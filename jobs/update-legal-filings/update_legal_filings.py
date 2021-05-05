@@ -21,6 +21,7 @@ import os
 
 import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
+from colin_api.models.business import Business
 from colin_api.models.filing import Filing
 from flask import Flask
 from legal_api.services.bootstrap import AccountService
@@ -67,11 +68,17 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def check_for_manual_filings(application: Flask = None, token: dict = None):  # pylint: disable=redefined-outer-name
+def check_for_manual_filings(application: Flask = None, token: dict = None):
+    # pylint: disable=redefined-outer-name, disable=too-many-branches
     """Check for colin filings in oracle."""
     id_list = []
+    colin_events = None
     legal_url = application.config['LEGAL_URL']
     colin_url = application.config['COLIN_URL']
+    corp_types = [Business.TypeCodes.COOP.value, Business.TypeCodes.BC_COMP.value,
+                  Business.TypeCodes.ULC_COMP.value, Business.TypeCodes.CCC_COMP.value]
+    no_corp_num_prefix_in_colin = [Business.TypeCodes.BC_COMP.value, Business.TypeCodes.ULC_COMP.value,
+                                   Business.TypeCodes.CCC_COMP.value]
 
     # get max colin event_id from legal
     response = requests.get(f'{legal_url}/internal/filings/colin_id')
@@ -85,22 +92,33 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):  # 
             last_event_id = dict(response.json())['maxId']
         if last_event_id:
             last_event_id = str(last_event_id)
-            # get all cp event_ids greater than above
+            # get all event_ids greater than above
             try:
-                # call colin api for ids + filing types list
-                response = requests.get(f'{colin_url}/event/CP/{last_event_id}')
-                colin_events = dict(response.json())
-
-                # for bringing in a specific filing
-                # global SET_EVENTS_MANUALLY
-                # SET_EVENTS_MANUALLY = True
-                # colin_events = {
-                #     'events': [{'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}]
-                # }
+                for corp_type in corp_types:
+                    # call colin api for ids + filing types list
+                    response = requests.get(f'{colin_url}/event/{corp_type}/{last_event_id}')
+                    event_info = dict(response.json())
+                    events = event_info.get('events')
+                    if corp_type in no_corp_num_prefix_in_colin:
+                        append_corp_num_prefixes(events, 'BC')
+                    if colin_events:
+                        colin_events.get('events').extend(events)
+                    else:
+                        colin_events = event_info
 
             except Exception as err:
                 application.logger.error('Error getting event_ids from colin')
                 raise err
+
+            # for bringing in a specific filing
+            # global SET_EVENTS_MANUALLY
+            # SET_EVENTS_MANUALLY = True
+            # colin_events = {
+            #     'events': [
+            #           {'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}
+            #           {'corp_num': 'BC0702216', 'event_id': 6580760, 'filing_typ_cd': 'ANNBC'},
+            #       ]
+            # }
 
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events['events']:
@@ -111,28 +129,36 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):  # 
                 )
                 if response.status_code == 200:
                     # check legal table
-
                     response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}')
                     if response.status_code == 404:
                         id_list.append(info)
                     elif response.status_code != 200:
                         application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
-
-        else:
-            application.logger.error('No ids returned from colin_last_update table in legal db.')
+                else:
+                    application.logger.error('No ids returned from colin_last_update table in legal db.')
 
     return id_list
+
+
+def append_corp_num_prefixes(events, corp_num_prefix):
+    """Append corp num prefix to Colin corp num to make Lear compatible."""
+    for event in events:
+        event['corp_num'] = corp_num_prefix + event['corp_num']
 
 
 def get_filing(event_info: dict = None, application: Flask = None):  # pylint: disable=redefined-outer-name
     """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info['corp_num'][:2]
-    if event_info['filing_typ_cd'] not in Filing.FILING_TYPES[legal_type].keys():
+    filing_typ_cd = event_info['filing_typ_cd']
+    filing_types = Filing.FILING_TYPES.keys()
+    filing_type = \
+        next((x for x in filing_types if filing_typ_cd in Filing.FILING_TYPES.get(x).get('type_code_list')), None)
+
+    if not filing_type:
         application.logger.error('Error unknown filing type: {} for event id: {}'.format(
             event_info['filing_type'], event_info['event_id']))
 
-    filing_type = Filing.FILING_TYPES[legal_type][event_info['filing_typ_cd']]
     identifier = event_info['corp_num']
     event_id = event_info['event_id']
     response = requests.get(
