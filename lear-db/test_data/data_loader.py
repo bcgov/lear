@@ -64,27 +64,24 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                         legal_type = Business.LegalTypes.COMP.value
                         corp_num = 'BC' + corp_num[-7:]
 
-                    business = Business.find_by_identifier(corp_num)
-                    if business:
+                    if business := Business.find_by_identifier(corp_num):
                         added = True
                         print('-> business info already exists -- skipping corp load')
                         continue
 
-                    filing_event = get_data_load_required_filing_event(legal_type, corp_num)
-                    if not filing_event:
+                    
+                    if not (filing_event := get_data_load_required_filing_event(legal_type, corp_num)):
                         print('no icorp app or conversion ledger event found -- skipping corp load')
                         continue
 
                     colin_filing_type = filing_event.get('filing_typ_cd')
                     filing_type = get_filing_type(legal_type, colin_filing_type)
-                    colin_filing = get_filing(filing_type, legal_type, filing_event, FLASK_APP)
-                    if not colin_filing:
+
+                    if not (colin_filing := get_filing(filing_type, legal_type, filing_event, FLASK_APP)):
                         print('no filing retrieved from filing event -- skipping corp load')
                         continue
 
-                    uow = versioning_manager.unit_of_work(db.session)
-                    transaction = uow.create_transaction(db.session)
-                    filing = create_filing(filing_type, colin_filing, filing_event.get('event_id'), corp_num, transaction)
+                    filing = create_filing(filing_type, colin_filing, filing_event.get('event_id'), corp_num)
                     filing.save()
 
                     #push to queue
@@ -104,7 +101,7 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                     FAILED_CORPS.append(corp_num)
                     continue
 
-def create_filing(filing_type, colin_filing, colin_event_id, corp_num, transaction):
+def create_filing(filing_type, colin_filing, colin_event_id, corp_num):
     """Create legal api filing using colin filing as base"""
     effective_date = colin_filing['filing']['business']['foundingDate']
     colin_filing['filing']['business']['identifier'] = corp_num
@@ -119,7 +116,6 @@ def create_filing(filing_type, colin_filing, colin_event_id, corp_num, transacti
     filing.skip_status_listener = True
     filing._status = 'PENDING'
     filing.source = Filing.Source.COLIN.value
-    filing.transaction_id = transaction.id
     return filing
 
 def get_data_load_required_filing_event(legal_type, corp_num):
@@ -142,7 +138,7 @@ def get_filing_events_for_corp(legal_type, corp_num):
     events = dict(r.json()).get('events', [])
     return events
 
-def get_filing(colin_filing_type, legal_type, event_info: dict = None, application: Flask = None):  # pylint: disable=redefined-outer-name
+def get_filing(colin_filing_type, legal_type, event_info: dict = None):  # pylint: disable=redefined-outer-name
     """Get filing for a given event from colin"""
     identifier = event_info['corp_num']
     event_id = event_info['event_id']
@@ -153,7 +149,7 @@ def get_filing(colin_filing_type, legal_type, event_info: dict = None, applicati
     filing = dict(response.json())
     return filing
 
-def get_filing_type(legal_type, filing_typ_cd):
+def get_filing_type(filing_typ_cd):
     """Get generic filing type """
     filing_types = ColinFiling.FILING_TYPES.keys()
     match = next((x for x in filing_types
