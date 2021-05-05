@@ -21,14 +21,12 @@ altered.
 
 There are no corrections for a conversion filing.
 """
-import copy
+# pylint: disable=superfluous-parens; as pylance requires it
 from contextlib import suppress
-from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
-from flask import current_app
 from legal_api.models import Business, Filing
 
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
@@ -39,13 +37,13 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
     """Process the incoming historic conversion filing."""
     # Extract the filing information for incorporation
-    if not (conversion_filing:= filing.get('filing', {}).get('conversion')):
+    if not (conversion_filing := filing.get('filing', {}).get('conversion')):
         raise QueueException(f'CONVL legal_filing:conversion missing from {filing_rec.id}')
 
-    if business: 
+    if business:
         raise QueueException(f'Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}')
 
-    if not (corp_num := filing.get('filing',{}).get('business',{}).get('identifier')):
+    if not (corp_num := filing.get('filing', {}).get('business', {}).get('identifier')):
         raise QueueException(f'conversion {filing_rec.id} missing the business idnetifier.')
 
     # Initial insert of the business record
