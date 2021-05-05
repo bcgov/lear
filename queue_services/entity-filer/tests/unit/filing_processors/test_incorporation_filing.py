@@ -146,7 +146,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing['filing']['incorporationApplication'].pop('shareStructure')
     effective_date = datetime.utcnow()
     # Create the Filing obeject in the DB
-    filing_rec = Filing(effective_date=effective_date, 
+    filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
     colin_event = ColinEventId()
     colin_event.colin_event_id=colind_id
@@ -165,3 +165,44 @@ def test_incorporation_filing_coop_from_colin(app, session):
     assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
     assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
+
+
+@pytest.mark.parametrize('legal_type', [
+    ('BC'),
+    ('ULC'),
+    ('CC'),
+])
+def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
+    """Assert that an existing bc company(LTD, ULC, CCC) incorporation is loaded corrrectly."""
+    # setup
+    corp_num = 'BC0000001'
+    colind_id = 1
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+
+    # Change the template to be LTD, ULC or CCC
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['business']['identifier'] = corp_num
+    filing['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
+    effective_date = datetime.utcnow()
+    # Create the Filing object in the DB
+    filing_rec = Filing(effective_date=effective_date,
+                        filing_json=filing)
+    colin_event = ColinEventId()
+    colin_event.colin_event_id=colind_id
+    filing_rec.colin_event_ids.append(colin_event)
+    # Override the state setting mechanism
+    filing_rec.skip_status_listener = True
+    filing_rec._status = 'PENDING'
+    filing_rec.save()
+
+    # test
+    business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+
+    # Assertions
+    assert business.identifier == corp_num
+    assert business.founding_date.replace(tzinfo=None) == effective_date
+    assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+    assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+    assert len(business.offices.all()) == 2  # One office is created in create_business method.
+    assert len(business.share_classes.all()) == 2
+    assert len(business.party_roles.all()) == 3

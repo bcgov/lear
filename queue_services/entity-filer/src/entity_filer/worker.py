@@ -51,6 +51,7 @@ from entity_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    conversion,
     correction,
     incorporation_filing,
     transition,
@@ -168,6 +169,10 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                                                                filing_core_submission.json,
                                                                                filing_submission)
 
+                elif filing.get('conversion'):
+                    business, filing_submission = conversion.process(business,
+                                                                     filing_core_submission.json,
+                                                                     filing_submission)
                 if filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing)
 
@@ -215,6 +220,12 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                             f'on Queue with error:{err}',
                             level='error'
                         )
+
+            if any('conversion' in x for x in legal_filings):
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                conversion.post_process(business, filing_submission)
 
             try:
                 await publish_email_message(
