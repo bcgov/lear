@@ -222,26 +222,10 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         )
 
             if any('conversion' in x for x in legal_filings):
-                if any('correction' in x for x in legal_filings):
-                    if name_request.has_new_nr_for_correction(filing_submission.filing_json):
-                        name_request.consume_nr(business, filing_submission)
-                else:
-                    filing_submission.business_id = business.id
-                    db.session.add(filing_submission)
-                    db.session.commit()
-                    conversion.update_affiliation(business, filing_submission)
-                    name_request.consume_nr(business, filing_submission)
-                    conversion.post_process(business, filing_submission)
-                    try:
-                        await publish_email_message(
-                            qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
-                    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                        # mark any failure for human review
-                        capture_message(
-                            f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                            f'on Queue with error:{err}',
-                            level='error'
-                        )
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                conversion.post_process(business, filing_submission)
 
             try:
                 await publish_email_message(
