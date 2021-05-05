@@ -286,8 +286,8 @@ class DocumentMetaService():
                     DocumentMetaService.ReportType.ALTERATION_NOTICE.value
                 )
             )
-            name_request = filing.get('filing', None).get('alteration', None).get('nameRequest', None)
-            business = filing.get('filing', None).get('business', None)
+            name_request = filing.get('filing', {}).get('alteration', {}).get('nameRequest', None)
+            business = filing.get('filing', {}).get('business', {})
             if name_request and 'legalName' in name_request and \
                     name_request['legalName'] != business.get('legalName', None):
                 reports.append(
