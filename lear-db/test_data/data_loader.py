@@ -28,7 +28,6 @@ from legal_api.models import (
 )
 from legal_api.services import queue
 from legal_api.models.colin_event_id import ColinEventId
-from sqlalchemy_continuum import versioning_manager
 
 
 load_dotenv(find_dotenv())
@@ -69,15 +68,15 @@ def load_corps(csv_filepath: str = 'corp_nums/corps_to_load.csv'):
                         print('-> business info already exists -- skipping corp load')
                         continue
 
-                    
+
                     if not (filing_event := get_data_load_required_filing_event(legal_type, corp_num)):
                         print('no icorp app or conversion ledger event found -- skipping corp load')
                         continue
 
                     colin_filing_type = filing_event.get('filing_typ_cd')
-                    filing_type = get_filing_type(legal_type, colin_filing_type)
+                    filing_type = get_filing_type(colin_filing_type)
 
-                    if not (colin_filing := get_filing(filing_type, legal_type, filing_event, FLASK_APP)):
+                    if not (colin_filing := get_filing(filing_type, legal_type, filing_event)):
                         print('no filing retrieved from filing event -- skipping corp load')
                         continue
 
