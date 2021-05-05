@@ -47,7 +47,7 @@ def _get_pdfs(
         filing: Filing,
         filing_date_time: str,
         effective_date: str) -> list:
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
     headers = {
