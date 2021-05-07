@@ -14,29 +14,14 @@
 """Tests to assure the Court Order is validated properly."""
 import pytest
 
+from legal_api.utils.datetime import datetime, timedelta
 from legal_api.services.filings.validations.common_validations import validate_court_order
 
 
 @pytest.mark.parametrize('invalid_court_order', [
-    {
-        'fileNumber': '123456789012345678901',  # long fileNumber
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
-    },
-    {
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
-    },
-    {
-        'fileNumber': 'Valid file number',
-        'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
-        'effectOfOrder': 'Valid effect of order'
-    },
-    {
-        'fileNumber': 'Valid File Number',
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': ('a' * 501)  # long effectOfOrder
-    }
+    {'orderDate': (datetime.today() + timedelta(days=1)).isoformat()}, #invalid date - tommorow
+    {'orderDate': (datetime.today() + timedelta(days=30)).isoformat()}, #invalid date - 30 days later
+    {'orderDate': (datetime.today() + timedelta(days=366)).isoformat()} #invalid date - 366 days later
 ])
 def test_validate_invalid_court_orders(session, invalid_court_order):
     """Assert not valid court orders."""
@@ -45,16 +30,11 @@ def test_validate_invalid_court_orders(session, invalid_court_order):
     assert msg
     assert len(msg) > 0
 
-
 @pytest.mark.parametrize('valid_court_order', [
-    {
-        'fileNumber': '12345678901234567890'
-    },
-    {
-        'fileNumber': 'Valid file number',
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
-    }
+    {'orderDate': datetime.today().isoformat()}, #valid date - today
+    {'orderDate': (datetime.today() + timedelta(days=-1)).isoformat()}, #valid date - yesterday
+    {'orderDate': (datetime.today() + timedelta(days=-30)).isoformat()}, #valid date - 30 days ago
+    {'orderDate': (datetime.today() + timedelta(days=-366)).isoformat()}  #valid date - 366 days ago
 ])
 def test_validate_valid_court_orders(session, valid_court_order):
     """Assert valid court orders."""

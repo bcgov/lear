@@ -47,6 +47,7 @@ coverage.xml
 .pytest_cache/
 *.postman_environment.json
 coverage/
+http-client.*
 
 # Translations
 *.mo
