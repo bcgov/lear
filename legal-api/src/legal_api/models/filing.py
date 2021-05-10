@@ -112,6 +112,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCINC'
             }
         },
+        'conversion': {
+            'name': 'conversion',
+            'title': 'Conversion Ledger'
+        },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
                                   'CP': 'RES'}},
