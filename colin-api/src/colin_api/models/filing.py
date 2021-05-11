@@ -683,6 +683,8 @@ class Filing:
                     filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
                 elif filing_event_info['filing_type_code'] == 'NOALE':
                     filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALA':
+                    filing.body['business']['legalType'] = filing.business.corp_type
                 else:
                     raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
                 filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
