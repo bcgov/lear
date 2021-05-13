@@ -107,8 +107,9 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
         )
 
     # add addresses to party
-    address = create_address(party_info.get('deliveryAddress', None), Address.DELIVERY)
-    party.delivery_address = address
+    if party_info.get('deliveryAddress', None):
+        address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
+        party.delivery_address = address
     if party_info.get('mailingAddress', None):
         mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
         party.mailing_address = mailing_address
