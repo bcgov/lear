@@ -29,9 +29,10 @@ from entity_filer.filing_processors.filing_components import (
 
 
 JSON_ROLE_CONVERTER = {
-    'Director': PartyRole.RoleTypes.DIRECTOR.value,
-    'Incorporator': PartyRole.RoleTypes.INCORPORATOR.value,
-    'Completing Party': PartyRole.RoleTypes.COMPLETING_PARTY.value
+    'custodian': PartyRole.RoleTypes.CUSTODIAN.value,
+    'completing party': PartyRole.RoleTypes.COMPLETING_PARTY.value,
+    'director': PartyRole.RoleTypes.DIRECTOR.value,
+    'incorporator': PartyRole.RoleTypes.INCORPORATOR.value,
 }
 
 
