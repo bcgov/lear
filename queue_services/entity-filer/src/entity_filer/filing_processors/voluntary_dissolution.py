@@ -12,17 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Change of Name filing."""
-from datetime import date
 from typing import Dict
 
-from entity_queue_common.service_utils import logger
+from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business
+from legal_api.utils.datetime import datetime
 
+from entity_filer.filing_processors.filing_components.parties import update_parties
 
 def process(business: Business, filing: Dict):
     """Render the annual_report onto the business model objects."""
+    if not (dissolution_filing := filing.get('filing', {}).get('voluntaryDissolution')):
+        logger.error('Could not find Voluntary Dissolution in: %s', filing)
+        raise QueueException(f'legal_filing:voluntaryDissolution missing from {filing}')
+
     logger.debug('processing Voluntary Dissolution: %s', filing)
-    dissolution_date = date.fromisoformat(filing['voluntaryDissolution'].get('dissolutionDate'))
+    try:
+        dissolution_date = datetime.fromisoformat(dissolution_filing.get('dissolutionDate'))
+    except Exception as err:
+        print(err)
     # Currently we don't use this for anything?
     # has_liabilities = filing['voluntaryDissolution'].get('hasLiabilities')
     business.dissolution_date = dissolution_date
+
+    if parties := dissolution_filing.get('parties'):
+        update_parties(business, parties)

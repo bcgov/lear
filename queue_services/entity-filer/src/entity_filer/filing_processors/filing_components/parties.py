@@ -49,7 +49,7 @@ def update_parties(business: Business, parties_structure: Dict) -> Optional[List
                 party = create_party(business_id=business.id, party_info=party_info, create=False)
                 for role_type in party_info.get('roles'):
                     role = {
-                        'roleType': role_type.get('roleType'),
+                        'roleType': role_type.get('roleType','').lower(),
                         'appointmentDate': role_type.get('appointmentDate', None),
                         'cessationDate': role_type.get('cessationDate', None)
                     }
