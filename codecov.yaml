@@ -13,10 +13,12 @@ coverage:
       backend:
         target: auto
         flags:
+          - colinapi
           - legalapi
           - entityemailer
           - entityfiler
           - entitypay
+          - datareset
 
 ignore:
   - "^/tests/**/*" # ignore test harness code
@@ -35,6 +37,10 @@ comment:
   require_changes: true
 
 flags:
+  colinapi:
+    paths:
+      - colin-api/src/colin_api
+    carryforward: true
   legalapi:
     paths:
       - legal-api/src/legal_api
@@ -50,4 +56,8 @@ flags:
   entitypay:
     paths:
       - queue_services/entity-pay/src/entity_pay
+    carryforward: true
+  datareset:
+    paths:
+      - data-reset-tool/src/data_reset_tool
     carryforward: true
