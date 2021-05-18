@@ -383,7 +383,7 @@ class ListFilingResource(Resource):
     @staticmethod
     def _check_authorization(identifier, filing_json: str) -> Tuple[dict, int]:
         action = ['edit']
-        filing_type = filing_json['filing']['header']['name']
+        filing_type = filing_json['filing']['header'].get('name')
         if filing_type == 'courtOrder':
             action = ['court_order']
         elif filing_type == 'registrarsNotation':
