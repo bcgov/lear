@@ -127,7 +127,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'TRANS',
                 'BEN': 'TRANS'
             }
-        }
+        },
+        # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
+        # for all the business the fee code remain same as NOFEE (Staff)
+        'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
+        'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
+        'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'}
     }
 
     __tablename__ = 'filings'
