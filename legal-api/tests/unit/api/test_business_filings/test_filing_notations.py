@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ def test_filing_court_order(client, jwt, session):
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
 
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings/court-order',
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
@@ -53,6 +53,35 @@ def test_filing_court_order(client, jwt, session):
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
     assert filing
     assert filing.status == Filing.Status.PENDING.value
+
+
+def test_filing_court_order_validation(client, jwt, session):
+    """Assert that a court order filing can be validated."""
+    identifier = 'BC1156638'
+    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['courtOrder']['fileNumber'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['courtOrder']['orderDetails'] = ''
+    filing['filing']['courtOrder']['effectOfOrder'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Court Order is required.', 'path': '/filing/courtOrder/orderDetails'}]
 
 
 @integration_payment
@@ -65,7 +94,7 @@ def test_filing_registrars_notation(client, jwt, session):
     filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
 
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings/registrars-notation',
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
@@ -75,6 +104,44 @@ def test_filing_registrars_notation(client, jwt, session):
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
     assert filing
     assert filing.status == Filing.Status.PENDING.value
+
+    filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsNotation']['effectOfOrder'] = ''
+    filing['filing']['registrarsNotation']['fileNumber'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+def test_filing_registrars_notation_validation(client, jwt, session):
+    """Assert that a registrars notation filing can be validated."""
+    identifier = 'BC1156638'
+    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsNotation']['orderDetails'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsNotation']['effectOfOrder'] = 'planOfArrangement'
+    filing['filing']['registrarsNotation']['fileNumber'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Court Order Number is required when this filing is pursuant to a \
+                Plan of Arrangement.', 'path': '/filing/registrarsNotation/fileNumber'}]
 
 
 @integration_payment
@@ -87,13 +154,53 @@ def test_filing_registrars_order(client, jwt, session):
     filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
 
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings/registrars-order',
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
     assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['header']['name'] == 'registrars_order'
+    assert rv.json['filing']['header']['name'] == 'registrarsOrder'
 
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
     assert filing
     assert filing.status == Filing.Status.PENDING.value
+
+    filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsOrder']['effectOfOrder'] = ''
+    filing['filing']['registrarsOrder']['fileNumber'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+def test_filing_registrars_order_validation(client, jwt, session):
+    """Assert that a registrars order filing can be validated."""
+    identifier = 'BC1156638'
+    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsOrder']['orderDetails'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsOrder']['effectOfOrder'] = 'planOfArrangement'
+    filing['filing']['registrarsOrder']['fileNumber'] = ''
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Court Order Number is required when this filing is pursuant to a \
+                Plan of Arrangement.', 'path': '/filing/registrarsOrder/fileNumber'}]
