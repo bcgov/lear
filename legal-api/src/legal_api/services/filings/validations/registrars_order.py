@@ -31,12 +31,15 @@ def validate(business: Business, registrars_order: Dict) -> Error:
     msg = []
 
     effect_of_order = get_str(registrars_order, '/filing/registrarsOrder/effectOfOrder')
-
-    if effect_of_order and effect_of_order == 'planOfArrangement':
-        file_number = get_str(registrars_order, '/filing/registrarsOrder/fileNumber')
-        if not file_number:
-            msg.append({'error': babel('Court Order Number is required when this filing is pursuant to a \
-                Plan of Arrangement.'), 'path': '/filing/registrarsOrder/fileNumber'})
+    if effect_of_order:
+        if effect_of_order == 'planOfArrangement':
+            file_number = get_str(registrars_order, '/filing/registrarsOrder/fileNumber')
+            if not file_number:
+                msg.append({'error': babel(
+                    'Court Order Number is required when this filing is pursuant to a Plan of Arrangement.'),
+                    'path': '/filing/registrarsOrder/fileNumber'})
+        else:
+            msg.append({'error': babel('Invalid effectOfOrder.'), 'path': '/filing/registrarsOrder/effectOfOrder'})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

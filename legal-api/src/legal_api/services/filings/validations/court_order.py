@@ -40,6 +40,10 @@ def validate(business: Business, court_order: Dict) -> Error:
     if not file_number:
         msg.append({'error': babel('Court Order Number is required.'), 'path': '/filing/courtOrder/fileNumber'})
 
+    effect_of_order = get_str(court_order, '/filing/courtOrder/effectOfOrder')
+    if effect_of_order and effect_of_order != 'planOfArrangement':
+        msg.append({'error': babel('Invalid effectOfOrder.'), 'path': '/filing/courtOrder/effectOfOrder'})
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

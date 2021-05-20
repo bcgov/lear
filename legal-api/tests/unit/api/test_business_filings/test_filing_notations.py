@@ -83,6 +83,17 @@ def test_filing_court_order_validation(client, jwt, session):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json['errors'] == [{'error': 'Court Order is required.', 'path': '/filing/courtOrder/orderDetails'}]
 
+    filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['courtOrder']['effectOfOrder'] = 'invalid'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Invalid effectOfOrder.', 'path': '/filing/courtOrder/effectOfOrder'}]
+
 
 @integration_payment
 def test_filing_registrars_notation(client, jwt, session):
@@ -140,8 +151,20 @@ def test_filing_registrars_notation_validation(client, jwt, session):
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'] == [{'error': 'Court Order Number is required when this filing is pursuant to a \
-                Plan of Arrangement.', 'path': '/filing/registrarsNotation/fileNumber'}]
+    assert rv.json['errors'] == [{
+        'error': 'Court Order Number is required when this filing is pursuant to a Plan of Arrangement.',
+        'path': '/filing/registrarsNotation/fileNumber'}]
+
+    filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsNotation']['effectOfOrder'] = 'invalid'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Invalid effectOfOrder.',
+                                  'path': '/filing/registrarsNotation/effectOfOrder'}]
 
 
 @integration_payment
@@ -202,5 +225,17 @@ def test_filing_registrars_order_validation(client, jwt, session):
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'] == [{'error': 'Court Order Number is required when this filing is pursuant to a \
-                Plan of Arrangement.', 'path': '/filing/registrarsOrder/fileNumber'}]
+    assert rv.json['errors'] == [{
+        'error': 'Court Order Number is required when this filing is pursuant to a Plan of Arrangement.',
+        'path': '/filing/registrarsOrder/fileNumber'}]
+
+    filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['registrarsOrder']['effectOfOrder'] = 'invalid'
+
+    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
+                     json=filing,
+                     headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'] == [{'error': 'Invalid effectOfOrder.', 'path': '/filing/registrarsOrder/effectOfOrder'}]
