@@ -24,19 +24,19 @@ from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, co: Dict) -> Error:
+def validate(business: Business, court_order: Dict) -> Error:
     """Validate the Court Order filing."""
-    if not business or not co:
+    if not business or not court_order:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    order_details = get_str(co, '/filing/courtOrder/orderDetails')
+    order_details = get_str(court_order, '/filing/courtOrder/orderDetails')
 
     if not order_details:
         msg.append({'error': babel('Court Order is required.'),
                     'path': '/filing/courtOrder/orderDetails'})
 
-    file_number = get_str(co, '/filing/courtOrder/fileNumber')
+    file_number = get_str(court_order, '/filing/courtOrder/fileNumber')
     if not file_number:
         msg.append({'error': babel('Court Order Number is required.'), 'path': '/filing/courtOrder/fileNumber'})
 

@@ -24,16 +24,16 @@ from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, ro: Dict) -> Error:
+def validate(business: Business, registrars_order: Dict) -> Error:
     """Validate the Registrars Order filing."""
-    if not business or not ro:
+    if not business or not registrars_order:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    effect_of_order = get_str(ro, '/filing/registrarsOrder/effectOfOrder')
+    effect_of_order = get_str(registrars_order, '/filing/registrarsOrder/effectOfOrder')
 
     if effect_of_order and effect_of_order == 'planOfArrangement':
-        file_number = get_str(ro, '/filing/registrarsOrder/fileNumber')
+        file_number = get_str(registrars_order, '/filing/registrarsOrder/fileNumber')
         if not file_number:
             msg.append({'error': babel('Court Order Number is required when this filing is pursuant to a \
                 Plan of Arrangement.'), 'path': '/filing/registrarsOrder/fileNumber'})
