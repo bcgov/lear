@@ -97,10 +97,10 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
     start_date = (business.last_ar_date if business.last_ar_date else business.founding_date).date()
     ar_min_date, ar_max_date = get_ar_dates(business, start_date, next_ar_year)
 
-    # if ar_date < ar_min_date:
-    #     return Error(HTTPStatus.BAD_REQUEST,
-    #                  [{'error': _('Annual Report Date cannot be before a previous Annual Report or the Founding Date.'),
-    #                    'path': 'filing/annualReport/annualReportDate'}])
+    if ar_date < ar_min_date:
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': _('Annual Report Date cannot be before a previous Annual Report or the Founding Date.'),
+                       'path': 'filing/annualReport/annualReportDate'}])
 
     # AR Date must be the next contiguous year, from either the last AR or foundingDate
     if ar_date > ar_max_date:
