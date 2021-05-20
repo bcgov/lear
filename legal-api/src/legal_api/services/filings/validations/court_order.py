@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Court Order filing."""
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -24,17 +24,14 @@ from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, court_order: Dict) -> Error:
+def validate(business: Business, court_order: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not court_order:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    order_details = get_str(court_order, '/filing/courtOrder/orderDetails')
-
-    if not order_details:
-        msg.append({'error': babel('Court Order is required.'),
-                    'path': '/filing/courtOrder/orderDetails'})
+    if not get_str(court_order, '/filing/courtOrder/orderDetails'):
+        msg.append({'error': babel('Court Order is required.'), 'path': '/filing/courtOrder/orderDetails'})
 
     effect_of_order = get_str(court_order, '/filing/courtOrder/effectOfOrder')
     if effect_of_order and effect_of_order != 'planOfArrangement':
