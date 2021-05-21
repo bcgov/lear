@@ -317,7 +317,7 @@ async def test_process_combined_filing(app, session, mocker):
     director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
     director_party2 = create_party(business.id, director_party2_dict)
     role2 = {
-        'roleType': 'director',
+        'roleType': 'Director',
         'appointmentDate': director_party2_dict.get('appointmentDate'),
         'cessationDate': director_party2_dict.get('cessationDate')
     }
