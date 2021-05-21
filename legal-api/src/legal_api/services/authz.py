@@ -43,8 +43,10 @@ def authorized(  # pylint: disable=too-many-return-statements
 
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
-        # if the action is create_comment, disallow - only staff are allowed
-        if action == 'add_comment':
+        # if the action is create_comment or courtOrder/registrarsNotation/registrarsOrder filings
+        # disallow - only staff are allowed
+        staff_only_actions = ['add_comment', 'court_order', 'registrars_notation', 'registrars_order']
+        if any(elem in action for elem in staff_only_actions):
             return False
 
         template_url = current_app.config.get('AUTH_SVC_URL')
