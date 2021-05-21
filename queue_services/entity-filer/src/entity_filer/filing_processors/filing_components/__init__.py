@@ -120,7 +120,7 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
 def create_role(party: Party, role_info: dict) -> PartyRole:
     """Create a new party role and link to party."""
     party_role = PartyRole(
-        role=JSON_ROLE_CONVERTER.get(role_info['roleType'], None),
+        role=JSON_ROLE_CONVERTER.get(role_info.get('roleType').lower(), ''),
         appointment_date=role_info['appointmentDate'],
         cessation_date=role_info['cessationDate'],
         party=party

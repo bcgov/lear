@@ -145,7 +145,7 @@ async def test_process_cod_filing(app, session):
     directors = filing_data['filing']['changeOfDirectors']['directors']
     director_party1 = create_party(business.id, directors[0])
     role1 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': directors[0].get('appointmentDate'),
         'cessationDate': directors[0].get('cessationDate')
     }
@@ -157,7 +157,7 @@ async def test_process_cod_filing(app, session):
     director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
     director_party2 = create_party(business.id, director_party2_dict)
     role2 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': director_party2_dict.get('appointmentDate'),
         'cessationDate': director_party2_dict.get('cessationDate')
     }
@@ -165,7 +165,7 @@ async def test_process_cod_filing(app, session):
     # prep director for cease
     director_party3 = create_party(business.id, directors[2])
     role3 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': directors[3].get('appointmentDate'),
         'cessationDate': directors[3].get('cessationDate')
     }
@@ -175,7 +175,7 @@ async def test_process_cod_filing(app, session):
     director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
     director_party4 = create_party(business.id, director_party4_dict)
     role4 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': director_party4_dict.get('appointmentDate'),
         'cessationDate': director_party4_dict.get('cessationDate')
     }
@@ -305,7 +305,7 @@ async def test_process_combined_filing(app, session, mocker):
     directors = filing_data['filing']['changeOfDirectors']['directors']
     director_party1 = create_party(business.id, directors[0])
     role1 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': directors[0].get('appointmentDate'),
         'cessationDate': directors[0].get('cessationDate')
     }
@@ -317,7 +317,7 @@ async def test_process_combined_filing(app, session, mocker):
     director_party2_dict['officer']['lastName'] = director_party2_dict['officer']['prevLastName']
     director_party2 = create_party(business.id, director_party2_dict)
     role2 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': director_party2_dict.get('appointmentDate'),
         'cessationDate': director_party2_dict.get('cessationDate')
     }
@@ -325,7 +325,7 @@ async def test_process_combined_filing(app, session, mocker):
     # prep director for cease
     director_party3 = create_party(business.id, directors[2])
     role3 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': directors[3].get('appointmentDate'),
         'cessationDate': directors[3].get('cessationDate')
     }
@@ -335,7 +335,7 @@ async def test_process_combined_filing(app, session, mocker):
     director_party4_dict['deliveryAddress']['streetAddress'] = 'should get changed'
     director_party4 = create_party(business.id, director_party4_dict)
     role4 = {
-        'roleType': 'Director',
+        'roleType': 'director',
         'appointmentDate': director_party4_dict.get('appointmentDate'),
         'cessationDate': director_party4_dict.get('cessationDate')
     }
