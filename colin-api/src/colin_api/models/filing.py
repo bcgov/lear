@@ -742,6 +742,8 @@ class Filing:
                 'name': filing.filing_type,
                 'source': cls.LearSource.COLIN.value
             }
+            if not filing.header['email']:
+                del filing.header['email']
 
             return filing
 

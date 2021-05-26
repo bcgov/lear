@@ -74,6 +74,14 @@ TEST_AUTHZ_DATA = [
      HTTPStatus.METHOD_NOT_ALLOWED),
     ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
      HTTPStatus.METHOD_NOT_ALLOWED),
+    ('add_comment_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['add_comment'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('court_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['court_order'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('registrars_notation_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_notation'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('registrars_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_order'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
 ]
 
 
@@ -131,6 +139,14 @@ TEST_INTEG_AUTHZ_DATA = [
     ('missing_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, None,
      HTTPStatus.METHOD_NOT_ALLOWED),
     ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('add_comment_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['add_comment'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('court_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['court_order'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('registrars_notation_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_notation'],
+     HTTPStatus.METHOD_NOT_ALLOWED),
+    ('registrars_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_order'],
      HTTPStatus.METHOD_NOT_ALLOWED),
 ]
 

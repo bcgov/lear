@@ -13,7 +13,7 @@
 # limitations under the License.
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
-from datetime import date
+from datetime import datetime
 
 from entity_filer.filing_processors import voluntary_dissolution
 from tests.unit import create_business
@@ -122,7 +122,7 @@ def test_voluntary_dissolution(app, session):
     business.dissolution_date = None
 
     # test
-    voluntary_dissolution.process(business, filing_json)
+    voluntary_dissolution.process(business, filing_json['filing'])
 
     # validate
-    assert business.dissolution_date == date.fromisoformat(dissolution_date)
+    assert business.dissolution_date == datetime.fromisoformat(dissolution_date)

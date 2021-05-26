@@ -53,7 +53,10 @@ from entity_filer.filing_processors import (
     change_of_name,
     conversion,
     correction,
+    court_order,
     incorporation_filing,
+    registrars_notation,
+    registrars_order,
     transition,
     voluntary_dissolution,
 )
@@ -173,6 +176,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
                                                                      filing_submission)
+
+                elif filing.get('courtOrder'):
+                    court_order.process(filing_submission, filing)
+                elif filing.get('registrarsNotation'):
+                    registrars_notation.process(filing_submission, filing)
+                elif filing.get('registrarsOrder'):
+                    registrars_order.process(filing_submission, filing)
+
                 if filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing)
 

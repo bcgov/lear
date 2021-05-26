@@ -159,10 +159,9 @@ class ListFilingResource(Resource):
         json_input = request.get_json()
 
         # check authorization
-        if not authorized(identifier, jwt, action=['edit']):
-            return jsonify({'message':
-                            f'You are not authorized to submit a filing for {identifier}.'}), \
-                HTTPStatus.UNAUTHORIZED
+        response, response_code = ListFilingResource._check_authorization(identifier, json_input)
+        if response:
+            return response, response_code
 
         # get query params
         draft = (request.args.get('draft', None).lower() == 'true') \
@@ -262,12 +261,12 @@ class ListFilingResource(Resource):
                 business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
                                                             Business.UNLIMITED_COMPANIES)]):
             response = jsonify({
-                            'message': _('You must complete this alteration filing to become a BC Benefit Company.')
-                            }), HTTPStatus.UNAUTHORIZED
+                'message': _('You must complete this alteration filing to become a BC Benefit Company.')
+            }), HTTPStatus.UNAUTHORIZED
         else:
             response = jsonify({
-                            'message': _('This filing cannot be deleted at this moment.')
-                            }), HTTPStatus.UNAUTHORIZED
+                'message': _('This filing cannot be deleted at this moment.')
+            }), HTTPStatus.UNAUTHORIZED
 
         return response
 
@@ -378,6 +377,23 @@ class ListFilingResource(Resource):
             return ({'message':
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
+
+        return None, None
+
+    @staticmethod
+    def _check_authorization(identifier, filing_json: str) -> Tuple[dict, int]:
+        action = ['edit']
+        filing_type = filing_json['filing']['header'].get('name')
+        if filing_type == 'courtOrder':
+            action = ['court_order']
+        elif filing_type == 'registrarsNotation':
+            action = ['registrars_notation']
+        elif filing_type == 'registrarsOrder':
+            action = ['registrars_order']
+        if not authorized(identifier, jwt, action=action):
+            return jsonify({'message':
+                            f'You are not authorized to submit a filing for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         return None, None
 
@@ -566,6 +582,12 @@ class ListFilingResource(Resource):
                 'filingTypeCode': filing_type_code,
                 'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+            })
+        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder']):
+            filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'filingDescription': filing_type
             })
         else:
             for k in filing_json['filing'].keys():

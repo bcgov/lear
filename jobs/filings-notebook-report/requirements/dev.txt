@@ -1,5 +1,4 @@
-# Everything the developer needs in addition to the production requirements
--r prod.txt
+# Everything the developer needs outside of the production requirements
 
 # Testing
 pytest

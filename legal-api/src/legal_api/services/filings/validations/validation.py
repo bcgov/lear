@@ -23,8 +23,11 @@ from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .correction import validate as correction_validate
+from .court_order import validate as court_order_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .incorporation_application import validate_correction_ia
+from .registrars_notation import validate as registrars_notation_validate
+from .registrars_order import validate as registrars_order_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 from .voluntary_dissolution import validate as voluntary_dissolution_validate
@@ -91,6 +94,15 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['alteration'].get('name'):
                     err = alteration_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['courtOrder'].get('name'):
+                    err = court_order_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['registrarsNotation'].get('name'):
+                    err = registrars_notation_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['registrarsOrder'].get('name'):
+                    err = registrars_order_validate(business, filing_json)
 
                 if err:
                     return err
