@@ -26,5 +26,5 @@ pytz==2020.4
 rsa==4.6
 sentry-sdk==0.19.4
 six==1.15.0
-urllib3==1.26.2
+urllib3==1.26.4
 git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
