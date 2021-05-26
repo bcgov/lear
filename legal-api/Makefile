@@ -82,10 +82,21 @@ mac-cov: test ## Run the coverage report and display in a browser window (mac)
 # expects export OPENSHIFT_SA_NAME="$(oc whoami)"
 # expects export OPENSHIFT_SA_TOKEN="$(oc whoami -t)"
 # expects export OPENSHIFT_REPOSITORY=""
-# expects export TAG_NAME="dev/test"
+# expects export TAG_NAME="dev/test/prod"
 # expects export OPS_REPOSITORY=""                                                        #
 #################################################################################
-cd: build update-env tag ## CD flow
+cd: ## CD flow
+ifeq ($(TAG_NAME), test)
+cd: update-env
+	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):dev $(DOCKER_NAME):$(TAG_NAME)
+else ifeq ($(TAG_NAME), prod)
+cd: update-env
+	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):$(TAG_NAME) $(DOCKER_NAME):$(TAG_NAME)-$(shell date +%F)
+	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):test $(DOCKER_NAME):$(TAG_NAME)
+else
+TAG_NAME=dev
+cd: build update-env tag
+endif
 
 build: ## Build the docker container
 	docker build . -t $(DOCKER_NAME) \
@@ -103,7 +114,7 @@ push: #build ## Push the docker container to the registry & tag latest
 
 VAULTS=`cat devops/vaults.json`
 update-env: ## Update env from 1pass
-	oc -n "$(OPS_REPOSITORY)-tools" exec dc/bcros-cli -- ./scripts/1pass.sh \
+	oc -n "$(OPS_REPOSITORY)-$(TAG_NAME)" exec "dc/vault-service-$(TAG_NAME)" -- ./scripts/1pass.sh \
 		-m "secret" \
 		-e "$(TAG_NAME)" \
 		-a "$(DOCKER_NAME)-$(TAG_NAME)" \
