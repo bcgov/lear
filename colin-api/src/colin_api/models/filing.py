@@ -151,6 +151,18 @@ class Filing:
         'transition': {
             'type_code_list': ['TRANS'],
             Business.TypeCodes.BC_COMP.value: 'TRANS'
+        },
+        'registrarsNotation': {
+            'type_code_list': ['REGSN'],
+            Business.TypeCodes.BC_COMP.value: 'REGSN'
+        },
+        'registrarsOrder': {
+            'type_code_list': ['REGSO'],
+            Business.TypeCodes.BC_COMP.value: 'REGSO'
+        },
+        'courtOrder': {
+            'type_code_list': ['COURT'],
+            Business.TypeCodes.BC_COMP.value: 'COURT'
         }
     }
 
@@ -386,6 +398,20 @@ class Filing:
                     filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
                     arragement_ind=arragement_ind,
+                    court_order_num=court_order_num
+                )
+            elif filing_type_code in ['REGSN', 'REGSO', 'COURT']:
+                arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
+                court_order_num = filing.body.get('fileNumber', None)
+
+                insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", :arrangement_ind, :court_order_num, 'F')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date,
+                    arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
             else:
@@ -819,7 +845,8 @@ class Filing:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['annualReport', 'changeOfAddress', 'changeOfDirectors',
-                                          'incorporationApplication', 'alteration', 'transition', 'correction']:
+                                          'incorporationApplication', 'alteration', 'transition', 'correction',
+                                          'registrarsNotation', 'registrarsOrder', 'courtOrder']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             legal_type = filing.business.corp_type
@@ -883,6 +910,11 @@ class Filing:
                 ledger_text = f'{ar_text}{dir_text}{office_text}'.replace('  ', '')
                 if ledger_text != '':
                     cls._insert_ledger_text(cursor, filing, ledger_text)
+
+                # add registrarsNotation, registrarsOrder or courtOrder ledger text record
+                if filing.filing_type in ['registrarsNotation', 'registrarsOrder', 'courtOrder']:
+                    order_details = filing.body.get('orderDetails')
+                    cls._insert_ledger_text(cursor, filing, order_details)
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
