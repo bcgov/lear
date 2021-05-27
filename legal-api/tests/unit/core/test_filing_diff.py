@@ -81,6 +81,29 @@ def test_filing_json_diff():
         'path': '/filing/specialResolution/resolution'}]
 
 
+def test_filing_json_diff_with_none_values():
+    """Assert the diff works with None values."""
+    from legal_api.core.utils import diff_dict, diff_list
+
+    json1 = copy.deepcopy(MINIMAL_FILING_JSON)
+    json1['filing']['specialResolution']['meetingDate'] = None
+
+    json2 = copy.deepcopy(CORRECTION_FILING_JSON)
+    json2['filing']['specialResolution']['meetingDate'] = None
+
+    diff = diff_dict(json2,
+                     json1,
+                     ignore_keys=['header', 'business', 'correction'],
+                     diff_list_callback=diff_list)
+
+    ld = [d.json for d in diff] if diff else None
+
+    assert ld == [{
+        'newValue': 'Be it resolved, and now it is.',
+        'oldValue': 'Be it resolved, that it is resolved to be resolved.',
+        'path': '/filing/specialResolution/resolution'}]
+
+
 def test_diff_of_stored_completed_filings(session):
     """Assert that the filing diff works correctly."""
     identifier = 'CP1234567'
