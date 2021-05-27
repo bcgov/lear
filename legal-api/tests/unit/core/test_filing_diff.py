@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests to assure the Filing Diff is working as expected."""
 import copy
+from typing import Final
 
 import datedelta
 
@@ -23,6 +24,8 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
 )
+
+RESOLUTION_PATH: Final = '/filing/specialResolution/resolution'
 
 
 MINIMAL_FILING_JSON = {'filing': {
@@ -78,7 +81,7 @@ def test_filing_json_diff():
     assert ld == [{
         'newValue': 'Be it resolved, and now it is.',
         'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-        'path': '/filing/specialResolution/resolution'}]
+        'path': RESOLUTION_PATH}]
 
 
 def test_filing_json_diff_with_none_values():
@@ -101,7 +104,7 @@ def test_filing_json_diff_with_none_values():
     assert ld == [{
         'newValue': 'Be it resolved, and now it is.',
         'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-        'path': '/filing/specialResolution/resolution'}]
+        'path': RESOLUTION_PATH}]
 
 
 def test_diff_of_stored_completed_filings(session):
@@ -126,5 +129,5 @@ def test_diff_of_stored_completed_filings(session):
         {
             'newValue': 'Be it resolved, and now it is.',
             'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-            'path': '/filing/specialResolution/resolution'
+            'path': RESOLUTION_PATH
         }]
