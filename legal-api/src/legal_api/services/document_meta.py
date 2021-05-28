@@ -62,8 +62,8 @@ class DocumentMetaService():
             self._legal_type = business.legal_type
 
         self._filing_status = filing['filing']['header']['status']
-        is_paper_only = filing['filing']['header']['availableOnPaperOnly']
-        is_colin_only = filing['filing']['header']['inColinOnly']
+        is_paper_only = filing['filing']['header'].get('availableOnPaperOnly', False)
+        is_colin_only = filing['filing']['header'].get('inColinOnly', False)
 
         if self._filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) \
                 or is_paper_only or is_colin_only:
