@@ -395,8 +395,9 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _is_historical_colin_filing(filing_json: str):
-        if filing_json['filing']['header'].get('source', None) == 'COLIN' \
-                and filing_json['filing']['header']['date'] < BOB_DATE:
+        if (filing_header := filing_json.get('filing', {}).get('header')) \
+            and filing_header.get('source', None) == 'COLIN' \
+                and filing_header.get('date') < BOB_DATE:
             return True
 
         return False

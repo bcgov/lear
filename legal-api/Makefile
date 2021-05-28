@@ -89,6 +89,7 @@ cd: build update-env tag ## CD flow
 
 build: ## Build the docker container
 	docker build . -t $(DOCKER_NAME) \
+		--platform linux/amd64 \
 		--build-arg VCS_REF=$(shell git rev-parse --short HEAD) \
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
 
