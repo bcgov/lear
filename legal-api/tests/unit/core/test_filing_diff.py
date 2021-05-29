@@ -16,6 +16,7 @@ import copy
 from typing import Final
 
 import datedelta
+import pytest
 
 from legal_api.core import Filing
 from legal_api.utils.datetime import datetime
@@ -84,15 +85,20 @@ def test_filing_json_diff():
         'path': RESOLUTION_PATH}]
 
 
-def test_filing_json_diff_with_none_values():
-    """Assert the diff works with None values."""
+@pytest.mark.parametrize('test_name, value', [
+    ('None values', None),
+    ('False values', False),
+    ('True values', True)
+])
+def test_filing_json_diff_with_same_values(test_name, value):
+    """Assert same values are not added to diff."""
     from legal_api.core.utils import diff_dict, diff_list
 
     json1 = copy.deepcopy(MINIMAL_FILING_JSON)
-    json1['filing']['specialResolution']['meetingDate'] = None
+    json1['filing']['specialResolution']['meetingDate'] = value
 
     json2 = copy.deepcopy(CORRECTION_FILING_JSON)
-    json2['filing']['specialResolution']['meetingDate'] = None
+    json2['filing']['specialResolution']['meetingDate'] = value
 
     diff = diff_dict(json2,
                      json1,
