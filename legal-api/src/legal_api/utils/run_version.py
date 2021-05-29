@@ -18,7 +18,7 @@ from legal_api.version import __version__
 
 
 def _get_build_openshift_commit_hash():
-    return os.getenv('OPENSHIFT_BUILD_COMMIT', None)
+    return os.getenv('OPENSHIFT_BUILD_COMMIT', None) or os.getenv('VCS_REF', None)
 
 
 def get_run_version():
