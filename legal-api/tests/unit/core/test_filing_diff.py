@@ -68,37 +68,21 @@ CORRECTION_FILING_JSON = {'filing': {
 }}
 
 
-def test_filing_json_diff():
-    """Assert the diff works on a sample filing structure."""
-    from legal_api.core.utils import diff_dict, diff_list
-
-    diff = diff_dict(CORRECTION_FILING_JSON,
-                     MINIMAL_FILING_JSON,
-                     ignore_keys=['header', 'business', 'correction'],
-                     diff_list_callback=diff_list)
-
-    ld = [d.json for d in diff] if diff else None
-
-    assert ld == [{
-        'newValue': 'Be it resolved, and now it is.',
-        'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-        'path': RESOLUTION_PATH}]
-
-
-@pytest.mark.parametrize('test_name, value', [
-    ('None values', None),
-    ('False values', False),
-    ('True values', True)
+@pytest.mark.parametrize('test_name, diff_value_test, value', [
+    ('Sample filing structure', False, None),
+    ('None diff values', True, None),
+    ('False diff values', True, False),
+    ('True diff values', True, True)
 ])
-def test_filing_json_diff_with_same_values(test_name, value):
-    """Assert same values are not added to diff."""
+def test_filing_json_diff(test_name, diff_value_test, value):
+    """Assert the diff works on filing."""
     from legal_api.core.utils import diff_dict, diff_list
 
     json1 = copy.deepcopy(MINIMAL_FILING_JSON)
-    json1['filing']['specialResolution']['meetingDate'] = value
-
     json2 = copy.deepcopy(CORRECTION_FILING_JSON)
-    json2['filing']['specialResolution']['meetingDate'] = value
+    if diff_value_test:
+        json1['filing']['specialResolution']['meetingDate'] = value
+        json2['filing']['specialResolution']['meetingDate'] = value
 
     diff = diff_dict(json2,
                      json1,
