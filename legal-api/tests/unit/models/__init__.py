@@ -112,6 +112,11 @@ AR_FILING = {
     }
 }
 
+def factory_user(username: str):
+    user = User()
+    user.username = username
+    user.save()
+    return user
 
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
                      entity_type=Business.LegalTypes.COOP.value):

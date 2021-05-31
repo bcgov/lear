@@ -19,10 +19,15 @@ import copy
 from enum import Enum
 from typing import Dict, List, Optional
 
+from flask_jwt_oidc import JwtManager
+
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
+from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
+
+from .constants import REDACTED_STAFF_SUBMITTER
 
 
 # @dataclass(init=False, repr=False)
@@ -79,6 +84,7 @@ class Filing:
         self._status: Optional[str] = None
         self._paper_only: bool = False
         self._payment_account: Optional[str] = None
+        self._jwt: JwtManager = None
 
     @property
     def id(self) -> str:  # pylint: disable=invalid-name; defining the std ID
@@ -122,30 +128,49 @@ class Filing:
             self._status = self._storage.status
         return self._status
 
+<<<<<<< HEAD
     # json is returned as a property defined after this method
     def get_json(self, with_diff: bool = True) -> Optional[Dict]:
+=======
+    def redacted(self, filing: dict, jwt: JwtManager):
+        """Redact the filing based on stored roles and those in JWT."""
+        if jwt \
+            and self._storage.submitter_roles \
+                and UserRoles.STAFF.value in self._storage.submitter_roles:
+
+            if filing.get('filing', {}).get('header', {}).get('submitter') \
+                 and not has_roles(jwt, [UserRoles.STAFF.value]):
+                filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
+
+        return filing
+
+    @property
+    def json(self) -> Optional[Dict]:
+>>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
                                                                                 Filing.Status.PAID.value,
                                                                                 Filing.Status.PENDING.value,
                                                                                 ]):
-            return self.raw
+            filing = self.raw
 
         # this will return the raw filing instead of the versioned filing until
         # payment and processing are complete.
         # This ASSUMES that the JSONSchemas remain valid for that period of time
         # which fits with the N-1 approach to versioning, and
         # that handling of filings stuck in PENDING are handled appropriately.
-        if self._storage.status in [Filing.Status.PAID.value,
-                                    Filing.Status.PENDING.value,
-                                    ]:
+        elif self._storage.status in [Filing.Status.PAID.value, Filing.Status.PENDING.value]:
             if self._storage.tech_correction_json:
-                return self._storage.tech_correction_json
+                filing = self._storage.tech_correction_json
+            else:
+                filing = self.raw
 
-            filing_json = self.raw
+            filing = copy.deepcopy(filing)
+
         else:  # Filing.Status.COMPLETED.value
-            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            filing = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
+<<<<<<< HEAD
         if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
                 if diff := self._diff(filing_json, correction_id):
@@ -153,6 +178,14 @@ class Filing:
 
         return filing_json
     json = property(get_json)
+=======
+        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
+            if correction_id := filing.get('filing', {}).get('correction', {}).get('correctedFilingId'):
+                if diff := self._diff(filing, correction_id):
+                    filing['filing']['correction']['diff'] = diff
+
+        return filing
+>>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
 
     @json.setter
     def json(self, filing_submission):
