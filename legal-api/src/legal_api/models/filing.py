@@ -159,6 +159,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'court_order_date',
             'court_order_effect_of_order',
             'court_order_file_number',
+            'order_details',
             'effective_date',
             'paper_only',
             'colin_only',
@@ -190,6 +191,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
     court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
+    order_details = db.Column(db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
 
     # # relationships
