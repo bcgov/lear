@@ -63,72 +63,75 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements,too-many-branches;
-        # fix this while refactoring this whole module
-        """Return a JSON object with meta information about the Service."""
+    def get(identifier, filing_id=None):  # pylint disable=too-many-return-statements,too-many-branches;
+        """Return a JSON object with meta information about the Filing Submission."""
+        if filing_id:
+            return ListFilingResource._get_single_filing(identifier, filing_id)
+
+        return ListFilingResource._get_ledger_listing(identifier)
+
+    @staticmethod
+    def _get_single_filing(identifier: str, filing_id: int):
         original_filing = str(request.args.get('original', None)).lower() == 'true'
-        if identifier.startswith('T'):
-            rv = CoreFiling.get(identifier, filing_id)
+        rv = CoreFiling.get(identifier, filing_id)
+        if not rv:
+            return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
 
-            if not rv.storage:
-                return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-            if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
-                if rv.filing_type == 'incorporationApplication':
-                    return legal_api.reports.get_pdf(rv.storage, None)
+        if original_filing:
+            return jsonify(rv.redacted(rv.raw, jwt))
 
-            if original_filing:
-                filing_json = rv.raw
-            else:
-                filing_json = rv.json
-                filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
+        if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
+            # This is required until #5302 ticket implements
+            rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
 
-            if filing_json['filing']['header']['status'] == Filing.Status.PENDING.value:
-                try:
-                    headers = {
-                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
-                        'Content-Type': 'application/json'
-                    }
-                    payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
-                    pay_response = requests.get(
-                        url=f'{payment_svc_url}/{filing_json["filing"]["header"]["paymentToken"]}',
-                        headers=headers
-                    )
-                    pay_details = {
-                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
-                        'paymentMethod': pay_response.json().get('paymentMethod', '')
-                    }
-                    filing_json['filing']['header'].update(pay_details)
+        if str(request.accept_mimetypes) == 'application/pdf':
+            report_type = request.args.get('type', None)
+            return legal_api.reports.get_pdf(rv.storage, report_type)
 
-                except (exceptions.ConnectionError, exceptions.Timeout) as err:
-                    current_app.logger.error(
-                        f'Payment connection failure for getting {identifier} filing payment details. ', err)
+        filing_json = rv.json
+        if documents := DocumentMetaService().get_documents(filing_json):
+            filing_json['filing']['documents'] = documents
 
-            return jsonify(filing_json)
+        if filing_json.get('filing', {}).get('header', {}).get('status') == Filing.Status.PENDING.value:
+            ListFilingResource._get_payment_update(filing_json)
+
+        return jsonify(rv.redacted(filing_json, jwt))
+
+    @staticmethod
+    def _get_payment_update(filing_dict: dict):
+        try:
+            headers = {
+                'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+                'Content-Type': 'application/json'
+            }
+            payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+
+            if payment_token := filing_dict.get('filing', {}).get('header', {}).get('paymentToken'):
+                pay_response = requests.get(
+                    url=f'{payment_svc_url}/{payment_token}',
+                    headers=headers
+                )
+                pay_details = {
+                    'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
+                    'paymentMethod': pay_response.json().get('paymentMethod', '')
+                }
+                filing_dict['filing']['header'].update(pay_details)
+
+        except (exceptions.ConnectionError, exceptions.Timeout) as err:
+            current_app.logger.error(
+                f'Payment connection failure for getting payment_token:{payment_token} filing payment details. ', err)
+
+    @staticmethod
+    def _get_ledger_listing(identifier: str):
+        # Does it make sense to get a PDF of all filings?
+        if str(request.accept_mimetypes) == 'application/pdf':
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+                HTTPStatus.NOT_ACCEPTABLE
 
         business = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
-
-        if filing_id:
-            rv = CoreFiling.get(identifier, filing_id)
-            if not rv:
-                return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-
-            if str(request.accept_mimetypes) == 'application/pdf':
-                report_type = request.args.get('type', None)
-
-                if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
-                    # This is required until #5302 ticket implements
-                    rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
-
-                return legal_api.reports.get_pdf(rv.storage, report_type)
-            return jsonify(rv.raw if original_filing else rv.json)
-
-        # Does it make sense to get a PDF of all filings?
-        if str(request.accept_mimetypes) == 'application/pdf':
-            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
-                HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
         filings = CoreFiling.get_filings_by_status(business.id,

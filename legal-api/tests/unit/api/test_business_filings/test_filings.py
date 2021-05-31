@@ -38,7 +38,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business
+from legal_api.models import Business, UserRoles
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -48,9 +48,9 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_user,
 )
 from tests.unit.services.utils import create_header
-
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
@@ -150,7 +150,6 @@ def test_get_empty_filings_with_invalid_business(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'filings': []}
 
 
 def test_post_fail_if_given_filing_id(session, client, jwt):
@@ -963,3 +962,43 @@ def test_coa_future_effective(session, client, jwt):
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
     valid_date = LegislationDatetime.tomorrow_midnight()
     assert effective_date == valid_date
+
+@pytest.mark.parametrize(
+    'test_name, submitter_role, jwt_role, username, expected',
+    [
+        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
+        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
+    ]
+)
+def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+    """Assert that the core filing is saved to the backing store."""
+    from legal_api.core.filing import Filing as CoreFiling
+    try:
+        identifier = 'BC1234567'
+        filing = CoreFiling()
+        filing_submission = {
+            'filing': {
+                'header': {
+                    'name': 'specialResolution',
+                    'date': '2019-04-08'
+                },
+                'specialResolution': {
+                    'resolution': 'Year challenge is hitting oppo for the win.'
+                }}}
+        user = factory_user(username)
+        business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+        filing.json = filing_submission
+        filing.save()
+        filing._storage.business_id = business.id
+        filing._storage.submitter_id = user.id
+        filing._storage.submitter_roles = submitter_role
+        filing.save()
+        filing_id = filing.id
+
+        rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                        headers=create_header(jwt, [jwt_role], identifier))
+    except Exception as err:
+        print(err)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['submitter'] == expected

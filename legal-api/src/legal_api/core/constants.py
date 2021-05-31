@@ -1,4 +1,4 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This has the core domain used by the application."""
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
-
-from .filing import Filing
+"""This has the common strings and values used across the core domain."""
+from typing import Final
 
 
-__all__ = ('UserRoles, Filing')
+REDACTED_STAFF_SUBMITTER: Final = 'Registry Staff'
