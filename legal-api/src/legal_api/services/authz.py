@@ -78,3 +78,13 @@ def authorized(  # pylint: disable=too-many-return-statements
             return False
 
     return False
+
+
+def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
+    """Assert the users JWT has the required role(s).
+
+    Assumes the JWT is already validated.
+    """
+    if jwt.validate_roles(roles):
+        return True
+    return False

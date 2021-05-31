@@ -147,6 +147,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     # This could occur from a failed deploy or during an upgrade.
     # The other option is to tell SQLAlchemy to ignore differences, but that is ambiguous
     # and can interfere with Alembic upgrades.
+    #
+    # NOTE: please keep mapper names in alpha-order, easier to track that way
+    #       Exception, id is always first, _fields first
     __mapper_args__ = {
         'include_properties': [
             'id',
@@ -160,20 +163,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_source',
             '_status',
             'business_id',
+            'colin_only',
             'court_order_date',
             'court_order_effect_of_order',
             'court_order_file_number',
-            'order_details',
+            'deletion_locked',
             'effective_date',
+            'order_details',
             'paper_only',
-            'colin_only',
             'parent_filing_id',
             'payment_account',
             'submitter_id',
+            'submitter_roles',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id',
-            'deletion_locked'
+            'transaction_id'
         ]
     }
 
@@ -182,16 +186,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
-    tech_correction_json = db.Column('tech_correction_json', JSONB)
-    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
+    _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
-    _source = db.Column('source', db.String(15), default=Source.LEAR.value)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    submitter_roles = db.Column('submitter_roles', db.String(200))
+    tech_correction_json = db.Column('tech_correction_json', JSONB)
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
     court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))

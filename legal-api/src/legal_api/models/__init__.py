@@ -28,10 +28,16 @@ from .registration_bootstrap import RegistrationBootstrap
 from .resolution import Resolution
 from .share_class import ShareClass
 from .share_series import ShareSeries
-from .user import User
+from .user import User, UserRoles
 
 
 __all__ = ('db',
+<<<<<<< HEAD
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Document',
            'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User')
+=======
+           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Filing',
+           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles')
+>>>>>>> 8b0e3cfe (split out the get(1) for the filings end-point)
