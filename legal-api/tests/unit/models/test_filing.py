@@ -47,6 +47,7 @@ from tests.unit.models import (
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_user,
 )
 
 
@@ -746,3 +747,13 @@ def test_validate_invalid_court_orders(session, invalid_court_order):
         filing.save()
 
     assert excinfo
+
+# @pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
+def test_submitter_info(session):
+    user = factory_user('idir/staff-person')
+    filing = Filing()
+    filing.submitter_roles = 'STAFF'
+    filing.submitter_id = user.id
+    filing.save()
+
+    assert filing.id
