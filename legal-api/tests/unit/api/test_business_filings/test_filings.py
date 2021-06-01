@@ -52,49 +52,6 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.utils import create_header
 
-def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
-    """Assert that the business info can be received in a valid JSONSchema format."""
-    import copy
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
-
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinIds'] = []
-
-    print('test_get_all_business_filings - filing:', filings)
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 0  # The endpoint will return only completed filings
-
-
-def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
-    """Assert that the business info can be received in a valid JSONSchema format."""
-    import copy
-    from tests import add_years
-
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    identifier = 'CP7654321'
-
-    # create business
-    b = factory_business(identifier)
-
-    # add 3 filings, add a year onto the AGM date
-    for i in range(0, 3):
-        ar['filing']['annualReport']['annualGeneralMeetingDate'] = \
-            datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
-        factory_filing(b, ar)
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 0
-
 
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
@@ -345,7 +302,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
 
 @integration_payment
-def tpost_valid_ar(session, client, jwt):
+def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
@@ -366,7 +323,7 @@ def tpost_valid_ar(session, client, jwt):
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '153'
+    assert rv.json['filing']['header']['paymentToken'] == '1'
 
     # check stored filing
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
@@ -968,6 +925,8 @@ def test_coa_future_effective(session, client, jwt):
     [
         ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
         ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
+        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
+        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
     ]
 )
 def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
