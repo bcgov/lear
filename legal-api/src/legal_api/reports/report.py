@@ -228,19 +228,19 @@ class Report:  # pylint: disable=too-few-public-methods
         # Filing Date
         filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %P Pacific time')
         # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         effective_hour = effective_date.strftime('%I').lstrip('0')
-        filing['effective_date_time'] = effective_date.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing['effective_date_time'] = effective_date.strftime(f'%B %-d, %Y at {effective_hour}:%M %P Pacific time')
         filing['effective_date'] = effective_date.strftime('%B %-d, %Y')
         # Recognition Date
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             recognition_hour = recognition_datetime.strftime('%I').lstrip('0')
             filing['recognition_date_time'] = \
-                recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %p Pacific Time')
+                recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %P Pacific time')
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -256,7 +256,7 @@ class Report:  # pylint: disable=too-few-public-methods
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
             original_filing_hour = original_filing_datetime.strftime('%I').lstrip('0')
             filing['original_filing_date_time'] = original_filing_datetime. \
-                strftime(f'%B %-d, %Y at {original_filing_hour}:%M %p Pacific Time')
+                strftime(f'%B %-d, %Y at {original_filing_hour}:%M %P Pacific time')
 
     def _set_directors(self, filing):
         if filing.get('changeOfDirectors'):
@@ -321,7 +321,7 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             business_json = business.json()
         business_json['formatted_founding_date_time'] = \
-            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %P Pacific time')
         business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
         filing.filing_json['filing']['business'] = business_json
         filing.filing_json['filing']['header']['filingId'] = filing.id

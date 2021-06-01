@@ -49,7 +49,7 @@ def diff_dict(json1,
         if ignore_keys and key in ignore_keys:
             continue
 
-        if not json2.get(key):
+        if json2.get(key) is None and value is not None:
             diff.append(Node(old_value=None,
                              new_value=value,
                              path=path + [key]))
