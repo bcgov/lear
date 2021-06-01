@@ -25,7 +25,7 @@ from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles, db  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
