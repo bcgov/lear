@@ -32,8 +32,9 @@ from colin_api.exceptions import (  # noqa: I001
     InvalidFilingTypeException,  # noqa: I001
     OfficeNotFoundException,  # noqa: I001
     PartiesNotFoundException,  # noqa: I001
+    UnableToDetermineCorpTypeException,  # noqa: I001
 )  # noqa: I001
-from colin_api.models import Business, CorpName, Office, Party, ShareObject
+from colin_api.models import Business, CorpName, FilingType, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
@@ -166,6 +167,15 @@ class Filing:
         }
     }
 
+    FILING_TYPE_TO_CORP_TYPE_CONVERSION = {
+        'ICORP': Business.TypeCodes.BC_COMP.value,
+        'ICORU': Business.TypeCodes.ULC_COMP.value,
+        'ICORC': Business.TypeCodes.CCC_COMP.value,
+        'NOALB': Business.TypeCodes.BC_COMP.value,
+        'NOALC': Business.TypeCodes.CCC_COMP.value,
+        'NOALU': Business.TypeCodes.ULC_COMP.value
+    }
+
     USERS = {
         Business.TypeCodes.COOP.value: 'COOPER',
         Business.TypeCodes.BCOMP.value: 'BCOMPS',
@@ -232,6 +242,21 @@ class Filing:
             filing['filing'].update({self.filing_type: self.body})
 
         return filing
+
+    @classmethod
+    def _get_corp_type_for_event(cls, cursor, corp_num: str, event_id: str) -> Optional[str]:
+        """Get corp type at time of a specific filing event for a given corp_num."""
+        corp_type_related_filing_types = cls.FILING_TYPE_TO_CORP_TYPE_CONVERSION.keys()
+        matching_filing_type = \
+            FilingType.get_most_recent_match_before_event(corp_num=corp_num,
+                                                          event_id=event_id,
+                                                          matching_filing_types=corp_type_related_filing_types,
+                                                          cursor=cursor)
+
+        if matching_corp_type := cls.FILING_TYPE_TO_CORP_TYPE_CONVERSION.get(matching_filing_type.filing_typ_cd):
+            return matching_corp_type
+
+        return None
 
     @classmethod
     def _get_event_id(cls, cursor, corp_num: str, event_type: str = 'FILE') -> str:
@@ -709,6 +734,14 @@ class Filing:
                     filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
                 elif filing_event_info['filing_type_code'] == 'NOALE':
                     filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALA':
+                    corp_type = cls._get_corp_type_for_event(corp_num=corp_num,
+                                                             event_id=filing_event_info['event_id'],
+                                                             cursor=cursor)
+                    if corp_type:
+                        filing.body['business']['legalType'] = corp_type
+                    else:
+                        raise UnableToDetermineCorpTypeException(filing_type=filing.filing_type)
                 else:
                     raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
                 filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'

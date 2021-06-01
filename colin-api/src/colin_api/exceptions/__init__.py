@@ -114,3 +114,16 @@ class InvalidFilingTypeException(GenericException):
         else:
             self.error = 'Filing type invalid'
         self.status_code = 400
+
+
+class UnableToDetermineCorpTypeException(GenericException):
+    """Exception with defined error code and messaging."""
+
+    def __init__(self, *args, filing_type=None, **kwargs):
+        """Return a valid InvalidFilingTypeException."""
+        super(UnableToDetermineCorpTypeException, self).__init__(None, None, *args, **kwargs)
+        if filing_type:
+            self.error = f'Unable to determine corp type for {filing_type} filing type'
+        else:
+            self.error = 'Unable to determine corp type for filing type'
+        self.status_code = 400
