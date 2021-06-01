@@ -12,17 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
+from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
 
 from flask_jwt_oidc import JwtManager
+from sqlalchemy import desc
 
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles, db  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -128,25 +131,22 @@ class Filing:
             self._status = self._storage.status
         return self._status
 
-<<<<<<< HEAD
-    # json is returned as a property defined after this method
-    def get_json(self, with_diff: bool = True) -> Optional[Dict]:
-=======
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
-        if jwt \
-            and self._storage.submitter_roles \
-                and UserRoles.STAFF.value in self._storage.submitter_roles:
-
-            if filing.get('filing', {}).get('header', {}).get('submitter') \
-                 and not has_roles(jwt, [UserRoles.STAFF.value]):
+        with suppress(TypeError):
+            if ((submitter_roles := self._storage.submitter_roles)
+                and (UserRoles.STAFF.value in submitter_roles
+                     or UserRoles.SYSTEM.value in submitter_roles)
+                ) and (
+                 filing.get('filing', {}).get('header', {}).get('submitter')
+                 and not has_roles(jwt, [UserRoles.STAFF.value])
+               ):
                 filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
 
-    @property
-    def json(self) -> Optional[Dict]:
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
+    # json is returned as a property defined after this method
+    def get_json(self, with_diff: bool = True) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
                                                                                 Filing.Status.PAID.value,
@@ -170,7 +170,6 @@ class Filing:
         else:  # Filing.Status.COMPLETED.value
             filing = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
-<<<<<<< HEAD
         if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
                 if diff := self._diff(filing_json, correction_id):
@@ -178,14 +177,6 @@ class Filing:
 
         return filing_json
     json = property(get_json)
-=======
-        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
-            if correction_id := filing.get('filing', {}).get('correction', {}).get('correctedFilingId'):
-                if diff := self._diff(filing, correction_id):
-                    filing['filing']['correction']['diff'] = diff
-
-        return filing
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
 
     @json.setter
     def json(self, filing_submission):
@@ -301,3 +292,52 @@ class Filing:
                     {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
 
         return legal_filings
+
+    @staticmethod
+    def ledger(identifier: str,
+               jwt: JwtManager = None,
+               start: int = None,
+               end: int = None,
+               **kwargs) \
+            -> tuple(dict, dict):
+        """Return the ledger list by directly querying the storage objects.
+
+        Note: Sort of breaks the "core" style, but searches are always interesting ducks.
+        """
+        business = Business.find_by_identifier(identifier)
+
+        if jwt:
+            redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
+        else:
+            redact_required = True
+
+        # filter(FilingStorage._filing_type == filing_type). \
+        # filter(FilingStorage._status != FilingStorage.Status.COMPLETED.value). \
+
+        filings = db.session.query(FilingStorage). \
+            filter(FilingStorage.business_id == business.id). \
+            order_by(desc(FilingStorage.filing_date)). \
+            all()
+
+        ledger = []
+        for filing in filings:
+            ledger_filing = {
+                'availableOnPaperOnly': filing.paper_only,
+                'effectiveDate': filing.effective_date,
+                'filingId': filing.id,
+                'isCorrected': filing.is_corrected,
+                'name': filing.filing_type,
+                'paymentStatusCode': filing.payment_status_code,
+                'status': filing.status,
+                'submittedDate': filing._filing_date,  # pylint: disable=protected-access
+                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username
+                # 'commentsLink':
+                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}/comments',
+                # 'correctionLink':
+                #  'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{correctedFilingId}',
+                # 'filingLink':
+                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}',
+            }
+            ledger.append(ledger_filing)
+
+        return ledger, {}

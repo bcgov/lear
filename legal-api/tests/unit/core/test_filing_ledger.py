@@ -1,0 +1,68 @@
+# Copyright © 2021 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests to assure the Filing Domain is working as expected."""
+import copy
+
+import datedelta
+import pytest
+from registry_schemas.example_data import FILING_TEMPLATE
+
+from legal_api.core import Filing as CoreFiling
+from legal_api.models import Business, Filing, UserRoles
+from legal_api.models.user import UserRoles
+from legal_api.utils.datetime import datetime
+from tests.unit.models import factory_business, factory_completed_filing, factory_user
+from tests.unit.services.utils import helper_create_jwt
+
+def load_ledger(business, founding_date):
+
+    i = 0
+    for k, filing_meta in Filing.FILINGS.items():
+        filing = copy.deepcopy(FILING_TEMPLATE)
+        filing['filing']['header']['name'] = filing_meta['name']
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
+        i += 1
+    return i
+
+def test_ledger_search(session):
+    """Assert that the ledger returns values for all the expected keys."""
+    # setup
+    identifier = 'BC1234567'
+    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
+    num_of_files = load_ledger(business, founding_date)
+
+    # test
+    ledger, errors = CoreFiling.ledger(identifier)
+
+    # Did we get the full set
+    assert len(ledger) == num_of_files
+
+    # Fully examine 1 filing - alteration
+    alteration = next((f for f in ledger if f.get('name')=='alteration'), None)
+
+    assert alteration
+    assert 'availableOnPaperOnly' in alteration 
+    assert 'effectiveDate' in alteration 
+    assert 'filingId' in alteration 
+    assert 'isCorrected' in alteration 
+    assert 'name' in alteration 
+    assert 'paymentStatusCode' in alteration 
+    assert 'status' in alteration 
+    assert 'submittedDate' in alteration 
+    assert 'submitter' in alteration 
+    # assert alteration['commentsLink']
+    # assert alteration['correctionLink']
+    # assert alteration['filingLink']
