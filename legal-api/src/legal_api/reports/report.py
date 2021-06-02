@@ -118,6 +118,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
+            'common/statement',
             'common/benefitCompanyStmt',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
@@ -188,15 +189,6 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
 
         filing['header']['reportType'] = self._report_key
-
-        if (filing['header']['reportType'] == 'alterationNotice'
-            and filing['previousLegalType'] != 'BEN'
-            and filing['business']['legalType'] == 'BEN'
-            ) or (
-            filing['header']['reportType'] == 'noa'
-            and filing['business']['legalType'] == 'BEN'
-        ):
-            filing['isBenefitCompanyStmt'] = True
 
         self._set_dates(filing)
         self._set_description(filing)
@@ -616,7 +608,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     }
 
     entity_description = {
-        Business.LegalTypes.COOP.value: 'BC Cooperative Association',
-        Business.LegalTypes.COMP.value: 'BC Company',
-        Business.LegalTypes.BCOMP.value: 'BC Benefit Company',
+        Business.LegalTypes.COOP.value: 'B.C. Cooperative Association',
+        Business.LegalTypes.COMP.value: 'B.C. Limited Company',
+        Business.LegalTypes.BCOMP.value: 'B.C. Benefit Company',
+        Business.LegalTypes.BC_CCC.value: 'B.C. Community Contribution Company',
+        Business.LegalTypes.BC_ULC_COMPANY.value: 'B.C. Unlimited Liability Company'
     }
