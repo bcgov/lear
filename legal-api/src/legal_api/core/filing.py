@@ -25,7 +25,7 @@ from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage, UserRoles, db  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -294,33 +294,35 @@ class Filing:
         return legal_filings
 
     @staticmethod
-    def ledger(identifier: str,
+    def ledger(business_id: int,
                jwt: JwtManager = None,
+               statuses: List(str) = None,
                start: int = None,
-               end: int = None,
+               size: int = None,
                **kwargs) \
-            -> tuple(dict, dict):
+            -> dict:
         """Return the ledger list by directly querying the storage objects.
 
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
         """
-        business = Business.find_by_identifier(identifier)
-
         if jwt:
             redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
         else:
             redact_required = True
 
-        # filter(FilingStorage._filing_type == filing_type). \
-        # filter(FilingStorage._status != FilingStorage.Status.COMPLETED.value). \
+        query = FilingStorage.query.filter(FilingStorage.business_id == business_id)
+        if statuses and isinstance(statuses, List):
+            query = query.filter(FilingStorage._status.in_(statuses))  # pylint: disable=protected-access;required by SA
 
-        filings = db.session.query(FilingStorage). \
-            filter(FilingStorage.business_id == business.id). \
-            order_by(desc(FilingStorage.filing_date)). \
-            all()
+        if start:
+            query = query.offset(start)
+        if size:
+            query = query.limit(size)
+
+        query = query.order_by(desc(FilingStorage.filing_date))
 
         ledger = []
-        for filing in filings:
+        for filing in query.all():
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'effectiveDate': filing.effective_date,
@@ -330,7 +332,7 @@ class Filing:
                 'paymentStatusCode': filing.payment_status_code,
                 'status': filing.status,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
-                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username
+                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
                 # 'commentsLink':
                 # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}/comments',
                 # 'correctionLink':
@@ -340,4 +342,4 @@ class Filing:
             }
             ledger.append(ledger_filing)
 
-        return ledger, {}
+        return ledger

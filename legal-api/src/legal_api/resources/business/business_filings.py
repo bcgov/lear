@@ -72,6 +72,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_single_filing(identifier: str, filing_id: int):
+        """Return a single filing and all of its components."""
         original_filing = str(request.args.get('original', None)).lower() == 'true'
         rv = CoreFiling.get(identifier, filing_id)
         if not rv:
@@ -99,6 +100,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_payment_update(filing_dict: dict):
+        """Get update on the payment status from the pay service."""
         try:
             headers = {
                 'Authorization': f'Bearer {jwt.get_token_auth_header()}',
@@ -123,25 +125,25 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_ledger_listing(identifier: str):
-        # Does it make sense to get a PDF of all filings?
+        """Return the requested ledger for the business identifier provided."""
         if str(request.accept_mimetypes) == 'application/pdf':
             return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
                 HTTPStatus.NOT_ACCEPTABLE
+
+        ledger_start = request.args.get('start', default=None, type=int)
+        ledger_size = request.args.get('size', default=None, type=int)
 
         business = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
-        rv = []
-        filings = CoreFiling.get_filings_by_status(business.id,
-                                                   [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
-        for filing in filings:
-            filing_json = filing.raw
-            filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
-            rv.append(filing_json)
+        filings = CoreFiling.ledger(business.id,
+                                    statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
+                                    start=ledger_start,
+                                    size=ledger_size)
 
-        return jsonify(filings=rv)
+        return jsonify(filings=filings)
 
     @staticmethod
     @cors.crossdomain(origin='*')
