@@ -57,13 +57,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         CO_1878 = 'QC'
         CO_1890 = 'QD'
         CO_1897 = 'QE'
-        BC_ULC_COMPANY = 'ULC'
+        BC_ULC_COMPANY = 'ULC'  # BC Unlimited Liability Company
         ULC_CONTINUE_IN = 'CUL'
         ULC_CO_1860 = 'UQA'
         ULC_CO_1862 = 'UQB'
         ULC_CO_1878 = 'UQC'
         ULC_CO_1890 = 'UQD'
         ULC_CO_1897 = 'UQE'
+        BC_CCC = 'CC'  # BC Community Contribution Company
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,
