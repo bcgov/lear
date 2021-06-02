@@ -36,7 +36,7 @@ def load_ledger(business, founding_date):
         i += 1
     return i
 
-def test_ledger_search(session):
+def test_simple_ledger_search(session):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
@@ -45,7 +45,7 @@ def test_ledger_search(session):
     num_of_files = load_ledger(business, founding_date)
 
     # test
-    ledger, errors = CoreFiling.ledger(identifier)
+    ledger = CoreFiling.ledger(business.id)
 
     # Did we get the full set
     assert len(ledger) == num_of_files
@@ -54,6 +54,7 @@ def test_ledger_search(session):
     alteration = next((f for f in ledger if f.get('name')=='alteration'), None)
 
     assert alteration
+    assert 9 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration 
     assert 'effectiveDate' in alteration 
     assert 'filingId' in alteration 
