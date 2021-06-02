@@ -43,6 +43,7 @@ from legal_api.resources.business.business_filings import Filing, ListFilingReso
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
+from tests.unit.core.test_filing_ledger import load_ledger
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,
     factory_business_mailing_address,
@@ -94,3 +95,39 @@ def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 0
+
+
+def test_ledger_search(session, client, jwt):
+    """Assert that the ledger returns values for all the expected keys."""
+    # setup
+    identifier = 'BC1234567'
+    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
+    num_of_files = load_ledger(business, founding_date)
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+
+    ledger = rv.json
+
+    # Did we get the full set
+    assert len(ledger['filings']) == num_of_files
+
+    # Fully examine 1 filing - alteration
+    alteration = next((f for f in ledger['filings'] if f.get('name')=='alteration'), None)
+
+    assert alteration
+    assert 9 == len(alteration.keys())
+    assert 'availableOnPaperOnly' in alteration
+    assert 'effectiveDate' in alteration
+    assert 'filingId' in alteration
+    assert 'isCorrected' in alteration
+    assert 'name' in alteration
+    assert 'paymentStatusCode' in alteration
+    assert 'status' in alteration
+    assert 'submittedDate' in alteration
+    assert 'submitter' in alteration
+    # assert alteration['commentsLink']
+    # assert alteration['correctionLink']
+    # assert alteration['filingLink']
