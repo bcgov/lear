@@ -608,9 +608,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     }
 
     entity_description = {
-        Business.LegalTypes.COOP.value: 'B.C. Cooperative Association',
-        Business.LegalTypes.COMP.value: 'B.C. Limited Company',
-        Business.LegalTypes.BCOMP.value: 'B.C. Benefit Company',
-        Business.LegalTypes.BC_CCC.value: 'B.C. Community Contribution Company',
-        Business.LegalTypes.BC_ULC_COMPANY.value: 'B.C. Unlimited Liability Company'
+        Business.LegalTypes.COOP.value: 'BC Cooperative Association',
+        Business.LegalTypes.COMP.value: 'BC Limited Company',
+        Business.LegalTypes.BCOMP.value: 'BC Benefit Company',
+        Business.LegalTypes.BC_CCC.value: 'BC Community Contribution Company',
+        Business.LegalTypes.BC_ULC_COMPANY.value: 'BC Unlimited Liability Company'
     }
