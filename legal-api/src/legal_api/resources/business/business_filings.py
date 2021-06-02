@@ -72,10 +72,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_single_filing(identifier: str, filing_id: int):
-<<<<<<< HEAD
         """Return a single filing and all of its components."""
-=======
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
         original_filing = str(request.args.get('original', None)).lower() == 'true'
         rv = CoreFiling.get(identifier, filing_id)
         if not rv:
@@ -103,10 +100,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_payment_update(filing_dict: dict):
-<<<<<<< HEAD
         """Get update on the payment status from the pay service."""
-=======
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
         try:
             headers = {
                 'Authorization': f'Bearer {jwt.get_token_auth_header()}',
@@ -124,7 +118,6 @@ class ListFilingResource(Resource):
                     'paymentMethod': pay_response.json().get('paymentMethod', '')
                 }
                 filing_dict['filing']['header'].update(pay_details)
-<<<<<<< HEAD
 
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(
@@ -133,38 +126,13 @@ class ListFilingResource(Resource):
     @staticmethod
     def _get_ledger_listing(identifier: str):
         """Return the requested ledger for the business identifier provided."""
-=======
-
-        except (exceptions.ConnectionError, exceptions.Timeout) as err:
-            current_app.logger.error(
-                f'Payment connection failure for getting payment_token:{payment_token} filing payment details. ', err)
-
-    @staticmethod
-    def _get_ledger_listing(identifier: str):
         # Does it make sense to get a PDF of all filings?
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
         if str(request.accept_mimetypes) == 'application/pdf':
             return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
                 HTTPStatus.NOT_ACCEPTABLE
 
-<<<<<<< HEAD
         ledger_start = request.args.get('start', default=None, type=int)
         ledger_size = request.args.get('size', default=None, type=int)
-=======
-        business = Business.find_by_identifier(identifier)
-
-        if not business:
-            return jsonify(filings=[]), HTTPStatus.NOT_FOUND
-
-        rv = []
-        filings = CoreFiling.get_filings_by_status(business.id,
-                                                   [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
-        for filing in filings:
-            filing_json = filing.raw
-            filing_json['filing']['documents'] = DocumentMetaService().get_documents(filing_json)
-            rv.append(filing_json)
->>>>>>> ea7b8ad4 (split out the get(1) for the filings end-point)
-
         business = Business.find_by_identifier(identifier)
 
         if not business:
