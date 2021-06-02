@@ -12,17 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
+from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
 
+from flask_jwt_oidc import JwtManager
+from sqlalchemy import desc
+
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
+from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
+
+from .constants import REDACTED_STAFF_SUBMITTER
 
 
 # @dataclass(init=False, repr=False)
@@ -80,6 +88,7 @@ class Filing:
         self._status: Optional[str] = None
         self._paper_only: bool = False
         self._payment_account: Optional[str] = None
+        self._jwt: JwtManager = None
 
     @property
     def id(self) -> str:  # pylint: disable=invalid-name; defining the std ID
@@ -123,6 +132,20 @@ class Filing:
             self._status = self._storage.status
         return self._status
 
+    def redacted(self, filing: dict, jwt: JwtManager):
+        """Redact the filing based on stored roles and those in JWT."""
+        with suppress(TypeError):
+            if ((submitter_roles := self._storage.submitter_roles)
+                and (UserRoles.STAFF.value in submitter_roles
+                     or UserRoles.SYSTEM.value in submitter_roles)
+                ) and (
+                 filing.get('filing', {}).get('header', {}).get('submitter')
+                 and not has_roles(jwt, [UserRoles.STAFF.value])
+               ):
+                filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
+
+        return filing
+
     @property
     def json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
@@ -130,29 +153,30 @@ class Filing:
                                                                                 Filing.Status.PAID.value,
                                                                                 Filing.Status.PENDING.value,
                                                                                 ]):
-            return self.raw
+            filing = self.raw
 
         # this will return the raw filing instead of the versioned filing until
         # payment and processing are complete.
         # This ASSUMES that the JSONSchemas remain valid for that period of time
         # which fits with the N-1 approach to versioning, and
         # that handling of filings stuck in PENDING are handled appropriately.
-        if self._storage.status in [Filing.Status.PAID.value,
-                                    Filing.Status.PENDING.value,
-                                    ]:
+        elif self._storage.status in [Filing.Status.PAID.value, Filing.Status.PENDING.value]:
             if self._storage.tech_correction_json:
-                return self._storage.tech_correction_json
+                filing = self._storage.tech_correction_json
+            else:
+                filing = self.raw
 
-            filing_json = self.raw
+            filing = copy.deepcopy(filing)
+
         else:  # Filing.Status.COMPLETED.value
-            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            filing = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
-        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
-            if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
-                if diff := self._diff(filing_json, correction_id):
-                    filing_json['filing']['correction']['diff'] = diff
+        if self.filing_type == Filing.FilingTypes.CORRECTION.value \
+            and (correction_id := filing.get('filing', {}).get('correction', {}).get('correctedFilingId')) \
+                and (diff := self._diff(filing, correction_id)):
+            filing['filing']['correction']['diff'] = diff
 
-        return filing_json
+        return filing
 
     @ json.setter
     def json(self, filing_submission):
@@ -268,3 +292,54 @@ class Filing:
                     {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
 
         return legal_filings
+
+    @staticmethod
+    def ledger(business_id: int,
+               jwt: JwtManager = None,
+               statuses: List(str) = None,
+               start: int = None,
+               size: int = None,
+               **kwargs) \
+            -> dict:
+        """Return the ledger list by directly querying the storage objects.
+
+        Note: Sort of breaks the "core" style, but searches are always interesting ducks.
+        """
+        if jwt:
+            redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
+        else:
+            redact_required = True
+
+        query = FilingStorage.query.filter(FilingStorage.business_id == business_id)
+        if statuses and isinstance(statuses, List):
+            query = query.filter(FilingStorage._status.in_(statuses))  # pylint: disable=protected-access;required by SA
+
+        if start:
+            query = query.offset(start)
+        if size:
+            query = query.limit(size)
+
+        query = query.order_by(desc(FilingStorage.filing_date))
+
+        ledger = []
+        for filing in query.all():
+            ledger_filing = {
+                'availableOnPaperOnly': filing.paper_only,
+                'effectiveDate': filing.effective_date,
+                'filingId': filing.id,
+                'isCorrected': filing.is_corrected,
+                'name': filing.filing_type,
+                'paymentStatusCode': filing.payment_status_code,
+                'status': filing.status,
+                'submittedDate': filing._filing_date,  # pylint: disable=protected-access
+                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
+                # 'commentsLink':
+                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}/comments',
+                # 'correctionLink':
+                #  'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{correctedFilingId}',
+                # 'filingLink':
+                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}',
+            }
+            ledger.append(ledger_filing)
+
+        return ledger

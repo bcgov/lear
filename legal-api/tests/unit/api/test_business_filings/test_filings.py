@@ -38,7 +38,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business
+from legal_api.models import Business, UserRoles
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -48,52 +48,9 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_user,
 )
 from tests.unit.services.utils import create_header
-
-
-def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
-    """Assert that the business info can be received in a valid JSONSchema format."""
-    import copy
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
-
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['filingId'] = filings.id
-    ar['filing']['header']['colinIds'] = []
-
-    print('test_get_all_business_filings - filing:', filings)
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 0  # The endpoint will return only completed filings
-
-
-def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
-    """Assert that the business info can be received in a valid JSONSchema format."""
-    import copy
-    from tests import add_years
-
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    identifier = 'CP7654321'
-
-    # create business
-    b = factory_business(identifier)
-
-    # add 3 filings, add a year onto the AGM date
-    for i in range(0, 3):
-        ar['filing']['annualReport']['annualGeneralMeetingDate'] = \
-            datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
-        factory_filing(b, ar)
-
-    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json.get('filings')) == 0
 
 
 def test_get_one_business_filing_by_id(session, client, jwt):
@@ -150,7 +107,6 @@ def test_get_empty_filings_with_invalid_business(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'filings': []}
 
 
 def test_post_fail_if_given_filing_id(session, client, jwt):
@@ -346,7 +302,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
 
 @integration_payment
-def tpost_valid_ar(session, client, jwt):
+def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
@@ -367,7 +323,7 @@ def tpost_valid_ar(session, client, jwt):
     assert not rv.json.get('errors')
     assert rv.json['filing']['header']['filingId']
     assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '153'
+    assert rv.json['filing']['header']['paymentToken'] == '1'
 
     # check stored filing
     filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
@@ -963,3 +919,45 @@ def test_coa_future_effective(session, client, jwt):
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
     valid_date = LegislationDatetime.tomorrow_midnight()
     assert effective_date == valid_date
+
+@pytest.mark.parametrize(
+    'test_name, submitter_role, jwt_role, username, expected',
+    [
+        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
+        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
+        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
+        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
+    ]
+)
+def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+    """Assert that the core filing is saved to the backing store."""
+    from legal_api.core.filing import Filing as CoreFiling
+    try:
+        identifier = 'BC1234567'
+        filing = CoreFiling()
+        filing_submission = {
+            'filing': {
+                'header': {
+                    'name': 'specialResolution',
+                    'date': '2019-04-08'
+                },
+                'specialResolution': {
+                    'resolution': 'Year challenge is hitting oppo for the win.'
+                }}}
+        user = factory_user(username)
+        business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+        filing.json = filing_submission
+        filing.save()
+        filing._storage.business_id = business.id
+        filing._storage.submitter_id = user.id
+        filing._storage.submitter_roles = submitter_role
+        filing.save()
+        filing_id = filing.id
+
+        rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                        headers=create_header(jwt, [jwt_role], identifier))
+    except Exception as err:
+        print(err)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['submitter'] == expected
