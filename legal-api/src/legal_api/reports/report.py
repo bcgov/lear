@@ -149,7 +149,11 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_template_filename(self):
         if ReportMeta.reports[self._report_key].get('hasDifferentTemplates', False):
-            file_name = ReportMeta.reports[self._report_key][self._business.legal_type]['fileName']
+            # Get template specific to legal type
+            specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
+            # Fallback to default if specific template not found
+            file_name = specific_template['fileName'] if specific_template else \
+                ReportMeta.reports[self._report_key]['default']['fileName']
         else:
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
@@ -553,10 +557,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'changeOfAddress': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Change of Address',
-            'BC': {
-                'fileName': 'bcAddressChange'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcAddressChange'
             },
             'CP': {
@@ -566,10 +567,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'changeOfDirectors': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Change of Directors',
-            'BC': {
-                'fileName': 'bcDirectorChange'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcDirectorChange'
             },
             'CP': {
@@ -579,10 +577,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'annualReport': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Annual Report',
-            'BC': {
-                'fileName': 'bcAnnualReport'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcAnnualReport'
             },
             'CP': {
