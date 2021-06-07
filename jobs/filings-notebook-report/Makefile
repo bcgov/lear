@@ -10,6 +10,12 @@ PROJECT_NAME:=filings-notebook-report
 DOCKER_NAME:=filings-notebook-report
 
 #################################################################################
+# COMMANDS -- license                                                           #
+#################################################################################
+license: ## Verify source code license headers.
+	./scripts/verify_license_headers.sh $(CURRENT_ABS_DIR)/src $(CURRENT_ABS_DIR)/tests
+
+#################################################################################
 # COMMANDS -- Setup                                                             #
 #################################################################################
 setup: install install-dev ## Setup the project
@@ -39,14 +45,14 @@ clean-test: ## clean test files
 build-req: clean ## Upgrade requirements
 	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install pip==20.3.3 ;\
+	pip install pip==21.1.2 ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
 
 install: clean ## Install python virtrual environment
 	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install pip==20.3.3 ;\
+	pip install pip==21.1.2 ;\
 	pip install -Ur requirements.txt
 
 install-dev: ## Install local application
