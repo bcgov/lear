@@ -16,7 +16,7 @@ to setup your local development environment.
 ## Running Notebook Report
 
 1. Run `. venv/bin/activate` to change to `venv` environment.
-2. Run notebook with `(python notebookreport.py)`
+2. Run notebook with `python notebookreport.py`
 
 ## Running Unit Tests
 
@@ -33,32 +33,22 @@ to setup your local development environment.
 2. switch to tools namespace
 
    ```sh
-   oc project gl2uos-tools
+   oc project cc892f-tools
    ```
 
 3. Create build image with a tag 'latest'.
 
-   ```sh
-   cd */lear/jobs/filings-notebook-report/openshift/templates
-   oc create imagestream filings-notebook-report
-   oc process -f filings-notebook-report-bc-template.json \
-        -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
-    | oc apply -f -
+   ```sh   
+   oc process -f openshift/templates/bc.yaml \
+   -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
+   -p GIT_REF=main \
+   -o yaml \
+   | oc apply -f - -n cc892f-tools  
    ```
+4. Checking log for building process at Console => Administrator => Builds => Builds => click image 'filings-notebook-report' => logs
 
-4. Create pipeline and need to start pipeline manually.
-   It will build image as a tag 'latest' and then tag it to 'dev'
-   or tag it from 'dev' to 'test'
-   or tag it from 'test' to 'prod'
+5. Tag image to dev: 'oc tag filings-notebook-report:latest filings-notebook-report:dev'
 
-   ```sh
-   oc process -f filings-notebook-report-pipeline.json \
-        -p TAG_NAME=dev \
-        -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
-        -p WEBHOOK=github-filings-notebook-report-dev \
-        -p JENKINS_FILE=./jenkins/dev.groovy \
-    | oc apply -f -
-   ```
 
 ### Create cron
 
@@ -71,13 +61,17 @@ to setup your local development environment.
 2. switch to dev namespace
 
    ```sh
-   oc project gl2uos-dev
+   oc project cc892f-dev
    ```
 
 3. Create cron
 
    ```sh
-   oc process -f cron-notebook-report.yml \
-        -p ENV_TAG=dev \
-    | oc apply -f -
-   ```
+   oc process -f openshift/templates/cronjob.yaml \
+  -p TAG=dev \
+  -p SCHEDULE="30 14 * * *" \
+  -o yaml \
+  | oc apply -f - -n cc892f-dev
+  ```
+
+4. Create a job to run and test it: 'oc create job filings-notebook-report-dev-1 --from=cronjob/filings-notebook-report-dev -n cc892f-dev'
