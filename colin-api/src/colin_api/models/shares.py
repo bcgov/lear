@@ -261,20 +261,17 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             """
         )
         try:
-            currency = ''
-            if 'currency' in class_dict.keys() and class_dict['currency']:
-                currency = class_dict['currency']
             cursor.execute(
                 query,
                 corp_num=corp_num,
                 class_id=class_id,
                 event_id=event_id,
-                currency=currency,
+                currency=class_dict.get('currency', ''),
                 has_max_share='N' if class_dict['hasMaximumShares'] else 'Y',
                 qty=class_dict['maxNumberOfShares'],
                 has_spec_rights='Y' if class_dict['hasRightsOrRestrictions'] else 'N',
                 has_par_value='Y' if class_dict['hasParValue'] else 'N',
-                par_value=class_dict['parValue'] if class_dict['hasParValue'] else '',
+                par_value=class_dict.get('parValue', ''),
                 name=class_dict['name']
             )
         except Exception as err:
