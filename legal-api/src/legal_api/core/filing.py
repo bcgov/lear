@@ -21,9 +21,11 @@ from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
 
+from flask import current_app
 from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
+from legal_api.core.meta import FilingMeta
 from legal_api.core.utils import diff_dict, diff_list
 from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
@@ -305,10 +307,13 @@ class Filing:
 
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
         """
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
         if jwt:
             redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
         else:
             redact_required = True
+
+        business = Business.find_by_internal_id(business_id)
 
         query = FilingStorage.query.filter(FilingStorage.business_id == business_id)
         if statuses and isinstance(statuses, List):
@@ -323,23 +328,38 @@ class Filing:
 
         ledger = []
         for filing in query.all():
+            data = {}
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
+                'businessIdentifier': business.identifier,
+                'correctionFilingId': filing.parent_filing.id if filing.parent_filing else None,
+                'correctionFilingStatus': filing.parent_filing.status if filing.parent_filing else None,
+                'displayName': FilingMeta.display_name(filing_name=filing.filing_type),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
-                'isCorrected': filing.is_corrected,
+                'isFutureEffective': (filing.effective_date
+                                      and filing._filing_date  # pylint: disable=protected-access
+                                      and (filing.effective_date > filing._filing_date)),  # pylint: disable=protected-access # noqa: E501
                 'name': filing.filing_type,
                 'paymentStatusCode': filing.payment_status_code,
                 'status': filing.status,
-                'submittedDate': filing._filing_date,  # pylint: disable=protected-access
                 'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
-                # 'commentsLink':
-                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}/comments',
-                # 'correctionLink':
-                #  'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{correctedFilingId}',
-                # 'filingLink':
-                # 'https://api.bcregistry.ca/v1/businesses/{business_identifier}/filings/{filingId}',
+                'submittedDate': filing._filing_date,  # pylint: disable=protected-access
+
+                'commentsLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}/comments',
+                'correctionLink': f'{base_url}{{businessIdentifier}}/filings/{{correctionFilingId}}',
+                'filingLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}',
             }
+            if filing.court_order_file_number:
+                data['fileNumber'] = filing.court_order_file_number
+            if filing.court_order_date:
+                data['orderDate'] = filing.court_order_date
+            if filing.court_order_effect_of_order:
+                data['effectOfOrder'] = filing.court_order_effect_of_order
+            if filing.order_details:
+                data['orderDetails'] = filing.order_details
+            if data:
+                ledger_filing['data'] = data
             ledger.append(ledger_filing)
 
         return ledger
