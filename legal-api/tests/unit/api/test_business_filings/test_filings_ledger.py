@@ -118,11 +118,10 @@ def test_ledger_search(session, client, jwt):
     alteration = next((f for f in ledger['filings'] if f.get('name')=='alteration'), None)
 
     assert alteration
-    assert 9 == len(alteration.keys())
+    assert 16 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
-    assert 'isCorrected' in alteration
     assert 'name' in alteration
     assert 'paymentStatusCode' in alteration
     assert 'status' in alteration
