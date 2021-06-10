@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
+<<<<<<< HEAD
 from contextlib import suppress
 from typing import Final, Optional
 
 from legal_api.models import Filing as FilingStorage
 from legal_api.utils.datetime import date
 
+=======
+from typing import Final, Optional
+
+>>>>>>> eb4fca0d (adding ledger fields)
 
 FILINGS: Final = {
     'alteration': {
@@ -67,11 +72,14 @@ FILINGS: Final = {
         'title': 'Change of Name Filing',
         'displayName': 'Legal Name Change'
     },
+<<<<<<< HEAD
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
         'displayName': 'Conversion'
     },
+=======
+>>>>>>> eb4fca0d (adding ledger fields)
     'correction': {
         'name': 'correction',
         'title': 'Correction',
@@ -81,6 +89,7 @@ FILINGS: Final = {
             'CP': 'CRCTN'
         }
     },
+<<<<<<< HEAD
     'courtOrder': {
         'name': 'courtOrder',
         'title': 'Court Order',
@@ -91,6 +100,8 @@ FILINGS: Final = {
         'title': 'Dissolution',
         'displayName': 'Dissolution',
         'code': 'NOT_IMPLEMENTED_YET'},
+=======
+>>>>>>> eb4fca0d (adding ledger fields)
     'incorporationApplication': {
         'name': 'incorporationApplication',
         'title': 'Incorporation Application',
@@ -99,6 +110,7 @@ FILINGS: Final = {
             'BEN': 'BCINC'
         }
     },
+<<<<<<< HEAD
     # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
     # for all the business the fee code remain same as NOFEE (Staff)
     'registrarsNotation': {
@@ -111,12 +123,27 @@ FILINGS: Final = {
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
         'code': 'NOFEE'},
+=======
+    'conversion': {
+        'name': 'conversion',
+        'title': 'Conversion Ledger',
+        'displayName': 'Conversion'
+    },
+>>>>>>> eb4fca0d (adding ledger fields)
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
         'displayName': 'Special Resolution',
         'codes': {
             'CP': 'RES'}},
+<<<<<<< HEAD
+=======
+    'voluntaryDissolution': {
+        'name': 'voluntaryDissolution',
+        'title': 'Voluntary Dissolution',
+        'displayName': 'Voluntary Dissolution'
+        },
+>>>>>>> eb4fca0d (adding ledger fields)
     'transition': {
         'name': 'transition',
         'title': 'Transition',
@@ -126,11 +153,31 @@ FILINGS: Final = {
             'BEN': 'TRANS'
         }
     },
+<<<<<<< HEAD
     'voluntaryDissolution': {
         'name': 'voluntaryDissolution',
         'title': 'Voluntary Dissolution',
         'displayName': 'Voluntary Dissolution'
         }
+=======
+    # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
+    # for all the business the fee code remain same as NOFEE (Staff)
+    'courtOrder': {
+        'name': 'courtOrder',
+        'title': 'Court Order',
+        'displayName': 'Court Order',
+        'code': 'NOFEE'},
+    'registrarsNotation': {
+        'name': 'registrarsNotation',
+        'title': 'Registrars Notation',
+        'displayName': "Registrar's Notation",
+        'code': 'NOFEE'},
+    'registrarsOrder': {
+        'name': 'registrarsOrder',
+        'title': 'Registrars Order',
+        'displayName': "Registrar's Order",
+        'code': 'NOFEE'}
+>>>>>>> eb4fca0d (adding ledger fields)
 }
 
 
@@ -138,6 +185,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
+<<<<<<< HEAD
     def display_name(filing: FilingStorage, full_name: bool = True) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
         name = FILINGS.get(filing.filing_type, {}).get('displayName', filing.filing_type)
@@ -160,3 +208,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             application_date = filing_meta_data['applicationDate']
             return str(date.fromisoformat(application_date).year)
         return None
+=======
+    def display_name(filing_name: str = None) -> Optional[str]:
+        """Return the name of the filing to display on outputs."""
+        return FILINGS.get(filing_name, {}).get('displayName')
+>>>>>>> eb4fca0d (adding ledger fields)

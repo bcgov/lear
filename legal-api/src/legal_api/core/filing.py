@@ -330,6 +330,7 @@ class Filing:
 
         ledger = []
         for filing in query.all():
+            data = {}
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,

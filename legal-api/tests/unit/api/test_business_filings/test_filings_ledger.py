@@ -126,6 +126,7 @@ def test_ledger_search(session, client, jwt):
 
     assert alteration
 <<<<<<< HEAD
+<<<<<<< HEAD
     assert 15 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
@@ -137,6 +138,12 @@ def test_ledger_search(session, client, jwt):
     assert 'filingId' in alteration
     assert 'isCorrected' in alteration
 >>>>>>> cde33860 (add ledger listing)
+=======
+    assert 16 == len(alteration.keys())
+    assert 'availableOnPaperOnly' in alteration
+    assert 'effectiveDate' in alteration
+    assert 'filingId' in alteration
+>>>>>>> eb4fca0d (adding ledger fields)
     assert 'name' in alteration
     assert 'paymentStatusCode' in alteration
     assert 'status' in alteration

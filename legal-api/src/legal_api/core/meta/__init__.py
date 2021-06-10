@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Copyright © 2020 Province of British Columbia
+=======
+# Copyright © 2021 Province of British Columbia
+>>>>>>> eb4fca0d (adding ledger fields)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,5 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+<<<<<<< HEAD
 """This has the meta insformation for the core domain used by the application."""
 from .filing import FilingMeta, FILINGS
+=======
+"""Meta support for the core domain used by the application."""
+
+from .filing import FilingMeta
+
+
+__all__ = ('FilingMeta')
+>>>>>>> eb4fca0d (adding ledger fields)
