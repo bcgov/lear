@@ -13,6 +13,7 @@
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
 <<<<<<< HEAD
+<<<<<<< HEAD
 from contextlib import suppress
 from typing import Final, Optional
 
@@ -23,6 +24,10 @@ from legal_api.utils.datetime import date
 from typing import Final, Optional
 
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+from typing import Final, Optional
+
+>>>>>>> 885773ca (adding ledger fields)
 
 FILINGS: Final = {
     'alteration': {
@@ -73,6 +78,7 @@ FILINGS: Final = {
         'displayName': 'Legal Name Change'
     },
 <<<<<<< HEAD
+<<<<<<< HEAD
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
@@ -80,6 +86,8 @@ FILINGS: Final = {
     },
 =======
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'correction': {
         'name': 'correction',
         'title': 'Correction',
@@ -89,6 +97,7 @@ FILINGS: Final = {
             'CP': 'CRCTN'
         }
     },
+<<<<<<< HEAD
 <<<<<<< HEAD
     'courtOrder': {
         'name': 'courtOrder',
@@ -102,6 +111,8 @@ FILINGS: Final = {
         'code': 'NOT_IMPLEMENTED_YET'},
 =======
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'incorporationApplication': {
         'name': 'incorporationApplication',
         'title': 'Incorporation Application',
@@ -110,6 +121,7 @@ FILINGS: Final = {
             'BEN': 'BCINC'
         }
     },
+<<<<<<< HEAD
 <<<<<<< HEAD
     # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
     # for all the business the fee code remain same as NOFEE (Staff)
@@ -124,12 +136,17 @@ FILINGS: Final = {
         'displayName': "Registrar's Order",
         'code': 'NOFEE'},
 =======
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
         'displayName': 'Conversion'
     },
+<<<<<<< HEAD
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
@@ -137,13 +154,19 @@ FILINGS: Final = {
         'codes': {
             'CP': 'RES'}},
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'voluntaryDissolution': {
         'name': 'voluntaryDissolution',
         'title': 'Voluntary Dissolution',
         'displayName': 'Voluntary Dissolution'
         },
+<<<<<<< HEAD
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+>>>>>>> 885773ca (adding ledger fields)
     'transition': {
         'name': 'transition',
         'title': 'Transition',
@@ -154,12 +177,15 @@ FILINGS: Final = {
         }
     },
 <<<<<<< HEAD
+<<<<<<< HEAD
     'voluntaryDissolution': {
         'name': 'voluntaryDissolution',
         'title': 'Voluntary Dissolution',
         'displayName': 'Voluntary Dissolution'
         }
 =======
+=======
+>>>>>>> 885773ca (adding ledger fields)
     # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
     # for all the business the fee code remain same as NOFEE (Staff)
     'courtOrder': {
@@ -177,7 +203,10 @@ FILINGS: Final = {
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
         'code': 'NOFEE'}
+<<<<<<< HEAD
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+>>>>>>> 885773ca (adding ledger fields)
 }
 
 
@@ -185,6 +214,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
+<<<<<<< HEAD
 <<<<<<< HEAD
     def display_name(filing: FilingStorage, full_name: bool = True) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
@@ -213,3 +243,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return the name of the filing to display on outputs."""
         return FILINGS.get(filing_name, {}).get('displayName')
 >>>>>>> eb4fca0d (adding ledger fields)
+=======
+    def display_name(filing_name: str = None) -> Optional[str]:
+        """Return the name of the filing to display on outputs."""
+        return FILINGS.get(filing_name, {}).get('displayName')
+>>>>>>> 885773ca (adding ledger fields)
