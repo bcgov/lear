@@ -14,12 +14,12 @@ USER root
 # Installing Oracle instant client
 WORKDIR    /opt/oracle
 RUN        apt-get update && apt-get install -y libaio1 wget unzip \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/instantclient-basiclite-linuxx64.zip \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/instantclient-sqlplus-linuxx64.zip \
-    && unzip instantclient-basiclite-linuxx64.zip \
-    && rm -f instantclient-basiclite-linuxx64.zip \
-    && unzip instantclient-sqlplus-linuxx64.zip \
-    && rm -f instantclient-sqlplus-linuxx64.zip \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-basiclite-linux.x64-21.1.0.0.0.zip \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-sqlplus-linux.x64-21.1.0.0.0.zip \
+    && unzip instantclient-basiclite-linux.x64-21.1.0.0.0.zip \
+    && rm -f instantclient-basiclite-linux.x64-21.1.0.0.0.zip \
+    && unzip instantclient-sqlplus-linux.x64-21.1.0.0.0.zip \
+    && rm -f instantclient-sqlplus-linux.x64-21.1.0.0.0.zip \
     && cd /opt/oracle/instantclient* \
     && rm -f *jdbc* *occi* *mysql* *README *jar uidrvci genezi adrci \
     && echo /opt/oracle/instantclient* > /etc/ld.so.conf.d/oracle-instantclient.conf \
