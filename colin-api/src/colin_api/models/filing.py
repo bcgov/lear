@@ -289,7 +289,7 @@ class Filing:
             cursor.execute(
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-                VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
+                VALUES (:event_id, :corp_num, :event_type, current_timestamp at time zone dbtimezone, NULL)
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
