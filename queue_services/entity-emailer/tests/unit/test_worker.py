@@ -19,7 +19,7 @@ from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import filing_notification
+from entity_emailer.email_processors import ar_reminder_notification, filing_notification
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
 
@@ -147,6 +147,32 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
+
+
+def test_process_ar_reminder_email(app, session):
+    """Assert that the ar reminder notification can be processed."""
+    # setup filing + business for email
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
+    business = Business.find_by_internal_id(filing.business_id)
+    business.legal_type = 'BC'
+    business.legal_name = 'test business'
+    token = 'token'
+    # test processor
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value='test@test.com'):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email({'email': {
+                    'businessId': filing.business_id,
+                    'type': 'annualReport', 'option': 'reminder',
+                    'arFee': '100', 'arYear': 2021
+                }}, app)
+
+                call_args = mock_send_email.call_args
+                assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
+                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['content']['body']
+                assert call_args[0][0]['content']['attachments'] == []
+                assert call_args[0][1] == token
 
 
 def test_process_bn_email(app, session):

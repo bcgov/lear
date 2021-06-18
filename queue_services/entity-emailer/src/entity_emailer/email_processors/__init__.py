@@ -23,7 +23,7 @@ from pathlib import Path
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -45,6 +45,11 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
 
+def get_business_info(business_id: str) -> Business:
+    """Get business info."""
+    return Business.find_by_internal_id(business_id)
+
+
 def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
     """Get the recipients for the email output."""
     recipients = ''
@@ -61,23 +66,31 @@ def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
                         break
             recipients = f'{recipients}, {comp_party_email}'
     else:
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {token}'
-        }
         identifier = filing_json['filing']['business']['identifier']
-        if not identifier[:2] == 'CP':
-            # only add recipients if not coop
-            contact_info = requests.get(
-                f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
-                headers=headers
-            )
-            contacts = contact_info.json()['contacts']
-            if not contacts:
-                logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
-                raise Exception
+        recipients = get_recipient_from_auth(identifier, token)
 
-            recipients = contacts[0]['email']
+    return recipients
+
+
+def get_recipient_from_auth(identifier: str, token: str) -> str:
+    """Get the recipients for the email output from auth."""
+    recipients = ''
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+    if not identifier[:2] == 'CP':
+        # only add recipients if not coop
+        contact_info = requests.get(
+            f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
+            headers=headers
+        )
+        contacts = contact_info.json()['contacts']
+        if not contacts:
+            logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
+            raise Exception
+
+        recipients = contacts[0]['email']
 
     return recipients
 
