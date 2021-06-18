@@ -50,6 +50,8 @@ from entity_emailer.email_processors import (
     name_request,
 )
 
+from .message_tracker import tracker as tracker_util
+
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
@@ -126,20 +128,35 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
-    try:
-        logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
-        email_msg = json.loads(msg.data.decode('utf-8'))
-        logger.debug('Extracted email msg: %s', email_msg)
-        process_email(email_msg, FLASK_APP)
-    except OperationalError as err:
-        logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
-        raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except EmailException as err:
-        logger.error('Queue Error - email failed to send: %s'
-                     '\n\nThis message has been put back on the queue for reprocessing.',
-                     json.dumps(email_msg), exc_info=True)
-        raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # noqa B902; pylint: disable=W0703;
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
-        logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+    with FLASK_APP.app_context():
+
+        try:
+            logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
+            email_msg = json.loads(msg.data.decode('utf-8'))
+            logger.debug('Extracted email msg: %s', email_msg)
+            message_properties = tracker_util.get_key_message_properties(msg)
+            message_id = message_properties.get('message_id')
+            process_message, tracker_msg = tracker_util.is_processable_message(message_id)
+            if process_message:
+                tracker_msg = tracker_util.start_tracking_message(message_properties, email_msg, tracker_msg)
+                process_email(email_msg, FLASK_APP)
+                tracker_util.complete_tracking_message(tracker_msg)
+            else:
+                # Skip processing of message due to message state - previously processed or currently being
+                # processed
+                logger.debug('Skipping processing of email_msg: %s', email_msg)
+        except OperationalError as err:
+            logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
+            raise err  # We don't want to handle the error, as a DB down would drain the queue
+        except EmailException as err:
+            logger.error('Queue Error - email failed to send: %s'
+                         '\n\nThis message has been put back on the queue for reprocessing.',
+                         json.dumps(email_msg), exc_info=True)
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
+            raise err  # we don't want to handle the error, so that the message gets put back on the queue
+        except (QueueException, Exception):  # noqa B902; pylint: disable=W0703;
+            # Catch Exception so that any error is still caught and the message is removed from the queue
+            capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
+            logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
