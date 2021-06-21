@@ -1,0 +1,284 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  annotations:
+    description: Deployment template for a postgresql server with persistent storage.
+    tags: ${NAME}
+  name: ${NAME}-persistent-template
+objects:
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: ${NAME}-${TAG}-config
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    data:
+      backup-file: |-
+        postgres=postgresql-${TAG}:5432/tracker
+
+        0 1 * * * default ./backup.sh -s
+        0 4 * * * default ./backup.sh -s -v all
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: ${NAME}-${TAG}-pvc
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    spec:
+      storageClassName: ${PERSISTENT_VOLUME_CLASS}
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${PERSISTENT_VOLUME_SIZE}
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: ${NAME}-verification-${TAG}-pvc
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    spec:
+      storageClassName: ${PERSISTENT_VERIFICATION_VOLUME_CLASS}
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${PERSISTENT_VERIFICATION_VOLUME_SIZE}
+
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${NAME}-${TAG}-secret
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    stringData:
+      webhook-url: ""
+    type: Opaque
+
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      name: ${NAME}-${TAG}
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+      generation: 1
+    spec:
+      strategy:
+        type: Recreate
+        recreateParams:
+          timeoutSeconds: 600
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ${NAME}-${TAG}
+            from:
+              kind: ImageStreamTag
+              namespace: ${NAMESPACE}-${IMAGE_NAMESPACE}
+              name: ${SOURCE_IMAGE}
+        - type: ConfigChange
+      replicas: 1
+      test: false
+      selector:
+        name: ${NAME}
+        environment: ${TAG}
+      template:
+        metadata:
+          labels:
+            name: ${NAME}
+            environment: ${TAG}
+            role: ${ROLE}
+          name: ${NAME}-${TAG}
+        spec:
+          containers:
+            - name: ${NAME}-${TAG}
+              env:
+                - name: BACKUP_STRATEGY
+                  value: rolling
+                - name: BACKUP_CONF
+                  value: "/conf/backup.conf"
+                - name: BACKUP_DIR
+                  value: /backups/
+                - name: DAILY_BACKUPS
+                  value: "12"
+                - name: WEEKLY_BACKUPS
+                  value: "5"
+                - name: MONTHLY_BACKUPS
+                  value: "1"
+                - name: POSTGRESQL_${TAG_UPPER}_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-user
+                      name: postgresql-${TAG}-secret
+                - name: POSTGRESQL_${TAG_UPPER}_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: postgresql-${TAG}-secret
+                - name: WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: webhook-url
+                      name: ${NAME}-${TAG}-secret
+                - name: ENVIRONMENT_FRIENDLY_NAME
+                  value: ""
+                - name: ENVIRONMENT_NAME
+                  value: ""
+                - name: DATABASE_SERVER_TIMEOUT
+                  value: "60"
+              image: ${IMAGE_REGISTRY}/${NAMESPACE}-${IMAGE_NAMESPACE}/${SOURCE_IMAGE}
+              ports: []
+              resources:
+                limits:
+                  cpu: "0"
+                  memory: 0Mi
+                requests:
+                  cpu: "0"
+                  memory: 0Mi
+              volumeMounts:
+                - name: backup-vol
+                  mountPath: /backups/
+                - name: verification-vol
+                  mountPath: /var/lib/pgsql/data
+                - name: config-vol
+                  readOnly: true
+                  mountPath: /conf/backup.conf
+                  subPath: backup-file
+          volumes:
+            - name: backup-vol
+              persistentVolumeClaim:
+                claimName: ${NAME}-${TAG}-pvc
+            - name: verification-vol
+              persistentVolumeClaim:
+                claimName: ${NAME}-verification-${TAG}-pvc
+            - name: config-vol
+              configMap:
+                name: ${NAME}-${TAG}-config
+                defaultMode: 420
+
+parameters:
+  - name: NAME
+    displayName: Name
+    description:
+      The name assigned to all of the OpenShift resources associated to the
+      PostgreSQL instance.
+    required: true
+    value: backup
+
+  - name: TAG
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    required: true
+    value: dev
+
+  - name: TAG_UPPER
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    required: true
+    value: DEV
+
+  - name: ROLE
+    displayName: Role
+    description: Role
+    required: true
+    value: backup
+
+  - name: NAMESPACE
+    displayName: Namespace Name
+    description: The base namespace name for the project.
+    required: true
+    value: cc892f
+
+  - name: IMAGE_NAMESPACE
+    displayName: Image Namespace
+    required: true
+    description: The namespace of the OpenShift project containing the imagestream for the application.
+    value: tools
+
+  - name: IMAGE_REGISTRY
+    displayName: Image Registry
+    required: true
+    description: The image registry of the OpenShift project.
+    value: image-registry.openshift-image-registry.svc:5000
+
+  - name: SOURCE_IMAGE
+    displayName: Source Image name
+    required: true
+    description: The namespace of the OpenShift project containing the imagestream for the application.
+    value: backup-postgres:latest
+
+  - name: NOTIFY_DB
+    displayName: PostgreSQL Database Name
+    description: The name of the PostgreSQL database.
+    required: true
+    value: postgresql-notify
+
+  - name: KEYCLOAK_DB
+    displayName: PostgreSQL Database Name
+    description: The name of the PostgreSQL database.
+    required: true
+    value: postgresql-keycloak
+
+  - name: PERSISTENT_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 15Gi
+
+  - name: PERSISTENT_VERIFICATION_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 5Gi
+
+  - name: PERSISTENT_VERIFICATION_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume; netapp-file-standard, netapp-file-extended, netapp-block-standard, netapp-block-extended.
+    required: false
+    value: netapp-block-standard
+
+  - name: PERSISTENT_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume; netapp-file-standard, netapp-file-extended, netapp-block-standard, netapp-block-extended.
+    required: false
+    value: netapp-block-standard
+
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 10m
+
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 250m
+
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 10Mi
+
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 512Mi

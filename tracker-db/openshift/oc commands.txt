@@ -1,0 +1,3 @@
+oc process -f openshift\templates\postgresql-build.json --param-file=openshift\postgresql-build.tracker.param | oc create -f -
+
+oc process -f openshift\templates\postgresql-deploy.json --param-file=openshift\postgresql-deploy.tracker.dev.param | oc create -f -

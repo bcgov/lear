@@ -1,0 +1,11 @@
+#=========================================================
+# OpenShift Jenkins pipeline template parameters for:
+# Jenkinsfile: ./tracker-db/Jenkinsfile
+# Template File: https://raw.githubusercontent.com/BCDevOps/openshift-tools/master/provisioning/pipeline/resources/pipeline-build.json
+#=========================================================
+NAME=tracker-db
+# GITHUB_WEBHOOK_SECRET=[a-zA-Z0-9]{40}
+SOURCE_REPOSITORY_URL=https://github.com/bcgov/lear.git
+SOURCE_REPOSITORY_REF=main
+CONTEXT_DIR=tracker-db
+JENKINSFILE_PATH=Jenkinsfile
