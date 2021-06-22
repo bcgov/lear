@@ -45,11 +45,6 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_business_info(business_id: str) -> Business:
-    """Get business info."""
-    return Business.find_by_internal_id(business_id)
-
-
 def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
     """Get the recipients for the email output."""
     recipients = ''
