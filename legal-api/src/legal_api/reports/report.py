@@ -23,7 +23,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Business, Filing
+from legal_api.models import CorpType, Business, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
@@ -218,7 +218,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _set_description(self, filing):
         if self._business:
-            filing['entityDescription'] = ReportMeta.entity_description[self._business.legal_type]
+            corp_type = CorpType.find_by_id(self._business.legal_type)
+            filing['entityDescription'] = corp_type.full_desc
 
     def _set_dates(self, filing):
         # Filing Date
@@ -358,8 +359,8 @@ class Report:  # pylint: disable=too-few-public-methods
             self._filing.id, self._business.id)
         prev_legal_type = versioned_business['legalType']
         filing['previousLegalType'] = prev_legal_type
-        with suppress(KeyError):
-            filing['previousLegalTypeDescription'] = ReportMeta.entity_description[prev_legal_type]
+        corp_type = CorpType.find_by_id(prev_legal_type)
+        filing['previousLegalTypeDescription'] = corp_type.full_desc
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
@@ -600,12 +601,4 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Certificate of Name Change',
             'fileName': 'certificateOfNameChange'
         }
-    }
-
-    entity_description = {
-        Business.LegalTypes.COOP.value: 'BC Cooperative Association',
-        Business.LegalTypes.COMP.value: 'BC Limited Company',
-        Business.LegalTypes.BCOMP.value: 'BC Benefit Company',
-        Business.LegalTypes.BC_CCC.value: 'BC Community Contribution Company',
-        Business.LegalTypes.BC_ULC_COMPANY.value: 'BC Unlimited Liability Company'
     }
