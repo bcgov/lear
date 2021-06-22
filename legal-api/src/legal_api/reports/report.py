@@ -23,7 +23,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import CorpType, Business, Filing
+from legal_api.models import Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
