@@ -20,31 +20,25 @@ Test-Suite to ensure that the CorpType Model is working as expected.
 from legal_api.models import Business, CorpType
 
 
+corp_type_json = {
+    'corp_type_cd': 'BEN',
+    'colin_ind': 'Y',
+    'corp_class': 'BC',
+    'short_desc': 'BENEFIT COMPANY',
+    'full_desc': 'BC Benefit Company',
+    'legislation': 'BC Business Corporations Act'
+}
+
+
 def test_corp_type_json(session):
     """Assert the json format of corp type."""
     corp_type = CorpType.find_by_id(Business.LegalTypes.BCOMP.value)
-    corp_type_json = {
-        'corp_type_cd': 'BEN',
-        'colin_ind': 'Y',
-        'corp_class': 'BC',
-        'short_desc': 'BENEFIT COMPANY',
-        'full_desc': 'BC Benefit Company',
-        'legislation': 'BC Business Corporations Act'
-    }
     assert corp_type_json == corp_type.json
 
 
 def test_find_corp_type_by_id(session):
     """Assert that the method returns the corp type matching the id."""
     corp_type = CorpType.find_by_id(Business.LegalTypes.BCOMP.value)
-    corp_type_json = {
-        'corp_type_cd': corp_type.corp_type_cd,
-        'colin_ind': corp_type.colin_ind,
-        'corp_class': corp_type.corp_class,
-        'short_desc': corp_type.short_desc,
-        'full_desc': corp_type.full_desc,
-        'legislation': corp_type.legislation
-    }
 
     assert corp_type
     assert corp_type_json == corp_type.json
