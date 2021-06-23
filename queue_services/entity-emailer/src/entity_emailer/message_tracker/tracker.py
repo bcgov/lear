@@ -17,7 +17,6 @@ import json
 
 import nats
 
-from legal_api.utils import datetime  # noqa: I001
 from entity_emailer.email_processors import filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
@@ -107,21 +106,30 @@ def complete_tracking_message(tracker_msg: MessageProcessing):
     update_message_status_to_complete(tracker_msg)
 
 
-def mark_tracking_message_as_failed(message_id: str, email_msg: dict, existing_tracker_msg: MessageProcessing):
+def mark_tracking_message_as_failed(message_id: str,
+                                    email_msg: dict,
+                                    existing_tracker_msg: MessageProcessing,
+                                    error_details: str):
     """Create a new message with FAILED status or update an existing message to FAILED status."""
     if existing_tracker_msg \
             and existing_tracker_msg.status == MessageProcessing.Status.PROCESSING.value:
-        return update_message_status_to_failed(existing_tracker_msg)
+        return update_message_status_to_failed(existing_tracker_msg, error_details)
 
-    return create_failed_message(message_id, email_msg)
+    if existing_tracker_msg \
+            and existing_tracker_msg.status == MessageProcessing.Status.FAILED.value:
+        return update_failed_message(existing_tracker_msg, error_details)
+
+    return create_failed_message(message_id, email_msg, error_details)
 
 
-def create_message(message_properties: dict, msg: str, status: MessageProcessing.Status):
+def create_message(message_properties: dict,
+                   msg: str,
+                   status: MessageProcessing.Status,
+                   error_details: None):
     """Create MessageProcessing record."""
     message_id = message_properties.get('message_id')
     identifier = message_properties.get('identifier')
     message_type = message_properties.get('type')
-    dt_now = datetime.datetime.utcnow()
     new_status = status
     message_json = msg
 
@@ -131,32 +139,37 @@ def create_message(message_properties: dict, msg: str, status: MessageProcessing
         message_type=message_type,
         status=new_status,
         message_json=message_json,
-        create_date=dt_now,
-        last_update=dt_now
+        last_error=error_details,
+        seen_count=1
     )
     return result
 
 
 def create_processing_message(message_id: str, msg: str):
     """Create message with status of PROCESSING."""
-    return create_message(message_id, msg, MessageProcessing.Status.PROCESSING)
+    return create_message(message_id, msg, MessageProcessing.Status.PROCESSING, None)
 
 
-def create_failed_message(message_id: str, msg: str):
+def create_failed_message(message_id: str, msg: str, error_details: str):
     """Create message with status of FAILED."""
-    return create_message(message_id, msg, MessageProcessing.Status.FAILED)
+    return create_message(message_id, msg, MessageProcessing.Status.FAILED, error_details)
 
 
 def update_message_status_to_processing(msg: MessageProcessing):
     """Update existing message status to PROCESSING."""
-    return MessageProcessingService.update_message_status(msg, MessageProcessing.Status.PROCESSING)
+    return MessageProcessingService.update_message_status(msg, MessageProcessing.Status.PROCESSING, None, True)
 
 
 def update_message_status_to_complete(tracker_msg: MessageProcessing):
     """Update existing message status to COMPLETE."""
-    MessageProcessingService.update_message_status(tracker_msg, MessageProcessing.Status.COMPLETE)
+    MessageProcessingService.update_message_status(tracker_msg, MessageProcessing.Status.COMPLETE, None, False)
 
 
-def update_message_status_to_failed(msg: MessageProcessing):
+def update_message_status_to_failed(msg: MessageProcessing, error_details: str):
     """Update existing message status to FAILED."""
-    return MessageProcessingService.update_message_status(msg, MessageProcessing.Status.FAILED)
+    return MessageProcessingService.update_message_status(msg, MessageProcessing.Status.FAILED, error_details, False)
+
+
+def update_failed_message(msg: MessageProcessing, error_details: str):
+    """Update error message for existing failed message."""
+    return MessageProcessingService.update_message_last_error(msg, error_details, False)

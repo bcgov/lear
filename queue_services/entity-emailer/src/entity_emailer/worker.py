@@ -147,16 +147,19 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                 logger.debug('Skipping processing of email_msg: %s', email_msg)
         except OperationalError as err:
             logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
-            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
+            error_details = f'OperationalError - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg, error_details)
             raise err  # We don't want to handle the error, as a DB down would drain the queue
         except EmailException as err:
             logger.error('Queue Error - email failed to send: %s'
                          '\n\nThis message has been put back on the queue for reprocessing.',
                          json.dumps(email_msg), exc_info=True)
-            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
+            error_details = f'EmailException - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg, error_details)
             raise err  # we don't want to handle the error, so that the message gets put back on the queue
-        except (QueueException, Exception):  # noqa B902; pylint: disable=W0703;
+        except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703;
             # Catch Exception so that any error is still caught and the message is removed from the queue
             capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
             logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
-            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg)
+            error_details = f'QueueException, Exception - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_id, email_msg, tracker_msg, error_details)

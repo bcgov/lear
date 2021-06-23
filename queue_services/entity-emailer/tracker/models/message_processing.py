@@ -46,6 +46,8 @@ class MessageProcessing(db.Model):
     message_type = db.Column(db.String(35), index=True)
     status = db.Column(db.String(10), index=True)
     message_json = db.Column('message_json', JSONB)
+    message_seen_count = db.Column(db.Integer, default=1)
+    last_error = db.Column(db.String(1000))
     create_date = db.Column('create_date', db.DateTime(timezone=True), default=datetime.utcnow)
     last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)
 

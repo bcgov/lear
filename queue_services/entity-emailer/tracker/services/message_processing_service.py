@@ -16,7 +16,7 @@
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 
 
-from datetime import datetime
+from legal_api.utils import datetime  # noqa: I001
 from typing import Optional
 
 from tracker.models import MessageProcessing
@@ -31,34 +31,59 @@ class MessageProcessingService:  # pylint: disable=too-many-public-methods
                        message_type: str,
                        status: MessageProcessing.Status,
                        message_json: str,
-                       create_date: datetime,
-                       last_update: datetime):
+                       seen_count: int,
+                       last_error: str):
+        dt_now = datetime.datetime.utcnow()
         msg = MessageProcessing()
         msg.message_id = message_id
         msg.identifier = identifier
         msg.message_type = message_type
         msg.status = status.value
         msg.message_json = message_json
-        msg.create_date = create_date
-        msg.last_update = last_update
+        msg.create_date = dt_now
+        msg.last_update = dt_now
         msg.save()
 
         return msg
 
 
     @staticmethod
-    def update_message_status(msg: MessageProcessing, status: MessageProcessing.Status):
+    def update_message_status(msg: MessageProcessing,
+                              status: MessageProcessing.Status,
+                              error_details: None,
+                              increment_seen_count=False):
         msg.status = status.value
-        msg.last_update = datetime.utcnow()
+        if error_details:
+            msg.last_error = error_details
+        if increment_seen_count:
+            msg.message_seen_count += 1
+        msg.last_update = datetime.datetime.utcnow()
         msg.save()
 
         return msg
 
 
     @staticmethod
-    def update_message_status_by_message_id(message_id: str, status: MessageProcessing.Status):
+    def update_message_status_by_message_id(message_id: str, status: MessageProcessing.Status,
+                                            increment_seen_count=False):
         msg = MessageProcessingService.find_message_by_message_id(message_id)
         msg.status = status.value
+        if increment_seen_count:
+            msg.message_seen_count += 1
+        msg.last_update = datetime.datetime.utcnow()
+        msg.save()
+
+        return msg
+
+
+    @staticmethod
+    def update_message_last_error(msg: MessageProcessing,
+                                  error_details: str,
+                                  increment_seen_count=False):
+        msg.last_error = error_details
+        if increment_seen_count:
+            msg.message_seen_count += 1
+        msg.last_update = datetime.datetime.utcnow()
         msg.save()
 
         return msg
