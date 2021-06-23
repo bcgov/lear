@@ -47,6 +47,5 @@ def test_find_corp_type_by_id(session):
 def test_find_all(session):
     """Assert that the method returns all corp types."""
     corp_types = CorpType.find_all()
-    assert len(corp_types) == 46
-    legal_types = [legal_type.value for legal_type in Business.LegalTypes]
-    assert all(corp_type.corp_type_cd in legal_types for corp_type in corp_types)
+    assert len(corp_types) == len(Business.LegalTypes)
+    assert all(corp_type.corp_type_cd in Business.LegalTypes._value2member_map_ for corp_type in corp_types)
