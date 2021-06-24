@@ -22,70 +22,84 @@ from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
 
-def get_key_message_properties(queue_msg: nats.aio.client.Msg):  # pylint: disable=too-many-return-statements
+def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: disable=too-many-return-statements
     """Get key message properties from a queue message."""
     # todo update this code to just use the cloud event message id when all
     #  publishers are publishing to emailer queue with cloud event format
-    raw_message_id = queue_msg.sequence
+    raw_message_id = str(queue_msg.sequence)
     email_msg = json.loads(queue_msg.data.decode('utf-8'))
     etype = email_msg.get('type', None)
 
-    message_properties = {
+    message_context_properties = {
         'type': None,
+        'source': None,
         'message_id': None,
         'identifier': None,
-        'trackable': False
+        'is_cloud_event_format': False
     }
 
     if etype:
         message_id = email_msg.get('id', None)
         if etype == 'bc.registry.names.request':
+            source = email_msg.get('source', None)
             identifier = email_msg.get('identifier', None)
-            return create_message_properties(etype, message_id, identifier)
+            return create_message_context_properties(etype, message_id, source, identifier, True)
 
         if etype == 'bc.registry.affiliation':
             identifier = email_msg.get('filing', {})\
                                     .get('business', {})\
                                     .get('identifier', None)
-            return create_message_properties(etype, raw_message_id, identifier)
+            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
         if not email or not etype:
-            return message_properties
+            return message_context_properties
 
         if etype == 'businessNumber':
-            identifier = email_msg.get('identifier', None)
-            return create_message_properties(etype, raw_message_id, identifier)
+            identifier = email.get('identifier', None)
+            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
 
         if etype == 'incorporationApplication':
-            return create_message_properties(etype, raw_message_id, None)
+            return create_message_context_properties(etype, raw_message_id, None, None, False)
 
         if etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             identifier = email.get('filing', {})\
                                 .get('business', {})\
                                 .get('identifier', None)
-            return create_message_properties(etype, raw_message_id, identifier)
+            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
 
-    return message_properties
+    return message_context_properties
 
 
-def create_message_properties(message_type, message_id, identifier) -> dict:
-    """Create message properties dict from input param values."""
+def create_message_context_properties(message_type, message_id, source, identifier, is_cloud_event_format) -> dict:
+    """Create message context properties dict from input param values."""
     return {
         'type': message_type,
         'message_id': message_id,
-        'identifier': identifier
+        'source': source,
+        'identifier': identifier,
+        'is_cloud_event_format': is_cloud_event_format
     }
 
 
-def is_processable_message(message_id):
-    """Determine if message needs to be processed by message_id."""
-    msg: MessageProcessing = \
-        MessageProcessingService.find_message_by_message_id(message_id)
+def is_processable_message(message_context_properties: dict):
+    """Determine if message needs to be processed."""
+    msg = None
+    is_cloud_event_format = message_context_properties.get('is_cloud_event_format')
+    source = message_context_properties.get('source')
+    message_id = message_context_properties.get('message_id')
 
-    if message_id is None:
-        return False, None
+    if is_cloud_event_format:
+        if source is None or message_id is None:
+            return False, None
+        msg: MessageProcessing = \
+            MessageProcessingService.find_message_by_source_and_message_id(source, message_id)
+    else:
+        if message_id is None:
+            return False, None
+        msg: MessageProcessing = \
+            MessageProcessingService.find_message_by_message_id(message_id)
 
     if msg is None or msg.status == MessageProcessing.Status.FAILED.value:
         return True, msg
@@ -93,12 +107,12 @@ def is_processable_message(message_id):
     return False, msg
 
 
-def start_tracking_message(message_properties: dict, email_msg: dict, existing_tracker_msg: MessageProcessing):
+def start_tracking_message(message_context_properties: dict, email_msg: dict, existing_tracker_msg: MessageProcessing):
     """Create a new message with PROCESSING status or update an existing message to PROCESSING status."""
     if existing_tracker_msg:
         return update_message_status_to_processing(existing_tracker_msg)
 
-    return create_processing_message(message_properties, email_msg)
+    return create_processing_message(message_context_properties, email_msg)
 
 
 def complete_tracking_message(tracker_msg: MessageProcessing):
@@ -106,7 +120,7 @@ def complete_tracking_message(tracker_msg: MessageProcessing):
     update_message_status_to_complete(tracker_msg)
 
 
-def mark_tracking_message_as_failed(message_id: str,
+def mark_tracking_message_as_failed(message_context_properties: dict,
                                     email_msg: dict,
                                     existing_tracker_msg: MessageProcessing,
                                     error_details: str):
@@ -119,22 +133,24 @@ def mark_tracking_message_as_failed(message_id: str,
             and existing_tracker_msg.status == MessageProcessing.Status.FAILED.value:
         return update_failed_message(existing_tracker_msg, error_details)
 
-    return create_failed_message(message_id, email_msg, error_details)
+    return create_failed_message(message_context_properties, email_msg, error_details)
 
 
-def create_message(message_properties: dict,
+def create_message(message_context_properties: dict,
                    msg: str,
                    status: MessageProcessing.Status,
                    error_details: None):
     """Create MessageProcessing record."""
-    message_id = message_properties.get('message_id')
-    identifier = message_properties.get('identifier')
-    message_type = message_properties.get('type')
+    message_id = message_context_properties.get('message_id')
+    source = message_context_properties.get('source')
+    identifier = message_context_properties.get('identifier')
+    message_type = message_context_properties.get('type')
     new_status = status
     message_json = msg
 
     result = MessageProcessingService.create_message(
         message_id=message_id,
+        source=source,
         identifier=identifier,
         message_type=message_type,
         status=new_status,
@@ -145,14 +161,14 @@ def create_message(message_properties: dict,
     return result
 
 
-def create_processing_message(message_id: str, msg: str):
+def create_processing_message(message_context_properties: dict, msg: str):
     """Create message with status of PROCESSING."""
-    return create_message(message_id, msg, MessageProcessing.Status.PROCESSING, None)
+    return create_message(message_context_properties, msg, MessageProcessing.Status.PROCESSING, None)
 
 
-def create_failed_message(message_id: str, msg: str, error_details: str):
+def create_failed_message(message_context_properties: dict, msg: str, error_details: str):
     """Create message with status of FAILED."""
-    return create_message(message_id, msg, MessageProcessing.Status.FAILED, error_details)
+    return create_message(message_context_properties, msg, MessageProcessing.Status.FAILED, error_details)
 
 
 def update_message_status_to_processing(msg: MessageProcessing):

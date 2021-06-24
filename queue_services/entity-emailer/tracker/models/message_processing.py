@@ -41,6 +41,7 @@ class MessageProcessing(db.Model):
     __tablename__ = 'message_processing'
 
     id = db.Column(db.Integer, primary_key=True)
+    source = db.Column(db.String(36), index=True)
     message_id = db.Column(db.String(36), unique=True, index=True)
     identifier = db.Column(db.String(36), index=True)
     message_type = db.Column(db.String(35), index=True)
@@ -63,8 +64,17 @@ class MessageProcessing(db.Model):
 
     @staticmethod
     def find_message_by_message_id(message_id: str):
-        """Return a MessageProcessing by identifier."""
+        """Return a MessageProcessing by message_id."""
         q = db.session.query(MessageProcessing).filter_by(message_id=message_id)
         result = q.one_or_none()
         return result
 
+
+    @staticmethod
+    def find_message_by_source_and_message_id(source: str, message_id: str):
+        """Return a MessageProcessing by source and message id."""
+        q = db.session.query(MessageProcessing)\
+            .filter_by(source=source,
+                       message_id=message_id)
+        result = q.one_or_none()
+        return result

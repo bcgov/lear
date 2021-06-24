@@ -27,6 +27,7 @@ class MessageProcessingService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_message(message_id: str,
+                       source: str,
                        identifier: str,
                        message_type: str,
                        status: MessageProcessing.Status,
@@ -36,6 +37,7 @@ class MessageProcessingService:  # pylint: disable=too-many-public-methods
         dt_now = datetime.datetime.utcnow()
         msg = MessageProcessing()
         msg.message_id = message_id
+        msg.source = source
         msg.identifier = identifier
         msg.message_type = message_type
         msg.status = status.value
@@ -97,3 +99,9 @@ class MessageProcessingService:  # pylint: disable=too-many-public-methods
         return msg
 
 
+    @staticmethod
+    def find_message_by_source_and_message_id(source: str, message_id: str) -> Optional[MessageProcessing]:
+        """Find MessageProcessing by source and message_id."""
+        msg = MessageProcessing.find_message_by_source_and_message_id(source=source, message_id=message_id)
+
+        return msg
