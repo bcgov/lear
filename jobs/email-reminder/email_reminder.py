@@ -88,7 +88,7 @@ async def send_email(business_id: int, ar_fee: str, ar_year: str, app: Flask, qs
         )
 
 
-def get_ar_fee(legal_type, token) -> str:
+def get_ar_fee(app: Flask, legal_type: str, token: str) -> str:
     """Get AR fee."""
     fee_url = app.config.get('PAYMENT_SVC_URL')
     filing_type_code = Filing.FILINGS['annualReport']['codes'].get(legal_type, None)
@@ -124,7 +124,7 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
         # get token
         token = AccountService.get_bearer_token()
         for legal_type in legal_types:
-            ar_fees[legal_type] = get_ar_fee(legal_type, token)
+            ar_fees[legal_type] = get_ar_fee(app, legal_type, token)
 
         app.logger.debug('Getting businesses to send AR reminder today')
         businesses = get_businesses(legal_types)
