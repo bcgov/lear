@@ -140,8 +140,8 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
 
 
 if __name__ == '__main__':
-    app = create_app()
-    with app.app_context():
+    application = create_app()
+    with application.app_context():
         event_loop = asyncio.get_event_loop()
-        qsm = QueueService(app=app, loop=event_loop)
-        event_loop.run_until_complete(find_and_send_ar_reminder(app, qsm))
+        queue_service = QueueService(app=application, loop=event_loop)
+        event_loop.run_until_complete(find_and_send_ar_reminder(application, queue_service))

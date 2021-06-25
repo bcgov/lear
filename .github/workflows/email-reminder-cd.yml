@@ -23,7 +23,7 @@ env:
   TAG_NAME: "dev"
 
 jobs:
-  update-legal-filings-cd-by-push:
+  email-reminder-cd-by-push:
     runs-on: ubuntu-20.04
 
     if: github.event_name == 'push' && github.repository == 'bcgov/lear'
