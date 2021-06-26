@@ -14,6 +14,7 @@
 """Validation for the Annual Report filing."""
 from http import HTTPStatus
 from typing import Dict, List, Tuple
+from datetime import timedelta
 
 from flask_babel import _
 
@@ -32,26 +33,25 @@ def requires_agm(business: Business) -> bool:
 
 def get_ar_dates(business: Business, start_date: datetime, next_ar_year):
     """Get ar min and max date for the specific year."""
-    check_agm = requires_agm(business)
     ar_min_date = datetime(next_ar_year, 1, 1).date()
-
-    # Make sure min date is greater than or equal to last_ar_date or founding_date
-    ar_min_date = max(ar_min_date, start_date)
-
     ar_max_date = datetime(next_ar_year, 12, 31).date()
 
-    if check_agm:  # If this is a CO-OP
+    if business.legal_type == business.LegalTypes.COOP.value:
+        # Make sure min date is greater than or equal to last_ar_date or founding_date
+        ar_min_date = max(ar_min_date, start_date)
+
         # This could extend by moving it into a table with start and end date against each year when extension
         # is required. We need more discussion to understand different scenario's which can come across in future.
         if next_ar_year == 2020:
             # For year 2020, set the max date as October 31th next year (COVID extension).
-            ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
+            ar_max_date = datetime(next_ar_year, 10, 31).date()
         else:
             # If this is a CO-OP, set the max date as April 30th next year.
-            ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-
-    if ar_max_date > datetime.utcnow().date():
-        ar_max_date = datetime.utcnow().date()
+            ar_max_date = datetime(next_ar_year, 4, 30).date()
+    elif business.legal_type == business.LegalTypes.BCOMP.value:
+        # For BCOMP min date is next anniversary date.
+        ar_min_date = business.next_anniversary.date()
+        ar_max_date = ar_min_date + timedelta(days=60)
 
     return ar_min_date, ar_max_date
 

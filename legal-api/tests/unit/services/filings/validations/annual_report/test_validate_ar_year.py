@@ -22,6 +22,8 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.filings.validations.annual_report import validate_ar_year
+from legal_api.services.filings.validations.annual_report import get_ar_dates
+from tests.unit.models import factory_business
 
 
 @pytest.mark.parametrize('test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg', [
@@ -78,3 +80,17 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
     else:
         assert err.code == expected_code
         assert err.msg == expected_msg
+
+
+@pytest.mark.parametrize('test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date', [
+    ('BCOMP', 'BC1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.BCOMP.value, '2022-03-03', '2022-05-02'),
+    ('COOP', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),    
+])
+def test_ar_dates(app, session, test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date):
+    """Assert min and max dates for Annual Report are correct."""
+    # setup
+    business = factory_business(identifier, datetime.fromisoformat(founding_date), datetime.fromisoformat(previous_ar_date), legal_type)
+    ar_min_date, ar_max_date = get_ar_dates(business, datetime(2022, 1, 1).date(), 2022)
+    
+    assert ar_max_date.isoformat() == expected_ar_max_date
+    assert ar_min_date.isoformat() == expected_ar_min_date
