@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Annual Report filing."""
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict, List, Tuple
-from datetime import timedelta
 
 from flask_babel import _
 
