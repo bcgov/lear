@@ -15,4 +15,4 @@
 from .validations.validation import validate
 
 
-__all__ = ('validate')
+__all__ = ('validate') # pylint: disable=E0605
