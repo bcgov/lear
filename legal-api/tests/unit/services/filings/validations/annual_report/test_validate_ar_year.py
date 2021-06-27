@@ -84,7 +84,8 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
 
 @pytest.mark.parametrize('test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date', [
     ('BCOMP', 'BC1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.BCOMP.value, '2022-03-03', '2022-05-02'),
-    ('COOP', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),    
+    ('COOP last AR issued in due time', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),
+    ('COOP last AR issued overdue', 'CP1234567', '1900-07-01', '2021-11-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),    
 ])
 def test_ar_dates(app, session, test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date):
     """Assert min and max dates for Annual Report are correct."""

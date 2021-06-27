@@ -37,9 +37,6 @@ def get_ar_dates(business: Business, start_date: datetime, next_ar_year):
     ar_max_date = datetime(next_ar_year, 12, 31).date()
 
     if business.legal_type == business.LegalTypes.COOP.value:
-        # Make sure min date is greater than or equal to last_ar_date or founding_date
-        ar_min_date = max(ar_min_date, start_date)
-
         # This could extend by moving it into a table with start and end date against each year when extension
         # is required. We need more discussion to understand different scenario's which can come across in future.
         if next_ar_year == 2020:
@@ -50,7 +47,7 @@ def get_ar_dates(business: Business, start_date: datetime, next_ar_year):
             ar_max_date = datetime(next_ar_year, 4, 30).date()
     elif business.legal_type == business.LegalTypes.BCOMP.value:
         # For BCOMP min date is next anniversary date.
-        ar_min_date = business.next_anniversary.date()
+        ar_min_date = datetime(next_ar_year, business.next_anniversary.month, business.next_anniversary.day).date()
         ar_max_date = ar_min_date + timedelta(days=60)
 
     return ar_min_date, ar_max_date
