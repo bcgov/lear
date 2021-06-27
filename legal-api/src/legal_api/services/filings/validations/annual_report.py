@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Annual Report filing."""
-from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict, List, Tuple
 
@@ -21,7 +20,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_date
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import datetime, timedelta
 
 
 def requires_agm(business: Business) -> bool:
@@ -31,7 +30,7 @@ def requires_agm(business: Business) -> bool:
     return business.legal_type in agm_arr
 
 
-def get_ar_dates(business: Business, start_date: datetime, next_ar_year):
+def get_ar_dates(business: Business, next_ar_year):
     """Get ar min and max date for the specific year."""
     ar_min_date = datetime(next_ar_year, 1, 1).date()
     ar_max_date = datetime(next_ar_year, 12, 31).date()
@@ -89,10 +88,8 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
                        'path': 'filing/annualReport/annualReportDate'}])
 
     # The AR Date cannot be before the last AR Filed
-    # or in or before the foundingDate
     next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
-    start_date = (business.last_ar_date if business.last_ar_date else business.founding_date).date()
-    ar_min_date, ar_max_date = get_ar_dates(business, start_date, next_ar_year)
+    ar_min_date, ar_max_date = get_ar_dates(business, next_ar_year)
 
     if ar_date < ar_min_date:
         return Error(HTTPStatus.BAD_REQUEST,

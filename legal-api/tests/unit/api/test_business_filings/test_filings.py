@@ -18,7 +18,6 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 from typing import Final
 
@@ -242,7 +241,7 @@ def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier,
-                     founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -263,7 +262,7 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     identifier = 'CP7654321'
     factory_business(identifier,
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date(),
-                     founding_date=(datetime.utcnow() - relativedelta(years=2))  # founding date = 2 years ago
+                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
@@ -330,7 +329,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier,
-                     founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -479,7 +478,7 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)
@@ -743,7 +742,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)
@@ -767,7 +766,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)
@@ -829,7 +828,7 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
     identifier = 'CP7654399'
     b = business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - relativedelta(years=2)),
+                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)

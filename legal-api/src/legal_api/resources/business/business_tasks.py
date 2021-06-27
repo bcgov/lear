@@ -137,16 +137,14 @@ class TaskListResource(Resource):
 
         # If this is the first calendar year since incorporation, there is no previous ar year.
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
-        start_date = (business.last_ar_date if business.last_ar_date else business.founding_date).date()
 
         # Checking for pending ar
         annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)
-            start_date = datetime(next_ar_year, 1, 1).date()
 
-        ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
+        ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, next_ar_year)
 
         start_year = next_ar_year
         while ar_min_date <= datetime.utcnow().date():
@@ -156,8 +154,7 @@ class TaskListResource(Resource):
 
             # Include all ar's to todo from last ar filing
             next_ar_year += 1
-            start_date = datetime(next_ar_year, 1, 1).date()
-            ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, start_date, next_ar_year)
+            ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, next_ar_year)
             order += 1
         return tasks
 
