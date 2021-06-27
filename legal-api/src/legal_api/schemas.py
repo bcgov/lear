@@ -18,4 +18,4 @@ from registry_schemas.flask import SchemaServices
 
 rsbc_schemas = SchemaServices()  # pylint: disable=invalid-name
 
-__all__ = ('rsbc_schemas') # pylint: disable=E0605
+__all__ = ('rsbc_schemas',)

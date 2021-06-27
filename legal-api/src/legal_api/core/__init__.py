@@ -20,4 +20,4 @@ from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, O
 from .filing import Filing
 
 
-__all__ = ('Filing') # pylint: disable=E0605
+__all__ = ('Filing',)

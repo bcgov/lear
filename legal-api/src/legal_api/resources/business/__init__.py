@@ -29,4 +29,4 @@ from .filing_comments import CommentResource
 from .internal_services import InternalBusinessResource
 
 
-__all__ = ('API') # pylint: disable=E0605
+__all__ = ('API',)
