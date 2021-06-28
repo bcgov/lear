@@ -731,7 +731,7 @@ class ListFilingResource(Resource):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)
                 filing.save()
 
-        elif business.legal_type != 'CP':
+        elif business.legal_type != Business.LegalTypes.COOP.value:
             if filing_type == 'changeOfAddress':
                 effective_date = LegislationDatetime.tomorrow_midnight()
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date

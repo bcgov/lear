@@ -26,7 +26,7 @@ from legal_api.utils.datetime import datetime
 def requires_agm(business: Business) -> bool:
     """Determine if AGM validation is required for AR."""
     # FUTURE: This is not dynamic enough
-    agm_arr = ['CP', 'XP']
+    agm_arr = [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
     return business.legal_type in agm_arr
 
 
