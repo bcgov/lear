@@ -45,12 +45,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
+    # NB: commented out items that exist in namex but are not yet supported by Lear
     class LegalTypes(Enum):
         """Render an Enum of the Business Legal Types."""
 
-        COOP = 'CP'
-        BCOMP = 'BEN'
-        COMP = 'BC'
+        COOP = 'CP'  # aka COOPERATIVE in namex
+        BCOMP = 'BEN'  # aka BENEFIT_COMPANY in namex
+        COMP = 'BC'  # aka CORPORATION in namex
         CONTINUE_IN = 'C'
         CO_1860 = 'QA'
         CO_1862 = 'QB'
@@ -94,6 +95,20 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         MISC_FIRM = 'MF'
         FINANCIAL = 'FI'
         CONT_IN_SOCIETY = 'CS'
+        # UNLIMITED_LIABILITY_COMPANY = 'UL'
+        # SOLE_PROPRIETORSHIP = 'FR'
+        # GENERAL_PARTNERSHIP = 'GP'
+        # DOING_BUSINESS_AS = 'DBA'
+        # LIMITED_PARTNERSHIP = 'LP'
+        # LIMITED_LIABILITY_PARTNERSHIP = 'LL'
+        # COMMUNITY_CONTRIBUTION_COMPANY = 'CC'
+        # XPRO_CORPORATION = 'XCR'
+        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
+        # XPRO_LIMITED_LIABILITY_COMPANY = 'RLC'
+        # XPRO_LIMITED_PARTNERSHIP = 'XLP'
+        # XPRO_LIMITED_LIABILITY_PARTNERSHIP = 'XLL'
+        # XPRO_COOPERATIVE = 'XCP'
+        # FIRM = 'FIRM'
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,
