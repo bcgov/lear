@@ -83,7 +83,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     contacts = contact_info.json()['contacts']
 
     if not contacts:
-        logger.error('Queue Error: No email in business profile to send output to.', exc_info=True)
+        logger.error('Queue Error: No email in business ({identifier}) profile to send output to.', exc_info=True)
         raise Exception
 
     return contacts[0]['email']
