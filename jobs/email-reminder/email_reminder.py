@@ -108,8 +108,7 @@ def get_businesses(legal_types: list):
         'CASE WHEN last_ar_year IS NULL' +
         " THEN date(founding_date) + interval '1 year' ELSE" +
         ' date(founding_date) + MAKE_INTERVAL(YEARS := last_ar_year - EXTRACT(YEAR FROM founding_date)::INTEGER)' +
-        # ' END = CURRENT_DATE')
-        " END = '2021-11-02'")
+        ' END = CURRENT_DATE')
     return db.session.query(Business).filter(
         Business.legal_type.in_(legal_types), where_clause
     ).all()
