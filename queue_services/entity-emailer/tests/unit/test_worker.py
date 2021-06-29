@@ -83,19 +83,18 @@ def test_maintenance_notification(app, session, status, filing_type):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-              as mock_get_recipients:
+                    as mock_get_recipients:
                 with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                     worker.process_email(
                         {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
 
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
-                    assert mock_get_pdfs.call_args[0][2] == \
-                        {
-                            'identifier': 'BC1234567',
-                            'legalype': Business.LegalTypes.BCOMP.value,
-                            'legalName': 'test business'
-                        }
+                    assert mock_get_pdfs.call_args[0][2] == {
+                        'identifier': 'BC1234567',
+                        'legalype': Business.LegalTypes.BCOMP.value,
+                        'legalName': 'test business'
+                    }
                     assert mock_get_pdfs.call_args[0][3] == filing
                     assert mock_get_recipients.call_args[0][0] == status
                     assert mock_get_recipients.call_args[0][1] == filing.filing_json
@@ -164,7 +163,7 @@ def test_process_ar_reminder_email(app, session):
                 worker.process_email({'email': {
                     'businessId': filing.business_id,
                     'type': 'annualReport', 'option': 'reminder',
-                    'arFee': '100', 'arYear': 2021
+                    'arFee': '100', 'arYear': '2021'
                 }}, app)
 
                 call_args = mock_send_email.call_args
