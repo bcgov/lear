@@ -63,6 +63,10 @@ jobs:
       NATS_FILER_SUBJECT: entity.email
       NATS_QUEUE: entity-email-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
+      TEMPLATE_PATH: /home/runner/work/lear/lear/queue_services/entity-emailer/src/entity_emailer/email_templates
+      DASHBOARD_URL: https://dev.bcregistry.ca/businesses/
+      TEST_NATS_DOCKER: True
+      STAN_CLUSTER_NAME: test-cluster
 
     runs-on: ubuntu-20.04
 
