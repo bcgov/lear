@@ -45,16 +45,16 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             return create_message_context_properties(etype, message_id, source, identifier, True)
 
         if etype == 'bc.registry.affiliation' \
-            and (identifier := email_msg.get('data', {}) \
-                                    .get('filing', {}) \
-                                    .get('business', {}) \
-                                    .get('identifier', None)):
+                and (identifier := email_msg.get('data', {})
+                     .get('filing', {})
+                     .get('business', {})
+                     .get('identifier', None)):
             filing_id = email_msg.get('data', {}) \
                                     .get('filing', {}) \
                                     .get('header', {}) \
                                     .get('filingId', None)
             message_id = f'{etype}_{filing_id}'
-        return create_message_context_properties(etype, message_id, None, identifier, False)
+            return create_message_context_properties(etype, message_id, None, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
@@ -66,14 +66,16 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             message_id = f'{etype}_{identifier}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
 
-        elif etype == 'incorporationApplication' \
+        # pylint: disable=used-before-assignment
+        if etype == 'incorporationApplication' \
                 and (option := email.get('option', None)) \
                 and option == 'mras' \
                 and (filing_id := email.get('filingId', None)):
             message_id = f'{etype}_{option}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
-        elif etype == 'annualReport' \
+        # pylint: disable=used-before-assignment
+        if etype == 'annualReport' \
                 and (option := email.get('option', None)) \
                 and option == 'reminder' \
                 and (ar_year := email.get('arYear', None)) \
@@ -81,11 +83,12 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             message_id = f'{etype}_{option}_{ar_year}_{business_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
-    if etype in filing_notification.FILING_TYPE_CONVERTER.keys() \
-            and (filing_id := email.get('filingId', None)):
-            identifier = email.get('filing', {})\
-                                    .get('business', {})\
-                                    .get('identifier', None)
+        if etype in filing_notification.FILING_TYPE_CONVERTER.keys() \
+                and (filing_id := email.get('filingId', None)):
+            identifier = \
+                    email.get('filing', {}) \
+                         .get('business', {}) \
+                         .get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
 
