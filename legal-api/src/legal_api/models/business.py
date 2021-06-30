@@ -97,17 +97,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         CONT_IN_SOCIETY = 'CS'
         # UNLIMITED_LIABILITY_COMPANY = 'UL'
         # SOLE_PROPRIETORSHIP = 'FR'
-        # GENERAL_PARTNERSHIP = 'GP'
         # DOING_BUSINESS_AS = 'DBA'
-        # LIMITED_PARTNERSHIP = 'LP'
-        # LIMITED_LIABILITY_PARTNERSHIP = 'LL'
-        # COMMUNITY_CONTRIBUTION_COMPANY = 'CC'
         # XPRO_CORPORATION = 'XCR'
         # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
         # XPRO_LIMITED_LIABILITY_COMPANY = 'RLC'
         # XPRO_LIMITED_PARTNERSHIP = 'XLP'
         # XPRO_LIMITED_LIABILITY_PARTNERSHIP = 'XLL'
-        # XPRO_COOPERATIVE = 'XCP'
         # FIRM = 'FIRM'
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
