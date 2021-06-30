@@ -45,9 +45,9 @@ class RequestActions(Enum):
 
 @API.route('', methods=['GET'])
 @API.doc(params={
-    'nrType': {'description': 'Optional NR Type code.', 'example': 'CR'},
-    'entityType': {'description': 'Optional Entity Type code.', 'example': 'BC'},
-    'RequestActions': {'description': 'Optional Request Action code.', 'example': 'NEW'}
+    'nrTypeCd': {'description': 'Optional NR Type code.', 'example': 'CR'},
+    'entityTypeCd': {'description': 'Optional Entity Type code.', 'example': 'BC'},
+    'requestActionCd': {'description': 'Optional Request Action code.', 'example': 'NEW'}
 })
 class NrTypeMap(Resource):
     """NR Type mapping service."""
