@@ -26,7 +26,6 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
     """Get key message properties from a queue message."""
     # todo update this code to just use the cloud event message id when all
     #  publishers are publishing to emailer queue with cloud event format
-    raw_message_id = str(queue_msg.sequence)
     email_msg = json.loads(queue_msg.data.decode('utf-8'))
     etype = email_msg.get('type', None)
 
@@ -45,29 +44,50 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             identifier = email_msg.get('identifier', None)
             return create_message_context_properties(etype, message_id, source, identifier, True)
 
-        if etype == 'bc.registry.affiliation':
-            identifier = email_msg.get('filing', {})\
-                                    .get('business', {})\
-                                    .get('identifier', None)
-            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
+        if etype == 'bc.registry.affiliation' \
+            and (identifier := email_msg.get('data', {}) \
+                                    .get('filing', {}) \
+                                    .get('business', {}) \
+                                    .get('identifier', None)):
+            filing_id = email_msg.get('data', {}) \
+                                    .get('filing', {}) \
+                                    .get('header', {}) \
+                                    .get('filingId', None)
+            message_id = f'{etype}_{filing_id}'
+        return create_message_context_properties(etype, message_id, None, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
         if not email or not etype:
             return message_context_properties
 
-        if etype == 'businessNumber':
-            identifier = email.get('identifier', None)
-            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
+        if etype == 'businessNumber' \
+                and (identifier := email.get('identifier', None)):
+            message_id = f'{etype}_{identifier}'
+            return create_message_context_properties(etype, message_id, None, identifier, False)
 
-        if etype == 'incorporationApplication':
-            return create_message_context_properties(etype, raw_message_id, None, None, False)
+        elif etype == 'incorporationApplication' \
+                and (option := email.get('option', None)) \
+                and option == 'mras' \
+                and (filing_id := email.get('filingId', None)):
+            message_id = f'{etype}_{option}_{filing_id}'
+            return create_message_context_properties(etype, message_id, None, None, False)
 
-        if etype in filing_notification.FILING_TYPE_CONVERTER.keys():
+        elif etype == 'annualReport' \
+                and (option := email.get('option', None)) \
+                and option == 'reminder' \
+                and (ar_year := email.get('arYear', None)) \
+                and (business_id := email.get('businessId', None)):
+            message_id = f'{etype}_{option}_{ar_year}_{business_id}'
+            return create_message_context_properties(etype, message_id, None, None, False)
+
+    if etype in filing_notification.FILING_TYPE_CONVERTER.keys() \
+            and (filing_id := email.get('filingId', None)):
             identifier = email.get('filing', {})\
-                                .get('business', {})\
-                                .get('identifier', None)
-            return create_message_context_properties(etype, raw_message_id, None, identifier, False)
+                                    .get('business', {})\
+                                    .get('identifier', None)
+            message_id = f'{etype}_{filing_id}'
+            return create_message_context_properties(etype, message_id, None, identifier, False)
 
     return message_context_properties
 
@@ -125,6 +145,9 @@ def mark_tracking_message_as_failed(message_context_properties: dict,
                                     existing_tracker_msg: MessageProcessing,
                                     error_details: str):
     """Create a new message with FAILED status or update an existing message to FAILED status."""
+    if error_details and len(error_details) > 1000:
+        error_details = error_details[:1000]
+
     if existing_tracker_msg \
             and existing_tracker_msg.status == MessageProcessing.Status.PROCESSING.value:
         return update_message_status_to_failed(existing_tracker_msg, error_details)
