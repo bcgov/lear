@@ -95,15 +95,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         MISC_FIRM = 'MF'
         FINANCIAL = 'FI'
         CONT_IN_SOCIETY = 'CS'
-        # UNLIMITED_LIABILITY_COMPANY = 'UL'
-        # SOLE_PROPRIETORSHIP = 'FR'
+        # *** The following are not yet supported by legal-api: ***
         # DOING_BUSINESS_AS = 'DBA'
         # XPRO_CORPORATION = 'XCR'
         # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
-        # XPRO_LIMITED_LIABILITY_COMPANY = 'RLC'
-        # XPRO_LIMITED_PARTNERSHIP = 'XLP'
-        # XPRO_LIMITED_LIABILITY_PARTNERSHIP = 'XLL'
-        # FIRM = 'FIRM'
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,

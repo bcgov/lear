@@ -41,21 +41,20 @@ BC_RESULTS = [
 NEW_RESULTS = [
     {'nrTypeCd': 'CR', 'entityTypeCd': 'BC', 'requestActionCd': 'NEW'},
     # {'nrTypeCd': 'XCR', 'entityTypeCd': 'XCR', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'LC', 'entityTypeCd': 'RLC', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'FR', 'entityTypeCd': 'FIRM', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'FR', 'entityTypeCd': 'FR', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'FR', 'entityTypeCd': 'DBA', 'requestActionCd': 'NEW'},
+    {'nrTypeCd': 'LC', 'entityTypeCd': 'XL', 'requestActionCd': 'NEW'},
+    {'nrTypeCd': 'FR', 'entityTypeCd': 'SP', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'FR', 'entityTypeCd': 'GP', 'requestActionCd': 'NEW'},
+    # {'nrTypeCd': 'FR', 'entityTypeCd': 'DBA', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'LL', 'entityTypeCd': 'LL', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'XLL', 'entityTypeCd': 'XLL', 'requestActionCd': 'NEW'},
+    {'nrTypeCd': 'XLL', 'entityTypeCd': 'XL', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'LP', 'entityTypeCd': 'LP', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'XLP', 'entityTypeCd': 'XLP', 'requestActionCd': 'NEW'},
+    {'nrTypeCd': 'XLP', 'entityTypeCd': 'XP', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'SO', 'entityTypeCd': 'S', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'XSO', 'entityTypeCd': 'XS', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'CP', 'entityTypeCd': 'CP', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'XCP', 'entityTypeCd': 'XCP', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'CC', 'entityTypeCd': 'CC', 'requestActionCd': 'NEW'},
-    # {'nrTypeCd': 'UL', 'entityTypeCd': 'UL', 'requestActionCd': 'NEW'},
+    {'nrTypeCd': 'UL', 'entityTypeCd': 'ULC', 'requestActionCd': 'NEW'},
     # {'nrTypeCd': 'XUL', 'entityTypeCd': 'XUL', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'FI', 'entityTypeCd': 'FI', 'requestActionCd': 'NEW'},
     {'nrTypeCd': 'PA', 'entityTypeCd': 'PA', 'requestActionCd': 'NEW'},
@@ -69,7 +68,7 @@ CR_BC_NEW_RESULTS = [
 
 
 @pytest.mark.parametrize('params, results, num_results', [
-    ('', None, 69),  # no parameters (all results)
+    ('', None, 89),  # no parameters (all results)
     ('?nrTypeCd=CR', CR_RESULTS, None),  # NR Type Code "CR" only
     ('?entityTypeCd=BC', BC_RESULTS, None),  # Entity Type Code "BC" only
     ('?requestActionCd=NEW', NEW_RESULTS, None),  # Request Action Code "NEW" only
