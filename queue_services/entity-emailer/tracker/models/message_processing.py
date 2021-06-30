@@ -42,7 +42,7 @@ class MessageProcessing(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(36), index=True)
-    message_id = db.Column(db.String(36), unique=True, index=True)
+    message_id = db.Column(db.String(60), unique=True, index=True)
     identifier = db.Column(db.String(36), index=True)
     message_type = db.Column(db.String(35), index=True)
     status = db.Column(db.String(10), index=True)

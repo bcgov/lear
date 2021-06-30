@@ -21,7 +21,7 @@ def upgrade():
     op.create_table('message_processing',
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('source', sa.String(length=36), nullable=True),
-                    sa.Column('message_id', sa.String(length=36), nullable=False),
+                    sa.Column('message_id', sa.String(length=60), nullable=False),
                     sa.Column('identifier', sa.String(length=36), nullable=True),
                     sa.Column('message_type', sa.String(length=35), nullable=False),
                     sa.Column('status', sa.String(length=10), nullable=False),
