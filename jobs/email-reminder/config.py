@@ -52,7 +52,7 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
 
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', None)
+    PAYMENT_SVC_FEES_URL = os.getenv('PAYMENT_SVC_FEES_URL', None)
 
     NATS_SERVERS = os.getenv('NATS_SERVERS', None)
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)

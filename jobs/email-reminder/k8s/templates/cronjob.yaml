@@ -42,11 +42,11 @@ objects:
                   - -c
                   - cd /opt/app-root; ./run.sh
                 env:
-                  - name: PAYMENT_SVC_URL
+                  - name: PAYMENT_SVC_FEES_URL
                     valueFrom:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
-                        key: PAYMENT_SVC_URL
+                        key: PAYMENT_SVC_FEES_URL
                   - name: SENTRY_DSN
                     valueFrom:
                       secretKeyRef:
@@ -156,7 +156,7 @@ parameters:
   - name: "SCHEDULE"
     displayName: "Cron Schedule"
     description: "Cron Schedule to Execute the Job (using local cluster system TZ)"
-    value: "0 0 7 * * ?"
+    value: "0 7 * * *"
     required: true
 
   - name: "SUCCESS_JOBS_HISTORY_LIMIT"
