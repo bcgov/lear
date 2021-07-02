@@ -9,11 +9,11 @@
         "vault": "entity",
         "application": [
             "postgres-legal",
-            "email-reminder",
             "filings-jobs",
             "nats-emailer",
             "entity-service-account",
-            "sentry"
+            "sentry",
+            "email-reminder"
         ]
     }
 ]
