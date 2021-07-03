@@ -249,9 +249,11 @@ def test_business_json(session):
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
-        'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR).isoformat(),
+        'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
-        'goodStanding': False  # good standing will be false because the epoch is 1970
+        'goodStanding': False,  # good standing will be false because the epoch is 1970
+        'arMinDate': '1971-01-01',
+        'arMaxDate': '1971-04-30'
     }
 
     assert business.json() == d
