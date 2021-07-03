@@ -240,7 +240,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
-        ar_min_date, ar_max_date = self.get_ar_dates((self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1)
+        ar_min_date, ar_max_date = self.get_ar_dates(
+                                    (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+                                   )
         d = {
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
