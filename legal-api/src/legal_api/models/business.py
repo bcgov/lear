@@ -229,12 +229,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             self.save()
         return self
 
-    def get_min_ar_datetime(self):
-        """Get min annual report datetime in UTC time."""
-        ar_min_date = self.get_ar_dates((self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1)[0]
-        ar_min_datetime = datetime(ar_min_date.year, ar_min_date.month, ar_min_date.day)
-        return ar_min_datetime.astimezone(timezone.utc)
-
     def json(self):
         """Return the Business as a json object.
 
@@ -248,7 +242,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.get_min_ar_datetime().isoformat(),
+            'nextAnnualReport': datetime.from_date(ar_min_date).astimezone(timezone.utc).isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
