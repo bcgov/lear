@@ -55,7 +55,7 @@ ALTER TABLE public.alembic_version OWNER TO "userA7C";
 CREATE TABLE public.message_processing (
                                            id integer NOT NULL,
                                            source character varying(36),
-                                           message_id character varying(36) NOT NULL,
+                                           message_id character varying(60) NOT NULL,
                                            identifier character varying(36),
                                            message_type character varying(35) NOT NULL,
                                            status character varying(10) NOT NULL,
