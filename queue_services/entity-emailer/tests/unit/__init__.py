@@ -13,6 +13,9 @@
 # limitations under the License.
 """The Unit Tests and the helper routines."""
 import copy
+import json
+from random import randrange
+from unittest.mock import Mock
 
 from legal_api.models import Business, Filing
 from registry_schemas.example_data import (
@@ -137,3 +140,26 @@ def prep_incorporation_correction_filing(session, business, original_filing_id, 
         filing.transaction_id = transaction.id
         filing.save()
     return filing
+
+
+class Obj:
+    """Make a custom object hook used by dict_to_obj."""
+
+    def __init__(self, dict1):
+        """Create instance of obj."""
+        self.__dict__.update(dict1)
+
+
+def dict_to_obj(dict1):
+    """Convert dict to an object."""
+    return json.loads(json.dumps(dict1), object_hook=Obj)
+
+
+def create_mock_message(message_payload: dict):
+    """Return a mock message that can be processed by the queue listener."""
+    mock_msg = Mock()
+    mock_msg.sequence = randrange(1000)
+    mock_msg.data = dict_to_obj(message_payload)
+    json_msg_payload = json.dumps(message_payload)
+    mock_msg.data.decode = Mock(return_value=json_msg_payload)
+    return mock_msg
