@@ -45,14 +45,11 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             return create_message_context_properties(etype, message_id, source, identifier, True)
 
         if etype == 'bc.registry.affiliation' \
-                and (identifier := email_msg.get('data', {})
-                     .get('filing', {})
-                     .get('business', {})
-                     .get('identifier', None)):
-            filing_id = email_msg.get('data', {}) \
-                                    .get('filing', {}) \
-                                    .get('header', {}) \
-                                    .get('filingId', None)
+            and (filing_id := email_msg.get('data', {})
+                 .get('filing', {})
+                 .get('header', {})
+                 .get('filingId', None)):
+            identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
     else:
@@ -85,12 +82,8 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
 
         if etype in filing_notification.FILING_TYPE_CONVERTER.keys() \
                 and (filing_id := email.get('filingId', None)):
-            identifier = \
-                    email.get('filing', {}) \
-                         .get('business', {}) \
-                         .get('identifier', None)
             message_id = f'{etype}_{filing_id}'
-            return create_message_context_properties(etype, message_id, None, identifier, False)
+            return create_message_context_properties(etype, message_id, None, None, False)
 
     return message_context_properties
 

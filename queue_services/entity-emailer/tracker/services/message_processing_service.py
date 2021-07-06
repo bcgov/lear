@@ -42,6 +42,8 @@ class MessageProcessingService:  # pylint: disable=too-many-public-methods
         msg.message_type = message_type
         msg.status = status.value
         msg.message_json = message_json
+        msg.message_seen_count = seen_count
+        msg.last_error = last_error
         msg.create_date = dt_now
         msg.last_update = dt_now
         msg.save()
