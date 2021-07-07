@@ -22,7 +22,6 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.filings.validations.annual_report import validate_ar_year
-from legal_api.services.filings.validations.annual_report import get_ar_dates
 from tests.unit.models import factory_business
 
 
@@ -94,7 +93,7 @@ def test_ar_dates(app, session, test_name, identifier, founding_date, previous_a
     # setup
     previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
     business = factory_business(identifier, datetime.fromisoformat(founding_date), previous_ar_datetime, legal_type)
-    ar_min_date, ar_max_date = get_ar_dates(business, 2022)
+    ar_min_date, ar_max_date = business.get_ar_dates(2022)
     
     assert ar_min_date.isoformat() == expected_ar_min_date
     assert ar_max_date.isoformat() == expected_ar_max_date
