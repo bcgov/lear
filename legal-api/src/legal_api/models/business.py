@@ -24,7 +24,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import datetime, timezone
 
 from .db import db  # noqa: I001
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -169,6 +169,27 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         return last_anniversary + datedelta.datedelta(years=1)
 
+    def get_ar_dates(self, next_ar_year):
+        """Get ar min and max date for the specific year."""
+        ar_min_date = datetime(next_ar_year, 1, 1).date()
+        ar_max_date = datetime(next_ar_year, 12, 31).date()
+
+        if self.legal_type == self.LegalTypes.COOP.value:
+            # This could extend by moving it into a table with start and end date against each year when extension
+            # is required. We need more discussion to understand different scenario's which can come across in future.
+            if next_ar_year == 2020:
+                # For year 2020, set the max date as October 31th next year (COVID extension).
+                ar_max_date = datetime(next_ar_year, 10, 31).date()
+            else:
+                # If this is a CO-OP, set the max date as April 30th next year.
+                ar_max_date = datetime(next_ar_year, 4, 30).date()
+        elif self.legal_type == self.LegalTypes.BCOMP.value:
+            # For BCOMP min date is next anniversary date.
+            ar_min_date = datetime(next_ar_year, self.next_anniversary.month, self.next_anniversary.day).date()
+            ar_max_date = ar_min_date + datedelta.datedelta(days=60)
+
+        return ar_min_date, ar_max_date
+
     @property
     def mailing_address(self):
         """Return the mailing address."""
@@ -218,18 +239,23 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
+        ar_min_date, ar_max_date = self.get_ar_dates(
+                                    (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+                                   )
         d = {
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.next_anniversary.isoformat(),
+            'nextAnnualReport': datetime.from_date(ar_min_date).astimezone(timezone.utc).isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
             'hasRestrictions': self.restriction_ind,
-            'goodStanding': self.good_standing
+            'goodStanding': self.good_standing,
+            'arMinDate': ar_min_date.isoformat(),
+            'arMaxDate': ar_max_date.isoformat()
         }
         # if self.last_remote_ledger_timestamp:
         #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one

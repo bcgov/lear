@@ -26,7 +26,6 @@ from flask_restx import Resource, cors
 
 from legal_api.models import Business, Filing
 from legal_api.services import namex
-from legal_api.services.filings import validations
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -144,17 +143,17 @@ class TaskListResource(Resource):
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)
 
-        ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, next_ar_year)
+        ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
         start_year = next_ar_year
-        while ar_min_date <= datetime.utcnow().date():
+        while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
             # while next_ar_year <= datetime.utcnow().date():
             enabled = not pending_filings and ar_min_date.year == start_year
             tasks.append(TaskListResource.create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
 
             # Include all ar's to todo from last ar filing
             next_ar_year += 1
-            ar_min_date, ar_max_date = validations.annual_report.get_ar_dates(business, next_ar_year)
+            ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
             order += 1
         return tasks
 

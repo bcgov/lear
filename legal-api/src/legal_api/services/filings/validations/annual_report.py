@@ -20,7 +20,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_date
-from legal_api.utils.datetime import datetime, timedelta
+from legal_api.utils.datetime import datetime
 
 
 def requires_agm(business: Business) -> bool:
@@ -28,28 +28,6 @@ def requires_agm(business: Business) -> bool:
     # FUTURE: This is not dynamic enough
     agm_arr = [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
     return business.legal_type in agm_arr
-
-
-def get_ar_dates(business: Business, next_ar_year):
-    """Get ar min and max date for the specific year."""
-    ar_min_date = datetime(next_ar_year, 1, 1).date()
-    ar_max_date = datetime(next_ar_year, 12, 31).date()
-
-    if business.legal_type == business.LegalTypes.COOP.value:
-        # This could extend by moving it into a table with start and end date against each year when extension
-        # is required. We need more discussion to understand different scenario's which can come across in future.
-        if next_ar_year == 2020:
-            # For year 2020, set the max date as October 31th next year (COVID extension).
-            ar_max_date = datetime(next_ar_year, 10, 31).date()
-        else:
-            # If this is a CO-OP, set the max date as April 30th next year.
-            ar_max_date = datetime(next_ar_year, 4, 30).date()
-    elif business.legal_type == business.LegalTypes.BCOMP.value:
-        # For BCOMP min date is next anniversary date.
-        ar_min_date = datetime(next_ar_year, business.next_anniversary.month, business.next_anniversary.day).date()
-        ar_max_date = ar_min_date + timedelta(days=60)
-
-    return ar_min_date, ar_max_date
 
 
 def validate(business: Business, annual_report: Dict) -> Error:
@@ -89,7 +67,7 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
 
     # The AR Date cannot be before the last AR Filed
     next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
-    ar_min_date, ar_max_date = get_ar_dates(business, next_ar_year)
+    ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
     if ar_date < ar_min_date:
         return Error(HTTPStatus.BAD_REQUEST,
