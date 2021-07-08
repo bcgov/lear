@@ -16,11 +16,12 @@
 import time as _time
 from datetime import date, datetime as _datetime, timezone, \
     timedelta  # pylint: disable=unused-import # noqa: F401, I001, I005
-from dateutil.tz import gettz
 # noqa: I003,I005
+from dateutil.tz import gettz
 
 
 PACIFIC_TZ = gettz('America/Vancouver')
+
 
 class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
