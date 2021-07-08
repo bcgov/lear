@@ -16,8 +16,11 @@
 import time as _time
 from datetime import date, datetime as _datetime, timezone, \
     timedelta  # pylint: disable=unused-import # noqa: F401, I001, I005
+from dateutil.tz import gettz
 # noqa: I003,I005
 
+
+PACIFIC_TZ = gettz('America/Vancouver')
 
 class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
@@ -30,5 +33,5 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
 
     @classmethod
     def from_date(cls, date_obj):
-        """Get a datetime object from a date object."""
-        return datetime(date_obj.year, date_obj.month, date_obj.day)
+        """Get a datetime object from a date object and localize it to Pacific time."""
+        return datetime(date_obj.year, date_obj.month, date_obj.day, tzinfo=PACIFIC_TZ)
