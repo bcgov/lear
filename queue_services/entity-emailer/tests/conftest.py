@@ -24,7 +24,7 @@ from flask import Flask
 from flask_migrate import Migrate, upgrade
 from entity_emailer.config import get_named_config  # noqa: I001
 from tracker.config import get_named_config as get_tracker_named_config  # noqa: I001
-from tracker.models import db as tracker_db  # noqa: I001
+from tracker.models import db as _tracker_db  # noqa: I001
 from entity_emailer import worker  # noqa: I001
 from legal_api import db as _db
 from legal_api import jwt as _jwt
@@ -79,7 +79,7 @@ def tracker_app():
     """
     _tracker_app = Flask(__name__)
     _tracker_app.config.from_object(get_tracker_named_config('testing'))
-    tracker_db.init_app(_tracker_app)
+    _tracker_db.init_app(_tracker_app)
     return _tracker_app
 
 
@@ -117,44 +117,11 @@ def client_id():
 
 
 @pytest.fixture(scope='session')
-def db(app, tracker_app):  # pylint: disable=redefined-outer-name, invalid-name
+def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
     Drops all existing tables - Meta follows Postgres FKs
     """
-    with tracker_app.app_context():
-        # Clear out any existing tables
-        metadata = MetaData(tracker_db.engine)
-        metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                tracker_db.engine.execute(DropConstraint(fk.constraint))
-        metadata.drop_all()
-        tracker_db.drop_all()
-
-        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-                          WHERE sequence_schema='public'
-                       """
-
-        sess = tracker_db.session()
-        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            try:
-                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-                print('DROP SEQUENCE public.%s ' % seq)
-            except Exception as err:  # pylint: disable=broad-except # noqa: B902
-                print(f'Error: {err}')
-        sess.commit()
-
-        # ############################################
-        # There are 2 approaches, an empty database, or the same one that the app will use
-        #     create the tables
-        #     _db.create_all()
-        # or
-        # Use Alembic to load all of the DB revisions including supporting lookup data
-        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
-        Migrate(tracker_app, tracker_db)
-        upgrade()
-
     with app.app_context():
         # Clear out any existing tables
         metadata = MetaData(_db.engine)
@@ -193,6 +160,48 @@ def db(app, tracker_app):  # pylint: disable=redefined-outer-name, invalid-name
         upgrade()
 
         return _db
+
+
+@pytest.fixture(scope='session')
+def tracker_db(tracker_app):  # pylint: disable=redefined-outer-name, invalid-name
+    """Return a session-wide initialised database.
+
+    Drops all existing tables - Meta follows Postgres FKs
+    """
+    with tracker_app.app_context():
+        # Clear out any existing tables
+        metadata = MetaData(_tracker_db.engine)
+        metadata.reflect()
+        for table in metadata.tables.values():
+            for fk in table.foreign_keys:  # pylint: disable=invalid-name
+                _tracker_db.engine.execute(DropConstraint(fk.constraint))
+        metadata.drop_all()
+        _tracker_db.drop_all()
+
+        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
+                          WHERE sequence_schema='public'
+                       """
+
+        sess = _tracker_db.session()
+        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
+            try:
+                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
+                print('DROP SEQUENCE public.%s ' % seq)
+            except Exception as err:  # pylint: disable=broad-except # noqa: B902
+                print(f'Error: {err}')
+        sess.commit()
+
+        # ############################################
+        # There are 2 approaches, an empty database, or the same one that the app will use
+        #     create the tables
+        #     _db.create_all()
+        # or
+        # Use Alembic to load all of the DB revisions including supporting lookup data
+        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
+        Migrate(tracker_app, _tracker_db)
+        upgrade()
+
+        return _tracker_db
 
 
 @pytest.fixture(scope='function')
