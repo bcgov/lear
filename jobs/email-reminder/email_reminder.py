@@ -90,15 +90,24 @@ async def send_email(business_id: int, ar_fee: str, ar_year: str, app: Flask, qs
 
 def get_ar_fee(app: Flask, legal_type: str, token: str) -> str:
     """Get AR fee."""
+    app.logger.debug(f'token: {token}')
+    app.logger.debug(f'legal_type: {legal_type}')
     fee_url = app.config.get('PAYMENT_SVC_FEES_URL')
+    app.logger.debug(f'fee_url: {fee_url}')
     filing_type_code = Filing.FILINGS['annualReport']['codes'].get(legal_type, None)
+    ar_filing = Filing.FILINGS['annualReport']
+    app.logger.debug(f'Filing.FILINGS: {ar_filing}')
+    app.logger.debug(f'filing_type_code: {filing_type_code}')
     fee_url = ''.join([fee_url, '/', legal_type, '/', filing_type_code])
+    app.logger.debug(f'fee_url: {fee_url}')
     res = requests.get(url=fee_url,
                        headers={
                            'Content-Type': 'application/json',
                            'Authorization': 'Bearer ' + token})
-
+    app.logger.debug(f'res: {res}')
+    app.logger.debug(f'res: {res.json()}')
     ar_fee = res.json().get('filingFees')
+    app.logger.debug(f'ar_fee: {ar_fee}')
     return str(ar_fee)
 
 
