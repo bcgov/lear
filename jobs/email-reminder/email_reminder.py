@@ -172,7 +172,8 @@ if __name__ == '__main__':
     with application.app_context():
         event_loop = asyncio.get_event_loop()
         queue_service = QueueService(app=application, loop=event_loop)
-        if condition == 'outstanding-bcomps':
+        send_outstanding_bcomps = application.config.get('SEND_OUTSTANDING_BCOMPS')
+        if condition == 'outstanding-bcomps' or send_outstanding_bcomps == 'send.outstanding.bcomps':
             event_loop.run_until_complete(send_outstanding_bcomps_ar_reminder(application, queue_service))
         else:
             event_loop.run_until_complete(find_and_send_ar_reminder(application, queue_service))
