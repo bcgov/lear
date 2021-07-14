@@ -10,6 +10,7 @@ blinker==1.4
 certifi==2020.12.5
 click==7.1.2
 cx-Oracle==8.1.0
+debugpy
 ecdsa==0.14.1
 flask-jwt-oidc==0.1.5
 flask-restx==0.3.0
