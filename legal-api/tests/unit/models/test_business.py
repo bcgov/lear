@@ -253,7 +253,7 @@ def test_business_json(session):
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'arMinDate': '1971-01-01',
-        'arMaxDate': '1971-04-30'
+        'arMaxDate': '1972-04-30'
     }
 
     assert business.json() == d
