@@ -15,6 +15,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
@@ -138,9 +139,41 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
         app.logger.error(err)
 
 
+async def send_outstanding_bcomps_ar_reminder(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
+    """Find outstanding bcomps to send annual report reminder."""
+    try:
+        # get token
+        token = AccountService.get_bearer_token()
+        ar_fee = get_ar_fee(app, Business.LegalTypes.BCOMP.value, token)
+
+        app.logger.debug('Getting outstanding bcomps to send AR reminder')
+        where_clause = text(
+            'CASE WHEN last_ar_date IS NULL THEN date(founding_date) ELSE date(last_ar_date) END' +
+            " <= CURRENT_DATE - interval '1 year'")
+        businesses = db.session.query(Business).filter(
+            Business.legal_type == Business.LegalTypes.BCOMP.value,
+            where_clause
+        ).all()
+        app.logger.debug('Processing outstanding bcomps to send AR reminder')
+
+        for business in businesses:
+            ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+
+            await send_email(business.id, ar_fee, str(ar_year), app, qsm)
+            app.logger.debug(f'Successfully queued ar reminder for business id {business.id} for year {ar_year}.')
+
+    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+        app.logger.error(err)
+
+
 if __name__ == '__main__':
+    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None
     application = create_app()
     with application.app_context():
         event_loop = asyncio.get_event_loop()
         queue_service = QueueService(app=application, loop=event_loop)
-        event_loop.run_until_complete(find_and_send_ar_reminder(application, queue_service))
+        send_outstanding_bcomps = application.config.get('SEND_OUTSTANDING_BCOMPS')
+        if condition == 'outstanding-bcomps' or send_outstanding_bcomps == 'send.outstanding.bcomps':
+            event_loop.run_until_complete(send_outstanding_bcomps_ar_reminder(application, queue_service))
+        else:
+            event_loop.run_until_complete(find_and_send_ar_reminder(application, queue_service))
