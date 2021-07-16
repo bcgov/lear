@@ -14,8 +14,7 @@
 """Date time utilities."""
 # from datetime import datetime, timezone
 import time as _time
-from datetime import date, datetime as _datetime, timezone, \
-    timedelta  # pylint: disable=unused-import # noqa: F401, I001, I005
+from datetime import date, datetime as _datetime, timezone  # pylint: disable=unused-import # noqa: F401, I001, I005
 # noqa: I003,I005
 
 
@@ -27,8 +26,3 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
         """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
         time_stamp = _time.time()
         return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)
-
-    @classmethod
-    def from_date(cls, date_obj):
-        """Get a datetime object from a date object."""
-        return datetime(date_obj.year, date_obj.month, date_obj.day)

@@ -13,10 +13,11 @@
 # limitations under the License.
 """Test annual report year is managed correctly."""
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 
 import datedelta
+from freezegun import freeze_time
 import pytest
 from registry_schemas.example_data import ANNUAL_REPORT
 
@@ -81,19 +82,38 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
         assert err.msg == expected_msg
 
 
-@pytest.mark.parametrize('test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date', [
-    ('BCOMP first AR', 'BC1234567', '2021-06-29', None, Business.LegalTypes.BCOMP.value, '2022-06-29', '2022-08-28'),
-    ('BCOMP last AR issued', 'BC1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.BCOMP.value, '2022-03-03', '2022-05-02'),
-    ('COOP last AR issued in due time', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),
-    ('COOP last AR issued overdue', 'CP1234567', '1900-07-01', '2021-11-03', Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),    
-    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, '2022-01-01', '2022-04-30'),    
+@pytest.mark.parametrize(
+    'test_name, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date, previous_ar_year, next_year, today', [
+    ('BCOMP first AR', 
+        '2011-06-29', None, Business.LegalTypes.BCOMP.value, '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
+    ('BCOMP last AR filed', 
+        '1900-07-01', '2011-07-03', Business.LegalTypes.BCOMP.value, '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
+    ('BCOMP max AR date equals today (2022-07-14)', 
+        '1900-07-01', '2021-07-03', Business.LegalTypes.BCOMP.value, '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
+    ('BCOMP 2021', 
+        '1900-06-01', '2020-07-03', Business.LegalTypes.BCOMP.value, '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
+    ('COOP first AR', 
+        '2011-01-01', None, Business.LegalTypes.COOP.value, '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'),    
+    ('COOP founded in the end of the year', 
+        '2011-12-31', None, Business.LegalTypes.COOP.value, '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'), 
+    ('COOP AR for 2021', 
+        '1900-07-01', '2020-07-03', Business.LegalTypes.COOP.value, '2021-01-01', '2021-07-14', 2020, 2021, '2021-07-14'),   
+    ('COOP AR for 2020 (covid extension)', 
+        '1900-07-01', '2019-07-03', Business.LegalTypes.COOP.value, '2020-01-01', '2021-10-31', 2019, 2020, '2022-07-14'),
+    ('COOP AR for 2020 (covid extension, max date equals today = 2021-07-14)', 
+        '1900-07-01', '2019-07-03', Business.LegalTypes.COOP.value, '2020-01-01', '2021-07-14', 2019, 2020, '2021-07-14'),
+    ('COOP founded in 2019 (covid extension)', 
+        '2019-07-01', None, Business.LegalTypes.COOP.value, '2020-01-01', '2021-10-31', None, 2020, '2022-07-14'),
 ])
-def test_ar_dates(app, session, test_name, identifier, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date):
+def test_ar_dates(app, session, test_name, founding_date, previous_ar_date, legal_type, expected_ar_min_date, expected_ar_max_date, 
+                  previous_ar_year, next_year, today):
     """Assert min and max dates for Annual Report are correct."""
-    # setup
-    previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
-    business = factory_business(identifier, datetime.fromisoformat(founding_date), previous_ar_datetime, legal_type)
-    ar_min_date, ar_max_date = business.get_ar_dates(2022)
-    
-    assert ar_min_date.isoformat() == expected_ar_min_date
-    assert ar_max_date.isoformat() == expected_ar_max_date
+    now = datetime.fromisoformat(today)
+    with freeze_time(now):
+        # setup
+        previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
+        business = factory_business('CP1234567', datetime.fromisoformat(founding_date), previous_ar_datetime, legal_type)
+        ar_min_date, ar_max_date = business.get_ar_dates(next_year)
+        
+        assert ar_min_date.isoformat() == expected_ar_min_date
+        assert ar_max_date.isoformat() == expected_ar_max_date

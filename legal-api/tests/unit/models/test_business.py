@@ -23,7 +23,7 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
-from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
+from tests import EPOCH_DATETIME
 
 
 def factory_business(designation: str = '001'):
@@ -249,11 +249,11 @@ def test_business_json(session):
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
-        'nextAnnualReport': (EPOCH_DATETIME + datedelta.YEAR + timedelta(hours=TIMEZONE_OFFSET)).isoformat(),
+        'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'arMinDate': '1971-01-01',
-        'arMaxDate': '1971-04-30'
+        'arMaxDate': '1972-04-30'
     }
 
     assert business.json() == d
