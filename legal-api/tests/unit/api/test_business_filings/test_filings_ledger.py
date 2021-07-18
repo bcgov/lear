@@ -104,11 +104,7 @@ def test_ledger_search(session, client, jwt):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
-<<<<<<< HEAD
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(FILINGS.keys()))
-=======
-    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
->>>>>>> cde33860 (add ledger listing)
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
 
@@ -118,6 +114,9 @@ def test_ledger_search(session, client, jwt):
 
     ledger = rv.json
 
+    with open("ledger.json", "w") as outfile:
+        json.dump(ledger, outfile)
+
     # Did we get the full set
     assert len(ledger['filings']) == num_of_files
 
@@ -125,25 +124,14 @@ def test_ledger_search(session, client, jwt):
     alteration = next((f for f in ledger['filings'] if f.get('name')=='alteration'), None)
 
     assert alteration
-<<<<<<< HEAD
-<<<<<<< HEAD
     assert 15 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
-=======
-    assert 9 == len(alteration.keys())
-    assert 'availableOnPaperOnly' in alteration
-    assert 'effectiveDate' in alteration
-    assert 'filingId' in alteration
-    assert 'isCorrected' in alteration
->>>>>>> cde33860 (add ledger listing)
-=======
     assert 16 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
->>>>>>> eb4fca0d (adding ledger fields)
     assert 'name' in alteration
     assert 'paymentStatusCode' in alteration
     assert 'status' in alteration
@@ -152,7 +140,6 @@ def test_ledger_search(session, client, jwt):
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
-<<<<<<< HEAD
 
 
 ###
@@ -335,5 +322,3 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             assert filing_json['displayName'] == f'Annual Report - Corrected'
         else:
             assert False
-=======
->>>>>>> cde33860 (add ledger listing)
