@@ -17,6 +17,7 @@
 Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is working as expected.
 """
 import copy
+import json
 from datetime import datetime
 from http import HTTPStatus
 from typing import Final
@@ -110,6 +111,9 @@ def test_ledger_search(session, client, jwt):
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
 
     ledger = rv.json
+
+    with open("ledger.json", "w") as outfile:
+        json.dump(ledger, outfile)
 
     # Did we get the full set
     assert len(ledger['filings']) == num_of_files
