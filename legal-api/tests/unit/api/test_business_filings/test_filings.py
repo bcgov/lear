@@ -961,3 +961,37 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['header']['submitter'] == expected
+
+
+def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+    """Assert that the core filing is saved to the backing store."""
+    from legal_api.core.filing import Filing as CoreFiling
+    try:
+        identifier = 'BC1234567'
+        filing = CoreFiling()
+        filing_submission = {
+            'filing': {
+                'header': {
+                    'name': 'specialResolution',
+                    'date': '2019-04-08'
+                },
+                'specialResolution': {
+                    'resolution': 'Year challenge is hitting oppo for the win.'
+                }}}
+        user = factory_user(username)
+        business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+        filing.json = filing_submission
+        filing.save()
+        filing._storage.business_id = business.id
+        filing._storage.submitter_id = user.id
+        filing._storage.submitter_roles = submitter_role
+        filing.save()
+        filing_id = filing.id
+
+        rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filing_id}',
+                        headers=create_header(jwt, [jwt_role], identifier))
+    except Exception as err:
+        print(err)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['submitter'] == expected
