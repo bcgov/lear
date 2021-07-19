@@ -15,10 +15,9 @@
 from unittest.mock import patch
 
 import pytest
-
-from entity_emailer.email_processors import nr_expiry
 from legal_api.services import NameXService
 
+from entity_emailer.email_processors import nr_expiry
 from tests import MockResponse
 
 

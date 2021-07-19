@@ -48,7 +48,7 @@ from entity_emailer.email_processors import (
     filing_notification,
     mras_notification,
     name_request,
-    nr_expiry
+    nr_expiry,
 )
 
 from .message_tracker import tracker as tracker_util

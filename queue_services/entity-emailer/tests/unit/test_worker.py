@@ -20,8 +20,7 @@ from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import ar_reminder_notification, filing_notification, nr_expiry
-
+from entity_emailer.email_processors import ar_reminder_notification, filing_notification
 from tests import MockResponse
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
