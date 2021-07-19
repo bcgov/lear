@@ -23,7 +23,7 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
-from tests import EPOCH_DATETIME
+from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 
 
 def factory_business(designation: str = '001'):

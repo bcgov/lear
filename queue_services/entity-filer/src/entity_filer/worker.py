@@ -41,6 +41,7 @@ from legal_api.models import Business, Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
+from sqlalchemy import exc  # pylint: disable=W0611
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
 
@@ -136,12 +137,15 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
         filing_submission = filing_core_submission.storage
 
-        if filing_core_submission.status == Filing.Status.COMPLETED.value:
+        if filing_core_submission.status == Filing.Status.COMPLETED:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
-        if legal_filings := filing_core_submission.legal_filings():
+        # convenience flag to set that the envelope is a correction
+        is_correction = (filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION)
+
+        if legal_filings := filing_core_submission.legal_filings(with_diff=False):
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
 
@@ -149,9 +153,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             for filing in legal_filings:
                 if filing.get('alteration'):
-                    alteration.process(business, filing_submission, filing)
+                    alteration.process(business, filing_submission, filing, is_correction)
 
-                if filing.get('annualReport'):
+                elif filing.get('annualReport'):
                     annual_report.process(business, filing)
 
                 elif filing.get('changeOfAddress'):
@@ -179,15 +183,17 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('courtOrder'):
                     court_order.process(filing_submission, filing)
+
                 elif filing.get('registrarsNotation'):
                     registrars_notation.process(filing_submission, filing)
+
                 elif filing.get('registrarsOrder'):
                     registrars_order.process(filing_submission, filing)
 
-                if filing.get('correction'):
+                elif filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing)
 
-                if filing.get('transition'):
+                elif filing.get('transition'):
                     filing_submission = transition.process(business, filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
@@ -199,9 +205,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
-                if name_request.has_new_nr_for_alteration(business, filing_submission.filing_json):
-                    name_request.consume_nr(business, filing_submission, '/filing/alteration/nameRequest/nrNumber')
-                alteration.post_process(business, filing_submission)
+
+                alteration.post_process(business, filing_submission, correction)
                 db.session.add(business)
                 db.session.commit()
                 AccountService.update_entity(

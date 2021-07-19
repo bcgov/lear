@@ -57,6 +57,11 @@ jobs:
       DATABASE_TEST_HOST: localhost
       DATABASE_HOST: localhost
       DATABASE_PASSWORD: postgres
+      TRACKER_DATABASE_TEST_USERNAME: postgres
+      TRACKER_DATABASE_TEST_PASSWORD: postgres
+      TRACKER_DATABASE_TEST_NAME: postgres
+      TRACKER_DATABASE_TEST_HOST: localhost
+      TRACKER_DATABASE_TEST_PORT: 5433
       NATS_SERVERS: "nats://nats:4222"
       NATS_CLIENT_NAME: entity.email.tester
       NATS_CLUSTER_ID: test-cluster
@@ -79,6 +84,16 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      postgres-tracker:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5433:5432
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
