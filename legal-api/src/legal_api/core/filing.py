@@ -29,7 +29,7 @@ from legal_api.utils.datetime import date, datetime  # noqa: I005
 class Filing:
     """Domain class for Filings."""
 
-    class Status(Enum):
+    class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
         COMPLETED = 'COMPLETED'
@@ -41,7 +41,7 @@ class Filing:
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
-    class FilingTypes(Enum):
+    class FilingTypes(str, Enum):
         """Render an Enum of all Filing Types."""
 
         ALTERATION = 'alteration'
@@ -123,8 +123,8 @@ class Filing:
             self._status = self._storage.status
         return self._status
 
-    @property
-    def json(self) -> Optional[Dict]:
+    # json is returned as a property defined after this method
+    def get_json(self, with_diff: bool = True) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
                                                                                 Filing.Status.PAID.value,
@@ -147,12 +147,14 @@ class Filing:
         else:  # Filing.Status.COMPLETED.value
             filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
-        if self.filing_type == Filing.FilingTypes.CORRECTION.value:
+        if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
                 if diff := self._diff(filing_json, correction_id):
                     filing_json['filing']['correction']['diff'] = diff
 
         return filing_json
+    json = property(get_json)
+
 
     @ json.setter
     def json(self, filing_submission):
@@ -251,14 +253,14 @@ class Filing:
 
         return filings
 
-    def legal_filings(self) -> Optional[List]:
+    def legal_filings(self, with_diff: bool = True) -> Optional[List]:
         """Return a list of the filings extracted from this filing submission.
 
         Returns: {
             List: or None of the Legal Filing JSON segments.
             }
         """
-        if not (filing := self.json):
+        if not (filing := self.get_json(with_diff)):
             return None
 
         legal_filings = []
