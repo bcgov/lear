@@ -48,6 +48,7 @@ from entity_emailer.email_processors import (
     filing_notification,
     mras_notification,
     name_request,
+    nr_expiry
 )
 
 from .message_tracker import tracker as tracker_util
@@ -112,6 +113,10 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'annualReport' and option == 'reminder':
                 email = ar_reminder_notification.process(email_msg['email'], token)
                 send_email(email, token)
+            elif etype == 'namerequest':
+                if option in ['before-expiry', 'expired']:
+                    email = nr_expiry.process(email_msg['email'], option)
+                    send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
                     logger.debug('No email to send for: %s', email_msg)
