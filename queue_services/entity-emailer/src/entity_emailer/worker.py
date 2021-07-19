@@ -104,7 +104,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']
-            if etype == 'businessNumber':
+            if etype == 'namerequest':
+                if option in ['before-expiry', 'expired']:
+                    email = nr_expiry.process(email_msg['email'], option)
+                    send_email(email, token)
+            elif etype == 'businessNumber':
                 email = bn_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'incorporationApplication' and option == 'mras':
@@ -113,10 +117,6 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'annualReport' and option == 'reminder':
                 email = ar_reminder_notification.process(email_msg['email'], token)
                 send_email(email, token)
-            elif etype == 'namerequest':
-                if option in ['before-expiry', 'expired']:
-                    email = nr_expiry.process(email_msg['email'], option)
-                    send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
                     logger.debug('No email to send for: %s', email_msg)
