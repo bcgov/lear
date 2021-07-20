@@ -48,6 +48,7 @@ from entity_emailer.email_processors import (
     filing_notification,
     mras_notification,
     name_request,
+    nr_expiry,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -103,7 +104,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']
-            if etype == 'businessNumber':
+            if etype == 'namerequest':
+                if option in ['before-expiry', 'expired']:
+                    email = nr_expiry.process(email_msg['email'], option)
+                    send_email(email, token)
+            elif etype == 'businessNumber':
                 email = bn_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'incorporationApplication' and option == 'mras':
