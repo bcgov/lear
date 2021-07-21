@@ -17,17 +17,20 @@ from unittest.mock import patch
 import pytest
 from legal_api.services import NameXService
 
-from entity_emailer.email_processors import nr_expiry
+from entity_emailer.email_processors import nr_notification
 from tests import MockResponse
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon'),
-    ('expired', 'NR 1234567', 'Expired')
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None),
+    ('expired', 'NR 1234567', 'Expired', None),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00'),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None)
 ])
-def test_nr_expiry(app, session, option, nr_number, subject):
-    """Assert that the nr expiry can be processed."""
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date):
+    """Assert that the nr notification can be processed."""
     nr_json = {
+        'expirationDate': expiration_date,
         'applicants': {
             'emailAddress': 'test@test.com'
         }
@@ -37,11 +40,12 @@ def test_nr_expiry(app, session, option, nr_number, subject):
     # test processor
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
             as mock_query_nr_number:
-        email = nr_expiry.process(
+        email = nr_notification.process(
             {
                 'nrNumber': nr_number,
                 'type': 'namerequest',
-                'option': option
+                'option': option,
+                'submitCount': 1
             }, option)
         assert email['content']['subject'] == f'{nr_number} - {subject}'
 

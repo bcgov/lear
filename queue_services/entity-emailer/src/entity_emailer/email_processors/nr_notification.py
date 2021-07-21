@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for Name Request before expiry and expiry."""
+"""Email processing rules and actions for Name Request before expiry, expiry, renewal, upgrade."""
 from __future__ import annotations
 
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -30,17 +31,12 @@ def process(email_info: dict, option) -> dict:
     """
     Build the email for Name Request notification.
 
-    valid values of option: 'before-expiry', 'expired'
+    valid values of option: 'before-expiry', 'expired', 'renewal', 'upgrade'
     """
-    logger.debug('NR_notification: %s', email_info)
+    logger.debug('NR %s notification: %s', option, email_info)
     nr_number = email_info['nrNumber']
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
     filled_template = substitute_template_parts(template)
-    # render template with vars
-    mail_template = Template(filled_template, autoescape=True)
-    html_out = mail_template.render(
-        nr_number=nr_number
-    )
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
@@ -50,6 +46,18 @@ def process(email_info: dict, option) -> dict:
 
     nr_data = nr_response.json()
 
+    expiration_date = ''
+    if nr_data['expirationDate']:
+        exp_date = datetime.fromisoformat(nr_data['expirationDate'])
+        expiration_date = exp_date.strftime('%Y-%m-%d')
+
+    # render template with vars
+    mail_template = Template(filled_template, autoescape=True)
+    html_out = mail_template.render(
+        nr_number=nr_number,
+        expiration_date=expiration_date
+    )
+
     # get recipients
     recipients = nr_data['applicants']['emailAddress']
     if not recipients:
@@ -57,7 +65,9 @@ def process(email_info: dict, option) -> dict:
 
     subjects = {
         'before-expiry': 'Expiring Soon',
-        'expired': 'Expired'
+        'expired': 'Expired',
+        'renewal': 'Confirmation of Renewal',
+        'upgrade': 'Confirmation of Upgrade'
     }
 
     return {
