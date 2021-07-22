@@ -202,13 +202,16 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon'),
-    ('expired', 'NR 1234567', 'Expired')
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None),
+    ('expired', 'NR 1234567', 'Expired', None),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00'),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None)
 ])
-def test_nr_expiry(app, session, option, nr_number, subject):
-    """Assert that the nr expiry can be processed."""
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date):
+    """Assert that the nr notification can be processed."""
     nr_json = {
+        'expirationDate': expiration_date,
         'applicants': {
             'emailAddress': 'test@test.com'
         }
@@ -224,7 +227,8 @@ def test_nr_expiry(app, session, option, nr_number, subject):
                 worker.process_email({'email': {
                     'nrNumber': nr_number,
                     'type': 'namerequest',
-                    'option': option
+                    'option': option,
+                    'submitCount': 1
                 }}, app)
 
                 call_args = mock_send_email.call_args
