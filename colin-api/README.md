@@ -14,7 +14,7 @@ BC Registries Legal Entities COLIN API
 ## Project Status
 As of 2019-04-09 in Development
 
-## Documnentation
+## Documentation
 
 GitHub Pages (https://guides.github.com/features/pages/) are a neat way to document you application/project.
 

@@ -14,8 +14,7 @@
 """Date time utilities."""
 # from datetime import datetime, timezone
 import time as _time
-from datetime import date, datetime as _datetime, timezone, \
-    timedelta  # pylint: disable=unused-import # noqa: F401, I001, I005
+from datetime import date, datetime as _datetime, timezone  # pylint: disable=unused-import # noqa: F401, I001, I005
 # noqa: I003,I005
 
 

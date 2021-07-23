@@ -42,6 +42,12 @@ objects:
           intervalSeconds: 1
           maxSurge: 25%
           maxUnavailable: 25%
+          pre:
+            execNewPod:
+              command:
+                - /opt/app-root/pre-hook-update-db.sh
+              containerName: ${NAME}-${TAG}
+            failurePolicy: Abort
           timeoutSeconds: 600
           updatePeriodSeconds: 1
         type: Rolling

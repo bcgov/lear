@@ -25,6 +25,7 @@ from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
 from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -179,14 +180,17 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             # is required. We need more discussion to understand different scenario's which can come across in future.
             if next_ar_year == 2020:
                 # For year 2020, set the max date as October 31th next year (COVID extension).
-                ar_max_date = datetime(next_ar_year, 10, 31).date()
+                ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
             else:
                 # If this is a CO-OP, set the max date as April 30th next year.
-                ar_max_date = datetime(next_ar_year, 4, 30).date()
+                ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
         elif self.legal_type == self.LegalTypes.BCOMP.value:
             # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(next_ar_year, self.next_anniversary.month, self.next_anniversary.day).date()
+            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
+
+        if ar_max_date > datetime.utcnow().date():
+            ar_max_date = datetime.utcnow().date()
 
         return ar_min_date, ar_max_date
 
@@ -247,7 +251,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
             'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': datetime.from_date(ar_min_date).astimezone(timezone.utc).isoformat(),
+            'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
+                self.next_anniversary
+            ).astimezone(timezone.utc).isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'legalName': self.legal_name,
