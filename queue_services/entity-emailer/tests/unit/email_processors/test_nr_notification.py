@@ -40,13 +40,18 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
     # test processor
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
             as mock_query_nr_number:
-        email = nr_notification.process(
-            {
-                'nrNumber': nr_number,
-                'type': 'namerequest',
-                'option': option,
-                'submitCount': 1
-            }, option)
+        email = nr_notification.process({
+            'id': '123456789',
+            'type': 'bc.registry.names.request',
+            'source': f'/requests/{nr_number}',
+            'identifier': nr_number,
+            'data': {
+                'request': {
+                    'nrNum': nr_number,
+                    'option': option
+                }
+            }
+        }, option)
         assert email['content']['subject'] == f'{nr_number} - {subject}'
 
         assert 'test@test.com' in email['recipients']

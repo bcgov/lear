@@ -34,7 +34,7 @@ def process(email_info: dict, option) -> dict:
     valid values of option: 'before-expiry', 'expired', 'renewal', 'upgrade'
     """
     logger.debug('NR %s notification: %s', option, email_info)
-    nr_number = email_info['nrNumber']
+    nr_number = email_info['identifier']
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
     filled_template = substitute_template_parts(template)
 

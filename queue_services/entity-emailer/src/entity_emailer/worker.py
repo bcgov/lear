@@ -96,7 +96,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         token = AccountService.get_bearer_token()
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
-            email = name_request.process(email_msg)
+            option = email_msg.get('data', {}).get('request', {}).get('option', None)
+            if option and option in ['before-expiry', 'expired', 'renewal', 'upgrade']:
+                email = nr_notification.process(email_msg, option)
+            else:
+                email = name_request.process(email_msg)
             send_email(email, token)
         elif etype and etype == 'bc.registry.affiliation':
             email = affiliation_notification.process(email_msg, token)
@@ -104,11 +108,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']
-            if etype == 'namerequest':
-                if option in ['before-expiry', 'expired', 'renewal', 'upgrade']:
-                    email = nr_notification.process(email_msg['email'], option)
-                    send_email(email, token)
-            elif etype == 'businessNumber':
+            if etype == 'businessNumber':
                 email = bn_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'incorporationApplication' and option == 'mras':

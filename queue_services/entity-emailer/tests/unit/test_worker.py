@@ -224,12 +224,18 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
                 as mock_query_nr_number:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email({'email': {
-                    'nrNumber': nr_number,
-                    'type': 'namerequest',
-                    'option': option,
-                    'submitCount': 1
-                }}, app)
+                worker.process_email({
+                    'id': '123456789',
+                    'type': 'bc.registry.names.request',
+                    'source': f'/requests/{nr_number}',
+                    'identifier': nr_number,
+                    'data': {
+                        'request': {
+                            'nrNum': nr_number,
+                            'option': option
+                        }
+                    }
+                }, app)
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == f'{nr_number} - {subject}'

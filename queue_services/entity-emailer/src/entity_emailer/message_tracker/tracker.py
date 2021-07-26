@@ -58,15 +58,6 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
         if not email or not etype:
             return message_context_properties
 
-        # pylint: disable=used-before-assignment
-        if etype == 'namerequest' \
-                and (option := email.get('option', None)) \
-                and option in ['before-expiry', 'expired', 'renewal', 'upgrade'] \
-                and (nr_number := email.get('nrNumber', None)) \
-                and (submit_count := email.get('submitCount', None)):
-            message_id = f'{etype}_{option}_{nr_number}_{submit_count}'
-            return create_message_context_properties(etype, message_id, None, None, False)
-
         if etype == 'businessNumber' \
                 and (identifier := email.get('identifier', None)):
             message_id = f'{etype}_{identifier}'
