@@ -21,13 +21,14 @@ from entity_emailer.email_processors import nr_notification
 from tests import MockResponse
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None),
-    ('expired', 'NR 1234567', 'Expired', None),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00'),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None)
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None),
+    ('expired', 'NR 1234567', 'Expired', None, None),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45')
 ])
-def test_nr_notification(app, session, option, nr_number, subject, expiration_date):
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
@@ -48,7 +49,8 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
             'data': {
                 'request': {
                     'nrNum': nr_number,
-                    'option': option
+                    'option': option,
+                    'refundValue': refund_value
                 }
             }
         }, option)
@@ -56,5 +58,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
 
         assert 'test@test.com' in email['recipients']
         assert email['content']['body']
+        if option == nr_notification.Option.REFUND.value:
+            assert f'${refund_value} CAD' in email['content']['body']
         assert email['content']['attachments'] == []
         assert mock_query_nr_number.call_args[0][0] == nr_number
