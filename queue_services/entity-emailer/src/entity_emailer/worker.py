@@ -97,14 +97,12 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
             option = email_msg.get('data', {}).get('request', {}).get('option', None)
-            if option and option in \
-                    [
-                        nr_notification.Option.BEFORE_EXPIRY.value,
-                        nr_notification.Option.EXPIRED.value,
-                        nr_notification.Option.RENEWAL.value,
-                        nr_notification.Option.UPGRADE.value,
-                        nr_notification.Option.REFUND.value
-                    ]:
+            if option and option in [nr_notification.Option.BEFORE_EXPIRY.value,
+                                     nr_notification.Option.EXPIRED.value,
+                                     nr_notification.Option.RENEWAL.value,
+                                     nr_notification.Option.UPGRADE.value,
+                                     nr_notification.Option.REFUND.value
+                                     ]:
                 email = nr_notification.process(email_msg, option)
             else:
                 email = name_request.process(email_msg)
