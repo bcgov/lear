@@ -27,18 +27,99 @@ from . import create_mock_message  # noqa: I003
     [
         ('16fd2706-8baf-433b-82eb-8c7fada847aa',
          {
-            'specversion': '1.x-wip',
-            'type': 'bc.registry.names.request',
-            'source': 'nr_pay',
-            'id': '16fd2706-8baf-433b-82eb-8c7fada847aa',
-            'time': '',
-            'datacontenttype': 'application/json',
-            'identifier': '781020202',
-            'data': {
-                'header': {'nrNum': '781020202'},
-                'paymentToken': '234234234324asjdkfhjsdhf23949239423',
-                'statusCode': 'PAID'
-            }
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': 'nr_pay',
+             'id': '16fd2706-8baf-433b-82eb-8c7fada847aa',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': '781020202',
+             'data': {
+                 'header': {'nrNum': '781020202'},
+                 'paymentToken': '234234234324asjdkfhjsdhf23949239423',
+                 'statusCode': 'PAID'
+             }
+         }),
+        ('f36e3af7-90c3-4859-a6f6-2feefbdc1e37',
+         {
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': '/requests/NR 1234567',
+             'id': 'f36e3af7-90c3-4859-a6f6-2feefbdc1e37',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': 'NR 1234567',
+             'data': {
+                 'request': {
+                     'nrNum': 'NR 1234567',
+                     'option': 'before-expiry'
+                 }
+             }
+         }),
+        ('286ef5d3-600a-4b77-a27a-3bcaf8a16413',
+         {
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': '/requests/NR 1234567',
+             'id': '286ef5d3-600a-4b77-a27a-3bcaf8a16413',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': 'NR 1234567',
+             'data': {
+                 'request': {
+                     'nrNum': 'NR 1234567',
+                     'option': 'expired'
+                 }
+             }
+         }),
+        ('7a53d2ee-110c-4df5-85c0-6b0315eb5764',
+         {
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': '/requests/NR 1234567',
+             'id': '7a53d2ee-110c-4df5-85c0-6b0315eb5764',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': 'NR 1234567',
+             'data': {
+                 'request': {
+                     'nrNum': 'NR 1234567',
+                     'option': 'renewal'
+                 }
+             }
+         }),
+        ('8693f767-642c-4cea-acba-6af6526f2458',
+         {
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': '/requests/NR 1234567',
+             'id': '8693f767-642c-4cea-acba-6af6526f2458',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': 'NR 1234567',
+             'data': {
+                 'request': {
+                     'nrNum': 'NR 1234567',
+                     'option': 'upgrade'
+                 }
+             }
+         }),
+        ('cae39db6-cf40-4fd3-99c3-63b14ef8ccbd',
+         {
+             'specversion': '1.x-wip',
+             'type': 'bc.registry.names.request',
+             'source': '/requests/NR 1234567',
+             'id': 'cae39db6-cf40-4fd3-99c3-63b14ef8ccbd',
+             'time': '',
+             'datacontenttype': 'application/json',
+             'identifier': 'NR 1234567',
+             'data': {
+                 'request': {
+                     'nrNum': 'NR 1234567',
+                     'option': 'refund',
+                     'refundValue': '123.45'
+                 }
+             }
          }),
         ('bc.registry.affiliation_1',
          {
@@ -51,7 +132,7 @@ from . import create_mock_message  # noqa: I003
                      },
                  }
              }
-          }
+         }
          ),
         ('businessNumber_BC1234567',
          {'email': {
