@@ -57,7 +57,7 @@ install-dev: ## Install local application
 	pip install -e .
 
 #################################################################################
-# COMMANDS - CI                                                                 #
+# COMMANDS -- CI                                                                 #
 #################################################################################
 ci: lint flake8 test ## CI flow
 
