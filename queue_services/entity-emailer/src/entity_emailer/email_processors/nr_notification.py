@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
 
@@ -27,14 +28,24 @@ from sentry_sdk import capture_message
 from entity_emailer.email_processors import substitute_template_parts
 
 
+class Option(Enum):
+    """NR notification option."""
+
+    BEFORE_EXPIRY = 'before-expiry'
+    EXPIRED = 'expired'
+    RENEWAL = 'renewal'
+    UPGRADE = 'upgrade'
+    REFUND = 'refund'
+
+
 def process(email_info: dict, option) -> dict:
     """
     Build the email for Name Request notification.
 
-    valid values of option: 'before-expiry', 'expired', 'renewal', 'upgrade'
+    valid values of option: Option
     """
     logger.debug('NR %s notification: %s', option, email_info)
-    nr_number = email_info['nrNumber']
+    nr_number = email_info['identifier']
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
     filled_template = substitute_template_parts(template)
 
@@ -51,11 +62,16 @@ def process(email_info: dict, option) -> dict:
         exp_date = datetime.fromisoformat(nr_data['expirationDate'])
         expiration_date = exp_date.strftime('%Y-%m-%d')
 
+    refund_value = ''
+    if option == Option.REFUND.value:
+        refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
+
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
     html_out = mail_template.render(
         nr_number=nr_number,
-        expiration_date=expiration_date
+        expiration_date=expiration_date,
+        refund_value=refund_value
     )
 
     # get recipients
@@ -64,10 +80,11 @@ def process(email_info: dict, option) -> dict:
         return {}
 
     subjects = {
-        'before-expiry': 'Expiring Soon',
-        'expired': 'Expired',
-        'renewal': 'Confirmation of Renewal',
-        'upgrade': 'Confirmation of Upgrade'
+        Option.BEFORE_EXPIRY.value: 'Expiring Soon',
+        Option.EXPIRED.value: 'Expired',
+        Option.RENEWAL.value: 'Confirmation of Renewal',
+        Option.UPGRADE.value: 'Confirmation of Upgrade',
+        Option.REFUND.value: 'Refund request confirmation'
     }
 
     return {

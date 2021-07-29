@@ -20,7 +20,7 @@ from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import ar_reminder_notification, filing_notification
+from entity_emailer.email_processors import ar_reminder_notification, filing_notification, nr_notification
 from tests import MockResponse
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
@@ -202,13 +202,14 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None),
-    ('expired', 'NR 1234567', 'Expired', None),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00'),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None)
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None),
+    ('expired', 'NR 1234567', 'Expired', None, None),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45')
 ])
-def test_nr_notification(app, session, option, nr_number, subject, expiration_date):
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
@@ -224,17 +225,26 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
                 as mock_query_nr_number:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email({'email': {
-                    'nrNumber': nr_number,
-                    'type': 'namerequest',
-                    'option': option,
-                    'submitCount': 1
-                }}, app)
+                worker.process_email({
+                    'id': '123456789',
+                    'type': 'bc.registry.names.request',
+                    'source': f'/requests/{nr_number}',
+                    'identifier': nr_number,
+                    'data': {
+                        'request': {
+                            'nrNum': nr_number,
+                            'option': option,
+                            'refundValue': refund_value
+                        }
+                    }
+                }, app)
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == f'{nr_number} - {subject}'
                 assert call_args[0][0]['recipients'] == 'test@test.com'
                 assert call_args[0][0]['content']['body']
+                if option == nr_notification.Option.REFUND.value:
+                    assert f'${refund_value} CAD' in call_args[0][0]['content']['body']
                 assert call_args[0][0]['content']['attachments'] == []
                 assert mock_query_nr_number.call_args[0][0] == nr_number
                 assert call_args[0][1] == token
