@@ -98,7 +98,7 @@ def validate_offices(incorporation_json) -> Error:
 def validate_roles(incorporation_json) -> Error:
     """Validate the required completing party of the incorporation filing."""
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
-    legal_type = incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType']
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -149,7 +149,7 @@ def validate_roles(incorporation_json) -> Error:
 
 def validate_parties_mailing_address(incorporation_json) -> Error:
     """Validate the person data of the incorporation filing."""
-    legal_type = incorporation_json['filing']['incorporationApplication']['nameRequest']['legalType']
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
     msg = []
     bc_party_ma_count = 0

@@ -216,6 +216,7 @@ def test_validate_incorporation_role(session, test_name, legal_type, parties, ex
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    f['filing']['business']['legalType'] = legal_type
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -410,6 +411,7 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, lega
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    f['filing']['business']['legalType'] = legal_type
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
