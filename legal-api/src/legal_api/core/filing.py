@@ -155,7 +155,6 @@ class Filing:
         return filing_json
     json = property(get_json)
 
-
     @ json.setter
     def json(self, filing_submission):
         """Add the raw json to the filing."""
