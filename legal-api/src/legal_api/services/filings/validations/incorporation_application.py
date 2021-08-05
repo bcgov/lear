@@ -94,9 +94,11 @@ def validate_offices(incorporation_json) -> Error:
     return None
 
 
+# pylint: disable=too-many-branches
 def validate_roles(incorporation_json) -> Error:
     """Validate the required completing party of the incorporation filing."""
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -104,7 +106,6 @@ def validate_roles(incorporation_json) -> Error:
 
     for item in parties_array:
         for role in item['roles']:
-
             if role['roleType'] == 'Completing Party':
                 completing_party_count += 1
 
@@ -122,14 +123,23 @@ def validate_roles(incorporation_json) -> Error:
         err_path = '/filing/incorporationApplication/parties/roles'
         msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
 
-    # FUTURE: THis may have to be altered based on entity type in the future
-    if incorporator_count < 1:
-        err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+    if legal_type == Business.LegalTypes.COOP.value:
+        if incorporator_count > 0:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Incorporator is an invalid party role', 'path': err_path})
 
-    if director_count < 1:
-        err_path = '/filing/incorporationApplication/parties/roles'
-        msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+        if director_count < 3:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of three Directors', 'path': err_path})
+    else:
+        # FUTURE: THis may have to be altered based on entity type in the future
+        if incorporator_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+
+        if director_count < 1:
+            err_path = '/filing/incorporationApplication/parties/roles'
+            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
 
     if msg:
         return msg
@@ -139,8 +149,12 @@ def validate_roles(incorporation_json) -> Error:
 
 def validate_parties_mailing_address(incorporation_json) -> Error:
     """Validate the person data of the incorporation filing."""
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
     msg = []
+    bc_party_ma_count = 0
+    country_ca_party_ma_count = 0
+    country_total_ma_count = 0
 
     for item in parties_array:
         for k, v in item['mailingAddress'].items():
@@ -151,6 +165,24 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
                 msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
                     item['officer']['id'], k, v
                 ), 'path': err_path})
+
+            if (ma_region := item.get('mailingAddress', {}).get('addressRegion', None)) and ma_region == 'BC':
+                bc_party_ma_count += 1
+
+            if (ma_country := item.get('mailingAddress', {}).get('addressCountry', None)):
+                country_total_ma_count += 1
+                if ma_country == 'CA':
+                    country_ca_party_ma_count += 1
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        if bc_party_ma_count < 1:
+            err_path = '/filing/incorporationApplication/parties/mailingAddress'
+            msg.append({'error': 'Must have minimum of one BC mailing address', 'path': err_path})
+
+        country_ca_percentage = country_ca_party_ma_count / country_total_ma_count * 100
+        if country_ca_percentage <= 50:
+            err_path = '/filing/incorporationApplication/parties/mailingAddress'
+            msg.append({'error': 'Must have majority of mailing addresses in Canada', 'path': err_path})
 
     if msg:
         return msg
