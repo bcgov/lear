@@ -155,12 +155,12 @@ class Filing:
         return filing_json
     json = property(get_json)
 
-    @ json.setter
+    @json.setter
     def json(self, filing_submission):
         """Add the raw json to the filing."""
         self._raw = filing_submission
 
-    @ property
+    @property
     def storage(self) -> Optional[FilingStorage]:
         """
         (Deprecated) Return filing model.
@@ -171,7 +171,7 @@ class Filing:
             self._storage = FilingStorage()
         return self._storage
 
-    @ storage.setter
+    @storage.setter
     def storage(self, filing: FilingStorage):
         """Set filing storage."""
         self._storage = filing
