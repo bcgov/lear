@@ -187,7 +187,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             # get record
             if not con:
                 con = DB.connection
-                con.begin()
+                # con.begin()
 
             cursor = con.cursor()
             cursor.execute(
