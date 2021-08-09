@@ -134,8 +134,13 @@ def update_director(director: PartyRole, new_info: dict) -> PartyRole:
     director.party.middle_initial = new_info['officer'].get('middleInitial', '').upper()
     director.party.last_name = new_info['officer'].get('lastName', '').upper()
     director.party.title = new_info.get('title', '').upper()
-    director.party.delivery_address = update_address(
-        director.party.delivery_address, new_info['deliveryAddress'])
+
+    if director.party.delivery_address:
+        director.party.delivery_address = update_address(
+            director.party.delivery_address, new_info['deliveryAddress'])
+    else:
+        director.party.delivery_address = create_address(new_info['deliveryAddress'], Address.DELIVERY)
+
     if new_info.get('mailingAddress', None):
         if director.party.mailing_address is None:
             director.party.mailing_address = create_address(new_info['mailingAddress'], Address.MAILING)
