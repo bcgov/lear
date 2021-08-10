@@ -623,7 +623,7 @@ class Filing:
         try:
             if not con:
                 con = DB.connection
-                con.begin()
+                # con.begin()
             cursor = con.cursor()
             corp_num = filing.business.corp_num
             # get the filing event info
@@ -643,6 +643,7 @@ class Filing:
             schema_name = convert_to_snake(filing.filing_type)
             schema = get_schema(f'{schema_name.replace("_application", "")}.json')
             components = schema.get('properties').keys()
+
             if filing.filing_type in components:
                 if filing.filing_type == 'changeOfAddress':
                     components = ['legalType', 'offices']

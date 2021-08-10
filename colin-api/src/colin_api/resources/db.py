@@ -57,6 +57,7 @@ class OracleDB:
         def init_session(conn, *args):  # pylint: disable=unused-argument; Extra var being passed with call
             cursor = conn.cursor()
             cursor.execute("alter session set TIME_ZONE = 'America/Vancouver'")
+
         return cx_Oracle.SessionPool(user=current_app.config.get('ORACLE_USER'),  # pylint:disable=c-extension-no-member
                                      password=current_app.config.get('ORACLE_PASSWORD'),
                                      dsn='{0}:{1}/{2}'.format(current_app.config.get('ORACLE_HOST'),
@@ -85,7 +86,7 @@ class OracleDB:
         """
         ctx = _app_ctx_stack.top
         if ctx is not None:
-            if not hasattr(ctx, 'oracle_pool'):
+            if not hasattr(ctx, '_oracle_pool'):
                 ctx._oracle_pool = self._create_pool()  # pylint: disable = protected-access; need this method
             return ctx._oracle_pool.acquire()  # pylint: disable = protected-access; need this method
 
