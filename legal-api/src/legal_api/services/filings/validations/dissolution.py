@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Voluntary Dissolution filing."""
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Optional
 
 from flask_babel import _
 
@@ -23,7 +23,7 @@ from legal_api.models import Business
 from ...utils import get_bool, get_date
 
 
-def validate(business: Business, con: Dict) -> Error:
+def validate(business: Business, con: Dict) -> Optional[Error]:
     """Validate the dissolution filing."""
     if not business or not con:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
