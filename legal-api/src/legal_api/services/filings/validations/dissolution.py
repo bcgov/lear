@@ -24,22 +24,8 @@ from ...utils import get_bool, get_date
 
 
 def validate(business: Business, con: Dict) -> Error:
-    """Validate the Voluntary dissolution filing."""
+    """Validate the dissolution filing."""
     if not business or not con:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
-    msg = []
 
-    dissolution_date_path = '/filing/voluntaryDissolution/dissolutionDate'
-    dissolution_date = get_date(con, dissolution_date_path)
-    if not dissolution_date:
-        msg.append({'error': _('Dissolution date must be provided.'),
-                    'path': dissolution_date_path})
-
-    has_liabilities_path = '/filing/voluntaryDissolution/hasLiabilities'
-    has_liabilities = get_bool(con, has_liabilities_path)
-    if has_liabilities is None:
-        msg.append({'error': _('Liabilities flag must be provided.'),
-                    'path': has_liabilities_path})
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

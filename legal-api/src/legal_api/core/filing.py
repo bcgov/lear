@@ -57,13 +57,12 @@ class Filing:
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'
+        DISSOLUTION = 'dissolution'
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         RESTORATIONAPPLICATION = 'restorationApplication'
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
-        VOLUNTARYDISSOLUTION = 'voluntaryDissolution'
-        VOLUNTARYLIQUIDATION = 'voluntaryLiquidation'
 
     def __init__(self):
         """Create the Filing."""

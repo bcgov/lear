@@ -122,7 +122,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
                                   'CP': 'RES'}},
-        'voluntaryDissolution': {'name': 'voluntaryDissolution', 'title': 'Voluntary Dissolution'},
+        'dissolution': {'name': 'dissolution', 'title': 'Dissolution'},
         'transition': {
             'name': 'transition',
             'title': 'Transition',
@@ -314,7 +314,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self._raise_default_lock_exception()
 
         try:
-            self._filing_type = json_data.get('filing').get('header').get('name')
+            self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
             if not self._filing_type:
                 raise Exception
         except Exception as err:

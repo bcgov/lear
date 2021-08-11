@@ -55,11 +55,11 @@ from entity_filer.filing_processors import (
     conversion,
     correction,
     court_order,
+    dissolution,
     incorporation_filing,
     registrars_notation,
     registrars_order,
     transition,
-    voluntary_dissolution,
 )
 from entity_filer.filing_processors.filing_components import name_request
 
@@ -168,8 +168,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('changeOfName'):
                     change_of_name.process(business, filing)
 
-                elif filing.get('voluntaryDissolution'):
-                    voluntary_dissolution.process(business, filing)
+                elif filing.get('dissolution'):
+                    dissolution.process(business, filing)
 
                 elif filing.get('incorporationApplication'):
                     business, filing_submission = incorporation_filing.process(business,
@@ -258,6 +258,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 await publish_event(business, filing_submission)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
+                print(err)
                 capture_message(
                     f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
                     f'on Queue with error:{err}',

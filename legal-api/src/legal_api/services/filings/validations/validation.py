@@ -30,7 +30,7 @@ from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
-from .voluntary_dissolution import validate as voluntary_dissolution_validate
+from .dissolution import validate as dissolution_validate
 
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches
@@ -83,11 +83,11 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                 elif k == Filing.FILINGS['changeOfName'].get('name'):
                     err = con_validate(business, filing_json)
 
+                elif k == Filing.FILINGS['dissolution'].get('name'):
+                    err = dissolution_validate(business, filing_json)
+
                 elif k == Filing.FILINGS['specialResolution'].get('name'):
                     err = special_resolution_validate(business, filing_json)
-
-                elif k == Filing.FILINGS['voluntaryDissolution'].get('name'):
-                    err = voluntary_dissolution_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['incorporationApplication'].get('name'):
                     err = incorporation_application_validate(filing_json)

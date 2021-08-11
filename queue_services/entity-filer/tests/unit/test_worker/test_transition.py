@@ -16,7 +16,7 @@ import copy
 import random
 
 from legal_api.models import Business, Filing, PartyRole
-from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
+from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE, FILING_HEADER, TRANSITION
 
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
@@ -24,7 +24,8 @@ from tests.unit import create_business, create_filing
 
 async def test_transition_filing(app, session):
     """Assert we can create a business based on transition filing."""
-    filing_data = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    filing_data = copy.deepcopy(FILING_HEADER)
+    filing_data['filing']['transition'] = copy.deepcopy(TRANSITION)
 
     business = create_business(filing_data['filing']['business']['identifier'])
 
