@@ -57,3 +57,6 @@ integration_namerequests = pytest.mark.skipif((os.getenv('RUN_NAMEREQUESTS_TESTS
 
 not_github_ci = pytest.mark.skipif((os.getenv('NOT_GITHUB_CI', False) is False),
                                    reason='Does not pass on github ci.')
+
+todo_tech_debt = pytest.mark.skipif((os.getenv('TECH_DEBT', False) is False),
+                                   reason='Does not run tech debt tests.')
