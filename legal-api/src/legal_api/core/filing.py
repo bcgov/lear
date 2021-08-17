@@ -171,7 +171,7 @@ class Filing:
             filing_json = filing
 
         else:  # Filing.Status.COMPLETED.value
-            filing = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
         if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
