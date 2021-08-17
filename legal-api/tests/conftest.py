@@ -187,3 +187,11 @@ def stan_server(docker_services):
     """Create the nats / stan services that the integration tests will use."""
     docker_services.start('nats')
     time.sleep(2)
+
+
+@pytest.fixture(scope='session')
+def minio_server(docker_services):
+    """Create the minio services that the integration tests will use."""
+    docker_services.start('minio')
+    docker_services.wait_for_service('minio', 9000)
+    time.sleep(10)

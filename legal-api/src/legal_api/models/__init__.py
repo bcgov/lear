@@ -20,6 +20,7 @@ from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .corp_type import CorpType
+from .documents import Documents
 from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
@@ -31,6 +32,6 @@ from .user import User
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Filing',
-           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
+           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Documents',
+           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User')

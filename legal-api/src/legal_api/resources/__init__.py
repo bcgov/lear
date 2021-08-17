@@ -24,6 +24,7 @@ from flask import Blueprint
 from flask_restx import Api
 
 from .business import API as BUSINESS_API
+from .document_signature import API as DOCUMENTS_API
 from .meta import API as META_API
 from .namerequest import API as NAME_REQUEST_PROXY_API
 from .nr_type_map import API as NR_TYPE_MAP_API
@@ -64,5 +65,6 @@ API = Api(API_BLUEPRINT,
 
 API.add_namespace(META_API, path='/meta')
 API.add_namespace(BUSINESS_API, path='/businesses')
+API.add_namespace(DOCUMENTS_API, path='/documents')
 API.add_namespace(NAME_REQUEST_PROXY_API, path='/nameRequests')
 API.add_namespace(NR_TYPE_MAP_API, path='/nrTypeMap')
