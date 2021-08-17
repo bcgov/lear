@@ -56,7 +56,4 @@ class Documents(db.Model):
     @classmethod
     def find_by_id(cls, document_id: int) -> Documents:
         """Return the document matching the id."""
-        document = None
-        if document_id:
-            document = cls.query.filter_by(id=document_id).one_or_none()
-        return document
+        return cls.query.filter_by(id=document_id).one_or_none()
