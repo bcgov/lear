@@ -16,20 +16,16 @@ import copy
 from http import HTTPStatus
 
 import pytest
-from registry_schemas.example_data import FILING_HEADER, VOLUNTARY_DISSOLUTION
+from registry_schemas.example_data import FILING_HEADER, DISSOLUTION
 
 from legal_api.models import Business
-from legal_api.services.filings.validations.voluntary_dissolution import validate
+from legal_api.services.filings.validations.dissolution import validate
 
 
 @pytest.mark.parametrize(
     'test_name, dissolution_date, has_liabilities, identifier, expected_code, expected_msg',
     [
         ('SUCCESS', '2018-04-08', True, 'CP1234567', None, None),
-        ('MISSING - dissolution date', None, True, 'CP1234567', HTTPStatus.BAD_REQUEST,
-            'Dissolution date must be provided.'),
-        ('MISSING - has liabilities', '2018-04-08', None, 'CP1234567', HTTPStatus.BAD_REQUEST,
-            'Liabilities flag must be provided.'),
     ]
 )
 def test_validate(session, test_name, dissolution_date, has_liabilities, identifier,
@@ -39,15 +35,8 @@ def test_validate(session, test_name, dissolution_date, has_liabilities, identif
     business = Business(identifier=identifier)
 
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['voluntaryDissolution'] = copy.deepcopy(VOLUNTARY_DISSOLUTION)
-    if dissolution_date:
-        filing['filing']['voluntaryDissolution']['dissolutionDate'] = dissolution_date
-    else:
-        del filing['filing']['voluntaryDissolution']['dissolutionDate']
-    if has_liabilities:
-        filing['filing']['voluntaryDissolution']['hasLiabilities'] = has_liabilities
-    else:
-        del filing['filing']['voluntaryDissolution']['hasLiabilities']
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
 
     # perform test
     err = validate(business, filing)

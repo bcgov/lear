@@ -18,12 +18,22 @@ from datetime import datetime
 
 import pytest
 from legal_api.models import Business, Filing
-from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, FILING_HEADER
+from registry_schemas.example_data import (
+    ALTERATION,
+    ALTERATION_FILING_TEMPLATE,
+    BUSINESS,
+    COURT_ORDER,
+    FILING_HEADER,
+)
 
 from entity_filer.filing_processors import alteration
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
+CONTACT_POINT = {
+        'email': 'no_one@never.get',
+        'phone': '123-456-7890'
+}
 
 @pytest.mark.parametrize(
     'orig_legal_type, new_legal_type',
@@ -39,9 +49,9 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     business = create_business(identifier)
     business.legal_type = orig_legal_type
 
-    alteration_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    alteration_filing['filing']['alteration']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
+    alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing['filing']['business']['legalType'] = orig_legal_type
+    alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
     alteration_filing['filing']['alteration']['business']['legalType'] = new_legal_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
@@ -69,7 +79,6 @@ async def test_worker_alteration(app, session, orig_legal_type, new_legal_type):
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type
-    filing['filing']['alteration']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -93,13 +102,12 @@ async def test_worker_alteration_court_order(app, session):
     effect_of_order: Final  = 'hasPlan'
 
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['alteration'] = {'courtOrder':
-                                   {
-                                       'fileNumber': file_number,
-                                       'orderDate': order_date,
-                                       'effectOfOrder': effect_of_order
-                                    }
-    }
+    filing['filing']['alteration'] = {}
+    filing['filing']['alteration']['business'] = BUSINESS
+    filing['filing']['alteration']['contactPoint'] = CONTACT_POINT
+
+    filing['filing']['alteration']['courtOrder'] = COURT_ORDER
+    filing['filing']['alteration']['courtOrder']['effectOfOrder'] = effect_of_order
  
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id

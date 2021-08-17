@@ -18,12 +18,19 @@ from operator import le
 import random
 from unittest.mock import patch
 
+import pycountry
 import pytest
 import pytz
 from freezegun import freeze_time
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CORRECTION_AR,
+    FILING_HEADER,
+    CHANGE_OF_ADDRESS,
+    INCORPORATION_FILING_TEMPLATE,
+)
 
 from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.worker import process_filing
@@ -41,11 +48,15 @@ from tests.unit import (
 
 def compare_addresses(business_address: dict, filing_address: dict):
     """Compare two address dicts."""
-    for key in business_address.keys():
-        if key == 'addressCountry':
+    for key, value in business_address.items():
+        if value is None and filing_address.get(key):
+            assert False
+        elif key == 'addressCountry':
+            pycountry.countries.search_fuzzy(value)[0].alpha_2 == \
+                pycountry.countries.search_fuzzy(filing_address.get('addressCountry'))[0].alpha_2
             assert business_address[key] == 'CA'
         elif key != 'addressType':
-            assert business_address[key] == filing_address[key]
+            assert business_address.get(key) == filing_address.get(key)
 
 
 def active_ceased_lists(filing):
@@ -97,20 +108,20 @@ async def test_process_filing_missing_app(app, session):
         await process_filing(filing_msg, flask_app=None)
 
 
-
-
 async def test_process_coa_filing(app, session):
     """Assert that a COD filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
-    new_delivery_address = COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']
-    new_mailing_address = COA_FILING['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
+    coa_filing = copy.deepcopy(FILING_HEADER)
+    coa_filing['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
+    new_delivery_address = coa_filing['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']
+    new_mailing_address = coa_filing['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']
 
     # setup
     business = create_business(identifier)
     business_id = business.id
-    filing_id = (create_filing(payment_id, COA_FILING, business.id)).id
+    filing_id = (create_filing(payment_id, coa_filing, business.id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
@@ -397,7 +408,7 @@ async def test_process_filing_completed(app, session, mocker):
     # setup
     business = create_business(identifier, legal_type='CP')
     business_id = business.id
-    filing_id = (create_filing(payment_id, AR_FILING, business.id)).id
+    filing_id = (create_filing(payment_id, ANNUAL_REPORT, business.id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
     # TEST
