@@ -1,6 +1,0 @@
-Flask
-python-dotenv
-psycopg2-binary
-pycountry
-requests
-Werkzeug

@@ -1,3 +1,0 @@
-oc process -f openshift\templates\postgresql-build.json --param-file=openshift\postgresql-build.lear.param | oc create -f -
-
-oc process -f openshift\templates\postgresql-deploy.json --param-file=openshift\postgresql-deploy.lear.dev.param | oc create -f -
