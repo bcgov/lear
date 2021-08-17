@@ -16,7 +16,6 @@ from http import HTTPStatus
 
 from flask_restx import Namespace, Resource, cors
 
-from legal_api.exceptions import BusinessException
 from legal_api.services import MinioService
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
@@ -35,8 +34,4 @@ class DocumentSignature(Resource):
     @jwt.requires_auth
     def get(file_name: str):
         """Return a pre-signed URL for the new document."""
-        try:
-            response, status = MinioService.create_signed_put_url(file_name), HTTPStatus.OK
-        except BusinessException as exception:
-            response, status = {'code': exception.code, 'message': exception.message}, exception.status_code
-        return response, status
+        return MinioService.create_signed_put_url(file_name), HTTPStatus.OK
