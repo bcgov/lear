@@ -31,6 +31,27 @@ def upgrade():
     )
     op.create_index(op.f('ix_documents_business_id'), 'documents', ['business_id'], unique=False)
     op.create_index(op.f('ix_documents_filing_id'), 'documents', ['filing_id'], unique=False)
+
+    op.create_table('documents_version',
+    sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
+    sa.Column('type', sa.String(length=30), nullable=False),
+    sa.Column('file_key', sa.String(length=100), nullable=False),
+    sa.Column('file_name', sa.String(length=100), nullable=False),
+    sa.Column('content_type', sa.String(length=20), nullable=False),
+    sa.Column('business_id', sa.Integer(), nullable=True),
+    sa.Column('filing_id', sa.Integer(), nullable=True),
+    sa.Column('transaction_id', sa.BigInteger(), autoincrement=False, nullable=False),
+    sa.Column('end_transaction_id', sa.BigInteger(), nullable=True),
+    sa.Column('operation_type', sa.SmallInteger(), nullable=False),
+    sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
+    sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
+    sa.PrimaryKeyConstraint('id', 'transaction_id')
+    )
+    op.create_index(op.f('ix_documents_version_end_transaction_id'), 'documents_version', ['end_transaction_id'], unique=False)
+    op.create_index(op.f('ix_documents_version_business_id'), 'documents_version', ['business_id'], unique=False)
+    op.create_index(op.f('ix_documents_version_filing_id'), 'documents_version', ['filing_id'], unique=False)
+    op.create_index(op.f('ix_documents_version_operation_type'), 'documents_version', ['operation_type'], unique=False)
+    op.create_index(op.f('ix_documents_version_transaction_id'), 'documents_version', ['transaction_id'], unique=False)
     # ### end Alembic commands ###
 
 
@@ -39,4 +60,11 @@ def downgrade():
     op.drop_index(op.f('ix_documents_filing_id'), table_name='documents')
     op.drop_index(op.f('ix_documents_business_id'), table_name='documents')
     op.drop_table('documents')
+    
+    op.drop_index(op.f('ix_documents_version_end_transaction_id'), table_name='documents_version')
+    op.drop_index(op.f('ix_documents_version_business_id'), table_name='documents_version')
+    op.drop_index(op.f('ix_documents_version_filing_id'), table_name='documents_version')
+    op.drop_index(op.f('ix_documents_version_operation_type'), table_name='documents_version')
+    op.drop_index(op.f('ix_documents_version_transaction_id'), table_name='documents_version')
+    op.drop_table('documents_version')
     # ### end Alembic commands ###

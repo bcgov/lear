@@ -53,21 +53,6 @@ class Documents(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    @property
-    def json(self):
-        """Return the json repressentation of a document."""
-        return {
-            'document': {
-                'id': self.id,
-                'type': self.type,
-                'fileKey': self.file_key,
-                'fileName': self.file_name,
-                'contentType': self.content_type,
-                'businessId': self.business_id,
-                'filingId': self.filing_id
-            }
-        }
-
     @classmethod
     def find_by_id(cls, document_id: int) -> Documents:
         """Return the document matching the id."""
