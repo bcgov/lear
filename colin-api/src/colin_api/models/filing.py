@@ -641,7 +641,8 @@ class Filing:
             }
             # TODO: simplify after consolidating schema
             schema_name = convert_to_snake(filing.filing_type)
-            schema = get_schema(f'{schema_name.replace("_application", "")}.json')
+            schema = get_schema(f'{schema_name}.json')
+            # schema = get_schema(f'{schema_name.replace("_application", "")}.json')
             components = schema.get('properties').keys()
 
             if filing.filing_type in components:
