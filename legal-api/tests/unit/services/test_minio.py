@@ -15,13 +15,10 @@
 
 Test suite to ensure that the Minio service routines are working as expected.
 """
-
-from logging import exception
 import os
-from minio.error import S3Error
 
 import requests
-from requests.api import get
+from minio.error import S3Error
 
 from legal_api.services import MinioService
 
@@ -37,19 +34,7 @@ def test_create_signed_put_url(session, minio_server):  # pylint:disable=unused-
 
 def test_create_signed_get_url(session, minio_server, tmpdir):  # pylint:disable=unused-argument
     """Assert that a GET url can be pre-signed."""
-    d = tmpdir.mkdir('subdir')
-    fh = d.join('test-file.txt')
-    fh.write('Test File')
-    filename = os.path.join(fh.dirname, fh.basename)
-
-    test_file = open(filename, 'rb')
-    files = {'upload_file': test_file}
-    file_name = fh.basename
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, files=files)
-
+    key = _upload_file(tmpdir)
     pre_signed_get = MinioService.create_signed_get_url(key)
     assert pre_signed_get
     get_response = requests.get(pre_signed_get)
@@ -58,46 +43,32 @@ def test_create_signed_get_url(session, minio_server, tmpdir):  # pylint:disable
 
 def test_get_file_info(session, minio_server, tmpdir):  # pylint:disable=unused-argument
     """Assert that we can retrieve a file info."""
-    d = tmpdir.mkdir('subdir')
-    fh = d.join('test-file.txt')
-    fh.write('Test File')
-    filename = os.path.join(fh.dirname, fh.basename)
-
-    test_file = open(filename, 'rb')
-    files = {'upload_file': test_file}
-    file_name = fh.basename
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, files=files)
-
+    key = _upload_file(tmpdir)
     file_info = MinioService.get_file_info(key)
     assert file_info
 
 
 def test_get_file(session, minio_server, tmpdir):  # pylint:disable=unused-argument
     """Assert that we can retrieve a file."""
-    d = tmpdir.mkdir('subdir')
-    fh = d.join('test-file.txt')
-    fh.write('Test File')
-    filename = os.path.join(fh.dirname, fh.basename)
-
-    test_file = open(filename, 'rb')
-    files = {'upload_file': test_file}
-    file_name = fh.basename
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, files=files)
-
+    key = _upload_file(tmpdir)
     get_response = MinioService.get_file(key)
     assert get_response
 
 
 def test_delete_file(session, minio_server, tmpdir):  # pylint:disable=unused-argument
     """Assert that a file can be deleted."""
+    key = _upload_file(tmpdir)
+    MinioService.delete_file(key)
+
+    try:
+        MinioService.get_file_info(key)
+    except S3Error as ex:
+        assert ex.code == 'NoSuchKey'
+
+
+def _upload_file(tmpdir):
     d = tmpdir.mkdir('subdir')
-    fh = d.join('test-file.txt')
+    fh = d.join('cooperative-test.pdf')
     fh.write('Test File')
     filename = os.path.join(fh.dirname, fh.basename)
 
@@ -108,10 +79,4 @@ def test_delete_file(session, minio_server, tmpdir):  # pylint:disable=unused-ar
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
     requests.put(pre_signed_put, files=files)
-
-    MinioService.delete_file(key)
-
-    try:
-        MinioService.get_file_info(key)
-    except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+    return key
