@@ -24,7 +24,7 @@ from flask import Blueprint
 from flask_restx import Api
 
 from .business import API as BUSINESS_API
-from .document_signature import API as DOCUMENTS_API
+from .documents_signature import API as DOCUMENTS_API
 from .meta import API as META_API
 from .namerequest import API as NAME_REQUEST_PROXY_API
 from .nr_type_map import API as NR_TYPE_MAP_API

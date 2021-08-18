@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Table for storing all static documents.
+"""Table for storing all static document details.
 
 Documents which are static in nature are stored in this table
 """
