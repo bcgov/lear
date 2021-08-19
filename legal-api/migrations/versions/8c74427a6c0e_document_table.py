@@ -52,6 +52,9 @@ def upgrade():
     op.create_index(op.f('ix_documents_version_filing_id'), 'documents_version', ['filing_id'], unique=False)
     op.create_index(op.f('ix_documents_version_operation_type'), 'documents_version', ['operation_type'], unique=False)
     op.create_index(op.f('ix_documents_version_transaction_id'), 'documents_version', ['transaction_id'], unique=False)
+
+    op.add_column('businesses', sa.Column('association_type', sa.String(length=50), nullable=True))
+    op.add_column('businesses_version', sa.Column('association_type', sa.String(length=50), nullable=True))
     # ### end Alembic commands ###
 
 
@@ -67,4 +70,7 @@ def downgrade():
     op.drop_index(op.f('ix_documents_version_operation_type'), table_name='documents_version')
     op.drop_index(op.f('ix_documents_version_transaction_id'), table_name='documents_version')
     op.drop_table('documents_version')
+
+    op.drop_column('businesses_version', 'association_type')
+    op.drop_column('businesses', 'association_type')
     # ### end Alembic commands ###
