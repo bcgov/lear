@@ -18,6 +18,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
 
 from .filing import Filing
-# UserRoles
+
 
 __all__ = ('Filing',)

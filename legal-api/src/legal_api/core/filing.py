@@ -154,7 +154,7 @@ class Filing:
                                                                                 Filing.Status.PAID.value,
                                                                                 Filing.Status.PENDING.value,
                                                                                 ]):
-            filing = self.raw
+            filing_json = self.raw
 
         # this will return the raw filing instead of the versioned filing until
         # payment and processing are complete.
@@ -170,11 +170,11 @@ class Filing:
             filing_json = filing
 
         else:  # Filing.Status.COMPLETED.value
-            filing = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
         if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
             if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
-                filing_json = copy.deepcopy(filing)
+                # filing_json = copy.deepcopy(filing)
                 if diff := self._diff(filing_json, correction_id):
                     filing_json['filing']['correction']['diff'] = diff
 
@@ -329,13 +329,11 @@ class Filing:
 
         ledger = []
         for filing in query.all():
-            data = {}
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,
-                'correctionFilingId': filing.parent_filing.id if filing.parent_filing else None,
-                'correctionFilingStatus': filing.parent_filing.status if filing.parent_filing else None,
-                'displayName': FilingMeta.display_name(filing_name=filing.filing_type),
+                'commentsCount': filing.comments_count,
+                'displayName': FilingMeta.display_name(filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
                 'isFutureEffective': (filing.effective_date
@@ -348,19 +346,37 @@ class Filing:
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
                 'commentsLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}/comments',
-                'correctionLink': f'{base_url}{{businessIdentifier}}/filings/{{correctionFilingId}}',
+                'documentsLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}/documents',
                 'filingLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}',
             }
-            if filing.court_order_file_number:
-                data['fileNumber'] = filing.court_order_file_number
-            if filing.court_order_date:
-                data['orderDate'] = filing.court_order_date
-            if filing.court_order_effect_of_order:
-                data['effectOfOrder'] = filing.court_order_effect_of_order
-            if filing.order_details:
-                data['orderDetails'] = filing.order_details
-            if data:
-                ledger_filing['data'] = data
+            # correction
+            if filing.parent_filing:
+                ledger_filing['correctionFilingId'] = filing.parent_filing.id
+                ledger_filing['correctionLink'] = f'{base_url}/{business.identifier}/filings/{filing.parent_filing.id}'
+                ledger_filing['correctionFilingStatus'] = filing.parent_filing.status
+
+            # add the collected meta_data
+            if filing.meta_data:
+                ledger_filing['data'] = filing.meta_data
+
+            # court order
+            if filing.court_order_file_number:  # file_number is mandatory, if a court-order exists
+                Filing._add_ledger_court_order(filing, ledger_filing)
+
             ledger.append(ledger_filing)
 
         return ledger
+
+    @staticmethod
+    def _add_ledger_court_order(filing: FilingStorage, ledger_filing: dict) -> dict:
+        court_order_data = {'fileNumber': filing.court_order_file_number}
+        if filing.court_order_date:
+            court_order_data['orderDate'] = filing.court_order_date
+        if filing.court_order_effect_of_order:
+            court_order_data['effectOfOrder'] = filing.court_order_effect_of_order
+        if filing.order_details:
+            court_order_data['orderDetails'] = filing.order_details
+
+        if not ledger_filing.get('data'):
+            ledger_filing['data'] = {}
+        ledger_filing['data']['courtOrder'] = court_order_data
