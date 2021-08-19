@@ -13,7 +13,7 @@
 # limitations under the License.
 """Table for storing all static document details.
 
-Documents which are static in nature are stored in this table
+Documents which are static in nature are stored in file server and details will be saved in this table
 """
 
 from __future__ import annotations
@@ -32,8 +32,8 @@ class DocumentType(Enum):
     COOP_MEMORANDOM = 'coop_memorandom'
 
 
-class Documents(db.Model):
-    """This is the model for a documents."""
+class Document(db.Model):
+    """This is the model for a document."""
 
     __versioned__ = {}
     __tablename__ = 'documents'
@@ -54,6 +54,6 @@ class Documents(db.Model):
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, document_id: int) -> Documents:
+    def find_by_id(cls, document_id: int) -> Document:
         """Return the document matching the id."""
         return cls.query.filter_by(id=document_id).one_or_none()

@@ -16,12 +16,12 @@
 
 Test-Suite to ensure that the Document Model is working as expected.
 """
-from legal_api.models.documents import Documents, DocumentType
+from legal_api.models.document import Document, DocumentType
 
 
 def test_document_save_and_find(session):
     """Assert that the document was saved and find by id."""
-    document = Documents()
+    document = Document()
     document.type = DocumentType.COOP_RULES.value
     document.file_key = 'cooperative/a5c51016-4de7-407b-ab73-bb131f852053.pdf'
     document.file_name = 'coops_rules.pdf'
@@ -29,4 +29,4 @@ def test_document_save_and_find(session):
     document.save()
     assert document.id
 
-    assert Documents.find_by_id(document.id)
+    assert Document.find_by_id(document.id)
