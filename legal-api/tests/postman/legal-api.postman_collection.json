@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8ce2c017-afa0-4cf8-8e1e-de085b849700",
+		"_postman_id": "1433dd7b-a7bd-4ca3-bd6e-187a0676e68a",
 		"name": "legal-api",
 		"description": "version=2.8 - Legal API Postman Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -23,8 +23,7 @@
 									"    postman.setGlobalVariable('postman_bdd_path', 'http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js');",
 									"}",
 									""
-								],
-								"id": "34beaf4d-cc99-40ca-ac90-ff8cae28b7ce"
+								]
 							}
 						},
 						{
@@ -35,8 +34,7 @@
 									"// \"install\" Postman BDD",
 									"postman.setGlobalVariable('postmanBDD', responseBody);",
 									""
-								],
-								"id": "ba55791b-2fd9-40f8-8023-51d34b114433"
+								]
 							}
 						}
 					],
@@ -64,7 +62,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "dadb4375-8232-4fc6-b6c0-d013ac2deab7",
 								"exec": [
 									""
 								],
@@ -74,7 +71,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4be6a583-77f4-4ace-8100-1e4590def91a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.environment.set(\"auth_token_script\", jsonData.data);"
@@ -110,7 +106,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "63913066-b159-47af-8372-11a5e6afbcce",
 								"exec": [
 									""
 								],
@@ -120,7 +115,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ae6523d7-1a58-4e59-b767-519b951402c9",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.environment.set(\"auth_refresh_script\", jsonData.data);"
@@ -155,7 +149,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "9f4b0c3d-a09e-4d28-bbdb-cc32a51ebc3e",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -165,15 +158,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a16cb904-3784-49d7-ac80-3807747f3323",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "reset data",
@@ -184,7 +175,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad3ef54f-ef99-4dd8-b5b2-eaec8a221bd1",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -245,7 +235,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "d0073f62-5c98-411d-9398-ebc65a48ede5",
 								"exec": [
 									""
 								],
@@ -255,7 +244,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "afaf187f-dd5d-44ee-a851-0efd2a7419ed",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -311,7 +299,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "3a90c6df-212a-4004-aaad-73e77e944db2",
 								"exec": [
 									""
 								],
@@ -321,7 +308,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c07f52ad-4922-4a0b-b2ea-8bbdd35c9925",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -377,7 +363,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "8bd0e5e7-8977-414b-af7e-d7950ffbd0dc",
 								"exec": [
 									""
 								],
@@ -387,7 +372,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "610a3495-308e-4036-8a6c-156f4fb60583",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -443,7 +427,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c0c1a61e-635f-4798-9d3d-cf44a8d7e26d",
 								"exec": [
 									""
 								],
@@ -453,7 +436,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "754e4bf6-12e1-44a5-96ce-af181c80e502",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -509,7 +491,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "51cb4205-3598-475f-8509-aa6060d05e05",
 								"exec": [
 									""
 								],
@@ -519,7 +500,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c077017d-cc66-4b7a-95b1-141edd384d93",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -575,7 +555,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "75d227d5-2fc8-453b-a9c5-b1d7bb39a5c2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -617,7 +596,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1dae4d83-0cbd-43b2-aeb8-c017fb28477a",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -653,8 +631,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "authenticate",
@@ -665,7 +642,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7cbcc826-f492-476a-b779-6adefac3cfdb",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.environment.set(\"token\", jsonData.access_token);",
@@ -680,6 +656,21 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{client_secret}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{clientid}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -689,7 +680,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "grant_type=password&client_id={{clientid}}&username=CP1000001&password={{password}}&client_secret={{client_secret}}"
+							"raw": "grant_type=client_credentials"
 						},
 						"url": {
 							"raw": "{{auth_url}}/auth/realms/{{realm}}/protocol/openid-connect/token",
@@ -714,7 +705,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "07fd31a2-9254-4431-8f87-20209ed1f620",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.environment.set(\"token\", jsonData.access_token);",
@@ -753,8 +743,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "ops",
@@ -765,7 +754,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5c502f32-842b-4368-9332-6f69570c3c12",
 								"exec": [
 									"pm.test(\"Response time is less than 200ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(200);",
@@ -808,7 +796,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "54dc65fd-b122-49a2-9838-4d4a2bc63a9a",
 								"exec": [
 									"pm.test(\"Response time is less than 200ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(200);",
@@ -851,7 +838,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8b04d0a2-8db4-4a70-ab16-029f73872112",
 								"exec": [
 									"pm.test(\"Response time is less than 200ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(200);",
@@ -872,7 +858,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "eb7f5a77-61a4-4d0a-a8ad-f72cf0db3dd3",
 								"exec": [
 									"eval(environment.auth_script);"
 								],
@@ -904,8 +889,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "get business info",
@@ -916,7 +900,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3da76b3e-61ef-4eff-951e-12ab6f6d4a63",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1028,7 +1011,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dac08f35-c602-40ec-9d2e-af1652260b4a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1314,7 +1296,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "724adb24-d3fa-45ec-ba3e-7bf77154a122",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1440,7 +1421,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "96902d2b-6fdb-48ae-af9b-1800e469ce7d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1554,7 +1534,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2e90cdf8-dab4-485c-a650-dc102bb9c53b",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1674,7 +1653,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f196b4dc-80bb-46c0-8846-1408801210d9",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -1921,8 +1899,7 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "get filings",
@@ -1933,7 +1910,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1f439872-b833-49ee-b7ca-1c5fa76572b2",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -2035,8 +2011,7 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Annual Report",
@@ -2050,7 +2025,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "268dbec5-fb73-4200-83be-0fda66ac86c5",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -2157,7 +2131,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "580f675e-50f9-4905-8e79-655fc3eb5d4d",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -2214,7 +2187,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2ccc5a35-35e4-4065-95ec-ff16c70b513e",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -2251,7 +2223,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "afafce20-c1aa-4379-bb5d-07f1cd324566",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -2408,7 +2379,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "16855d3c-6278-4d28-a38a-a4d3288b4092",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -2528,7 +2498,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "0e43481f-59df-4f24-be97-f4252d97adbe",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -2540,7 +2509,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fa943a59-556d-4738-adc7-a9a36e3f3930",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -2714,7 +2682,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4a7ec31b-cf3a-49af-b5cb-f8fdcf42a014",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -2768,9 +2735,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "POST - CP1000006",
@@ -2781,7 +2746,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2ea7d7d3-afc4-48b2-9672-42f2d2555296",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -2888,7 +2852,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e1247f46-9c0c-46de-a1f4-8ab303b5f0ff",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -3141,7 +3104,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "279388b4-b765-4463-9d78-e1898de88469",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -3173,7 +3135,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "a91eb58e-a0ba-4b09-95f0-f263ae576bc9",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -3308,7 +3269,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e1b81dff-1ee2-4d7f-a59f-0c3d288424a6",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -3558,9 +3518,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "POST combined - CP1000002",
@@ -3571,7 +3529,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2dfc0621-1736-4d8a-83e6-43f853bbe96e",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -3678,7 +3635,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "abfdaa14-28d7-4a38-b4c2-30cf69c52b59",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -3931,7 +3887,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d78bef1e-32e8-4906-965c-b76ea741dfe0",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -3965,7 +3920,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7e1b1a56-e1b3-4c66-b63f-2b046f5b6f2d",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -4100,7 +4054,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "12ac3e7b-8688-4204-a093-0a467d2c2c15",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -4352,12 +4305,9 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Change of Address - CP1000002",
@@ -4368,7 +4318,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8ae6c41e-ac91-4725-9124-f94300a7b782",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4475,7 +4424,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d88838c1-315b-450a-9800-7702e556bf2a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4532,7 +4480,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "879b5008-573f-43fc-a71f-15e2fff1407f",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -4567,7 +4514,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "541fcbba-fe24-4425-9c4a-600c9da6a9eb",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -4706,7 +4652,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1caf735-1abd-4d5c-a6e1-dcf825b2db08",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4768,7 +4713,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0489482b-0894-4983-ac94-800af7a270c5",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 202\", function () {",
@@ -4782,7 +4726,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "2943218c-1555-41fa-891b-d5337fe009c9",
 								"exec": [
 									""
 								],
@@ -4920,7 +4863,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ff41974e-2603-41e5-a8af-ea0bd8ccebab",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -4934,7 +4876,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "0a2ce04b-7ff4-416f-a8f1-bc938de3aaee",
 								"exec": [
 									""
 								],
@@ -5066,8 +5007,7 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Change of Directors - CP1000002",
@@ -5078,7 +5018,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8b8d53b1-28b2-42e9-a906-7d559eded567",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -5185,7 +5124,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "12c61b15-114f-4aba-b4b7-5f3621040f5f",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.environment.set(\"incorp_date\", jsonData.business.foundingDate.substring(0, 10))",
@@ -5287,7 +5225,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ecc166e7-2ac1-4a83-b6e5-cffede28df70",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -5408,7 +5345,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "61d5e8c1-a7ce-4671-a294-3f30f05e4f51",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -5465,7 +5401,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "79e7adc0-02bd-4343-ae7f-2ec787df6dc9",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -5497,7 +5432,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "3a9679a2-a28a-4b77-8b62-54a749a747d4",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -5632,7 +5566,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f4a7967f-f3e4-4d8c-b9d9-f231bdbc30d3",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -5694,7 +5627,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3b1a12cd-e644-44ce-8cfa-9d294d3b1903",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 202\", function () {",
@@ -5708,7 +5640,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "471048f0-cf72-45ed-8496-2257f25aacf7",
 								"exec": [
 									""
 								],
@@ -5846,7 +5777,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfa70f84-4a1b-4c7d-901b-3e94ae772c29",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -5860,7 +5790,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "ccbb9c71-7b6b-49e7-b8c7-753db9718467",
 								"exec": [
 									""
 								],
@@ -5998,7 +5927,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c6481146-f955-4ffa-95ba-af3678261f9e",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6018,7 +5946,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "171de99f-005b-4343-8d07-2037ebe5f46e",
 								"exec": [
 									"var today = new Date()",
 									"var future = new Date();",
@@ -6156,7 +6083,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "408c022f-732b-4eca-ae66-eca5b368d3da",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6176,7 +6102,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "15e0c282-4624-4e6d-9d11-d7234a285af9",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -6316,7 +6241,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dc402186-547c-4e4e-8de5-1a0d94ba57c0",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6336,7 +6260,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "1e4efd09-8915-40a3-bac8-4c369e659ec8",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -6476,7 +6399,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1df7fa30-4cef-48c8-84c3-33f45c322c53",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6499,7 +6421,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "eedcbf0d-c86c-44db-a1c7-f957ea109d0f",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -6633,7 +6554,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "b303f3cc-efd8-487d-a0aa-6af425820c92",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -6643,15 +6563,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "dbf7f666-5b61-41ea-b94e-a3f53925a7c2",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "internal-requests-for-jobs",
@@ -6662,7 +6580,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0ff5eba7-3db6-4bc0-a681-99609bb74a23",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6769,7 +6686,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9a64b22c-5be7-456a-a7e6-269b2a2ffcce",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6796,7 +6712,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "1d5d2680-aa83-4079-a0c6-61b2c7b9d9d6",
 								"exec": [
 									"pm.environment.set(\"colin_id\", 103251025)"
 								],
@@ -6899,7 +6814,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cb7b11d7-4c7a-45ac-990f-6c4946e94de8",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -6926,7 +6840,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "404274a9-aa6f-4758-931e-889f48abdf65",
 								"exec": [
 									""
 								],
@@ -7029,7 +6942,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9b9365ee-17c5-47b5-aed2-fa5501c1f5dc",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -7137,7 +7049,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "92859324-be7c-40a4-8f23-0f29b659c209",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -7253,7 +7164,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cc7a1175-d847-478f-a6cc-564c6447995e",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -7280,7 +7190,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "2dd027c9-d844-4718-91fe-e76d57a8d80a",
 								"exec": [
 									""
 								],
@@ -7384,8 +7293,7 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Incorporation",
@@ -7396,7 +7304,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3c7bfe6e-630d-456a-a944-737944ed296a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -7503,7 +7410,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "8cc1469c-4471-4a69-9b3c-6246b69aa011",
 								"exec": [
 									"// set nr num",
 									"pm.environment.set('nr_num', 'NR 1234567')",
@@ -7524,7 +7430,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "97c080ee-5c46-454b-9c65-bdba40d0146b",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -7590,7 +7495,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c09fe61a-8b00-4f8c-9c76-97966e1799d3",
 								"exec": [
 									""
 								],
@@ -7600,7 +7504,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aaa73e02-9c15-41b9-9375-7f3762c2de37",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -7680,7 +7583,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "d4ae39bd-846b-4bc1-b84a-3a229de4dce9",
 								"exec": [
 									""
 								],
@@ -7690,7 +7592,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "35039e73-89b2-4e94-87bc-1a63d84425b3",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -7762,7 +7663,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "97e6ca46-e979-42d7-93a7-5b7826397d27",
 								"exec": [
 									""
 								],
@@ -7772,7 +7672,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "02ecbf6e-e00c-4a52-af16-d03f986b2487",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -7857,7 +7756,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "e9dbea03-0cf6-4ef7-82eb-0347a148ba1c",
 								"exec": [
 									"// clear filing_id ",
 									"pm.environment.set('filing_id', '')",
@@ -7869,7 +7767,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "94ad9343-b271-4821-95e7-f52208a41a47",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -7930,8 +7827,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Filing Comments/Details",
@@ -7942,7 +7838,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cbf34a83-cc29-4d30-b8e2-5e120df06440",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -8049,7 +7944,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6c2a3f56-593f-426a-8744-f2b03b1c4dd0",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -8074,7 +7968,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "65ee46ee-3aab-4b05-a9c2-a45e2718358a",
 								"exec": [
 									""
 								],
@@ -8231,7 +8124,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1aa5b740-6cda-4a6d-a9a5-7609f07007e0",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -8300,7 +8192,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11dd2d09-af4f-4a11-9787-96e39a521a6b",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -8367,7 +8258,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "88112176-3397-4756-b119-19b7cbef8a42",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -8440,7 +8330,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bf57128c-2221-432f-9150-693186dba8d8",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -8490,7 +8379,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3aab8236-2079-47eb-9de3-8cc077dd9c64",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -8511,7 +8399,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "931de96a-4452-4a91-8f42-7a0155cbdd2f",
 								"exec": [
 									""
 								],
@@ -8668,7 +8555,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dcc9582e-2e53-405d-a905-ae09f9157557",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -8689,7 +8575,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "4874c545-b4fa-4734-b63b-ead93274367a",
 								"exec": [
 									""
 								],
@@ -8846,7 +8731,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "911ea390-9665-46c4-895f-35598a2ebd2f",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -8865,7 +8749,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "1a1d20be-f862-4fb2-a9e4-ea944521ae0c",
 								"exec": [
 									""
 								],
@@ -9027,7 +8910,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "6863c945-e145-4e85-86e0-23845ce677e6",
 								"exec": [
 									""
 								],
@@ -9037,7 +8919,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad630289-287a-47d1-a85a-246d7bafba2c",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -9205,7 +9086,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5168a52d-aa74-4734-afc1-f262f1fea237",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -9312,7 +9192,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aa8e9ffc-c7bb-4f90-bcfc-728bc25054b8",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"",
@@ -9327,7 +9206,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "f31b0ef1-6ff3-4137-b32d-211c7253000a",
 								"exec": [
 									""
 								],
@@ -9483,7 +9361,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "49126980-44a4-4b4f-ad30-03474d135c93",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -9493,15 +9370,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f92bcc6e-cc46-4b7e-b642-544692a8e91f",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "nameRequests",
@@ -9512,7 +9387,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c0ce6dc0-4de8-4355-9207-6608d2425afd",
 								"exec": [
 									"pm.test(\"Response time is less than 200ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(200);",
@@ -9533,7 +9407,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "40a5b57f-28b6-41ae-b64f-abcc65dbf84a",
 								"exec": [
 									"eval(environment.auth_script);"
 								],
@@ -9630,8 +9503,7 @@
 					"response": []
 				}
 			],
-			"description": "NameX-API proxy call for name request data",
-			"protocolProfileBehavior": {}
+			"description": "NameX-API proxy call for name request data"
 		},
 		{
 			"name": "Transition Application",
@@ -9642,7 +9514,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5d7c65c9-111f-49de-a95a-0f799c6b6e07",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -9764,7 +9635,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63ce8133-d2e2-48f1-b763-707b18d6d492",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -9801,7 +9671,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "9bab7f74-df6e-4bbd-aaf8-37e43761465d",
 								"exec": [
 									"var today = new Date()",
 									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -9940,7 +9809,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3e80d1cb-d9b5-4127-b157-8be89e0e5353",
 								"exec": [
 									"var jsonData = pm.response.json()",
 									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
@@ -9969,7 +9837,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "967a11b1-5d71-4cfc-a64e-f6fba4e14eed",
 								"exec": [
 									""
 								],
@@ -10097,15 +9964,115 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
+		},
+		{
+			"name": "DocumentSignatures",
+			"item": [
+				{
+					"name": "Get document signatures",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test(\"response is ok\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"response should be okay to process\", function () { ",
+									"    pm.response.to.not.be.error; ",
+									"    //pm.response.to.have.jsonBody(\"\"); ",
+									"    pm.response.to.not.have.jsonBody(\"error\"); ",
+									"});",
+									"",
+									"pm.test(\"response must be valid and have a body\", function () {",
+									"     // assert that the response has a valid JSON body",
+									"     pm.response.to.be.withBody;",
+									"     pm.response.to.be.json; // this assertion also checks if a body  exists, so the above check is not needed",
+									"});",
+									"",
+									"pm.test(\"Verify payload\",  () => {",
+									"    pm.expect(pm.response.text()).to.include(\"key\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"documnent_key\", jsonData.key);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"file_name\", \"coop_rules_file.pdf\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/documents/{{file_name}}/signatures",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								"{{file_name}}",
+								"signatures"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "53b5c1a6-2db7-4254-9c66-559b68f387c3",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -10115,13 +10082,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "63004fd0-2b9a-496f-969a-8f46d4410778",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

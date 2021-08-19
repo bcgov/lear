@@ -136,6 +136,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
+    association_type = db.Column('association_type', db.String(50))
 
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
@@ -147,6 +148,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
+    documents = db.relationship('Document', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -244,8 +246,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         None fields are not included.
         """
         ar_min_date, ar_max_date = self.get_ar_dates(
-                                    (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
-                                   )
+            (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        )
         d = {
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
