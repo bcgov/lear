@@ -31,8 +31,12 @@ from .filing import FilingMeta, FILINGS
 from .filing import FilingMeta
 
 
+<<<<<<< HEAD
 __all__ = ('FilingMeta')
 <<<<<<< HEAD
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+__all__ = ('FilingMeta',)
+>>>>>>> 1dcddedf (added all fields to filing_ledger)

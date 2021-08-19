@@ -14,12 +14,16 @@
 """Meta Filing support for the core domain used by the application."""
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
 from contextlib import suppress
 from typing import Final, Optional
 
 from legal_api.models import Filing as FilingStorage
 from legal_api.utils.datetime import date
 
+<<<<<<< HEAD
 =======
 from typing import Final, Optional
 
@@ -28,6 +32,8 @@ from typing import Final, Optional
 from typing import Final, Optional
 
 >>>>>>> 885773ca (adding ledger fields)
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
 
 FILINGS: Final = {
     'alteration': {
@@ -79,15 +85,21 @@ FILINGS: Final = {
     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
         'displayName': 'Conversion'
     },
+<<<<<<< HEAD
 =======
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'correction': {
         'name': 'correction',
         'title': 'Correction',
@@ -99,6 +111,9 @@ FILINGS: Final = {
     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'courtOrder': {
         'name': 'courtOrder',
         'title': 'Court Order',
@@ -107,12 +122,17 @@ FILINGS: Final = {
     'dissolution': {
         'name': 'dissolution',
         'title': 'Dissolution',
+<<<<<<< HEAD
         'displayName': 'Dissolution',
         'code': 'NOT_IMPLEMENTED_YET'},
 =======
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+        'displayName': 'Disolution',
+        'code': 'NOT_IMPLEMENTED_YET'},
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'incorporationApplication': {
         'name': 'incorporationApplication',
         'title': 'Incorporation Application',
@@ -123,6 +143,9 @@ FILINGS: Final = {
     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
     # for all the business the fee code remain same as NOFEE (Staff)
     'registrarsNotation': {
@@ -135,6 +158,7 @@ FILINGS: Final = {
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
         'code': 'NOFEE'},
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 885773ca (adding ledger fields)
@@ -147,12 +171,15 @@ FILINGS: Final = {
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
         'displayName': 'Special Resolution',
         'codes': {
             'CP': 'RES'}},
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -167,6 +194,8 @@ FILINGS: Final = {
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'transition': {
         'name': 'transition',
         'title': 'Transition',
@@ -178,11 +207,15 @@ FILINGS: Final = {
     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
     'voluntaryDissolution': {
         'name': 'voluntaryDissolution',
         'title': 'Voluntary Dissolution',
         'displayName': 'Voluntary Dissolution'
         }
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 885773ca (adding ledger fields)
@@ -207,6 +240,8 @@ FILINGS: Final = {
 >>>>>>> eb4fca0d (adding ledger fields)
 =======
 >>>>>>> 885773ca (adding ledger fields)
+=======
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
 }
 
 
@@ -214,6 +249,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     def display_name(filing: FilingStorage, full_name: bool = True) -> Optional[str]:
@@ -248,3 +284,27 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return the name of the filing to display on outputs."""
         return FILINGS.get(filing_name, {}).get('displayName')
 >>>>>>> 885773ca (adding ledger fields)
+=======
+    def display_name(filing: FilingStorage, full_name: bool = True) -> Optional[str]:
+        """Return the name of the filing to display on outputs."""
+        name = FILINGS.get(filing.filing_type, {}).get('displayName', filing.filing_type)
+
+        if filing.filing_type in ('annualReport') and (year := FilingMeta.get_effective_display_year(filing.meta_data)):
+            name = f'{name} ({year})'
+
+        if filing.filing_type in ('correction') and filing.meta_data:
+            with suppress(Exception):
+                name = f'{name} - {FilingMeta.display_name(filing.children[0], False)}'
+
+        if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
+            name = f'{name} - Corrected'
+        return name
+
+    @staticmethod
+    def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
+        """Render a year as a string, given all filing mechanisms."""
+        with suppress(IndexError, KeyError, TypeError):
+            application_date = filing_meta_data['applicationDate']
+            return str(date.fromisoformat(application_date).year)
+        return None
+>>>>>>> 1dcddedf (added all fields to filing_ledger)
