@@ -16,65 +16,20 @@
 
 Test-Suite to ensure that the /tasks endpoint is working as expected.
 """
+import copy
 from datetime import datetime, timezone
 from http import HTTPStatus
 
 import datedelta
-from freezegun import freeze_time
 import pytest
+from freezegun import freeze_time
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
-
-
-AR_FILING_CURRENT_YEAR = {
-    'filing': {
-        'header': {
-            'name': 'annualReport',
-            'date': '2019-08-13',
-            'certifiedBy': 'full name'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08',
-            'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
-        },
-        'annualReport': {
-            'annualGeneralMeetingDate': str(datetime.today()).split()[0],
-            'annualReportDate': str(datetime.today()).split()[0],
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
-        }
-    }
-}
-
-AR_FILING_PREVIOUS_YEAR = {
-    'filing': {
-        'header': {
-            'name': 'annualReport',
-            'date': '2001-08-05',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567',
-            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00'
-        },
-        'annualReport': {
-            'annualGeneralMeetingDate': str(datetime.today() - datedelta.datedelta(years=1)).split()[0],
-            'annualReportDate': str(datetime.today() - datedelta.datedelta(years=1)).split()[0],
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get'
-        }
-    }
-}
 
 
 def test_get_tasks_no_filings(session, client, jwt):
@@ -131,7 +86,10 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     assert len(rv.json.get('tasks')) == 3  # To-do for the current year
     assert rv.json['tasks'][0]['task']['todo']['header']['status'] == 'NEW'
 
-    filing = AR_FILING_PREVIOUS_YEAR
+    # Try to post the previous years AR
+    filing = copy.deepcopy(ANNUAL_REPORT)
+    filing['filing']['annualReport']['annualGeneralMeetingDate'] = str(datetime.today() - datedelta.datedelta(years=1)).split()[0]
+    filing['filing']['annualReport']['annualReportDate'] = str(datetime.today() - datedelta.datedelta(years=1)).split()[0]
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -156,7 +114,7 @@ def test_get_tasks_current_year_filing_exists(session, client, jwt):
     """Assert that only the filing for the current year is returned when only current year filing exists."""
     identifier = 'CP7654321'
     b = factory_business(identifier=identifier, last_ar_date=datetime(2018, 8, 13))
-    filings = factory_filing(b, AR_FILING_CURRENT_YEAR, datetime(2019, 8, 5, 7, 7, 58, 272362), 'annualReport')
+    filings = factory_filing(b, ANNUAL_REPORT, datetime(2019, 8, 5, 7, 7, 58, 272362), 'annualReport')
 
     print('test_get_all_business_filings - filing:', filings)
 
@@ -170,7 +128,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
     b = factory_business(identifier, last_ar_date=datetime(2018, 3, 3))
-    filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
+    filings = factory_filing(b, ANNUAL_REPORT, datetime(2018, 8, 5, 7, 7, 58, 272362))
 
     print('test_get_all_business_filings - filing:', filings)
 
@@ -184,7 +142,7 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
     b = factory_business(identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date=datetime(2018, 3, 3))
-    filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
+    filings = factory_filing(b, ANNUAL_REPORT, datetime(2018, 8, 5, 7, 7, 58, 272362))
     print('test_get_all_business_filings - filing:', filings)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))

@@ -18,9 +18,9 @@ Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is
 """
 import copy
 import json
-from datetime import datetime
+from datetime import date, datetime
 from http import HTTPStatus
-from typing import Final
+from typing import Final, Tuple
 
 import datedelta
 import pytest
@@ -34,12 +34,13 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     FILING_HEADER,
+    FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
 from legal_api.resources.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -112,8 +113,9 @@ def test_ledger_search(session, client, jwt):
 
     ledger = rv.json
 
-    with open("ledger.json", "w") as outfile:
-        json.dump(ledger, outfile)
+    # Useful for testing purposes
+    # with open("ledger.json", "w") as outfile:
+    #     json.dump(ledger, outfile)
 
     # Did we get the full set
     assert len(ledger['filings']) == num_of_files
@@ -122,7 +124,7 @@ def test_ledger_search(session, client, jwt):
     alteration = next((f for f in ledger['filings'] if f.get('name')=='alteration'), None)
 
     assert alteration
-    assert 16 == len(alteration.keys())
+    assert 14 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
@@ -134,3 +136,185 @@ def test_ledger_search(session, client, jwt):
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
+
+
+###
+#  Check elements of the ledger search
+###
+
+def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling') -> Tuple[Business, FilingStorage]:
+    """Render common setup for the element tests."""
+    founding_date = datetime.utcnow()
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
+    return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
+
+def ledger_element_setup_filing(business, filing_name, filing_date):
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing']['header']['name'] = filing_name
+    f = factory_completed_filing(business, filing, filing_date=filing_date)
+    return f
+ 
+
+def test_ledger_comment_count(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    number_of_comments = 10
+    business, filing_storage = ledger_element_setup_help(identifier)
+    for c in range(number_of_comments):
+        comment = Comment()
+        comment.comment = f'this comment {c}'
+        filing_storage.comments.append(comment)
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings'][0]['commentsCount'] == number_of_comments
+
+@pytest.mark.parametrize('test_name, file_number, order_date, effect_of_order, order_details, expected',[
+    ('all_elements', 'ABC123', datetime.utcnow(), 'effect', 'details',
+        ['effectOfOrder', 'fileNumber', 'orderDate', 'orderDetails']),
+    ('no_elements', None, None, None, None,
+        []),
+    ('missing_filenumber', None, datetime.utcnow(), 'effect', 'details',
+        []),
+    ('date', 'ABC123', datetime.utcnow(), None, None,
+        ['fileNumber', 'orderDate']),
+    ('effect', 'ABC123', None, 'effect', None,
+        ['effectOfOrder', 'fileNumber']),
+    ('details', 'ABC123', None, None, 'details',
+        ['fileNumber', 'orderDetails']),
+
+])
+def test_ledger_court_order(session, client, jwt, test_name, file_number, order_date, effect_of_order, order_details, expected):
+    """Assert that the ledger returns court_order values."""
+    # setup
+    identifier = 'BC1234567'
+    number_of_comments = 10
+    business, filing_storage = ledger_element_setup_help(identifier)
+
+    filing_storage.court_order_file_number = file_number
+    filing_storage.court_order_date = order_date
+    filing_storage.court_order_effect_of_order = effect_of_order
+    filing_storage.order_details = order_details
+
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings'][0]
+    filing_json = rv.json['filings'][0]
+    if expected:
+        assert filing_json['data']['courtOrder']['fileNumber']
+        assert set(filing_json['data']['courtOrder'].keys()) == set(expected)
+    else:
+        assert not filing_json.get('data')
+
+
+def test_ledger_display_name_annual_report(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    today = date.today().isoformat()
+    annual_report_meta = {'annualReport':{
+        'annualReportDate': today,
+        'annualGeneralMeetingDate': today
+    }}
+    meta_data = {**{'applicationDate': today}, **annual_report_meta}
+
+    business, filing_storage = ledger_element_setup_help(identifier, 'annualReport')
+    filing_storage._meta_data = meta_data
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings'][0]
+    filing_json = rv.json['filings'][0]
+    assert filing_json['data'] == meta_data
+    assert filing_json['displayName'] == f'Annual Report ({date.fromisoformat(today).year})'
+    
+def test_ledger_display_alteration_report(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    today = date.today().isoformat()
+    alteration_meta = {'alteration':{
+        'fromLegalType and ': 'BC',
+        'toLegalType': 'BEN'
+    }}
+    meta_data = {**{'applicationDate': today}, **alteration_meta}
+
+    business, filing_storage = ledger_element_setup_help(identifier, 'alteration')
+    filing_storage._meta_data = meta_data
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings'][0]
+    filing_json = rv.json['filings'][0]
+    assert filing_json['data'] == meta_data
+    assert filing_json['displayName'] == f'Alteration'
+
+def test_ledger_display_corrected_incorporation(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    business, original = ledger_element_setup_help(identifier, 'incorporationApplication')
+    correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
+    original.parent_filing_id = correction.id
+    original.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings']
+    for filing_json in rv.json['filings']:
+        if filing_json['name'] == 'correction':
+            assert filing_json['displayName'] == f'Correction'
+        elif filing_json['name'] == 'incorporationApplication':
+            assert filing_json['displayName'] == f'Incorporation Application - Corrected'
+        else:
+            assert False
+
+
+def test_ledger_display_corrected_annual_report(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    business, original = ledger_element_setup_help(identifier, 'annualReport')
+    correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
+    original.parent_filing_id = correction.id
+    original.save()
+
+    today = date.today().isoformat()
+    correction_meta = {'legalFilings':['annualReport','correction']}
+    correction._meta_data = {**{'applicationDate': today}, **correction_meta}
+    correction.save()
+
+    # test
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings']
+    for filing_json in rv.json['filings']:
+        if filing_json['name'] == 'correction':
+            assert filing_json['displayName'] == f'Correction - Annual Report'
+        elif filing_json['name'] == 'annualReport':
+            assert filing_json['displayName'] == f'Annual Report - Corrected'
+        else:
+            assert False

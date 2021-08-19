@@ -16,4 +16,4 @@
 from .filing import FilingMeta
 
 
-__all__ = ('FilingMeta')
+__all__ = ('FilingMeta',)
