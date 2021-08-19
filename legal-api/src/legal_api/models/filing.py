@@ -19,7 +19,7 @@ from http import HTTPStatus
 from typing import List
 
 from flask import current_app
-from sqlalchemy import desc, event, inspect, or_
+from sqlalchemy import desc, event, func, inspect, or_, select
 from sqlalchemy.dialects.postgresql import JSONB, dialect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -39,10 +39,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     Manages the filing ledger for the associated business.
     """
 
-    class Status(Enum):
+    class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
         COMPLETED = 'COMPLETED'
+        CORRECTED = 'CORRECTED'
         DRAFT = 'DRAFT'
         EPOCH = 'EPOCH'
         ERROR = 'ERROR'
@@ -156,6 +157,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_filing_date',
             '_filing_json',
             '_filing_type',
+            '_meta_data',
             '_payment_completion_date',
             '_payment_status_code',
             '_payment_token',
@@ -185,6 +187,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
+    _meta_data = db.Column('meta_data', JSONB)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
@@ -290,6 +293,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def status(self):
         """Property containing the filing status."""
+        # pylint: disable=W0212; prevent infinite loop
+        if self._status == Filing.Status.COMPLETED \
+            and self.parent_filing_id \
+                and self.parent_filing._status == Filing.Status.COMPLETED:
+            return Filing.Status.CORRECTED.value
         return self._status
 
     @hybrid_property
@@ -345,6 +353,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self._filing_json = json_data
 
     @property
+    def meta_data(self):
+        """Return the meta data collected about a filing, stored as JSON."""
+        return self._meta_data
+
+    @property
     def locked(self):
         """Return the locked state of the filing.
 
@@ -392,6 +405,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         ):
             return True
         return False
+
+    @hybrid_property
+    def comments_count(self):
+        """Return the number of commentson this filing."""
+        return self.comments.count()
+
+    @comments_count.expression
+    def comments_count(self):
+        return (select([func.count(Comment.business_id)]).
+                where(Comment.business_id == self.id).
+                label('comments_count')
+                )
 
     # json serializer
     @property

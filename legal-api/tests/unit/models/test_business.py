@@ -245,6 +245,8 @@ def test_business_json(session):
         'legalType': 'CP',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
+        'lastCOAFilingDate': '',
+        'lastCODFilingDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),

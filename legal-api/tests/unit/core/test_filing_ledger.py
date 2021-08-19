@@ -20,19 +20,24 @@ import pytest
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import Business, Comment, Filing, UserRoles
 from legal_api.models.user import UserRoles
 from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from tests.unit.services.utils import helper_create_jwt
 
 def load_ledger(business, founding_date):
-
+    """Create a ledger of all filing types."""
     i = 0
     for k, filing_meta in Filing.FILINGS.items():
         filing = copy.deepcopy(FILING_TEMPLATE)
         filing['filing']['header']['name'] = filing_meta['name']
-        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
+        f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
+        for c in range(i):
+            comment = Comment()
+            comment.comment = f'this comment {c}'
+            f.comments.append(comment)
+        f.save()
         i += 1
     return i
 
@@ -54,7 +59,7 @@ def test_simple_ledger_search(session):
     alteration = next((f for f in ledger if f.get('name')=='alteration'), None)
 
     assert alteration
-    assert 16 == len(alteration.keys())
+    assert 14 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration 
     assert 'effectiveDate' in alteration 
     assert 'filingId' in alteration 
