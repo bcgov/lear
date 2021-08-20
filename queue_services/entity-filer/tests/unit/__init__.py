@@ -378,7 +378,7 @@ def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_D
     return filing
 
 
-def create_business(identifier, legal_type = None):
+def create_business(identifier, legal_type=None):
     """Return a test business."""
     from legal_api.models import Address, Business
     business = Business()
