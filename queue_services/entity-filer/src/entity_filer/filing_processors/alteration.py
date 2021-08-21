@@ -28,7 +28,13 @@ from entity_filer.filing_processors.filing_components import (
     shares,
 )
 
-def process(business: Business, filing_submission: Filing, filing: Dict, correction: bool = False):  # pylint: disable=W0613
+
+def process(
+    business: Business,
+    filing_submission: Filing,
+    filing: Dict,
+    correction: bool = False
+):  # pylint: disable=W0613
     """Render the Alteration onto the model objects."""
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):

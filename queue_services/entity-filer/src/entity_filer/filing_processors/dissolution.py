@@ -21,11 +21,9 @@ from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime
 
-from entity_filer.filing_processors.filing_components import create_office
+from entity_filer.filing_processors.filing_components import create_office, filings
 from entity_filer.filing_processors.filing_components.parties import update_parties
-from entity_filer.filing_processors.filing_components import (
-    filings,
-)
+
 
 def process(business: Business, filing: Dict):
     """Render the dissolution filing unto the model objects."""
