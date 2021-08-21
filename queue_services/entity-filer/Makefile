@@ -61,7 +61,7 @@ install-dev: ## Install local application
 #################################################################################
 ci: lint flake8 test ## CI flow
 
-lint: ## Linting with pylint
+pylint: ## Linting with pylint
 	. venv/bin/activate && pylint --rcfile=setup.cfg src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
