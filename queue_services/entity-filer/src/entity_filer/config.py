@@ -153,6 +153,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', 'http://mock_url')
+    ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL', 'http://mock_url')
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
