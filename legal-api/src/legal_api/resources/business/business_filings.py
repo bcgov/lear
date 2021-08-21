@@ -215,7 +215,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def delete(identifier, filing_id=None):
+    def delete(identifier, filing_id=None):  # pylint: disable=too-many-branches
         """Delete a filing from the business."""
         if not filing_id:
             return ({'message':
