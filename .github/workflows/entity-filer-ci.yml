@@ -64,6 +64,10 @@ jobs:
       NATS_QUEUE: entity-filer-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
       GO_LIVE_DATE: 2019-08-12
+      LEGAL_API_URL: mock_url
+      ACCOUNT_SVC_AUTH_URL: mock_url
+      ACCOUNT_SVC_ENTITY_URL: mock_url
+      COLIN_API: mock_url
 
     runs-on: ubuntu-20.04
 
