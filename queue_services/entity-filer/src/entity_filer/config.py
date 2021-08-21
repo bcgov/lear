@@ -155,6 +155,8 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', 'https://mock_url')
     ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL', 'https://mock_url')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL', 'https://mock_url')
+    COLIN_API = os.getenv('COLIN_API', 'https://mock_url')
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
