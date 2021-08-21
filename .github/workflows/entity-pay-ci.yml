@@ -63,6 +63,10 @@ jobs:
       NATS_FILER_SUBJECT: entity.email
       NATS_QUEUE: entity-email-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
+      LEGAL_API_URL: mock_url
+      ACCOUNT_SVC_AUTH_URL: mock_url
+      ACCOUNT_SVC_ENTITY_URL: mock_url
+      COLIN_API: mock_url
 
     runs-on: ubuntu-20.04
 
