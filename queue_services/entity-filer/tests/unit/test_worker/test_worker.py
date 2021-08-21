@@ -14,8 +14,8 @@
 """The Test Suites to ensure that the worker is operating correctly."""
 import copy
 import datetime
-from operator import le
 import random
+from tests.conftest import config
 from unittest.mock import patch
 
 import pycountry
@@ -299,8 +299,8 @@ async def test_process_cod_mailing_address(app, session):
 async def test_process_combined_filing(app, session, mocker):
     """Assert that an AR filling can be applied to the model correctly."""
     # mock out the email sender and event publishing
-    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -402,8 +402,8 @@ async def test_process_filing_completed(app, session, mocker):
     identifier = 'CP1234567'
 
     # mock out the email sender and event publishing
-    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
 
     # setup
     business = create_business(identifier, legal_type='CP')
@@ -454,10 +454,9 @@ async def test_correction_filing(app, session):
 
     correction_filing_id = correction_filing.id
     filing_msg = {'filing': {'id': correction_filing_id}}
-    
+
     # TEST
     await process_filing(filing_msg, app)
-
 
     # Get modified data
     original_filing = Filing.find_by_id(original_filing_id)
@@ -490,7 +489,7 @@ async def test_publish_event():
     """Assert that publish_event is called with the correct struct."""
     import uuid
     from unittest.mock import AsyncMock
-    from entity_filer.worker import APP_CONFIG, get_filing_types, publish_event, qsm
+    from entity_filer.worker import get_filing_types, publish_event, qsm
     from legal_api.utils.datetime import datetime
 
     mock_publish = AsyncMock()
@@ -510,7 +509,7 @@ async def test_publish_event():
             'specversion': '1.x-wip',
             'type': 'bc.registry.business.' + filing.filing_type,
             'source': ''.join(
-                [APP_CONFIG.LEGAL_API_URL,
+                [config.get('LEGAL_API_URL'),
                  '/business/',
                  business.identifier,
                  '/filing/',
