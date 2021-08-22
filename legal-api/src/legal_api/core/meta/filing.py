@@ -89,7 +89,7 @@ FILINGS: Final = {
     'dissolution': {
         'name': 'dissolution',
         'title': 'Dissolution',
-        'displayName': 'Disolution',
+        'displayName': 'Dissolution',
         'code': 'NOT_IMPLEMENTED_YET'},
     'incorporationApplication': {
         'name': 'incorporationApplication',
