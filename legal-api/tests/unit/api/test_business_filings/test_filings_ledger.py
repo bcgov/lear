@@ -114,10 +114,6 @@ def test_ledger_search(session, client, jwt):
 
     ledger = rv.json
 
-    # Useful for testing purposes
-    # with open("ledger.json", "w") as outfile:
-    #     json.dump(ledger, outfile)
-
     # Did we get the full set
     assert len(ledger['filings']) == num_of_files
 
