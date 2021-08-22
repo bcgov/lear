@@ -113,10 +113,6 @@ def test_ledger_search(session, client, jwt):
 
     ledger = rv.json
 
-    # Useful for testing purposes
-    # with open("ledger.json", "w") as outfile:
-    #     json.dump(ledger, outfile)
-
     # Did we get the full set
     assert len(ledger['filings']) == num_of_files
 
@@ -248,7 +244,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
     identifier = 'BC1234567'
     today = date.today().isoformat()
     alteration_meta = {'alteration':{
-        'fromLegalType and ': 'BC',
+        'fromLegalType': 'BC',
         'toLegalType': 'BEN'
     }}
     meta_data = {**{'applicationDate': today}, **alteration_meta}
