@@ -1105,3 +1105,60 @@ def test_transition_bcomp_completed(session, app):
         assert documents[1]['filingId'] == 1
         assert documents[1]['title'] == NOA_TITLE
         assert documents[1]['filename'] == NOA_FILENAME
+
+
+def test_ia_completed_coop(session, app):
+    """Assert that documents are returned for a COMPLETED IA filing when business is a COOP."""
+    document_meta = DocumentMetaService()
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COOP.value)
+    with app.app_context():
+        filing = {
+            'filing': {
+                'header': {
+                    'filingId': 12356,
+                    'status': 'COMPLETED',
+                    'name': 'incorporationApplication',
+                    'inColinOnly': False,
+                    'availableOnPaperOnly': False,
+                    'effectiveDate': FILING_DATE,
+                    'date': FILING_DATE
+                },
+                'business': {
+                    'identifier': 'BC1234567'
+                }
+            }
+        }
+
+        with patch.object(Filing, 'find_by_id', return_value=Filing()):
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 5
+
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Incorporation Application'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
+
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'certificate'
+            assert documents[2]['filingId'] == 12356
+            assert documents[2]['title'] == 'Certificate'
+            assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+
+            assert documents[3]['type'] == 'REPORT'
+            assert documents[3]['reportType'] == 'certifiedRules'
+            assert documents[3]['filingId'] == 12356
+            assert documents[3]['title'] == 'Certified Rules'
+            assert documents[3]['filename'] == 'BC1234567 - Certified Rules - 2020-07-14.pdf'
+
+            assert documents[4]['type'] == 'REPORT'
+            assert documents[4]['reportType'] == 'certifiedMemorandum'
+            assert documents[4]['filingId'] == 12356
+            assert documents[4]['title'] == 'Certified Memorandum'
+            assert documents[4]['filename'] == 'BC1234567 - Certified Memorandum - 2020-07-14.pdf'
