@@ -240,12 +240,7 @@ class ListFilingResource(Resource):
             return ListFilingResource._create_deletion_locked_response(identifier, filing)
 
         try:
-            if cooperative := filing. \
-                    filing_json.get('filing', {}).get('incorporationApplication', {}).get('cooperative', None):
-                if rules_file_key := cooperative.get('rulesFileKey', None):
-                    MinioService.delete_file(rules_file_key)
-                if memorandom_file_key := cooperative.get('memorandomFileKey', None):
-                    MinioService.delete_file(memorandom_file_key)
+            ListFilingResource._delete_from_minio(filing)
             filing.delete()
         except BusinessException as err:
             return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
@@ -259,6 +254,15 @@ class ListFilingResource(Resource):
                     current_app.logger.error('Unable to deregister and delete temp reg:', identifier)
 
         return jsonify({'message': _('Filing deleted.')}), HTTPStatus.OK
+
+    @staticmethod
+    def _delete_from_minio(filing):
+        if cooperative := filing. \
+                filing_json.get('filing', {}).get('incorporationApplication', {}).get('cooperative', None):
+            if rules_file_key := cooperative.get('rulesFileKey', None):
+                MinioService.delete_file(rules_file_key)
+            if memorandom_file_key := cooperative.get('memorandomFileKey', None):
+                MinioService.delete_file(memorandom_file_key)
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):

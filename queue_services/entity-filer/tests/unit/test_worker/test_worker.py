@@ -25,17 +25,15 @@ from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
     CORRECTION_AR,
     FILING_HEADER,
-    CHANGE_OF_ADDRESS,
     INCORPORATION_FILING_TEMPLATE,
 )
 
 from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.worker import process_filing
 from tests.unit import (
-    AR_FILING,
-    COA_FILING,
     COD_FILING,
     COD_FILING_TWO_ADDRESSES,
     COMBINED_FILING,
@@ -395,7 +393,6 @@ async def test_process_combined_filing(app, session, mocker):
 
 async def test_process_filing_completed(app, session, mocker):
     """Assert that an AR filling status is set to completed once processed."""
-    from entity_filer.worker import publish_email_message
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
@@ -484,11 +481,11 @@ async def test_correction_filing(app, session):
     assert staff_user.id == original_filing.comments.all()[-1].staff.id
 
 
-async def test_publish_event(config):
+async def test_publish_event():
     """Assert that publish_event is called with the correct struct."""
     import uuid
     from unittest.mock import AsyncMock
-    from entity_filer.worker import get_filing_types, publish_event, qsm
+    from entity_filer.worker import APP_CONFIG, get_filing_types, publish_event, qsm
     from legal_api.utils.datetime import datetime
 
     mock_publish = AsyncMock()
@@ -508,7 +505,7 @@ async def test_publish_event(config):
             'specversion': '1.x-wip',
             'type': 'bc.registry.business.' + filing.filing_type,
             'source': ''.join(
-                [config.get('LEGAL_API_URL'),
+                [APP_CONFIG.LEGAL_API_URL,
                  '/business/',
                  business.identifier,
                  '/filing/',
