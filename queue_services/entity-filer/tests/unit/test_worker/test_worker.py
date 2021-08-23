@@ -15,7 +15,6 @@
 import copy
 import datetime
 import random
-from tests.conftest import config
 from unittest.mock import patch
 
 import pycountry
@@ -485,7 +484,7 @@ async def test_correction_filing(app, session):
     assert staff_user.id == original_filing.comments.all()[-1].staff.id
 
 
-async def test_publish_event():
+async def test_publish_event(config):
     """Assert that publish_event is called with the correct struct."""
     import uuid
     from unittest.mock import AsyncMock
