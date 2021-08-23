@@ -90,6 +90,7 @@ async def test_worker_alteration(app, session, mocker, orig_legal_type, new_lega
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
     mocker.patch('entity_filer.worker.publish_event', return_value=None)
     mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_bearer_token', return_value='token')
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
@@ -126,6 +127,7 @@ async def test_worker_alteration_court_order(app, session, mocker):
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
     mocker.patch('entity_filer.worker.publish_event', return_value=None)
     mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_bearer_token', return_value='token')
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
