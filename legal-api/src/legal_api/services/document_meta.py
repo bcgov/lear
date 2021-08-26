@@ -334,18 +334,25 @@ class DocumentMetaService():
             self.create_report_object(
                 f'Incorporation Application{label_original}',
                 self.get_general_filename(f'Incorporation Application{label_original}')
-            ),
-            self.create_report_object(
-                DocumentMetaService.NOTICE_OF_ARTICLES,
-                self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
-                DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
-            ),
+            )
+        ]
+
+        if not self.is_coop():
+            reports.append(
+                self.create_report_object(
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        reports.append(
             self.create_report_object(
                 f'Certificate{label_certificate_original}',
                 self.get_general_filename(f'Certificate{label_certificate_original}'),
                 DocumentMetaService.ReportType.CERTIFICATE.value
             )
-        ]
+        )
 
         if self.is_coop():
             reports.extend([

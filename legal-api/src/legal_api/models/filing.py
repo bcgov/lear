@@ -112,7 +112,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCINC',
                 'BC': 'BCINC',
                 'ULC': 'BCINC',
-                'CC': 'BCINC'
+                'CC': 'BCINC',
+                'CP': 'OTINC'
             }
         },
         'conversion': {

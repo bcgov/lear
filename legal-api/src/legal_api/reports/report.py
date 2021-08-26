@@ -24,6 +24,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.models import Business, CorpType, Filing
+from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
@@ -118,6 +119,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
+            'incorporation-application/cooperativeAssociationType',
             'common/statement',
             'common/benefitCompanyStmt',
             'notice-of-articles/directors',
@@ -220,6 +222,11 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._business:
             corp_type = CorpType.find_by_id(self._business.legal_type)
             filing['entityDescription'] = corp_type.full_desc
+
+            act = {
+                Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+            }  # This could be the legislation column from CorpType. Yet to discuss.
+            filing['entityAct'] = act.get(self._business.legal_type, 'Business Corporations Act')
 
     def _set_dates(self, filing):
         # Filing Date
@@ -343,6 +350,10 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
         else:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
+
+        if cooperative := filing['incorporationApplication'].get('cooperative', None):
+            cooperative['associationTypeName'] = \
+                ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
