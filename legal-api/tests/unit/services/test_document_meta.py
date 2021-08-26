@@ -1131,7 +1131,7 @@ def test_ia_completed_coop(session, app):
 
         with patch.object(Filing, 'find_by_id', return_value=Filing()):
             documents = document_meta.get_documents(filing)
-            assert len(documents) == 5
+            assert len(documents) == 4
 
             assert documents[0]['type'] == 'REPORT'
             assert documents[0]['reportType'] is None
@@ -1140,25 +1140,19 @@ def test_ia_completed_coop(session, app):
             assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
 
             assert documents[1]['type'] == 'REPORT'
-            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['reportType'] == 'certificate'
             assert documents[1]['filingId'] == 12356
-            assert documents[1]['title'] == NOA_TITLE
-            assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['title'] == 'Certificate'
+            assert documents[1]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
 
             assert documents[2]['type'] == 'REPORT'
-            assert documents[2]['reportType'] == 'certificate'
+            assert documents[2]['reportType'] == 'certifiedRules'
             assert documents[2]['filingId'] == 12356
-            assert documents[2]['title'] == 'Certificate'
-            assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+            assert documents[2]['title'] == 'Certified Rules'
+            assert documents[2]['filename'] == 'BC1234567 - Certified Rules - 2020-07-14.pdf'
 
             assert documents[3]['type'] == 'REPORT'
-            assert documents[3]['reportType'] == 'certifiedRules'
+            assert documents[3]['reportType'] == 'certifiedMemorandum'
             assert documents[3]['filingId'] == 12356
-            assert documents[3]['title'] == 'Certified Rules'
-            assert documents[3]['filename'] == 'BC1234567 - Certified Rules - 2020-07-14.pdf'
-
-            assert documents[4]['type'] == 'REPORT'
-            assert documents[4]['reportType'] == 'certifiedMemorandum'
-            assert documents[4]['filingId'] == 12356
-            assert documents[4]['title'] == 'Certified Memorandum'
-            assert documents[4]['filename'] == 'BC1234567 - Certified Memorandum - 2020-07-14.pdf'
+            assert documents[3]['title'] == 'Certified Memorandum'
+            assert documents[3]['filename'] == 'BC1234567 - Certified Memorandum - 2020-07-14.pdf'

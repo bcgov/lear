@@ -117,6 +117,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                                   LegalTypes.ULC_CO_1890,
                                   LegalTypes.ULC_CO_1897]
 
+    class AssociationTypes(Enum):
+        """Render an Enum of the Business Association Types."""
+
+        CP_COOPERATIVE = 'CP'
+        CP_HOUSING_COOPERATIVE = 'HC'
+        CP_COMMUNITY_SERVICE_COOPERATIVE = 'CSC'
+
     __versioned__ = {}
     __tablename__ = 'businesses'
 
@@ -359,3 +366,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             return False
 
         return True
+
+
+ASSOCIATION_TYPE_DESC: Final = {
+    Business.AssociationTypes.CP_COOPERATIVE.value: 'Cooperative Without a Special Purpose',
+    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Special Purpose - Housing Cooperative',
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Special Purpose - Community Service Cooperative'
+}
