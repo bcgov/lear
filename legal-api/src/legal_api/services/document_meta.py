@@ -38,6 +38,8 @@ class DocumentMetaService():
         NOTICE_OF_ARTICLES = 'noa'
         ALTERATION_NOTICE = 'alterationNotice'
         CERTIFICATE_OF_NAME_CHANGE = 'certificateOfNameChange'
+        CERTIFIED_RULES = 'certifiedRules'
+        CERTIFIED_MEMORANDUM = 'certifiedMemorandum'
 
     def __init__(self):
         """Create the document meta instance."""
@@ -328,7 +330,7 @@ class DocumentMetaService():
             has_correction_changed_name(Filing.find_by_id(filing_data.parent_filing_id).json) else ''
 
         # else status is COMPLETED
-        return [
+        reports = [
             self.create_report_object(
                 f'Incorporation Application{label_original}',
                 self.get_general_filename(f'Incorporation Application{label_original}')
@@ -338,13 +340,28 @@ class DocumentMetaService():
                 self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
                 DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
             ),
-
             self.create_report_object(
                 f'Certificate{label_certificate_original}',
                 self.get_general_filename(f'Certificate{label_certificate_original}'),
                 DocumentMetaService.ReportType.CERTIFICATE.value
             )
         ]
+
+        if self.is_coop():
+            reports.extend([
+                self.create_report_object(
+                    'Certified Rules',
+                    self.get_general_filename('Certified Rules'),
+                    DocumentMetaService.ReportType.CERTIFIED_RULES.value
+                ),
+                self.create_report_object(
+                    'Certified Memorandum',
+                    self.get_general_filename('Certified Memorandum'),
+                    DocumentMetaService.ReportType.CERTIFIED_MEMORANDUM.value
+                )
+            ])
+
+        return reports
 
     def create_report_object(self, title: str, filename: str, report_type=None):
         """Return a populated document meta object."""
@@ -365,6 +382,10 @@ class DocumentMetaService():
     def is_bcomp(self):
         """Return True if this entity is a BCOMP."""
         return self._legal_type == Business.LegalTypes.BCOMP.value
+
+    def is_coop(self):
+        """Return True if this entity is a COOP."""
+        return self._legal_type == Business.LegalTypes.COOP.value
 
     def is_paid(self):
         """Return True if this filing is PAID."""
