@@ -1141,7 +1141,7 @@ def test_ia_completed_coop(session, app):
 
             assert documents[1]['type'] == 'REPORT'
             assert documents[1]['reportType'] == 'certificate'
-            assert documents[1]['filingId'] == 11356
+            assert documents[1]['filingId'] == 12356
             assert documents[1]['title'] == 'Certificate'
             assert documents[1]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
 
