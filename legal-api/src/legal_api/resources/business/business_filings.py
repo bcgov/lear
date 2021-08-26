@@ -261,8 +261,8 @@ class ListFilingResource(Resource):
                 filing_json.get('filing', {}).get('incorporationApplication', {}).get('cooperative', None):
             if rules_file_key := cooperative.get('rulesFileKey', None):
                 MinioService.delete_file(rules_file_key)
-            if memorandom_file_key := cooperative.get('memorandomFileKey', None):
-                MinioService.delete_file(memorandom_file_key)
+            if memorandum_file_key := cooperative.get('memorandumFileKey', None):
+                MinioService.delete_file(memorandum_file_key)
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):

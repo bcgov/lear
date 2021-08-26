@@ -107,9 +107,9 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         business.documents.append(document)
 
         document = Document()
-        document.type = DocumentType.COOP_MEMORANDOM.value
-        document.file_key = cooperative_obj.get('memorandomFileKey')
-        document.file_name = cooperative_obj.get('memorandomFileName')
+        document.type = DocumentType.COOP_MEMORANDUM.value
+        document.file_key = cooperative_obj.get('memorandumFileKey')
+        document.file_name = cooperative_obj.get('memorandumFileName')
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id

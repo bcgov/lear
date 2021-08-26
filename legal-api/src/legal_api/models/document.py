@@ -29,7 +29,7 @@ class DocumentType(Enum):
     """Document types."""
 
     COOP_RULES = 'coop_rules'
-    COOP_MEMORANDOM = 'coop_memorandom'
+    COOP_MEMORANDUM = 'coop_memorandum'
 
 
 class Document(db.Model):

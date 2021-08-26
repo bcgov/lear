@@ -66,9 +66,9 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing):
                 if document.type == DocumentType.COOP_RULES.value:
                     rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
                     assert document.file_key == rules_key
-                elif document.type == DocumentType.COOP_MEMORANDOM.value:
-                    memorandom_key = filing['filing']['incorporationApplication']['cooperative']['memorandomFileKey']
-                    assert document.file_key == memorandom_key
+                elif document.type == DocumentType.COOP_MEMORANDUM.value:
+                    memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                    assert document.file_key == memorandum_key
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
