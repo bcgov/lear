@@ -264,31 +264,32 @@ def test_nr_receipt_notification(app, session):
     payment_token = '1234'
 
     # run worker
-    with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
-        with patch.object(name_request, '_get_pdfs', return_value=[]) as mock_pdf:
-            with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
-                    as mock_query_nr_number:
-                with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                    worker.process_email({
-                        'id': '123456789',
-                        'type': 'bc.registry.names.request',
-                        'source': f'/requests/{nr_number}',
-                        'identifier': nr_number,
-                        'data': {
-                            'request': {
-                                'header': {'nrNum': nr_number},
-                                'paymentToken': payment_token,
-                                'statusCode': 'DRAFT'  # not used
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
+            with patch.object(name_request, '_get_pdfs', return_value=[]) as mock_pdf:
+                with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
+                        as mock_query_nr_number:
+                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                        worker.process_email({
+                            'id': '123456789',
+                            'type': 'bc.registry.names.request',
+                            'source': f'/requests/{nr_number}',
+                            'identifier': nr_number,
+                            'data': {
+                                'request': {
+                                    'header': {'nrNum': nr_number},
+                                    'paymentToken': payment_token,
+                                    'statusCode': 'DRAFT'  # not used
+                                }
                             }
-                        }
-                    }, app)
+                        }, app)
 
-                    assert mock_pdf.call_args[0][0]['nr_number'] == nr_number
-                    assert mock_pdf.call_args[0][0]['payment_token'] == payment_token
-                    assert mock_query_nr_number.call_args[0][0] == nr_number
-                    call_args = mock_send_email.call_args
-                    assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
-                    assert call_args[0][0]['recipients'] == 'test@test.com'
-                    assert call_args[0][0]['content']['body']
-                    assert call_args[0][0]['content']['attachments'] == []
-                    assert call_args[0][1] == token
+                        assert mock_pdf.call_args[0][0]['nr_number'] == nr_number
+                        assert mock_pdf.call_args[0][0]['payment_token'] == payment_token
+                        assert mock_query_nr_number.call_args[0][0] == nr_number
+                        call_args = mock_send_email.call_args
+                        assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
+                        assert call_args[0][0]['recipients'] == 'test@test.com'
+                        assert call_args[0][0]['content']['body']
+                        assert call_args[0][0]['content']['attachments'] == []
+                        assert call_args[0][1] == token
