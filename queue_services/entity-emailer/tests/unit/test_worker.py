@@ -265,7 +265,7 @@ def test_nr_receipt_notification(app, session):
 
     # run worker
     with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
-        with patch.object(name_request, '_get_pdf', return_value=[]) as mock_pdf:
+        with patch.object(name_request, '_get_pdfs', return_value=[]) as mock_pdf:
             with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
                     as mock_query_nr_number:
                 with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
