@@ -20,7 +20,7 @@ from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import ar_reminder_notification, filing_notification, name_request, nr_notification
+from entity_emailer.email_processors import ar_reminder_notification, filing_notification, nr_notification
 from tests import MockResponse
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
@@ -288,7 +288,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
 #                         assert mock_pdf.call_args[0][1] == payment_token
 #                         assert mock_query_nr_number.call_args[0][0] == nr_number
 #                         call_args = mock_send_email.call_args
-#                         assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
+#                       assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
 #                         assert call_args[0][0]['recipients'] == email_address
 #                         assert call_args[0][0]['content']['body']
 #                         assert call_args[0][0]['content']['attachments'] == []
