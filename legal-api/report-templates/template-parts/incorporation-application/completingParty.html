@@ -41,7 +41,21 @@
    {% endfor %}
 </div>
 
-{% if business.legalType != 'CP' %}
+{% if business.legalType == 'CP' %}
+   <div class="no-page-break">
+      <div class="separator mt-4"></div>
+      <div class="section-title mt-4">Completing Party Statement</div>
+      <div class="section-data mt-4">
+         I,
+         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.middleName %}
+            <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
+         {% endif %}
+         <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span> certify that I have relevant knowledge
+         of the Cooperative and I am authorized to make this filing.
+      </div>
+   </div>
+{% else %}
    <div class="no-page-break">
       <div class="separator mt-4"></div>
       <div class="section-title mt-4">Completing Party Statement</div>

@@ -55,6 +55,15 @@ class LegislationDatetime():
         return date_time.astimezone(pytz.timezone('GMT'))
 
     @staticmethod
+    def format_as_report_string(date_time: datetime) -> str:
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        hour = date_time.strftime('%I').lstrip('0')
+        # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
+        am_pm = date_time.strftime('%p').lower()
+        date_time_str = date_time.strftime(f'%B %-d, %Y at {hour}:%M {am_pm} Pacific time')
+        return date_time_str
+
+    @staticmethod
     def format_as_legislation_date(date_string: str) -> str:
         """Return the date in legislation timezone as a string."""
         date_time = datetime.datetime.fromisoformat(date_string)
