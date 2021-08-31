@@ -155,8 +155,8 @@ def test_pending_not_completed_filing(session, client, jwt, test_name, filing_na
                     headers=create_header(jwt, [STAFF_ROLE], business.identifier))
     
     # remove the filing ID
-    rv_data = json.loads(re.sub("/\d/", "/", rv.data.decode("utf-8")).replace("\n", ""))
-    expected = json.loads(re.sub("/\d/", "/", json.dumps(expected_msg)))
+    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected

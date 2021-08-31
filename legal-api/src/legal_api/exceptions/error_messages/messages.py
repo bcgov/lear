@@ -11,7 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This has the meta insformation for the core domain used by the application."""
-from .filing import FilingMeta
+"""Application Common Error Messages."""
+from .codes import ErrorCode
 
-__all__ = ('FilingMeta',)
+
+ERROR_MESSAGES: dict = {
+   ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
+   ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',
+   ErrorCode.NOT_AUTHORIZED: 'Not authorized to access business: {identifier}',
+}

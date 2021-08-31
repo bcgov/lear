@@ -18,6 +18,7 @@ Provides all business entity Filings externalized services.
 from .business_documents import FilingDocumentsResource
 from .business_filings import ColinLastUpdate, InternalFilings, ListFilingResource
 
+
 __all__ = (
     'ColinLastUpdate',
     'FilingDocumentsResource',

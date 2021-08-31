@@ -180,7 +180,7 @@ def test_ledger_comment_count(session, client, jwt):
         ['effectOfOrder', 'fileNumber', 'orderDate', 'orderDetails']),
     ('no_elements', None, None, None, None,
         []),
-    ('missing_filenumber', None, datetime.utcnow(), 'effect', 'details',
+    ('no-file-number-or-details', None, datetime.utcnow(), None, None,
         []),
     ('date', 'ABC123', datetime.utcnow(), None, None,
         ['fileNumber', 'orderDate']),
@@ -212,8 +212,8 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
     assert rv.json['filings'][0]
     filing_json = rv.json['filings'][0]
     if expected:
-        assert filing_json['data']['courtOrder']['fileNumber']
-        assert set(filing_json['data']['courtOrder'].keys()) == set(expected)
+        assert filing_json['data']['order']['fileNumber']
+        assert set(filing_json['data']['order'].keys()) == set(expected)
     else:
         assert not filing_json.get('data')
 
