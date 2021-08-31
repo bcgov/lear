@@ -50,7 +50,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
-from .api_namespace import API
+from ..api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 

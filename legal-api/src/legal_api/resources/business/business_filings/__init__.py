@@ -1,4 +1,4 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,5 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This has the meta insformation for the core domain used by the application."""
-from .filing import FilingMeta, FILINGS
+"""Business Entity Filings.
+
+Provides all business entity Filings externalized services.
+"""
+from .business_documents import FilingDocumentsResource
+from .business_filings import ColinLastUpdate, InternalFilings, ListFilingResource
+
+__all__ = (
+    'ColinLastUpdate',
+    'FilingDocumentsResource',
+    'InternalFilings',
+    'ListFilingResource',
+    )

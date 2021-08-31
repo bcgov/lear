@@ -43,6 +43,7 @@ class Filing:
         """Render an Enum of the Filing Statuses."""
 
         COMPLETED = 'COMPLETED'
+        CORRECTED = 'CORRECTED'
         DRAFT = 'DRAFT'
         EPOCH = 'EPOCH'
         ERROR = 'ERROR'
@@ -345,9 +346,9 @@ class Filing:
                 'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
-                'commentsLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}/comments',
-                'documentsLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}/documents',
-                'filingLink': f'{base_url}{{businessIdentifier}}/filings/{{filingId}}',
+                'commentsLink': f'{base_url}/{business.identifier}/filings/{filing.id}/comments',
+                'documentsLink': f'{base_url}/{business.identifier}/filings/{filing.id}/documents',
+                'filingLink': f'{base_url}/{business.identifier}/filings/{filing.id}',
             }
             # correction
             if filing.parent_filing:
@@ -359,16 +360,16 @@ class Filing:
             if filing.meta_data:
                 ledger_filing['data'] = filing.meta_data
 
-            # court order
-            if filing.court_order_file_number:  # file_number is mandatory, if a court-order exists
-                Filing._add_ledger_court_order(filing, ledger_filing)
+            # orders
+            if filing.court_order_file_number or filing.order_details:
+                Filing._add_ledger_order(filing, ledger_filing)
 
             ledger.append(ledger_filing)
 
         return ledger
 
     @staticmethod
-    def _add_ledger_court_order(filing: FilingStorage, ledger_filing: dict) -> dict:
+    def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
         court_order_data = {'fileNumber': filing.court_order_file_number}
         if filing.court_order_date:
             court_order_data['orderDate'] = filing.court_order_date
@@ -379,4 +380,40 @@ class Filing:
 
         if not ledger_filing.get('data'):
             ledger_filing['data'] = {}
-        ledger_filing['data']['courtOrder'] = court_order_data
+        ledger_filing['data']['order'] = court_order_data
+
+    @staticmethod
+    def get_document_list(business_identifier, filing) -> dict:
+        """Return a list of documents for a particular filing."""
+        if not filing \
+            or filing.status in (
+                Filing.Status.PAPER_ONLY,
+                Filing.Status.DRAFT,
+                Filing.Status.PENDING,
+            ):
+            return None
+
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        doc_url = f'{base_url}/{business_identifier}/filings/{filing.id}/documents'
+
+        documents = {'documents':{
+        'primary': f'{doc_url}/{filing.filing_type}',
+        'receipt': f'{doc_url}/receipt'
+        }}
+
+        if filing.status in (
+            Filing.Status.PAID,
+        ):
+            return documents
+
+        if filing.status in (
+            Filing.Status.COMPLETED,
+            Filing.Status.CORRECTED,
+        ):
+            if legal_filings := filing.legal_filings(False):
+                legal_docs = []
+                for legal in legal_filings:
+                    legal_docs.append({legal: f'{doc_url}/{legal}'})
+                documents['legalFilings'] = legal_docs
+
+        return documents
