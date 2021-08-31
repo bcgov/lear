@@ -390,16 +390,16 @@ class Filing:
                 Filing.Status.PAPER_ONLY,
                 Filing.Status.DRAFT,
                 Filing.Status.PENDING,
-            ):
+            ):  # noqa: E125; lint conflicts on the indenting
             return None
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         doc_url = f'{base_url}/{business_identifier}/filings/{filing.id}/documents'
 
-        documents = {'documents':{
-        'primary': f'{doc_url}/{filing.filing_type}',
-        'receipt': f'{doc_url}/receipt'
-        }}
+        documents = {'documents': {
+                     'primary': f'{doc_url}/{filing.filing_type}',
+                     'receipt': f'{doc_url}/receipt'
+                     }}
 
         if filing.status in (
             Filing.Status.PAID,

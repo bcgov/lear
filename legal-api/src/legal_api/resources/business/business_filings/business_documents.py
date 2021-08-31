@@ -30,39 +30,41 @@ from legal_api.utils.util import cors_preflight
 from ..api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
+
 @cors_preflight('GET, POST')
 @API.route('/<string:identifier>/filings/<int:filing_id>/documents', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/filings/<int:filing_id>/documents/<string:legal_filing_name>', methods=['GET', 'OPTIONS'])
+@API.route('/<string:identifier>/filings/<int:filing_id>/documents/<string:legal_filing_name>',
+           methods=['GET', 'OPTIONS']
+           )
 class FilingDocumentsResource(Resource):
     """Business Comment service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def get(identifier:str, filing_id:int, legal_filing_name:str = None):
+    def get(identifier: str, filing_id: int, legal_filing_name: str = None):
         """Return a JSON object with meta information about the Service."""
         # basic checks
-        if not authorized(identifier, jwt, ['GET',]):
+        if not authorized(identifier, jwt, ['GET', ]):
             return jsonify(
-                message = get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
+                message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
             ), HTTPStatus.UNAUTHORIZED
 
         if not (business := Business.find_by_identifier(identifier)):
             return jsonify(
-                message = get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
+                message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
                 ), HTTPStatus.NOT_FOUND
 
         if not (filing := Filing.get(identifier, filing_id)):
             return jsonify(
-                message = get_error_message(ErrorCode.FILING_NOT_FOUND,
-                                            **{'filing_id': filing_id, 'identifier': identifier})
+                message=get_error_message(ErrorCode.FILING_NOT_FOUND,
+                                          **{'filing_id': filing_id, 'identifier': identifier})
                 ), HTTPStatus.NOT_FOUND
 
         if not legal_filing_name:
             return FilingDocumentsResource._get_document_list(business.identifier, filing)
 
         return {}, HTTPStatus.NOT_FOUND
-
 
     @staticmethod
     def _get_document_list(business_identifier, filing):

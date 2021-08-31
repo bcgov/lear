@@ -19,6 +19,8 @@ BusinessException - error, status_code - Business rules error
 error - a description of the error {code / description: classname / full text}
 status_code - where possible use HTTP Error Codes
 """
+
+
 class BusinessException(Exception):
     """Exception that adds error code and error name, that can be used for i18n support."""
 

@@ -11,31 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Application Common Error Messages.
-"""
-from enum import auto, Enum
+"""Application Common Error Messages."""
 from string import Formatter
 from typing import Optional
 
-from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
+from flask_babel import _ as babel  # noqa: N813,I005
 
-class AutoName(str, Enum):
-    def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213
-        return name.lower()
+from .codes import ErrorCode
+from .messages import ERROR_MESSAGES
 
-class ErrorCode(AutoName):
-    FILING_NOT_FOUND = auto()
-    MISSING_BUSINESS = auto()
-    NOT_AUTHORIZED = auto()
-
-ERROR_MESSAGES: dict = {
-   ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
-   ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',
-   ErrorCode.NOT_AUTHORIZED: 'Not authorized to access business: {identifier}',
-}
 
 class MissingKeysFormatter(Formatter):
+    """Format the string, using the key names if the values are missing."""
+
     def get_value(self, key, args, kwargs):
+        """Return the ley name if the value is missing."""
         if isinstance(key, str):
             try:
                 return kwargs[key]
@@ -46,6 +36,7 @@ class MissingKeysFormatter(Formatter):
 
 
 def get_error_message(error_code: ErrorCode, **kwargs) -> Optional[str]:
+    """Get a localized, formatted error message using the templates in the ERROR_MESSAGES dict."""
     if template := ERROR_MESSAGES.get(error_code, None):
         fmt = MissingKeysFormatter()
         template = babel(template)

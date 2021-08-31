@@ -11,5 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This has the meta insformation for the core domain used by the application."""
-from .filing import FILINGS, FilingMeta
+"""Application Common Error Messages."""
+from enum import Enum, auto
+
+
+class AutoName(str, Enum):
+    """Replace autoname from Enum class."""
+
+    def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
+        """Return the name of the key, but in lowercase."""
+        return name.lower()
+
+
+class ErrorCode(AutoName):
+    """Enum of the system error codes."""
+
+    FILING_NOT_FOUND = auto()
+    MISSING_BUSINESS = auto()
+    NOT_AUTHORIZED = auto()
