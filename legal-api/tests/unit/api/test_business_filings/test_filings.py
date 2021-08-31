@@ -38,8 +38,8 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, UserRoles
-from legal_api.resources.business.business_filings import Filing, ListFilingResource
+from legal_api.models import Business, Filing, UserRoles
+from legal_api.resources.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment

@@ -40,8 +40,9 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
+from legal_api.core import Filing, FilingMeta, FILINGS
 from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
-from legal_api.resources.business.business_filings import Filing, ListFilingResource
+from legal_api.resources.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
@@ -103,7 +104,7 @@ def test_ledger_search(session, client, jwt):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
-    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
+    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(FILINGS.keys()))
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
 
