@@ -100,7 +100,8 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
             payment_id = payment['id']
     if not payment_id:
         logger.error('No matching payment info found for name request id: %s, payment token: %s', nr_id, payment_token)
-        capture_message(f'Email Queue: nr_id={nr_id}, payment_token={payment_token}, error=receipt generation', level='error')
+        capture_message(
+            f'Email Queue: nr_id={nr_id}, payment_token={payment_token}, error=receipt generation', level='error')
         return []
 
     # get receipt
