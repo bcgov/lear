@@ -254,10 +254,12 @@ def test_nr_receipt_notification(app, session):
     """Assert that the nr payment notification can be processed."""
     nr_number = 'NR 1234567'
     email_address = 'test@test.com'
+    nr_id = 12345
     nr_json = {
         'applicants': {
             'emailAddress': email_address
-        }
+        },
+        'id': nr_id
     }
     nr_response = MockResponse(nr_json, 200)
     token = 'token'
@@ -285,7 +287,7 @@ def test_nr_receipt_notification(app, session):
                             }
                         }, app)
 
-                        assert mock_pdf.call_args[0][0] == nr_number
+                        assert mock_pdf.call_args[0][0] == nr_id
                         assert mock_pdf.call_args[0][1] == payment_token
                         # assert mock_query_nr_number.call_args[0][0] == nr_number
                         call_args = mock_send_email.call_args
