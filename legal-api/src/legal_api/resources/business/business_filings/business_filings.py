@@ -579,7 +579,6 @@ class ListFilingResource(Resource):
         if filing_type == 'incorporationApplication':
             legal_type = filing_json['filing']['business']['legalType']
         else:
-            # business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
             legal_type = business.legal_type
 
         if any('correction' in x for x in filing_json['filing'].keys()):
@@ -738,18 +737,16 @@ class ListFilingResource(Resource):
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            fe_date = filing.filing_json['filing']['header'].get('futureEffectiveDate')
-            if fe_date:
-                filing.effective_date = datetime.datetime.fromisoformat(fe_date)
-                filing.save()
+        if filing_type == Filing.FILINGS['incorporationApplication'].get('name') and \
+           (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
+            filing.effective_date = datetime.datetime.fromisoformat(fe_date)
+            filing.save()
 
-        elif business.legal_type != Business.LegalTypes.COOP.value:
-            if filing_type == 'changeOfAddress':
-                effective_date = LegislationDatetime.tomorrow_midnight()
-                filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
-                filing.effective_date = effective_date
-                filing.save()
+        elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
+            effective_date = LegislationDatetime.tomorrow_midnight()
+            filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
+            filing.effective_date = effective_date
+            filing.save()
 
     @staticmethod
     def _is_future_effective_filing(filing_json: dict) -> bool:
