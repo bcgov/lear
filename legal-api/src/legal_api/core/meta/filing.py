@@ -18,6 +18,7 @@ from typing import Final, Optional
 from legal_api.models import Filing as FilingStorage
 from legal_api.utils.datetime import date
 
+
 FILINGS: Final = {
     'alteration': {
         'name': 'alteration',
@@ -126,6 +127,7 @@ FILINGS: Final = {
         }
     },
 }
+
 
 class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""

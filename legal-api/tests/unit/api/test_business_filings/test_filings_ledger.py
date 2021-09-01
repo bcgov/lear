@@ -125,10 +125,6 @@ def test_ledger_search(session, client, jwt):
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
-    assert 16 == len(alteration.keys())
-    assert 'availableOnPaperOnly' in alteration
-    assert 'effectiveDate' in alteration
-    assert 'filingId' in alteration
     assert 'name' in alteration
     assert 'paymentStatusCode' in alteration
     assert 'status' in alteration
