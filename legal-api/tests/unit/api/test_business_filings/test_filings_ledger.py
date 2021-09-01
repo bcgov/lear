@@ -194,7 +194,6 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
     """Assert that the ledger returns court_order values."""
     # setup
     identifier = 'BC1234567'
-    number_of_comments = 10
     business, filing_storage = ledger_element_setup_help(identifier)
 
     filing_storage.court_order_file_number = file_number

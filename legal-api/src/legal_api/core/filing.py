@@ -304,7 +304,7 @@ class Filing:
                start: int = None,
                size: int = None,
                **kwargs) \
-            -> dict:
+            -> list:
         """Return the ledger list by directly querying the storage objects.
 
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
@@ -383,7 +383,7 @@ class Filing:
         ledger_filing['data']['order'] = court_order_data
 
     @staticmethod
-    def get_document_list(business_identifier, filing) -> dict:
+    def get_document_list(business_identifier, filing) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         if not filing \
             or filing.status in (
@@ -409,11 +409,12 @@ class Filing:
         if filing.status in (
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
+        ) and (
+            legal_filings := filing.legal_filings(False)
         ):
-            if legal_filings := filing.legal_filings(False):
-                legal_docs = []
-                for legal in legal_filings:
-                    legal_docs.append({legal: f'{doc_url}/{legal}'})
-                documents['legalFilings'] = legal_docs
+            legal_docs = []
+            for legal in legal_filings:
+                legal_docs.append({legal: f'{doc_url}/{legal}'})
+            documents['legalFilings'] = legal_docs
 
         return documents
