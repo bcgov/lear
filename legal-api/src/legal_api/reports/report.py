@@ -167,6 +167,7 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
+            filing['header']['status'] = self._filing.status
             if self._report_key == 'incorporationApplication':
                 self._format_incorporation_data(filing)
             elif self._report_key == 'alterationNotice':
@@ -219,14 +220,14 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
-        if self._business:
-            corp_type = CorpType.find_by_id(self._business.legal_type)
-            filing['entityDescription'] = corp_type.full_desc
+        legal_type = self._filing.filing_json['filing']['business'].get('legalType', 'NA')
+        corp_type = CorpType.find_by_id(legal_type)
+        filing['entityDescription'] = corp_type.full_desc
 
-            act = {
-                Business.LegalTypes.COOP.value: 'Cooperative Association Act'
-            }  # This could be the legislation column from CorpType. Yet to discuss.
-            filing['entityAct'] = act.get(self._business.legal_type, 'Business Corporations Act')
+        act = {
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+        }  # This could be the legislation column from CorpType. Yet to discuss.
+        filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
     def _set_dates(self, filing):
         # Filing Date
