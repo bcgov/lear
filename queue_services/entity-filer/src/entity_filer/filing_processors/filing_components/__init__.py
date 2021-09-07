@@ -23,6 +23,7 @@ from entity_filer.filing_processors.filing_components import (
     aliases,
     business_info,
     business_profile,
+    filings,
     name_request,
     shares,
 )
@@ -44,14 +45,14 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     db_address_type = address_type.replace('Address', '')
 
     address = Address(street=address_info.get('streetAddress'),
-                    street_additional=address_info.get('streetAddressAdditional'),
-                    city=address_info.get('addressCity'),
-                    region=address_info.get('addressRegion'),
-                    country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
-                    postal_code=address_info.get('postalCode'),
-                    delivery_instructions=address_info.get('deliveryInstructions'),
-                    address_type=db_address_type
-                    )
+                      street_additional=address_info.get('streetAddressAdditional'),
+                      city=address_info.get('addressCity'),
+                      region=address_info.get('addressRegion'),
+                      country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
+                      postal_code=address_info.get('postalCode'),
+                      delivery_instructions=address_info.get('deliveryInstructions'),
+                      address_type=db_address_type
+                      )
     return address
 
 

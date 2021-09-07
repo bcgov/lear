@@ -14,7 +14,6 @@
 """The Test Suites to ensure that the worker is operating correctly."""
 import copy
 import datetime
-from operator import le
 import random
 from unittest.mock import patch
 
@@ -26,17 +25,15 @@ from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.resources.business import DirectorResource
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
     CORRECTION_AR,
     FILING_HEADER,
-    CHANGE_OF_ADDRESS,
     INCORPORATION_FILING_TEMPLATE,
 )
 
 from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.worker import process_filing
 from tests.unit import (
-    AR_FILING,
-    COA_FILING,
     COD_FILING,
     COD_FILING_TWO_ADDRESSES,
     COMBINED_FILING,
@@ -299,8 +296,8 @@ async def test_process_cod_mailing_address(app, session):
 async def test_process_combined_filing(app, session, mocker):
     """Assert that an AR filling can be applied to the model correctly."""
     # mock out the email sender and event publishing
-    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
 
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -396,14 +393,13 @@ async def test_process_combined_filing(app, session, mocker):
 
 async def test_process_filing_completed(app, session, mocker):
     """Assert that an AR filling status is set to completed once processed."""
-    from entity_filer.worker import publish_email_message
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
 
     # mock out the email sender and event publishing
-    mocker.patch ('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch ('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
 
     # setup
     business = create_business(identifier, legal_type='CP')
@@ -454,10 +450,9 @@ async def test_correction_filing(app, session):
 
     correction_filing_id = correction_filing.id
     filing_msg = {'filing': {'id': correction_filing_id}}
-    
+
     # TEST
     await process_filing(filing_msg, app)
-
 
     # Get modified data
     original_filing = Filing.find_by_id(original_filing_id)
