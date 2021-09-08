@@ -30,129 +30,129 @@ from tests import integration_namerequests
 
 expiration_date = '2099-12-31T07:59:00+00:00'
 nr_consumable_approved = {
-  'consentFlag': None,
-  'expirationDate': expiration_date,
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': None,
-      'name': 'ABC 1234',
-      'state': 'APPROVED'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'NE'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'APPROVED'
+    'consentFlag': None,
+    'expirationDate': expiration_date,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'APPROVED'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'NE'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'APPROVED'
 }
 
 nr_not_consumable_rejected = {
-  'consentFlag': None,
-  'expirationDate': expiration_date,
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': None,
-      'name': 'ABC 1234',
-      'state': 'REJECTED'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'NE'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'REJECTED'
+    'consentFlag': None,
+    'expirationDate': expiration_date,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'REJECTED'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'NE'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'REJECTED'
 }
 
 nr_not_consumable_expired = {
-  'consentFlag': None,
-  'expirationDate': '2019-12-31T07:59:00+00:00',
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': None,
-      'name': 'ABC 1234',
-      'state': 'REJECTED'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'NE'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'REJECTED'
+    'consentFlag': None,
+    'expirationDate': '2019-12-31T07:59:00+00:00',
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'REJECTED'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'NE'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'EXPIRED'
 }
 
 nr_already_consumed = {
-  'consentFlag': None,
-  'expirationDate': expiration_date,
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': 'Thu, 31 Dec 2019 23:59:59 GMT',
-      'name': 'ABC 1234',
-      'state': 'APPROVED'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'NE'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'APPROVED'
+    'consentFlag': None,
+    'expirationDate': expiration_date,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': 'Thu, 31 Dec 2019 23:59:59 GMT',
+            'name': 'ABC 1234',
+            'state': 'APPROVED'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'NE'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'CONSUMED'
 }
 
 nr_consent_required_not_received = {
-  'consentFlag': None,
-  'expirationDate': expiration_date,
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': None,
-      'name': 'ABC 1234',
-      'state': 'NE'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'CONDITIONAL'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'CONDITIONAL'
+    'consentFlag': None,
+    'expirationDate': expiration_date,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'NE'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'CONDITION'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'CONDITIONAL'
 }
 
 nr_consent_required_received = {
-  'consentFlag': 'R',
-  'expirationDate': expiration_date,
-  'names': [
-    {
-      'choice': 1,
-      'consumptionDate': None,
-      'name': 'ABC 1234',
-      'state': 'NE'
-    },
-    {
-      'choice': 2,
-      'consumptionDate': None,
-      'name': 'CDE 1234',
-      'state': 'CONDITIONAL'
-    }
-  ],
-  'nrNum': 'NR 1234567',
-  'state': 'CONDITIONAL'
+    'consentFlag': 'R',
+    'expirationDate': expiration_date,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'NE'
+        },
+        {
+            'choice': 2,
+            'consumptionDate': None,
+            'name': 'CDE 1234',
+            'state': 'CONDITION'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'CONDITIONAL'
 }
 
 
@@ -235,7 +235,7 @@ def test_validate_nr_already_consumed():
     validation_result = namex.validate_nr(nr_already_consumed)
 
     assert not validation_result['is_consumable']
-    assert validation_result['is_approved']
+    assert not validation_result['is_approved']
     assert not validation_result['is_expired']
     assert not validation_result['consent_required']
     assert not validation_result['consent_received']
@@ -259,3 +259,11 @@ def test_validate_nr_consent_required_received():
     assert not validation_result['is_expired']
     assert validation_result['consent_required']
     assert validation_result['consent_received']
+
+
+def test_get_approved_name():
+    """Get Approved/Conditional Approved name."""
+    nr_name = namex.get_approved_name(nr_consumable_approved)
+    assert nr_name == nr_consumable_approved['names'][0]['name']
+    nr_name = namex.get_approved_name(nr_consent_required_received)
+    assert nr_name == nr_consent_required_received['names'][1]['name']

@@ -78,7 +78,7 @@ def company_name_validation(filing):
         if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC'):
             msg.append({'error': babel('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
 
-        if not validation_result['is_approved']:
+        if not validation_result['is_consumable']:
             msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
         # ensure NR request has the same legal name
