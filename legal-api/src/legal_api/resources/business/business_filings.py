@@ -38,6 +38,7 @@ from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
     DocumentMetaService,
+    MinioService,
     RegistrationBootstrapService,
     authorized,
     namex,
@@ -214,7 +215,7 @@ class ListFilingResource(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
-    def delete(identifier, filing_id=None):
+    def delete(identifier, filing_id=None):  # pylint: disable=too-many-branches
         """Delete a filing from the business."""
         if not filing_id:
             return ({'message':
@@ -239,6 +240,7 @@ class ListFilingResource(Resource):
             return ListFilingResource._create_deletion_locked_response(identifier, filing)
 
         try:
+            ListFilingResource._delete_from_minio(filing)
             filing.delete()
         except BusinessException as err:
             return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
@@ -252,6 +254,15 @@ class ListFilingResource(Resource):
                     current_app.logger.error('Unable to deregister and delete temp reg:', identifier)
 
         return jsonify({'message': _('Filing deleted.')}), HTTPStatus.OK
+
+    @staticmethod
+    def _delete_from_minio(filing):
+        if cooperative := filing. \
+                filing_json.get('filing', {}).get('incorporationApplication', {}).get('cooperative', None):
+            if rules_file_key := cooperative.get('rulesFileKey', None):
+                MinioService.delete_file(rules_file_key)
+            if memorandum_file_key := cooperative.get('memorandumFileKey', None):
+                MinioService.delete_file(memorandum_file_key)
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):

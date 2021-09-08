@@ -41,7 +41,6 @@ from legal_api.models import Business, Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
-from sqlalchemy import exc  # pylint: disable=W0611
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
 
@@ -281,7 +280,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                      '\n\nThis message has been put back on the queue for reprocessing.',
                      json.dumps(filing_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception) as err:  # pylint: disable=broad-except
+    except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)

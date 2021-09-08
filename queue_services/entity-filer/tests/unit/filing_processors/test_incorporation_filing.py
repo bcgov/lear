@@ -13,25 +13,32 @@
 # limitations under the License.
 """The Unit Tests for the Incorporation filing."""
 
+from tests.unit import create_filing
+from entity_filer.filing_processors import incorporation_filing
 import copy
 from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from legal_api.models import Filing
+from legal_api.models.document import DocumentType
 from legal_api.models.colin_event_id import ColinEventId
-from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    COOP_INCORPORATION_FILING_TEMPLATE,
+    CORRECTION_INCORPORATION,
+    INCORPORATION_FILING_TEMPLATE,
+)
 
-from entity_filer.filing_processors import incorporation_filing
-from tests.unit import create_filing
 
-
-def test_incorporation_filing_process_with_nr(app, session):
+@pytest.mark.parametrize('legal_type,filing', [
+    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE)),
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE)),
+])
+def test_incorporation_filing_process_with_nr(app, session, legal_type, filing):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
     with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -48,9 +55,20 @@ def test_incorporation_filing_process_with_nr(app, session):
         assert business.founding_date == effective_date
         assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
-        assert len(business.share_classes.all()) == 2
-        assert len(business.offices.all()) == 2  # One office is created in create_business method.
-
+        if legal_type == 'BC':
+            assert len(business.share_classes.all()) == 2
+            assert len(business.offices.all()) == 2  # One office is created in create_business method.
+        elif legal_type == 'CP':
+            assert len(business.offices.all()) == 1
+            documents = business.documents.all()
+            assert len(documents) == 2
+            for document in documents:
+                if document.type == DocumentType.COOP_RULES.value:
+                    rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                    assert document.file_key == rules_key
+                elif document.type == DocumentType.COOP_MEMORANDUM.value:
+                    memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                    assert document.file_key == memorandum_key
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
@@ -111,7 +129,7 @@ def test_incorporation_filing_process_correction(app, session):
         incorporation_filing.process(business, correction_filing, corrected_filing_rec)
     assert corrected_business.identifier == next_corp_num
     assert corrected_business.legal_name == \
-           correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
     assert len(corrected_business.share_classes.all()) == 1
 
 
@@ -132,6 +150,7 @@ def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
 
     assert corp_num == expected
 
+
 def test_incorporation_filing_coop_from_colin(app, session):
     """Assert that an existing coop incorporation is loaded corrrectly."""
     # setup
@@ -149,7 +168,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
     colin_event = ColinEventId()
-    colin_event.colin_event_id=colind_id
+    colin_event.colin_event_id = colind_id
     filing_rec.colin_event_ids.append(colin_event)
     # Override the state setting mechanism
     filing_rec.skip_status_listener = True
@@ -188,7 +207,7 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
     filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
     colin_event = ColinEventId()
-    colin_event.colin_event_id=colind_id
+    colin_event.colin_event_id = colind_id
     filing_rec.colin_event_ids.append(colin_event)
     # Override the state setting mechanism
     filing_rec.skip_status_listener = True

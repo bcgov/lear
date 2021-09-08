@@ -21,7 +21,8 @@ import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Business, Document, Filing, RegistrationBootstrap
+from legal_api.models.document import DocumentType
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
@@ -92,6 +93,30 @@ def update_affiliation(business: Business, filing: Filing):
         )
 
 
+def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
+    cooperative_obj = incorp_filing.get('cooperative', None)
+    if cooperative_obj:
+        business.association_type = cooperative_obj.get('cooperativeAssociationType')
+        document = Document()
+        document.type = DocumentType.COOP_RULES.value
+        document.file_key = cooperative_obj.get('rulesFileKey')
+        document.file_name = cooperative_obj.get('rulesFileName')
+        document.content_type = document.file_name.split('.')[-1]
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+        document = Document()
+        document.type = DocumentType.COOP_MEMORANDUM.value
+        document.file_key = cooperative_obj.get('memorandumFileKey')
+        document.file_name = cooperative_obj.get('memorandumFileName')
+        document.content_type = document.file_name.split('.')[-1]
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+    return business
+
+
 def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
@@ -122,6 +147,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: di
         # Initial insert of the business record
         business = Business()
         business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
+        business = _update_cooperative(incorp_filing, business, filing_rec)
+
         if not business:
             raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
