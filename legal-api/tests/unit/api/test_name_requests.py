@@ -18,6 +18,7 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 """
 from http import HTTPStatus
 
+import copy
 import datedelta
 import pytz
 
@@ -113,28 +114,7 @@ nr_already_consumed = {
     'state': 'CONSUMED'
 }
 
-nr_consent_required_not_received = {
-    'consentFlag': None,
-    'expirationDate': expiration_date,
-    'names': [
-        {
-            'choice': 1,
-            'consumptionDate': None,
-            'name': 'ABC 1234',
-            'state': 'NE'
-        },
-        {
-            'choice': 2,
-            'consumptionDate': None,
-            'name': 'CDE 1234',
-            'state': 'CONDITION'
-        }
-    ],
-    'nrNum': 'NR 1234567',
-    'state': 'CONDITIONAL'
-}
-
-nr_consent_required_received = {
+nr_consumable_conditional = {
     'consentFlag': 'R',
     'expirationDate': expiration_date,
     'names': [
@@ -243,7 +223,9 @@ def test_validate_nr_already_consumed():
 
 def test_validate_nr_consent_required_not_received():
     """Assert that nr mock data is conditionally approved, but consent not received."""
-    validation_result = namex.validate_nr(nr_consent_required_not_received)
+    nr_consent_required = copy.deepcopy(nr_consumable_conditional)
+    nr_consent_required['consentFlag'] = 'Y'
+    validation_result = namex.validate_nr(nr_consent_required)
     assert not validation_result['is_consumable']
     assert validation_result['is_approved']
     assert not validation_result['is_expired']
@@ -253,17 +235,46 @@ def test_validate_nr_consent_required_not_received():
 
 def test_validate_nr_consent_required_received():
     """Assert that nr mock data is conditionally approved and consent was received."""
-    validation_result = namex.validate_nr(nr_consent_required_received)
+    validation_result = namex.validate_nr(nr_consumable_conditional)
     assert validation_result['is_consumable']
     assert validation_result['is_approved']
     assert not validation_result['is_expired']
     assert validation_result['consent_required']
     assert validation_result['consent_received']
 
+    # N = consent waived
+    nr_consent_waived = copy.deepcopy(nr_consumable_conditional)
+    nr_consent_waived['consentFlag'] = 'N'
+    validation_result = namex.validate_nr(nr_consent_waived)
+    assert validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+    # None = consent not required
+    nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
+    nr_consent_not_required['consentFlag'] = None
+    validation_result = namex.validate_nr(nr_consent_not_required)
+    assert validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
+    nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
+    nr_consent_not_required['consentFlag'] = ''
+    validation_result = namex.validate_nr(nr_consent_not_required)
+    assert validation_result['is_consumable']
+    assert validation_result['is_approved']
+    assert not validation_result['is_expired']
+    assert not validation_result['consent_required']
+    assert not validation_result['consent_received']
+
 
 def test_get_approved_name():
     """Get Approved/Conditional Approved name."""
     nr_name = namex.get_approved_name(nr_consumable_approved)
     assert nr_name == nr_consumable_approved['names'][0]['name']
-    nr_name = namex.get_approved_name(nr_consent_required_received)
-    assert nr_name == nr_consent_required_received['names'][1]['name']
+    nr_name = namex.get_approved_name(nr_consumable_conditional)
+    assert nr_name == nr_consumable_conditional['names'][1]['name']

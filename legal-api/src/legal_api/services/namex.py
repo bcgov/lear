@@ -133,9 +133,15 @@ class NameXService():
             is_approved = True
             consent_required = True
             consent_received = False
+
             # Check if consent received
+            # Y = consent required and not received, R = consent required and received
+            # N = consent waived, None = consent not required
             if nr_json['consentFlag'] == 'R':
                 consent_received = True
+                is_consumable = True
+            elif nr_json['consentFlag'] == 'N' or not nr_json['consentFlag']:
+                consent_required = False
                 is_consumable = True
 
         elif nr_state == NameXService.State.EXPIRED.value:
