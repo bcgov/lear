@@ -272,7 +272,7 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
     # ensure NR is approved or conditionally approved
     nr_response = namex.query_nr_number(new_nr_number)
     validation_result = namex.validate_nr(nr_response.json())
-    if not validation_result['is_approved']:
+    if not validation_result['is_consumable']:
         msg.append({'error': babel('Correction of Name Request is not approved.'), 'path': nr_path})
 
     # ensure business type is BCOMP
