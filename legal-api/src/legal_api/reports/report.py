@@ -23,10 +23,10 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Business, CorpType, Filing
+from legal_api.models import Business, CorpType, Document, Filing
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import VersionedBusinessDetailsService
+from legal_api.services import MinioService, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -44,6 +44,17 @@ class Report:  # pylint: disable=too-few-public-methods
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
         self._report_key = report_type if report_type else self._filing.filing_type
+        if self._report_key in ReportMeta.static_reports:
+            return self._get_static_report()
+        return self._get_report()
+
+    def _get_static_report(self):
+        document_type = ReportMeta.static_reports[self._report_key]['documentType']
+        document: Document = self._filing.documents.filter(Document.type == document_type).first()
+        response = MinioService.get_file(document.file_key)
+        return response.data, response.status
+
+    def _get_report(self):
         if self._report_key == 'correction':
             self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
         elif self._report_key == 'alteration':
@@ -333,8 +344,9 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
-        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
+        if 'recordsOffice' in filing['incorporationApplication']['offices']:
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
         # create helper lists
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
@@ -342,7 +354,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['parties'] = filing['incorporationApplication']['parties']
         if filing['incorporationApplication'].get('shareClasses', None):
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
-        else:
+        elif 'shareStructure' in filing['incorporationApplication']:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
 
         if cooperative := filing['incorporationApplication'].get('cooperative', None):
@@ -605,5 +617,14 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfNameChange': {
             'filingDescription': 'Certificate of Name Change',
             'fileName': 'certificateOfNameChange'
+        }
+    }
+
+    static_reports = {
+        'certifiedRules': {
+            'documentType': 'coop_rules'
+        },
+        'certifiedMemorandum': {
+            'documentType': 'coop_memorandum'
         }
     }
