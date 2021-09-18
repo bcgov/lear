@@ -23,6 +23,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'name': 'RON TOWNSHEND',
             'title': 'Registrar of Companies',
             'signatureImage': 'registrar_signature_1.png',
+            'signatureImageAndText': '',
             'startDate': '1970-01-01T00:00:00',
             'endDate': '2012-05-31T23:59:59'
         },
@@ -30,6 +31,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'name': 'ANGELO COCCO',
             'title': 'A/Registrar of Companies',
             'signatureImage': 'registrar_signature_2.png',
+            'signatureImageAndText': '',
             'startDate': '2012-06-01T00:00:00',
             'endDate': '2012-07-12T23:59:59'
         },
@@ -37,6 +39,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'name': 'CAROL PREST',
             'title': 'Registrar of Companies',
             'signatureImage': 'registrar_signature_3.png',
+            'signatureImageAndText': 'registrar_signature_and_text_3.png',
             'startDate': '2012-07-13T00:00:00',
             'endDate': None
         }
@@ -52,6 +55,8 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
                        filing_effective_date <= datetime.datetime.strptime(x['endDate'], '%Y-%m-%dT%H:%M:%S')))][0]
         signature = RegistrarInfo.encode_registrar_signature(registrar['signatureImage'])
         registrar['signature'] = f'data:image/png;base64,{signature}'
+        signature_and_text = RegistrarInfo.encode_registrar_signature(registrar['signatureImageAndText'])
+        registrar['signatureAndText'] = f'data:image/png;base64,{signature_and_text}'
         return registrar
 
     @staticmethod
