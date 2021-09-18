@@ -55,8 +55,9 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
                        filing_effective_date <= datetime.datetime.strptime(x['endDate'], '%Y-%m-%dT%H:%M:%S')))][0]
         signature = RegistrarInfo.encode_registrar_signature(registrar['signatureImage'])
         registrar['signature'] = f'data:image/png;base64,{signature}'
-        signature_and_text = RegistrarInfo.encode_registrar_signature(registrar['signatureImageAndText'])
-        registrar['signatureAndText'] = f'data:image/png;base64,{signature_and_text}'
+        if registrar['signatureImageAndText']:
+            signature_and_text = RegistrarInfo.encode_registrar_signature(registrar['signatureImageAndText'])
+            registrar['signatureAndText'] = f'data:image/png;base64,{signature_and_text}'
         return registrar
 
     @staticmethod
