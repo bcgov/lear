@@ -42,9 +42,7 @@ class PdfService:
         for page_num in range(pdf_reader.getNumPages()):
             page = pdf_reader.getPage(page_num)
 
-            if only_first_page and page_num == 0:
-                page.mergePage(watermark_page)
-            elif not only_first_page:
+            if (only_first_page and page_num == 0) or not only_first_page:
                 page.mergePage(watermark_page)
 
             pdf_writer.addPage(page)

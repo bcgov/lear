@@ -56,9 +56,9 @@ def test_stamp(app):  # pylint:disable=unused-argument
 def _create_pdf_file():
     buffer = io.BytesIO()
     can = canvas.Canvas(buffer, pagesize=letter)
-    doc_height = letter[1] # doc_width = letter[0] 
-    
-    for i in range(3):
+    doc_height = letter[1]
+
+    for _ in range(3):
         text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
         text_x_margin = 100
         text_y_margin = doc_height - 300
