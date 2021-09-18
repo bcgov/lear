@@ -20,6 +20,7 @@ from .flags import Flags
 from .minio import MinioService
 from .namex import NameXService
 from .queue import QueueService
+from .pdf_service import PdfService
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
