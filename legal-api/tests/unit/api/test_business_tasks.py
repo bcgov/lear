@@ -16,12 +16,14 @@
 
 Test-Suite to ensure that the /tasks endpoint is working as expected.
 """
+import copy
 from datetime import datetime, timezone
 from http import HTTPStatus
 
 import datedelta
-from freezegun import freeze_time
 import pytest
+from freezegun import freeze_time
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
@@ -131,12 +133,13 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     assert len(rv.json.get('tasks')) == 3  # To-do for the current year
     assert rv.json['tasks'][0]['task']['todo']['header']['status'] == 'NEW'
 
-    filing = AR_FILING_PREVIOUS_YEAR
+    filing = copy.deepcopy(ANNUAL_REPORT)
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.status_code >= 400
+    assert rv.status_code < 500
 
     filing['filing']['annualReport']['annualReportDate'] = str((datetime.today() - datedelta.datedelta(years=2)).date())
     filing['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value

@@ -315,7 +315,7 @@ class ListFilingResource(Resource):
             token = jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token}
             rv = requests.delete(url=payment_svc_url, headers=headers, timeout=20.0)
-            if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.ACCEPTED:
+            if rv.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED):
                 filing.reset_filing_to_draft()
 
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
@@ -714,7 +714,7 @@ class ListFilingResource(Resource):
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
-        if rv.status_code == HTTPStatus.OK or rv.status_code == HTTPStatus.CREATED:
+        if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
             pid = rv.json().get('id')
             filing.payment_token = pid
             filing.payment_status_code = rv.json().get('statusCode', '')
