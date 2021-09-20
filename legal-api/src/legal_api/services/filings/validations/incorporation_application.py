@@ -21,6 +21,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -33,6 +34,7 @@ def validate(incorporation_json: Dict):
     """Validate the Incorporation filing."""
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
 
     err = validate_offices(incorporation_json)
@@ -47,9 +49,15 @@ def validate(incorporation_json: Dict):
     if err:
         msg.extend(err)
 
-    err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
-    if err:
-        msg.extend(err)
+    if legal_type == Business.LegalTypes.BCOMP.value:
+        err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
+        if err:
+            msg.extend(err)
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        err = validate_cooperative_documents(incorporation_json)
+        if err:
+            msg.extend(err)
 
     err = validate_incorporation_effective_date(incorporation_json)
     if err:
@@ -220,6 +228,62 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
 
     if effective_date > now_plus_10_days:
         msg.append({'error': babel('Invalid Datetime, effective date must be a maximum of 10 days ahead.')})
+
+    if msg:
+        return msg
+
+    return None
+
+def validate_cooperative_documents(incorporation_json) -> Error:
+    """Return an error or warning message based on the cooperative documents validation rules.
+
+    Rules:
+        - The documents are provided.
+        - Document IDs are unique.
+    """
+    # Setup
+    msg = []
+
+    try:
+        cooperative_block = incorporation_json['filing']['incorporationApplication']['cooperative']
+    except KeyError:
+        return msg
+
+    try:
+      rules_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+      rules_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileName']
+      memorandum_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+      memorandum_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileName']
+    except ValueError:
+        return msg
+
+    # Validate key values exist
+    if not rules_file_key:
+        msg.append({'error': babel('A valid rules key is required.')})
+        return msg
+
+    if not rules_file_name:
+        msg.append({'error': babel('A valid rules file name is required.')})
+        return msg
+
+    if not memorandum_file_key:
+        msg.append({'error': babel('A valid memorandum key is required.')})
+        return msg
+
+    if not memorandum_file_name:
+        msg.append({'error': babel('A valid memorandum file name is required.')})
+        return msg
+
+    # Validate the files exist in Minio
+    try:
+        rules_file_info = MinioService.get_file_info(rules_file_key)
+    except:
+        msg.append({'error': babel('Invalid rules file.')})
+
+    try:
+        memorandum_file_info = MinioService.get_file_info(memorandum_file_key)
+    except:
+        msg.append({'error': babel('Invalid memorandum file.')})
 
     if msg:
         return msg
