@@ -26,12 +26,13 @@ class PdfService:
     """Pdf Services."""
 
     def __init__(self):
+        """Create a PDF Service Instance."""
         fonts_path = current_app.config.get('FONTS_PATH')
         bcsans_path = f'{fonts_path}/BCSans-Regular.ttf'
         pdfmetrics.registerFont(TTFont('BCSans', bcsans_path))
 
     @staticmethod
-    def stamp_pdf(input_pdf, watermark, only_first_page = True):
+    def stamp_pdf(input_pdf, watermark, only_first_page=True):
         """Merge two PDFs."""
         watermark_obj = PyPDF2.PdfFileReader(watermark)
         watermark_page = watermark_obj.getPage(0)
@@ -87,7 +88,7 @@ class PdfService:
 
 
 def _write_text(can, text, line_height, x_margin, y_margin):
-    """Function to write text spliting the lines into a canvas."""
+    """Write text lines into a canvas."""
     for line in text.splitlines():
         can.drawString(x_margin, y_margin, line)
         y_margin -= line_height
