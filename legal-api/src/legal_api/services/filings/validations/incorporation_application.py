@@ -21,7 +21,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService, PdfService
+from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -244,43 +244,34 @@ def validate_cooperative_documents(incorporation_json) -> Error:
     # Setup
     msg = []
 
-    try:
-        cooperative_block = incorporation_json['filing']['incorporationApplication']['cooperative']
-    except KeyError:
-        return msg
-
-    try:
-      rules_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-      rules_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileName']
-      memorandum_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-      memorandum_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileName']
-    except ValueError:
-        return msg
+    rules_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+    rules_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileName']
+    memorandum_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+    memorandum_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileName']
 
     # Validate key values exist
     if not rules_file_key:
         msg.append({'error': babel('A valid rules key is required.')})
-        return msg
 
     if not rules_file_name:
         msg.append({'error': babel('A valid rules file name is required.')})
-        return msg
 
     if not memorandum_file_key:
         msg.append({'error': babel('A valid memorandum key is required.')})
-        return msg
 
     if not memorandum_file_name:
         msg.append({'error': babel('A valid memorandum file name is required.')})
+
+    if msg:
         return msg
 
     # Validate the files from Minio
     try:
-        rules_file = MinioService.get_file(rules_file_key)
+        MinioService.get_file(rules_file_key)
         file_info = MinioService.get_file_stat_object(rules_file_key)
         if file_info.size > 10000:
             msg.append({'error': babel('Rules file exceeds maximum size.')})
-    except:
+    except Exception:
         msg.append({'error': babel('Invalid rules file.')})
 
     try:
@@ -288,7 +279,7 @@ def validate_cooperative_documents(incorporation_json) -> Error:
         file_info = MinioService.get_file_stat_object(memorandum_file_key)
         if file_info.size > 10000:
             msg.append({'error': babel('Rules file exceeds maximum size.')})
-    except:
+    except Exception:
         msg.append({'error': babel('Invalid memorandum file.')})
 
     if msg:
