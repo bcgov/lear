@@ -71,6 +71,12 @@ class MinioService:
         return minio_client.get_object(current_app.config['MINIO_BUCKET_LEAR'], key)
 
     @staticmethod
+    def get_file_stat_object(key: str):
+        """Fetch file stat object from Minio."""
+        minio_client: Minio = MinioService._get_client()
+        return minio_client.stat_object(current_app.config['MINIO_BUCKET_LEAR'], key)
+
+    @staticmethod
     def delete_file(key: str):
         """Delete file from Minio."""
         minio_client: Minio = MinioService._get_client()
