@@ -54,6 +54,8 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
+    legal_type = business.get('legalType', None)
+
     if filing.filing_type == 'correction':
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
     if status == Filing.Status.PAID.value:
@@ -119,25 +121,26 @@ def _get_pdfs(
                 }
             )
     if status == Filing.Status.COMPLETED.value:
-        # add notice of articles
-        noa = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=noa',
-            headers=headers
-        )
-        if noa.status_code != HTTPStatus.OK:
-            logger.error('Failed to get noa pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=noa generation', level='error')
-        else:
-            noa_encoded = base64.b64encode(noa.content)
-            pdfs.append(
-                {
-                    'fileName': 'Notice of Articles.pdf',
-                    'fileBytes': noa_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': '1'
-                }
+        if legal_type != Business.LegalTypes.COOP.value:
+            # add notice of articles
+            noa = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=noa',
+                headers=headers
             )
+            if noa.status_code != HTTPStatus.OK:
+                logger.error('Failed to get noa pdf for filing: %s', filing.id)
+                capture_message(f'Email Queue: filing id={filing.id}, error=noa generation', level='error')
+            else:
+                noa_encoded = base64.b64encode(noa.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Notice of Articles.pdf',
+                        'fileBytes': noa_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': '1'
+                    }
+                )
 
         if filing.filing_type == 'incorporationApplication' or (filing.filing_type == 'correction' and
                                                                 original_filing_type == 'incorporationApplication' and
@@ -163,6 +166,49 @@ def _get_pdfs(
                         'attachOrder': '2'
                     }
                 )
+
+            if legal_type == Business.LegalTypes.COOP.value:
+                # Add rules
+                rules = requests.get(
+                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                    '?type=certifiedRules',
+                    headers=headers
+                )
+                if rules.status_code != HTTPStatus.OK:
+                    logger.error('Failed to get certifiedRules pdf for filing: %s', filing.id)
+                    capture_message(f'Email Queue: filing id={filing.id}, error=certifiedRules generation',
+                                    level='error')
+                else:
+                    certified_rules_encoded = base64.b64encode(rules.content)
+                    pdfs.append(
+                        {
+                            'fileName': 'Certified Rules.pdf',
+                            'fileBytes': certified_rules_encoded.decode('utf-8'),
+                            'fileUrl': '',
+                            'attachOrder': '2'
+                        }
+                    )
+
+                # Add memorandum
+                memorandum = requests.get(
+                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                    '?type=certifiedMemorandum',
+                    headers=headers
+                )
+                if memorandum.status_code != HTTPStatus.OK:
+                    logger.error('Failed to get certifiedMemorandum pdf for filing: %s', filing.id)
+                    capture_message(f'Email Queue: filing id={filing.id}, error=certifiedMemorandum generation',
+                                    level='error')
+                else:
+                    certified_memorandum_encoded = base64.b64encode(memorandum.content)
+                    pdfs.append(
+                        {
+                            'fileName': 'Certified Memorandum.pdf',
+                            'fileBytes': certified_memorandum_encoded.decode('utf-8'),
+                            'fileUrl': '',
+                            'attachOrder': '2'
+                        }
+                    )
 
         if filing.filing_type == 'alteration' and get_additional_info(filing).get('nameChange', False):
             # add certificate of name change

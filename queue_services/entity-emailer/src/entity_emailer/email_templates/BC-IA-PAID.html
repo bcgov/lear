@@ -19,11 +19,9 @@
           <div class="container">
             <p>We have received your incorporation application.</p>
 
-            [[whitespace-16px.html]]
             [[business-info.html]]
 
-            [[whitespace-24px.html]]
-            <p>Please find the following documents attached to this email:</p>
+            <p>The following documents attached to this email:</p>
             <ul class="outputs">
               <li>Incorporation Application</li>
               <li>Receipt</li>
@@ -47,8 +45,14 @@
             </p>
             {% endif %}
             <ul class="outputs">
-              <li>Notice of Articles</li>
-              <li>Incorporation Certificate</li>
+              {% if business.legalType == 'CP' %}
+                <li>Incorporation Certificate</li>
+                <li>Certified Rules</li>
+                <li>Certified Memorandum</li>
+              {% else %}
+                <li>Notice of Articles</li>
+                <li>Incorporation Certificate</li>
+              {% endif %}
             </ul>
 
             [[whitespace-16px.html]]
