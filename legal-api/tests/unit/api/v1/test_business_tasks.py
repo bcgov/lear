@@ -263,7 +263,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
 ])
 def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
-    from legal_api.resources.business import TaskListResource
+    from legal_api.resources.v1.business import TaskListResource
     previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
     business = factory_business(
         identifier, founding_date, previous_ar_datetime, legal_type)
