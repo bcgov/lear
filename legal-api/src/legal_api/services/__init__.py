@@ -19,6 +19,7 @@ from .document_meta import DocumentMetaService
 from .flags import Flags
 from .minio import MinioService
 from .namex import NameXService
+from .pdf_service import PdfService
 from .queue import QueueService
 
 
