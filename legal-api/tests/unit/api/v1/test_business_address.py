@@ -38,7 +38,7 @@ def test_get_business_addresses(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/addresses',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    headers=create_header(jwt, [STAFF_ROLE], identifier, **{'Accept-Version':'v1'})
                     )
     # check
     assert rv.status_code == HTTPStatus.OK

@@ -29,7 +29,7 @@ from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, errorhandlers, models
 from legal_api.models import db
-from legal_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
+from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import flags, queue
 from legal_api.translations import babel
@@ -56,27 +56,16 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             send_default_pii=False
         )
 
-    errorhandlers.init_app(app)
     db.init_app(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
     queue.init_app(app)
     babel.init_app(app)
+    endpoints.init_app(app)
 
-    app.register_blueprint(API_BLUEPRINT)
-    app.register_blueprint(OPS_BLUEPRINT)
+    # errorhandlers.init_app(app)
+
     setup_jwt_manager(app, jwt)
-
-    @app.route('/')
-    def be_nice_swagger_redirect():  # pylint: disable=unused-variable
-        return redirect('/api/v1', code=HTTPStatus.MOVED_PERMANENTLY)
-
-    @app.after_request
-    def add_version(response):  # pylint: disable=unused-variable
-        version = get_run_version()
-        response.headers['API'] = f'legal_api/{version}'
-        response.headers['SCHEMAS'] = f'registry_schemas/{registry_schemas_version}'
-        return response
 
     register_shellcontext(app)
 

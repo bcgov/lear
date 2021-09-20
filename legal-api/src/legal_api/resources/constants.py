@@ -11,13 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Exposes all of the resource endpoints mounted in Flask-Blueprint style.
+"""Constants used in managing the end-points."""
+from __future__ import annotations
 
-Uses restx namespaces to mount individual api/v1 endpoints into the service.
+from enum import Enum
 
-All services have 2 defaults sets of endpoints:
- - ops
- - meta
-That are used to expose operational health information about the service, and meta information.
-"""
-from .endpoints import endpoints
+
+class EndpointEnum(str, Enum):
+    """Enumerate the endpoint mounts used in the system."""
+
+    API_V1 = '/api/v1'
+    API_V2 = '/api/v2'
+    API = '/api'
+    DEFAULT_API = API_V1
+
+
+class EndpointVersionEnum(str, Enum):
+    """Enumerate the Accept Version Headers."""
+
+    V1 = 'v1'
+    V2 = 'v2'
