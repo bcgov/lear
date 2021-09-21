@@ -50,6 +50,7 @@ def _get_pdfs(
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
+    attach_order = 1
     headers = {
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
@@ -84,9 +85,10 @@ def _get_pdfs(
                     'fileName': f'{file_name}.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': '1'
+                    'attachOrder': attach_order
                 }
             )
+            attach_order += 1
         # add receipt pdf
         if filing.filing_type == 'incorporationApplication' or (filing.filing_type == 'correction' and
                                                                 original_filing_type == 'incorporationApplication'):
@@ -117,9 +119,10 @@ def _get_pdfs(
                     'fileName': 'Receipt.pdf',
                     'fileBytes': receipt_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': '2'
+                    'attachOrder': attach_order
                 }
             )
+            attach_order += 1
     if status == Filing.Status.COMPLETED.value:
         if legal_type != Business.LegalTypes.COOP.value:
             # add notice of articles
@@ -138,9 +141,10 @@ def _get_pdfs(
                         'fileName': 'Notice of Articles.pdf',
                         'fileBytes': noa_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': '1'
+                        'attachOrder': attach_order
                     }
                 )
+                attach_order += 1
 
         if filing.filing_type == 'incorporationApplication' or (filing.filing_type == 'correction' and
                                                                 original_filing_type == 'incorporationApplication' and
@@ -163,9 +167,10 @@ def _get_pdfs(
                         'fileName': file_name,
                         'fileBytes': certificate_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': '2'
+                        'attachOrder': attach_order
                     }
                 )
+                attach_order += 1
 
             if legal_type == Business.LegalTypes.COOP.value:
                 # Add rules
@@ -185,9 +190,10 @@ def _get_pdfs(
                             'fileName': 'Certified Rules.pdf',
                             'fileBytes': certified_rules_encoded.decode('utf-8'),
                             'fileUrl': '',
-                            'attachOrder': '2'
+                            'attachOrder': attach_order
                         }
                     )
+                    attach_order += 1
 
                 # Add memorandum
                 memorandum = requests.get(
@@ -206,9 +212,10 @@ def _get_pdfs(
                             'fileName': 'Certified Memorandum.pdf',
                             'fileBytes': certified_memorandum_encoded.decode('utf-8'),
                             'fileUrl': '',
-                            'attachOrder': '2'
+                            'attachOrder': attach_order
                         }
                     )
+                    attach_order += 1
 
         if filing.filing_type == 'alteration' and get_additional_info(filing).get('nameChange', False):
             # add certificate of name change
@@ -229,9 +236,10 @@ def _get_pdfs(
                         'fileName': file_name,
                         'fileBytes': certificate_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': '2'
+                        'attachOrder': attach_order
                     }
                 )
+                attach_order += 1
 
     return pdfs
 
