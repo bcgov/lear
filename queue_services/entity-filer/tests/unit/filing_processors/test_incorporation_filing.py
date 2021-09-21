@@ -54,10 +54,11 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
-        filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
-        filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
-        filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
-        filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
+        if legal_type == 'CP':
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
+            filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
+            filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()
