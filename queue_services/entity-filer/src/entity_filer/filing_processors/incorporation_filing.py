@@ -13,21 +13,31 @@
 # limitations under the License.
 """File processing rules and actions for the incorporation of a business."""
 import copy
+import io
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict
 
+import PyPDF2
 import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
+from legal_api.constants import COOPERATIVE_FOLDER_NAME
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
+from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.services import PdfService
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.minio import MinioService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
+
+
+CERTIFIED_COPY_PREFIX = 'Certified_copy-'
 
 
 def get_next_corp_num(legal_type: str):
@@ -96,6 +106,7 @@ def update_affiliation(business: Business, filing: Filing):
 def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
     cooperative_obj = incorp_filing.get('cooperative', None)
     if cooperative_obj:
+
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
         document.type = DocumentType.COOP_RULES.value
@@ -114,7 +125,67 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)
+
+        # create certified copy for rules document
+        rules_file = MinioService.get_file(cooperative_obj.get('rulesFileKey'))
+        rules_file_name = cooperative_obj.get('rulesFileName')
+        certified_rules_file_name = CERTIFIED_COPY_PREFIX + rules_file_name
+        certified_rules_file_key = _create_certified_copy(rules_file.data,
+                                                         business,
+                                                         certified_rules_file_name)
+
+        document = Document()
+        document.type = DocumentType.CERTIFIED_COOP_RULES.value
+        document.file_key = certified_rules_file_key
+        document.file_name = certified_rules_file_name
+        document.content_type = document.file_name.split('.')[-1]
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+        # create certified copy for memorandum document
+        memorandum_file = MinioService.get_file(cooperative_obj.get('memorandumFileKey'))
+        memorandum_file_name = cooperative_obj.get('memorandumFileName')
+        certified_memorandum_file_name = CERTIFIED_COPY_PREFIX + memorandum_file_name
+        certified_memorandum_file_key = _create_certified_copy(memorandum_file.data,
+                                                              business,
+                                                              certified_memorandum_file_name)
+
+        document = Document()
+        document.type = DocumentType.CERTIFIED_COOP_MEMORANDUM.value
+        document.file_key = certified_memorandum_file_key
+        document.file_name = certified_memorandum_file_name
+        document.content_type = document.file_name.split('.')[-1]
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
     return business
+
+
+def _create_certified_copy(_bytes, business, certified_file_name):
+    open_pdf_file = io.BytesIO(_bytes)
+    pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+    pdf_writer = PyPDF2.PdfFileWriter()
+    pdf_writer.appendPagesFromReader(pdf_reader)
+    output_original_pdf = io.BytesIO()
+    pdf_writer.write(output_original_pdf)
+    output_original_pdf.seek(0)
+
+    registrar_info = RegistrarInfo.get_registrar_info(business.founding_date)
+    registrars_signature = registrar_info['signatureAndText']
+    pdf_service = PdfService()
+    registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature,
+                                                           LegislationDatetime.as_legislation_timezone(business.founding_date),
+                                                           business.identifier)
+    certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
+
+    signed_url = MinioService.create_signed_put_url(certified_file_name, prefix_key=COOPERATIVE_FOLDER_NAME)
+    key = signed_url.get('key')
+    pre_signed_put = signed_url.get('preSignedUrl')
+
+    requests.put(pre_signed_put, data=certified_copy.read(), headers={'Content-Type': 'application/octet-stream'})
+    return key
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
