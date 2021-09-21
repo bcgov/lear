@@ -33,6 +33,7 @@ class DocumentType(Enum):
     CERTIFIED_COOP_RULES = 'certified_coop_rules'
     CERTIFIED_COOP_MEMORANDUM = 'certified_coop_memorandum'
 
+
 class Document(db.Model):
     """This is the model for a document."""
 
