@@ -52,4 +52,4 @@ six==1.15.0
 strict-rfc3339==0.7
 urllib3==1.26.4
 minio==7.0.2
-git+https://github.com/bcgov/business-schemas.git@2.15.3#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.15.4#egg=registry_schemas
