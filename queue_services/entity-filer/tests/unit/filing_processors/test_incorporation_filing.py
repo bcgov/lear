@@ -50,16 +50,17 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    rules_file_key = _upload_file()
-    memorandum_file_key = _upload_file()
     with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
         if legal_type == 'CP':
-            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
+            rules_file_key_uploaded_by_user = _upload_file()
+            memorandum_file_key_uploaded_by_user = _upload_file()
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
-            filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
+            filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = \
+                memorandum_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
         create_filing('123', filing)
 
@@ -83,24 +84,26 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
             assert len(documents) == 2
             for document in documents:
                 if document.type == DocumentType.COOP_RULES.value:
-                    rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-                    assert document.file_key != rules_key
+                    original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                    assert document.file_key != original_rules_key
+                    assert MinioService.get_file(document.file_key)
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
-                    memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-                    assert document.file_key != memorandum_key
+                    original_memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                    assert document.file_key != original_memorandum_key
+                    assert MinioService.get_file(document.file_key)
 
             # Assert those exist before deletion:
-            assert MinioService.get_file(rules_file_key)
-            assert MinioService.get_file(memorandum_file_key)
+            assert MinioService.get_file(rules_file_key_uploaded_by_user)
+            assert MinioService.get_file(memorandum_file_key_uploaded_by_user)
 
             incorporation_filing.post_process(business, filing_rec)
             try:
-                MinioService.get_file(rules_file_key)
+                MinioService.get_file(rules_file_key_uploaded_by_user)
                 raise AssertionError ("Original Rules file should not exist after post_process.")
             except S3Error:
                 pass
             try:
-                MinioService.get_file(memorandum_file_key)
+                MinioService.get_file(memorandum_file_key_uploaded_by_user)
                 raise AssertionError ("Original Memorandum file should not exist after post_process.")
             except S3Error:
                 pass
