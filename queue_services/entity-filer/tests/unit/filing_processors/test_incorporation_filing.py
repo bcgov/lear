@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from _pytest.compat import assert_never
 from legal_api.constants import COOPERATIVE_FOLDER_NAME
 from legal_api.models import Filing
 from legal_api.models.colin_event_id import ColinEventId
@@ -28,6 +29,7 @@ from legal_api.models.document import DocumentType
 from legal_api.services import PdfService
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import _write_text
+from minio.error import S3Error
 from registry_schemas.example_data import (
     COOP_INCORPORATION_FILING_TEMPLATE,
     CORRECTION_INCORPORATION,
@@ -78,20 +80,26 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         elif legal_type == 'CP':
             assert len(business.offices.all()) == 1
             documents = business.documents.all()
-            assert len(documents) == 4
+            assert len(documents) == 2
             for document in documents:
                 if document.type == DocumentType.COOP_RULES.value:
                     rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-                    assert document.file_key == rules_key
+                    assert document.file_key != rules_key
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
                     memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-                    assert document.file_key == memorandum_key
-                elif document.type == DocumentType.CERTIFIED_COOP_MEMORANDUM.value:
-                    certified_memorandum_exists = True
-                elif document.type == DocumentType.CERTIFIED_COOP_RULES.value:
-                    certified_rules_exists = True
-            assert certified_rules_exists
-            assert certified_memorandum_exists
+                    assert document.file_key != memorandum_key
+            
+            incorporation_filing.post_process(business, filing_rec)
+            try:
+                MinioService.get_file(rules_file_key)
+                raise AssertionError ("Original Rules file should not exist after post_process.")
+            except S3Error:
+                pass
+            try:
+                MinioService.get_file(memorandum_file_key)
+                raise AssertionError ("Original Memorandum file should not exist after post_process.")
+            except S3Error:
+                pass
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 

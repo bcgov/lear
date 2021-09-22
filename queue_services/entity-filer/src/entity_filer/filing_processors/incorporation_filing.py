@@ -37,9 +37,6 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
-CERTIFIED_COPY_PREFIX = 'Certified_copy-'
-
-
 def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
     try:
@@ -106,38 +103,18 @@ def update_affiliation(business: Business, filing: Filing):
 def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
     cooperative_obj = incorp_filing.get('cooperative', None)
     if cooperative_obj:
+        # create certified copy for rules document
+        rules_file = MinioService.get_file(cooperative_obj.get('rulesFileKey'))
+        rules_file_name = cooperative_obj.get('rulesFileName')
+        certified_rules_file_key = _create_certified_copy(rules_file.data,
+                                                          business,
+                                                          rules_file_name)
 
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
         document.type = DocumentType.COOP_RULES.value
-        document.file_key = cooperative_obj.get('rulesFileKey')
-        document.file_name = cooperative_obj.get('rulesFileName')
-        document.content_type = document.file_name.split('.')[-1]
-        document.business_id = business.id
-        document.filing_id = filing.id
-        business.documents.append(document)
-
-        document = Document()
-        document.type = DocumentType.COOP_MEMORANDUM.value
-        document.file_key = cooperative_obj.get('memorandumFileKey')
-        document.file_name = cooperative_obj.get('memorandumFileName')
-        document.content_type = document.file_name.split('.')[-1]
-        document.business_id = business.id
-        document.filing_id = filing.id
-        business.documents.append(document)
-
-        # create certified copy for rules document
-        rules_file = MinioService.get_file(cooperative_obj.get('rulesFileKey'))
-        rules_file_name = cooperative_obj.get('rulesFileName')
-        certified_rules_file_name = CERTIFIED_COPY_PREFIX + rules_file_name
-        certified_rules_file_key = _create_certified_copy(rules_file.data,
-                                                         business,
-                                                         certified_rules_file_name)
-
-        document = Document()
-        document.type = DocumentType.CERTIFIED_COOP_RULES.value
         document.file_key = certified_rules_file_key
-        document.file_name = certified_rules_file_name
+        document.file_name = rules_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
@@ -146,15 +123,15 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         # create certified copy for memorandum document
         memorandum_file = MinioService.get_file(cooperative_obj.get('memorandumFileKey'))
         memorandum_file_name = cooperative_obj.get('memorandumFileName')
-        certified_memorandum_file_name = CERTIFIED_COPY_PREFIX + memorandum_file_name
+
         certified_memorandum_file_key = _create_certified_copy(memorandum_file.data,
-                                                              business,
-                                                              certified_memorandum_file_name)
+                                                               business,
+                                                               memorandum_file_name)
 
         document = Document()
-        document.type = DocumentType.CERTIFIED_COOP_MEMORANDUM.value
+        document.type = DocumentType.COOP_MEMORANDUM.value
         document.file_key = certified_memorandum_file_key
-        document.file_name = certified_memorandum_file_name
+        document.file_name = memorandum_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
@@ -257,3 +234,11 @@ def post_process(business: Business, filing: Filing):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
                 level='error')
+
+    cooperative_obj = filing.filing_json['filing']['incorporationApplication'].get('cooperative', None)
+    if cooperative_obj:
+        # Delete original files
+        rules_file_key = cooperative_obj.get('rulesFileKey')
+        MinioService.delete_file(rules_file_key)
+        memorandum_file_key = cooperative_obj.get('memorandumFileKey')
+        MinioService.delete_file(memorandum_file_key)
