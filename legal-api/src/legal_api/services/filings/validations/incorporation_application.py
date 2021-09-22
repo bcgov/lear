@@ -23,7 +23,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService, PdfService
+from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -267,13 +267,13 @@ def validate_cooperative_documents(incorporation_json) -> Error:
     if msg:
         return msg
 
-    rulesErr = validate_pdf(rules_file_key)
-    if rulesErr:
-        return rulesErr
+    rules_err = validate_pdf(rules_file_key)
+    if rules_err:
+        return rules_err
 
-    memorandumErr = validate_pdf(memorandum_file_key)
-    if memorandumErr:
-        return memorandumErr
+    memorandum_err = validate_pdf(memorandum_file_key)
+    if memorandum_err:
+        return memorandum_err
 
     return None
 
