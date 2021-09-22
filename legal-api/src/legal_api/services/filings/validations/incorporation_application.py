@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
+import io
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, List, Optional
-import io
 
 import pycountry
 import PyPDF2
@@ -236,6 +236,7 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
 
     return None
 
+
 def validate_cooperative_documents(incorporation_json) -> Error:
     """Return an error or warning message based on the cooperative documents validation rules.
 
@@ -343,6 +344,7 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
         return msg
 
     return None
+
 
 def validate_pdf(file_key: str) -> Optional[Error]:
     """Validate the PDF file."""
