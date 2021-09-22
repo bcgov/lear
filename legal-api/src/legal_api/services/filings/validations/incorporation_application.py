@@ -15,13 +15,15 @@
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, List, Optional
+import io
 
 import pycountry
+import PyPDF2
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService
+from legal_api.services import MinioService, PdfService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -265,25 +267,13 @@ def validate_cooperative_documents(incorporation_json) -> Error:
     if msg:
         return msg
 
-    # Validate the files from Minio
-    try:
-        MinioService.get_file(rules_file_key)
-        file_info = MinioService.get_file_stat_object(rules_file_key)
-        if file_info.size > 10000:
-            msg.append({'error': babel('Rules file exceeds maximum size.')})
-    except Exception:
-        msg.append({'error': babel('Invalid rules file.')})
+    rulesErr = validate_pdf(rules_file_key)
+    if rulesErr:
+        return rulesErr
 
-    try:
-        memorandum_file = MinioService.get_file(memorandum_file_key)
-        file_info = MinioService.get_file_stat_object(memorandum_file_key)
-        if file_info.size > 10000:
-            msg.append({'error': babel('Rules file exceeds maximum size.')})
-    except Exception:
-        msg.append({'error': babel('Invalid memorandum file.')})
-
-    if msg:
-        return msg
+    memorandumErr = validate_pdf(memorandum_file_key)
+    if memorandumErr:
+        return memorandumErr
 
     return None
 
@@ -348,6 +338,30 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
     nr_name = namex.get_approved_name(nr_response.json())
     if nr_name != legal_name:
         msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
+
+    if msg:
+        return msg
+
+    return None
+
+def validate_pdf(file_key: str) -> Optional[Error]:
+    """Validate the PDF file."""
+    msg = []
+    try:
+        file = MinioService.get_file(file_key)
+        open_pdf_file = io.BytesIO(file.data)
+        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+        pdf_size_units = pdf_reader.getPage(0).mediaBox
+
+        if pdf_size_units.getWidth() != 612 or pdf_size_units.getHeight() != 792:
+            msg.append({'error': babel('Document must be set to fit onto 8.5” x 11” letter-size paper.')})
+
+        file_info = MinioService.get_file_info(file_key)
+        if file_info.size > 10000:
+            msg.append({'error': babel('File exceeds maximum size.')})
+
+    except Exception:
+        msg.append({'error': babel('Invalid file.')})
 
     if msg:
         return msg

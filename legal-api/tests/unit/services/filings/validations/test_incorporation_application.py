@@ -16,7 +16,9 @@ import copy
 from datetime import date
 from http import HTTPStatus
 import os
+import io
 
+import PyPDF2
 import datedelta
 import pytest
 import requests
@@ -28,6 +30,10 @@ from legal_api.services import MinioService
 from legal_api.services.filings import validate
 from legal_api.services.filings.validations.incorporation_application import validate_roles, \
     validate_parties_mailing_address
+from reportlab.lib.pagesizes import letter, legal
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 from . import lists_are_equal, create_party, create_party_address
 
@@ -599,17 +605,17 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
         assert err is None
 
 @pytest.mark.parametrize(
-    'test_name, key, mockKey, expected_code, expected_msg',
+    'test_name, key, scenario, expected_code, expected_msg',
     [
-        ('SUCCESS', 'rulesFileKey', 'mockSuccess', None, None),
-        ('SUCCESS', 'memorandumFileKey', 'mockSuccess', None, None),
-        ('FAIL_INVALID_RULES_FILE', 'rulesFileKey', 'mockFail',
+        ('SUCCESS', 'rulesFileKey', 'success', None, None),
+        ('SUCCESS', 'memorandumFileKey', 'success', None, None),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'failRules',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid rules file.'
+                'error': 'Invalid file.'
             }]),
-        ('FAIL_INVALID_MEMORANDUM_FILE', 'memorandumFileKey', 'mockFail',
+        ('FAIL_INVALID_MEMORANDUM_FILE_KEY', 'memorandumFileKey', 'failMemorandum',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid memorandum file.'
+                'error': 'Invalid file.'
             }]),
         ('FAIL_INVALID_RULES_KEY', 'rulesFileKey', '',
             HTTPStatus.BAD_REQUEST, [{
@@ -626,9 +632,17 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
         ('FAIL_INVALID_MEMORANDUM_NAME', 'memorandumFileName', '',
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'A valid memorandum file name is required.'
-            }])
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidRulesSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.'
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidMemorandumSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.'
+            }]),
     ])
-def test_validate_cooperative_documents(session, minio_server, tmpdir, test_name, key, mockKey, expected_code, expected_msg):
+def test_validate_cooperative_documents(session, minio_server, test_name, key, scenario, expected_code, expected_msg):
     """Assert that validator validates cooperative documents correctly."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
@@ -641,15 +655,25 @@ def test_validate_cooperative_documents(session, minio_server, tmpdir, test_name
     f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
     f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
 
-    #Mock upload file for test purposes
-    if mockKey:
-        keyValue = _upload_file(tmpdir)
-        f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = keyValue
-        f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = keyValue
-        if mockKey == 'mockFail':
-            f['filing']['incorporationApplication']['cooperative'][key] = mockKey
+    #Mock upload file for test scenarios
+    if scenario:
+        if scenario == 'success':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'failRules':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = scenario
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'failMemorandum':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = scenario
+        if scenario == 'invalidRulesSize':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(legal)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'invalidMemorandumSize':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(legal)
     else:
-        # Assign key and value test variables
+        # Assign key and value to test empty variables for failures
         keyValue = ''
         f['filing']['incorporationApplication']['cooperative'][key] = keyValue
 
@@ -663,18 +687,35 @@ def test_validate_cooperative_documents(session, minio_server, tmpdir, test_name
     else:
         assert err is None
 
-# Mock file upload for Minio related validations
-def _upload_file(tmpdir):
-    d = tmpdir.mkdir('subdir')
-    fh = d.join('cooperative-test.pdf')
-    fh.write('Test File')
-    filename = os.path.join(fh.dirname, fh.basename)
-
-    test_file = open(filename, 'rb')
-    files = {'upload_file': test_file}
-    file_name = fh.basename
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
+def _upload_file(pageSize):
+    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, files=files)
+
+    requests.put(pre_signed_put, data=_create_pdf_file(pageSize).read(), headers={'Content-Type': 'application/octet-stream'})
     return key
+
+
+def _create_pdf_file(pageSize):
+    buffer = io.BytesIO()
+    can = canvas.Canvas(buffer, pagesize=pageSize)
+    doc_height = letter[1]
+
+    for _ in range(3):
+        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
+        text_x_margin = 100
+        text_y_margin = doc_height - 300
+        line_height = 14
+        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        can.showPage()
+
+    can.save()
+    buffer.seek(0)
+    return buffer
+
+
+def _write_text(can, text, line_height, x_margin, y_margin):
+    """Write text lines into a canvas."""
+    for line in text.splitlines():
+        can.drawString(x_margin, y_margin, line)
+        y_margin -= line_height
