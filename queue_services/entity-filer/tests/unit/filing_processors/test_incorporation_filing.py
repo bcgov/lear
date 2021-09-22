@@ -88,7 +88,11 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
                     memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
                     assert document.file_key != memorandum_key
-            
+
+            # Assert those exist before deletion:
+            assert MinioService.get_file(rules_file_key)
+            assert MinioService.get_file(memorandum_file_key)
+
             incorporation_filing.post_process(business, filing_rec)
             try:
                 MinioService.get_file(rules_file_key)
