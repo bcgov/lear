@@ -56,7 +56,7 @@ def validate(incorporation_json: Dict):
         if err:
             msg.extend(err)
 
-    if legal_type == Business.LegalTypes.COOP.value:
+    elif legal_type == Business.LegalTypes.COOP.value:
         err = validate_cooperative_documents(incorporation_json)
         if err:
             msg.extend(err)
