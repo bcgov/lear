@@ -237,7 +237,7 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
     return None
 
 
-def validate_cooperative_documents(incorporation_json) -> Error:
+def validate_cooperative_documents(incorporation_json):
     """Return an error or warning message based on the cooperative documents validation rules.
 
     Rules:
@@ -346,7 +346,7 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
     return None
 
 
-def validate_pdf(file_key: str) -> Optional[Error]:
+def validate_pdf(file_key: str):
     """Validate the PDF file."""
     msg = []
     try:
