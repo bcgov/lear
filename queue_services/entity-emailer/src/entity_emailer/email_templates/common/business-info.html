@@ -1,7 +1,15 @@
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
 <!-- table and cell padding doesn't work consistently -- use cellspacing instead -->
 <table class="business-info-table" cellspacing="10" role="presentation">
   <tr>
+    {% if business.legalType == 'CP' %}
+    <td class="name">Cooperative Association Name:</td>
+    {% else %}
     <td class="name">Company Name:</td>
+    {% endif %}
+
     {% if business.legalName %}
     <!-- try to get legal name from Business object -->
     <td class="value">{{ business.legalName }}</td>
@@ -47,3 +55,6 @@
   </tr>
   {% endif %}
 </table>
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]

@@ -110,6 +110,8 @@ def substitute_template_parts(template_code: str) -> str:
         'logo',
         'pdf-notice',
         'style',
+        'divider',
+        '20px',
         'whitespace-16px',
         'whitespace-24px'
     ]
