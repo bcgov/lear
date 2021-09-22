@@ -369,7 +369,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
 
 ASSOCIATION_TYPE_DESC: Final = {
-    Business.AssociationTypes.CP_COOPERATIVE.value: 'Cooperative Without a Special Purpose',
-    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Special Purpose - Housing Cooperative',
-    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Special Purpose - Community Service Cooperative'
+    Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
+    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative'
 }
