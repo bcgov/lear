@@ -218,14 +218,21 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
                                     'path': '/filing/incorporationApplication/parties/roles'}]
         )
     ])
-def test_validate_incorporation_role(session, test_name, legal_type, parties, expected_code, expected_msg):
+def test_validate_incorporation_role(session, minio_server, test_name, legal_type, parties, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
-
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+                             'email': 'no_one@never.get', 'filingId': 1}
     f['filing']['business']['legalType'] = legal_type
+
+    if legal_type == 'CP':
+        f['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+        # Provide mocked valid documents
+        f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+        f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+    else:
+        f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -243,8 +250,7 @@ def test_validate_incorporation_role(session, test_name, legal_type, parties, ex
         f['filing']['incorporationApplication']['parties'].append(p)
 
     # perform test
-    with freeze_time(now):
-        err = validate(business, f)
+    err = validate(business, f)
 
     # validate outcomes
     if expected_code:
