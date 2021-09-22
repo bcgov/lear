@@ -362,6 +362,9 @@ def validate_pdf(file_key: str):
         if file_info.size > 10000:
             msg.append({'error': babel('File exceeds maximum size.')})
 
+        if pdf_reader.isEncrypted:
+            msg.append({'error': babel('File is encrypted.')})
+
     except Exception:
         msg.append({'error': babel('Invalid file.')})
 
