@@ -12,16 +12,16 @@
 
     {% if business.legalName %}
     <!-- try to get legal name from Business object -->
-    <td class="value">{{ business.legalName }}</td>
+    <td class="value bold">{{ business.legalName }}</td>
     {% elif filing.nameRequest.legalName %}
     <!-- try to get legal name from Name Request object -->
-    <td class="value">{{ filing.nameRequest.legalName }}</td>
+    <td class="value bold">{{ filing.nameRequest.legalName }}</td>
     {% elif business.legalType == 'BEN' %}
     <!-- fallback BC label -->
-    <td class="value">Numbered Benefit Company</td>
+    <td class="value bold">Numbered Benefit Company</td>
     {% else %}
     <!-- add other cases here -->
-    <td class="value">Unknown</td>
+    <td class="value bold">Unknown</td>
     {% endif %}
   </tr>
 
@@ -29,29 +29,29 @@
     <td class="name">Incorporation Number:</td>
     {% if header.status == 'PAID' and filing_type == 'incorporationApplication'
     %}
-    <td class="value">Pending</td>
+    <td class="value bold">Pending</td>
     {% else %}
     <!-- Eg, BC0878529 -->
-    <td class="value">{{ business.identifier }}</td>
+    <td class="value bold">{{ business.identifier }}</td>
     {% endif %}
   </tr>
 
   {% if business.tax_id %}
   <tr>
     <td class="name">Business Number:</td>
-    <td class="value">{{ business.tax_id }}</td>
+    <td class="value bold">{{ business.tax_id }}</td>
   </tr>
   {% endif %}
 
   <tr>
     <td class="name">Date and Time of Filing:</td>
-    <td class="value">{{ filing_date_time }}</td>
+    <td class="value bold">{{ filing_date_time }}</td>
   </tr>
 
   {% if header.isFutureEffective %}
   <tr>
     <td class="name">Effective Date and Time:</td>
-    <td class="value">{{ effective_date_time }}</td>
+    <td class="value bold">{{ effective_date_time }}</td>
   </tr>
   {% endif %}
 </table>

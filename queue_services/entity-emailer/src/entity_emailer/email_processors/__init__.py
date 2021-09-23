@@ -35,12 +35,14 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
     hour = leg_tmz_filing_date.strftime('%I').lstrip('0')
-    leg_tmz_filing_date = leg_tmz_filing_date.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
+    am_pm = leg_tmz_filing_date.strftime('%p').lower()
+    leg_tmz_filing_date = leg_tmz_filing_date.strftime(f'%B %d, %Y at {hour}:%M {am_pm} Pacific time')
 
     effective_date = datetime.fromisoformat(filing.effective_date.isoformat())
     leg_tmz_effective_date = LegislationDatetime.as_legislation_timezone(effective_date)
     hour = leg_tmz_effective_date.strftime('%I').lstrip('0')
-    leg_tmz_effective_date = leg_tmz_effective_date.strftime(f'%B %d, %Y {hour}:%M %p Pacific Time')
+    am_pm = leg_tmz_effective_date.strftime('%p').lower()
+    leg_tmz_effective_date = leg_tmz_effective_date.strftime(f'%B %d, %Y at {hour}:%M {am_pm} Pacific time')
 
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
@@ -104,6 +106,7 @@ def substitute_template_parts(template_code: str) -> str:
         'business-dashboard-link-alt',
         'business-info',
         'cra-notice',
+        'nr-footer',
         'footer',
         'header',
         'initiative-notice',
