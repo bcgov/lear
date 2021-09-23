@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
+import io
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, List, Optional
 
 import pycountry
+import PyPDF2
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -33,6 +36,7 @@ def validate(incorporation_json: Dict):
     """Validate the Incorporation filing."""
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
 
     err = validate_offices(incorporation_json)
@@ -47,9 +51,15 @@ def validate(incorporation_json: Dict):
     if err:
         msg.extend(err)
 
-    err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
-    if err:
-        msg.extend(err)
+    if legal_type == Business.LegalTypes.BCOMP.value:
+        err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
+        if err:
+            msg.extend(err)
+
+    elif legal_type == Business.LegalTypes.COOP.value:
+        err = validate_cooperative_documents(incorporation_json)
+        if err:
+            msg.extend(err)
 
     err = validate_incorporation_effective_date(incorporation_json)
     if err:
@@ -227,6 +237,48 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
     return None
 
 
+def validate_cooperative_documents(incorporation_json):
+    """Return an error or warning message based on the cooperative documents validation rules.
+
+    Rules:
+        - The documents are provided.
+        - Document IDs are unique.
+    """
+    # Setup
+    msg = []
+
+    rules_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+    rules_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileName']
+    memorandum_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+    memorandum_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileName']
+
+    # Validate key values exist
+    if not rules_file_key:
+        msg.append({'error': babel('A valid rules key is required.')})
+
+    if not rules_file_name:
+        msg.append({'error': babel('A valid rules file name is required.')})
+
+    if not memorandum_file_key:
+        msg.append({'error': babel('A valid memorandum key is required.')})
+
+    if not memorandum_file_name:
+        msg.append({'error': babel('A valid memorandum file name is required.')})
+
+    if msg:
+        return msg
+
+    rules_err = validate_pdf(rules_file_key)
+    if rules_err:
+        return rules_err
+
+    memorandum_err = validate_pdf(memorandum_file_key)
+    if memorandum_err:
+        return memorandum_err
+
+    return None
+
+
 def validate_correction_ia(filing: Dict) -> Optional[Error]:
     """Validate correction of Incorporation Application."""
     if not (corrected_filing  # pylint: disable=superfluous-parens; needed to pass pylance
@@ -287,6 +339,34 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
     nr_name = namex.get_approved_name(nr_response.json())
     if nr_name != legal_name:
         msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_pdf(file_key: str):
+    """Validate the PDF file."""
+    msg = []
+    try:
+        file = MinioService.get_file(file_key)
+        open_pdf_file = io.BytesIO(file.data)
+        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+        pdf_size_units = pdf_reader.getPage(0).mediaBox
+
+        if pdf_size_units.getWidth() != 612 or pdf_size_units.getHeight() != 792:
+            msg.append({'error': babel('Document must be set to fit onto 8.5” x 11” letter-size paper.')})
+
+        file_info = MinioService.get_file_info(file_key)
+        if file_info.size > 10000:
+            msg.append({'error': babel('File exceeds maximum size.')})
+
+        if pdf_reader.isEncrypted:
+            msg.append({'error': babel('File must be unencrypted.')})
+
+    except Exception:
+        msg.append({'error': babel('Invalid file.')})
 
     if msg:
         return msg

@@ -15,16 +15,25 @@
 import copy
 from datetime import date
 from http import HTTPStatus
+import os
+import io
 
+import PyPDF2
 import datedelta
 import pytest
+import requests
 from freezegun import freeze_time
-from registry_schemas.example_data import INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import COOP_INCORPORATION, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.models import Business
+from legal_api.services import MinioService
 from legal_api.services.filings import validate
 from legal_api.services.filings.validations.incorporation_application import validate_roles, \
     validate_parties_mailing_address
+from reportlab.lib.pagesizes import letter, legal
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 from . import lists_are_equal, create_party, create_party_address
 
@@ -209,14 +218,21 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
                                     'path': '/filing/incorporationApplication/parties/roles'}]
         )
     ])
-def test_validate_incorporation_role(session, test_name, legal_type, parties, expected_code, expected_msg):
+def test_validate_incorporation_role(session, minio_server, test_name, legal_type, parties, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
-
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+                             'email': 'no_one@never.get', 'filingId': 1}
     f['filing']['business']['legalType'] = legal_type
+
+    if legal_type == 'CP':
+        f['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+        # Provide mocked valid documents
+        f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+        f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+    else:
+        f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
     f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
@@ -234,8 +250,7 @@ def test_validate_incorporation_role(session, test_name, legal_type, parties, ex
         f['filing']['incorporationApplication']['parties'].append(p)
 
     # perform test
-    with freeze_time(now):
-        err = validate(business, f)
+    err = validate(business, f)
 
     # validate outcomes
     if expected_code:
@@ -521,6 +536,7 @@ def test_validate_incorporation_share_classes(session, test_name,
 
     f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    f['filing']['business']['legalType'] = 'BEN'
 
     share_structure = f['filing']['incorporationApplication']['shareStructure']
 
@@ -593,3 +609,119 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_name, key, scenario, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'rulesFileKey', 'success', None, None),
+        ('SUCCESS', 'memorandumFileKey', 'success', None, None),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'failRules',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid file.'
+            }]),
+        ('FAIL_INVALID_MEMORANDUM_FILE_KEY', 'memorandumFileKey', 'failMemorandum',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid file.'
+            }]),
+        ('FAIL_INVALID_RULES_KEY', 'rulesFileKey', '',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'A valid rules key is required.'
+            }]),
+        ('FAIL_INVALID_RULES_NAME', 'rulesFileName', '',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'A valid rules file name is required.'
+            }]),
+       ('FAIL_INVALID_MEMORANDUM_KEY', 'memorandumFileKey', '',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'A valid memorandum key is required.'
+            }]),
+        ('FAIL_INVALID_MEMORANDUM_NAME', 'memorandumFileName', '',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'A valid memorandum file name is required.'
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidRulesSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.'
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidMemorandumSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.'
+            }]),
+    ])
+def test_validate_cooperative_documents(session, minio_server, test_name, key, scenario, expected_code, expected_msg):
+    """Assert that validator validates cooperative documents correctly."""
+    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+                             'email': 'no_one@never.get', 'filingId': 1}
+    f['filing']['business']['legalType'] = 'CP'
+    f['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+
+    # Add minimum director requirements
+    director = f['filing']['incorporationApplication']['parties'][0]['roles'][1]
+    f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
+    f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
+
+    #Mock upload file for test scenarios
+    if scenario:
+        if scenario == 'success':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'failRules':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = scenario
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'failMemorandum':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = scenario
+        if scenario == 'invalidRulesSize':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(legal)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        if scenario == 'invalidMemorandumSize':
+            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
+            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(legal)
+    else:
+        # Assign key and value to test empty variables for failures
+        key_value = ''
+        f['filing']['incorporationApplication']['cooperative'][key] = key_value
+
+    # perform test
+    err = validate(business, f)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+def _upload_file(page_size):
+    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
+    key = signed_url.get('key')
+    pre_signed_put = signed_url.get('preSignedUrl')
+
+    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(), headers={'Content-Type': 'application/octet-stream'})
+    return key
+
+
+def _create_pdf_file(page_size):
+    buffer = io.BytesIO()
+    can = canvas.Canvas(buffer, pagesize=page_size)
+    doc_height = letter[1]
+
+    for _ in range(3):
+        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
+        text_x_margin = 100
+        text_y_margin = doc_height - 300
+        line_height = 14
+        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        can.showPage()
+
+    can.save()
+    buffer.seek(0)
+    return buffer
+
+
+def _write_text(can, text, line_height, x_margin, y_margin):
+    """Write text lines into a canvas."""
+    for line in text.splitlines():
+        can.drawString(x_margin, y_margin, line)
+        y_margin -= line_height
