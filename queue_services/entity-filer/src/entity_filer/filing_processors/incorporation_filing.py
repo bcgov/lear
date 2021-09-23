@@ -23,7 +23,6 @@ import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
-from legal_api.constants import COOPERATIVE_FOLDER_NAME
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
 from legal_api.reports.registrar_meta import RegistrarInfo
@@ -228,4 +227,3 @@ def post_process(business: Business, filing: Filing):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
                 level='error')
-
