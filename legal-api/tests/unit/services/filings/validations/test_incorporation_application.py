@@ -680,8 +680,8 @@ def test_validate_cooperative_documents(session, minio_server, test_name, key, s
             f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(legal)
     else:
         # Assign key and value to test empty variables for failures
-        keyValue = ''
-        f['filing']['incorporationApplication']['cooperative'][key] = keyValue
+        key_value = ''
+        f['filing']['incorporationApplication']['cooperative'][key] = key_value
 
     # perform test
     err = validate(business, f)
@@ -693,18 +693,18 @@ def test_validate_cooperative_documents(session, minio_server, test_name, key, s
     else:
         assert err is None
 
-def _upload_file(pageSize):
+def _upload_file(page_size):
     signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
 
-    requests.put(pre_signed_put, data=_create_pdf_file(pageSize).read(), headers={'Content-Type': 'application/octet-stream'})
+    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(), headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
-def _create_pdf_file(pageSize):
+def _create_pdf_file(page_size):
     buffer = io.BytesIO()
-    can = canvas.Canvas(buffer, pagesize=pageSize)
+    can = canvas.Canvas(buffer, pagesize=page_size)
     doc_height = letter[1]
 
     for _ in range(3):
