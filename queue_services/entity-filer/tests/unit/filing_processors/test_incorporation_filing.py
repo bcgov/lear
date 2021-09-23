@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
 )
+import PyPDF2
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
@@ -85,36 +86,34 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
             for document in documents:
                 if document.type == DocumentType.COOP_RULES.value:
                     original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-                    assert document.file_key != original_rules_key
+                    assert document.file_key == original_rules_key
                     assert MinioService.get_file(document.file_key)
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
                     original_memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-                    assert document.file_key != original_memorandum_key
+                    assert document.file_key == original_memorandum_key
                     assert MinioService.get_file(document.file_key)
 
-            # Assert those exist before deletion:
-            assert MinioService.get_file(rules_file_key_uploaded_by_user)
-            assert MinioService.get_file(memorandum_file_key_uploaded_by_user)
+            rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+            assert rules_files_obj
+            _assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+            memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+            assert memorandum_file_obj
+            _assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
-            incorporation_filing.post_process(business, filing_rec)
-            try:
-                MinioService.get_file(rules_file_key_uploaded_by_user)
-                raise AssertionError ("Original Rules file should not exist after post_process.")
-            except S3Error:
-                pass
-            try:
-                MinioService.get_file(memorandum_file_key_uploaded_by_user)
-                raise AssertionError ("Original Memorandum file should not exist after post_process.")
-            except S3Error:
-                pass
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+def _assert_pdf_contains_text(search_text, pdf_raw_bytes: bytes):
+    pdf_obj = PyPDF2.PdfFileReader(io.BytesIO(pdf_raw_bytes))
+    pdf_page = pdf_obj.getPage(0)
+    text = pdf_page.extractText() 
+    assert search_text in text
 
 
 def _upload_file():
     signed_url = MinioService.create_signed_put_url('cooperative-test.pdf', prefix_key=COOPERATIVE_FOLDER_NAME)
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
-
     requests.put(pre_signed_put, data=_create_pdf_file().read(), headers={'Content-Type': 'application/octet-stream'})
     return key
 

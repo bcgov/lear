@@ -104,16 +104,15 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
     cooperative_obj = incorp_filing.get('cooperative', None)
     if cooperative_obj:
         # create certified copy for rules document
-        rules_file = MinioService.get_file(cooperative_obj.get('rulesFileKey'))
+        rules_file_key = cooperative_obj.get('rulesFileKey')
+        rules_file = MinioService.get_file(rules_file_key)
         rules_file_name = cooperative_obj.get('rulesFileName')
-        certified_rules_file_key = _create_certified_copy(rules_file.data,
-                                                          business,
-                                                          rules_file_name)
+        _replace_file_with_certified_copy(rules_file.data, business, rules_file_key)
 
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
         document.type = DocumentType.COOP_RULES.value
-        document.file_key = certified_rules_file_key
+        document.file_key = rules_file_key
         document.file_name = rules_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
@@ -121,16 +120,14 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         business.documents.append(document)
 
         # create certified copy for memorandum document
-        memorandum_file = MinioService.get_file(cooperative_obj.get('memorandumFileKey'))
+        memorandum_file_key = cooperative_obj.get('memorandumFileKey')
+        memorandum_file = MinioService.get_file(memorandum_file_key)
         memorandum_file_name = cooperative_obj.get('memorandumFileName')
-
-        certified_memorandum_file_key = _create_certified_copy(memorandum_file.data,
-                                                               business,
-                                                               memorandum_file_name)
+        _replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key)
 
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value
-        document.file_key = certified_memorandum_file_key
+        document.file_key = memorandum_file_key
         document.file_name = memorandum_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
@@ -140,7 +137,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
     return business
 
 
-def _create_certified_copy(_bytes, business, certified_file_name):
+def _replace_file_with_certified_copy(_bytes, business, key):
     open_pdf_file = io.BytesIO(_bytes)
     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
     pdf_writer = PyPDF2.PdfFileWriter()
@@ -157,11 +154,8 @@ def _create_certified_copy(_bytes, business, certified_file_name):
                                                            business.identifier)
     certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
 
-    signed_url = MinioService.create_signed_put_url(certified_file_name, prefix_key=COOPERATIVE_FOLDER_NAME)
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
+    MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
 
-    requests.put(pre_signed_put, data=certified_copy.read(), headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
@@ -235,10 +229,3 @@ def post_process(business: Business, filing: Filing):
                 f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
                 level='error')
 
-    cooperative_obj = filing.filing_json['filing']['incorporationApplication'].get('cooperative', None)
-    if cooperative_obj:
-        # Delete original files
-        rules_file_key = cooperative_obj.get('rulesFileKey')
-        MinioService.delete_file(rules_file_key)
-        memorandum_file_key = cooperative_obj.get('memorandumFileKey')
-        MinioService.delete_file(memorandum_file_key)
