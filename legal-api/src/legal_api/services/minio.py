@@ -84,3 +84,9 @@ class MinioService:
         minio_secret = current_app.config['MINIO_ACCESS_SECRET']
         return Minio(minio_endpoint, access_key=minio_key, secret_key=minio_secret,
                      secure=current_app.config['MINIO_SECURE'])
+
+    @staticmethod
+    def put_file(key: str, data: str, length: str):
+        """Put file to Minio."""
+        minio_client: Minio = MinioService._get_client()
+        minio_client.put_object(current_app.config['MINIO_BUCKET_LEAR'], key, data, length)
