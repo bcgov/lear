@@ -293,3 +293,11 @@ def create_mock_coro(mocker, monkeypatch):
         return mock, _coro
 
     return _create_mock_patch_coro
+
+
+@pytest.fixture(scope='session')
+def minio_server(docker_services):
+    """Create the minio services that the integration tests will use."""
+    docker_services.start('minio')
+    docker_services.wait_for_service('minio', 9000)
+    time.sleep(10)

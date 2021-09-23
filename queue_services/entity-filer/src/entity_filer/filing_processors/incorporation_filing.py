@@ -13,17 +13,23 @@
 # limitations under the License.
 """File processing rules and actions for the incorporation of a business."""
 import copy
+import io
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict
 
+import PyPDF2
 import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
+from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.services import PdfService
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.minio import MinioService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
@@ -96,25 +102,60 @@ def update_affiliation(business: Business, filing: Filing):
 def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
     cooperative_obj = incorp_filing.get('cooperative', None)
     if cooperative_obj:
+        # create certified copy for rules document
+        rules_file_key = cooperative_obj.get('rulesFileKey')
+        rules_file = MinioService.get_file(rules_file_key)
+        rules_file_name = cooperative_obj.get('rulesFileName')
+        _replace_file_with_certified_copy(rules_file.data, business, rules_file_key)
+
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
         document.type = DocumentType.COOP_RULES.value
-        document.file_key = cooperative_obj.get('rulesFileKey')
-        document.file_name = cooperative_obj.get('rulesFileName')
+        document.file_key = rules_file_key
+        document.file_name = rules_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)
 
+        # create certified copy for memorandum document
+        memorandum_file_key = cooperative_obj.get('memorandumFileKey')
+        memorandum_file = MinioService.get_file(memorandum_file_key)
+        memorandum_file_name = cooperative_obj.get('memorandumFileName')
+        _replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key)
+
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value
-        document.file_key = cooperative_obj.get('memorandumFileKey')
-        document.file_name = cooperative_obj.get('memorandumFileName')
+        document.file_key = memorandum_file_key
+        document.file_name = memorandum_file_name
         document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)
+
     return business
+
+
+def _replace_file_with_certified_copy(_bytes, business, key):
+    open_pdf_file = io.BytesIO(_bytes)
+    pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+    pdf_writer = PyPDF2.PdfFileWriter()
+    pdf_writer.appendPagesFromReader(pdf_reader)
+    output_original_pdf = io.BytesIO()
+    pdf_writer.write(output_original_pdf)
+    output_original_pdf.seek(0)
+
+    registrar_info = RegistrarInfo.get_registrar_info(business.founding_date)
+    registrars_signature = registrar_info['signatureAndText']
+    pdf_service = PdfService()
+    registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature,
+                                                           LegislationDatetime.as_legislation_timezone(business.founding_date),
+                                                           business.identifier)
+    certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
+
+    MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
+
+    return key
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches

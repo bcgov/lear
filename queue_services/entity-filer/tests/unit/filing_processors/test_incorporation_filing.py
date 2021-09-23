@@ -13,28 +13,41 @@
 # limitations under the License.
 """The Unit Tests for the Incorporation filing."""
 
-from tests.unit import create_filing
-from entity_filer.filing_processors import incorporation_filing
 import copy
+import io
+import os
 from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+import requests
+from _pytest.compat import assert_never
+from legal_api.constants import COOPERATIVE_FOLDER_NAME
 from legal_api.models import Filing
-from legal_api.models.document import DocumentType
 from legal_api.models.colin_event_id import ColinEventId
+from legal_api.models.document import DocumentType
+from legal_api.services import PdfService
+from legal_api.services.minio import MinioService
+from legal_api.services.pdf_service import _write_text
+from minio.error import S3Error
 from registry_schemas.example_data import (
     COOP_INCORPORATION_FILING_TEMPLATE,
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
 )
+import PyPDF2
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+from entity_filer.filing_processors import incorporation_filing
+from tests.unit import create_filing
 
 
 @pytest.mark.parametrize('legal_type,filing', [
     ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE)),
     ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE)),
 ])
-def test_incorporation_filing_process_with_nr(app, session, legal_type, filing):
+def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
@@ -42,6 +55,14 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing):
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
+        if legal_type == 'CP':
+            rules_file_key_uploaded_by_user = _upload_file()
+            memorandum_file_key_uploaded_by_user = _upload_file()
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key_uploaded_by_user
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
+            filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = \
+                memorandum_file_key_uploaded_by_user
+            filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()
@@ -64,12 +85,55 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing):
             assert len(documents) == 2
             for document in documents:
                 if document.type == DocumentType.COOP_RULES.value:
-                    rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-                    assert document.file_key == rules_key
+                    original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                    assert document.file_key == original_rules_key
+                    assert MinioService.get_file(document.file_key)
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
-                    memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-                    assert document.file_key == memorandum_key
+                    original_memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                    assert document.file_key == original_memorandum_key
+                    assert MinioService.get_file(document.file_key)
+
+            rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+            assert rules_files_obj
+            _assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+            memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+            assert memorandum_file_obj
+            _assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
+
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+
+
+def _assert_pdf_contains_text(search_text, pdf_raw_bytes: bytes):
+    pdf_obj = PyPDF2.PdfFileReader(io.BytesIO(pdf_raw_bytes))
+    pdf_page = pdf_obj.getPage(0)
+    text = pdf_page.extractText() 
+    assert search_text in text
+
+
+def _upload_file():
+    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf', prefix_key=COOPERATIVE_FOLDER_NAME)
+    key = signed_url.get('key')
+    pre_signed_put = signed_url.get('preSignedUrl')
+    requests.put(pre_signed_put, data=_create_pdf_file().read(), headers={'Content-Type': 'application/octet-stream'})
+    return key
+
+
+def _create_pdf_file():
+    buffer = io.BytesIO()
+    can = canvas.Canvas(buffer, pagesize=letter)
+    doc_height = letter[1]
+
+    for _ in range(3):
+        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
+        text_x_margin = 100
+        text_y_margin = doc_height - 300
+        line_height = 14
+        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        can.showPage()
+
+    can.save()
+    buffer.seek(0)
+    return buffer
 
 
 def test_incorporation_filing_process_no_nr(app, session):
@@ -140,8 +204,9 @@ def test_incorporation_filing_process_correction(app, session):
 ])
 def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
-    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
     from flask import current_app
+
+    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
 
     with app.app_context():
         requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={'corpNum': response})

@@ -22,7 +22,7 @@ import pytest
 import pytz
 from freezegun import freeze_time
 from legal_api.models import Business, Filing, PartyRole, User
-from legal_api.resources.business import DirectorResource
+from legal_api.resources.v1.business import DirectorResource
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
