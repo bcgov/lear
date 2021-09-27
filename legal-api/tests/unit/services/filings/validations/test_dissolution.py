@@ -23,12 +23,18 @@ from legal_api.services.filings.validations.dissolution import validate
 
 
 @pytest.mark.parametrize(
-    'test_name, dissolution_date, has_liabilities, identifier, expected_code, expected_msg',
+    'test_name, legal_type, dissolution_date, dissolution_statement_type, has_liabilities, identifier, expected_code, expected_msg',
     [
-        ('SUCCESS', '2018-04-08', True, 'CP1234567', None, None),
+        ('SUCCESS', 'CP', '2018-04-08', '197NoAssetsNoLiabilities', False, 'CP1234567', None, None),
+        ('SUCCESS', 'CP', '2018-04-08', '197NoAssetsProvisionsLiabilities', True, 'CP1234567', None, None),
+        ('FAIL', 'CP', '2018-04-08', 'asjkdf', True, 'CP1234567', HTTPStatus.BAD_REQUEST,
+         'Invalid Dissolution statement type.'),
+        ('FAIL', 'CP', '2018-04-08', '', True, 'CP1234567', HTTPStatus.BAD_REQUEST,
+            'Dissolution statement type must be provided.'),
+        ('SUCCESS', 'BC', '2018-04-08', '', True, 'BC1234567', None, None)
     ]
 )
-def test_validate(session, test_name, dissolution_date, has_liabilities, identifier,
+def test_validate(session, test_name, legal_type, dissolution_date, dissolution_statement_type, has_liabilities, identifier,
                   expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a VD can be validated."""
     # setup
@@ -36,7 +42,12 @@ def test_validate(session, test_name, dissolution_date, has_liabilities, identif
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = legal_type
     filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionStatementType'] = dissolution_statement_type
+
+    if legal_type != Business.LegalTypes.COOP.value:
+        del filing['filing']['dissolution']['dissolutionStatementType']
 
     # perform test
     err = validate(business, filing)
