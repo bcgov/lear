@@ -131,7 +131,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
     MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
     MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
-    MINIO_BUCKET_LEAR = os.getenv('MINIO_BUCKET_LEAR', 'lear')
+    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
     MINIO_SECURE = True
 
     TESTING = False
@@ -225,7 +225,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     MINIO_ENDPOINT = 'localhost:9000'
     MINIO_ACCESS_KEY = 'minio'
     MINIO_ACCESS_SECRET = 'minio123'
-    MINIO_BUCKET_LEAR = 'lear'
+    MINIO_BUCKET_BUSINESSES = 'businesses'
     MINIO_SECURE = False
 
 

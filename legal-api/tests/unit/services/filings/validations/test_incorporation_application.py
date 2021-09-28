@@ -13,29 +13,25 @@
 # limitations under the License.
 """Test suite to ensure the Incorporation Application is validated correctly."""
 import copy
+import io
 from datetime import date
 from http import HTTPStatus
-import os
-import io
 
-import PyPDF2
 import datedelta
 import pytest
 import requests
 from freezegun import freeze_time
+from reportlab.lib.pagesizes import legal, letter
+from reportlab.pdfgen import canvas
 from registry_schemas.example_data import COOP_INCORPORATION, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_roles, \
-    validate_parties_mailing_address
-from reportlab.lib.pagesizes import letter, legal
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
+from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address
 
-from . import lists_are_equal, create_party, create_party_address
+from . import create_party, create_party_address, lists_are_equal
+
 
 # setup
 identifier = 'NR 1234567'
@@ -153,72 +149,73 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
     'test_name, legal_type, parties, expected_code, expected_msg',
     [
         (
-          'SUCCESS', 'BEN',
-          [
-              {'partyName': 'officer1', 'roles': ['Completing Party', 'Incorporator']},
-              {'partyName': 'officer2','roles': ['Incorporator', 'Director']}
-          ],
-          None, None
+            'SUCCESS', 'BEN',
+            [
+                {'partyName': 'officer1', 'roles': ['Completing Party', 'Incorporator']},
+                {'partyName': 'officer2', 'roles': ['Incorporator', 'Director']}
+            ],
+            None, None
         ),
         (
-          'FAIL_NO_COMPLETING_PARTY', 'BEN',
-          [
-            {'partyName': 'officer1', 'roles': ['Director', 'Incorporator']},
-            {'partyName': 'officer2','roles': ['Incorporator', 'Director']}
-          ],
-          HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of one completing party',
-                                   'path': '/filing/incorporationApplication/parties/roles'}]
+            'FAIL_NO_COMPLETING_PARTY', 'BEN',
+            [
+                {'partyName': 'officer1', 'roles': ['Director', 'Incorporator']},
+                {'partyName': 'officer2', 'roles': ['Incorporator', 'Director']}
+            ],
+            HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of one completing party',
+                                      'path': '/filing/incorporationApplication/parties/roles'}]
         ),
         (
-          'FAIL_EXCEEDING_ONE_COMPLETING_PARTY', 'BEN',
-          [
-           {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
-           {'partyName': 'officer2','roles': ['Incorporator', 'Completing Party']}
-          ],
-          HTTPStatus.BAD_REQUEST, [{'error': 'Must have a maximum of one completing party',
-                                    'path': '/filing/incorporationApplication/parties/roles'}]
+            'FAIL_EXCEEDING_ONE_COMPLETING_PARTY', 'BEN',
+            [
+                {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
+                {'partyName': 'officer2', 'roles': ['Incorporator', 'Completing Party']}
+            ],
+            HTTPStatus.BAD_REQUEST, [{'error': 'Must have a maximum of one completing party',
+                                      'path': '/filing/incorporationApplication/parties/roles'}]
         ),
         (
-          'SUCCESS', 'CP',
-          [
-              {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
-              {'partyName': 'officer2','roles': ['Director']},
-              {'partyName': 'officer3','roles': ['Director']}
-          ],
-          None, None
+            'SUCCESS', 'CP',
+            [
+                {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
+                {'partyName': 'officer2', 'roles': ['Director']},
+                {'partyName': 'officer3', 'roles': ['Director']}
+            ],
+            None, None
         ),
         (
-          'FAIL_NO_COMPLETING_PARTY', 'CP',
-          [
-              {'partyName': 'officer1', 'roles': ['Director']},
-              {'partyName': 'officer2','roles': ['Director']},
-              {'partyName': 'officer3','roles': ['Director']}
-          ],
-          HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of one completing party',
-                                   'path': '/filing/incorporationApplication/parties/roles'}]
+            'FAIL_NO_COMPLETING_PARTY', 'CP',
+            [
+                {'partyName': 'officer1', 'roles': ['Director']},
+                {'partyName': 'officer2', 'roles': ['Director']},
+                {'partyName': 'officer3', 'roles': ['Director']}
+            ],
+            HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of one completing party',
+                                      'path': '/filing/incorporationApplication/parties/roles'}]
         ),
         (
-          'FAIL_INVALID_PARTY_ROLE', 'CP',
-          [
-            {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
-            {'partyName': 'officer2','roles': ['Director']},
-            {'partyName': 'officer3','roles': ['Director']},
-            {'partyName': 'officer3','roles': ['Incorporator']}
-          ],
-          HTTPStatus.BAD_REQUEST, [{'error': 'Incorporator is an invalid party role',
-                                  'path': '/filing/incorporationApplication/parties/roles'}]
+            'FAIL_INVALID_PARTY_ROLE', 'CP',
+            [
+                {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
+                {'partyName': 'officer2', 'roles': ['Director']},
+                {'partyName': 'officer3', 'roles': ['Director']},
+                {'partyName': 'officer3', 'roles': ['Incorporator']}
+            ],
+            HTTPStatus.BAD_REQUEST, [{'error': 'Incorporator is an invalid party role',
+                                      'path': '/filing/incorporationApplication/parties/roles'}]
         ),
         (
-          'FAIL_MINIMUM_3_DIRECTORS', 'CP',
-          [
-            {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
-            {'partyName': 'officer2','roles': ['Director']}
-          ],
-          HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of three Directors',
-                                    'path': '/filing/incorporationApplication/parties/roles'}]
+            'FAIL_MINIMUM_3_DIRECTORS', 'CP',
+            [
+                {'partyName': 'officer1', 'roles': ['Completing Party', 'Director']},
+                {'partyName': 'officer2', 'roles': ['Director']}
+            ],
+            HTTPStatus.BAD_REQUEST, [{'error': 'Must have a minimum of three Directors',
+                                      'path': '/filing/incorporationApplication/parties/roles'}]
         )
     ])
-def test_validate_incorporation_role(session, minio_server, test_name, legal_type, parties, expected_code, expected_msg):
+def test_validate_incorporation_role(session, minio_server, test_name,
+                                     legal_type, parties, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
@@ -264,58 +261,59 @@ def test_validate_incorporation_role(session, minio_server, test_name, legal_typ
     'test_name, legal_type, parties, expected_msg',
     [
         ('SUCCESS', 'BEN',
-          [
-            {'partyName': 'officer1', 'roles': ['Director'],
-             'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
+         [
+             {'partyName': 'officer1', 'roles': ['Director'],
+              'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
                                  'postalCode': 'h0h0h0', 'region': 'BC'}}
-          ], None
-        ),
-        ('FAIL_INVALID_STREET', 'BEN',
-          [
-           {'partyName': 'officer1', 'roles': ['Director'],
-            'mailingAddress': {'street': None, 'city': 'Vancouver', 'country': 'CA',
-                               'postalCode': 'h0h0h0', 'region': 'BC'}},
-          ], [{'error': 'Person 1: Mailing address streetAddress None is invalid',
-                'path': '/filing/incorporationApplication/parties/1/mailingAddress/streetAddress/None/' }]
+         ], None
          ),
-         ('FAIL_INVALID_CITY', 'BEN',
-           [
+        ('FAIL_INVALID_STREET', 'BEN',
+         [
+             {'partyName': 'officer1', 'roles': ['Director'],
+              'mailingAddress': {'street': None, 'city': 'Vancouver', 'country': 'CA',
+                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
+         ], [{'error': 'Person 1: Mailing address streetAddress None is invalid',
+              'path': '/filing/incorporationApplication/parties/1/mailingAddress/streetAddress/None/'}]
+         ),
+        ('FAIL_INVALID_CITY', 'BEN',
+         [
              {'partyName': 'officer1', 'roles': ['Director'],
               'mailingAddress': {'street': '123 St', 'city': None, 'country': 'CA',
                                  'postalCode': 'h0h0h0', 'region': 'BC'}},
-           ], [{'error': 'Person 1: Mailing address addressCity None is invalid',
-                'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCity/None/' }]
+         ], [{'error': 'Person 1: Mailing address addressCity None is invalid',
+              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCity/None/'}]
          ),
         ('FAIL_INVALID_COUNTRY', 'BEN',
-          [
-            {'partyName': 'officer1', 'roles': ['Director'],
-             'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': None,
-                                'postalCode': 'h0h0h0', 'region': 'BC'}},
-          ], [{'error': 'Person 1: Mailing address addressCountry None is invalid',
-               'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCountry/None/' }]
+         [
+             {'partyName': 'officer1', 'roles': ['Director'],
+              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': None,
+                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
+         ], [{'error': 'Person 1: Mailing address addressCountry None is invalid',
+              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCountry/None/'}]
          ),
         ('FAIL_INVALID_POSTAL_CODE', 'BEN',
          [
-           {'partyName': 'officer1', 'roles': ['Director'],
-            'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
-                               'postalCode': None, 'region': 'BC'}},
+             {'partyName': 'officer1', 'roles': ['Director'],
+              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
+                                 'postalCode': None, 'region': 'BC'}},
          ], [{'error': 'Person 1: Mailing address postalCode None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/postalCode/None/' }]
+              'path': '/filing/incorporationApplication/parties/1/mailingAddress/postalCode/None/'}]
          ),
         ('FAIL_INVALID_REGION', 'BEN',
          [
-           {'partyName': 'officer1', 'roles': ['Director'],
-            'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA', 'postalCode': 'h0h0h0', 'region': None}},
+             {'partyName': 'officer1', 'roles': ['Director'],
+              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
+                                 'postalCode': 'h0h0h0', 'region': None}},
          ], [{'error': 'Person 1: Mailing address addressRegion None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressRegion/None/' }]
+              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressRegion/None/'}]
          ),
         ('SUCCESS', 'CP',
          [
              {
-               'partyName': 'officer1', 'roles': ['Completing Party', 'Director'],
-               'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
-                                  'postalCode': 'h0h0h0', 'region': 'BC'}
-              },
+                 'partyName': 'officer1', 'roles': ['Completing Party', 'Director'],
+                 'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
+                                    'postalCode': 'h0h0h0', 'region': 'BC'}
+             },
              {
                  'partyName': 'officer2', 'roles': ['Director'],
                  'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
@@ -346,7 +344,7 @@ def test_validate_incorporation_role(session, minio_server, test_name, legal_typ
                                     'postalCode': 'h0h0h0', 'region': 'MB'}
              },
          ], [{'error': 'Must have minimum of one BC mailing address',
-                        'path': '/filing/incorporationApplication/parties/mailingAddress' }]
+              'path': '/filing/incorporationApplication/parties/mailingAddress'}]
          ),
         ('FAIL_MAJORITY_IN_COUNTRY_CA', 'CP',
          [
@@ -366,7 +364,7 @@ def test_validate_incorporation_role(session, minio_server, test_name, legal_typ
                                     'postalCode': 'h0h0h0', 'region': 'BC'}
              }
          ], [{'error': 'Must have majority of mailing addresses in Canada',
-              'path': '/filing/incorporationApplication/parties/mailingAddress' }]
+              'path': '/filing/incorporationApplication/parties/mailingAddress'}]
          ),
         ('FAIL_MAJORITY_IN_COUNTRY_CA_50_percent', 'CP',
          [
@@ -391,7 +389,7 @@ def test_validate_incorporation_role(session, minio_server, test_name, legal_typ
                                     'postalCode': 'h0h0h0', 'region': 'BC'}
              }
          ], [{'error': 'Must have majority of mailing addresses in Canada',
-              'path': '/filing/incorporationApplication/parties/mailingAddress' }]
+              'path': '/filing/incorporationApplication/parties/mailingAddress'}]
          ),
         ('PASS_MAJORITY_IN_COUNTRY_CA', 'CP',
          [
@@ -419,7 +417,6 @@ def test_validate_incorporation_role(session, minio_server, test_name, legal_typ
          ),
     ])
 def test_validate_incorporation_parties_mailing_address(session, test_name, legal_type, parties, expected_msg):
-
     """Assert that incorporation parties mailing address is not empty."""
     f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
@@ -610,6 +607,7 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
     else:
         assert err is None
 
+
 @pytest.mark.parametrize(
     'test_name, key, scenario, expected_code, expected_msg',
     [
@@ -631,7 +629,7 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'A valid rules file name is required.'
             }]),
-       ('FAIL_INVALID_MEMORANDUM_KEY', 'memorandumFileKey', '',
+        ('FAIL_INVALID_MEMORANDUM_KEY', 'memorandumFileKey', '',
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'A valid memorandum key is required.'
             }]),
@@ -661,7 +659,7 @@ def test_validate_cooperative_documents(session, minio_server, test_name, key, s
     f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
     f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
 
-    #Mock upload file for test scenarios
+    # Mock upload file for test scenarios
     if scenario:
         if scenario == 'success':
             f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
@@ -693,12 +691,14 @@ def test_validate_cooperative_documents(session, minio_server, test_name, key, s
     else:
         assert err is None
 
+
 def _upload_file(page_size):
     signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(), headers={'Content-Type': 'application/octet-stream'})
+    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(),
+                 headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
@@ -712,7 +712,7 @@ def _create_pdf_file(page_size):
         text_x_margin = 100
         text_y_margin = doc_height - 300
         line_height = 14
-        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        _write_text(can, text, line_height, text_x_margin, text_y_margin)
         can.showPage()
 
     can.save()

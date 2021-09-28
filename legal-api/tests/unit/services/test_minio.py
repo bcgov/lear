@@ -21,14 +21,15 @@ import requests
 from minio.error import S3Error
 
 from legal_api.services import MinioService
+
 from .test_pdf_service import _create_pdf_file
+
 
 def test_create_signed_put_url(session, minio_server):  # pylint:disable=unused-argument
     """Assert that the a PUT url can be pre-signed."""
     file_name = 'cooperative-test.pdf'
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
+    signed_url = MinioService.create_signed_put_url(file_name)
     assert signed_url
-    assert signed_url.get('key').startswith('Test/')
     assert signed_url.get('key').endswith('.pdf')
 
 
@@ -75,7 +76,7 @@ def _upload_file(tmpdir):
     test_file = open(filename, 'rb')
     files = {'upload_file': test_file}
     file_name = fh.basename
-    signed_url = MinioService.create_signed_put_url(file_name, prefix_key='Test')
+    signed_url = MinioService.create_signed_put_url(file_name)
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
     requests.put(pre_signed_put, files=files)
@@ -85,7 +86,7 @@ def _upload_file(tmpdir):
 def test_put_file(session, minio_server, tmpdir):  # pylint:disable=unused-argument
     """Assert that a file can be replaced."""
     key = _upload_file(tmpdir)
-    
+
     pdf_file = _create_pdf_file()
     # Replace previous file with this pdf file
     MinioService.put_file(key, pdf_file, pdf_file.getbuffer().nbytes)
