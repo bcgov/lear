@@ -97,15 +97,16 @@ def _get_pdfs(
         else:
             corp_name = business.get('legalName')
 
+        # business_data won't be available for incorporationApplication
         business_data = Business.find_by_internal_id(filing.business_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
                 'corpName': corp_name,
                 'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date,
+                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
                 'filingIdentifier': str(filing.id),
-                'businessNumber': business_data.tax_id if business_data.tax_id else ''
+                'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
             },
             headers=headers
         )
