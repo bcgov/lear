@@ -30,8 +30,6 @@ class DocumentType(Enum):
 
     COOP_RULES = 'coop_rules'
     COOP_MEMORANDUM = 'coop_memorandum'
-    CERTIFIED_COOP_RULES = 'certified_coop_rules'
-    CERTIFIED_COOP_MEMORANDUM = 'certified_coop_memorandum'
 
 
 class Document(db.Model):

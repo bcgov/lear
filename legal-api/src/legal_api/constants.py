@@ -14,6 +14,3 @@
 """Constants for legal api."""
 
 BOB_DATE = '2019-03-08'
-
-# cooperative folder
-COOPERATIVE_FOLDER_NAME = 'cooperative'
