@@ -119,15 +119,6 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         return True
 
 
-    @classmethod
-    def find_by_id(cls, party_id: int) -> Party:
-        """Return the party matching the id."""
-        party = None
-        if party_id:
-            party = cls.query.filter_by(id=party_id).one_or_none()
-        return party
-
-
 @event.listens_for(Party, 'before_insert')
 @event.listens_for(Party, 'before_update')
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
