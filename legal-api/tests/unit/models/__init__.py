@@ -297,7 +297,9 @@ def factory_party_role(delivery_address: Address, mailing_address: Address, offi
     party = Party(
         first_name=officer['firstName'],
         last_name=officer['lastName'],
-        middle_initial=officer['middleInitial']
+        middle_initial=officer['middleInitial'],
+        party_type=officer['partyType'],
+        organization_name=officer['orgName']
     )
     party.delivery_address = delivery_address
     party.mailing_address = mailing_address
