@@ -24,7 +24,6 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
-# from flask_restx import Resource, cors
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
@@ -99,7 +98,6 @@ def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-ma
         else:
             business_validate = Business.find_by_identifier(identifier)
         err = validate(business_validate, json_input)
-        # err_msg, err_code = ListFilingResource.validate_filing_json(request)
         if err or only_validate:
             if err:
                 json_input['errors'] = err.msg

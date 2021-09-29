@@ -28,7 +28,6 @@ from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
-# from ..api_namespace import API
 from ..bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
