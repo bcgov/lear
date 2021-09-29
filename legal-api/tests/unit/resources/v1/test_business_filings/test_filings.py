@@ -44,10 +44,13 @@ from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
+    Address,
+    PartyRole,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_party_role
 )
 from tests.unit.services.utils import create_header
 
@@ -108,6 +111,68 @@ def test_get_one_business_filing_by_id(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
     assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+
+
+def test_business_filing_ia_parties(session, client, jwt):
+    """Assert that the business info cannot be received in a valid JSONSchema format."""
+    identifier = 'BC7654321'
+    b = factory_business(identifier)
+    filings = factory_completed_filing(b, INCORPORATION_FILING_TEMPLATE)
+    director_address = Address(city='Test Mailing City', address_type=Address.DELIVERY, postal_code='H0H0H0')
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe',
+        'partyType': 'person',
+        'orgName': ''
+    }
+    party_role = factory_party_role(
+        director_address,
+        None,
+        officer,
+        datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    b.party_roles.append(party_role)
+
+    officer = {
+        'firstName': '',
+        'lastName': '',
+        'middleInitial': '',
+        'partyType': 'org',
+        'orgName': 'Test Inc.'
+    }
+    party_role = factory_party_role(
+        director_address,
+        None,
+        officer,
+        datetime(2017, 5, 17),
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    b.party_roles.append(party_role)
+
+
+    rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    party_1 = rv.json['filing']['incorporationApplication']['parties'][0]['officer']
+    assert party_1
+    assert party_1['partyType'] == 'person'
+    assert party_1['firstName'] == 'Michael'
+    assert party_1['lastName'] == 'Crane'
+    assert party_1['middleName'] == 'Joe'
+    assert 'orgName' not in party_1
+    
+    party_2 = rv.json['filing']['incorporationApplication']['parties'][1]['officer']
+    assert party_2
+    assert party_2['partyType'] == 'org'
+    assert 'firstName' not in party_2
+    assert 'lastName' not in party_2
+    assert 'middleName' not in party_2
+    assert party_2['orgName'] == 'Test Inc.'
 
 
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
