@@ -23,6 +23,7 @@ from legal_api.utils.run_version import get_run_version
 
 from .constants import EndpointEnum, EndpointVersionEnum
 from .v1 import API_BLUEPRINT, OPS_BLUEPRINT
+from .v2 import v2_endpoint
 
 
 class Endpoints:
@@ -98,6 +99,7 @@ class Endpoints:
         """Mount the endpoints of the system."""
         self.app.register_blueprint(API_BLUEPRINT)
         self.app.register_blueprint(OPS_BLUEPRINT)
+        v2_endpoint.init_app(self.app)
 
 
 endpoints = Endpoints()

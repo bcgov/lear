@@ -126,6 +126,30 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     __versioned__ = {}
     __tablename__ = 'businesses'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'association_type',
+            'dissolution_date',
+            'fiscal_year_end_date',
+            'founding_date',
+            'identifier',
+            'last_agm_date',
+            'last_ar_date',
+            'last_ar_year',
+            'last_coa_date',
+            'last_cod_date',
+            'last_ledger_id',
+            'last_ledger_timestamp',
+            'last_modified',
+            'last_remote_ledger_id',
+            'legal_name',
+            'legal_type',
+            'restriction_ind',
+            'submitter_userid',
+            'tax_id'
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -134,6 +158,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
     last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True))
     last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
+    last_coa_date = db.Column('last_coa_date', db.DateTime(timezone=True))
+    last_cod_date = db.Column('last_cod_date', db.DateTime(timezone=True))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -265,6 +291,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).astimezone(timezone.utc).isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
+            'lastCOAFilingDate': datetime.date(self.last_coa_date).isoformat() if self.last_coa_date else '',
+            'lastCODFilingDate': datetime.date(self.last_cod_date).isoformat() if self.last_cod_date else '',
             'legalName': self.legal_name,
             'legalType': self.legal_type,
             'hasRestrictions': self.restriction_ind,

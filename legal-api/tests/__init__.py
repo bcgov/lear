@@ -18,6 +18,8 @@ from collections import MutableMapping, MutableSequence
 from typing import Dict, List
 
 from .pytest_marks import (
+    api_v1,
+    api_v2,
     integration_affiliation,
     integration_authorization,
     integration_colin,
