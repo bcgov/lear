@@ -47,7 +47,7 @@ def test_party_json(session):
     )
     organization_json = {
         'officer': {
-            'organizationName': organization.organization_name,
+            'orgName': organization.organization_name,
         },
     }
 
