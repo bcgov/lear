@@ -56,9 +56,9 @@ from ..bp import bp
 @bp.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_filings(identifier, filing_id=None):  # pylint disable=too-many-return-statements,too-many-branches;
+def get_filings(identifier: str, filing_id=None):  # pylint disable=too-many-return-statements,too-many-branches;
     """Return a JSON object with meta information about the Filing Submission."""
-    if filing_id:
+    if filing_id or identifier.startswith('T'):
         return ListFilingResource.get_single_filing(identifier, filing_id)
 
     return ListFilingResource.get_ledger_listing(identifier)
