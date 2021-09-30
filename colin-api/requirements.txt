@@ -13,7 +13,7 @@ cx-Oracle==8.1.0
 debugpy
 ecdsa==0.14.1
 flask-jwt-oidc==0.1.5
-flask-restx==0.3.0
+flask-restx==0.5.1
 gunicorn==20.0.4
 itsdangerous==1.1.0
 jsonschema==3.2.0
