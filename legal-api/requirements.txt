@@ -28,7 +28,7 @@ ecdsa==0.14.1
 expiringdict==1.1.4
 flask-cors==3.0.10
 flask-jwt-oidc==0.3.0
-flask-restx==0.3.0
+flask-restx==0.5.1
 gunicorn==20.1.0
 idna==2.10
 itsdangerous==1.1.0
