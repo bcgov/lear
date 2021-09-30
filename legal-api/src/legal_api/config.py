@@ -60,6 +60,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://')
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
@@ -96,6 +97,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     JWT_OIDC_AUDIENCE = os.getenv('JWT_OIDC_AUDIENCE')
     JWT_OIDC_CLIENT_SECRET = os.getenv('JWT_OIDC_CLIENT_SECRET')
     JWT_OIDC_CACHING_ENABLED = os.getenv('JWT_OIDC_CACHING_ENABLED')
+    JWT_OIDC_USERNAME = os.getenv('JWT_OIDC_USERNAME', 'username')
+    JWT_OIDC_FIRSTNAME = os.getenv('JWT_OIDC_FIRSTNAME', 'firstname')
+    JWT_OIDC_LASTNAME = os.getenv('JWT_OIDC_LASTNAME', 'lastname')
     try:
         JWT_OIDC_JWKS_CACHE_TIMEOUT = int(os.getenv('JWT_OIDC_JWKS_CACHE_TIMEOUT'))
         if not JWT_OIDC_JWKS_CACHE_TIMEOUT:

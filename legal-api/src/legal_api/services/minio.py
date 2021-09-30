@@ -31,8 +31,9 @@ class MinioService:
         minio_client: Minio = MinioService._get_client()
         file_extension: str = file_name.split('.')[-1]
         key = f'{prefix_key}/{str(uuid.uuid4())}.{file_extension}'
+        bucket = current_app.config['MINIO_BUCKET_LEAR']
         signed_url_details = {
-            'preSignedUrl': minio_client.presigned_put_object(current_app.config['MINIO_BUCKET_LEAR'], key,
+            'preSignedUrl': minio_client.presigned_put_object(bucket, key,
                                                               timedelta(minutes=5)),
             'key': key
         }

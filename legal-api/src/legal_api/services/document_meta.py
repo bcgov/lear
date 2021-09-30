@@ -53,7 +53,10 @@ class DocumentMetaService():
     def get_documents(self, filing: dict):
         """Return an array of document meta for a filing."""
         # look up legal type
-        self._business_identifier = filing['filing']['business']['identifier']
+        if not (business_identifier := filing.get('filing', {}).get('business', {}).get('identifier')):
+            return []
+
+        self._business_identifier = business_identifier
         # if this is a temp registration then there is no business, so get legal type from filing
         if self._business_identifier.startswith('T'):
             self._legal_type = filing['filing']['incorporationApplication']['nameRequest']['legalType']

@@ -18,7 +18,8 @@ flake8-docstrings
 flake8-isort
 flake8-quotes
 pep8-naming
-pydocstyle<4
+pydocstyle
+# pydocstyle<4
 pylint
 pylint-flask
 isort
