@@ -33,12 +33,13 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     FILING_HEADER,
+    INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import Business, Filing, RegistrationBootstrap, UserRoles
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -48,9 +49,38 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_pending_filing,
     factory_user,
 )
 from tests.unit.services.utils import create_header
+
+
+def test_get_temp_business_filing(session, client, jwt):
+    """Assert that the business info cannot be received in a valid JSONSchema format."""
+    #
+    # setup
+    identifier = 'Tb31yQIuBw'
+    filing_name = 'incorporationApplication'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = filing_name
+    json_data['filing'][filing_name] = copy.deepcopy(INCORPORATION)
+    filings = factory_pending_filing(None, json_data)
+    filings.temp_reg = identifier
+    filings.save()
+
+    #
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    #
+    # validate
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['name'] == filing_name
+    assert rv.json['filing'][filing_name] == INCORPORATION
 
 
 def test_get_one_business_filing_by_id(session, client, jwt):
