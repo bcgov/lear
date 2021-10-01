@@ -124,7 +124,7 @@ def test_business_filing_ia_parties(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         director_address,
@@ -140,8 +140,8 @@ def test_business_filing_ia_parties(session, client, jwt):
         'firstName': '',
         'lastName': '',
         'middleInitial': '',
-        'partyType': 'org',
-        'orgName': 'Test Inc.'
+        'partyType': 'organization',
+        'organizationName': 'Test Inc.'
     }
     party_role = factory_party_role(
         director_address,
@@ -164,15 +164,15 @@ def test_business_filing_ia_parties(session, client, jwt):
     assert party_1['firstName'] == 'Michael'
     assert party_1['lastName'] == 'Crane'
     assert party_1['middleName'] == 'Joe'
-    assert 'orgName' not in party_1
+    assert 'organizationName' not in party_1
     
     party_2 = rv.json['filing']['incorporationApplication']['parties'][1]['officer']
     assert party_2
-    assert party_2['partyType'] == 'org'
+    assert party_2['partyType'] == 'organization'
     assert 'firstName' not in party_2
     assert 'lastName' not in party_2
     assert 'middleName' not in party_2
-    assert party_2['orgName'] == 'Test Inc.'
+    assert party_2['organizationName'] == 'Test Inc.'
 
 
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
