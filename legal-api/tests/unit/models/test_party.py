@@ -43,11 +43,11 @@ def test_party_json(session):
     }
     organization = Party(
         party_type=Party.PartyTypes.ORGANIZATION.value,
-        organization_name='org'
+        organization_name='organization'
     )
     organization_json = {
         'officer': {
-            'orgName': organization.organization_name,
+            'organizationName': organization.organization_name,
         },
     }
 
@@ -65,7 +65,7 @@ def test_party_save(session):
     )
     member2 = Party(
         party_type=Party.PartyTypes.ORGANIZATION.value,
-        organization_name='org'
+        organization_name='organization'
     )
 
     member1.save()
@@ -85,7 +85,7 @@ def test_invalid_org_party_type(session):
     )
     member2 = Party(
         party_type=Party.PartyTypes.PERSON.value,
-        organization_name='org'
+        organization_name='organization'
     )
     with pytest.raises(BusinessException) as party_type_err1:
         member1.save()
