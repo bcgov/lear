@@ -11,4 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test-Suite for the endpoint versioning system."""
+"""Business Entity Filings.
+
+Provides all business entity Filings externalized services.
+"""
+from .business_documents import get_documents
+from .business_filings import delete_filings, get_filings, patch_filings, saving_filings
+
+
+__all__ = (
+    'get_documents',
+    'get_filings',
+    'delete_filings',
+    'patch_filings',
+    'saving_filings',
+    )

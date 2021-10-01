@@ -19,6 +19,7 @@ import uuid
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
+from legal_api.exceptions.error_messages import ErrorCode
 
 from legal_api.models import (
     Address,
@@ -112,6 +113,11 @@ AR_FILING = {
     }
 }
 
+def factory_user(username: str):
+    user = User()
+    user.username = username
+    user.save()
+    return user
 
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
                      entity_type=Business.LegalTypes.COOP.value):
@@ -165,8 +171,12 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type
     filing.business_id = business.id
     filing.filing_date = filing_date
     filing.filing_json = data_dict
-    filing._filing_type = filing_type
-    filing.save()
+    if filing_type:
+        filing._filing_type = filing_type
+    try:
+        filing.save()
+    except Exception as err:
+        print(err)
     return filing
 
 
@@ -212,7 +222,7 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
 def factory_pending_filing(business, data_dict, filing_date=FROZEN_DATETIME):
     """Create a pending filing."""
     filing = Filing()
-    filing.business_id = business.id
+    filing.business_id = business.id if business else None
     filing.filing_date = filing_date
     filing.filing_json = data_dict
     filing.payment_token = 2

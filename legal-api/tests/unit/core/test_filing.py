@@ -13,10 +13,12 @@
 # limitations under the License.
 
 """Tests to assure the Filing Domain is working as expected."""
+import pytest
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
-from tests.unit.models import factory_business, factory_completed_filing
+from legal_api.models.user import UserRoles
+from tests.unit.models import factory_business, factory_completed_filing, factory_user
 
 
 def test_filing_raw():
@@ -52,7 +54,8 @@ def test_filing_json_draft(session):
     filing.json = filing_submission
     filing.save()
 
-    assert filing.json == filing_submission
+    assert filing.json['filing']['header']['name'] == filing_submission['filing']['header']['name']
+    assert filing.json['filing']['specialResolution'] == filing_submission['filing']['specialResolution']
 
 def test_technical_filing_json_draft(session):
     """Assert that the technical json field gets the draft filing correctly.
@@ -78,7 +81,8 @@ def test_technical_filing_json_draft(session):
     filing.json = filing_submission
     filing.save()
     # sanity check
-    assert filing.json == filing_submission
+    assert filing.json['filing']['header']['name'] == filing_submission['filing']['header']['name']
+    assert filing.json['filing']['specialResolution'] == filing_submission['filing']['specialResolution']
 
     # test
     non_compliant_json  = {

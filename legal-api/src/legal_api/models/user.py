@@ -17,12 +17,23 @@ Actual user data is kept in the OIDC and IDP services, this data is
 here as a convenience for audit and db reporting.
 """
 from datetime import datetime
+from enum import Enum
 
 from flask import current_app
 
 from legal_api.exceptions import BusinessException
 
 from .db import db
+
+
+class UserRoles(str, Enum):
+    """Enum of the roles used across the domain."""
+
+    SYSTEM = 'system'
+    STAFF = 'staff'
+    BASIC_USER = 'basic'
+    COLIN_SVC = 'colin'
+    PUBLIC_USER = 'public_user'
 
 
 class User(db.Model):
@@ -79,13 +90,10 @@ class User(db.Model):
         to populate the User audit data
         """
         if token:
-            # TODO: schema doesn't parse from token need to figure that out ... LATER!
-            # s = KeycloakUserSchema()
-            # u = s.load(data=token, partial=True)
             user = User(
-                username=token.get('username', None),
-                firstname=token.get('given_name', None),
-                lastname=token.get('family_name', None),
+                username=token.get(current_app.config.get('JWT_OIDC_USERNAME'), None),
+                firstname=token.get(current_app.config.get('JWT_OIDC_FIRSTNAME'), None),
+                lastname=token.get(current_app.config.get('JWT_OIDC_LASTNAME'), None),
                 iss=token['iss'],
                 sub=token['sub']
             )

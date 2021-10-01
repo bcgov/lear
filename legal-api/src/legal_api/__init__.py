@@ -15,11 +15,7 @@
 
 This module is the API for the Legal Entity system.
 """
-import asyncio
-import logging
-import logging.config
 import os
-from http import HTTPStatus
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
@@ -27,7 +23,7 @@ from flask import redirect, Flask  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
-from legal_api import config, errorhandlers, models
+from legal_api import config, models
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
@@ -62,8 +58,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
-
-    # errorhandlers.init_app(app)
 
     setup_jwt_manager(app, jwt)
 

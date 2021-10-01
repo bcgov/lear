@@ -150,7 +150,7 @@ from . import create_mock_message  # noqa: I003
                  'filingId': '8238434'
              }
          }),
-        ('annualReport_2323432432',
+        ('annualReport_COMPLETED_2323432432',
          {
              'email': {
                  'type': 'annualReport',
@@ -168,11 +168,19 @@ from . import create_mock_message  # noqa: I003
                  'arYear': 2021
              }
          }),
-        ('alteration_1112223333',
+        ('alteration_PAID_1112223333',
          {
              'email': {
                  'type': 'alteration',
-                 'option': None,
+                 'option': 'PAID',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('alteration_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'alteration',
+                 'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
          })
