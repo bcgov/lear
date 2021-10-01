@@ -18,23 +18,20 @@ from datetime import timedelta
 from flask import current_app
 from minio import Minio
 
-from legal_api.constants import COOPERATIVE_FOLDER_NAME
-
 
 class MinioService:
     """Document Storage class."""
 
     @staticmethod
-    def create_signed_put_url(file_name: str, prefix_key: str = COOPERATIVE_FOLDER_NAME) -> dict:
+    def create_signed_put_url(file_name: str) -> dict:
         """Return a pre-signed URL for new doc upload."""
         current_app.logger.debug(f'Creating pre-signed URL for {file_name}')
         minio_client: Minio = MinioService._get_client()
         file_extension: str = file_name.split('.')[-1]
-        key = f'{prefix_key}/{str(uuid.uuid4())}.{file_extension}'
-        bucket = current_app.config['MINIO_BUCKET_LEAR']
+        key = f'{str(uuid.uuid4())}.{file_extension}'
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
         signed_url_details = {
-            'preSignedUrl': minio_client.presigned_put_object(bucket, key,
-                                                              timedelta(minutes=5)),
+            'preSignedUrl': minio_client.presigned_put_object(bucket, key, timedelta(minutes=5)),
             'key': key
         }
 
@@ -45,15 +42,16 @@ class MinioService:
         """Return a pre-signed URL for uploaded document."""
         minio_client: Minio = MinioService._get_client()
         current_app.logger.debug(f'Creating pre-signed GET URL for {key}')
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
 
-        return minio_client.presigned_get_object(
-            current_app.config['MINIO_BUCKET_LEAR'], key, timedelta(hours=1))
+        return minio_client.presigned_get_object(bucket, key, timedelta(hours=1))
 
     @staticmethod
     def get_file_info(key: str):
         """Fetch file info from Minio."""
         minio_client: Minio = MinioService._get_client()
-        return minio_client.stat_object(current_app.config['MINIO_BUCKET_LEAR'], key)
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
+        return minio_client.stat_object(bucket, key)
 
     @staticmethod
     def get_file(key: str):
@@ -69,13 +67,15 @@ class MinioService:
                 response.release_conn()
         """
         minio_client: Minio = MinioService._get_client()
-        return minio_client.get_object(current_app.config['MINIO_BUCKET_LEAR'], key)
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
+        return minio_client.get_object(bucket, key)
 
     @staticmethod
     def delete_file(key: str):
         """Delete file from Minio."""
         minio_client: Minio = MinioService._get_client()
-        minio_client.remove_object(current_app.config['MINIO_BUCKET_LEAR'], key)
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
+        minio_client.remove_object(bucket, key)
 
     @staticmethod
     def _get_client() -> Minio:
@@ -83,11 +83,12 @@ class MinioService:
         minio_endpoint = current_app.config['MINIO_ENDPOINT']
         minio_key = current_app.config['MINIO_ACCESS_KEY']
         minio_secret = current_app.config['MINIO_ACCESS_SECRET']
-        return Minio(minio_endpoint, access_key=minio_key, secret_key=minio_secret,
-                     secure=current_app.config['MINIO_SECURE'])
+        minio_secure = current_app.config['MINIO_SECURE']
+        return Minio(minio_endpoint, access_key=minio_key, secret_key=minio_secret, secure=minio_secure)
 
     @staticmethod
     def put_file(key: str, data: str, length: str):
         """Put file to Minio."""
         minio_client: Minio = MinioService._get_client()
-        minio_client.put_object(current_app.config['MINIO_BUCKET_LEAR'], key, data, length)
+        bucket = current_app.config['MINIO_BUCKET_BUSINESSES']
+        minio_client.put_object(bucket, key, data, length)

@@ -27,3 +27,5 @@ sentry-sdk[flask]
 strict-rfc3339
 Werkzeug
 minio
+PyPDF2
+reportlab
