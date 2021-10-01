@@ -21,6 +21,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from legal_api.utils.legislation_datetime import LegislationDatetime
+
 
 class PdfService:
     """Pdf Services."""
@@ -70,7 +72,8 @@ class PdfService:
                       preserveAspectRatio=True,
                       mask='auto')
 
-        text = 'Filed on ' + _format_datetime(incorp_date) + '\nIncorporation Number: ' + incorp_num
+        text = 'Filed on ' + LegislationDatetime.format_as_report_string(incorp_date) \
+            + '\nIncorporation Number: ' + incorp_num
         text_x_margin = 32
         text_y_margin = doc_height - 42
         line_height = 14
@@ -92,9 +95,3 @@ def _write_text(can, text, line_height, x_margin, y_margin):
     for line in text.splitlines():
         can.drawString(x_margin, y_margin, line)
         y_margin -= line_height
-
-
-def _format_datetime(_datetime):
-    """Format datetime."""
-    hour = _datetime.strftime('%I').lstrip('0')
-    return _datetime.strftime(f'%B %-d, %Y at {hour}:%M %P Pacific time')

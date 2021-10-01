@@ -15,21 +15,16 @@
 
 import copy
 import io
-import os
 from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 import requests
-from _pytest.compat import assert_never
-from legal_api.constants import COOPERATIVE_FOLDER_NAME
 from legal_api.models import Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
-from legal_api.services import PdfService
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import _write_text
-from minio.error import S3Error
 from registry_schemas.example_data import (
     COOP_INCORPORATION_FILING_TEMPLATE,
     CORRECTION_INCORPORATION,
@@ -58,7 +53,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         if legal_type == 'CP':
             rules_file_key_uploaded_by_user = _upload_file()
             memorandum_file_key_uploaded_by_user = _upload_file()
-            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key_uploaded_by_user
+            filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
+                rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
             filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = \
                 memorandum_file_key_uploaded_by_user
@@ -89,7 +85,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
                     assert document.file_key == original_rules_key
                     assert MinioService.get_file(document.file_key)
                 elif document.type == DocumentType.COOP_MEMORANDUM.value:
-                    original_memorandum_key = filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                    original_memorandum_key = \
+                        filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
                     assert document.file_key == original_memorandum_key
                     assert MinioService.get_file(document.file_key)
 
@@ -106,12 +103,12 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
 def _assert_pdf_contains_text(search_text, pdf_raw_bytes: bytes):
     pdf_obj = PyPDF2.PdfFileReader(io.BytesIO(pdf_raw_bytes))
     pdf_page = pdf_obj.getPage(0)
-    text = pdf_page.extractText() 
+    text = pdf_page.extractText()
     assert search_text in text
 
 
 def _upload_file():
-    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf', prefix_key=COOPERATIVE_FOLDER_NAME)
+    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
     requests.put(pre_signed_put, data=_create_pdf_file().read(), headers={'Content-Type': 'application/octet-stream'})
@@ -128,7 +125,7 @@ def _create_pdf_file():
         text_x_margin = 100
         text_y_margin = doc_height - 300
         line_height = 14
-        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        _write_text(can, text, line_height, text_x_margin, text_y_margin)
         can.showPage()
 
     can.save()
