@@ -148,9 +148,10 @@ def _replace_file_with_certified_copy(_bytes, business, key):
     registrar_info = RegistrarInfo.get_registrar_info(business.founding_date)
     registrars_signature = registrar_info['signatureAndText']
     pdf_service = PdfService()
-    registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature,
-                                                           LegislationDatetime.as_legislation_timezone(business.founding_date),
-                                                           business.identifier)
+    registrars_stamp = \
+        pdf_service.create_registrars_stamp(registrars_signature,
+                                            LegislationDatetime.as_legislation_timezone(business.founding_date),
+                                            business.identifier)
     certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
 
     MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
