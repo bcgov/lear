@@ -447,7 +447,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         else:
             member = {
                 'officer': {
-                    'orgName': party_revision.organization_name,
+                    'organizationName': party_revision.organization_name,
                     'partyType': Party.PartyTypes.ORGANIZATION.value
                 }
             }

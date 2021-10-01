@@ -36,7 +36,7 @@ def test_get_business_directors(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         director_address,
@@ -71,7 +71,7 @@ def test_bcorp_get_business_directors(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         director_address,
@@ -119,7 +119,7 @@ def test_get_business_ceased_directors(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         None,
@@ -151,7 +151,7 @@ def test_get_business_director_by_id(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         None,
@@ -214,7 +214,7 @@ def test_directors_mailing_address(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         delivery_address,
@@ -249,7 +249,7 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
         'lastName': 'Crane',
         'middleInitial': 'Joe',
         'partyType': 'person',
-        'orgName': ''
+        'organizationName': ''
     }
     party_role = factory_party_role(
         delivery_address,

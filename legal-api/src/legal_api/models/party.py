@@ -32,7 +32,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         """Render an Enum of the party types."""
 
         PERSON = 'person'
-        ORGANIZATION = 'org'
+        ORGANIZATION = 'organization'
 
     __versioned__ = {}
     __tablename__ = 'parties'
@@ -78,7 +78,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
                 member['officer']['middleInitial'] = self.middle_initial
         else:
             member = {
-                'officer': {'orgName': self.organization_name}
+                'officer': {'organizationName': self.organization_name}
             }
 
         if self.delivery_address:
