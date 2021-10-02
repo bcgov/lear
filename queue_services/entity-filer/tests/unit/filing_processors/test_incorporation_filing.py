@@ -161,8 +161,8 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert parties[0]['officer']['lastName'] == 'Swanson'
         assert parties[0]['officer']['middleName'] == 'P'
         assert parties[0]['officer']['partyType'] == 'person'
-        assert parties[1]['officer']['partyType'] == 'org'
-        assert parties[1]['officer']['orgName'] == 'Xyz Inc.'
+        assert parties[1]['officer']['partyType'] == 'organization'
+        assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
 
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])

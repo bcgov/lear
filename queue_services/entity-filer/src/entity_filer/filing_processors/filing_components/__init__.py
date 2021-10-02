@@ -92,7 +92,7 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=party_info['officer'].get('middleInitial', '').upper(),
-            org_name=party_info['officer'].get('orgName', '').upper()
+            org_name=party_info['officer'].get('organizationName', '').upper()
         )
     if not party:
         party = Party(
@@ -100,7 +100,7 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=party_info['officer'].get('middleInitial', '').upper(),
             title=party_info.get('title', '').upper(),
-            organization_name=party_info['officer'].get('orgName', '').upper(),
+            organization_name=party_info['officer'].get('organizationName', '').upper(),
             party_type=party_info['officer'].get('partyType')
         )
 
