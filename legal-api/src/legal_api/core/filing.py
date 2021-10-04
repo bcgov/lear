@@ -394,7 +394,6 @@ class Filing:
             ):  # noqa: E125; lint conflicts on the indenting
             return None
 
-        # doc_url = request.url
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
         doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
