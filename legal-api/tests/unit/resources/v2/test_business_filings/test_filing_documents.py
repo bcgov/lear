@@ -129,28 +129,30 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
+base_url = 'https://LEGAL_API_BASE_URL'
+
 @pytest.mark.parametrize('test_name, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code', [
         ('special_res_paper', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND),
         ('special_res_pending', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND),
         ('special_res_paid', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
-         {'documents': {'primary': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/receipt'}},
+         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
+                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'}},
         HTTPStatus.OK),
         ('special_res_completed', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-         {'documents': {'primary': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
+                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
-                            {'specialResolution': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                         ]
                         }
          },
         HTTPStatus.OK),
         ('specres_court_completed', 'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-         {'documents': {'primary': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
+                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
-                            {'courtOrder': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
-                            {'specialResolution': 'http://localhost/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                            {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
+                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                         ]
                         }
          },
