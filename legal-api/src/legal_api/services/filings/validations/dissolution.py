@@ -12,16 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Voluntary Dissolution filing."""
+from enum import Enum
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Dict, Final, Optional, Union
 
+import pycountry
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Address, Business, PartyRole
 
 from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
+
+CORP_TYPES: Final = [Business.LegalTypes.COMP.value,
+                     Business.LegalTypes.BCOMP.value,
+                     Business.LegalTypes.CCC_CONTINUE_IN.value,
+                     Business.LegalTypes.BC_ULC_COMPANY.value]
+
+
+class DissolutionTypes(Enum):
+    """Dissolution types."""
+
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
+
+
+DISSOLUTION_MAPPING = {
+    'COOP': [DissolutionTypes.VOLUNTARY.value, DissolutionTypes.VOLUNTARY_LIQUIDATION.value],
+    'CORP': [DissolutionTypes.VOLUNTARY.value]
+}
 
 
 def validate(business: Business, con: Dict) -> Optional[Error]:
@@ -32,13 +52,39 @@ def validate(business: Business, con: Dict) -> Optional[Error]:
     legal_type = get_str(con, '/filing/business/legalType')
     msg = []
 
+    err = validate_dissolution_type(con, legal_type)
+    if err:
+        msg.extend(err)
+
     if legal_type == Business.LegalTypes.COOP.value:
         err = validate_dissolution_statement_type(con)
         if err:
             msg.extend(err)
 
+    err = validate_parties_address(con, legal_type)
+    if err:
+        msg.extend(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+    return None
+
+
+def validate_dissolution_type(filing_json, legal_type) -> Error:
+    """Validate dissolution type of the filing."""
+    msg = []
+    dissolution_type_path = '/filing/dissolution/dissolutionType'
+    dissolution_type = get_str(filing_json, dissolution_type_path)
+    if dissolution_type:
+        if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
+                or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']):
+            msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
+            return msg
+    else:
+        msg.append({'error': _('Dissolution type must be provided.'),
+                    'path': dissolution_type_path})
+        return msg
+
     return None
 
 
@@ -58,3 +104,69 @@ def validate_dissolution_statement_type(filing_json) -> Error:
         return msg
 
     return None
+
+
+def validate_parties_address(filing_json, legal_type) -> Optional[Error]:
+    """Validate the person data of the dissolution filing.
+
+    Address must be in Canada for COOP and BC for CORP.
+    Both mailing and delivery address are mandatory.
+    """
+    parties_json = filing_json['filing']['dissolution']['parties']
+    parties = list(filter(lambda x: _is_dissolution_party_role(x.get('roles', [])), parties_json))
+    msg = []
+    address_in_bc = 0
+    address_in_ca = 0
+
+    if len(parties) > 0:
+        err, address_in_bc, address_in_ca = _validate_address_location(parties)
+        if err:
+            msg.extend(err)
+    else:
+        msg.append({'error': 'Dissolution party is required.', 'path': '/filing/dissolution/parties'})
+
+    if legal_type == Business.LegalTypes.COOP.value and address_in_ca == 0:
+        msg.append({'error': 'Address must be in Canada.', 'path': '/filing/dissolution/parties'})
+    elif legal_type in CORP_TYPES and address_in_bc == 0:
+        msg.append({'error': 'Address must be in BC.', 'path': '/filing/dissolution/parties'})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def _is_dissolution_party_role(roles: list) -> bool:
+    return any(role.get('roleType', '').lower() in
+               [PartyRole.RoleTypes.CUSTODIAN.value,
+                PartyRole.RoleTypes.LIQUIDATOR.value] for role in roles)
+
+
+def _validate_address_location(parties) -> Union[Optional[Error], int, int]:
+    msg = []
+    address_in_bc = 0
+    address_in_ca = 0
+    for idx, party in enumerate(parties):  # pylint: disable=too-many-nested-blocks;  # noqa: E501
+        for address_type in Address.JSON_ADDRESS_TYPES:
+            if address_type in party:
+                try:
+                    region = get_str(party, f'/{address_type}/addressRegion')
+                    if region == 'BC':
+                        address_in_bc += 1
+
+                    country = get_str(party, f'/{address_type}/addressCountry')
+                    country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                    if country_code == 'CA':
+                        address_in_ca += 1
+
+                except LookupError:
+                    msg.append({'error': _('Address Country must resolve to a valid ISO-2 country.'),
+                                'path': f'/filing/dissolution/parties/{idx}/{address_type}/addressCountry'})
+            else:
+                msg.append({'error': _(f'{address_type} is required.'),
+                            'path': f'/filing/dissolution/parties/{idx}'})
+
+    if msg:
+        return msg, address_in_bc, address_in_ca
+
+    return None, address_in_bc, address_in_ca
