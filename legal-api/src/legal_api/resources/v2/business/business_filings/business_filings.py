@@ -16,7 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 from http import HTTPStatus
-from typing import Tuple, Union
+from typing import Generic, Optional, Tuple, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
@@ -24,6 +24,9 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
+from flask_pydantic import validate as pydantic_validate
+from pydantic import BaseModel
+from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
@@ -52,12 +55,31 @@ from ..bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
+class QueryModel(BaseModel):
+    """Query string model."""
+
+    draft: Optional[bool]
+    only_validate: Optional[bool]
+
+
+FilingT = TypeVar('FilingT')
+
+
+class FilingModel(GenericModel, Generic[FilingT]):
+    """Generic model to alow pydantic validation."""
+
+    data: Optional[FilingT]
+
+
 @bp.route('/<string:identifier>/filings', methods=['GET'])
 @bp.route('/<string:identifier>/filings/<int:filing_id>', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_filings(identifier: str, filing_id=None):  # pylint disable=too-many-return-statements,too-many-branches;
+@pydantic_validate(query=QueryModel)
+def get_filings(identifier: str, filing_id: Optional[int] = None):
     """Return a JSON object with meta information about the Filing Submission."""
+    # identifier = query.identifier
+    # filing_id = query.filing_id
     if filing_id or identifier.startswith('T'):
         return ListFilingResource.get_single_filing(identifier, filing_id)
 
@@ -68,7 +90,11 @@ def get_filings(identifier: str, filing_id=None):  # pylint disable=too-many-ret
 @bp.route('/<string:identifier>/filings/<int:filing_id>', methods=['POST', 'PUT'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-many-return-statements,too-many-locals
+@pydantic_validate()
+def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals
+                   query: QueryModel,
+                   identifier,
+                   filing_id: Optional[int] = None):
     """Modify an incomplete filing for the business."""
     # basic checks
     err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request)
@@ -81,16 +107,10 @@ def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-ma
     if response:
         return response, response_code
 
-    # get query params
-    draft = (request.args.get('draft', None).lower() == 'true') \
-        if request.args.get('draft', None) else False
-    only_validate = (request.args.get('only_validate', None).lower() == 'true') \
-        if request.args.get('only_validate', None) else False
-
     # get header params
     payment_account_id = request.headers.get('accountId', None)
 
-    if not draft \
+    if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
             and not ListFilingResource.is_before_epoch_filing(json_input, Business.find_by_identifier(identifier)):
         if identifier.startswith('T'):
@@ -98,7 +118,7 @@ def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-ma
         else:
             business_validate = Business.find_by_identifier(identifier)
         err = validate(business_validate, json_input)
-        if err or only_validate:
+        if err or query.only_validate:
             if err:
                 json_input['errors'] = err.msg
                 return jsonify(json_input), err.code
@@ -108,7 +128,7 @@ def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-ma
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
         business, filing, err_msg, err_code = ListFilingResource.save_filing(request, identifier, user, filing_id)
-        if err_msg or draft:
+        if err_msg or query.draft:
             reply = filing.json if filing else json_input
             reply['errors'] = [err_msg, ]
             return jsonify(reply), err_code or \
@@ -117,7 +137,7 @@ def saving_filings(identifier, filing_id: int = None):  # pylint: disable=too-ma
         print(err)
 
     # complete filing
-    response, response_code = ListFilingResource.complete_filing(business, filing, draft, payment_account_id)
+    response, response_code = ListFilingResource.complete_filing(business, filing, query.draft, payment_account_id)
     if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
         return response, response_code
 

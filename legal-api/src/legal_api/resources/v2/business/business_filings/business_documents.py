@@ -24,6 +24,7 @@ from flask_cors import cross_origin
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business
+from legal_api.reports import get_pdf
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
@@ -60,15 +61,17 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name:
-        return _get_document_list(business.identifier, filing)
+        return _get_document_list(business, filing)
+
+    if legal_filing_name and str(request.accept_mimetypes) == 'application/pdf':
+        return get_pdf(filing.storage, legal_filing_name.lower())
 
     return {}, HTTPStatus.NOT_FOUND
 
 
-def _get_document_list(business_identifier, filing):
-    # b = API.base_path()
-    # u = API.base_url()
-    if not (document_list := Filing.get_document_list(business_identifier, filing, request)):
+def _get_document_list(business, filing):
+    """Get list of document outputs."""
+    if not (document_list := Filing.get_document_list(business, filing, request)):
         return {}, HTTPStatus.NOT_FOUND
 
     return jsonify(document_list), HTTPStatus.OK

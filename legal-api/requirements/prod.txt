@@ -2,8 +2,10 @@ sqlalchemy
 # sqlalchemy < 1.4.0
 Flask
 Flask-Babel
+Flask-Cors
 Flask-Migrate
 Flask-Moment
+Flask-Pydantic
 Flask-RESTX
 Flask-Script
 Flask-SQLAlchemy
@@ -21,6 +23,7 @@ launchdarkly-server-sdk
 psycopg2-binary
 python-dotenv
 pycountry
+pydantic
 reportlab
 requests
 sentry-sdk[flask]
