@@ -114,7 +114,7 @@ def test_get_one_business_filing_by_id(session, client, jwt):
 
 
 def test_business_filing_ia_parties(session, client, jwt):
-    """Assert that the business info cannot be received in a valid JSONSchema format."""
+    """Assert that the ia parties can be received in a valid JSONSchema format."""
     identifier = 'BC7654321'
     b = factory_business(identifier)
     filings = factory_completed_filing(b, INCORPORATION_FILING_TEMPLATE)
