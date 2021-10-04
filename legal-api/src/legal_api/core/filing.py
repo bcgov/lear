@@ -21,7 +21,7 @@ from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
 
-from flask import current_app
+from flask import current_app, url_for
 from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
@@ -384,7 +384,7 @@ class Filing:
         ledger_filing['data']['order'] = court_order_data
 
     @staticmethod
-    def get_document_list(business_identifier, filing, request) -> Optional[dict]:
+    def get_document_list(business, filing, request) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         if not filing \
             or filing.status in (
@@ -394,11 +394,16 @@ class Filing:
             ):  # noqa: E125; lint conflicts on the indenting
             return None
 
-        doc_url = request.url
+        # doc_url = request.url
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        base_url = base_url[:base_url.find('/api')]
+        doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
+                                                   'filing_id': filing.id,
+                                                   'legal_filing_name': None})
 
         documents = {'documents': {
-                     'primary': f'{doc_url}/{filing.filing_type}',
-                     'receipt': f'{doc_url}/receipt'
+                     'primary': f'{base_url}{doc_url}/{filing.filing_type}',
+                     'receipt': f'{base_url}{doc_url}/receipt'
                      }}
 
         if filing.status in (
@@ -410,12 +415,15 @@ class Filing:
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
         ) and (
-            legal_filings := filing.legal_filings(False)
-        ) and (
-            (f := [list(x.keys()) for x in legal_filings])
-            and (legal_docs := [item for sublist in f for item in sublist])
+            filing.storage.meta_data and (legal_filings := filing.storage.meta_data.get('legalFilings'))
         ):
             documents['documents']['legalFilings'] = \
-                [{doc: f'{doc_url}/{doc}'} for doc in legal_docs]
+                [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
+
+            # get extra outputs
+            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+            additional = set([item for sublist in adds for item in sublist])
+            for doc in additional:
+                documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
         return documents
