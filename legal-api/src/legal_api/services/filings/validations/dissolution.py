@@ -14,7 +14,7 @@
 """Validation for the Voluntary Dissolution filing."""
 from enum import Enum
 from http import HTTPStatus
-from typing import Dict, Final, Optional, Union
+from typing import Dict, Final, Optional
 
 import pycountry
 from flask_babel import _
