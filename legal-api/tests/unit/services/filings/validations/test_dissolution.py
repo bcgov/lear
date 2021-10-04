@@ -108,7 +108,7 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
         ('FAIL', 'BC', 'mailing_address_required', 'BC1234567',
          HTTPStatus.BAD_REQUEST, 'mailingAddress is required.'),
         ('FAIL', 'BC', 'party_address_required', 'BC1234567',
-         HTTPStatus.BAD_REQUEST, 'Party is required.'),
+         HTTPStatus.BAD_REQUEST, 'Dissolution party is required.'),
         ('FAIL', 'CP', 'lookup_error', 'CP1234567',
          HTTPStatus.BAD_REQUEST, 'Address Country must resolve to a valid ISO-2 country.')
     ]

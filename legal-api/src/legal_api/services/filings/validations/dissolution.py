@@ -70,7 +70,7 @@ def validate(business: Business, con: Dict) -> Optional[Error]:
     return None
 
 
-def validate_dissolution_type(filing_json, legal_type) -> Error:
+def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     """Validate dissolution type of the filing."""
     msg = []
     dissolution_type_path = '/filing/dissolution/dissolutionType'
@@ -88,7 +88,7 @@ def validate_dissolution_type(filing_json, legal_type) -> Error:
     return None
 
 
-def validate_dissolution_statement_type(filing_json) -> Error:
+def validate_dissolution_statement_type(filing_json) -> Optional[list]:
     """Validate dissolution statement type of the filing."""
     msg = []
     dissolution_stmt_type_path = '/filing/dissolution/dissolutionStatementType'
@@ -106,7 +106,7 @@ def validate_dissolution_statement_type(filing_json) -> Error:
     return None
 
 
-def validate_parties_address(filing_json, legal_type) -> Optional[Error]:
+def validate_parties_address(filing_json, legal_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.
 
     Address must be in Canada for COOP and BC for CORP.
@@ -117,18 +117,19 @@ def validate_parties_address(filing_json, legal_type) -> Optional[Error]:
     msg = []
     address_in_bc = 0
     address_in_ca = 0
+    party_path = '/filing/dissolution/parties'
 
     if len(parties) > 0:
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
             msg.extend(err)
     else:
-        msg.append({'error': 'Dissolution party is required.', 'path': '/filing/dissolution/parties'})
+        msg.append({'error': 'Dissolution party is required.', 'path': party_path})
 
     if legal_type == Business.LegalTypes.COOP.value and address_in_ca == 0:
-        msg.append({'error': 'Address must be in Canada.', 'path': '/filing/dissolution/parties'})
+        msg.append({'error': 'Address must be in Canada.', 'path': party_path})
     elif legal_type in CORP_TYPES and address_in_bc == 0:
-        msg.append({'error': 'Address must be in BC.', 'path': '/filing/dissolution/parties'})
+        msg.append({'error': 'Address must be in BC.', 'path': party_path})
 
     if msg:
         return msg
@@ -142,7 +143,7 @@ def _is_dissolution_party_role(roles: list) -> bool:
                 PartyRole.RoleTypes.LIQUIDATOR.value] for role in roles)
 
 
-def _validate_address_location(parties) -> Union[Optional[Error], int, int]:
+def _validate_address_location(parties):
     msg = []
     address_in_bc = 0
     address_in_ca = 0
