@@ -20,10 +20,7 @@ from typing import Generic, Optional, Tuple, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
-from flask import current_app
-from flask import g
-from flask import jsonify
-from flask import request
+from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
