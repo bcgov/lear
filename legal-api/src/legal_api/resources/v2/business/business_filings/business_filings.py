@@ -78,8 +78,6 @@ class FilingModel(GenericModel, Generic[FilingT]):
 @pydantic_validate(query=QueryModel)
 def get_filings(identifier: str, filing_id: Optional[int] = None):
     """Return a JSON object with meta information about the Filing Submission."""
-    # identifier = query.identifier
-    # filing_id = query.filing_id
     if filing_id or identifier.startswith('T'):
         return ListFilingResource.get_single_filing(identifier, filing_id)
 
