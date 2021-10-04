@@ -31,7 +31,7 @@ CORP_TYPES: Final = [Business.LegalTypes.COMP.value,
                      Business.LegalTypes.BC_ULC_COMPANY.value]
 
 
-class DissolutionTypes(Enum):
+class DissolutionTypes(str, Enum):
     """Dissolution types."""
 
     VOLUNTARY = 'voluntary'
@@ -39,8 +39,8 @@ class DissolutionTypes(Enum):
 
 
 DISSOLUTION_MAPPING = {
-    'COOP': [DissolutionTypes.VOLUNTARY.value, DissolutionTypes.VOLUNTARY_LIQUIDATION.value],
-    'CORP': [DissolutionTypes.VOLUNTARY.value]
+    'COOP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION],
+    'CORP': [DissolutionTypes.VOLUNTARY]
 }
 
 
