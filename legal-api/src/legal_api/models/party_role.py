@@ -30,6 +30,7 @@ class PartyRole(db.Model):
         """Render an Enum of the role types."""
 
         CUSTODIAN = 'custodian'
+        LIQUIDATOR = 'liquidator'
         COMPLETING_PARTY = 'completing_party'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'
