@@ -178,8 +178,14 @@ def test_post_empty_annual_report_to_a_business(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
+    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+
+    if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
+        assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
+    
+    if rv.status_code == HTTPStatus.BAD_REQUEST:
+        assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
+    
 
 
 def test_post_authorized_draft_ar(session, client, jwt):
@@ -806,8 +812,13 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
+    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+
+    if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
+        assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
+    
+    if rv.status_code == HTTPStatus.BAD_REQUEST:
+        assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
 def test_file_ar_no_agm_coop(session, client, jwt):
