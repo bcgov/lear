@@ -132,7 +132,11 @@ FILINGS: Final = {
         'displayName': 'Incorporation Application',
         'codes': {
             'BEN': 'BCINC'
-        }
+        },
+        'additional': [
+            {'types': 'CP', 'outputs': ['Certificate']},
+            {'types': 'BC,BEN', 'outputs': ['NOA', 'Certificate']},
+        ]
     },
     'registrarsNotation': {
         'name': 'registrarsNotation',
@@ -188,3 +192,12 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             application_date = filing_meta_data['applicationDate']
             return str(date.fromisoformat(application_date).year)
         return None
+
+    @staticmethod
+    def get_all_outputs(business_type: str, filing_name: str) -> list:
+        """Return list of all outputs."""
+        filing = FILINGS.get(filing_name)
+        for docs in filing.get('additional', []):
+            if business_type in docs.get('types'):
+                return docs.get('outputs')
+        return []
