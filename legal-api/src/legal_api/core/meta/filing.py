@@ -134,8 +134,8 @@ FILINGS: Final = {
             'BEN': 'BCINC'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['Certificate']},
-            {'types': 'BC,BEN', 'outputs': ['NOA', 'Certificate']},
+            {'types': 'CP', 'outputs': ['certificate']},
+            {'types': 'BC,BEN', 'outputs': ['noa', 'certificate']},
         ]
     },
     'registrarsNotation': {

@@ -141,14 +141,17 @@ base_url = 'https://LEGAL_API_BASE_URL'
         ),
         ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
-         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'}},
+         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                        'legalFilings': [
+                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                        ]
+                        }
+         },
         HTTPStatus.OK
         ),
         ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
                             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                         ]
@@ -158,8 +161,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
         ),
         ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
-                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
                             {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
                             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
@@ -170,9 +172,8 @@ base_url = 'https://LEGAL_API_BASE_URL'
         ),
         ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
-         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication',
-                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'Certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/Certificate',
+         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                        'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                         'legalFilings': [
                             {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
                         ]
@@ -182,10 +183,9 @@ base_url = 'https://LEGAL_API_BASE_URL'
         ),
         ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
          'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
-         {'documents': {'primary': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication',
-                        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                        'Certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/Certificate',
-                        'NOA': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/NOA',
+         {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                        'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                        'noa': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noa',
                         'legalFilings': [
                             {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
                         ]

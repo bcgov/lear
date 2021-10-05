@@ -401,13 +401,14 @@ class Filing:
                                                    'legal_filing_name': None})
 
         documents = {'documents': {
-                     'primary': f'{base_url}{doc_url}/{filing.filing_type}',
                      'receipt': f'{base_url}{doc_url}/receipt'
                      }}
 
         if filing.status in (
             Filing.Status.PAID,
         ):
+            documents['documents']['legalFilings'] = \
+                [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
             return documents
 
         if filing.status in (
