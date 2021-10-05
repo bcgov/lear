@@ -18,7 +18,8 @@ Provides all the search and retrieval from the business entity documents.
 from http import HTTPStatus
 from typing import Final
 
-from flask import jsonify, request
+import requests
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.core import Filing
@@ -27,6 +28,7 @@ from legal_api.models import Business
 from legal_api.reports import get_pdf
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
 from ..bp import bp
@@ -64,6 +66,9 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         return _get_document_list(business, filing)
 
     if legal_filing_name and str(request.accept_mimetypes) == 'application/pdf':
+        if legal_filing_name.lower().startswith('receipt'):
+            return _get_receipt(business, filing, jwt.get_token_auth_header())
+
         return get_pdf(filing.storage, legal_filing_name.lower())
 
     return {}, HTTPStatus.NOT_FOUND
@@ -75,3 +80,37 @@ def _get_document_list(business, filing):
         return {}, HTTPStatus.NOT_FOUND
 
     return jsonify(document_list), HTTPStatus.OK
+
+
+def _get_receipt(business: Business, filing: Filing, token):
+    """Get the receipt for the filing."""
+    if filing.status not in (
+            Filing.Status.PAID,
+            Filing.Status.COMPLETED,
+            Filing.Status.CORRECTED,
+    ):
+        return {}, HTTPStatus.BAD_REQUEST
+
+    effective_date = None
+    if filing.storage.effective_date != filing.storage.filing_date:
+        effective_date = LegislationDatetime.as_legislation_timezone(filing.storage.effective_date).isoformat()
+
+    headers = {'Authorization': 'Bearer ' + token}
+
+    url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.storage.payment_token}/receipts'
+    receipt = requests.post(
+            url,
+            json={
+                'corpName': business.legal_name if business else filing.storage.temp_reg,
+                'filingDateTime': LegislationDatetime.as_legislation_timezone(filing.storage.filing_date).isoformat(),
+                'effectiveDateTime': effective_date if effective_date else '',
+                'filingIdentifier': str(filing.id),
+                'businessNumber': business.tax_id if business and business.tax_id else ''
+            },
+            headers=headers
+    )
+
+    if receipt.status_code != HTTPStatus.CREATED:
+        current_app.logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+
+    return receipt.content, receipt.status_code

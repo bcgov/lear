@@ -41,6 +41,7 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
+from registry_schemas.example_data.schema_data import INCORPORATION
 
 from legal_api.core import Filing, FilingMeta, FILINGS
 from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
@@ -56,7 +57,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_filing,
     factory_user,
 )
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, helper_create_jwt
 
 
 def basic_test_helper():
@@ -196,3 +197,76 @@ def test_various_filing_states(session, client, jwt,
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
+
+
+def test_get_receipt(session, client, jwt, requests_mock):
+    """Assert that a receipt is generated."""
+    from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
+
+    # Setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing_name = 'incorporationApplication'
+    payment_id = '12345'
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_name
+    filing_json['filing'][filing_name] = INCORPORATION
+    filing_json['filing'].pop('business')
+
+    filing_date = datetime.utcnow()
+    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing.skip_status_listener = True
+    filing._status = 'PAID'
+    filing._payment_token = payment_id
+    filing.save()
+    filing_core = Filing()
+    filing_core._storage = filing
+
+    requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
+                       json={'foo': 'bar'},
+                       status_code=HTTPStatus.CREATED)
+
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='username')
+
+    content, status_code = _get_receipt(business, filing_core, token)
+
+    assert status_code == HTTPStatus.CREATED
+    assert requests_mock.called_once
+
+
+def test_get_receipt_request_mock(session, client, jwt, requests_mock):
+    """Assert that a receipt is generated."""
+    from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
+
+    # Setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing_name = 'incorporationApplication'
+    payment_id = '12345'
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_name
+    filing_json['filing'][filing_name] = INCORPORATION
+    filing_json['filing'].pop('business')
+
+    filing_date = datetime.utcnow()
+    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing.skip_status_listener = True
+    filing._status = 'PAID'
+    filing._payment_token = payment_id
+    filing.save()
+
+    requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
+                       json={'foo': 'bar'},
+                       status_code=HTTPStatus.CREATED)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
+                    headers=create_header(jwt,
+                                          [STAFF_ROLE],
+                                          identifier,
+                                          **{'accept': 'application/pdf'})
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert requests_mock.called_once
