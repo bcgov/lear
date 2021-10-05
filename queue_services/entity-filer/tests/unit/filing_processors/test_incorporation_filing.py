@@ -155,6 +155,16 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
+        # Parties
+        parties = filing_rec.filing_json['filing']['incorporationApplication']['parties']
+        assert parties[0]['officer']['firstName'] == 'Joe'
+        assert parties[0]['officer']['lastName'] == 'Swanson'
+        assert parties[0]['officer']['middleName'] == 'P'
+        assert parties[0]['officer']['partyType'] == 'person'
+        assert parties[1]['officer']['partyType'] == 'organization'
+        assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
+
+
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 

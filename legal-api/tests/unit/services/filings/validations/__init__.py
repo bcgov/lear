@@ -41,7 +41,7 @@ def create_party(roles: list,
             'lastName': 'Swanson',
             'middleName': 'P',
             'email': 'joe@email.com',
-            'orgName': '',
+            'organizationName': '',
             'partyType': 'person'
         },
         'mailingAddress': None,

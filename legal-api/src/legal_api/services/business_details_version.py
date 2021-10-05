@@ -437,7 +437,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 'officer': {
                     'firstName': party_revision.first_name,
                     'lastName': party_revision.last_name,
-                    'partyType': 'Person'
+                    'partyType': Party.PartyTypes.PERSON.value
                 }
             }
             if party_revision.title:
@@ -448,7 +448,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             member = {
                 'officer': {
                     'organizationName': party_revision.organization_name,
-                    'partyType': 'Organization'
+                    'partyType': Party.PartyTypes.ORGANIZATION.value
                 }
             }
 

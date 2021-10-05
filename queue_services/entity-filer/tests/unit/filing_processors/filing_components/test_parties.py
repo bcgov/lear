@@ -38,10 +38,10 @@ PARTIES_STRUCTURE = {
             'officer': {
                 'id': 0,
                 'email': 'test@test.com',
-                'orgName': '',
+                'organizationName': '',
                 'lastName': 'Test',
                 'firstName': 'Test',
-                'partyType': 'Person',
+                'partyType': 'person',
                 'middleName': ''
             },
             'mailingAddress': {
@@ -76,10 +76,10 @@ SECOND_PARTY = {
             'officer': {
                 'id': 1,
                 'email': 'test@test.com',
-                'orgName': '',
+                'organizationName': '',
                 'lastName': 'Test abc',
                 'firstName': 'Test abc',
-                'partyType': 'Person',
+                'partyType': 'person',
                 'middleName': ''
             },
             'mailingAddress': {
