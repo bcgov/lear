@@ -132,14 +132,21 @@ def test_unpaid_filing(session, client, jwt):
 
 base_url = 'https://LEGAL_API_BASE_URL'
 
-@pytest.mark.parametrize('test_name, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code', [
-        ('special_res_paper', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND),
-        ('special_res_pending', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND),
-        ('special_res_paid', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
+@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code', [
+        ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND
+        ),
+        ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND
+        ),
+        ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
          {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
                         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'}},
-        HTTPStatus.OK),
-        ('special_res_completed', 'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
+        HTTPStatus.OK
+        ),
+        ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
          {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
                         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
@@ -147,8 +154,10 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK),
-        ('specres_court_completed', 'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
+        HTTPStatus.OK
+        ),
+        ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+         'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
          {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
                         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
@@ -157,17 +166,45 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK),
+        HTTPStatus.OK
+        ),
+        ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+         {'documents': {'primary': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication',
+                        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                        'Certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/Certificate',
+                        'legalFilings': [
+                            {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
+                        ]
+                        }
+         },
+        HTTPStatus.OK
+        ),
+        ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+         {'documents': {'primary': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication',
+                        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                        'Certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/Certificate',
+                        'NOA': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/NOA',
+                        'legalFilings': [
+                            {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        ]
+                        }
+         },
+        HTTPStatus.OK
+        ),
     ])
 def test_various_filing_states(session, client, jwt, 
                                test_name,
+                               identifier,
+                               entity_type,
                                filing_name_1, legal_filing_1, 
                                filing_name_2, legal_filing_2,
                                status, expected_msg, expected_http_code):
     """Test document list based on filing states."""
     # Setup
-    identifier = 'CP7654321'
-    business = factory_business(identifier)
+    # identifier = 'CP7654321'
+    business = factory_business(identifier, entity_type=entity_type)
 
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = filing_name_1
