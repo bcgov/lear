@@ -70,7 +70,9 @@ class DocumentMetaService():
         is_paper_only = filing['filing']['header'].get('availableOnPaperOnly', False)
         is_colin_only = filing['filing']['header'].get('inColinOnly', False)
 
-        if self._filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) \
+        if self._filing_status not in (Filing.Status.COMPLETED.value,
+                                       Filing.Status.PAID.value,
+                                       Filing.Status.CORRECTED.value) \
                 or is_paper_only or is_colin_only:
             return []  # wrong filing status
 

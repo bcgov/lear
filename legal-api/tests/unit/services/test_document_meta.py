@@ -705,7 +705,14 @@ def test_ia_paid(app):
         assert documents[0]['filename'] == 'T12345678 - Incorporation Application (Pending) - 2020-07-14.pdf'
 
 
-def test_ia_completed(session, app):
+
+@pytest.mark.parametrize('status, number_of_docs', 
+    [
+        ('COMPLETED', 3),
+        ('CORRECTED', 3),
+        ('UNKNOWN', 0)
+    ])
+def test_ia_status(session, app, status, number_of_docs):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
     document_meta = DocumentMetaService()
     with app.app_context():
@@ -713,7 +720,7 @@ def test_ia_completed(session, app):
             'filing': {
                 'header': {
                     'filingId': 12356,
-                    'status': 'COMPLETED',
+                    'status': status,
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
@@ -733,25 +740,26 @@ def test_ia_completed(session, app):
 
         with patch.object(Filing, 'find_by_id', return_value=Filing()):
             documents = document_meta.get_documents(filing)
-            assert len(documents) == 3
+            assert len(documents) == number_of_docs
 
-            assert documents[0]['type'] == 'REPORT'
-            assert documents[0]['reportType'] is None
-            assert documents[0]['filingId'] == 12356
-            assert documents[0]['title'] == 'Incorporation Application'
-            assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
+            if number_of_docs:
+                assert documents[0]['type'] == 'REPORT'
+                assert documents[0]['reportType'] is None
+                assert documents[0]['filingId'] == 12356
+                assert documents[0]['title'] == 'Incorporation Application'
+                assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
 
-            assert documents[1]['type'] == 'REPORT'
-            assert documents[1]['reportType'] == 'noa'
-            assert documents[1]['filingId'] == 12356
-            assert documents[1]['title'] == 'Notice of Articles'
-            assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+                assert documents[1]['type'] == 'REPORT'
+                assert documents[1]['reportType'] == 'noa'
+                assert documents[1]['filingId'] == 12356
+                assert documents[1]['title'] == 'Notice of Articles'
+                assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
 
-            assert documents[2]['type'] == 'REPORT'
-            assert documents[2]['reportType'] == 'certificate'
-            assert documents[2]['filingId'] == 12356
-            assert documents[2]['title'] == 'Certificate'
-            assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
+                assert documents[2]['type'] == 'REPORT'
+                assert documents[2]['reportType'] == 'certificate'
+                assert documents[2]['filingId'] == 12356
+                assert documents[2]['title'] == 'Certificate'
+                assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
 
 
 def test_ia_completed_bcomp(session, app):
