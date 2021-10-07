@@ -2,6 +2,7 @@
 
 # Testing
 freezegun
+hypothesis
 pytest
 pytest-aiohttp
 pytest-asyncio

@@ -17,12 +17,13 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
-def process(business: Business, filing_rec: Filing, filing: Dict):
+def process(business: Business, filing_rec: Filing, filing: Dict, filing_meta: FilingMeta):
     # pylint: disable=too-many-locals; 1 extra
     """Process the incoming transition filing."""
     # Extract the filing information for transition application

@@ -17,6 +17,7 @@ from datetime import datetime
 
 from legal_api.models import Business, Office, OfficeType
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
+from entity_filer.filing_meta import FilingMeta
 
 from entity_filer.filing_processors import dissolution
 from tests.unit import create_business
@@ -46,8 +47,10 @@ def test_voluntary_dissolution(app, session):
     business.dissolution_date = None
     business_id = business.id
 
+    filing_meta = FilingMeta()
+
     # test
-    dissolution.process(business, filing_json['filing'])
+    dissolution.process(business, filing_json['filing'], filing_meta)
     business.save()
 
     # validate

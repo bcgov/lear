@@ -22,6 +22,7 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.utils.datetime import datetime
 from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import conversion
 from tests.unit import create_filing
 
@@ -39,9 +40,10 @@ def test_conversion_process_with_nr(app, session):
 
     effective_date = datetime.utcnow()
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+    filing_meta = FilingMeta(application_date=effective_date)
 
     # test
-    business, filing_rec = conversion.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == identifier
@@ -61,9 +63,10 @@ def test_conversion_process_no_nr(app, session):
     create_filing('123', filing)
     effective_date = datetime.utcnow()
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+    filing_meta = FilingMeta(application_date=effective_date)
 
     # test
-    business, filing_rec = conversion.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == identifier
@@ -98,9 +101,10 @@ def test_conversion_coop_from_colin(app, session):
     filing_rec.skip_status_listener = True
     filing_rec._status = 'PENDING'
     filing_rec.save()
+    filing_meta = FilingMeta(application_date=effective_date)
 
     # test
-    business, filing_rec = conversion.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == identifier
@@ -137,9 +141,10 @@ def test_conversion_bc_company_from_colin(app, session, legal_type):
     filing_rec.skip_status_listener = True
     filing_rec._status = 'PENDING'
     filing_rec.save()
+    filing_meta = FilingMeta(application_date=effective_date)
 
     # test
-    business, filing_rec = conversion.process(None, filing, filing_rec)
+    business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == identifier

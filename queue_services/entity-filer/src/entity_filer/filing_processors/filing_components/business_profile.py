@@ -52,8 +52,7 @@ def update_business_profile(business: Business, profile_info: Dict) -> Dict:
             data=data,
             timeout=AccountService.timeout
         )
-        if rv.status_code == HTTPStatus.OK or \
-                rv.status_code == HTTPStatus.CREATED:
+        if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
             error = None
 
         if rv.status_code == HTTPStatus.NOT_FOUND:
@@ -71,8 +70,7 @@ def update_business_profile(business: Business, profile_info: Dict) -> Dict:
                 data=data,
                 timeout=AccountService.timeout
             )
-            if put.status_code == HTTPStatus.OK or \
-                    put.status_code == HTTPStatus.CREATED:
+            if put.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
                 error = None
             else:
                 error = {'error': 'Unable to update existing business profile.'}

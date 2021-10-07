@@ -19,6 +19,7 @@ import dpath
 import sentry_sdk
 from legal_api.models import Business, Filing
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
     business_info,
@@ -33,13 +34,27 @@ def process(
     business: Business,
     filing_submission: Filing,
     filing: Dict,
+    filing_meta: FilingMeta,
     correction: bool = False
 ):  # pylint: disable=W0613
     """Render the Alteration onto the model objects."""
+    filing_meta.alteration = {}
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         business_json = dpath.util.get(filing, '/alteration/business')
+        filing_meta.alteration = {**filing_meta.alteration,
+                                  **{'fromLegalType': business.legal_type,
+                                     'toLegalType': business_json.get('legalType')}}
         business_info.set_corp_type(business, business_json)
+
+    # Alter the corp name, if any
+    with suppress(IndexError, KeyError, TypeError):
+        name_request_json = dpath.util.get(filing, '/alteration/nameRequest')
+        if legal_name := name_request_json.get('legalName', None):
+            filing_meta.alteration = {**filing_meta.alteration,
+                                      **{'fromLegalName': business.legal_name,
+                                         'toLegalName': legal_name}}
+        name_request.set_legal_name(business, name_request_json)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):

@@ -18,8 +18,10 @@ from typing import Dict
 
 from legal_api.models import Filing
 
+from entity_filer.filing_meta import FilingMeta
 
-def process(court_order_filing: Filing, filing: Dict):
+
+def process(court_order_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
     court_order_filing.court_order_file_number = filing['courtOrder'].get('fileNumber')
     court_order_filing.court_order_effect_of_order = filing['courtOrder'].get('effectOfOrder')

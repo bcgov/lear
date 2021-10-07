@@ -21,6 +21,7 @@ import pytest
 from legal_api.models import Filing
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
 from entity_filer.filing_processors.filing_components import name_request
 from tests.unit import create_filing
@@ -43,9 +44,10 @@ def test_has_new_nr_for_correction(app, session, test_name, nr_number, expected_
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta()
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
