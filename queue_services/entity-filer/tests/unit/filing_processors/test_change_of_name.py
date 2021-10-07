@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Change of Name filing."""
-
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import change_of_name
 from tests.unit import create_business
 
@@ -27,8 +27,10 @@ def test_change_of_name_process(app, session):
     business = create_business(identifier)
     business.legal_name = 'original name'
 
+    filing_meta = FilingMeta()
+
     # test
-    change_of_name.process(business, con)
+    change_of_name.process(business, con, filing_meta)
 
     # validate
     assert business.legal_name == new_name

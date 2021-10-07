@@ -34,6 +34,7 @@ import PyPDF2
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
 from tests.unit import create_filing
 
@@ -63,9 +64,10 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta(application_date=effective_date)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -143,9 +145,10 @@ def test_incorporation_filing_process_no_nr(app, session):
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -178,9 +181,10 @@ def test_incorporation_filing_process_correction(app, session):
 
         effective_date = datetime.utcnow()
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -196,8 +200,9 @@ def test_incorporation_filing_process_correction(app, session):
     correction_filing['filing']['incorporationApplication']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
     del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
     corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
-    corrected_business, corrected_filing_rec =\
-        incorporation_filing.process(business, correction_filing, corrected_filing_rec)
+    corrected_filing_meta = FilingMeta(application_date=corrected_filing_rec.effective_date)
+    corrected_business, corrected_filing_rec, corrected_filing_meta =\
+        incorporation_filing.process(business, correction_filing, corrected_filing_rec, corrected_filing_meta)
     assert corrected_business.identifier == next_corp_num
     assert corrected_business.legal_name == \
         correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
@@ -246,9 +251,10 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_rec.skip_status_listener = True
     filing_rec._status = 'PENDING'
     filing_rec.save()
+    filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == corp_num
@@ -285,9 +291,10 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
     filing_rec.skip_status_listener = True
     filing_rec._status = 'PENDING'
     filing_rec.save()
+    filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec = incorporation_filing.process(None, filing, filing_rec)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta=filing_meta)
 
     # Assertions
     assert business.identifier == corp_num

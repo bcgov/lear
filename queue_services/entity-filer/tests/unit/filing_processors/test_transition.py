@@ -19,6 +19,7 @@ import datetime
 from legal_api.models import Filing
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import transition
 from tests.unit import create_business, create_filing
 
@@ -33,9 +34,10 @@ def test_transition_filing_process(app, session):
 
     effective_date = datetime.datetime.utcnow()
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+    filing_meta = FilingMeta(application_date=effective_date)
 
     # test
-    transition.process(business, filing_rec, filing['filing'])
+    transition.process(business, filing_rec, filing['filing'], filing_meta)
 
     # Assertions
     assert business.restriction_ind is False

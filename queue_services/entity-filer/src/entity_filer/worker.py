@@ -45,6 +45,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
 
 from entity_filer import config
+from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
     alteration,
     annual_report,
@@ -150,53 +151,61 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
+            filing_meta = FilingMeta(application_date=filing_submission.effective_date,
+                                     legal_filings=[item for sublist in
+                                                    [list(x.keys()) for x in legal_filings]
+                                                    for item in sublist])
+
             for filing in legal_filings:
                 if filing.get('alteration'):
-                    alteration.process(business, filing_submission, filing, is_correction)
+                    alteration.process(business, filing_submission, filing, filing_meta, is_correction)
 
                 elif filing.get('annualReport'):
-                    annual_report.process(business, filing)
+                    annual_report.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfAddress'):
-                    change_of_address.process(business, filing)
+                    change_of_address.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfDirectors'):
                     filing['colinIds'] = filing_submission.colin_event_ids
-                    change_of_directors.process(business, filing)
+                    change_of_directors.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfName'):
-                    change_of_name.process(business, filing)
+                    change_of_name.process(business, filing, filing_meta)
 
                 elif filing.get('dissolution'):
-                    dissolution.process(business, filing)
+                    dissolution.process(business, filing, filing_meta)
 
                 elif filing.get('incorporationApplication'):
-                    business, filing_submission = incorporation_filing.process(business,
-                                                                               filing_core_submission.json,
-                                                                               filing_submission)
+                    business, filing_submission, filing_meta = incorporation_filing.process(business,
+                                                                                            filing_core_submission.json,
+                                                                                            filing_submission,
+                                                                                            filing_meta)
 
                 elif filing.get('conversion'):
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
-                                                                     filing_submission)
+                                                                     filing_submission,
+                                                                     filing_meta)
 
                 elif filing.get('courtOrder'):
-                    court_order.process(filing_submission, filing)
+                    court_order.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('registrarsNotation'):
-                    registrars_notation.process(filing_submission, filing)
+                    registrars_notation.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('registrarsOrder'):
-                    registrars_order.process(filing_submission, filing)
+                    registrars_order.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('correction'):
-                    filing_submission = correction.process(filing_submission, filing)
+                    filing_submission = correction.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('transition'):
-                    filing_submission = transition.process(business, filing_submission, filing)
+                    filing_submission = transition.process(business, filing_submission, filing, filing_meta)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
+            filing_submission._meta_data = json.dumps(filing_meta.asjson, default=json_serial)  # pylint: disable=W0212
 
             db.session.add(business)
             db.session.add(filing_submission)

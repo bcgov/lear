@@ -17,9 +17,16 @@ from typing import Dict
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business
 
+from entity_filer.filing_meta import FilingMeta
 
-def process(business: Business, filing: Dict):
+
+def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     """Render the annual_report onto the business model objects."""
     logger.debug('processing Change of Name: %s', filing)
+
     new_name = filing['changeOfName'].get('legalName')
+
+    filing_meta.change_of_name = {'fromLegalName': business.legal_name,
+                                  'toLegalName': new_name}
+
     business.legal_name = new_name

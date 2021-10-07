@@ -27,6 +27,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
 )
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
@@ -59,10 +60,13 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
 
+    filing_meta = FilingMeta()
+
     # test
     alteration.process(business=business,
                        filing_submission=filing_submission,
-                       filing=alteration_filing['filing'])
+                       filing=alteration_filing['filing'],
+                       filing_meta=filing_meta)
 
     # validate
     assert business.legal_type == new_legal_type

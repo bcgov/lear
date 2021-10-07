@@ -31,6 +31,7 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
@@ -159,7 +160,10 @@ def _replace_file_with_certified_copy(_bytes, business, key):
     return key
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
+def process(business: Business,  # pylint: disable=too-many-branches
+            filing: Dict,
+            filing_rec: Filing,
+            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing.get('filing', {}).get('incorporationApplication')
@@ -212,7 +216,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: di
         ia_json['filing']['business']['identifier'] = business.identifier
         ia_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
-    return business, filing_rec
+    return business, filing_rec, filing_meta
 
 
 def post_process(business: Business, filing: Filing):

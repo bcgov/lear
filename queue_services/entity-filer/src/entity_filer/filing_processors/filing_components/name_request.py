@@ -54,6 +54,12 @@ def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorpor
         sentry_sdk.capture_message(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
 
 
+def set_legal_name(business: Business, name_request_info: dict):
+    """Set the legal_name in the business object."""
+    if legal_name := name_request_info.get('legalName', None):
+        business.legal_name = legal_name
+
+
 def has_new_nr_for_correction(filing: dict):
     """Return whether a correction filing has new NR."""
     new_nr_number = filing.get('filing').get('incorporationApplication').get('nameRequest').get('nrNumber', None)

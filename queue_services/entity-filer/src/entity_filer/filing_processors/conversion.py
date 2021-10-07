@@ -29,12 +29,16 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing):  # pylint: disable=too-many-branches
+def process(business: Business,  # pylint: disable=too-many-branches
+            filing: Dict,
+            filing_rec: Filing,
+            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
     """Process the incoming historic conversion filing."""
     # Extract the filing information for incorporation
     if not (conversion_filing := filing.get('filing', {}).get('conversion')):
