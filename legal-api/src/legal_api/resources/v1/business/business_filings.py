@@ -686,9 +686,10 @@ class ListFilingResource(Resource):
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
-
+        staff_payment = False
         if user_jwt.validate_roles([STAFF_ROLE]) or \
                 user_jwt.validate_roles([SYSTEM_ROLE]):
+            staff_payment = True
             account_info = {}
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
@@ -725,13 +726,18 @@ class ListFilingResource(Resource):
         if rv.status_code == HTTPStatus.BAD_REQUEST:
             # Set payment error type used to retrieve error messages from pay-api
             error_type = rv.json().get('type')
-            filing.payment_status_code = error_type
-            filing.save()
+            error_message = rv.json().get('detail')
+            
+            if staff_payment:
+                filing.delete()
+            else:
+                filing.payment_status_code = error_type
+                filing.save()
 
             return {'payment_error_type': error_type,
-                    'message': rv.json().get('detail')}, HTTPStatus.PAYMENT_REQUIRED
+                    'message': error_message}, HTTPStatus.PAYMENT_REQUIRED
 
-        return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
+        return {'message': 'Unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
