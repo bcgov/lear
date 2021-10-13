@@ -29,7 +29,7 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
 from .db import db  # noqa: I001
-from .comment import Comment  # noqa: I001,F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods

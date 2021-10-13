@@ -25,7 +25,7 @@ from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
-from pydantic import BaseModel  # pylint: disable=E0611; not sure why pylint is unable to scan module
+from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
 

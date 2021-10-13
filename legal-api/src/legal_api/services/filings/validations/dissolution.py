@@ -22,9 +22,9 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 
-from .common_validations import validate_court_order
-from ...utils import get_str
-# noqa: I003; needed as the linter gets confused from the babel override above.
+from .common_validations import validate_court_order, validate_pdf
+from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
+
 
 CORP_TYPES: Final = [Business.LegalTypes.COMP.value,
                      Business.LegalTypes.BCOMP.value,
@@ -37,6 +37,18 @@ class DissolutionTypes(str, Enum):
 
     VOLUNTARY = 'voluntary'
     VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
+
+
+class DissolutionStatementTypes(str, Enum):
+    """Dissolution statement types."""
+
+    NO_ASSETS_NO_LIABILITIES_197 = '197NoAssetsNoLiabilities'
+    NO_ASSETS_PROVISIONS_LIABILITIES_197 = '197NoAssetsProvisionsLiabilities'
+
+    @classmethod
+    def has_value(cls, value):
+        """Check if enum contains specific value provided via input param."""
+        return value in cls._value2member_map_  # pylint: disable=no-member
 
 
 DISSOLUTION_MAPPING = {
@@ -57,12 +69,15 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    if legal_type == Business.LegalTypes.COOP.value:
-        err = validate_dissolution_statement_type(dissolution)
-        if err:
-            msg.extend(err)
+    err = validate_dissolution_statement_type(dissolution, legal_type)
+    if err:
+        msg.extend(err)
 
     err = validate_parties_address(dissolution, legal_type)
+    if err:
+        msg.extend(err)
+
+    err = validate_documents(dissolution, legal_type)
     if err:
         msg.extend(err)
 
@@ -91,20 +106,21 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     return None
 
 
-def validate_dissolution_statement_type(filing_json) -> Optional[list]:
+def validate_dissolution_statement_type(filing_json, legal_type) -> Optional[list]:
     """Validate dissolution statement type of the filing."""
     msg = []
     dissolution_stmt_type_path = '/filing/dissolution/dissolutionStatementType'
     dissolution_stmt_type = get_str(filing_json, dissolution_stmt_type_path)
-    if dissolution_stmt_type:
-        if dissolution_stmt_type not in ['197NoAssetsNoLiabilities', '197NoAssetsProvisionsLiabilities']:
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        if not dissolution_stmt_type:
+            msg.append({'error': _('Dissolution statement type must be provided.'),
+                        'path': dissolution_stmt_type_path})
+            return msg
+        if not DissolutionStatementTypes.has_value(dissolution_stmt_type):
             msg.append({'error': _('Invalid Dissolution statement type.'),
                         'path': dissolution_stmt_type_path})
             return msg
-    else:
-        msg.append({'error': _('Dissolution statement type must be provided.'),
-                    'path': dissolution_stmt_type_path})
-        return msg
 
     return None
 
@@ -174,6 +190,48 @@ def _validate_address_location(parties):
         return msg, address_in_bc, address_in_ca
 
     return None, address_in_bc, address_in_ca
+
+
+def validate_documents(filing_json, legal_type) -> Optional[list]:
+    """Validate documents of the filing."""
+    msg = []
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        affidavit_file_key = filing_json['filing']['dissolution'].get('affidavitFileKey', None)
+        affidavit_file_name = filing_json['filing']['dissolution'].get('affidavitFileName', None)
+        special_resolution_file_key = filing_json['filing']['dissolution'].get('specialResolutionFileKey', None)
+        special_resolution_file_name = filing_json['filing']['dissolution'].get('specialResolutionFileName', None)
+
+        # Validate key values exist
+        if not affidavit_file_key:
+            msg.append({'error': _('A valid affidavit key is required.'),
+                        'path': '/filing/dissolution/affidavitFileKey'})
+
+        if not affidavit_file_name:
+            msg.append({'error': _('A valid affidavit file name is required.'),
+                        'path': '/filing/dissolution/affidavitFileName'})
+
+        if not special_resolution_file_key:
+            msg.append({'error': _('A valid special resolution key is required.'),
+                        'path': '/filing/dissolution/specialResolutionFileKey'})
+
+        if not special_resolution_file_name:
+            msg.append({'error': _('A valid special resolution file name is required.'),
+                        'path': '/filing/dissolution/specialResolutionFileName'})
+
+        if msg:
+            return msg
+
+        affidavit_err = validate_pdf(affidavit_file_key, '/filing/dissolution/affidavitFileKey')
+        if affidavit_err:
+            return affidavit_err
+
+        special_resolution_err = validate_pdf(special_resolution_file_key,
+                                              '/filing/dissolution/specialResolutionFileKey')
+        if special_resolution_err:
+            return special_resolution_err
+
+    return None
 
 
 def _validate_court_order(filing):

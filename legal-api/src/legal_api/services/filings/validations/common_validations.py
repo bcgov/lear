@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+import io
 from datetime import datetime
 from typing import Optional
 
+import PyPDF2
+from flask_babel import _
+
 from legal_api.errors import Error
+from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 
@@ -133,6 +138,35 @@ def validate_court_order(court_order_path, court_order):
         except ValueError:
             err_path = court_order_date_path
             msg.append({'error': 'Invalid court order date format.', 'path': err_path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
+    """Validate the PDF file."""
+    msg = []
+    try:
+        file = MinioService.get_file(file_key)
+        open_pdf_file = io.BytesIO(file.data)
+        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+        pdf_size_units = pdf_reader.getPage(0).mediaBox
+
+        if pdf_size_units.getWidth() != 612 or pdf_size_units.getHeight() != 792:
+            msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
+                        'path': file_key_path})
+
+        file_info = MinioService.get_file_info(file_key)
+        if file_info.size > 10000000:
+            msg.append({'error': _('File exceeds maximum size.'), 'path': file_key_path})
+
+        if pdf_reader.isEncrypted:
+            msg.append({'error': _('File must be unencrypted.'), 'path': file_key_path})
+
+    except Exception:
+        msg.append({'error': _('Invalid file.'), 'path': file_key_path})
 
     if msg:
         return msg

@@ -22,7 +22,7 @@ from sqlalchemy import event
 from legal_api.exceptions import BusinessException
 
 from .db import db  # noqa: I001
-from .address import Address  # noqa: I001,F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class Party(db.Model):  # pylint: disable=too-many-instance-attributes
