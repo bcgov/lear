@@ -151,7 +151,7 @@ def test_create_invoice_fail(session, jwt, test_name, staff_payment):
                                                       filing,
                                                       filing_types,
                                                       jwt,
-                                                      None)
+                                                      '')
 
     assert response
     assert response[0]['payment_error_type'] == 'PAYMENT_ERROR'
