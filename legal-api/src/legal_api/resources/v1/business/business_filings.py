@@ -724,20 +724,24 @@ class ListFilingResource(Resource):
             return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired', False)}, HTTPStatus.CREATED
 
         if rv.status_code == HTTPStatus.BAD_REQUEST:
-            # Set payment error type used to retrieve error messages from pay-api
-            error_type = rv.json().get('type')
-            error_message = rv.json().get('detail')
-            
-            if staff_payment:
-                filing.delete()
-            else:
-                filing.payment_status_code = error_type
-                filing.save()
-
-            return {'payment_error_type': error_type,
-                    'message': error_message}, HTTPStatus.PAYMENT_REQUIRED
+            return ListFilingResource._return_payment_failure(rv, filing, staff_payment)
 
         return {'message': 'Unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
+
+    @staticmethod
+    def _return_payment_failure(rv, filing, staff_payment):
+        # Set payment error type used to retrieve error messages from pay-api
+        error_type = rv.json().get('type')
+        error_message = rv.json().get('detail')
+
+        if staff_payment:
+            filing.delete()
+        else:
+            filing.payment_status_code = error_type
+            filing.save()
+
+        return {'payment_error_type': error_type,
+                'message': error_message}, HTTPStatus.PAYMENT_REQUIRED
 
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
