@@ -22,6 +22,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 
+from .common_validations import validate_court_order
 from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
@@ -44,26 +45,28 @@ DISSOLUTION_MAPPING = {
 }
 
 
-def validate(business: Business, con: Dict) -> Optional[Error]:
+def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     """Validate the dissolution filing."""
-    if not business or not con:
+    if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
-    legal_type = get_str(con, '/filing/business/legalType')
+    legal_type = get_str(dissolution, '/filing/business/legalType')
     msg = []
 
-    err = validate_dissolution_type(con, legal_type)
+    err = validate_dissolution_type(dissolution, legal_type)
     if err:
         msg.extend(err)
 
     if legal_type == Business.LegalTypes.COOP.value:
-        err = validate_dissolution_statement_type(con)
+        err = validate_dissolution_statement_type(dissolution)
         if err:
             msg.extend(err)
 
-    err = validate_parties_address(con, legal_type)
+    err = validate_parties_address(dissolution, legal_type)
     if err:
         msg.extend(err)
+
+    msg.extend(_validate_court_order(dissolution))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -171,3 +174,13 @@ def _validate_address_location(parties):
         return msg, address_in_bc, address_in_ca
 
     return None, address_in_bc, address_in_ca
+
+
+def _validate_court_order(filing):
+    """Validate court order."""
+    if court_order := filing.get('filing', {}).get('dissolution', {}).get('courtOrder', None):
+        court_order_path: Final = '/filing/dissolution/courtOrder'
+        err = validate_court_order(court_order_path, court_order)
+        if err:
+            return err
+    return []

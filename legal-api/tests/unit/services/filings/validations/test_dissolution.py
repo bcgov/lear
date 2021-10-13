@@ -149,3 +149,41 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         assert expected_msg == err.msg[0]['error']
     else:
         assert not err
+
+
+@pytest.mark.parametrize(
+    'test_status, file_number, effect_of_order, expected_code, expected_msg',
+    [
+        ('FAIL', None, 'planOfArrangement', HTTPStatus.BAD_REQUEST, 'Court order file number is required.'),
+        ('FAIL', '12345678901234567890', 'invalid', HTTPStatus.BAD_REQUEST, 'Invalid effectOfOrder.'),
+        ('SUCCESS', '12345678901234567890', 'planOfArrangement', None, None)
+    ]
+)
+def test_dissolution_court_orders(session, test_status, file_number, effect_of_order, expected_code, expected_msg):
+    """Assert valid court orders."""
+    business = Business(identifier='BC1234567')
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    court_order = {
+        'effectOfOrder': effect_of_order
+    }
+
+    if file_number:
+        court_order['fileNumber'] = file_number
+
+    filing['filing']['dissolution']['courtOrder'] = court_order
+
+    err = validate(business, filing)
+
+    # validate outcomes
+    if test_status == 'FAIL':
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err

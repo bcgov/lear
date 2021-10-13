@@ -120,11 +120,8 @@ def validate_court_order(court_order_path, court_order):
             msg.append({'error': 'Length of court order file number must be from 5 to 20 characters.',
                         'path': err_path})
 
-    if 'effectOfOrder' in court_order and (len(court_order['effectOfOrder']) < 5 or
-                                           len(court_order['effectOfOrder']) > 500):
-        err_path = court_order_path + '/effectOfOrder'
-        msg.append({'error': 'Length of court order effect of order must be from 5 to 500 characters.',
-                    'path': err_path})
+    if (effect_of_order := court_order.get('effectOfOrder', None)) and effect_of_order != 'planOfArrangement':
+        msg.append({'error': 'Invalid effectOfOrder.', 'path': f'{court_order_path}/effectOfOrder'})
 
     court_order_date_path = court_order_path + '/orderDate'
     if 'orderDate' in court_order:
