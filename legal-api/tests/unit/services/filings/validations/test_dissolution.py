@@ -22,8 +22,8 @@ from reportlab.lib.pagesizes import letter, legal
 
 from legal_api.models import Business
 from legal_api.services import MinioService
-from legal_api.services.filings.validations.dissolution import validate
 from legal_api.services.filings.validations import dissolution
+from legal_api.services.filings.validations.dissolution import validate
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -58,8 +58,9 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     if legal_type != Business.LegalTypes.COOP.value:
         del filing['filing']['dissolution']['dissolutionStatementType']
 
-    with patch.object(dissolution, 'validate_documents', return_value=None):
-        err = validate(business, filing)
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
+            err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -97,8 +98,9 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     # perform test
-    with patch.object(dissolution, 'validate_documents', return_value=None):
-        err = validate(business, filing)
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
+            err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -149,8 +151,9 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
     elif address_validation == 'lookup_error':
         filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'adssadkj'
 
-    with patch.object(dissolution, 'validate_documents', return_value=None):
-        err = validate(business, filing)
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
+            err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -164,50 +167,37 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
     'test_name, legal_type, dissolution_type, key, scenario, identifier, expected_code, expected_msg',
     [
         ('SUCCESS', 'BC', 'voluntary', '', 'success', 'BC1234567', None, None),
-        ('SUCCESS', 'CP', 'voluntary', '', 'success', 'BC1234567', None, None),
-        ('FAIL_INVALID_AFFIDAVIT_FILE_KEY', 'CP', 'voluntary', 'affidavitFileKey', 'failAffidavit', 'CP1234567',
+        ('SUCCESS', 'CP', 'voluntary', '', 'success', 'CP1234567', None, None),
+        ('FAIL_REQUIRED_SPECIAL_RESOLUTIONS', 'CP', 'voluntary', '', 'failRequiredSpecialResolutions', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Invalid file.', 'path': '/filing/dissolution/affidavitFileKey'
+             'error': 'Special resolution is required.', 'path': '/filing/dissolution/specialResolution'
          }]),
-        ('FAIL_INVALID_SPECIAL_RESOLUTIONS_FILE_KEY', 'CP', 'voluntary', 'specialResolutionFileKey',
+        ('FAIL_INVALID_SPECIAL_RESOLUTIONS_FILE_KEY', 'CP', 'voluntary', 'resolutionFileKey',
          'failSpecialResolutions', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Invalid file.', 'path': '/filing/dissolution/specialResolutionFileKey'
+             'error': 'Invalid file.', 'path': '/filing/dissolution/specialResolution/resolutionFileKey'
          }]),
-        ('FAIL_REQUIRED_AFFIDAVIT_FILE_KEY', 'CP', 'voluntary', 'affidavitFileKey', '', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'A valid affidavit key is required.', 'path': '/filing/dissolution/affidavitFileKey'
-         }]),
-        ('FAIL_REQUIRED_AFFIDAVIT_FILE_NAME', 'CP', 'voluntary', 'affidavitFileName', '', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'A valid affidavit file name is required.', 'path': '/filing/dissolution/affidavitFileName'
-         }]),
-        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_KEY', 'CP', 'voluntary', 'specialResolutionFileKey', '', 'CP1234567',
+        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_KEY', 'CP', 'voluntary', 'resolutionFileKey', '', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
              'error': 'A valid special resolution key is required.',
-             'path': '/filing/dissolution/specialResolutionFileKey'
+             'path': '/filing/dissolution/specialResolution/resolutionFileKey'
          }]),
-        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_NAME', 'CP', 'voluntary', 'specialResolutionFileName', '', 'CP1234567',
+        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_NAME', 'CP', 'voluntary', 'resolutionFileName', '', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
              'error': 'A valid special resolution file name is required.',
-             'path': '/filing/dissolution/specialResolutionFileName'
+             'path': '/filing/dissolution/specialResolution/resolutionFileName'
          }]),
-        ('FAIL_INVALID_AFFIDAVIT_FILE', 'CP', 'voluntary', 'affidavitFileKey', 'invalidAffidavitFileSize', 'CP1234567',
+        ('FAIL_INVALID_SPECIAL_RESOLUTION_FILE', 'CP', 'voluntary', 'resolutionFileKey',
+         'invalidSpecialResolutionPageSize', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
-             'path': '/filing/dissolution/affidavitFileKey'
-         }]),
-        ('FAIL_INVALID_SPECIAL_RESOLUTION_FILE', 'CP', 'voluntary', 'specialResolutionFileKey',
-         'invalidSpecialResolutionFileSize', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
-             'path': '/filing/dissolution/specialResolutionFileKey'
+             'path': '/filing/dissolution/specialResolution/resolutionFileKey'
          }]),
     ]
 )
-def test_dissolution_documents(session, minio_server, test_name, legal_type, dissolution_type, key, scenario,
-                               identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
-    """Assert that a VD can be validated."""
+def test_dissolution_special_resolution(session, minio_server, test_name, legal_type, dissolution_type, key, scenario,
+                                        identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
+    """Assert that special resolution can be validated."""
     # setup
     business = Business(identifier=identifier)
 
@@ -221,33 +211,23 @@ def test_dissolution_documents(session, minio_server, test_name, legal_type, dis
 
     if scenario:
         if scenario == 'success':
-            if legal_type != Business.LegalTypes.COOP.value:
-                del filing['filing']['dissolution']['affidavitFileKey']
-                del filing['filing']['dissolution']['affidavitFileName']
-                del filing['filing']['dissolution']['specialResolutionFileKey']
-                del filing['filing']['dissolution']['specialResolutionFileName']
+            if legal_type == Business.LegalTypes.COOP.value:
+                filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = _upload_file(letter)
             else:
-                filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter)
-                filing['filing']['dissolution']['specialResolutionFileKey'] = _upload_file(letter)
-        elif scenario == 'failAffidavit':
-            filing['filing']['dissolution']['affidavitFileKey'] = "invalid file key"
-            filing['filing']['dissolution']['specialResolutionFileKey'] = _upload_file(letter)
+                del filing['filing']['dissolution']['specialResolution']
+        elif scenario == 'failRequiredSpecialResolutions':
+            del filing['filing']['dissolution']['specialResolution']
         elif scenario == 'failSpecialResolutions':
-            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter)
-            filing['filing']['dissolution']['specialResolutionFileKey'] = "invalid file key"
-        elif scenario == 'invalidAffidavitFileSize':
-            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(legal)
-            filing['filing']['dissolution']['specialResolutionFileKey'] = _upload_file(letter)
-        elif scenario == 'invalidSpecialResolutionFileSize':
-            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter)
-            filing['filing']['dissolution']['specialResolutionFileKey'] = _upload_file(legal)
+            filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = 'invalid file key'
+        elif scenario == 'invalidSpecialResolutionPageSize':
+            filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = _upload_file(legal)
     else:
         # Assign key and value to test empty variables for failures
         key_value = ''
-        filing['filing']['dissolution'][key] = key_value
+        filing['filing']['dissolution']['specialResolution'][key] = key_value
 
-    # perform test
-    err = validate(business, filing)
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code:
@@ -257,10 +237,79 @@ def test_dissolution_documents(session, minio_server, test_name, legal_type, dis
         assert err is None
 
     # Cleanup
-    if affidavit_file_key := filing['filing']['dissolution'].get('affidavitFileKey', None):
-        MinioService.delete_file(affidavit_file_key)
-    if special_resolution_file_key := filing['filing']['dissolution'].get('specialResolutionFileKey', None):
-        MinioService.delete_file(special_resolution_file_key)
+    if file_key := filing['filing']['dissolution']\
+            .get('specialResolution', {})\
+            .get('resolutionFileKey', None):
+        MinioService.delete_file(file_key)
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, dissolution_type, key, scenario, identifier, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'BC', 'voluntary', '', 'success', 'BC1234567', None, None),
+        ('SUCCESS', 'CP', 'voluntary', '', 'success', 'CP1234567', None, None),
+        ('FAIL_INVALID_AFFIDAVIT_FILE_KEY', 'CP', 'voluntary', 'affidavitFileKey', 'failAffidavit', 'CP1234567',
+         HTTPStatus.BAD_REQUEST, [{
+             'error': 'Invalid file.', 'path': '/filing/dissolution/affidavitFileKey'
+         }]),
+        ('FAIL_REQUIRED_AFFIDAVIT_FILE_KEY', 'CP', 'voluntary', 'affidavitFileKey', '', 'CP1234567',
+         HTTPStatus.BAD_REQUEST, [{
+             'error': 'A valid affidavit key is required.', 'path': '/filing/dissolution/affidavitFileKey'
+         }]),
+        ('FAIL_REQUIRED_AFFIDAVIT_FILE_NAME', 'CP', 'voluntary', 'affidavitFileName', '', 'CP1234567',
+         HTTPStatus.BAD_REQUEST, [{
+             'error': 'A valid affidavit file name is required.', 'path': '/filing/dissolution/affidavitFileName'
+         }]),
+        ('FAIL_INVALID_AFFIDAVIT_FILE', 'CP', 'voluntary', 'affidavitFileKey', 'invalidAffidavitPageSize', 'CP1234567',
+         HTTPStatus.BAD_REQUEST, [{
+             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
+             'path': '/filing/dissolution/affidavitFileKey'
+         }]),
+    ]
+)
+def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dissolution_type, key, scenario,
+                               identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
+    """Assert that an affidavit can be validated."""
+    # setup
+    business = Business(identifier=identifier)
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = dissolution_type
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    if scenario:
+        if scenario == 'success':
+            if legal_type == Business.LegalTypes.COOP.value:
+                filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter)
+            else:
+                del filing['filing']['dissolution']['affidavitFileKey']
+                del filing['filing']['dissolution']['affidavitFileName']
+        elif scenario == 'failAffidavit':
+            filing['filing']['dissolution']['affidavitFileKey'] = 'invalid file key'
+        elif scenario == 'invalidAffidavitPageSize':
+            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(legal)
+    else:
+        # Assign key and value to test empty variables for failures
+        key_value = ''
+        filing['filing']['dissolution'][key] = key_value
+
+    with patch.object(dissolution, 'validate_special_resolution', return_value=None):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+    # Cleanup
+    if file_key := filing['filing']['dissolution'].get('affidavitFileKey', None):
+        MinioService.delete_file(file_key)
 
 
 @pytest.mark.parametrize(
@@ -291,8 +340,9 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
     filing['filing']['dissolution']['courtOrder'] = court_order
 
-    with patch.object(dissolution, 'validate_documents', return_value=None):
-        err = validate(business, filing)
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
+            err = validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':
