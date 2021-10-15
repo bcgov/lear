@@ -720,12 +720,12 @@ def test_alteration_filing_with_court_order(session):
     {
         'fileNumber': '123456789012345678901',  # long fileNumber
         'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     },
     {
         'fileNumber': 'Valid file number',
         'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     },
     {
         'fileNumber': 'Valid File Number',
@@ -749,6 +749,8 @@ def test_validate_invalid_court_orders(session, invalid_court_order):
     assert excinfo
 
 # @pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
+
+
 def test_submitter_info(session):
     user = factory_user('idir/staff-person')
     filing = Filing()
