@@ -206,7 +206,7 @@ def validate_special_resolution(filing_json, legal_type) -> Optional[list]:
     if legal_type == Business.LegalTypes.COOP.value:
         special_resolution = filing_json['filing']['dissolution'].get('specialResolution', None)
         if not special_resolution:
-            msg.append({'error': _('Special resolution is required.'),
+            msg.append({'error': babel('Special resolution is required.'),
                         'path': '/filing/dissolution/specialResolution'})
             return msg
 
@@ -215,11 +215,11 @@ def validate_special_resolution(filing_json, legal_type) -> Optional[list]:
 
         # Validate key values exist
         if not resolution_file_key:
-            msg.append({'error': _('A valid special resolution key is required.'),
+            msg.append({'error': babel('A valid special resolution key is required.'),
                         'path': '/filing/dissolution/specialResolution/resolutionFileKey'})
 
         if not resolution_file_name:
-            msg.append({'error': _('A valid special resolution file name is required.'),
+            msg.append({'error': babel('A valid special resolution file name is required.'),
                         'path': '/filing/dissolution/specialResolution/resolutionFileName'})
 
         if msg:
