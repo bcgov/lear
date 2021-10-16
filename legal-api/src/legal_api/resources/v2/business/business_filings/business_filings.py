@@ -269,6 +269,8 @@ class ListFilingResource():
         if filing_json.get('filing', {}).get('header', {}).get('status') == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
 
+        filing_json = {**filing_json, **CoreFiling.common_ledger_items(identifier, rv.storage)}
+
         return jsonify(rv.redacted(filing_json, jwt))
 
     @staticmethod

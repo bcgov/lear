@@ -17,7 +17,7 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 import pycountry
-from flask_babel import _
+from flask_babel import _ as babel  # noqa: N813,I005
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
@@ -63,7 +63,7 @@ DISSOLUTION_MAPPING = {
 def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     """Validate the dissolution filing."""
     if not business or not dissolution:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
     legal_type = get_str(dissolution, '/filing/business/legalType')
     msg = []
@@ -103,10 +103,10 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     if dissolution_type:
         if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
                 or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']):
-            msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
+            msg.append({'error': babel('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
     else:
-        msg.append({'error': _('Dissolution type must be provided.'),
+        msg.append({'error': babel('Dissolution type must be provided.'),
                     'path': dissolution_type_path})
         return msg
 
@@ -121,11 +121,11 @@ def validate_dissolution_statement_type(filing_json, legal_type) -> Optional[lis
 
     if legal_type == Business.LegalTypes.COOP.value:
         if not dissolution_stmt_type:
-            msg.append({'error': _('Dissolution statement type must be provided.'),
+            msg.append({'error': babel('Dissolution statement type must be provided.'),
                         'path': dissolution_stmt_type_path})
             return msg
         if not DissolutionStatementTypes.has_value(dissolution_stmt_type):
-            msg.append({'error': _('Invalid Dissolution statement type.'),
+            msg.append({'error': babel('Invalid Dissolution statement type.'),
                         'path': dissolution_stmt_type_path})
             return msg
 
@@ -187,10 +187,10 @@ def _validate_address_location(parties):
                         address_in_ca += 1
 
                 except LookupError:
-                    msg.append({'error': _('Address Country must resolve to a valid ISO-2 country.'),
+                    msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
                                 'path': f'/filing/dissolution/parties/{idx}/{address_type}/addressCountry'})
             else:
-                msg.append({'error': _(f'{address_type} is required.'),
+                msg.append({'error': babel(f'{address_type} is required.'),
                             'path': f'/filing/dissolution/parties/{idx}'})
 
     if msg:
@@ -243,11 +243,11 @@ def validate_affidavit(filing_json, legal_type) -> Optional[list]:
 
         # Validate key values exist
         if not affidavit_file_key:
-            msg.append({'error': _('A valid affidavit key is required.'),
+            msg.append({'error': babel('A valid affidavit key is required.'),
                         'path': '/filing/dissolution/affidavitFileKey'})
 
         if not affidavit_file_name:
-            msg.append({'error': _('A valid affidavit file name is required.'),
+            msg.append({'error': babel('A valid affidavit file name is required.'),
                         'path': '/filing/dissolution/affidavitFileName'})
 
         if msg:

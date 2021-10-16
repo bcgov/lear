@@ -285,14 +285,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foundingDate': self.founding_date.isoformat(),
             'identifier': self.identifier,
             'lastModified': self.last_modified.isoformat(),
-            'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
+            'lastAnnualReport': datetime.date(LegislationDatetime
+                                              .as_legislation_timezone(
+                                                  self.last_ar_date
+                                              )).isoformat() if self.last_ar_date else '',
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
-            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
+            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat()
+            if self.last_agm_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
-            'lastCOAFilingDate': datetime.date(self.last_coa_date).isoformat() if self.last_coa_date else '',
-            'lastCODFilingDate': datetime.date(self.last_cod_date).isoformat() if self.last_cod_date else '',
+            'lastAddressChangeDate': datetime.date(LegislationDatetime
+                                                   .as_legislation_timezone(
+                                                       self.last_coa_date
+                                                   )).isoformat() if self.last_coa_date else '',
+            'lastDirectorChangeDate': datetime.date(LegislationDatetime
+                                                    .as_legislation_timezone(
+                                                        self.last_cod_date
+                                                    )).isoformat() if self.last_cod_date else '',
             'legalName': self.legal_name,
             'legalType': self.legal_type,
             'hasRestrictions': self.restriction_ind,
@@ -307,9 +317,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         #     d['last_ledger_timestamp'] = None
 
         if self.dissolution_date:
-            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
+            d['dissolutionDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.dissolution_date)).isoformat()
         if self.fiscal_year_end_date:
-            d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
+            d['fiscalYearEndDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.fiscal_year_end_date)).isoformat()
         if self.tax_id:
             d['taxId'] = self.tax_id
 
