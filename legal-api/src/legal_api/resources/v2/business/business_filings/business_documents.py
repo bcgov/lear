@@ -48,7 +48,7 @@ OUTPUT_DATE_FORMAT: Final = '%b %-d, %Y at %-I:%M %p Pacific time'
 def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    if not authorized(identifier, jwt, ['GET', ]):
+    if not authorized(identifier, jwt, ['view', ]):
         return jsonify(
             message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
         ), HTTPStatus.UNAUTHORIZED
