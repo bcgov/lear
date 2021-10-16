@@ -52,21 +52,21 @@ class Endpoints:
         def before_request():
             """Before routing the request, check the Accept Version header to route to the correct API."""
             if (version := request.headers.get('accept-version')) and request.endpoint:  # pylint: disable=R1705
-                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name+'.'):
+                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name + '.'):
                     return redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
                         ))
                 elif version == EndpointVersionEnum.V1 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V1.name+'.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name+'.'):
+                    and not request.endpoint.startswith(EndpointEnum.API_V1.name + '.') \
+                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
                     return redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
                         ))
                 elif version == EndpointVersionEnum.V2 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V2.name+'.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name+'.'):
+                    and not request.endpoint.startswith(EndpointEnum.API_V2.name + '.') \
+                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
                     return redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V2.name, 1)

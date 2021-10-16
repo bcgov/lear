@@ -54,15 +54,13 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         ), HTTPStatus.UNAUTHORIZED
 
     if not (business := Business.find_by_identifier(identifier)):
-        return jsonify(
-            message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
-            ), HTTPStatus.NOT_FOUND
+        return jsonify(message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
+                       ), HTTPStatus.NOT_FOUND
 
     if not (filing := Filing.get(identifier, filing_id)):
-        return jsonify(
-            message=get_error_message(ErrorCode.FILING_NOT_FOUND,
-                                      **{'filing_id': filing_id, 'identifier': identifier})
-            ), HTTPStatus.NOT_FOUND
+        return jsonify(message=get_error_message(
+                       ErrorCode.FILING_NOT_FOUND,
+                       **{'filing_id': filing_id, 'identifier': identifier})), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name:
         return _get_document_list(business, filing)
@@ -102,19 +100,17 @@ def _get_receipt(business: Business, filing: Filing, token):
     headers = {'Authorization': 'Bearer ' + token}
 
     url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.storage.payment_token}/receipts'
-    receipt = requests.post(
-            url,
-            json={
-                'corpName': business.legal_name if business else filing.storage.temp_reg,
-                'filingDateTime': LegislationDatetime
-                                    .as_legislation_timezone(filing.storage.filing_date)
-                                    .strftime(OUTPUT_DATE_FORMAT),
-                'effectiveDateTime': effective_date if effective_date else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business.tax_id if business and business.tax_id else ''
-            },
-            headers=headers
-    )
+    receipt = requests.post(url,
+                            json={
+                                'corpName': business.legal_name if business else filing.storage.temp_reg,
+                                'filingDateTime': LegislationDatetime
+                                                    .as_legislation_timezone(filing.storage.filing_date)
+                                                    .strftime(OUTPUT_DATE_FORMAT),
+                                'effectiveDateTime': effective_date if effective_date else '',
+                                'filingIdentifier': str(filing.id),
+                                'businessNumber': business.tax_id if business and business.tax_id else ''
+                            },
+                            headers=headers)
 
     if receipt.status_code != HTTPStatus.CREATED:
         current_app.logger.error('Failed to get receipt pdf for filing: %s', filing.id)

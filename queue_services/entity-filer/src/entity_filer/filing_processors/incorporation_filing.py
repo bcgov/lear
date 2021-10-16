@@ -168,6 +168,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Extract the filing information for incorporation
     incorp_filing = filing.get('filing', {}).get('incorporationApplication')
     is_correction = filing_rec.filing_type == 'correction'
+    filing_meta.incorporation_application = {}
 
     if not incorp_filing:
         raise QueueException(f'IA legal_filing:incorporationApplication missing from {filing_rec.id}')
@@ -195,6 +196,11 @@ def process(business: Business,  # pylint: disable=too-many-branches
         business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
         business = _update_cooperative(incorp_filing, business, filing_rec)
 
+        if nr_number := business_info.get('nrNumber', None):
+            filing_meta.incorporation_application = {**filing_meta.incorporation_application,
+                                  **{'nrNumber': nr_number,
+                                     'legalName':business_info.get('legalName', None)}}
+
         if not business:
             raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
@@ -213,6 +219,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     if not is_correction and not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
         ia_json = copy.deepcopy(filing_rec.filing_json)
+        if not ia_json['filing'].get('business'):
+            ia_json['filing']['business'] = {}
         ia_json['filing']['business']['identifier'] = business.identifier
         ia_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data

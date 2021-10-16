@@ -141,9 +141,9 @@ class Filing:
                 and (UserRoles.STAFF.value in submitter_roles
                      or UserRoles.SYSTEM.value in submitter_roles)
                 ) and (
-                 filing.get('filing', {}).get('header', {}).get('submitter')
-                 and not has_roles(jwt, [UserRoles.STAFF.value])
-               ):
+                filing.get('filing', {}).get('header', {}).get('submitter')
+                and not has_roles(jwt, [UserRoles.STAFF.value])
+            ):
                 filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
@@ -334,22 +334,16 @@ class Filing:
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,
-                'commentsCount': filing.comments_count,
-                'displayName': FilingMeta.display_name(filing=filing),
+                'displayName': FilingMeta.display_name(business=business, filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
-                'isFutureEffective': (filing.effective_date
-                                      and filing._filing_date  # pylint: disable=protected-access
-                                      and (filing.effective_date > filing._filing_date)),  # pylint: disable=protected-access # noqa: E501
                 'name': filing.filing_type,
                 'paymentStatusCode': filing.payment_status_code,
                 'status': filing.status,
                 'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
-                'commentsLink': f'{base_url}/{business.identifier}/filings/{filing.id}/comments',
-                'documentsLink': f'{base_url}/{business.identifier}/filings/{filing.id}/documents',
-                'filingLink': f'{base_url}/{business.identifier}/filings/{filing.id}',
+                **Filing.common_ledger_items(business.identifier, filing)
             }
             # correction
             if filing.parent_filing:
@@ -368,6 +362,20 @@ class Filing:
             ledger.append(ledger_filing)
 
         return ledger
+
+    @staticmethod
+    def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
+        """Return attributes and links that also get included in T-business filings."""
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        return {
+            'commentsCount': filing_storage.comments_count,
+            'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
+            'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents',
+            'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
+            'isFutureEffective': (filing_storage.effective_date
+                                  and filing_storage._filing_date  # pylint: disable=protected-access
+                                  and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
+        }
 
     @staticmethod
     def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:

@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     FILING_HEADER,
     FILING_TEMPLATE,
+    INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
@@ -222,7 +223,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
         'annualReportDate': today,
         'annualGeneralMeetingDate': today
     }}
-    meta_data = {**{'applicationDate': today}, **annual_report_meta}
+    meta_data = {**{'applicationDate': None}, **annual_report_meta}
 
     business, filing_storage = ledger_element_setup_help(identifier, 'annualReport')
     filing_storage._meta_data = meta_data
@@ -237,6 +238,29 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     filing_json = rv.json['filings'][0]
     assert filing_json['data'] == meta_data
     assert filing_json['displayName'] == f'Annual Report ({date.fromisoformat(today).year})'
+
+
+def test_ledger_display_unknown_name(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    today = date.today().isoformat()
+    meta_data = {'applicationDate': None}
+
+    business, filing_storage = ledger_element_setup_help(identifier, 'someAncientNamedReport')
+    filing_storage._meta_data = meta_data
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings'][0]
+    filing_json = rv.json['filings'][0]
+    assert filing_json['data'] == meta_data
+    assert filing_json['displayName'] == 'Some Ancient Named Report'
+
 
 def test_ledger_display_alteration_report(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
@@ -262,6 +286,44 @@ def test_ledger_display_alteration_report(session, client, jwt):
     filing_json = rv.json['filings'][0]
     assert filing_json['data'] == meta_data
     assert filing_json['displayName'] == f'Alteration'
+
+def test_ledger_display_incorporation(session, client, jwt):
+    """Assert that the ledger returns the correct number of comments."""
+    # setup
+    identifier = 'BC1234567'
+    nr_number = 'NR000001'
+    founding_date = datetime.utcnow()
+    filing_date = founding_date
+    filing_name = 'incorporationApplication'
+    business_name = 'The Truffle House'
+    entity_type = Business.LegalTypes.BCOMP.value
+
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
+    business.legal_name = business_name
+    business.save()
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing'].pop('business')
+    filing['filing']['header']['name'] = filing_name
+    filing['filing'][filing_name] = INCORPORATION
+    filing['filing'][filing_name]['nameRequest'] = 'NR0000001'
+    filing['filing'][filing_name]['legalName'] = business_name
+
+    f = factory_completed_filing(business, filing, filing_date=filing_date)
+    today = filing_date.isoformat()
+    ia_meta = {'legalFilings':[filing_name,],
+               filing_name: {'nrNumber': nr_number,
+                             'legalName': business_name}
+    }
+    f._meta_data = {**{'applicationDate': today}, **ia_meta}
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+    
+    # validate
+    assert rv.json['filings']
+    assert rv.json['filings'][0]['displayName'] == f'BC Benefit Company Incorporation Application - {business_name}'
 
 def test_ledger_display_corrected_incorporation(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
