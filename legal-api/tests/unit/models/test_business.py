@@ -23,6 +23,7 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 
 
@@ -245,31 +246,33 @@ def test_business_json(session):
         'legalType': 'CP',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
-        'lastCOAFilingDate': '',
-        'lastCODFilingDate': '',
+        'lastAddressChangeDate': '',
+        'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
-        'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
-        'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
-        'nextAnnualReport': '1971-01-01T08:00:00+00:00',
+        'lastAnnualReport': datetime.date(LegislationDatetime.as_legislation_timezone(EPOCH_DATETIME)).isoformat(),
+        'lastAnnualGeneralMeetingDate': datetime.date(LegislationDatetime.as_legislation_timezone(EPOCH_DATETIME)).isoformat(),
+        'nextAnnualReport': '1971-01-01T00:00:00+00:00',
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'arMinDate': '1971-01-01',
         'arMaxDate': '1972-04-30'
     }
 
+    b = business.json()
+
     assert business.json() == d
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    d['dissolutionDate'] = datetime.date(LegislationDatetime.as_legislation_timezone(business.dissolution_date)).isoformat()
     assert business.json() == d
     business.dissolution_date = None
     d.pop('dissolutionDate')
 
     # include fiscalYearEndDate
     business.fiscal_year_end_date = EPOCH_DATETIME
-    d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
+    d['fiscalYearEndDate'] = datetime.date(LegislationDatetime.as_legislation_timezone(business.fiscal_year_end_date)).isoformat()
     assert business.json() == d
     business.fiscal_year_end_date = None
     d.pop('fiscalYearEndDate')

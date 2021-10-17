@@ -552,7 +552,7 @@ def test_get_internal_filings(session, client, jwt):
     assert len(filings) == 1
     assert filing.id == filings[0].json['filing']['header']['filingId']
     assert filings[0].json['filing']['header']['colinIds'] == []
-    # assert doesn't return non completed filings
+    # # assert doesn't return non completed filings
     filing.transaction_id = None
     filing.save()
     assert filing.status != Filing.Status.COMPLETED.value

@@ -282,40 +282,42 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
         d = {
+            'arMinDate': ar_min_date.isoformat(),
+            'arMaxDate': ar_max_date.isoformat(),
             'foundingDate': self.founding_date.isoformat(),
+            'goodStanding': self.good_standing,
+            'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
-            'lastModified': self.last_modified.isoformat(),
-            'lastAnnualReport': datetime.date(LegislationDatetime
-                                              .as_legislation_timezone(
-                                                  self.last_ar_date
-                                              )).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
-                self.next_anniversary
-            ).astimezone(timezone.utc).isoformat(),
-            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat()
-            if self.last_agm_date else '',
+            'lastAddressChangeDate': '',
+            'lastAnnualGeneralMeetingDate': '',
+            'lastAnnualReport': '',
+            'lastDirectorChangeDate': '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
-            'lastAddressChangeDate': datetime.date(LegislationDatetime
-                                                   .as_legislation_timezone(
-                                                       self.last_coa_date
-                                                   )).isoformat() if self.last_coa_date else '',
-            'lastDirectorChangeDate': datetime.date(LegislationDatetime
-                                                    .as_legislation_timezone(
-                                                        self.last_cod_date
-                                                    )).isoformat() if self.last_cod_date else '',
+            'lastModified': self.last_modified.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
-            'hasRestrictions': self.restriction_ind,
-            'goodStanding': self.good_standing,
-            'arMinDate': ar_min_date.isoformat(),
-            'arMaxDate': ar_max_date.isoformat()
+            'nextAnnualReport': self.next_anniversary.isoformat(),
         }
-        # if self.last_remote_ledger_timestamp:
-        #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
-        #     d['last_ledger_timestamp'] = self.last_remote_ledger_timestamp.isoformat()
-        # else:
-        #     d['last_ledger_timestamp'] = None
-
+        if self.last_ar_date:
+            d['lastAnnualReport'] = datetime.date(LegislationDatetime
+                                              .as_legislation_timezone(
+                                                  self.last_ar_date
+                                              )).isoformat()
+        if self.last_agm_date:
+            d['lastAnnualGeneralMeetingDate'] = datetime.date(LegislationDatetime
+                                                          .as_legislation_timezone(
+                                                              self.last_agm_date
+                                                          )).isoformat()
+        if self.last_coa_date:
+            d['lastAddressChangeDate'] = datetime.date(LegislationDatetime
+                                                   .as_legislation_timezone(
+                                                       self.last_coa_date
+                                                   )).isoformat()
+        if self.last_cod_date:
+            d['lastDirectorChangeDate'] = datetime.date(LegislationDatetime
+                                                    .as_legislation_timezone(
+                                                        self.last_cod_date
+                                                    )).isoformat()
         if self.dissolution_date:
             d['dissolutionDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.dissolution_date)).isoformat()

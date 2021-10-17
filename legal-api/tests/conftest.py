@@ -193,5 +193,5 @@ def stan_server(docker_services):
 def minio_server(docker_services):
     """Create the minio services that the integration tests will use."""
     docker_services.start('minio')
-    docker_services.wait_for_service('minio', 9000)
+    # docker_services.wait_for_service('minio', 9000)
     time.sleep(10)
