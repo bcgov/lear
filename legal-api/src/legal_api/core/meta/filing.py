@@ -56,6 +56,11 @@ class ReportNames(AutoName):
     NOTICE_OF_ARTICLES = auto()
 
 
+class FilingTitles(str, Enum):
+    """Enum of the system error codes."""
+
+    INCORPORATION_APPLICATION_DEFAULT = 'Incorporation Application'
+
 FILINGS: Final = {
     'alteration': {
         'name': 'alteration',
@@ -130,11 +135,11 @@ FILINGS: Final = {
         'code': 'NOT_IMPLEMENTED_YET'},
     'incorporationApplication': {
         'name': 'incorporationApplication',
-        'title': 'Incorporation Application',
+        'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
         'displayName': {
-            'BC': 'Incorporation Application',
+            'BC': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
             'BEN': 'BC Benefit Company Incorporation Application',
-            'CP': 'Incorporation Application'
+            'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
         },
         'codes': {
             'BEN': 'BCINC'
