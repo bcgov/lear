@@ -906,7 +906,10 @@ def test_correction_ia_with_cert_nr_change(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
     b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
-    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    initial_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    initial_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+    initial_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'New Name'
+    initial_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
     with app.app_context():
         filing = {
@@ -960,9 +963,11 @@ def test_correction_ia_with_cert_name_correction(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
     b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
-    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
-    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+    original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+    original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+    original_filing = factory_filing(b, original_filing_json)
     with app.app_context():
         filing = {
             'filing': {
@@ -1016,9 +1021,11 @@ def test_correction_ia_with_named_to_numbered(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
     b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
-    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
-    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+    original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+    original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+    original_filing = factory_filing(b, original_filing_json)
     with app.app_context():
         filing = {
             'filing': {
