@@ -244,7 +244,6 @@ def test_ledger_display_unknown_name(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
-    today = date.today().isoformat()
     meta_data = {'applicationDate': None}
 
     business, filing_storage = ledger_element_setup_help(identifier, 'someAncientNamedReport')
@@ -344,7 +343,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
         if filing_json['name'] == 'correction':
             assert filing_json['displayName'] == f'Correction'
         elif filing_json['name'] == 'incorporationApplication':
-            assert filing_json['displayName'] == f'Incorporation Application - Corrected'
+            assert filing_json['displayName'] == f'BC Benefit Company Incorporation Application - Corrected'
         else:
             assert False
 
