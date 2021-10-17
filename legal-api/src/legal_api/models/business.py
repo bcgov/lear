@@ -24,7 +24,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
@@ -300,24 +300,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         }
         if self.last_ar_date:
             d['lastAnnualReport'] = datetime.date(LegislationDatetime
-                                              .as_legislation_timezone(
-                                                  self.last_ar_date
-                                              )).isoformat()
+                                                  .as_legislation_timezone(
+                                                      self.last_ar_date
+                                                  )).isoformat()
         if self.last_agm_date:
             d['lastAnnualGeneralMeetingDate'] = datetime.date(LegislationDatetime
-                                                          .as_legislation_timezone(
-                                                              self.last_agm_date
-                                                          )).isoformat()
+                                                              .as_legislation_timezone(
+                                                                  self.last_agm_date
+                                                              )).isoformat()
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(LegislationDatetime
-                                                   .as_legislation_timezone(
-                                                       self.last_coa_date
-                                                   )).isoformat()
+                                                       .as_legislation_timezone(
+                                                           self.last_coa_date
+                                                       )).isoformat()
         if self.last_cod_date:
             d['lastDirectorChangeDate'] = datetime.date(LegislationDatetime
-                                                    .as_legislation_timezone(
-                                                        self.last_cod_date
-                                                    )).isoformat()
+                                                        .as_legislation_timezone(
+                                                            self.last_cod_date
+                                                        )).isoformat()
         if self.dissolution_date:
             d['dissolutionDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.dissolution_date)).isoformat()

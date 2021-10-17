@@ -13,7 +13,6 @@
 # limitations under the License.
 """Legislation Date time utilities."""
 import contextlib
-import datetime
 from typing import Optional
 
 import datedelta
@@ -35,11 +34,11 @@ class LegislationDatetime():
     @staticmethod
     def tomorrow_midnight() -> datetime:
         """Construct a datetime tomorrow midnight using the legislation timezone."""
-        date = datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
-        date += datedelta.datedelta(days=1)
-        date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        _date = datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        _date += datedelta.datedelta(days=1)
+        _date = datetime.replace(_date, hour=0, minute=0, second=0, microsecond=0)
 
-        return date
+        return _date
 
     @staticmethod
     def as_legislation_timezone(date_time: datetime) -> Optional[datetime]:
