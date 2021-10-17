@@ -61,6 +61,7 @@ class FilingTitles(str, Enum):
 
     INCORPORATION_APPLICATION_DEFAULT = 'Incorporation Application'
 
+
 FILINGS: Final = {
     'alteration': {
         'name': 'alteration',
