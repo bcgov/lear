@@ -19,6 +19,7 @@ from http import HTTPStatus
 
 import datedelta
 import pytest
+from registry_schemas.example_data.schema_data import FILING_HEADER
 import requests
 from freezegun import freeze_time
 from reportlab.lib.pagesizes import legal, letter
@@ -31,6 +32,7 @@ from legal_api.services.filings import validate
 from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address
 
 from . import create_party, create_party_address, lists_are_equal
+from tests import not_github_ci
 
 
 # setup
@@ -39,6 +41,7 @@ now = date(2020, 9, 17)
 founding_date = now - datedelta.YEAR
 business = Business(identifier=identifier)
 effective_date = '2020-09-18T00:00:00+00:00'
+incorporation_application_name = 'incorporationApplication'
 
 
 @pytest.mark.parametrize(
@@ -111,23 +114,24 @@ effective_date = '2020-09-18T00:00:00+00:00'
 def test_validate_incorporation_addresses_basic(session, test_name, delivery_region, delivery_country, mailing_region,
                                                 mailing_country, expected_code, expected_msg):
     """Assert that incorporation offices can be validated."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
-    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
-    f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
-    f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
 
-    regoffice = f['filing']['incorporationApplication']['offices']['registeredOffice']
+    regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region
     regoffice['deliveryAddress']['addressCountry'] = delivery_country
     regoffice['mailingAddress']['addressRegion'] = mailing_region
     regoffice['mailingAddress']['addressCountry'] = mailing_country
 
-    recoffice = f['filing']['incorporationApplication']['offices']['recordsOffice']
+    recoffice = filing_json['filing'][incorporation_application_name]['offices']['recordsOffice']
     recoffice['deliveryAddress']['addressRegion'] = delivery_region
     recoffice['deliveryAddress']['addressCountry'] = delivery_country
     recoffice['mailingAddress']['addressRegion'] = mailing_region
@@ -135,7 +139,7 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
 
     # perform test
     with freeze_time(now):
-        err = validate(business, f)
+        err = validate(business, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -217,37 +221,38 @@ def test_validate_incorporation_addresses_basic(session, test_name, delivery_reg
 def test_validate_incorporation_role(session, minio_server, test_name,
                                      legal_type, parties, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1}
-    f['filing']['business']['legalType'] = legal_type
+    filing_json['filing']['business']['legalType'] = legal_type
 
     if legal_type == 'CP':
-        f['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+        filing_json['filing'][incorporation_application_name] = copy.deepcopy(COOP_INCORPORATION)
         # Provide mocked valid documents
-        f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
-        f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
     else:
-        f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+        filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
 
-    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
-    f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
-    f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
 
-    base_mailing_address = f['filing']['incorporationApplication']['parties'][0]['mailingAddress']
-    base_delivery_address = f['filing']['incorporationApplication']['parties'][0]['deliveryAddress']
-    f['filing']['incorporationApplication']['parties'] = []
+    base_mailing_address = filing_json['filing'][incorporation_application_name]['parties'][0]['mailingAddress']
+    base_delivery_address = filing_json['filing'][incorporation_application_name]['parties'][0]['deliveryAddress']
+    filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
     for index, party in enumerate(parties):
         mailing_addr = create_party_address(base_address=base_mailing_address)
         delivery_addr = create_party_address(base_address=base_delivery_address)
         p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
-        f['filing']['incorporationApplication']['parties'].append(p)
+        filing_json['filing'][incorporation_application_name]['parties'].append(p)
 
     # perform test
-    err = validate(business, f)
+    err = validate(business, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -418,17 +423,18 @@ def test_validate_incorporation_role(session, minio_server, test_name,
     ])
 def test_validate_incorporation_parties_mailing_address(session, test_name, legal_type, parties, expected_msg):
     """Assert that incorporation parties mailing address is not empty."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
-    f['filing']['business']['legalType'] = legal_type
-    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
-    f['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
-    f['filing']['incorporationApplication']['contactPoint']['email'] = 'no_one@never.get'
-    f['filing']['incorporationApplication']['contactPoint']['phone'] = '123-456-7890'
-    f['filing']['incorporationApplication']['parties'] = []
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing']['business']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
     for index, party in enumerate(parties):
@@ -441,11 +447,11 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, lega
                                             postal_code=party_ma['postalCode'],
                                             region=party_ma['region'])
         p = create_party(party['roles'], index + 1, mailing_addr, None)
-        f['filing']['incorporationApplication']['parties'].append(p)
+        filing_json['filing'][incorporation_application_name]['parties'].append(p)
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_mailing_address(f)
+        err = validate_parties_mailing_address(filing_json)
 
     # validate outcomes
     if expected_msg:
@@ -527,15 +533,17 @@ def test_validate_incorporation_share_classes(session, test_name,
                                               class_name_2, series_name_2,
                                               expected_code, expected_msg):
     """Assert that validator validates share class correctly."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
-    f['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    f['filing']['business']['legalType'] = 'BEN'
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = 'BC'
+    filing_json['filing']['business']['legalType'] = 'BEN'
 
-    share_structure = f['filing']['incorporationApplication']['shareStructure']
+    share_structure = filing_json['filing'][incorporation_application_name]['shareStructure']
 
     share_structure['shareClasses'][0]['name'] = class_name_1
     share_structure['shareClasses'][0]['hasMaximumShares'] = class_has_max_shares
@@ -557,7 +565,7 @@ def test_validate_incorporation_share_classes(session, test_name,
 
     # perform test
     with freeze_time(now):
-        err = validate(business, f)
+        err = validate(business, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -565,7 +573,6 @@ def test_validate_incorporation_share_classes(session, test_name,
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
-
 
 @pytest.mark.parametrize(
     'test_name, effective_date, expected_code, expected_msg',
@@ -585,26 +592,30 @@ def test_validate_incorporation_share_classes(session, test_name,
                 'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.'
             }])
     ])
+@not_github_ci
 def test_validate_incorporation_effective_date(session, test_name, effective_date, expected_code, expected_msg):
     """Assert that validator validates share class correctly."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing'].pop('business')
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1}
 
     if effective_date is not None:
-        f['filing']['header']['effectiveDate'] = effective_date
+        filing_json['filing']['header']['effectiveDate'] = effective_date
 
-    f['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
 
     # perform test
     with freeze_time(now):
-        err = validate(business, f)
+        err = validate(business, filing_json)
 
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
+        if err:
+            print(err, err.code, err.msg)
         assert err is None
 
 
@@ -648,41 +659,41 @@ def test_validate_incorporation_effective_date(session, test_name, effective_dat
     ])
 def test_validate_cooperative_documents(session, minio_server, test_name, key, scenario, expected_code, expected_msg):
     """Assert that validator validates cooperative documents correctly."""
-    f = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    f['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08', 'certifiedBy': 'full name',
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                              'email': 'no_one@never.get', 'filingId': 1}
-    f['filing']['business']['legalType'] = 'CP'
-    f['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(COOP_INCORPORATION)
 
     # Add minimum director requirements
-    director = f['filing']['incorporationApplication']['parties'][0]['roles'][1]
-    f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
-    f['filing']['incorporationApplication']['parties'][0]['roles'].append(director)
+    director = filing_json['filing'][incorporation_application_name]['parties'][0]['roles'][1]
+    filing_json['filing'][incorporation_application_name]['parties'][0]['roles'].append(director)
+    filing_json['filing'][incorporation_application_name]['parties'][0]['roles'].append(director)
 
     # Mock upload file for test scenarios
     if scenario:
         if scenario == 'success':
-            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
-            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
         if scenario == 'failRules':
-            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = scenario
-            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = scenario
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
         if scenario == 'failMemorandum':
-            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
-            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = scenario
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = scenario
         if scenario == 'invalidRulesSize':
-            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(legal)
-            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(legal)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
         if scenario == 'invalidMemorandumSize':
-            f['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = _upload_file(letter)
-            f['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = _upload_file(legal)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(legal)
     else:
         # Assign key and value to test empty variables for failures
         key_value = ''
-        f['filing']['incorporationApplication']['cooperative'][key] = key_value
+        filing_json['filing'][incorporation_application_name]['cooperative'][key] = key_value
 
     # perform test
-    err = validate(business, f)
+    err = validate(business, filing_json)
 
     # validate outcomes
     if expected_code:

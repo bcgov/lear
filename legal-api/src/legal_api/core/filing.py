@@ -335,7 +335,7 @@ class Filing:
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,
                 'commentsCount': filing.comments_count,
-                'displayName': FilingMeta.display_name(filing=filing),
+                'displayName': FilingMeta.display_name(business, filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
                 'isFutureEffective': (filing.effective_date

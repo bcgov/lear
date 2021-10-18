@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
+import re
 from contextlib import suppress
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final, MutableMapping, Optional
 
+from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
 from legal_api.utils.datetime import date
 
@@ -52,6 +54,12 @@ class ReportNames(AutoName):
     CERTIFIED_MEMORANDUM = auto()
     CERTIFIED_RULES = auto()
     NOTICE_OF_ARTICLES = auto()
+
+
+class FilingTitles(str, Enum):
+    """Enum of the system error codes."""
+
+    INCORPORATION_APPLICATION_DEFAULT = 'Incorporation Application'
 
 
 FILINGS: Final = {
@@ -128,8 +136,12 @@ FILINGS: Final = {
         'code': 'NOT_IMPLEMENTED_YET'},
     'incorporationApplication': {
         'name': 'incorporationApplication',
-        'title': 'Incorporation Application',
-        'displayName': 'Incorporation Application',
+        'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+        'displayName': {
+            'BC': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+            'BEN': 'BC Benefit Company Incorporation Application',
+            'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+        },
         'codes': {
             'BEN': 'BCINC'
         },
@@ -170,16 +182,30 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(filing: FilingStorage, full_name: bool = True) -> Optional[str]:
+    def display_name(business: Business, filing: FilingStorage, full_name: bool = True) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
-        name = FILINGS.get(filing.filing_type, {}).get('displayName', filing.filing_type)
+        # if there is no lookup
+        if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
+            return ' '.join(word.capitalize()
+                            for word in
+                            re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
+
+        if isinstance(names, MutableMapping):
+            name = names.get(business.legal_type)
+        else:
+            name = names
 
         if filing.filing_type in ('annualReport') and (year := FilingMeta.get_effective_display_year(filing.meta_data)):
             name = f'{name} ({year})'
 
-        if filing.filing_type in ('correction') and filing.meta_data:
+        elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                name = f'{name} - {FilingMeta.display_name(filing.children[0], False)}'
+                name = f'{name} - {FilingMeta.display_name(business, filing.children[0], False)}'
+
+        elif filing.filing_type in ('incorporationApplication') \
+            and filing.meta_data \
+                and (legal_name := filing.meta_data.get('incorporationApplication', {}).get('legalName')):
+            name = f'{name} - {legal_name}'
 
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
@@ -189,8 +215,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
         """Render a year as a string, given all filing mechanisms."""
         with suppress(IndexError, KeyError, TypeError):
-            application_date = filing_meta_data['applicationDate']
-            return str(date.fromisoformat(application_date).year)
+            report_date = filing_meta_data['annualReport']['annualReportDate']
+            return str(date.fromisoformat(report_date).year)
         return None
 
     @staticmethod

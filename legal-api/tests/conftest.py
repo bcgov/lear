@@ -14,7 +14,7 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import datetime
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 import pytest
 from flask_migrate import Migrate, upgrade
@@ -114,9 +114,12 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         metadata.reflect()
         for table in metadata.tables.values():
             for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                _db.engine.execute(DropConstraint(fk.constraint))
-        metadata.drop_all()
-        _db.drop_all()
+                with suppress(Exception):
+                    _db.engine.execute(DropConstraint(fk.constraint))
+        with suppress(Exception):
+            metadata.drop_all()
+        with suppress(Exception):
+            _db.drop_all()
 
         sequence_sql = """SELECT sequence_name FROM information_schema.sequences
                           WHERE sequence_schema='public'
@@ -124,11 +127,9 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         sess = _db.session()
         for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            try:
+            with suppress(Exception):
                 sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
                 print('DROP SEQUENCE public.%s ' % seq)
-            except Exception as err:  # pylint: disable=broad-except
-                print(f'Error: {err}')
         sess.commit()
 
         # ############################################
@@ -193,5 +194,6 @@ def stan_server(docker_services):
 def minio_server(docker_services):
     """Create the minio services that the integration tests will use."""
     docker_services.start('minio')
-    docker_services.wait_for_service('minio', 9000)
+    with suppress(Exception):
+        docker_services.wait_for_service('minio', 9000)
     time.sleep(10)
