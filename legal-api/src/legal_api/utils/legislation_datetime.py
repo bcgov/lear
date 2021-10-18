@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Legislation Date time utilities."""
-import datetime
-
 import datedelta
 import pytz
 from dateutil.tz import gettz
 from flask import current_app
+
+from .datetime import date, datetime, timezone
 
 
 class LegislationDatetime():
@@ -26,16 +26,16 @@ class LegislationDatetime():
     @staticmethod
     def now() -> datetime:
         """Construct a datetime using the legislation timezone."""
-        return datetime.datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        return datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
     def tomorrow_midnight() -> datetime:
         """Construct a datetime tomorrow midnight using the legislation timezone."""
-        date = datetime.datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
-        date += datedelta.datedelta(days=1)
-        date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        _date = datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        _date += datedelta.datedelta(days=1)
+        _date = _date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        return date
+        return _date
 
     @staticmethod
     def as_legislation_timezone(date_time: datetime) -> datetime:
@@ -43,9 +43,9 @@ class LegislationDatetime():
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
-    def as_legislation_timezone_from_date(_date: datetime.date) -> datetime.date:
+    def as_legislation_timezone_from_date(_date: date) -> date:
         """Return a datetime adjusted to the legislation timezone from a date object."""
-        return datetime.datetime(
+        return datetime(
             _date.year, _date.month, _date.day, tzinfo=gettz(current_app.config.get('LEGISLATIVE_TIMEZONE'))
         )
 
@@ -66,11 +66,11 @@ class LegislationDatetime():
     @staticmethod
     def format_as_legislation_date(date_string: str) -> str:
         """Return the date in legislation timezone as a string."""
-        date_time = datetime.datetime.fromisoformat(date_string)
+        date_time = datetime.fromisoformat(date_string)
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))).strftime('%Y-%m-%d')
 
     @staticmethod
     def is_future(date_string: str) -> bool:
         """Return the boolean for whether the date string is in the future."""
-        effective_date = datetime.datetime.fromisoformat(date_string)
-        return effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        effective_date = datetime.fromisoformat(date_string)
+        return effective_date > datetime.utcnow().replace(tzinfo=timezone.utc)

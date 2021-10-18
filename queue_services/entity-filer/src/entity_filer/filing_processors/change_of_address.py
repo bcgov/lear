@@ -27,6 +27,8 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     # offices = json.loads(offices_array)
     offices = filing['changeOfAddress']['offices']
 
+    business.last_coa_date = filing_meta.application_date
+
     for item in offices.keys():
         office = business.offices.filter_by(office_type=item).one_or_none()
         for k, new_address in offices[item].items():
