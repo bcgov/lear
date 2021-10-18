@@ -17,6 +17,7 @@ from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
+import json
 from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
@@ -422,16 +423,19 @@ class Filing:
         if filing.status in (
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
-        ) and (
-            filing.storage.meta_data and (legal_filings := filing.storage.meta_data.get('legalFilings'))
-        ):
-            documents['documents']['legalFilings'] = \
-                [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
+        ) and filing.storage.meta_data:
+            meta = filing.storage.meta_data
+            if isinstance(meta, str):
+                meta = json.loads(meta)
 
-            # get extra outputs
-            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
-            additional = set([item for sublist in adds for item in sublist])
-            for doc in additional:
-                documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
+            if legal_filings := meta.get('legalFilings'):
+                documents['documents']['legalFilings'] = \
+                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
+
+                # get extra outputs
+                adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+                additional = set([item for sublist in adds for item in sublist])
+                for doc in additional:
+                    documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
         return documents
