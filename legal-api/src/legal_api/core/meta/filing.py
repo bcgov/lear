@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
+import json
 import re
 from contextlib import suppress
 from enum import Enum, auto
@@ -202,10 +203,12 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             with suppress(Exception):
                 name = f'{name} - {FilingMeta.display_name(business, filing.children[0], False)}'
 
-        elif filing.filing_type in ('incorporationApplication') \
-            and filing.meta_data \
-                and (legal_name := filing.meta_data.get('incorporationApplication', {}).get('legalName')):
-            name = f'{name} - {legal_name}'
+        elif filing.filing_type in ('incorporationApplication') and filing.meta_data:
+            meta = filing.meta_data
+            if isinstance(meta, str):
+                meta = json.loads(meta)
+            if legal_name := meta.get('incorporationApplication', {}).get('legalName'):
+                name = f'{name} - {legal_name}'
 
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
