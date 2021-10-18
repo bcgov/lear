@@ -24,7 +24,10 @@ from entity_filer.filing_processors.filing_components import create_party, creat
 
 def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylint: disable=too-many-branches;
     """Render the change_of_directors onto the business model objects."""
-    new_directors = filing['changeOfDirectors'].get('directors')
+    if not (new_directors := filing['changeOfDirectors'].get('directors')):
+        return
+
+    business.last_cod_date = filing_meta.application_date
     new_director_names = []
 
     for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
