@@ -205,7 +205,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
-            filing_submission._meta_data = json.dumps(filing_meta.asjson, default=json_serial)  # pylint: disable=W0212
+            filing_submission._meta_data = json.loads(  # pylint: disable=W0212
+                                                      json.dumps(filing_meta.asjson, default=json_serial)
+                                                     )
 
             db.session.add(business)
             db.session.add(filing_submission)

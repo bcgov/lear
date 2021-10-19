@@ -323,7 +323,7 @@ def test_ledger_display_incorporation(session, client, jwt):
 
     # validate
     assert rv.json['filings']
-    assert rv.json['filings'][0]['displayName'] == f'BC Benefit Company Incorporation Application - {business_name}'
+    assert rv.json['filings'][0]['displayName'] == f'BC Benefit Company Incorporation Application'
 
 
 def test_ledger_display_corrected_incorporation(session, client, jwt):
