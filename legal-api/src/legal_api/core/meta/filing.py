@@ -203,13 +203,6 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             with suppress(Exception):
                 name = f'{name} - {FilingMeta.display_name(business, filing.children[0], False)}'
 
-        elif filing.filing_type in ('incorporationApplication') and filing.meta_data:
-            meta = filing.meta_data
-            if isinstance(meta, str):
-                meta = json.loads(meta)
-            if legal_name := meta.get('incorporationApplication', {}).get('legalName'):
-                name = f'{name} - {legal_name}'
-
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
         return name

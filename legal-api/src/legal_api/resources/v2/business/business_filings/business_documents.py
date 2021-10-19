@@ -66,12 +66,13 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
 
     if not legal_filing_name:
         return _get_document_list(business, filing)
-
-    if legal_filing_name and str(request.accept_mimetypes) == 'application/pdf':
+    
+    if legal_filing_name and ('application/pdf' in request.accept_mimetypes):
         if legal_filing_name.lower().startswith('receipt'):
             return _get_receipt(business, filing, jwt.get_token_auth_header())
 
-        return get_pdf(filing.storage, legal_filing_name.lower())
+        return get_pdf(filing.storage, legal_filing_name)
+        # return get_pdf(filing.storage, legal_filing_name.lower())
 
     return {}, HTTPStatus.NOT_FOUND
 
