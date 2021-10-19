@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
-import json
 import re
 from contextlib import suppress
 from enum import Enum, auto
