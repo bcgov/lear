@@ -72,7 +72,6 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             return _get_receipt(business, filing, jwt.get_token_auth_header())
 
         return get_pdf(filing.storage, legal_filing_name)
-        # return get_pdf(filing.storage, legal_filing_name.lower())
 
     return {}, HTTPStatus.NOT_FOUND
 
