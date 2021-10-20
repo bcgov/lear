@@ -121,6 +121,10 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
+    print("Processing Callback Msg: %s", msg )
+   
+    return
+
     """Use Callback to process Queue Msg objects."""
     try:
         logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
