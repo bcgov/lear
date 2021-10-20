@@ -20,7 +20,7 @@ from enum import Enum
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
-from .party import Party  # noqa: I001,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class PartyRole(db.Model):
@@ -30,6 +30,7 @@ class PartyRole(db.Model):
         """Render an Enum of the role types."""
 
         CUSTODIAN = 'custodian'
+        LIQUIDATOR = 'liquidator'
         COMPLETING_PARTY = 'completing_party'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'

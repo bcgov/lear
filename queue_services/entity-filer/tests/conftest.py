@@ -23,10 +23,12 @@ from contextlib import contextmanager
 import pytest
 import requests
 from flask import Flask, current_app
-from legal_api import db
+from flask_migrate import Migrate, upgrade
+from legal_api import db as _db
 from legal_api import jwt as _jwt
 from nats.aio.client import Client as Nats
 from sqlalchemy import event, text
+from sqlalchemy.schema import DropConstraint, MetaData
 from stan.aio.client import Client as Stan
 
 from entity_filer.config import get_named_config
@@ -64,7 +66,7 @@ def app():
     # _app = create_app('testing')
     _app = Flask(__name__)
     _app.config.from_object(get_named_config('testing'))
-    db.init_app(_app)
+    _db.init_app(_app)
 
     return _app
 
@@ -134,9 +136,53 @@ def client_id():
 
     return f'client-{_id}'
 
+@pytest.fixture(scope='session')
+def db(app):  # pylint: disable=redefined-outer-name, invalid-name
+    """Return a session-wide initialised database.
+
+    Drops all existing tables - Meta follows Postgres FKs
+    """
+    with app.app_context():
+        # Clear out any existing tables
+        metadata = MetaData(_db.engine)
+        metadata.reflect()
+        for table in metadata.tables.values():
+            for fk in table.foreign_keys:  # pylint: disable=invalid-name
+                _db.engine.execute(DropConstraint(fk.constraint))
+        metadata.drop_all()
+        _db.drop_all()
+
+        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
+                          WHERE sequence_schema='public'
+                       """
+
+        sess = _db.session()
+        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
+            try:
+                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
+                print('DROP SEQUENCE public.%s ' % seq)
+            except Exception as err:  # pylint: disable=broad-except
+                print(f'Error: {err}')
+        sess.commit()
+
+        # ############################################
+        # There are 2 approaches, an empty database, or the same one that the app will use
+        #     create the tables
+        #     _db.create_all()
+        # or
+        # Use Alembic to load all of the DB revisions including supporting lookup data
+        # This is the path we'll use in legal_api!!
+
+        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
+        legal_api_dir = os.path.abspath('..').replace('queue_services', 'legal-api')
+        legal_api_dir = os.path.join(legal_api_dir, 'migrations')
+        Migrate(app, _db, directory=legal_api_dir)
+        upgrade()
+
+        return _db
 
 @pytest.fixture(scope='function')
-def session(app):  # pylint: disable=redefined-outer-name, invalid-name
+def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
         conn = db.engine.connect()
@@ -247,3 +293,11 @@ def create_mock_coro(mocker, monkeypatch):
         return mock, _coro
 
     return _create_mock_patch_coro
+
+
+@pytest.fixture(scope='session')
+def minio_server(docker_services):
+    """Create the minio services that the integration tests will use."""
+    docker_services.start('minio')
+    docker_services.wait_for_service('minio', 9000)
+    time.sleep(10)

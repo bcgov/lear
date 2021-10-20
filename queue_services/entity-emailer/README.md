@@ -13,7 +13,7 @@ BC Registries Names Entity Filer Service
 
 ## Project Status
 
-## Documnentation
+## Documentation
 
 ## Security
 

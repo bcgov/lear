@@ -57,3 +57,12 @@ integration_namerequests = pytest.mark.skipif((os.getenv('RUN_NAMEREQUESTS_TESTS
 
 not_github_ci = pytest.mark.skipif((os.getenv('NOT_GITHUB_CI', False) is False),
                                    reason='Does not pass on github ci.')
+
+todo_tech_debt = pytest.mark.skipif((os.getenv('TECH_DEBT', False) is False),
+                                   reason='Does not run tech debt tests.')
+
+api_v1 = pytest.mark.skipif((os.getenv('API_V1', False) is False),
+                                   reason='Version 1 of API.')
+
+api_v2 = pytest.mark.skipif((os.getenv('API_V2', False) is False),
+                                   reason='Version 2 of API.')

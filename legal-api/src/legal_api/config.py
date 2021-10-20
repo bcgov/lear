@@ -60,10 +60,12 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://')
+    LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
+    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://PAYMENT_BASE/api/v1/payment-request')
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
     REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
@@ -95,6 +97,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     JWT_OIDC_AUDIENCE = os.getenv('JWT_OIDC_AUDIENCE')
     JWT_OIDC_CLIENT_SECRET = os.getenv('JWT_OIDC_CLIENT_SECRET')
     JWT_OIDC_CACHING_ENABLED = os.getenv('JWT_OIDC_CACHING_ENABLED')
+    JWT_OIDC_USERNAME = os.getenv('JWT_OIDC_USERNAME', 'username')
+    JWT_OIDC_FIRSTNAME = os.getenv('JWT_OIDC_FIRSTNAME', 'firstname')
+    JWT_OIDC_LASTNAME = os.getenv('JWT_OIDC_LASTNAME', 'lastname')
     try:
         JWT_OIDC_JWKS_CACHE_TIMEOUT = int(os.getenv('JWT_OIDC_JWKS_CACHE_TIMEOUT'))
         if not JWT_OIDC_JWKS_CACHE_TIMEOUT:
@@ -125,6 +130,13 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+
+    # Minio configuration values
+    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
+    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
+    MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
+    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
+    MINIO_SECURE = True
 
     TESTING = False
     DEBUG = False
@@ -212,6 +224,13 @@ W0mOp436T6ZaELBfbFNulNLOzLLi5YzNRPLppfG1SRNZjbIrvTIKVL4N/YxLvQbT
 NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 4H8UZcVFN95vEKxJiLRjAmj6g273pu9kK4ymXNEjWWJn
 -----END RSA PRIVATE KEY-----"""
+
+    # Minio variables
+    MINIO_ENDPOINT = 'localhost:9000'
+    MINIO_ACCESS_KEY = 'minio'
+    MINIO_ACCESS_SECRET = 'minio123'
+    MINIO_BUCKET_BUSINESSES = 'businesses'
+    MINIO_SECURE = False
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

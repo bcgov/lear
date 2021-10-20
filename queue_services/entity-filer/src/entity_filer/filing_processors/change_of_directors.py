@@ -18,12 +18,16 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, PartyRole
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_party, create_role, update_director
 
 
-def process(business: Business, filing: Dict):  # pylint: disable=too-many-branches;
+def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylint: disable=too-many-branches;
     """Render the change_of_directors onto the business model objects."""
-    new_directors = filing['changeOfDirectors'].get('directors')
+    if not (new_directors := filing['changeOfDirectors'].get('directors')):
+        return
+
+    business.last_cod_date = filing_meta.application_date
     new_director_names = []
 
     for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;

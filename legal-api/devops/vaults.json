@@ -6,6 +6,13 @@
         ]
     },
     {
+        "vault": "minio",
+        "application": [
+            "base",
+            "lear"
+        ]
+    },
+    {
         "vault": "entity",
         "application": [
             "jwt",

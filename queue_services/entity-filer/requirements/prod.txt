@@ -9,3 +9,6 @@ asyncio-nats-streaming
 pycountry
 attr
 Werkzeug
+minio
+PyPDF2
+reportlab

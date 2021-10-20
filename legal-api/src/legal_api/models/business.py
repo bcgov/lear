@@ -24,17 +24,18 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
-from .address import Address  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
-from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
+from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -45,12 +46,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
+    # NB: commented out items that exist in namex but are not yet supported by Lear
     class LegalTypes(Enum):
         """Render an Enum of the Business Legal Types."""
 
-        COOP = 'CP'
-        BCOMP = 'BEN'
-        COMP = 'BC'
+        COOP = 'CP'  # aka COOPERATIVE in namex
+        BCOMP = 'BEN'  # aka BENEFIT_COMPANY in namex
+        COMP = 'BC'  # aka CORPORATION in namex
         CONTINUE_IN = 'C'
         CO_1860 = 'QA'
         CO_1862 = 'QB'
@@ -64,6 +66,40 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         ULC_CO_1878 = 'UQC'
         ULC_CO_1890 = 'UQD'
         ULC_CO_1897 = 'UQE'
+        BC_CCC = 'CC'
+        EXTRA_PRO_A = 'A'
+        EXTRA_PRO_B = 'B'
+        CEMETARY = 'CEM'
+        EXTRA_PRO_REG = 'EPR'
+        FOREIGN = 'FOR'
+        LICENSED = 'LIC'
+        LIBRARY = 'LIB'
+        LIMITED_CO = 'LLC'
+        PRIVATE_ACT = 'PA'
+        PARISHES = 'PAR'
+        PENS_FUND_SOC = 'PFS'
+        REGISTRATION = 'REG'
+        RAILWAYS = 'RLY'
+        SOCIETY_BRANCH = 'SB'
+        TRUST = 'T'
+        TRAMWAYS = 'TMY'
+        XPRO_COOP = 'XCP'
+        CCC_CONTINUE_IN = 'CCC'
+        SOCIETY = 'S'
+        XPRO_SOCIETY = 'XS'
+        SOLE_PROP = 'SP'
+        PARTNERSHIP = 'GP'
+        LIM_PARTNERSHIP = 'LP'
+        XPRO_LIM_PARTNR = 'XP'
+        LL_PARTNERSHIP = 'LL'
+        XPRO_LL_PARTNR = 'XL'
+        MISC_FIRM = 'MF'
+        FINANCIAL = 'FI'
+        CONT_IN_SOCIETY = 'CS'
+        # *** The following are not yet supported by legal-api: ***
+        # DOING_BUSINESS_AS = 'DBA'
+        # XPRO_CORPORATION = 'XCR'
+        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,
@@ -81,8 +117,39 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                                   LegalTypes.ULC_CO_1890,
                                   LegalTypes.ULC_CO_1897]
 
+    class AssociationTypes(Enum):
+        """Render an Enum of the Business Association Types."""
+
+        CP_COOPERATIVE = 'CP'
+        CP_HOUSING_COOPERATIVE = 'HC'
+        CP_COMMUNITY_SERVICE_COOPERATIVE = 'CSC'
+
     __versioned__ = {}
     __tablename__ = 'businesses'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'association_type',
+            'dissolution_date',
+            'fiscal_year_end_date',
+            'founding_date',
+            'identifier',
+            'last_agm_date',
+            'last_ar_date',
+            'last_ar_year',
+            'last_coa_date',
+            'last_cod_date',
+            'last_ledger_id',
+            'last_ledger_timestamp',
+            'last_modified',
+            'last_remote_ledger_id',
+            'legal_name',
+            'legal_type',
+            'restriction_ind',
+            'submitter_userid',
+            'tax_id'
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -91,6 +158,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
     last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True))
     last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
+    last_coa_date = db.Column('last_coa_date', db.DateTime(timezone=True))
+    last_cod_date = db.Column('last_cod_date', db.DateTime(timezone=True))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -100,6 +169,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
+    association_type = db.Column('association_type', db.String(50))
 
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
@@ -111,6 +181,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
+    documents = db.relationship('Document', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -133,6 +204,30 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             last_anniversary = self.last_ar_date
 
         return last_anniversary + datedelta.datedelta(years=1)
+
+    def get_ar_dates(self, next_ar_year):
+        """Get ar min and max date for the specific year."""
+        ar_min_date = datetime(next_ar_year, 1, 1).date()
+        ar_max_date = datetime(next_ar_year, 12, 31).date()
+
+        if self.legal_type == self.LegalTypes.COOP.value:
+            # This could extend by moving it into a table with start and end date against each year when extension
+            # is required. We need more discussion to understand different scenario's which can come across in future.
+            if next_ar_year == 2020:
+                # For year 2020, set the max date as October 31th next year (COVID extension).
+                ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
+            else:
+                # If this is a CO-OP, set the max date as April 30th next year.
+                ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
+        elif self.legal_type == self.LegalTypes.BCOMP.value:
+            # For BCOMP min date is next anniversary date.
+            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
+            ar_max_date = ar_min_date + datedelta.datedelta(days=60)
+
+        if ar_max_date > datetime.utcnow().date():
+            ar_max_date = datetime.utcnow().date()
+
+        return ar_min_date, ar_max_date
 
     @property
     def mailing_address(self):
@@ -183,24 +278,37 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
+        ar_min_date, ar_max_date = self.get_ar_dates(
+            (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        )
         d = {
+            'arMinDate': ar_min_date.isoformat(),
+            'arMaxDate': ar_max_date.isoformat(),
             'foundingDate': self.founding_date.isoformat(),
+            'goodStanding': self.good_standing,
+            'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
-            'lastModified': self.last_modified.isoformat(),
-            'lastAnnualReport': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'nextAnnualReport': self.next_anniversary.isoformat(),
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
+            'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
+            'lastAddressChangeDate': '',
+            'lastDirectorChangeDate': '',
+            'lastModified': self.last_modified.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
-            'hasRestrictions': self.restriction_ind,
-            'goodStanding': self.good_standing
+            'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
+                self.next_anniversary
+            ).astimezone(timezone.utc).isoformat(),
         }
-        # if self.last_remote_ledger_timestamp:
-        #     # this is not a typo, we want the external facing view object ledger timestamp to be the remote one
-        #     d['last_ledger_timestamp'] = self.last_remote_ledger_timestamp.isoformat()
-        # else:
-        #     d['last_ledger_timestamp'] = None
+
+        if self.last_coa_date:
+            d['lastAddressChangeDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.last_coa_date)
+                ).isoformat()
+        if self.last_cod_date:
+            d['lastDirectorChangeDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.last_cod_date)
+                ).isoformat()
 
         if self.dissolution_date:
             d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
@@ -290,3 +398,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             return False
 
         return True
+
+
+ASSOCIATION_TYPE_DESC: Final = {
+    Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
+    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative'
+}

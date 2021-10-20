@@ -13,8 +13,10 @@
 # limitations under the License.
 """Tests to assure the Filing Diff is working as expected."""
 import copy
+from typing import Final
 
 import datedelta
+import pytest
 
 from legal_api.core import Filing
 from legal_api.utils.datetime import datetime
@@ -23,6 +25,8 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
 )
+
+RESOLUTION_PATH: Final = '/filing/specialResolution/resolution'
 
 
 MINIMAL_FILING_JSON = {'filing': {
@@ -64,12 +68,24 @@ CORRECTION_FILING_JSON = {'filing': {
 }}
 
 
-def test_filing_json_diff():
-    """Assert the diff works on a sample filing structure."""
+@pytest.mark.parametrize('test_name, diff_value_test, value', [
+    ('Sample filing structure', False, None),
+    ('None diff values', True, None),
+    ('False diff values', True, False),
+    ('True diff values', True, True)
+])
+def test_filing_json_diff(test_name, diff_value_test, value):
+    """Assert the diff works on filing."""
     from legal_api.core.utils import diff_dict, diff_list
 
-    diff = diff_dict(CORRECTION_FILING_JSON,
-                     MINIMAL_FILING_JSON,
+    json1 = copy.deepcopy(MINIMAL_FILING_JSON)
+    json2 = copy.deepcopy(CORRECTION_FILING_JSON)
+    if diff_value_test:
+        json1['filing']['specialResolution']['meetingDate'] = value
+        json2['filing']['specialResolution']['meetingDate'] = value
+
+    diff = diff_dict(json2,
+                     json1,
                      ignore_keys=['header', 'business', 'correction'],
                      diff_list_callback=diff_list)
 
@@ -78,7 +94,7 @@ def test_filing_json_diff():
     assert ld == [{
         'newValue': 'Be it resolved, and now it is.',
         'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-        'path': '/filing/specialResolution/resolution'}]
+        'path': RESOLUTION_PATH}]
 
 
 def test_diff_of_stored_completed_filings(session):
@@ -103,5 +119,5 @@ def test_diff_of_stored_completed_filings(session):
         {
             'newValue': 'Be it resolved, and now it is.',
             'oldValue': 'Be it resolved, that it is resolved to be resolved.',
-            'path': '/filing/specialResolution/resolution'
+            'path': RESOLUTION_PATH
         }]

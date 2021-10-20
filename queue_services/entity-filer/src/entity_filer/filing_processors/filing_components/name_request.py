@@ -27,10 +27,9 @@ from legal_api.services.utils import get_str
 def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorporationApplication/nameRequest/nrNumber'):
     """Update the nr to a consumed state."""
     try:
-        nr_num = get_str(filing.filing_json, nr_num_path)
         # skip this if none (nrNumber will not be available for numbered company)
-        if nr_num:
-            bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+        if nr_num := get_str(filing.filing_json, nr_num_path):
+
             namex_svc_url = current_app.config.get('NAMEX_API')
             token = AccountService.get_bearer_token()
 
@@ -47,11 +46,18 @@ def consume_nr(business: Business, filing: Filing, nr_num_path='/filing/incorpor
                 raise QueueException
 
             # remove the NR from the account
-            AccountService.delete_affiliation(bootstrap.account, nr_num)
+            if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
+                AccountService.delete_affiliation(bootstrap.account, nr_num)
     except KeyError:
         pass  # return
     except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
+
+
+def set_legal_name(business: Business, name_request_info: dict):
+    """Set the legal_name in the business object."""
+    if legal_name := name_request_info.get('legalName', None):
+        business.legal_name = legal_name
 
 
 def has_new_nr_for_correction(filing: dict):

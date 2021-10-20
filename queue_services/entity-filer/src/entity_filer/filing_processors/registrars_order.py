@@ -16,22 +16,17 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
-from legal_api.models import Comment, Filing
+from legal_api.models import Filing
+
+from entity_filer.filing_meta import FilingMeta
 
 
-def process(registrars_order_filing: Filing, filing: Dict):
+def process(registrars_order_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the registrars order filing into the business model objects."""
     registrars_order_filing.court_order_file_number = filing['registrarsOrder'].get('fileNumber')
     registrars_order_filing.court_order_effect_of_order = filing['registrarsOrder'].get('effectOfOrder')
+    registrars_order_filing.order_details = filing['registrarsOrder']['orderDetails']
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
         registrars_order_filing.court_order_date = datetime.fromisoformat(
             filing['registrarsOrder'].get('orderDate'))
-
-    # add comment to the registrars order filing
-    registrars_order_filing.comments.append(
-        Comment(
-            comment=filing['registrarsOrder']['orderDetails'],
-            staff_id=registrars_order_filing.submitter_id
-        )
-    )

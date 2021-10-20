@@ -37,6 +37,7 @@ class NameXService():
         CANCELLED = 'CANCELLED'
         COMPLETED = 'COMPLETED'
         CONDITIONAL = 'CONDITIONAL'
+        CONSUMED = 'CONSUMED'
         DRAFT = 'DRAFT'
         EXPIRED = 'EXPIRED'
         HISTORICAL = 'HISTORICAL'
@@ -122,37 +123,29 @@ class NameXService():
         consent_received = None
         nr_state = nr_json['state']
 
-        if nr_json['expirationDate']:
-            expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
-            if expiration_date < datetime.today().replace(tzinfo=pytz.utc):
-                is_expired = True
-
-        # Not consumable and not approved
-        if nr_state not in (NameXService.State.APPROVED.value, NameXService.State.CONDITIONAL.value):
-            is_consumable = False
-            is_approved = False
-
         # Is approved
-        elif nr_state == NameXService.State.APPROVED.value:
+        if nr_state == NameXService.State.APPROVED.value:
             is_approved = True
-            consumed = False
-            # Approved, but check if it has been consumed
-            for name in nr_json['names']:
-                # Already consumed
-                if name['consumptionDate']:
-                    consumed = True
-            if not consumed:
-                is_consumable = True
+            is_consumable = True
 
         # Is conditionally approved
         elif nr_state == NameXService.State.CONDITIONAL.value:
             is_approved = True
             consent_required = True
             consent_received = False
+
             # Check if consent received
+            # Y = consent required and not received, R = consent required and received
+            # N = consent waived, None = consent not required
             if nr_json['consentFlag'] == 'R':
                 consent_received = True
                 is_consumable = True
+            elif nr_json['consentFlag'] == 'N' or not nr_json['consentFlag']:
+                consent_required = False
+                is_consumable = True
+
+        elif nr_state == NameXService.State.EXPIRED.value:
+            is_expired = True
 
         return {
             'is_consumable': is_consumable,
@@ -179,9 +172,9 @@ class NameXService():
         nr_state = nr_json['state']
 
         if nr_state == NameXService.State.APPROVED.value:
-            state_to_check = nr_state
+            state_to_check = 'APPROVED'
         elif nr_state == NameXService.State.CONDITIONAL.value:
-            state_to_check = nr_state
+            state_to_check = 'CONDITION'  # Name state is different from NR state
         else:  # When NR is not approved
             return None
 

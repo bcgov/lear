@@ -42,4 +42,4 @@ async def test_worker_registrars_order(app, session):
     final_filing = Filing.find_by_id(filing_id)
     assert filing['filing']['registrarsOrder']['fileNumber'] == final_filing.court_order_file_number
     assert filing['filing']['registrarsOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing['filing']['registrarsOrder']['orderDetails'] == final_filing.comments.first().comment
+    assert filing['filing']['registrarsOrder']['orderDetails'] == final_filing.order_details

@@ -18,6 +18,11 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
 
 from .filing import Filing
+from .meta import FILINGS, FilingMeta
 
 
-__all__ = ('Filing')
+__all__ = (
+    'FILINGS',
+    'Filing',
+    'FilingMeta',
+)

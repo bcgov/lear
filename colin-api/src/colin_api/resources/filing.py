@@ -25,7 +25,7 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business
 from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
-from colin_api.utils import convert_to_pacific_time
+from colin_api.utils import convert_to_utc_datetime
 from colin_api.utils.util import cors_preflight
 
 
@@ -123,7 +123,10 @@ class FilingInfo(Resource):
                     'annualReport': json_data.get('annualReport', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
                     'alteration': json_data.get('alteration', None),
-                    'transition': json_data.get('transition', None)
+                    'transition': json_data.get('transition', None),
+                    'registrarsNotation': json_data.get('registrarsNotation', None),
+                    'registrarsOrder': json_data.get('registrarsOrder', None),
+                    'courtOrder': json_data.get('courtOrder', None)
                 }
 
             # Filter out null-values in the filing_list dictionary
@@ -183,7 +186,7 @@ class FilingInfo(Resource):
             filing.filing_type = filing_type
             filing.body = filing_list[filing_type]
             # get utc lear effective date and convert to pacific time for insert into oracle
-            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
+            filing.effective_date = convert_to_utc_datetime(filing.header['learEffectiveDate'])
 
             if filing_type != 'incorporationApplication':
                 filing.business = Business.find_by_identifier(identifier, corp_types, con)

@@ -45,6 +45,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
 
 from entity_filer import config
+from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
     alteration,
     annual_report,
@@ -54,11 +55,11 @@ from entity_filer.filing_processors import (
     conversion,
     correction,
     court_order,
+    dissolution,
     incorporation_filing,
     registrars_notation,
     registrars_order,
     transition,
-    voluntary_dissolution,
 )
 from entity_filer.filing_processors.filing_components import name_request
 
@@ -136,62 +137,77 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
         filing_submission = filing_core_submission.storage
 
-        if filing_core_submission.status == Filing.Status.COMPLETED.value:
+        if filing_core_submission.status == Filing.Status.COMPLETED:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
-        if legal_filings := filing_core_submission.legal_filings():
+        # convenience flag to set that the envelope is a correction
+        is_correction = (filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION)
+
+        if legal_filings := filing_core_submission.legal_filings(with_diff=False):
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
+            filing_meta = FilingMeta(application_date=filing_submission.effective_date,
+                                     legal_filings=[item for sublist in
+                                                    [list(x.keys()) for x in legal_filings]
+                                                    for item in sublist])
+
             for filing in legal_filings:
                 if filing.get('alteration'):
-                    alteration.process(business, filing_submission, filing)
+                    alteration.process(business, filing_submission, filing, filing_meta, is_correction)
 
-                if filing.get('annualReport'):
-                    annual_report.process(business, filing)
+                elif filing.get('annualReport'):
+                    annual_report.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfAddress'):
-                    change_of_address.process(business, filing)
+                    change_of_address.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfDirectors'):
                     filing['colinIds'] = filing_submission.colin_event_ids
-                    change_of_directors.process(business, filing)
+                    change_of_directors.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfName'):
-                    change_of_name.process(business, filing)
+                    change_of_name.process(business, filing, filing_meta)
 
-                elif filing.get('voluntaryDissolution'):
-                    voluntary_dissolution.process(business, filing)
+                elif filing.get('dissolution'):
+                    dissolution.process(business, filing, filing_meta)
 
                 elif filing.get('incorporationApplication'):
-                    business, filing_submission = incorporation_filing.process(business,
-                                                                               filing_core_submission.json,
-                                                                               filing_submission)
+                    business, filing_submission, filing_meta = incorporation_filing.process(business,
+                                                                                            filing_core_submission.json,
+                                                                                            filing_submission,
+                                                                                            filing_meta)
 
                 elif filing.get('conversion'):
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
-                                                                     filing_submission)
+                                                                     filing_submission,
+                                                                     filing_meta)
 
                 elif filing.get('courtOrder'):
-                    court_order.process(filing_submission, filing)
+                    court_order.process(filing_submission, filing, filing_meta)
+
                 elif filing.get('registrarsNotation'):
-                    registrars_notation.process(filing_submission, filing)
+                    registrars_notation.process(filing_submission, filing, filing_meta)
+
                 elif filing.get('registrarsOrder'):
-                    registrars_order.process(filing_submission, filing)
+                    registrars_order.process(filing_submission, filing, filing_meta)
 
-                if filing.get('correction'):
-                    filing_submission = correction.process(filing_submission, filing)
+                elif filing.get('correction'):
+                    filing_submission = correction.process(filing_submission, filing, filing_meta)
 
-                if filing.get('transition'):
-                    filing_submission = transition.process(business, filing_submission, filing)
+                elif filing.get('transition'):
+                    filing_submission = transition.process(business, filing_submission, filing, filing_meta)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
+            filing_submission._meta_data = json.loads(  # pylint: disable=W0212
+                                                      json.dumps(filing_meta.asjson, default=json_serial)
+                                                     )
 
             db.session.add(business)
             db.session.add(filing_submission)
@@ -199,9 +215,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
-                if name_request.has_new_nr_for_alteration(business, filing_submission.filing_json):
-                    name_request.consume_nr(business, filing_submission, '/filing/alteration/nameRequest/nrNumber')
-                alteration.post_process(business, filing_submission)
+
+                alteration.post_process(business, filing_submission, correction)
                 db.session.add(business)
                 db.session.commit()
                 AccountService.update_entity(
@@ -253,6 +268,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 await publish_event(business, filing_submission)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
+                print(err)
                 capture_message(
                     f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
                     f'on Queue with error:{err}',

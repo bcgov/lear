@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Suite to ensure the worker routines are working as expected."""
 import asyncio
+import copy
 
 import pytest
 
@@ -25,7 +26,8 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     # Call back for the subscription
     from entity_filer.worker import cb_subscription_handler
     from legal_api.models import Business, Filing
-    from tests.unit import create_filing, AR_FILING, create_business
+    from registry_schemas.example_data import ANNUAL_REPORT
+    from tests.unit import create_filing, create_business
 
     # vars
     identifier = 'CP1234567'
@@ -33,7 +35,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     # setup
     business = create_business(identifier)
     business_id = business.id
-    filing = create_filing('test_pay_id', AR_FILING, business.id)
+    filing = create_filing('test_pay_id', ANNUAL_REPORT, business.id)
     filing_id = filing.id
 
     # register the handler to test it

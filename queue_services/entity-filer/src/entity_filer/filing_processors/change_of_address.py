@@ -16,15 +16,18 @@ from typing import Dict
 
 from legal_api.models import Business
 
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_address, update_address
 
 
-def process(business: Business, filing: Dict):
+def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     """Render the change_of_address onto the business model objects."""
     # offices_array = json.dumps(filing['changeOfAddress']['offices'])
     # Only retrieve the offices component from the filing json
     # offices = json.loads(offices_array)
     offices = filing['changeOfAddress']['offices']
+
+    business.last_coa_date = filing_meta.application_date
 
     for item in offices.keys():
         office = business.offices.filter_by(office_type=item).one_or_none()

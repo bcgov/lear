@@ -22,6 +22,7 @@ from legal_api.models import Business, Filing
 from registry_schemas.example_data import ANNUAL_REPORT
 
 # from entity_filer.filing_processors.filing_components import create_party, create_role
+from entity_filer.filing_meta import FilingMeta
 from entity_filer.worker import process_filing
 from tests.unit import (
     create_business,
@@ -48,12 +49,14 @@ def test_process_ar_filing(app, session):
     ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
 
+    filing_meta = FilingMeta()
+
     # TEST
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
         filing_msg = {'filing': {'id': filing_id}}
-        annual_report.process(business, filing.filing_json['filing'])
+        annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta)
 
     # check it out
     # NOTE: until we save or convert the dates, they are FakeDate objects, so casting to str()

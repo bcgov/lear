@@ -32,8 +32,9 @@ from colin_api.exceptions import (  # noqa: I001
     InvalidFilingTypeException,  # noqa: I001
     OfficeNotFoundException,  # noqa: I001
     PartiesNotFoundException,  # noqa: I001
+    UnableToDetermineCorpTypeException,  # noqa: I001
 )  # noqa: I001
-from colin_api.models import Business, CorpName, Office, Party, ShareObject
+from colin_api.models import Business, CorpName, FilingType, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
@@ -151,7 +152,28 @@ class Filing:
         'transition': {
             'type_code_list': ['TRANS'],
             Business.TypeCodes.BC_COMP.value: 'TRANS'
+        },
+        'registrarsNotation': {
+            'type_code_list': ['REGSN'],
+            Business.TypeCodes.BC_COMP.value: 'REGSN'
+        },
+        'registrarsOrder': {
+            'type_code_list': ['REGSO'],
+            Business.TypeCodes.BC_COMP.value: 'REGSO'
+        },
+        'courtOrder': {
+            'type_code_list': ['COURT'],
+            Business.TypeCodes.BC_COMP.value: 'COURT'
         }
+    }
+
+    FILING_TYPE_TO_CORP_TYPE_CONVERSION = {
+        'ICORP': Business.TypeCodes.BC_COMP.value,
+        'ICORU': Business.TypeCodes.ULC_COMP.value,
+        'ICORC': Business.TypeCodes.CCC_COMP.value,
+        'NOALB': Business.TypeCodes.BC_COMP.value,
+        'NOALC': Business.TypeCodes.CCC_COMP.value,
+        'NOALU': Business.TypeCodes.ULC_COMP.value
     }
 
     USERS = {
@@ -222,6 +244,21 @@ class Filing:
         return filing
 
     @classmethod
+    def _get_corp_type_for_event(cls, cursor, corp_num: str, event_id: str) -> Optional[str]:
+        """Get corp type at time of a specific filing event for a given corp_num."""
+        corp_type_related_filing_types = cls.FILING_TYPE_TO_CORP_TYPE_CONVERSION.keys()
+        matching_filing_type = \
+            FilingType.get_most_recent_match_before_event(corp_num=corp_num,
+                                                          event_id=event_id,
+                                                          matching_filing_types=corp_type_related_filing_types,
+                                                          cursor=cursor)
+
+        if matching_corp_type := cls.FILING_TYPE_TO_CORP_TYPE_CONVERSION.get(matching_filing_type.filing_typ_cd):
+            return matching_corp_type
+
+        return None
+
+    @classmethod
     def _get_event_id(cls, cursor, corp_num: str, event_type: str = 'FILE') -> str:
         """Get next event ID for filing.
 
@@ -252,7 +289,7 @@ class Filing:
             cursor.execute(
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-                VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
+                VALUES (:event_id, :corp_num, :event_type, current_timestamp at time zone dbtimezone, NULL)
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
@@ -386,6 +423,20 @@ class Filing:
                     filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
                     arragement_ind=arragement_ind,
+                    court_order_num=court_order_num
+                )
+            elif filing_type_code in ['REGSN', 'REGSO', 'COURT']:
+                arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
+                court_order_num = filing.body.get('fileNumber', None)
+
+                insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", :arrangement_ind, :court_order_num, 'F')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date,
+                    arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
             else:
@@ -572,7 +623,7 @@ class Filing:
         try:
             if not con:
                 con = DB.connection
-                con.begin()
+                # con.begin()
             cursor = con.cursor()
             corp_num = filing.business.corp_num
             # get the filing event info
@@ -590,8 +641,10 @@ class Filing:
             }
             # TODO: simplify after consolidating schema
             schema_name = convert_to_snake(filing.filing_type)
-            schema = get_schema(f'{schema_name.replace("_application", "")}.json')
+            schema = get_schema(f'{schema_name}.json')
+            # schema = get_schema(f'{schema_name.replace("_application", "")}.json')
             components = schema.get('properties').keys()
+
             if filing.filing_type in components:
                 if filing.filing_type == 'changeOfAddress':
                     components = ['legalType', 'offices']
@@ -683,6 +736,14 @@ class Filing:
                     filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
                 elif filing_event_info['filing_type_code'] == 'NOALE':
                     filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALA':
+                    corp_type = cls._get_corp_type_for_event(corp_num=corp_num,
+                                                             event_id=filing_event_info['event_id'],
+                                                             cursor=cursor)
+                    if corp_type:
+                        filing.body['business']['legalType'] = corp_type
+                    else:
+                        raise UnableToDetermineCorpTypeException(filing_type=filing.filing_type)
                 else:
                     raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
                 filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
@@ -819,7 +880,8 @@ class Filing:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['annualReport', 'changeOfAddress', 'changeOfDirectors',
-                                          'incorporationApplication', 'alteration', 'transition', 'correction']:
+                                          'incorporationApplication', 'alteration', 'transition', 'correction',
+                                          'registrarsNotation', 'registrarsOrder', 'courtOrder']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             legal_type = filing.business.corp_type
@@ -883,6 +945,11 @@ class Filing:
                 ledger_text = f'{ar_text}{dir_text}{office_text}'.replace('  ', '')
                 if ledger_text != '':
                     cls._insert_ledger_text(cursor, filing, ledger_text)
+
+                # add registrarsNotation, registrarsOrder or courtOrder ledger text record
+                if filing.filing_type in ['registrarsNotation', 'registrarsOrder', 'courtOrder']:
+                    order_details = filing.body.get('orderDetails')
+                    cls._insert_ledger_text(cursor, filing, order_details)
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'

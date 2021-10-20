@@ -6,13 +6,24 @@ on:
     paths:
       - "jobs/filings-notebook-report/**"
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./jobs/filings-notebook-report
+
 jobs:
-  filings-notebook-report-ci:
+  setup-job:
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./jobs/filings-notebook-report
+
+    if: github.repository == 'bcgov/lear'
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: "true"
+
+  linting:
+    needs: setup-job
+    runs-on: ubuntu-20.04
 
     strategy:
       matrix:
@@ -28,14 +39,30 @@ jobs:
         run: |
           make setup
       - name: Lint with pylint
+        id: pylint
         run: |
           make pylint
       - name: Lint with flake8
+        id: flake8
         run: |
           make flake8
-      #- name: Test with pytest
-      #  run: |
-      #    make test
+
+  testing:
+    needs: setup-job
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          make setup
+      - name: Test with pytest
+        id: test
+        run: |
+          make test
       #- name: Upload coverage to Codecov
       #  uses: codecov/codecov-action@v1
       #  with:
@@ -43,6 +70,14 @@ jobs:
       #    flags: entitypay
       #    name: codecov-entity-pay
       #    fail_ci_if_error: true
+
+  build-check:
+    needs: setup-job
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
       - name: build to check strictness
+        id: build
         run: |
           make build-nc

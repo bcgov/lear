@@ -100,12 +100,13 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             if not row['appointment_dt']:
                 row['appointment_dt'] = Business.get_founding_date(cursor=cursor, corp_num=corp_num)
             party.officer = cls._get_officer(row)
-            if not row['delivery_addr_id']:
+            if (row.get('party_typ_cd', None) == cls.role_types['Director']) and not row['delivery_addr_id']:
                 current_app.logger.error(
                     f"Bad director data for {party.officer.get('firstName')} {party.officer.get('lastName')} {corp_num}"
                 )
             else:
-                party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+                if row['delivery_addr_id']:
+                    party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
                 party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
                     if row['mailing_addr_id'] else party.delivery_address
                 party.appointment_date =\
@@ -222,12 +223,15 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     def get_by_event(cls, cursor, corp_num: str, event_id: int, role_type: str = 'Director') -> List:
         """Get all parties active or deleted during this event."""
         query = """
-                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id, appointment_dt, cessation_dt,
-                start_event_id, end_event_id, business_nme, party_typ_cd, corp_party_id
+                select first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id,
+                       appointment_dt, cessation_dt, start_event_id, end_event_id,
+                       business_nme, party_typ_cd, corp_party_id
                 from corp_party
-                where ((start_event_id<=:event_id and end_event_id is null) or (start_event_id<=:event_id and
-                cessation_dt is not null and end_event_id>=:event_id) or (start_event_id<:event_id and
-                end_event_id>:event_id)) and corp_num=:corp_num
+                where corp_num=:corp_num
+                  and (start_event_id = :event_id
+                        or (start_event_id<:event_id and end_event_id is null)
+                        or (start_event_id<:event_id and cessation_dt is not null and end_event_id>=:event_id)
+                        or (start_event_id<:event_id and end_event_id>:event_id))
                 """
 
         if role_type:

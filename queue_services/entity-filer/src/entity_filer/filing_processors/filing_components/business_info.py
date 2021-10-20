@@ -46,5 +46,7 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
         business.identifier = corp_num
         business.legal_type = business_info.get('legalType', None)
         business.founding_date = filing.effective_date
+        business.last_coa_date = filing.effective_date
+        business.last_cod_date = filing.effective_date
         return business
     return None

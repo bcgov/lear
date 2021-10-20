@@ -16,10 +16,12 @@ from unittest.mock import patch
 
 import pytest
 from legal_api.models import Business
+from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
 
 from entity_emailer import worker
-from entity_emailer.email_processors import filing_notification
+from entity_emailer.email_processors import ar_reminder_notification, filing_notification, name_request, nr_notification
+from tests import MockResponse
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
 
@@ -83,19 +85,18 @@ def test_maintenance_notification(app, session, status, filing_type):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-              as mock_get_recipients:
+                    as mock_get_recipients:
                 with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                     worker.process_email(
                         {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
 
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
-                    assert mock_get_pdfs.call_args[0][2] == \
-                        {
-                            'identifier': 'BC1234567',
-                            'legalype': Business.LegalTypes.BCOMP.value,
-                            'legalName': 'test business'
-                        }
+                    assert mock_get_pdfs.call_args[0][2] == {
+                        'identifier': 'BC1234567',
+                        'legalype': Business.LegalTypes.BCOMP.value,
+                        'legalName': 'test business'
+                    }
                     assert mock_get_pdfs.call_args[0][3] == filing
                     assert mock_get_recipients.call_args[0][0] == status
                     assert mock_get_recipients.call_args[0][1] == filing.filing_json
@@ -149,6 +150,32 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][1] == token
 
 
+def test_process_ar_reminder_email(app, session):
+    """Assert that the ar reminder notification can be processed."""
+    # setup filing + business for email
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
+    business = Business.find_by_internal_id(filing.business_id)
+    business.legal_type = 'BC'
+    business.legal_name = 'test business'
+    token = 'token'
+    # test processor
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value='test@test.com'):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email({'email': {
+                    'businessId': filing.business_id,
+                    'type': 'annualReport', 'option': 'reminder',
+                    'arFee': '100', 'arYear': '2021'
+                }}, app)
+
+                call_args = mock_send_email.call_args
+                assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
+                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['content']['body']
+                assert call_args[0][0]['content']['attachments'] == []
+                assert call_args[0][1] == token
+
+
 def test_process_bn_email(app, session):
     """Assert that a BN email msg is processed correctly."""
     # setup filing + business for email
@@ -173,3 +200,99 @@ def test_process_bn_email(app, session):
                 f'{business.legal_name} - Business Number Information'
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+
+
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None),
+    ('expired', 'NR 1234567', 'Expired', None, None),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45')
+])
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value):
+    """Assert that the nr notification can be processed."""
+    nr_json = {
+        'expirationDate': expiration_date,
+        'applicants': {
+            'emailAddress': 'test@test.com'
+        }
+    }
+    nr_response = MockResponse(nr_json, 200)
+    token = 'token'
+
+    # run worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
+                as mock_query_nr_number:
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email({
+                    'id': '123456789',
+                    'type': 'bc.registry.names.request',
+                    'source': f'/requests/{nr_number}',
+                    'identifier': nr_number,
+                    'data': {
+                        'request': {
+                            'nrNum': nr_number,
+                            'option': option,
+                            'refundValue': refund_value
+                        }
+                    }
+                }, app)
+
+                call_args = mock_send_email.call_args
+                assert call_args[0][0]['content']['subject'] == f'{nr_number} - {subject}'
+                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['content']['body']
+                if option == nr_notification.Option.REFUND.value:
+                    assert f'${refund_value} CAD' in call_args[0][0]['content']['body']
+                assert call_args[0][0]['content']['attachments'] == []
+                assert mock_query_nr_number.call_args[0][0] == nr_number
+                assert call_args[0][1] == token
+
+
+def test_nr_receipt_notification(app, session):
+    """Assert that the nr payment notification can be processed."""
+    nr_number = 'NR 1234567'
+    email_address = 'test@test.com'
+    nr_id = 12345
+    nr_json = {
+        'applicants': {
+            'emailAddress': email_address
+        },
+        'id': nr_id
+    }
+    nr_response = MockResponse(nr_json, 200)
+    token = 'token'
+    payment_token = '1234'
+    pdfs = ['test']
+
+    # run worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
+                as mock_query_nr_number:
+            with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
+                with patch.object(name_request, '_get_pdfs', return_value=pdfs) as mock_pdf:
+                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                        worker.process_email({
+                            'id': '123456789',
+                            'type': 'bc.registry.names.request',
+                            'source': f'/requests/{nr_number}',
+                            'identifier': nr_number,
+                            'data': {
+                                'request': {
+                                    'header': {'nrNum': nr_number},
+                                    'paymentToken': payment_token,
+                                    'statusCode': 'DRAFT'  # not used
+                                }
+                            }
+                        }, app)
+
+                        assert mock_pdf.call_args[0][0] == nr_id
+                        assert mock_pdf.call_args[0][1] == payment_token
+                        assert mock_query_nr_number.call_args[0][0] == nr_number
+                        call_args = mock_send_email.call_args
+                        assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
+                        assert call_args[0][0]['recipients'] == email_address
+                        assert call_args[0][0]['content']['body']
+                        assert call_args[0][0]['content']['attachments'] == pdfs
+                        assert call_args[0][1] == token

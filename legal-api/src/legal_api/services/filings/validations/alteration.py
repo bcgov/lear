@@ -75,10 +75,10 @@ def company_name_validation(filing):
         nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)
 
-        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC'):
+        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECV'):
             msg.append({'error': babel('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
 
-        if not validation_result['is_approved']:
+        if not validation_result['is_consumable']:
             msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
         # ensure NR request has the same legal name
@@ -91,7 +91,10 @@ def company_name_validation(filing):
     else:
         # ensure legalType is valid
         legal_type_path: Final = '/filing/business/legalType'
-        if get_str(filing, legal_type_path) not in ('ULC', 'BC', 'BEN'):
+        if get_str(filing, legal_type_path) not in \
+                (Business.LegalTypes.BC_ULC_COMPANY.value,
+                 Business.LegalTypes.COMP.value,
+                 Business.LegalTypes.BCOMP.value):
             msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
 
         # ensure company is named if being altered to numbered
@@ -108,7 +111,7 @@ def type_change_validation(filing):
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
     # you must alter to a bc benefit company
-    if get_str(filing, legal_type_path) != 'BEN':
+    if get_str(filing, legal_type_path) != Business.LegalTypes.BCOMP.value:
         msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'),
                     'path': legal_type_path})
         return msg

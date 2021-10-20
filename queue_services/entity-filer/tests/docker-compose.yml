@@ -14,3 +14,18 @@ services:
           - 4222:4222
           - 8222:8222
         tty: true
+    
+    minio:
+        image: 'bitnami/minio:latest'
+        ports:
+          - '9000:9000'
+        networks:
+          - minio-tier
+        environment:
+          - MINIO_ACCESS_KEY=minio
+          - MINIO_SECRET_KEY=minio123
+          - MINIO_DEFAULT_BUCKETS=businesses
+
+networks:
+  minio-tier:
+    driver: bridge

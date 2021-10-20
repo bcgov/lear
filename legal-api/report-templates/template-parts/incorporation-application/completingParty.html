@@ -41,34 +41,50 @@
    {% endfor %}
 </div>
 
-<div class="no-page-break">
-   <div class="separator mt-4"></div>
-   <div class="section-title mt-4">Completing Party Statement</div>
-   <div class="section-data mt-4">
-      I,
-      <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
-      {% if ns.cp.officer.middleName %}
-         <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
-      {% endif %}
-      <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span>
-      , the completing party, have examined the articles and the incorporation agreement applicable to the
-      company that is to be incorporated by the filing of the Incorporation Application and confirm that:
-      <table class="certify-statement-table" role="presentation">
-         <tr>
-            <td class="pt-2">a)</td>
-            <td class="pt-2">the Articles and the Incorporation Agreement both contain a signature line for each person
-               identified as an incorporator in the Incorporation Application with the name of that person set out
-               legibly under the signature lines,</td>
-         </tr>
-         <tr>
-            <td class="pt-2">b)</td>
-            <td class="pt-2">an original signature has been placed on each of those signature lines, and</td>
-         </tr>
-         <tr>
-            <td class="pt-2">c)</td>
-            <td class="pt-2">I have no reason to believe that the signature placed on a signature line is not the
-               signature of the person whose name is set out under that signature line.</td>
-         </tr>
-      </table>
+{% if business.legalType == 'CP' %}
+   <div class="no-page-break">
+      <div class="separator mt-4"></div>
+      <div class="section-title mt-4">Completing Party Statement</div>
+      <div class="section-data mt-4">
+         I,
+         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.middleName %}
+            <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
+         {% endif %}
+         <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span> certify that I have relevant knowledge
+         of the Cooperative and I am authorized to make this filing.
+      </div>
    </div>
-</div>
+{% else %}
+   <div class="no-page-break">
+      <div class="separator mt-4"></div>
+      <div class="section-title mt-4">Completing Party Statement</div>
+      <div class="section-data mt-4">
+         I,
+         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.middleName %}
+            <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
+         {% endif %}
+         <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span>
+         , the completing party, have examined the articles and the incorporation agreement applicable to the
+         company that is to be incorporated by the filing of the Incorporation Application and confirm that:
+         <table class="certify-statement-table" role="presentation">
+            <tr>
+               <td class="pt-2">a)</td>
+               <td class="pt-2">the Articles and the Incorporation Agreement both contain a signature line for each person
+                  identified as an incorporator in the Incorporation Application with the name of that person set out
+                  legibly under the signature lines,</td>
+            </tr>
+            <tr>
+               <td class="pt-2">b)</td>
+               <td class="pt-2">an original signature has been placed on each of those signature lines, and</td>
+            </tr>
+            <tr>
+               <td class="pt-2">c)</td>
+               <td class="pt-2">I have no reason to believe that the signature placed on a signature line is not the
+                  signature of the person whose name is set out under that signature line.</td>
+            </tr>
+         </table>
+      </div>
+   </div>
+{% endif %}

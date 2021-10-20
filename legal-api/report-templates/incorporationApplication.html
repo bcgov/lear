@@ -21,7 +21,7 @@
                      {% endif %}
                      INCORPORATION APPLICATION
                   </div>
-                  <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+                  <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
                </td>
             </tr>
          </table>
@@ -30,7 +30,7 @@
             {% if not incorporationApplication.nameRequest.nrNumber %}
                Numbered Benefit Company
             {% else %}
-               {{incorporationApplication.nameRequest.legalName}}
+               {{ incorporationApplication.nameRequest.legalName }}
             {% endif %}
             </label>
          </div>
@@ -41,19 +41,32 @@
             This replaces the Incorporation Application filed on {{ original_filing_date_time }}
          </div>
       {% endif %}
-      <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
-      <div class="container pt-4">
-         [[incorporation-application/nameRequest.html]]
-         [[incorporation-application/effectiveDate.html]]
-         [[incorporation-application/incorporator.html]]
-         [[incorporation-application/completingParty.html]]
-      </div>
-      <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
-      <div class="container pt-4">
-         [[incorporation-application/benefitCompanyStmt.html]]
-         [[common/addresses.html]]
-         [[common/directors.html]]
-         [[common/shareStructure.html]]
-      </div>
+
+      {% if business.legalType == 'CP' %}
+         <div class="container">
+            [[incorporation-application/nameRequest.html]]
+            [[incorporation-application/cooperativeAssociationType.html]]
+            [[incorporation-application/effectiveDate.html]]
+            [[incorporation-application/completingParty.html]]
+            [[common/addresses.html]]
+            [[common/directors.html]]
+         </div>
+      {% else %}
+         <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
+         <div class="container pt-4">
+            [[incorporation-application/nameRequest.html]]
+            [[incorporation-application/effectiveDate.html]]
+            [[incorporation-application/incorporator.html]]
+            [[incorporation-application/completingParty.html]]
+         </div>
+         <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
+         <div class="container pt-4">
+            [[common/statement.html]]
+            [[incorporation-application/benefitCompanyStmt.html]]
+            [[common/addresses.html]]
+            [[common/directors.html]]
+            [[common/shareStructure.html]]
+         </div>
+      {% endif %}
    </body>
 </html>

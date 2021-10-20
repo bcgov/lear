@@ -17,8 +17,10 @@ from typing import Dict
 import pytz
 from legal_api.models import Comment, Filing
 
+from entity_filer.filing_meta import FilingMeta
 
-def process(correction_filing: Filing, filing: Dict):
+
+def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
     local_timezone = pytz.timezone('US/Pacific')
 

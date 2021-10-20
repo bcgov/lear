@@ -66,19 +66,17 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+
+    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
+
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
     DB_NAME = os.getenv('DATABASE_NAME', '')
     DB_HOST = os.getenv('DATABASE_HOST', '')
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
-    )
+    SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
     NATS_CONNECTION_OPTIONS = {
         'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
@@ -123,6 +121,13 @@ class _Config():  # pylint: disable=too-few-public-methods
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
+    # Minio configuration values
+    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
+    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
+    MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
+    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
+    MINIO_SECURE = True
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
@@ -145,13 +150,14 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
     DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
     DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
-    )
+    SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
+    # Minio variables
+    MINIO_ENDPOINT = 'localhost:9000'
+    MINIO_ACCESS_KEY = 'minio'
+    MINIO_ACCESS_SECRET = 'minio123'
+    MINIO_BUCKET_BUSINESSES = 'businesses'
+    MINIO_SECURE = False
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

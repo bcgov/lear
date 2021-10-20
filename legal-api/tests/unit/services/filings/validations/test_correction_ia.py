@@ -23,11 +23,13 @@ from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATIO
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing
+from tests import todo_tech_debt
 
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 
 
+@todo_tech_debt
 def test_valid_ia_correction(session):
     """Test that a valid IA without NR correction passes validation."""
     # setup
@@ -49,6 +51,7 @@ def test_valid_ia_correction(session):
     assert None is err
 
 
+@todo_tech_debt
 def test_valid_nr_correction(session):
     """Test that a valid NR correction passes validation."""
     # setup
@@ -86,6 +89,7 @@ def test_valid_nr_correction(session):
     assert None is err
 
 
+@todo_tech_debt
 def test_invalid_nr_correction(session):
     """Test that an invalid NR correction fails validation."""
     # setup

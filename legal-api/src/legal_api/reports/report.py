@@ -23,9 +23,10 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, CorpType, Document, Filing
+from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import VersionedBusinessDetailsService
+from legal_api.services import MinioService, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -43,6 +44,17 @@ class Report:  # pylint: disable=too-few-public-methods
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
         self._report_key = report_type if report_type else self._filing.filing_type
+        if self._report_key in ReportMeta.static_reports:
+            return self._get_static_report()
+        return self._get_report()
+
+    def _get_static_report(self):
+        document_type = ReportMeta.static_reports[self._report_key]['documentType']
+        document: Document = self._filing.documents.filter(Document.type == document_type).first()
+        response = MinioService.get_file(document.file_key)
+        return response.data, response.status
+
+    def _get_report(self):
         if self._report_key == 'correction':
             self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
         elif self._report_key == 'alteration':
@@ -118,6 +130,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
+            'incorporation-application/cooperativeAssociationType',
+            'common/statement',
             'common/benefitCompanyStmt',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
@@ -148,7 +162,11 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _get_template_filename(self):
         if ReportMeta.reports[self._report_key].get('hasDifferentTemplates', False):
-            file_name = ReportMeta.reports[self._report_key][self._business.legal_type]['fileName']
+            # Get template specific to legal type
+            specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
+            # Fallback to default if specific template not found
+            file_name = specific_template['fileName'] if specific_template else \
+                ReportMeta.reports[self._report_key]['default']['fileName']
         else:
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
@@ -160,6 +178,7 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
+            filing['header']['status'] = self._filing.status
             if self._report_key == 'incorporationApplication':
                 self._format_incorporation_data(filing)
             elif self._report_key == 'alterationNotice':
@@ -189,15 +208,6 @@ class Report:  # pylint: disable=too-few-public-methods
 
         filing['header']['reportType'] = self._report_key
 
-        if (filing['header']['reportType'] == 'alterationNotice'
-            and filing['previousLegalType'] != 'BEN'
-            and filing['business']['legalType'] == 'BEN'
-            ) or (
-            filing['header']['reportType'] == 'noa'
-            and filing['business']['legalType'] == 'BEN'
-        ):
-            filing['isBenefitCompanyStmt'] = True
-
         self._set_dates(filing)
         self._set_description(filing)
         self._set_tax_id(filing)
@@ -221,26 +231,28 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
-        if self._business:
-            filing['entityDescription'] = ReportMeta.entity_description[self._business.legal_type]
+        legal_type = self._filing.filing_json['filing']['business'].get('legalType', 'NA')
+        corp_type = CorpType.find_by_id(legal_type)
+        filing['entityDescription'] = corp_type.full_desc
+
+        act = {
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+        }  # This could be the legislation column from CorpType. Yet to discuss.
+        filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
     def _set_dates(self, filing):
         # Filing Date
         filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
-        hour = filing_datetime.strftime('%I').lstrip('0')
-        filing['filing_date_time'] = filing_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
         # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
-        effective_hour = effective_date.strftime('%I').lstrip('0')
-        filing['effective_date_time'] = effective_date.strftime(f'%B %-d, %Y at {effective_hour}:%M %p Pacific Time')
+        filing['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_date)
         filing['effective_date'] = effective_date.strftime('%B %-d, %Y')
         # Recognition Date
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
-            recognition_hour = recognition_datetime.strftime('%I').lstrip('0')
-            filing['recognition_date_time'] = \
-                recognition_datetime.strftime(f'%B %-d, %Y at {recognition_hour}:%M %p Pacific Time')
+            filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -254,9 +266,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
-            original_filing_hour = original_filing_datetime.strftime('%I').lstrip('0')
-            filing['original_filing_date_time'] = original_filing_datetime. \
-                strftime(f'%B %-d, %Y at {original_filing_hour}:%M %p Pacific Time')
+            filing['original_filing_date_time'] = LegislationDatetime.format_as_report_string(original_filing_datetime)
 
     def _set_directors(self, filing):
         if filing.get('changeOfDirectors'):
@@ -274,6 +284,7 @@ class Report:  # pylint: disable=too-few-public-methods
         for director in directors:
             with suppress(KeyError):
                 self._format_address(director['deliveryAddress'])
+            with suppress(KeyError):
                 self._format_address(director['mailingAddress'])
         return directors
 
@@ -315,13 +326,11 @@ class Report:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _populate_business_info_to_filing(filing: Filing, business: Business):
         founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
-        hour = founding_datetime.strftime('%I')
         if filing.transaction_id:
             business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         else:
             business_json = business.json()
-        business_json['formatted_founding_date_time'] = \
-            founding_datetime.strftime(f'%B %-d, %Y at {hour}:%M %p Pacific Time')
+        business_json['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
         business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
         filing.filing_json['filing']['business'] = business_json
         filing.filing_json['filing']['header']['filingId'] = filing.id
@@ -335,8 +344,9 @@ class Report:  # pylint: disable=too-few-public-methods
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
-        self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
+        if 'recordsOffice' in filing['incorporationApplication']['offices']:
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(filing['incorporationApplication']['offices']['recordsOffice']['mailingAddress'])
         self._format_directors(filing['incorporationApplication']['parties'])
         # create helper lists
         filing['listOfTranslations'] = filing['incorporationApplication'].get('nameTranslations', [])
@@ -344,8 +354,12 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['parties'] = filing['incorporationApplication']['parties']
         if filing['incorporationApplication'].get('shareClasses', None):
             filing['shareClasses'] = filing['incorporationApplication']['shareClasses']
-        else:
+        elif 'shareStructure' in filing['incorporationApplication']:
             filing['shareClasses'] = filing['incorporationApplication']['shareStructure']['shareClasses']
+
+        if cooperative := filing['incorporationApplication'].get('cooperative', None):
+            cooperative['associationTypeName'] = \
+                ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -362,8 +376,8 @@ class Report:  # pylint: disable=too-few-public-methods
             self._filing.id, self._business.id)
         prev_legal_type = versioned_business['legalType']
         filing['previousLegalType'] = prev_legal_type
-        with suppress(KeyError):
-            filing['previousLegalTypeDescription'] = ReportMeta.entity_description[prev_legal_type]
+        corp_type = CorpType.find_by_id(prev_legal_type)
+        filing['previousLegalTypeDescription'] = corp_type.full_desc
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
@@ -561,10 +575,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'changeOfAddress': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Change of Address',
-            'BC': {
-                'fileName': 'bcAddressChange'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcAddressChange'
             },
             'CP': {
@@ -574,10 +585,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'changeOfDirectors': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Change of Directors',
-            'BC': {
-                'fileName': 'bcDirectorChange'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcDirectorChange'
             },
             'CP': {
@@ -587,10 +595,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'annualReport': {
             'hasDifferentTemplates': True,
             'filingDescription': 'Annual Report',
-            'BC': {
-                'fileName': 'bcAnnualReport'
-            },
-            'BEN': {
+            'default': {
                 'fileName': 'bcAnnualReport'
             },
             'CP': {
@@ -615,8 +620,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         }
     }
 
-    entity_description = {
-        Business.LegalTypes.COOP.value: 'BC Cooperative Association',
-        Business.LegalTypes.COMP.value: 'BC Company',
-        Business.LegalTypes.BCOMP.value: 'BC Benefit Company',
+    static_reports = {
+        'certifiedRules': {
+            'documentType': 'coop_rules'
+        },
+        'certifiedMemorandum': {
+            'documentType': 'coop_memorandum'
+        }
     }

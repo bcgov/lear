@@ -23,6 +23,7 @@ from entity_filer.filing_processors.filing_components import (
     aliases,
     business_info,
     business_profile,
+    filings,
     name_request,
     shares,
 )
@@ -41,12 +42,7 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     if not address_info:
         return Address()
 
-    db_address_type = address_type
-
-    if db_address_type == 'mailingAddress':
-        db_address_type = 'mailing'
-    elif db_address_type == 'deliveryAddress':
-        db_address_type = 'delivery'
+    db_address_type = address_type.replace('Address', '')
 
     address = Address(street=address_info.get('streetAddress'),
                       street_additional=address_info.get('streetAddressAdditional'),
@@ -96,7 +92,7 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=party_info['officer'].get('middleInitial', '').upper(),
-            org_name=party_info.get('orgName', '').upper()
+            org_name=party_info['officer'].get('organizationName', '').upper()
         )
     if not party:
         party = Party(
@@ -104,7 +100,8 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=party_info['officer'].get('middleInitial', '').upper(),
             title=party_info.get('title', '').upper(),
-            organization_name=party_info.get('orgName', '').upper()
+            organization_name=party_info['officer'].get('organizationName', '').upper(),
+            party_type=party_info['officer'].get('partyType')
         )
 
     # add addresses to party
@@ -134,8 +131,13 @@ def update_director(director: PartyRole, new_info: dict) -> PartyRole:
     director.party.middle_initial = new_info['officer'].get('middleInitial', '').upper()
     director.party.last_name = new_info['officer'].get('lastName', '').upper()
     director.party.title = new_info.get('title', '').upper()
-    director.party.delivery_address = update_address(
-        director.party.delivery_address, new_info['deliveryAddress'])
+
+    if director.party.delivery_address:
+        director.party.delivery_address = update_address(
+            director.party.delivery_address, new_info['deliveryAddress'])
+    else:
+        director.party.delivery_address = create_address(new_info['deliveryAddress'], Address.DELIVERY)
+
     if new_info.get('mailingAddress', None):
         if director.party.mailing_address is None:
             director.party.mailing_address = create_address(new_info['mailingAddress'], Address.MAILING)

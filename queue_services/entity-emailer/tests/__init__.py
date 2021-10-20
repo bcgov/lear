@@ -30,3 +30,16 @@ def add_years(d, years):
         return d.replace(year=d.year + years)
     except ValueError:
         return d + (datetime.date(d.year + years, 3, 1) - datetime.date(d.year, 3, 1))
+
+
+class MockResponse:
+    """Mock Response."""
+
+    def __init__(self, json_data, status_code):
+        """Mock Response __init__."""
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        """Mock Response json."""
+        return self.json_data

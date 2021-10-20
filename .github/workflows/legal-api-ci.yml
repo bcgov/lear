@@ -6,8 +6,49 @@ on:
     paths:
       - "legal-api/**"
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./legal-api
+
 jobs:
-  legal-api-ci:
+  setup-job:
+    runs-on: ubuntu-20.04
+
+    if: github.repository == 'bcgov/lear'
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: "true"
+
+  linting:
+    needs: setup-job
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          make setup
+      - name: Lint with pylint
+        id: pylint
+        run: |
+          make pylint
+      - name: Lint with flake8
+        id: flake8
+        run: |
+          make flake8
+
+  testing:
+    needs: setup-job
     env:
       IMAGE_NAME: business-create
       DATABASE_TEST_USERNAME: postgres
@@ -25,18 +66,10 @@ jobs:
       GO_LIVE_DATE: 2019-08-12
 
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./legal-api
-
-    strategy:
-      matrix:
-        python-version: [3.8]
 
     services:
       postgres:
-        image: postgres:11
+        image: postgres:12
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -55,13 +88,8 @@ jobs:
       - name: Install dependencies
         run: |
           make setup
-      - name: Lint with pylint
-        run: |
-          make pylint
-      - name: Lint with flake8
-        run: |
-          make flake8
       - name: Test with pytest
+        id: test
         run: |
           make test
       - name: Upload coverage to Codecov
@@ -71,6 +99,14 @@ jobs:
           flags: legalapi
           name: codecov-legal-api
           fail_ci_if_error: true
+
+  build-check:
+    needs: setup-job
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
       - name: build to check strictness
+        id: build
         run: |
           make build-nc

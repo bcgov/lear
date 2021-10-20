@@ -22,13 +22,13 @@
           <div class="cert-title-container">
             <div class="sub-header-1">Certificate  of</div>
             <div class="incorporation-header">INCORPORATION</div>
-            <div class="sub-header-2">Business Corporations Act</div>
+            <div class="sub-header-2">{{ entityAct }}</div>
           </div>
 
           <div class="certify-clause-container">
             <div class="cert-statement">I hereby certify that</div>
             <div class="company-name-header"><div class="company-name-text">{{ business.legalName }}</div></div>
-            <div class="cert-statement-no-spacing">was incorporated under the Business Corporations Act</div>
+            <div class="cert-statement-no-spacing">was incorporated under the {{ entityAct }}</div>
             <div class="cert-statement">on {{ business.formatted_founding_date_time }}</div>
           </div>
 

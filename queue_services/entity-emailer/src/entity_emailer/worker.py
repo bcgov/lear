@@ -43,11 +43,15 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import config
 from entity_emailer.email_processors import (
     affiliation_notification,
+    ar_reminder_notification,
     bn_notification,
     filing_notification,
     mras_notification,
     name_request,
+    nr_notification,
 )
+
+from .message_tracker import tracker as tracker_util
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -92,7 +96,16 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         token = AccountService.get_bearer_token()
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
-            email = name_request.process(email_msg)
+            option = email_msg.get('data', {}).get('request', {}).get('option', None)
+            if option and option in [nr_notification.Option.BEFORE_EXPIRY.value,
+                                     nr_notification.Option.EXPIRED.value,
+                                     nr_notification.Option.RENEWAL.value,
+                                     nr_notification.Option.UPGRADE.value,
+                                     nr_notification.Option.REFUND.value
+                                     ]:
+                email = nr_notification.process(email_msg, option)
+            else:
+                email = name_request.process(email_msg)
             send_email(email, token)
         elif etype and etype == 'bc.registry.affiliation':
             email = affiliation_notification.process(email_msg, token)
@@ -105,6 +118,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'incorporationApplication' and option == 'mras':
                 email = mras_notification.process(email_msg['email'])
+                send_email(email, token)
+            elif etype == 'annualReport' and option == 'reminder':
+                email = ar_reminder_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
@@ -126,20 +142,46 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     return
 
     """Use Callback to process Queue Msg objects."""
-    try:
-        logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
-        email_msg = json.loads(msg.data.decode('utf-8'))
-        logger.debug('Extracted email msg: %s', email_msg)
-        process_email(email_msg, FLASK_APP)
-    except OperationalError as err:
-        logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
-        raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except EmailException as err:
-        logger.error('Queue Error - email failed to send: %s'
-                     '\n\nThis message has been put back on the queue for reprocessing.',
-                     json.dumps(email_msg), exc_info=True)
-        raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # noqa B902; pylint: disable=W0703;
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
-        logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+    with FLASK_APP.app_context():
+
+        try:
+            logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
+            email_msg = json.loads(msg.data.decode('utf-8'))
+            logger.debug('Extracted email msg: %s', email_msg)
+            message_context_properties = tracker_util.get_message_context_properties(msg)
+            process_message, tracker_msg = tracker_util.is_processable_message(message_context_properties)
+            if process_message:
+                tracker_msg = tracker_util.start_tracking_message(message_context_properties, email_msg, tracker_msg)
+                process_email(email_msg, FLASK_APP)
+                tracker_util.complete_tracking_message(tracker_msg)
+            else:
+                # Skip processing of message due to message state - previously processed or currently being
+                # processed
+                logger.debug('Skipping processing of email_msg: %s', email_msg)
+        except OperationalError as err:
+            logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
+            error_details = f'OperationalError - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_context_properties,
+                                                         email_msg,
+                                                         tracker_msg,
+                                                         error_details)
+            raise err  # We don't want to handle the error, as a DB down would drain the queue
+        except EmailException as err:
+            logger.error('Queue Error - email failed to send: %s'
+                         '\n\nThis message has been put back on the queue for reprocessing.',
+                         json.dumps(email_msg), exc_info=True)
+            error_details = f'EmailException - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_context_properties,
+                                                         email_msg,
+                                                         tracker_msg,
+                                                         error_details)
+            raise err  # we don't want to handle the error, so that the message gets put back on the queue
+        except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703;
+            # Catch Exception so that any error is still caught and the message is removed from the queue
+            capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
+            logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+            error_details = f'QueueException, Exception - {str(err)}'
+            tracker_util.mark_tracking_message_as_failed(message_context_properties,
+                                                         email_msg,
+                                                         tracker_msg,
+                                                         error_details)

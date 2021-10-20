@@ -1,11 +1,15 @@
-sqlalchemy < 1.4.0
+sqlalchemy
+# sqlalchemy < 1.4.0
 Flask
 Flask-Babel
+Flask-Cors
 Flask-Migrate
 Flask-Moment
+Flask-Pydantic
 Flask-RESTX
 Flask-Script
 Flask-SQLAlchemy
+PyPDF2
 SQLAlchemy-Continuum
 asyncio-nats-client
 asyncio-nats-streaming
@@ -19,7 +23,12 @@ launchdarkly-server-sdk
 psycopg2-binary
 python-dotenv
 pycountry
+pydantic
+reportlab
 requests
 sentry-sdk[flask]
 strict-rfc3339
 Werkzeug
+minio
+PyPDF2
+reportlab

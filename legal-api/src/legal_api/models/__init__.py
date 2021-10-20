@@ -19,6 +19,8 @@ from .alias import Alias
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
+from .corp_type import CorpType
+from .document import Document
 from .filing import Filing
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
@@ -26,10 +28,10 @@ from .registration_bootstrap import RegistrationBootstrap
 from .resolution import Resolution
 from .share_class import ShareClass
 from .share_series import ShareSeries
-from .user import User
+from .user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'Filing',
-           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
-           'PartyRole', 'ShareClass', 'ShareSeries', 'User')
+           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Document',
+           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles')

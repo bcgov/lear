@@ -21,21 +21,21 @@ from legal_api.services.filings.validations.common_validations import validate_c
     {
         'fileNumber': '123456789012345678901',  # long fileNumber
         'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     },
     {
         'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     },
     {
         'fileNumber': 'Valid file number',
         'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     },
     {
         'fileNumber': 'Valid File Number',
         'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': ('a' * 501)  # long effectOfOrder
+        'effectOfOrder': 'invalid'  # Invalid effectOfOrder
     }
 ])
 def test_validate_invalid_court_orders(session, invalid_court_order):
@@ -53,7 +53,7 @@ def test_validate_invalid_court_orders(session, invalid_court_order):
     {
         'fileNumber': 'Valid file number',
         'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'Valid effect of order'
+        'effectOfOrder': 'planOfArrangement'
     }
 ])
 def test_validate_valid_court_orders(session, valid_court_order):

@@ -20,17 +20,24 @@ from entity_queue_common.service_utils import logger
 from legal_api.models import Business
 from legal_api.services.filings import validations
 
+from entity_filer.filing_meta import FilingMeta
 
-def process(business: Business, filing: Dict):
+
+def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     """Render the annual_report onto the business model objects."""
-    agm_date = filing['annualReport'].get('annualGeneralMeetingDate')
-    ar_date = filing['annualReport'].get('annualReportDate')
+    legal_filing_name = 'annualReport'
+    agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
+    ar_date = filing[legal_filing_name].get('annualReportDate')
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
         logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
 
+    # save the annual report date to the filing meta info
+    filing_meta.application_date = ar_date
+    filing_meta.annual_report = {'annualReportDate': ar_date.isoformat(),
+                                 'annualGeneralMeetingDate': agm_date}
     business.last_ar_date = ar_date
     if agm_date and validations.annual_report.requires_agm(business):
         with suppress(ValueError):

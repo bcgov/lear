@@ -38,6 +38,8 @@ class DocumentMetaService():
         NOTICE_OF_ARTICLES = 'noa'
         ALTERATION_NOTICE = 'alterationNotice'
         CERTIFICATE_OF_NAME_CHANGE = 'certificateOfNameChange'
+        CERTIFIED_RULES = 'certifiedRules'
+        CERTIFIED_MEMORANDUM = 'certifiedMemorandum'
 
     def __init__(self):
         """Create the document meta instance."""
@@ -51,7 +53,10 @@ class DocumentMetaService():
     def get_documents(self, filing: dict):
         """Return an array of document meta for a filing."""
         # look up legal type
-        self._business_identifier = filing['filing']['business']['identifier']
+        if not (business_identifier := filing.get('filing', {}).get('business', {}).get('identifier')):
+            return []
+
+        self._business_identifier = business_identifier
         # if this is a temp registration then there is no business, so get legal type from filing
         if self._business_identifier.startswith('T'):
             self._legal_type = filing['filing']['incorporationApplication']['nameRequest']['legalType']
@@ -62,10 +67,12 @@ class DocumentMetaService():
             self._legal_type = business.legal_type
 
         self._filing_status = filing['filing']['header']['status']
-        is_paper_only = filing['filing']['header']['availableOnPaperOnly']
-        is_colin_only = filing['filing']['header']['inColinOnly']
+        is_paper_only = filing['filing']['header'].get('availableOnPaperOnly', False)
+        is_colin_only = filing['filing']['header'].get('inColinOnly', False)
 
-        if self._filing_status not in (Filing.Status.COMPLETED.value, Filing.Status.PAID.value) \
+        if self._filing_status not in (Filing.Status.COMPLETED.value,
+                                       Filing.Status.PAID.value,
+                                       Filing.Status.CORRECTED.value) \
                 or is_paper_only or is_colin_only:
             return []  # wrong filing status
 
@@ -328,23 +335,45 @@ class DocumentMetaService():
             has_correction_changed_name(Filing.find_by_id(filing_data.parent_filing_id).json) else ''
 
         # else status is COMPLETED
-        return [
+        reports = [
             self.create_report_object(
                 f'Incorporation Application{label_original}',
                 self.get_general_filename(f'Incorporation Application{label_original}')
-            ),
-            self.create_report_object(
-                DocumentMetaService.NOTICE_OF_ARTICLES,
-                self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
-                DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
-            ),
+            )
+        ]
 
+        if not self.is_coop():
+            reports.append(
+                self.create_report_object(
+                    DocumentMetaService.NOTICE_OF_ARTICLES,
+                    self.get_general_filename(DocumentMetaService.NOTICE_OF_ARTICLES),
+                    DocumentMetaService.ReportType.NOTICE_OF_ARTICLES.value
+                )
+            )
+
+        reports.append(
             self.create_report_object(
                 f'Certificate{label_certificate_original}',
                 self.get_general_filename(f'Certificate{label_certificate_original}'),
                 DocumentMetaService.ReportType.CERTIFICATE.value
             )
-        ]
+        )
+
+        if self.is_coop():
+            reports.extend([
+                self.create_report_object(
+                    'Certified Rules',
+                    self.get_general_filename('Certified Rules'),
+                    DocumentMetaService.ReportType.CERTIFIED_RULES.value
+                ),
+                self.create_report_object(
+                    'Certified Memorandum',
+                    self.get_general_filename('Certified Memorandum'),
+                    DocumentMetaService.ReportType.CERTIFIED_MEMORANDUM.value
+                )
+            ])
+
+        return reports
 
     def create_report_object(self, title: str, filename: str, report_type=None):
         """Return a populated document meta object."""
@@ -365,6 +394,10 @@ class DocumentMetaService():
     def is_bcomp(self):
         """Return True if this entity is a BCOMP."""
         return self._legal_type == Business.LegalTypes.BCOMP.value
+
+    def is_coop(self):
+        """Return True if this entity is a COOP."""
+        return self._legal_type == Business.LegalTypes.COOP.value
 
     def is_paid(self):
         """Return True if this filing is PAID."""

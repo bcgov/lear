@@ -50,3 +50,4 @@ class OfficeType(db.Model):  # pylint: disable=too-few-public-methods
     # Office Types Constants
     REGISTERED = 'registeredOffice'
     RECORDS = 'recordsOffice'
+    CUSTODIAL = 'custodialOffice'
