@@ -249,7 +249,7 @@ def test_business_json(session):
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
-        'lastAnnualReport': datetime.date(EPOCH_DATETIME).isoformat(),
+        'lastAnnualReportDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
