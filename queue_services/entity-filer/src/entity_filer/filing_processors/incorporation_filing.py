@@ -42,7 +42,7 @@ def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
     # this gets called if the new services are generating the Business.identifier.
     if legal_type in BusinessType:
-        if business_type := BusinessType.get_enum_by_value('CP'):
+        if business_type := BusinessType.get_enum_by_value(legal_type):
             return BusinessIdentifier.next_identifier(business_type)
         return None
 
