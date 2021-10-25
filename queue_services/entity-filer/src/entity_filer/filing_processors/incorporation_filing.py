@@ -23,6 +23,7 @@ import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
+from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
 from legal_api.reports.registrar_meta import RegistrarInfo
@@ -39,6 +40,13 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 
 def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
+    # this gets called if the new services are generating the Business.identifier.
+    if legal_type in BusinessType:
+        if business_type := BusinessType.get_enum_by_value('CP'):
+            return BusinessIdentifier.next_identifier(business_type)
+        return None
+
+    # legacy Business.Identifier generation
     try:
         # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
         if legal_type == Business.LegalTypes.BCOMP.value:
