@@ -308,3 +308,23 @@ def test_business_relationships_json(session):
     business.save()
 
     assert business.delivery_address.one_or_none()
+
+
+@pytest.mark.parametrize('business_type,expected',[
+    ('CP', True),
+    ('NOT_FOUND', False),
+])
+def test_get_next_value_from_sequence(session, business_type, expected):
+    """Assert that the sequence value is generated successfully."""
+    from legal_api.models import Business
+
+    if expected:
+        first_val = Business.get_next_value_from_sequence(business_type)
+        assert first_val
+
+        next_val = Business.get_next_value_from_sequence(business_type)
+        assert next_val
+        assert next_val == first_val + 1
+    
+    else:
+        assert not Business.get_next_value_from_sequence(business_type)

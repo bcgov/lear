@@ -17,11 +17,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
 
+from .business import BusinessIdentifier, BusinessType
 from .filing import Filing
 from .meta import FILINGS, FilingMeta
 
 
 __all__ = (
+    'BusinessIdentifier',
+    'BusinessType',
     'FILINGS',
     'Filing',
     'FilingMeta',
