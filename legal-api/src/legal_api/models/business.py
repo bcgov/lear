@@ -16,7 +16,7 @@
 The Business class and Schema are held in this module
 """
 from enum import Enum
-from typing import Final
+from typing import Final, Optional
 
 import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -47,7 +47,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     """
 
     # NB: commented out items that exist in namex but are not yet supported by Lear
-    class LegalTypes(Enum):
+    class LegalTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
 
         COOP = 'CP'  # aka COOPERATIVE in namex
@@ -367,6 +367,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
+
+    @classmethod
+    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+        """Return the next value from the sequence."""
+        sequence_mapping = {
+            'CP': 'business_identifier_coop',
+        }
+        if sequence_name := sequence_mapping.get(business_type, None):
+            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+        return None
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
