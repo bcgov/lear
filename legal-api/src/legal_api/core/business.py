@@ -47,12 +47,12 @@ class BusinessType(str, Enum, metaclass=BaseMeta):
     DEFAULT = 'OT'
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> str:
+    def get_enum_by_value(cls, value: str) -> Optional[str]:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
                 return enum_value
-        return cls.DEFAULT
+        return None
 
 
 MAX_IDENTIFIER_NUM_LENGTH: Final[int] = 7
