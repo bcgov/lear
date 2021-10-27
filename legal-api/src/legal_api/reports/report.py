@@ -172,7 +172,7 @@ class Report:  # pylint: disable=too-few-public-methods
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):  # pylint: disable=too-many-branches
-        if self._report_key == 'noa':
+        if self._report_key == 'noticeOfArticles':
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
         else:
@@ -530,7 +530,7 @@ class Report:  # pylint: disable=too-few-public-methods
             self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
 
         # Appears in the Description section of the PDF Document Properties as Subject.
-        if self._report_key == 'noa':
+        if self._report_key == 'noticeOfArticles':
             filing['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
         else:
             legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
@@ -560,7 +560,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Incorporation Application',
             'fileName': 'incorporationApplication'
         },
-        'noa': {
+        'noticeOfArticles': {
             'filingDescription': 'Notice of Articles',
             'fileName': 'noticeOfArticles'
         },
