@@ -106,9 +106,8 @@ class Endpoints:
         return resp
 
     def _set_access_control_header(self, response):  # pylint: disable=unused-variable
-        h = response.headers
-        h['Access-Control-Allow-Origin'] = '*'
-        h['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""
