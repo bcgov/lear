@@ -147,7 +147,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificate']},
-            {'types': 'BC,BEN', 'outputs': ['noa', 'certificate']},
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
     'registrarsNotation': {

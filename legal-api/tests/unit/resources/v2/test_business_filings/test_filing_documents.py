@@ -140,7 +140,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
          'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND
         ),
         ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
          {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'legalFilings': [
                             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
@@ -185,7 +185,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
          'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
          {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                         'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
-                        'noa': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noa',
+                        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                         'legalFilings': [
                             {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
                         ]
@@ -194,11 +194,11 @@ base_url = 'https://LEGAL_API_BASE_URL'
         HTTPStatus.OK
         ),
     ])
-def test_various_filing_states(session, client, jwt, 
+def test_various_filing_states(session, client, jwt,
                                test_name,
                                identifier,
                                entity_type,
-                               filing_name_1, legal_filing_1, 
+                               filing_name_1, legal_filing_1,
                                filing_name_2, legal_filing_2,
                                status, expected_msg, expected_http_code):
     """Test document list based on filing states."""
@@ -227,7 +227,7 @@ def test_various_filing_states(session, client, jwt,
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], business.identifier))
-    
+
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
     expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
