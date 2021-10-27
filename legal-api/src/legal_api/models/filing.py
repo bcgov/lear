@@ -13,6 +13,7 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 import copy
+import json
 from datetime import date, datetime
 from enum import Enum
 from http import HTTPStatus
@@ -357,6 +358,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def meta_data(self):
         """Return the meta data collected about a filing, stored as JSON."""
+        if isinstance(self._meta_data, str):
+            return json.loads(self._meta_data)
         return self._meta_data
 
     @property
