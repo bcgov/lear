@@ -60,17 +60,20 @@ def process(email_info: dict, option) -> dict:
     expiration_date = ''
     if nr_data['expirationDate']:
         exp_date = datetime.fromisoformat(nr_data['expirationDate'])
-        expiration_date = exp_date.strftime('%Y-%m-%d')
+        expiration_date = exp_date.strftime('%B %d, %Y %H:%M %p')
 
     refund_value = ''
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
+
+    legal_name = nr_data['legal_name']
 
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
     html_out = mail_template.render(
         nr_number=nr_number,
         expiration_date=expiration_date,
+        legal_name=legal_name,
         refund_value=refund_value
     )
 
