@@ -201,18 +201,19 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
-
-@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None),
-    ('expired', 'NR 1234567', 'Expired', None, None),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45')
+names_arr = [{"name":"TEST Company Name","state":"APPROVED"}]
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value', 'names'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None, [{"name":"TEST Company Name","state":"NE"},{"name":"TEST2 Company Name","state":"APPROVED"}]),
+    ('expired', 'NR 1234567', 'Expired', None, None, names_arr),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, names_arr),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, names_arr),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', names_arr)
 ])
-def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value):
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value, names):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
+        'names': names,
         'applicants': {
             'emailAddress': 'test@test.com'
         }

@@ -65,8 +65,11 @@ def process(email_info: dict, option) -> dict:
     refund_value = ''
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
-
-    legal_name = nr_data['legal_name']
+    
+    for x in nr_data['names']:
+        if (x['state'] == 'APPROVED') or (x['state'] == 'CONDITION'):
+            legal_name = x['name']
+            break
 
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
