@@ -179,7 +179,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'submitter_roles',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id'
+            'transaction_id',
+            '_sent_to_gazette_date'
         ]
     }
 
@@ -227,6 +228,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
+    _sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True))
+
+    @hybrid_property
+    def sent_to_gazette_date(self):
+        """Property containing the date a sent_to_gazette_date was submitted."""
+        return self._sent_to_gazette_date
+
+    @sent_to_gazette_date.setter
+    def sent_to_gazette_date(self, value: datetime):
+        self._sent_to_gazette_date = value
 
     # properties
     @property
