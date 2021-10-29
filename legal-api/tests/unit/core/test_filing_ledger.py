@@ -22,9 +22,10 @@ from registry_schemas.example_data import FILING_TEMPLATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Comment, Filing, UserRoles
 from legal_api.models.user import UserRoles
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import datetime, timezone
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from tests.unit.services.utils import helper_create_jwt
+
 
 def load_ledger(business, founding_date):
     """Create a ledger of all filing types."""
@@ -41,6 +42,7 @@ def load_ledger(business, founding_date):
         i += 1
     return i
 
+
 def test_simple_ledger_search(session):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
@@ -56,18 +58,63 @@ def test_simple_ledger_search(session):
     assert len(ledger) == num_of_files
 
     # Fully examine 1 filing - alteration
-    alteration = next((f for f in ledger if f.get('name')=='alteration'), None)
+    alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
 
     assert alteration
     assert 15 == len(alteration.keys())
-    assert 'availableOnPaperOnly' in alteration 
-    assert 'effectiveDate' in alteration 
-    assert 'filingId' in alteration 
-    assert 'name' in alteration 
-    assert 'paymentStatusCode' in alteration 
-    assert 'status' in alteration 
-    assert 'submittedDate' in alteration 
-    assert 'submitter' in alteration 
+    assert 'availableOnPaperOnly' in alteration
+    assert 'effectiveDate' in alteration
+    assert 'filingId' in alteration
+    assert 'name' in alteration
+    assert 'paymentStatusCode' in alteration
+    assert 'status' in alteration
+    assert 'submittedDate' in alteration
+    assert 'submitter' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
+
+
+@pytest.mark.parametrize('filing_date, effective_date, is_future_effective', [
+    (
+        datetime(2021, 10, 29, 16, 15, 0, 16015, tzinfo=timezone.utc),
+        datetime(2021, 10, 29, 16, 15, 0, 16015, tzinfo=timezone.utc),
+        False
+    ),
+    (
+        datetime(2021, 10, 29, 16, 15, 0, 0, tzinfo=timezone.utc),
+        datetime(2021, 10, 29, 16, 15, 0, 16015, tzinfo=timezone.utc),
+        False
+    ),
+    (
+        datetime(2021, 10, 29, 0, 0, 0, 0, tzinfo=timezone.utc),
+        datetime(2021, 10, 29, 16, 15, 0, 16015, tzinfo=timezone.utc),
+        False
+    ),
+    (  # This scenario need to be revisited
+        datetime(2021, 10, 29, 23, 59, 59, 99999, tzinfo=timezone.utc),
+        datetime(2021, 10, 30, 0, 0, 0, 0, tzinfo=timezone.utc),
+        True
+    ),
+    (
+        datetime(2021, 10, 29, 0, 0, 0, 0, tzinfo=timezone.utc),
+        datetime(2021, 10, 30, 0, 0, 0, 0, tzinfo=timezone.utc),
+        True
+    )
+])
+def test_is_future_effective(session, filing_date, effective_date, is_future_effective):
+    """.Assert that isFutureEffective has expected value."""
+    identifier = 'BC1234567'
+
+    class MockFilingStorage:
+        comments_count: int
+        id: int
+        effective_date: datetime
+        _filing_date: datetime
+    filing_storage = MockFilingStorage()
+    filing_storage.comments_count = 0
+    filing_storage.id = 1
+    filing_storage._filing_date = filing_date
+    filing_storage.effective_date = effective_date
+    common_items = CoreFiling.common_ledger_items(identifier, filing_storage)
+    assert common_items['isFutureEffective'] == is_future_effective
