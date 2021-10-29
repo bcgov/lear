@@ -23,7 +23,7 @@ from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, User, db
+from legal_api.models import Business, Comment, Filing as FilingModel, User, db  # noqa: I001
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
@@ -39,7 +39,11 @@ from .bp import bp
 def get_comments(identifier, comment_id=None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    business = Business.find_by_identifier(identifier)
+    if identifier.startswith('T'):
+        filing_model = FilingModel.get_temp_reg_filing(identifier)
+        business = Business.find_by_internal_id(filing_model.business_id)
+    else:
+        business = Business.find_by_identifier(identifier)
     err_msg, err_code = _basic_checks(identifier, business, request)
     if err_msg:
         return jsonify(err_msg), err_code

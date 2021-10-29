@@ -404,7 +404,8 @@ class Filing:
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
-        doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
+        identifier = business.identifier if business else filing.storage.temp_reg
+        doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
 
