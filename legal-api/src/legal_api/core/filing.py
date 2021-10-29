@@ -17,7 +17,6 @@ from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
-import json
 from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
@@ -142,9 +141,9 @@ class Filing:
                 and (UserRoles.STAFF.value in submitter_roles
                      or UserRoles.SYSTEM.value in submitter_roles)
                 ) and (
-                 filing.get('filing', {}).get('header', {}).get('submitter')
-                 and not has_roles(jwt, [UserRoles.STAFF.value])
-               ):
+                filing.get('filing', {}).get('header', {}).get('submitter')
+                and not has_roles(jwt, [UserRoles.STAFF.value])
+            ):
                 filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
@@ -424,11 +423,7 @@ class Filing:
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
         ) and filing.storage.meta_data:
-            meta = filing.storage.meta_data
-            if isinstance(meta, str):
-                meta = json.loads(meta)
-
-            if legal_filings := meta.get('legalFilings'):
+            if legal_filings := filing.storage.meta_data.get('legalFilings'):
                 documents['documents']['legalFilings'] = \
                     [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
 
