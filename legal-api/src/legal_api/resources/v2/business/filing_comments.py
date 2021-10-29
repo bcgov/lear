@@ -124,7 +124,12 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
         return ({'message': f'No filing json data in body of post for {identifier}.'},
                 HTTPStatus.BAD_REQUEST)
 
-    business = Business.find_by_identifier(identifier)
+    if client_request.method == 'GET' and identifier.startswith('T'):
+        filing_model = Filing.get_temp_reg_filing(identifier)
+        business = Business.find_by_internal_id(filing_model.business_id)
+    else:
+        business = Business.find_by_identifier(identifier)
+
     filing = Filing.find_by_id(filing_id)
 
     if not business:

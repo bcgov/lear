@@ -17,7 +17,6 @@ from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
-import json
 from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
@@ -137,6 +136,7 @@ class Filing:
 
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
+
         if (self._storage
             and (submitter_roles := self._storage.submitter_roles)
                 and self.redact_submitter(submitter_roles, jwt)):
@@ -416,7 +416,8 @@ class Filing:
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
-        doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
+        identifier = business.identifier if business else filing.storage.temp_reg
+        doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
 
@@ -435,11 +436,7 @@ class Filing:
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
         ) and filing.storage.meta_data:
-            meta = filing.storage.meta_data
-            if isinstance(meta, str):
-                meta = json.loads(meta)
-
-            if legal_filings := meta.get('legalFilings'):
+            if legal_filings := filing.storage.meta_data.get('legalFilings'):
                 documents['documents']['legalFilings'] = \
                     [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
 
