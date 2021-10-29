@@ -18,7 +18,7 @@ Provides an endpoint to query/match NR Type to Entity Type mappings.
 from enum import Enum
 from http import HTTPStatus
 
-from flask import Blueprint, request
+from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business
@@ -187,4 +187,4 @@ def get_nr_type_map():
     if not rv:
         return {'message': 'no mappings found'}, HTTPStatus.NOT_FOUND
 
-    return rv, HTTPStatus.OK
+    return jsonify(rv), HTTPStatus.OK
