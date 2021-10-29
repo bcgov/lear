@@ -136,7 +136,6 @@ class Filing:
 
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
-
         if (self._storage
             and (submitter_roles := self._storage.submitter_roles)
                 and self.redact_submitter(submitter_roles, jwt)):
