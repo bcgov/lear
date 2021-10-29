@@ -136,15 +136,10 @@ class Filing:
 
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
-        with suppress(TypeError):
-            if ((submitter_roles := self._storage.submitter_roles)
-                and (UserRoles.STAFF.value in submitter_roles
-                     or UserRoles.SYSTEM.value in submitter_roles)
-                ) and (
-                filing.get('filing', {}).get('header', {}).get('submitter')
-                and not has_roles(jwt, [UserRoles.STAFF.value])
-            ):
-                filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
+        if (self._storage
+            and (submitter_roles := self._storage.submitter_roles)
+                and self.redact_submitter(submitter_roles, jwt)):
+            filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
 
@@ -299,6 +294,19 @@ class Filing:
         return legal_filings
 
     @staticmethod
+    def redact_submitter(submitter_roles: list, jwt: JwtManager) -> Optional[bool]:
+        """Redact the submitter of the filing."""
+        if not (submitter_roles or jwt):
+            return None
+
+        with suppress(KeyError, TypeError):
+            if (UserRoles.STAFF.value in submitter_roles
+                or UserRoles.SYSTEM.value in submitter_roles) \
+                 and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+                return True
+        return False
+
+    @staticmethod
     def ledger(business_id: int,
                jwt: JwtManager = None,
                statuses: List(str) = None,
@@ -311,10 +319,6 @@ class Filing:
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
         """
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        if jwt:
-            redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
-        else:
-            redact_required = True
 
         business = Business.find_by_internal_id(business_id)
 
@@ -331,6 +335,13 @@ class Filing:
 
         ledger = []
         for filing in query.all():
+
+            submitter_displayname = REDACTED_STAFF_SUBMITTER
+            if (submitter := filing.filing_submitter) \
+                and submitter.username and jwt \
+                    and not Filing.redact_submitter(filing.submitter_roles, jwt):
+                submitter_displayname = submitter.username
+
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,
@@ -340,7 +351,7 @@ class Filing:
                 'name': filing.filing_type,
                 'paymentStatusCode': filing.payment_status_code,
                 'status': filing.status,
-                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
+                'submitter': submitter_displayname,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
                 **Filing.common_ledger_items(business.identifier, filing),

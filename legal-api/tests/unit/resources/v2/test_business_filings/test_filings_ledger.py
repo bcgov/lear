@@ -376,3 +376,57 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             assert filing_json['displayName'] == f'Annual Report - Corrected'
         else:
             assert False
+
+
+
+@pytest.mark.parametrize(
+    'test_name, submitter_role, jwt_role, username, expected',
+    [
+        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
+        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
+        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'some-user'),
+        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
+        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
+        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'bcsc/public_user'),
+        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'bcsc/public_user'),
+        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'some-user'),
+    ]
+)
+def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+    """Assert that the core filing is saved to the backing store."""
+    from legal_api.core.filing import Filing as CoreFiling
+    try:
+        identifier = 'BC1234567'
+        founding_date = datetime.utcnow()
+        business_name = 'The Truffle House'
+        entity_type = Business.LegalTypes.BCOMP.value
+
+        business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
+        business.legal_name = business_name
+        business.save()
+
+        filing_name = 'specialResolution'
+        filing_date = founding_date
+        filing_submission = {
+            'filing': {
+                'header': {
+                    'name': filing_name,
+                    'date': '2019-04-08'
+                },
+                filing_name: {
+                    'resolution': 'Year challenge is hitting oppo for the win.'
+                }}}
+        user = factory_user(username)
+        new_filing = factory_completed_filing(business, filing_submission, filing_date=filing_date)
+        new_filing.submitter_id = user.id
+        new_filing.submitter_roles = submitter_role
+        setattr(new_filing, 'skip_status_listener', True)  # skip status listener
+        new_filing.save()
+
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=create_header(jwt, [jwt_role], identifier))
+    except Exception as err:
+        print(err)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filings'][0]['submitter'] == expected

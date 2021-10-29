@@ -968,14 +968,17 @@ def test_coa_future_effective(session, client, jwt):
     valid_date = LegislationDatetime.tomorrow_midnight()
     assert effective_date == valid_date
 
-@api_v2
 @pytest.mark.parametrize(
     'test_name, submitter_role, jwt_role, username, expected',
     [
         ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
-        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
         ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
+        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'some-user'),
         ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
+        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
+        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'bcsc/public_user'),
+        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'bcsc/public_user'),
+        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'some-user'),
     ]
 )
 def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
