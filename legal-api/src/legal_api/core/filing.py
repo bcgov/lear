@@ -301,8 +301,8 @@ class Filing:
 
         with suppress(KeyError, TypeError):
             if (UserRoles.STAFF.value in submitter_roles
-                or UserRoles.SYSTEM.value in submitter_roles) \
-                 and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+                    or UserRoles.SYSTEM.value in submitter_roles) \
+                    and not has_roles(jwt, [UserRoles.STAFF.value, ]):
                 return True
         return False
 
@@ -385,7 +385,7 @@ class Filing:
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
             'isFutureEffective': (filing_storage.effective_date
                                   and filing_storage._filing_date  # pylint: disable=protected-access
-                                  and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
+                                  and (filing_storage.effective_date.date() > filing_storage._filing_date.date())),  # pylint: disable=protected-access # noqa: E501
         }
 
     @staticmethod
