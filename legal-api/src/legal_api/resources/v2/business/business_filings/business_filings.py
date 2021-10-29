@@ -81,7 +81,7 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
     if filing_id or identifier.startswith('T'):
         return ListFilingResource.get_single_filing(identifier, filing_id)
 
-    return ListFilingResource.get_ledger_listing(identifier)
+    return ListFilingResource.get_ledger_listing(identifier, jwt)
 
 
 @bp.route('/<string:identifier>/filings', methods=['POST'])
@@ -299,7 +299,7 @@ class ListFilingResource():
                 f'Payment connection failure for getting payment_token:{payment_token} filing payment details. ', err)
 
     @staticmethod
-    def get_ledger_listing(identifier: str):
+    def get_ledger_listing(identifier: str, user_jwt: JwtManager):
         """Return the requested ledger for the business identifier provided."""
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
@@ -314,6 +314,7 @@ class ListFilingResource():
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         filings = CoreFiling.ledger(business.id,
+                                    jwt=user_jwt,
                                     statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
                                     start=ledger_start,
                                     size=ledger_size)
