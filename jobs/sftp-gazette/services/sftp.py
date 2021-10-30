@@ -35,23 +35,31 @@ class SFTPService:  # pylint: disable=too-few-public-methods
 
         sftp_host = os.getenv('SFTP_HOST', 'localhost') 
         sftp_port = os.getenv('SFTP_PORT', 22) 
-                
+        logging.exception('############# 111 processing notebook sftp_host: %s.', sftp_host)    
+        logging.exception('############# 222 processing notebook sftp_port: %s.', sftp_port)    
+
         cnopts = CnOpts()
         # only for local development set this to false .
         if os.getenv('SFTP_VERIFY_HOST').lower() == 'false':
             cnopts.hostkeys = None            
         else:
+            logging.exception('############# 333 processing notebook SFTP_HOST_KEY: %s.', os.getenv('SFTP_HOST_KEY', ''))    
             ftp_host_key_data = os.getenv('SFTP_HOST_KEY', '').encode()            
             key = paramiko.RSAKey(data=decodebytes(ftp_host_key_data))   
             cnopts.hostkeys.add(sftp_host, 'ssh-rsa', key) 
+            logging.exception('############# 333 processing notebook cnopts: %s.', cnopts)    
         
         sftp_priv_key =  os.getenv('BCREG_FTP_PRIVATE_KEY', '')   
         sftp_priv_key_file = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archieve/') + 'sftp_priv_key_file'
-        
+
+        logging.exception('############# 4444 processing notebook sftp_priv_key: %s.', sftp_priv_key)    
+        logging.exception('############# 5555 processing notebook sftp_priv_key_file: %s.', sftp_priv_key_file)    
+
         # only create key file if it doesn't exist
         if not os.path.isfile(sftp_priv_key_file):            
             with open(sftp_priv_key_file, 'w+') as fh:
                 fh.write(sftp_priv_key)
+        logging.exception('############# 5555bbb processing notebook sftp_priv_key_file: %s.', sftp_priv_key_file.)   
 
         sft_credentials = {
             'username': os.getenv('SFTP_USERNAME', 'foo'),
@@ -59,6 +67,8 @@ class SFTPService:  # pylint: disable=too-few-public-methods
             'private_key': sftp_priv_key_file,
             'private_key_pass': os.getenv('BCREG_FTP_PRIVATE_KEY_PASSPHRASE', '')
         }
+
+        logging.exception('############# 6666 processing notebook sft_credentials: %s.', sft_credentials)  
 
         sftp_connection = Connection(host=sftp_host, **sft_credentials, cnopts=cnopts, port=int(sftp_port))        
         logging.info('sftp_connection successful')
