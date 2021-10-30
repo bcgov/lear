@@ -69,7 +69,7 @@ to setup your local development environment.
    ```sh
    oc process -f openshift/templates/cronjob.yaml \
   -p TAG=dev \
-  -p SCHEDULE="30 14 * * *" \
+  -p SCHEDULE="30 1 * * TUE" \
   -o yaml \
   | oc apply -f - -n cc892f-dev
   ```
