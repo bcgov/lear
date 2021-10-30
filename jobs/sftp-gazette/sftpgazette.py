@@ -120,8 +120,7 @@ def processnotebooks(notebookdirectory):
                                     
             status = True                    
         except Exception:            
-            logging.exception(
-                'Error processing notebook %s at %s/%s try.', notebookdirectory)
+            logging.exception('Error processing notebook %s.', notebookdirectory)
             send_email(notebookdirectory, 'ERROR', traceback.format_exc())            
 
     return status;    
