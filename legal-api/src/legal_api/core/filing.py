@@ -223,6 +223,7 @@ class Filing:
         if filing_json and correction_id and self._storage and self.status in [Filing.Status.COMPLETED.value,
                                                                                Filing.Status.PAID.value,
                                                                                Filing.Status.PENDING.value,
+                                                                               Filing.Status.PENDING_CORRECTION.value
                                                                                ]:
             if corrected_filing := Filing.find_by_id(correction_id):
                 if diff_nodes := diff_dict(filing_json,
