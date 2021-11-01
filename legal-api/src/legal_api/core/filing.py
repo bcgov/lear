@@ -25,7 +25,6 @@ from typing import Dict, List, Optional
 from flask import current_app, url_for
 from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
-from pprint import pprint
 
 from legal_api.core.meta import FilingMeta
 from legal_api.core.utils import diff_dict, diff_list
