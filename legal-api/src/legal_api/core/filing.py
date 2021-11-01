@@ -368,15 +368,19 @@ class Filing:
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        return {
-            'commentsCount': filing_storage.comments_count,
-            'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
-            'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents',
-            'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
-            'isFutureEffective': (filing_storage.effective_date
-                                  and filing_storage._filing_date  # pylint: disable=protected-access
-                                  and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
-        }
+        common_items = {
+           'commentsCount': filing_storage.comments_count,
+           'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
+           'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
+           'isFutureEffective': (filing_storage.effective_date
+                                 and filing_storage._filing_date  # pylint: disable=protected-access
+                                 and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
+       }
+        """Only apply document links for filings that are paid for and completed in our system."""
+        if filing_storage.payment_status_code == 'COMPLETED':
+            common_items['documentsLink'] = f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents'
+
+        return common_items
 
     @staticmethod
     def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
