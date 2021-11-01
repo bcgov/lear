@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the worker is operating correctly."""
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
 from entity_emailer.email_processors import ar_reminder_notification, filing_notification, name_request, nr_notification
@@ -202,20 +204,23 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
 
-names_arr = [{'name': 'TEST Company Name', 'state': 'APPROVED'}]
+default_legal_name = 'TEST COMP'
+default_names_array = [{'name': default_legal_name, 'state': 'APPROVED'}]
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value', 'names'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None,
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value',
+                         'expected_legal_name', 'names'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST2 Company Name',
         [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None,
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
         [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
-    ('expired', 'NR 1234567', 'Expired', None, None, names_arr),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, names_arr),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, names_arr),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', names_arr)
+    ('expired', 'NR 1234567', 'Expired', None, None, None, default_names_array),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
 ])
-def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value, names):
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value,
+                         expected_legal_name, names):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
@@ -255,6 +260,12 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                 assert call_args[0][0]['content']['attachments'] == []
                 assert mock_query_nr_number.call_args[0][0] == nr_number
                 assert call_args[0][1] == token
+
+                if option == nr_notification.Option.BEFORE_EXPIRY.value:
+                    assert nr_number in call_args[0][0]['content']['body']
+                    assert expected_legal_name in call_args[0][0]['content']['body']
+                    exp_date = LegislationDatetime.format_as_report_string(datetime.fromisoformat(expiration_date))
+                    assert exp_date in call_args[0][0]['content']['body']
 
 
 def test_nr_receipt_notification(app, session):
