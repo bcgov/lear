@@ -12,6 +12,13 @@ to setup your local development environment.
 1. Follow the [instructions](https://github.com/bcgov/entity/blob/master/docs/setup-forking-workflow.md) to checkout the project from GitHub.
 2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes, set up a virtual environment to install the Python packages used by this project.
 3. Run `make setup` to set up the virtual environment and install libraries.
+4. How to generate an SSH key which will be used when you run codes on Visual Source Code only - from command line:
+   The SFTP server supports only rsa key with 2048 length
+   > ssh-keygen -t rsa -b 2048 -C 'BCRegistries'
+5. How to print SFT servers public key which will be used for either Visual Source Code or openshift - from command line
+   > ssh-keyscan server.gov.bc.ca
+
+   this will print the public key. Store the string after ssh-rsa to the SFTP_HOST_KEY configurations on openshift.
 
 ## Running Notebook Report
 
