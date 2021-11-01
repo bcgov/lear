@@ -23,6 +23,7 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.services import NameXService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import substitute_template_parts
@@ -60,7 +61,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     expiration_date = ''
     if nr_data['expirationDate']:
         exp_date = datetime.fromisoformat(nr_data['expirationDate'])
-        expiration_date = exp_date.strftime('%B %d, %Y %H:%M %p')
+        expiration_date = LegislationDatetime.format_as_report_string(exp_date)
 
     refund_value = ''
     if option == Option.REFUND.value:
