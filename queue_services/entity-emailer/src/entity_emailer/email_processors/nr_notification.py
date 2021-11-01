@@ -37,8 +37,7 @@ class Option(Enum):
     UPGRADE = 'upgrade'
     REFUND = 'refund'
 
-
-def process(email_info: dict, option) -> dict:
+def process(email_info: dict, option) -> dict: # pylint: disable-msg=too-many-locals
     """
     Build the email for Name Request notification.
 
@@ -65,10 +64,10 @@ def process(email_info: dict, option) -> dict:
     refund_value = ''
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
-    
-    for x in nr_data['names']:
-        if (x['state'] == 'APPROVED') or (x['state'] == 'CONDITION'):
-            legal_name = x['name']
+
+    for n_item in nr_data['names']:
+        if (n_item['state'] == 'APPROVED') or (n_item['state'] == 'CONDITION'):
+            legal_name = n_item['name']
             break
 
     # render template with vars
