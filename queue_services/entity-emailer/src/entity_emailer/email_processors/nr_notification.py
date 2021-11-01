@@ -37,7 +37,8 @@ class Option(Enum):
     UPGRADE = 'upgrade'
     REFUND = 'refund'
 
-def process(email_info: dict, option) -> dict: # pylint: disable-msg=too-many-locals
+
+def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
     """
     Build the email for Name Request notification.
 

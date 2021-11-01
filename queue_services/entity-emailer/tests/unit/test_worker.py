@@ -201,9 +201,13 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
-names_arr = [{"name":"TEST Company Name","state":"APPROVED"}]
+
+names_arr = [{'name': 'TEST Company Name', 'state': 'APPROVED'}]
+
+
 @pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value', 'names'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None, [{"name":"TEST Company Name","state":"NE"},{"name":"TEST2 Company Name","state":"APPROVED"}]),
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None,
+        [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
     ('expired', 'NR 1234567', 'Expired', None, None, names_arr),
     ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, names_arr),
     ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, names_arr),
