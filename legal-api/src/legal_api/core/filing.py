@@ -411,13 +411,13 @@ class Filing:
 
         documents = {'documents': {}}
 
-        verifyPayment = [
+        has_payment_rules = [
             filing.storage,
             filing.storage.payment_status_code,
             filing.storage.payment_status_code == 'COMPLETED'
         ]
 
-        if all(verifyPayment):
+        if all(has_payment_rules):
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         if filing.status in (
