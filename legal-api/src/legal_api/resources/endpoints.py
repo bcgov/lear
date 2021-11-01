@@ -84,14 +84,12 @@ class Endpoints:
         @self.app.errorhandler(405)
         def _handle_api_error(error):
             if request.path.startswith(EndpointEnum.API_V2.value):
-                # using request.url to aviod scheme issue (redirecting from https -> http)
-                path = request.url.replace(EndpointEnum.API_V2.value, EndpointEnum.API_V1.value)
-                return self._redirect(path, code=HTTPStatus.MOVED_PERMANENTLY)
+                path = request.path.replace(EndpointEnum.API_V2.value, EndpointEnum.API_V1.value)
+                return self._redirect(path)
 
             elif request.path.startswith(EndpointEnum.API.value) and not ('v1' in request.path or 'v2' in request.path):
-                # using request.url to aviod scheme issue (redirecting from https -> http)
-                path = request.url.replace(EndpointEnum.API.value, EndpointEnum.API_V1.value)
-                return self._redirect(path, code=HTTPStatus.MOVED_PERMANENTLY)
+                path = request.path.replace(EndpointEnum.API.value, EndpointEnum.API_V1.value)
+                return self._redirect(path)
 
             return error
 
