@@ -20,7 +20,6 @@ from .business import bp as businesses_bp
 from .document_signature import bp as document_signature_bp
 from .meta import bp as meta_bp
 from .namerequest import bp as namerequest_bp
-from .nr_type_map import bp as nr_type_map_bp
 
 
 class V2Endpoint:
@@ -41,7 +40,6 @@ class V2Endpoint:
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(document_signature_bp)
         self.app.register_blueprint(namerequest_bp)
-        self.app.register_blueprint(nr_type_map_bp)
 
 
 v2_endpoint = V2Endpoint()
