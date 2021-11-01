@@ -25,6 +25,9 @@ to setup your local development environment.
 1. Run `. venv/bin/activate` to change to `venv` environment.
 2. Run notebook with `python sftpgazette.py`
 
+## Added permission to run.sh file if it is needed
+git add --chmod=+x path/to/file
+
 ## Running Unit Tests
 
 1. Run `python -m pytest` or `pytest` command.
