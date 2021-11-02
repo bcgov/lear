@@ -283,9 +283,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            if self.effective_date is None or \
-                    self.effective_date <= self._payment_completion_date:
-                self._status = Filing.Status.COMPLETED.value
+            # if self.effective_date is None or \
+            #         self.effective_date <= self._payment_completion_date:
+            #     self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -378,9 +378,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return False
 
     def set_processed(self):
-        """Assign the completion date, unless it is already set."""
+        """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
+        if (self.effective_date is None or
+            (self.payment_completion_date
+             and self.effective_date < self.payment_completion_date)):  # pylint: disable=W0143; hybrid property
+            self.effective_date = self.payment_completion_date
 
     @staticmethod
     def _raise_default_lock_exception():
@@ -493,7 +497,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
