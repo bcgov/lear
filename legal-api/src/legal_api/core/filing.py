@@ -83,7 +83,7 @@ class Filing:
         self._completion_date: datetime
         self._filing_date: datetime
         self._filing_type: Optional[str] = None
-        self._effective_date: datetime
+        self._effective_date: Optional[datetime] = None
         self._payment_status_code: str
         self._payment_token: str
         self._payment_completion_date: datetime
@@ -142,6 +142,14 @@ class Filing:
             filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
+
+    @property
+    def is_future_effective(self) -> bool:
+        """Return True if the effective date is in the future."""
+        with suppress(AttributeError, TypeError):
+            if self._storage.effective_date > self._storage.payment_completion_date:
+                return True
+        return False
 
     # json is returned as a property defined after this method
     def get_json(self, with_diff: bool = True) -> Optional[Dict]:
@@ -265,7 +273,7 @@ class Filing:
         return None
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         storages = FilingStorage.get_filings_by_status(business_id, status, after_date)
         filings = []
@@ -379,14 +387,14 @@ class Filing:
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        filing = Filing()
+        filing._storage = filing_storage  # pylint: disable=protected-access
         return {
             'commentsCount': filing_storage.comments_count,
             'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
             'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents',
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
-            'isFutureEffective': (filing_storage.effective_date
-                                  and filing_storage._filing_date  # pylint: disable=protected-access
-                                  and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
+            'isFutureEffective': filing.is_future_effective,
         }
 
     @staticmethod
