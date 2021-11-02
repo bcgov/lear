@@ -366,6 +366,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         Once a filing, with valid json has an invoice attached, it can no longer be altered and is locked.
         Exception to this rule, payment_completion_date requires the filing to be locked.
         """
+        if self.deletion_locked:
+            return True
+
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
@@ -432,6 +435,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['status'] = self.status
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
+            json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
@@ -624,7 +628,7 @@ def block_filing_delete_listener_function(mapper, connection, target):  # pylint
     """Raise an error when a delete is attempted on a Filing."""
     filing = target
 
-    if filing.locked:
+    if filing.locked or filing.deletion_locked:
         raise BusinessException(
             error='Deletion not allowed.',
             status_code=HTTPStatus.FORBIDDEN

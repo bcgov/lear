@@ -22,6 +22,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing
 from tests import EPOCH_DATETIME
+from tests.conftest import not_raises
 
 
 def test_unsaved_filing_lock(session):
@@ -81,3 +82,23 @@ def test_changing_uninvoiced_saved_filing_is_unlocked(session):
     assert not filing.locked
     filing.save()
     assert not filing.locked
+
+
+@pytest.mark.parametrize('test_name, deletion_lock', [
+    ('with_deletion_lock', True),
+    ('without_deletion_lock', False),
+])
+def test_filing_deletion_lock(session, test_name, deletion_lock):
+    """Assert that a filing can be deleted."""
+    filing = Filing()
+    filing.deletion_locked = deletion_lock
+    filing.save()
+
+    if deletion_lock:
+        assert filing.locked
+        with pytest.raises(BusinessException):
+            filing.delete()
+    else:
+        assert not filing.locked
+        with not_raises(BusinessException):
+            filing.delete()
