@@ -229,7 +229,7 @@ def test_various_filing_states(session, client, jwt,
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
-    filing._payment_status_code = payment_status
+    filing._payment_completion_date = payment_completion_date
     filing.save()
 
     if status == 'COMPLETED':
