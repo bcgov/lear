@@ -410,14 +410,7 @@ class Filing:
                                                    'legal_filing_name': None})
 
         documents = {'documents': {}}
-
-        has_payment_rules = [
-            filing.storage,
-            filing.storage.payment_status_code,
-            filing.storage.payment_status_code == 'COMPLETED'
-        ]
-
-        if all(has_payment_rules):
+        if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         if filing.status in (
