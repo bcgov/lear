@@ -429,9 +429,9 @@ class Filing:
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
 
-        documents = {'documents': {
-                     'receipt': f'{base_url}{doc_url}/receipt'
-                     }}
+        documents = {'documents': {}}
+        if filing.storage and filing.storage.payment_completion_date:
+            documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         if filing.status in (
             Filing.Status.PAID,

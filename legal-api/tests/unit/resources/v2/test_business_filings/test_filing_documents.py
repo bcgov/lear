@@ -132,12 +132,12 @@ def test_unpaid_filing(session, client, jwt):
 
 base_url = 'https://LEGAL_API_BASE_URL'
 
-@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code', [
+@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
         ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND, None
         ),
         ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND
+         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND, None
         ),
         ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
@@ -147,7 +147,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK
+        HTTPStatus.OK, '2017-10-01'
         ),
         ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
@@ -157,7 +157,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK
+        HTTPStatus.OK, '2017-10-01'
         ),
         ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
@@ -168,7 +168,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK
+        HTTPStatus.OK, '2017-10-01'
         ),
         ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
          'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
@@ -179,7 +179,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK
+        HTTPStatus.OK, '2017-10-01'
         ),
         ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
          'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
@@ -191,8 +191,19 @@ base_url = 'https://LEGAL_API_BASE_URL'
                         ]
                         }
          },
-        HTTPStatus.OK
+        HTTPStatus.OK, '2017-10-01'
         ),
+        ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+                 'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+                 {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                                'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                                'legalFilings': [
+                                    {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                                ]
+                                }
+                 },
+                HTTPStatus.OK, None
+                ),
     ])
 def test_various_filing_states(session, client, jwt,
                                test_name,
@@ -200,7 +211,8 @@ def test_various_filing_states(session, client, jwt,
                                entity_type,
                                filing_name_1, legal_filing_1,
                                filing_name_2, legal_filing_2,
-                               status, expected_msg, expected_http_code):
+                               status, expected_msg, expected_http_code,
+                               payment_completion_date):
     """Test document list based on filing states."""
     # Setup
     # identifier = 'CP7654321'
@@ -217,6 +229,7 @@ def test_various_filing_states(session, client, jwt,
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
+    filing._payment_completion_date = payment_completion_date
     filing.save()
 
     if status == 'COMPLETED':
