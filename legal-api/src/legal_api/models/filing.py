@@ -162,6 +162,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_payment_completion_date',
             '_payment_status_code',
             '_payment_token',
+            '_sent_to_gazette_date',
             '_source',
             '_status',
             'business_id',
@@ -179,8 +180,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'submitter_roles',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id',
-            '_sent_to_gazette_date'
+            'transaction_id'
         ]
     }
 
@@ -193,6 +193,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
+    _sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
@@ -228,7 +229,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
-    _sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True))
+    
 
     @hybrid_property
     def sent_to_gazette_date(self):
