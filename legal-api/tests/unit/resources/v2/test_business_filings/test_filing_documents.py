@@ -171,7 +171,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
         HTTPStatus.OK, '2017-10-01'
         ),
         ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+         'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
          {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                         'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                         'legalFilings': [
@@ -182,7 +182,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
         HTTPStatus.OK, '2017-10-01'
         ),
         ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+         'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
          {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                         'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
                         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
@@ -194,7 +194,7 @@ base_url = 'https://LEGAL_API_BASE_URL'
         HTTPStatus.OK, '2017-10-01'
         ),
         ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-                 'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
+                 'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
                  {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
                                 'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                                 'legalFilings': [
@@ -204,8 +204,28 @@ base_url = 'https://LEGAL_API_BASE_URL'
                  },
                 HTTPStatus.OK, None
                 ),
+        ('ben_changeOfDirector', 'BC7654321', Business.LegalTypes.BCOMP.value,
+                 'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
+                 {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                                'legalFilings': [
+                                    {'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
+                                ]
+                                }
+                 },
+                HTTPStatus.OK, None
+                ),
+        ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value,
+                 'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
+                 {'documents': {
+                                'legalFilings': [
+                                    {'changeOfDirectors': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/changeOfDirectors'},
+                                ]
+                                }
+                 },
+                HTTPStatus.OK, None
+                ),
     ])
-def test_various_filing_states(session, client, jwt,
+def test_document_list_for_various_filing_states(session, client, jwt,
                                test_name,
                                identifier,
                                entity_type,

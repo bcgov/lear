@@ -103,7 +103,10 @@ FILINGS: Final = {
                 'CP': 'OTFDR',
                 'BEN': 'BCFDR'
             }
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'changeOfName': {
         'name': 'changeOfName',
