@@ -430,6 +430,11 @@ class Filing:
                                                    'legal_filing_name': None})
 
         documents = {'documents': {}}
+        # for paper_only filings return and empty documents list
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        # return a receipt for filings completed in our system
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
