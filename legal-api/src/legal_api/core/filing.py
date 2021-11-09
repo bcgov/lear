@@ -20,6 +20,7 @@ import copy
 from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
+from pprint import pprint
 
 from flask import current_app, url_for
 from flask_jwt_oidc import JwtManager
@@ -430,6 +431,11 @@ class Filing:
                                                    'legal_filing_name': None})
 
         documents = {'documents': {}}
+        # for paper_only filings return and empty documents list
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        # return a receipt for filings completed in our system
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
