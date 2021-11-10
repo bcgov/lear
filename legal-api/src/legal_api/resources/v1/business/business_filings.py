@@ -577,7 +577,6 @@ class ListFilingResource(Resource):
         if filing_type == 'incorporationApplication':
             return filing_json['filing']['business']['legalType']
 
-        # business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
         return business.legal_type
 
     @staticmethod
