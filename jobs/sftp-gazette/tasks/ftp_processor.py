@@ -27,7 +27,8 @@ class FtpProcessor:  # pylint:disable=too-few-public-methods
                 
                 for file in file_list:                                      
                     file_full_name = data_dir + file                      
-                    sftp_client.put(file_full_name)    
+                    sftp_client.put(file_full_name) 
+                    logging.info('SFTP to Gazette completed for file: %s', file_full_name)    
 
             except Exception as e:  # NOQA # pylint: disable=broad-except
                 logging.error(e)

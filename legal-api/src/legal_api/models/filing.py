@@ -162,7 +162,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_payment_completion_date',
             '_payment_status_code',
             '_payment_token',
-            '_sent_to_gazette_date',
             '_source',
             '_status',
             'business_id',
@@ -192,8 +191,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _meta_data = db.Column('meta_data', JSONB)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
-    _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
-    _sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True))
+    _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))    
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
@@ -293,15 +291,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
                 status_code=HTTPStatus.FORBIDDEN
             )
-
-    @hybrid_property
-    def sent_to_gazette_date(self):
-        """Property containing the date a sent_to_gazette_date was submitted."""
-        return self._sent_to_gazette_date
-
-    @sent_to_gazette_date.setter
-    def sent_to_gazette_date(self, value: datetime):
-        self._sent_to_gazette_date = value
 
     @property
     def status(self):

@@ -102,32 +102,29 @@ def processnotebooks(notebookdirectory):
     """Process data."""
     status = False
          
-    logging.info('Start processing: %s', notebookdirectory)        
+    logging.info('Start processing directory: %s', notebookdirectory)        
     data_dir = os.getenv('DATA_DIR', '/opt/app-root/data') 
-    dest_dir = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archive/') 
-    for file in findfiles(notebookdirectory, 'generate_*'):        
-        note_book = os.path.basename(file)        
-        
-        try:       
-            logging.info('##### Start processing file: %s', file) 
-            pm.execute_notebook(file, data_dir +'temp.ipynb', parameters=None)   
-            os.remove(data_dir+'temp.ipynb') 
-            
-            FtpProcessor.process_ftp(data_dir)                
-            logging.info('SFTP to Gazette completed')
-
-            logging.info('##### Start processing UPDAte file: %s', file.replace("generate", "update")) 
-            pm.execute_notebook(file.replace("generate", "update"), data_dir +'temp.ipynb', parameters=None)   
-            os.remove(data_dir+'temp.ipynb')       
-                                    
-            status = True                    
-        except Exception:            
-            logging.exception('Error processing notebook %s.', notebookdirectory)
-            send_email(notebookdirectory, 'ERROR', traceback.format_exc())            
-
+    dest_dir = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archive/')     
     
-    send_email(note_book, '', '')   
-    archive_files (data_dir, dest_dir)      
+    try: 
+        file=os.path.join(notebookdirectory, "generate_files.ipynb")        
+        note_book = os.path.basename(file) 
+
+        pm.execute_notebook(file, data_dir +'temp.ipynb', parameters=None)   
+        os.remove(data_dir+'temp.ipynb')   
+
+        FtpProcessor.process_ftp(data_dir)                        
+                    
+        pm.execute_notebook(os.path.join(notebookdirectory, "update_database.ipynb") , data_dir +'temp.ipynb', parameters=None)   
+        os.remove(data_dir+'temp.ipynb')   
+
+        send_email(note_book, '', '')   
+        archive_files (data_dir, dest_dir)      
+                                
+        status = True                    
+    except Exception:            
+        logging.exception('Error processing notebook %s.', notebookdirectory)
+        send_email(notebookdirectory, 'ERROR', traceback.format_exc())       
     return status;    
    
 
