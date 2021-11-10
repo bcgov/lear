@@ -571,7 +571,6 @@ class ListFilingResource(Resource):
             errors.append({'path': '/'.join(error.path), 'error': error.message})
         return errors, HTTPStatus.BAD_REQUEST
 
-
     @staticmethod
     def _get_legal_type(filing_type: str, filing_json: dict, business: Business):
         """Get the legal type from a filing."""
@@ -580,7 +579,6 @@ class ListFilingResource(Resource):
 
         # business = Business.find_by_identifier(filing_json['filing']['business']['identifier'])
         return business.legal_type
-
 
     @staticmethod
     def _get_filing_types(business: Business, filing_json: dict):
