@@ -1036,12 +1036,9 @@ def test_get_correct_fee_codes(
     # verify fee code
     assert fee_code == expected_fee_code
     
-    if additional_fee_codes and len(additional_fee_codes):
-        for additional_fee_code in additional_fee_codes:
-            assert additional_fee_code in map(
-                lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
-    elif additional_fee_codes and not len(additional_fee_codes):
-        assert len(ListFilingResource._get_filing_types(business, filing)) == 1
+    assert all(elem in\
+            map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))\
+                for elem in additional_fee_codes)
 
 
 @integration_payment
