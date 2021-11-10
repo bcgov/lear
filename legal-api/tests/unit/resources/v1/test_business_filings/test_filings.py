@@ -962,11 +962,12 @@ DISSOLUTION_FILING = {
 }
 
 
-def get_expected_fee_code(free, filing_name, orig_legal_type):
+def _get_expected_fee_code(free, filing_name, legal_type):
+    """Return fee codes for legal type."""
     if free:
-        return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(orig_legal_type)
+        return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
     
-    return Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
+    return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
 
 @pytest.mark.parametrize(
@@ -1006,7 +1007,7 @@ def test_get_correct_fee_codes(
         session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
-    expected_fee_code = get_expected_fee_code(free, filing_name, orig_legal_type)
+    expected_fee_code = _get_expected_fee_code(free, filing_name, orig_legal_type)
     
     business = None
     if not identifier.startswith('T'):
