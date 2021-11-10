@@ -59,6 +59,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
+        'affidavit': {
+            'name': 'affidavit',
+            'title': 'Affidavit',
+            'codes': {
+                'CP': 'AFDVT'
+            }
+        },
         'alteration': {
             'name': 'alteration',
             'title': 'Notice of Alteration Filing',
@@ -106,6 +113,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'CRCTN'
             }
         },
+        'dissolution': {
+            'name': 'dissolution',
+            'title': 'Voluntary dissolution',
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL'
+            }
+        },
         'incorporationApplication': {
             'name': 'incorporationApplication',
             'title': 'Incorporation Application',
@@ -123,8 +142,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
-                                  'CP': 'RES'}},
-        'dissolution': {'name': 'dissolution', 'title': 'Dissolution'},
+                                  'CP': 'SPRLN'}},
         'transition': {
             'name': 'transition',
             'title': 'Transition',

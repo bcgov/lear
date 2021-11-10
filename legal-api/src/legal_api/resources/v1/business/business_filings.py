@@ -595,6 +595,28 @@ class ListFilingResource(Resource):
                 'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
             })
+        elif any(filing_type in x for x in ['dissolution']) and\
+                filing_json['filing']['dissolution']['dissolutionType'] == 'voluntary':
+            filing_type_code = Filing.FILINGS.get('dissolution', {}).get('codes', {}).get(legal_type)
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'futureEffective': ListFilingResource._is_future_effective_filing(filing_json),
+                'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+            })
+            if legal_type == Business.LegalTypes.COOP.value:
+                filing_type_code =\
+                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'priority': priority_flag,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
+                filing_type_code =\
+                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
         elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
