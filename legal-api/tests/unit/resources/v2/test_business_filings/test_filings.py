@@ -934,11 +934,10 @@ def test_get_correct_fee_codes(
         expected_fee_code = Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(orig_legal_type)
     else:
         expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
-    if identifier.startswith('T'):
-        business = None
-    else:
+ 
+    business = None
+    if not identifier.startswith('T'):
         business = factory_business(identifier=identifier, entity_type=orig_legal_type)
-
     # set filing
     filing = copy.deepcopy(base_filing)
     filing['filing']['business']['identifier'] = identifier
