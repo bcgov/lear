@@ -1,8 +1,8 @@
-"""add_sent_to_gazette_table
+"""add_sent_to_gazette
 
-Revision ID: 6ce7d2e74c5b
+Revision ID: d9e21a1b82ca
 Revises: 3d8eb786f4c2
-Create Date: 2021-11-10 12:09:37.801168
+Create Date: 2021-11-10 21:29:51.135585
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6ce7d2e74c5b'
+revision = 'd9e21a1b82ca'
 down_revision = '3d8eb786f4c2'
 branch_labels = None
 depends_on = None

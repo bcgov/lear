@@ -19,16 +19,16 @@ The sentToGazette class are held in this module.
 from .db import db
 
 
-class sentToGazette(db.Model):  # pylint: disable=too-few-public-methods
+class SentToGazette(db.Model):  # pylint: disable=too-few-public-methods
     """This table maps sent_to_gazette to filing ids."""
 
     __tablename__ = 'sent_to_gazette'
 
-    filing_id = db.Column('filing_id', db.Integer)  
-    identifier = db.Column('identifier', db.String(10))  
-    sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True), default=None)    
+    filing_id = db.Column('filing_id', db.Integer)
+    identifier = db.Column('identifier', db.String(10))
+    sent_to_gazette_date = db.Column('sent_to_gazette_date', db.DateTime(timezone=True), default=None)
 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
-        db.session.commit()    
+        db.session.commit()
