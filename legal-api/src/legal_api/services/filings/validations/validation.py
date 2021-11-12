@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validation entry point for all filing submissions."""
+from http import HTTPStatus
 from typing import Dict
+
+from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services.utils import get_str
 
 from .alteration import validate as alteration_validate
 from .annual_report import validate as annual_report_validate
@@ -62,7 +66,22 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
         if err:
             return err
+    elif 'dissolution' in filing_json['filing'].keys() \
+            and (dissolution_type := filing_json['filing']['dissolution'].get('dissolutionType', None)) \
+            and dissolution_type == 'voluntary':
+        err = dissolution_validate(business, filing_json)
+        if err:
+            return err
 
+        legal_type = get_str(filing_json, '/filing/business/legalType')
+        if legal_type == Business.LegalTypes.COOP.value:
+            if 'specialResolution' in filing_json['filing'].keys():
+                err = special_resolution_validate(business, filing_json)
+            else:
+                err = Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is required.'),
+                                                      'path': '/filing/specialResolution'}])
+        if err:
+            return err
     else:
         for k in filing_json['filing'].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary

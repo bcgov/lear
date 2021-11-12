@@ -80,10 +80,6 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_special_resolution(dissolution, legal_type)
-    if err:
-        msg.extend(err)
-
     err = validate_affidavit(dissolution, legal_type)
     if err:
         msg.extend(err)
@@ -197,40 +193,6 @@ def _validate_address_location(parties):
         return msg, address_in_bc, address_in_ca
 
     return None, address_in_bc, address_in_ca
-
-
-def validate_special_resolution(filing_json, legal_type) -> Optional[list]:
-    """Validate special resolution of the filing."""
-    msg = []
-
-    if legal_type == Business.LegalTypes.COOP.value:
-        special_resolution = filing_json['filing']['dissolution'].get('specialResolution', None)
-        if not special_resolution:
-            msg.append({'error': _('Special resolution is required.'),
-                        'path': '/filing/dissolution/specialResolution'})
-            return msg
-
-        resolution_file_key = special_resolution.get('resolutionFileKey', None)
-        resolution_file_name = special_resolution.get('resolutionFileName', None)
-
-        # Validate key values exist
-        if not resolution_file_key:
-            msg.append({'error': _('A valid special resolution key is required.'),
-                        'path': '/filing/dissolution/specialResolution/resolutionFileKey'})
-
-        if not resolution_file_name:
-            msg.append({'error': _('A valid special resolution file name is required.'),
-                        'path': '/filing/dissolution/specialResolution/resolutionFileName'})
-
-        if msg:
-            return msg
-
-        special_resolution_err = validate_pdf(resolution_file_key,
-                                              '/filing/dissolution/specialResolution/resolutionFileKey')
-        if special_resolution_err:
-            return special_resolution_err
-
-    return None
 
 
 def validate_affidavit(filing_json, legal_type) -> Optional[list]:

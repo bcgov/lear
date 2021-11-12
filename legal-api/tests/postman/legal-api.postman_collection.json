@@ -10218,7 +10218,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/Users/argus/data/minio/test 2.pdf"
+								"src": "/Users/argus/data/minio/rules test.pdf"
 							}
 						},
 						"url": {
@@ -10231,195 +10231,7 @@
 					"response": []
 				},
 				{
-					"name": "Get special resolution document signature",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response time is less than 10000ms\", function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
-									"});",
-									"",
-									"pm.test(\"response is ok\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"response should be okay to process\", function () { ",
-									"    pm.response.to.not.be.error; ",
-									"    //pm.response.to.have.jsonBody(\"\"); ",
-									"    pm.response.to.not.have.jsonBody(\"error\"); ",
-									"});",
-									"",
-									"pm.test(\"response must be valid and have a body\", function () {",
-									"     // assert that the response has a valid JSON body",
-									"     pm.response.to.be.withBody;",
-									"     pm.response.to.be.json; // this assertion also checks if a body  exists, so the above check is not needed",
-									"});",
-									"",
-									"pm.test(\"Verify payload\",  () => {",
-									"    pm.expect(pm.response.text()).to.include(\"key\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"special_resolution_file_key\", jsonData.key);",
-									"pm.environment.set(\"special_resolution_file_put_presigned_url\", jsonData.preSignedUrl);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{url}}/api/v1/documents/:file_name/signatures",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"documents",
-								":file_name",
-								"signatures"
-							],
-							"query": [
-								{
-									"key": "",
-									"value": "",
-									"disabled": true
-								}
-							],
-							"variable": [
-								{
-									"key": "file_name",
-									"value": "special_resolution_file.pdf"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "put - special resolution document to minio",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var today = new Date()",
-									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "X-Amz-Credential",
-								"value": "{{X-Amz-Credential}}",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "X-Amz-Date",
-								"value": "{{X-Amz-Date}}",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "X-Amz-Expires",
-								"value": "{{X-Amz-Expires}}",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "X-Amz-SignedHeaders",
-								"value": "{{X-Amz-SignedHeaders}}",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "X-Amz-Signature",
-								"value": "{{X-Amz-Signature}}",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "file",
-							"file": {
-								"src": "/Users/argus/data/minio/rules test.pdf"
-							}
-						},
-						"url": {
-							"raw": "{{special_resolution_file_put_presigned_url}}",
-							"host": [
-								"{{special_resolution_file_put_presigned_url}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "post - valid statement type - CP3490248",
+					"name": "post - success - CP3490248",
 					"event": [
 						{
 							"listen": "test",
@@ -10430,8 +10242,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code is 201\", function () {",
-									"    pm.response.to.have.status(201);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"pm.test('should return JSON', function () {",
@@ -10484,7 +10296,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },            \n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatoryFirstName\": \"Jane\",\n        \"signatoryMiddleName\": \"\",\n        \"signatoryLastName\": \"Doe\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -10578,7 +10390,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -10758,7 +10570,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"sdfsdf\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"sdfsdf\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -10938,7 +10750,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11032,7 +10844,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"invalid key\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"invalid key\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11126,7 +10938,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11218,7 +11030,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11243,7 +11055,7 @@
 					"response": []
 				},
 				{
-					"name": "post - required special resolution key - CP3490248",
+					"name": "post - required special resolution - CP3490248",
 					"event": [
 						{
 							"listen": "test",
@@ -11270,8 +11082,8 @@
 									"    pm.expect(jsonData.filing.header).to.exist",
 									"    pm.expect(jsonData.errors).to.exist",
 									"    pm.expect(jsonData.errors.length).to.eq(1)",
-									"    pm.expect(jsonData.errors[0].error).to.eq('A valid special resolution key is required.')",
-									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/dissolution/specialResolution/resolutionFileKey')",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Special Resolution is required.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution')",
 									"});",
 									"",
 									""
@@ -11312,7 +11124,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },                \n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11335,9 +11147,14 @@
 						}
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Special Resolution",
+			"item": [
 				{
-					"name": "post - invalid special resolution key - CP3490248",
+					"name": "post - success - CP3490248",
 					"event": [
 						{
 							"listen": "test",
@@ -11348,8 +11165,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code is 400\", function () {",
-									"    pm.response.to.have.status(400);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"pm.test('should return JSON', function () {",
@@ -11357,15 +11174,11 @@
 									"});",
 									"",
 									"",
-									"pm.test(\"Returns dissolution filing.\", () => {",
+									"pm.test(\"Returns special resolution filing.\", () => {",
 									"    pm.expect(jsonData.filing).to.exist",
 									"    pm.expect(jsonData.filing.business).to.exist",
-									"    pm.expect(jsonData.filing.dissolution).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
 									"    pm.expect(jsonData.filing.header).to.exist",
-									"    pm.expect(jsonData.errors).to.exist",
-									"    pm.expect(jsonData.errors.length).to.eq(1)",
-									"    pm.expect(jsonData.errors[0].error).to.eq('Invalid file.')",
-									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/dissolution/specialResolution/resolutionFileKey')",
 									"});",
 									"",
 									""
@@ -11406,7 +11219,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"invalid key\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11431,7 +11244,7 @@
 					"response": []
 				},
 				{
-					"name": "post - invalid special resolution doc page size - CP3490248",
+					"name": "post - fail, missing resolution text - CP3490248",
 					"event": [
 						{
 							"listen": "test",
@@ -11454,12 +11267,12 @@
 									"pm.test(\"Returns dissolution filing.\", () => {",
 									"    pm.expect(jsonData.filing).to.exist",
 									"    pm.expect(jsonData.filing.business).to.exist",
-									"    pm.expect(jsonData.filing.dissolution).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
 									"    pm.expect(jsonData.filing.header).to.exist",
 									"    pm.expect(jsonData.errors).to.exist",
 									"    pm.expect(jsonData.errors.length).to.eq(1)",
-									"    pm.expect(jsonData.errors[0].error).to.eq('Document must be set to fit onto 8.5” x 11” letter-size paper.')",
-									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/dissolution/specialResolution/resolutionFileKey')",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Resolution must be provided.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution/resolution')",
 									"});",
 									"",
 									""
@@ -11500,7 +11313,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
@@ -11525,16 +11338,112 @@
 					"response": []
 				},
 				{
-					"name": "post - invalid special resolution doc max size - CP3490248",
+					"name": "post - fail, missing resolution date - CP3490248 Copy",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"const jsonData = pm.response.json()",
+									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonData.errors.length).to.eq(1)",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Resolution date is required.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution/resolutionDate')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, resolution date future - CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
 									"const jsonDataText = pm.response.text()",
 									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
 									"",
+									"var jsonData = pm.response.json();",
+									"",
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
 									"});",
@@ -11547,11 +11456,207 @@
 									"pm.test(\"Returns dissolution filing.\", () => {",
 									"    pm.expect(jsonData.filing).to.exist",
 									"    pm.expect(jsonData.filing.business).to.exist",
-									"    pm.expect(jsonData.filing.dissolution).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
 									"    pm.expect(jsonData.filing.header).to.exist",
 									"    pm.expect(jsonData.errors).to.exist",
-									"    pm.expect(jsonDataText).to.include('File exceeds maximum size.')",
-									"    pm.expect(jsonDataText).to.include('/filing/dissolution/specialResolution/resolutionFileKey')",
+									"    pm.expect(jsonDataText).to.include('Resolution date cannot be in the future.')",
+									"    pm.expect(jsonDataText).to.include('/filing/specialResolution/resolutionDate')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"{{future}}\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, resolution date < incorp date - CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"const jsonDataText = pm.response.text()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonDataText).to.include('Resolution date cannot be earlier than the incorporation date.')",
+									"    pm.expect(jsonDataText).to.include('/filing/specialResolution/resolutionDate')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"1970-01-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, missing signing date - CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonData.errors.length).to.eq(1)",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Signing date is required.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution/signingDate')",
 									"});",
 									"",
 									""
@@ -11592,7 +11697,401 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"dissolution\": {\n        \"dissolutionDate\": \"{{today}}\",\n        \"dissolutionType\": \"voluntary\",\n        \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n        \"hasLiabilities\": false,\n        \"parties\": [\n          {\n            \"officer\": {\n              \"firstName\": \"Completing\",\n              \"lastName\": \"Party\",\n              \"middleName\": \"P\",\n              \"email\": \"cp@example.com\",\n              \"organizationName\": \"\",\n              \"partyType\": \"person\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Completing Party\",\n                \"appointmentDate\": \"2021-08-05\"\n\n              }\n            ]\n          },\n          {\n            \"officer\": {\n              \"firstName\": \"\",\n              \"lastName\": \"\",\n              \"middleName\": \"\",\n              \"organizationName\": \"Xyz Inc.\",\n              \"partyType\": \"organization\"\n            },\n            \"mailingAddress\": {\n              \"streetAddress\": \"mailing_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"mailing_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"deliveryAddress\": {\n              \"streetAddress\": \"delivery_address - address line one\",\n              \"streetAddressAdditional\": \"\",\n              \"addressCity\": \"delivery_address city\",\n              \"addressCountry\": \"CA\",\n              \"postalCode\": \"H0H0H0\",\n              \"addressRegion\": \"BC\"\n            },\n            \"roles\": [\n              {\n                \"roleType\": \"Custodian\",\n                \"appointmentDate\": \"2021-08-05\"\n              }\n            ]\n          }\n        ],\n        \"custodialOffice\": {\n          \"deliveryAddress\": {\n            \"streetAddress\": \"records - delivery_address\",\n            \"addressCity\": \"delivery_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          },\n          \"mailingAddress\": {\n            \"streetAddress\": \"records - mailing_address\",\n            \"addressCity\": \"mailing_address city\",\n            \"addressCountry\": \"CA\",\n            \"postalCode\": \"H0H0H0\",\n            \"addressRegion\": \"BC\"\n          }\n        },\n        \"specialResolution\": {\n            \"resolution\": \"vd resolution text...\",\n            \"resolutionFileKey\": \"{{special_resolution_file_key}}\",\n            \"resolutionFileName\": \"special_resolution_file.pdf\"\n        },\n        \"affidavitFileKey\": \"{{affidavit_file_key}}\",\n        \"affidavitFileName\": \"affidavit_file.pdf\"\n      }\n    }\n}"
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, signing date future - CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"const jsonDataText = pm.response.text()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonDataText).to.include('Signing date cannot be in the future.')",
+									"    pm.expect(jsonDataText).to.include('/filing/specialResolution/signingDate')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"{{future}}\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, signing date < resolution date - CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"const jsonDataText = pm.response.text()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonDataText).to.include('Signing date cannot be before the resolution date.')",
+									"    pm.expect(jsonDataText).to.include('/filing/specialResolution/signingDate')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-02\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, missing signatory given name CP3490248 Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"const jsonDataText = pm.response.text()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonData.errors.length).to.eq(1)",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Signatory given name is required.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution/signatory/givenName')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"\",\n            \"additionalName\": \"\",\n            \"familyName\": \"Doe\"\n        }\n      }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v1/businesses/:id/filings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CP3490248"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - fail, missing signatory family name CP3490248",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"const jsonDataText = pm.response.text()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('should return JSON', function () {",
+									"    pm.response.to.have.header('Content-Type', 'application/json');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Returns dissolution filing.\", () => {",
+									"    pm.expect(jsonData.filing).to.exist",
+									"    pm.expect(jsonData.filing.business).to.exist",
+									"    pm.expect(jsonData.filing.specialResolution).to.exist",
+									"    pm.expect(jsonData.filing.header).to.exist",
+									"    pm.expect(jsonData.errors).to.exist",
+									"    pm.expect(jsonData.errors.length).to.eq(1)",
+									"    pm.expect(jsonData.errors[0].error).to.eq('Signatory family name is required.')",
+									"    pm.expect(jsonData.errors[0].path).to.eq('/filing/specialResolution/signatory/familyName')",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									"",
+									"var future = new Date()",
+									"future.setDate(future.getDate() + 10)",
+									"pm.environment.set(\"future\", future.getFullYear()+'-'+('0'+(future.getMonth()+1)).slice(-2)+'-'+('0'+future.getDate()).slice(-2))"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n      \"header\": {\n        \"name\": \"dissolution\",\n        \"date\": \"{{today}}\",\n        \"certifiedBy\": \"full name\",\n        \"email\": \"no_one@never.get\",\n        \"effectiveDate\": \"{{today}}T00:00:00+00:00\"\n      },\n      \"business\": {\n        \"identifier\": \"CP3490248\",\n        \"legalType\": \"CP\"\n      },\n      \"specialResolution\": {\n        \"resolution\": \"Be in resolved that cookies are delicious.\\n\\nNom nom nom...\",\n        \"resolutionDate\": \"2021-10-01\",\n        \"signingDate\": \"2021-10-01\",\n        \"signatory\": {\n            \"givenName\": \"Jane\",\n            \"additionalName\": \"\",\n            \"familyName\": \"\"\n        }\n      }\n    }\n}"
 						},
 						"url": {
 							"raw": "{{url}}/api/v1/businesses/:id/filings",
