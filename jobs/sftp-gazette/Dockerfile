@@ -14,8 +14,8 @@ USER root
 
 # Create working directory
 RUN mkdir /opt/app-root && chmod 755 /opt/app-root
-RUN mkdir /opt/app-root/data && chmod g+rw /opt/app-root/data
-RUN mkdir /opt/app-root/archive && chmod g+rw /opt/app-root/archive
+RUN mkdir /opt/app-root/data && chmod 766 /opt/app-root/data
+RUN mkdir /opt/app-root/archive && chmod 766 /opt/app-root/archive
 WORKDIR /opt/app-root
 
 # Install the requirements
