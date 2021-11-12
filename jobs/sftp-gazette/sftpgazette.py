@@ -56,39 +56,11 @@ def send_email(note_book, emailtype, errormessage):
     if not os.getenv('ENVIRONMENT', '') == 'prod':
         ext = ' on ' + os.getenv('ENVIRONMENT', '')
 
-    if emailtype == 'ERROR':
-        subject = "SFTP Gazette Error Notification from LEAR for processing '" \
-            + note_book + "' on " + date + ext
-        recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
-        message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
-    else:
-        subject = 'SFTP Gazette Files ' + date + ext
-        # filename = 'COOP_GAZETTE_CHANGEOFNAME_' + date + '.TXT'
-        recipients = os.getenv('SFTP_GAZETTE_RECIPIENTS', '')
-
-        # Add body to email
-        message.attach(MIMEText('Please see attached.', 'plain'))
-
-        for filename in os.listdir(os.getenv('DATA_DIR', '/opt/app-root/data')):            
-            # Open file in binary mode
-            with open(os.getenv('DATA_DIR', '')+filename, 'rb') as attachment:
-                # Add file as application/octet-stream
-                # Email client can usually download this automatically as attachment
-                part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
-
-            # Encode file in ASCII characters to send by email
-            encoders.encode_base64(part)
-
-            # Add header as key/value pair to attachment part
-            part.add_header(
-                'Content-Disposition',
-                f'attachment; filename= {filename}',
-            )
-
-            # Add attachment to message and convert message to string
-            message.attach(part)
-
+    subject = "SFTP Gazette Error Notification from LEAR for processing '" \
+        + note_book + "' on " + date + ext
+    recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
+    message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
+        
     message['Subject'] = subject
     server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
     email_list = recipients.strip('][').split(', ')
@@ -104,23 +76,18 @@ def processnotebooks(notebookdirectory):
          
     logging.info('Start processing directory: %s', notebookdirectory)        
     data_dir = os.getenv('DATA_DIR', '/opt/app-root/data') 
-    dest_dir = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archive/')     
+    dest_dir = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archive/')            
     
     try: 
-        file=os.path.join(notebookdirectory, "generate_files.ipynb")        
-        note_book = os.path.basename(file) 
-
-        pm.execute_notebook(file, data_dir +'temp.ipynb', parameters=None)   
+        pm.execute_notebook(os.path.join(notebookdirectory, "generate_files.ipynb") , data_dir +'temp.ipynb', parameters=None)   
         os.remove(data_dir+'temp.ipynb')   
 
         FtpProcessor.process_ftp(data_dir)                        
                     
         pm.execute_notebook(os.path.join(notebookdirectory, "update_database.ipynb") , data_dir +'temp.ipynb', parameters=None)   
-        os.remove(data_dir+'temp.ipynb')   
+        os.remove(data_dir+'temp.ipynb')      
 
-        send_email(note_book, '', '')   
-        archive_files (data_dir, dest_dir)      
-                                
+        archive_files (data_dir, dest_dir)          
         status = True                    
     except Exception:            
         logging.exception('Error processing notebook %s.', notebookdirectory)
