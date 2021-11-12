@@ -63,6 +63,13 @@ class FilingTitles(str, Enum):
 
 
 FILINGS: Final = {
+    'affidavit': {
+        'name': 'affidavit',
+        'title': 'Affidavit',
+        'codes': {
+            'CP': 'AFDVT'
+        }
+    },
     'alteration': {
         'name': 'alteration',
         'title': 'Notice of Alteration Filing',
@@ -134,9 +141,17 @@ FILINGS: Final = {
         'code': 'NOFEE'},
     'dissolution': {
         'name': 'dissolution',
-        'title': 'Dissolution',
-        'displayName': 'Dissolution',
-        'code': 'NOT_IMPLEMENTED_YET'},
+        'title': 'Voluntary dissolution',
+        'displayName': 'Voluntary dissolution',
+        'codes': {
+            'CP': 'DIS_VOL',
+            'BC': 'DIS_VOL',
+            'BEN': 'DIS_VOL',
+            'ULC': 'DIS_VOL',
+            'CC': 'DIS_VOL',
+            'LLC': 'DIS_VOL'
+        }
+    },
     'incorporationApplication': {
         'name': 'incorporationApplication',
         'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
@@ -168,7 +183,7 @@ FILINGS: Final = {
         'title': 'Special Resolution',
         'displayName': 'Special Resolution',
         'codes': {
-            'CP': 'RES'}},
+            'CP': 'SPRLN'}},
     'transition': {
         'name': 'transition',
         'title': 'Transition',
