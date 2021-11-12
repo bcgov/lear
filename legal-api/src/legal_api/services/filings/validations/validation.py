@@ -15,7 +15,7 @@
 from http import HTTPStatus
 from typing import Dict
 
-from flask_babel import _
+from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
@@ -78,7 +78,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
             if 'specialResolution' in filing_json['filing'].keys():
                 err = special_resolution_validate(business, filing_json)
             else:
-                err = Error(HTTPStatus.BAD_REQUEST, [{'error': _('Special Resolution is required.'),
+                err = Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is required.'),
                                                       'path': '/filing/specialResolution'}])
         if err:
             return err
