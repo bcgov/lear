@@ -555,17 +555,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.one_or_none()
 
     @staticmethod
-    def get_most_recent_legal_filing(business_id: str, filing_type: str):
+    def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
         """Return the most recent filing containing the legal_filing type."""
-        # Filing._filing_json.has_any(filing_type))).\
-
-        expr = Filing._filing_json[('filing', filing_type)]
-        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
+        query = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing.business_id == business_id).\
-            filter(or_(Filing._filing_type == filing_type,
-                       expr.label('legal_filing_type').isnot(None))).\
-            filter(Filing._status == Filing.Status.COMPLETED.value).\
-            subquery()
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+        if filing_type:
+            expr = Filing._filing_json[('filing', filing_type)]
+            query = query.filter(or_(Filing._filing_type == filing_type,
+                                     expr.label('legal_filing_type').isnot(None)))
+        max_filing = query.subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
