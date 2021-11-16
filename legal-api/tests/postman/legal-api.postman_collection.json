@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2aa0e30a-a181-4b1a-bc86-a6fd781f8377",
+		"_postman_id": "ef89460e-54da-4975-87bc-ab41fa2e701a",
 		"name": "legal-api",
 		"description": "version=2.8 - Legal API Postman Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12112,6 +12112,1278 @@
 								}
 							]
 						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fee Codes",
+			"item": [
+				{
+					"name": "Get Fees BC Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.total).to.eql(21.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BC/DIS_VOL",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BC",
+								"DIS_VOL"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees BC Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(100.0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BEN/DIS_VOL?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BEN",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees BC Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(100.0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BC/DIS_VOL?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BC",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees BEN Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.total).to.eql(21.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BEN/DIS_VOL",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BEN",
+								"DIS_VOL"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees BEN Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(100.0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BEN/DIS_VOL?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BEN",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees BEN Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(100.0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/BEN/DIS_VOL?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"BEN",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CC Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.total).to.eql(21.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CC/DIS_VOL",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CC",
+								"DIS_VOL"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CC Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(100.0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CC/DIS_VOL?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CC",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CC Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(100.0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CC/DIS_VOL?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CC",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/DIS_VOL",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"DIS_VOL"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct (should not have future effective fee)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/DIS_VOL?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct (should not have priority fee)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/DIS_VOL?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees AFDVT Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('AFDVT');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/AFDVT",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"AFDVT"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees AFDVT Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('AFDVT');",
+									"});",
+									"pm.test(\"filing fees are correct (should not have future effective fee)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/AFDVT?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"AFDVT"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees AFDVT Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('AFDVT');",
+									"});",
+									"pm.test(\"filing fees are correct (should not have priority fee)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(20.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/AFDVT?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"AFDVT"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Special Resolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('SPRLN');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(70.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(70.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/SPRLN",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"SPRLN"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Special Resolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('SPRLN');",
+									"});",
+									"pm.test(\"filing fees are correct (should not have future effective fee)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(70.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(70.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/SPRLN?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"SPRLN"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees CP Special Resolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('SPRLN');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(70.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(0);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(100.0);",
+									"    pm.expect(jsonData.total).to.eql(170.0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/CP/SPRLN?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"CP",
+								"SPRLN"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees ULC Voluntary Dissolution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.total).to.eql(21.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/ULC/DIS_VOL",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"ULC",
+								"DIS_VOL"
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees ULC Voluntary Dissolution - Future Effective",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(100.0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/ULC/DIS_VOL?futureEffective=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"ULC",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "futureEffective",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fees ULC Voluntary Dissolution - Priority",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"filing type code matches\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingTypeCode).to.eql('DIS_VOL');",
+									"});",
+									"pm.test(\"filing fees are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.filingFees).to.eql(20.0);",
+									"    pm.expect(jsonData.serviceFees).to.eql(1.5);",
+									"    pm.expect(jsonData.futureEffectiveFees).to.eql(0);",
+									"    pm.expect(jsonData.priorityFees).to.eql(100.0);",
+									"    pm.expect(jsonData.total).to.eql(121.5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{job_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pay-api-base-url}}/api/v1/fees/ULC/DIS_VOL?priority=true",
+							"host": [
+								"{{pay-api-base-url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fees",
+								"ULC",
+								"DIS_VOL"
+							],
+							"query": [
+								{
+									"key": "priority",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Calculate fees by Corp Type and Filing type"
 					},
 					"response": []
 				}
