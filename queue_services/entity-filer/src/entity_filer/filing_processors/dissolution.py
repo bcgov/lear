@@ -39,6 +39,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     dissolution_date = datetime.fromisoformat(dissolution_filing.get('dissolutionDate'))
     # FUTURE: remove hasLiabilities from schema as it can be derived from dissolutionStatementType
     # has_liabilities = filing['dissolution'].get('hasLiabilities')
+
     business.dissolution_date = dissolution_date
 
     # remove all directors and add custodial party if in filing
