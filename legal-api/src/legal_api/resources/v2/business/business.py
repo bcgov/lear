@@ -52,7 +52,8 @@ def get_businesses(identifier: str):
 
     business_json = business.json()
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
-    business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
+    if recent_filing_json:
+        business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
     return jsonify(business=business_json)
 
 
