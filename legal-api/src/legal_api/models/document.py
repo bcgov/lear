@@ -30,6 +30,7 @@ class DocumentType(Enum):
 
     COOP_RULES = 'coop_rules'
     COOP_MEMORANDUM = 'coop_memorandum'
+    AFFIDAVIT = 'affidavit'
 
 
 class Document(db.Model):
