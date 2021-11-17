@@ -32,6 +32,7 @@ class DocumentType(Enum):
     COOP_MEMORANDUM = 'coop_memorandum'
     AFFIDAVIT = 'affidavit'
 
+
 class Document(db.Model):
     """This is the model for a document."""
 
