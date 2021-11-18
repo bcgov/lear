@@ -3,7 +3,12 @@
   <div class="section-title mt-4">Certification</div>
 
   <div class="section-data mt-4">
-    I, {{ header.certifiedBy }}, certify that I have relevant knowledge of the {{entityDescription}}, and
-    that I am authorized to make this filing.
+    {% if header.reportType == 'dissolution' %}
+      {{ header.certifiedBy }} certifies that they have relevant knowledge of the {{entityDescription}} and
+      is authorized to make this filing.
+    {% else %}
+      I, {{ header.certifiedBy }}, certify that I have relevant knowledge of the {{entityDescription}}, and
+      that I am authorized to make this filing.
+    {% endif %}
   </div>
 </div>
