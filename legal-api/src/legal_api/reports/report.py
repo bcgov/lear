@@ -617,6 +617,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfNameChange': {
             'filingDescription': 'Certificate of Name Change',
             'fileName': 'certificateOfNameChange'
+        },
+        'certificateOfDissolution': {
+            'filingDescription': 'Certificate of Dissolution',
+            'fileName': 'certificateOfDissolution'
         }
     }
 
