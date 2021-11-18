@@ -34,6 +34,7 @@ from legal_api.utils.datetime import date, datetime  # noqa: I005
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
+
 # @dataclass(init=False, repr=False)
 class Filing:
     """Domain class for Filings."""
