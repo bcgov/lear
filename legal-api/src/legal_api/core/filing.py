@@ -14,7 +14,6 @@
 """Filings are legal documents that alter the state of a business."""
 # pylint: disable=unused-argument
 from __future__ import annotations
-from pprint import pprint
 
 # from dataclasses import dataclass, field
 import copy
@@ -28,7 +27,7 @@ from sqlalchemy import desc
 
 from legal_api.core.meta import FilingMeta
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage, User, UserRoles  # noqa: I001
+from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
