@@ -133,6 +133,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/cooperativeAssociationType',
             'common/statement',
             'common/benefitCompanyStmt',
+            'dissolution/custodianOfRecords',
+            'dissolution/dissolutionStatement',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
             'common/resolutionDates',
@@ -193,6 +195,9 @@ class Report:  # pylint: disable=too-few-public-methods
 
             if self._report_key == 'transition':
                 self._format_transition_data(filing)
+
+            if self._report_key == 'dissolution':
+                self._format_directors(filing['dissolution']['parties'])
 
             # since we reset _report_key with correction type
             if filing['header']['name'] == 'correction':
@@ -621,7 +626,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfDissolution': {
             'filingDescription': 'Certificate of Dissolution',
             'fileName': 'certificateOfDissolution'
-        }
+        },
+        'dissolution': {
+            'filingDescription': 'Dissolution Application',
+            'fileName': 'dissolution'
+        },
     }
 
     static_reports = {
