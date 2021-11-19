@@ -412,7 +412,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
                 'header': {
                     'name': filing_name,
                     'date': '2019-04-08',
-                    'certifiedBy': expected
+                    'certifiedBy': username
                 },
                 filing_name: {
                     'resolution': 'Year challenge is hitting oppo for the win.'
