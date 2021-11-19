@@ -349,7 +349,10 @@ class Filing:
             if (submitter := filing.filing_submitter) \
                 and submitter.username and jwt \
                     and not Filing.redact_submitter(filing.submitter_roles, jwt):
-                submitter_displayname = filing._filing_json['filing']['header']['certifiedBy']
+                if not (filing.paper_only):
+                    submitter_displayname = filing._filing_json['filing']['header']['certifiedBy']
+                else:
+                    submitter_displayname = submitter.username
 
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
