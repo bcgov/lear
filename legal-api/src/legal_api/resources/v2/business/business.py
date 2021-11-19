@@ -22,6 +22,7 @@ from flask import jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
 
+from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services import RegistrationBootstrapService
@@ -49,7 +50,12 @@ def get_businesses(identifier: str):
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    return jsonify(business=business.json())
+    business_json = business.json()
+    recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
+    if recent_filing_json:
+        business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
+        business_json['lastModified'] = recent_filing_json['filing']['header']['date']
+    return jsonify(business=business_json)
 
 
 @bp.route('', methods=['POST'])

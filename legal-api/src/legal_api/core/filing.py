@@ -284,6 +284,21 @@ class Filing:
 
         return filings
 
+    @staticmethod
+    def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
+        """Return the most recent filing json."""
+        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+            submitter_displayname = REDACTED_STAFF_SUBMITTER
+            if (submitter := storage.filing_submitter) \
+                and submitter.username and jwt \
+                    and not Filing.redact_submitter(storage.submitter_roles, jwt):
+                submitter_displayname = submitter.username
+
+            filing_json = storage.json
+            filing_json['filing']['header']['submitter'] = submitter_displayname
+            return filing_json
+        return None
+
     def legal_filings(self, with_diff: bool = True) -> Optional[List]:
         """Return a list of the filings extracted from this filing submission.
 
@@ -311,7 +326,7 @@ class Filing:
         with suppress(KeyError, TypeError):
             if (UserRoles.STAFF.value in submitter_roles
                 or UserRoles.SYSTEM.value in submitter_roles) \
-                 and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+                    and not has_roles(jwt, [UserRoles.STAFF.value, ]):
                 return True
         return False
 
