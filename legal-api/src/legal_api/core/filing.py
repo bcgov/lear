@@ -349,8 +349,8 @@ class Filing:
             if (submitter := filing.filing_submitter) \
                 and submitter.username and jwt \
                     and not Filing.redact_submitter(filing.submitter_roles, jwt):
-                if not (filing.paper_only):
-                    submitter_displayname = filing._filing_json['filing']['header']['certifiedBy']
+                if not filing.paper_only:
+                    submitter_displayname = filing._filing_json['filing']['header']['certifiedBy'] # pylint: disable=protected-access
                 else:
                     submitter_displayname = submitter.username
 
