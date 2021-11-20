@@ -131,7 +131,7 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'http://localhost:5000'
+base_url = 'https://LEGAL_API_BASE_URL'
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
         ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
