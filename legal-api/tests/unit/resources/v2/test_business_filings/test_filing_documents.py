@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     COURT_ORDER,
+    DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
@@ -130,7 +131,7 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'https://LEGAL_API_BASE_URL'
+base_url = 'http://localhost:5000'
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
         ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
@@ -224,6 +225,118 @@ base_url = 'https://LEGAL_API_BASE_URL'
                  },
                 HTTPStatus.OK, None
                 ),
+        ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
+                 'specialResolution':
+                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
+                 'affidavit':
+                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+        HTTPStatus.OK, '2017-10-01'
+        ),
+        ('cp_dissolution_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+         'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+        HTTPStatus.OK, '2017-10-01'
+        ),
+        ('ben_dissolution_completed', 'BC7654321', 'BEN',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                     f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+        HTTPStatus.OK, '2017-10-01'
+        ),
+        ('ben_dissolution_paid', 'BC7654321', 'BEN',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+        HTTPStatus.OK, '2017-10-01'
+        ),
+        ('bc_dissolution_completed', 'BC7654321', 'BC',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                     f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+        HTTPStatus.OK, '2017-10-01'
+        ),
+        ('cc_dissolution_completed', 'BC7654321', 'CC',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                     f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+         HTTPStatus.OK, '2017-10-01'
+         ),
+        ('ulc_dissolution_completed', 'BC7654321', 'LLC',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                     f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+         HTTPStatus.OK, '2017-10-01'
+         ),
+        ('llc_dissolution_completed', 'BC7654321', 'LLC',
+         'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+         {
+             'documents': {
+                 'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                 'certificateOfDissolution':
+                            f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                    {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+             }
+         },
+         HTTPStatus.OK, '2017-10-01'
+        )
     ])
 def test_document_list_for_various_filing_states(session, client, jwt,
                                test_name,
