@@ -19,6 +19,7 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
+from legal_api.services.namex import NameXService
 from legal_api.utils.datetime import date
 
 
@@ -77,7 +78,11 @@ FILINGS: Final = {
         'codes': {
             'BC': 'ALTER',
             'BEN': 'ALTER'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ],
+        'hasConditionalOutputs': True
     },
     'annualReport': {
         'name': 'annualReport',
@@ -95,7 +100,10 @@ FILINGS: Final = {
         'codes': {
             'CP': 'OTADD',
             'BEN': 'BCADD'
-        }
+        },
+        'additional': [
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'changeOfDirectors': {
         'name': 'changeOfDirectors',
@@ -112,13 +120,16 @@ FILINGS: Final = {
             }
         },
         'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfName': {
         'name': 'changeOfName',
         'title': 'Change of Name Filing',
-        'displayName': 'Legal Name Change'
+        'displayName': 'Legal Name Change',
+        'additional': [
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'conversion': {
         'name': 'conversion',
@@ -132,7 +143,11 @@ FILINGS: Final = {
         'codes': {
             'BEN': 'CRCTN',
             'CP': 'CRCTN'
-        }
+        },
+        'additional': [
+            {'types': 'CP,BEN', 'outputs': ['noticeOfArticles', ]},
+        ],
+        'hasConditionalOutputs': True
     },
     'courtOrder': {
         'name': 'courtOrder',
@@ -191,7 +206,10 @@ FILINGS: Final = {
         'codes': {
             'BC': 'TRANS',
             'BEN': 'TRANS'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
 }
 
@@ -232,11 +250,43 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             return str(date.fromisoformat(report_date).year)
         return None
 
+    def get_conditional_alteration_outputs(filing: FilingStorage):  # pylint: disable=no-self-use
+        """Return conditional alteration outputs."""
+        reports = []
+
+        name_request = filing.filing_json.get('filing', {}).get('alteration', {}).get('nameRequest', None)
+        business = filing.filing_json.get('filing', {}).get('business', {})
+        if name_request and 'legalName' in name_request and \
+                name_request['legalName'] != business.get('legalName', None):
+            reports.append('certificateOfNameChange')
+
+        return reports
+
+    def get_conditional_correction_outputs(filing: FilingStorage):
+        """Return conditional correction outputs."""
+        reports = []
+
+        if NameXService.has_correction_changed_name(filing.filing_json):
+            reports.append('certificate')
+
+        return reports
+
+    CONDITIONAL_OUTPUTS: Final = {
+        'alteration': get_conditional_alteration_outputs,
+        'correction': get_conditional_correction_outputs
+    }
+
     @staticmethod
-    def get_all_outputs(business_type: str, filing_name: str) -> list:
+    def get_all_outputs(business_type: str, filing_name: str, storage: FilingStorage) -> list:
         """Return list of all outputs."""
+        outputs = []
         filing = FILINGS.get(filing_name)
         for docs in filing.get('additional', []):
             if business_type in docs.get('types'):
-                return docs.get('outputs')
-        return []
+                outputs.extend(docs.get('outputs'))
+
+        if filing.get('hasConditionalOutputs', False):
+            conditional_outputs = FilingMeta.CONDITIONAL_OUTPUTS[filing_name](storage)
+            outputs.extend(conditional_outputs)
+
+        return outputs

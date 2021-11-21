@@ -364,7 +364,7 @@ class Filing:
             if (submitter := filing.filing_submitter) \
                 and submitter.username and jwt \
                     and not Filing.redact_submitter(filing.submitter_roles, jwt):
-                submitter_displayname = submitter.username
+                submitter_displayname = submitter.display_name
 
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
@@ -469,7 +469,7 @@ class Filing:
                     [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
 
                 # get extra outputs
-                adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+                adds = [FilingMeta.get_all_outputs(business.legal_type, doc, filing.storage) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
