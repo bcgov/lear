@@ -380,19 +380,20 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
 
 
 @pytest.mark.parametrize(
-    'test_name, submitter_role, jwt_role, username, expected',
+    'test_name, submitter_role, jwt_role, username, firstname, lastname, expected',
     [
-        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'firstname lastname'),
-        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'firstname lastname'),
-        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'firstname lastname'),
-        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
-        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
-        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'firstname lastname'),
-        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'firstname lastname'),
-        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'firstname lastname'),
+        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'firstname', 'lastname', 'Registry Staff'),
+        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'firstname', 'lastname', 'Registry Staff'),
+        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
+        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', '', '', 'some-user'),
     ]
 )
-def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, firstname, lastname, expected):
     """Assert that the core filing is saved to the backing store."""
     from legal_api.core.filing import Filing as CoreFiling
     try:
@@ -416,7 +417,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
                 filing_name: {
                     'resolution': 'Year challenge is hitting oppo for the win.'
                 }}}
-        user = factory_user(username, 'firstname', 'lastname')
+        user = factory_user(username, firstname, lastname)
         new_filing = factory_completed_filing(business, filing_submission, filing_date=filing_date)
         new_filing.submitter_id = user.id
         new_filing.submitter_roles = submitter_role
