@@ -1036,6 +1036,7 @@ def test_set_effective_date(session, identifier, base_filing, filing_name, legal
         # default effective date is got from DB (might be only some millis different)
         assert filing.effective_date != filing_time
 
+
 @integration_payment
 def test_coa_future_effective(session, client, jwt):
     """Assert future effective changes do not affect Coops, and that BCORP change of address if future-effective."""
