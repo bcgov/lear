@@ -151,7 +151,7 @@ def ledger_element_setup_filing(business, filing_name, filing_date):
     filing['filing']['header']['name'] = filing_name
     f = factory_completed_filing(business, filing, filing_date=filing_date)
     return f
- 
+
 
 def test_ledger_comment_count(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
@@ -168,7 +168,7 @@ def test_ledger_comment_count(session, client, jwt):
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings'][0]['commentsCount'] == number_of_comments
 
@@ -203,7 +203,7 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings'][0]
     filing_json = rv.json['filings'][0]
@@ -232,7 +232,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings'][0]
     filing_json = rv.json['filings'][0]
@@ -279,7 +279,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings'][0]
     filing_json = rv.json['filings'][0]
@@ -338,7 +338,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
@@ -366,7 +366,7 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                 headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
-    
+
     # validate
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
@@ -382,14 +382,14 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
 @pytest.mark.parametrize(
     'test_name, submitter_role, jwt_role, username, expected',
     [
-        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
-        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
-        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'some-user'),
+        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'firstname lastname'),
+        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'firstname lastname'),
+        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'firstname lastname'),
         ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
         ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
-        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'bcsc/public_user'),
-        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'bcsc/public_user'),
-        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'some-user'),
+        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'firstname lastname'),
+        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'firstname lastname'),
+        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'firstname lastname'),
     ]
 )
 def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
@@ -416,7 +416,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
                 filing_name: {
                     'resolution': 'Year challenge is hitting oppo for the win.'
                 }}}
-        user = factory_user(username)
+        user = factory_user(username, 'firstname', 'lastname')
         new_filing = factory_completed_filing(business, filing_submission, filing_date=filing_date)
         new_filing.submitter_id = user.id
         new_filing.submitter_roles = submitter_role
