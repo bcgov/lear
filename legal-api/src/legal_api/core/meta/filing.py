@@ -254,10 +254,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return conditional alteration outputs."""
         reports = []
 
-        name_request = filing.filing_json \
-            .get('filing', {}) \
-            .get('alteration', {}) \
-            .get('nameRequest', None)  # pylint: disable=no-member
+        name_request = (filing.filing_json
+                        .get('filing', {})
+                        .get('alteration', {})
+                        .get('nameRequest', None))  # pylint: disable=no-member
         business = filing.filing_json.get('filing', {}).get('business', {})  # pylint: disable=no-member
         if name_request and 'legalName' in name_request and \
                 name_request['legalName'] != business.get('legalName', None):
