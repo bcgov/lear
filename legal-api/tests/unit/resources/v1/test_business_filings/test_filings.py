@@ -17,11 +17,12 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Final
 
 import datedelta
+import pytz
 import pytest
 from dateutil.parser import parse
 from flask import current_app
@@ -1046,6 +1047,63 @@ def test_get_correct_fee_codes(
             map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))\
                 for elem in additional_fee_codes)
 
+@pytest.mark.parametrize('identifier, base_filing, filing_name, legal_type',
+    [
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value),
+        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value),
+        ('BC1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication', Business.LegalTypes.BCOMP.value),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BCOMP.value),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COMP.value),
+        ('CP1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COOP.value),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value),
+    ]
+)
+def test_set_effective_date(session, identifier, base_filing, filing_name, legal_type):
+    """Check if effective date is set correctly."""
+    filing_time = datetime.utcnow().replace(tzinfo=pytz.utc)
+    future_effective_date = (filing_time + timedelta(days=3)).isoformat()
+    business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
+    # set filing
+    filing_submission = copy.deepcopy(base_filing)
+    filing_submission['filing']['business']['identifier'] = identifier
+    filing_submission['filing']['business']['legalType'] = legal_type
+    filing_submission['filing']['header']['name'] = filing_name
+    filing_submission['filing']['header']['futureEffectiveDate'] = future_effective_date
+
+    if filing_name == 'alteration':
+        filing_submission['filing'][filing_name]['business']['legalType'] = legal_type
+    elif filing_name == 'transition':
+        filing_submission['filing']['business']['legalType'] = legal_type
+    elif filing_name == 'changeOfAddress':
+        filing_submission['filing'][filing_name] = CHANGE_OF_ADDRESS
+    elif filing_name == 'changeOfDirectors':
+        filing_submission['filing'][filing_name] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+
+    filing = factory_filing(business, filing_submission)
+
+    ListFilingResource._set_effective_date(business, filing)
+    if filing_name in ['incorporationApplication', 'dissolution'] and\
+        legal_type != Business.LegalTypes.COOP.value:
+        assert filing.effective_date.isoformat() == future_effective_date
+    elif filing_name in ['changeOfAddress'] and legal_type != Business.LegalTypes.COOP.value:
+        assert filing.effective_date == LegislationDatetime.tomorrow_midnight()
+    else:
+        # default effective date is got from DB (might be only some millis different)
+        assert filing.effective_date != filing_time
 
 @integration_payment
 def test_coa_future_effective(session, client, jwt):

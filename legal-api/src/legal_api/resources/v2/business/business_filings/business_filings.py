@@ -586,6 +586,14 @@ class ListFilingResource():
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
+    def _get_legal_type(filing_type: str, filing_json: dict, business: Business):
+        """Get the legal type from a filing."""
+        if filing_type == 'incorporationApplication':
+            return filing_json['filing']['business']['legalType']
+
+        return business.legal_type
+
+    @staticmethod
     def get_filing_types(business: Business, filing_json: dict):
         """Get the filing type fee codes for the filing.
 
@@ -596,10 +604,7 @@ class ListFilingResource():
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        if filing_type == 'incorporationApplication':
-            legal_type = filing_json['filing']['business']['legalType']
-        else:
-            legal_type = business.legal_type
+        legal_type = ListFilingResource._get_legal_type(filing_type, filing_json, business)
 
         if any('correction' in x for x in filing_json['filing'].keys()):
             filing_type_code = Filing.FILINGS.get('correction', {}).get('codes', {}).get(legal_type)
@@ -608,6 +613,28 @@ class ListFilingResource():
                 'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
             })
+        elif any(filing_type in x for x in ['dissolution']) and\
+                filing_json['filing']['dissolution']['dissolutionType'] == 'voluntary':
+            filing_type_code = Filing.FILINGS.get('dissolution', {}).get('codes', {}).get(legal_type)
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+            })
+            if legal_type == Business.LegalTypes.COOP.value:
+                filing_type_code =\
+                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'priority': priority_flag,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
+                filing_type_code =\
+                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                })
         elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
@@ -762,7 +789,11 @@ class ListFilingResource():
            (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
             filing.effective_date = datetime.datetime.fromisoformat(fe_date)
             filing.save()
-
+        elif filing_type == Filing.FILINGS['dissolution'].get('name') and\
+                business.legal_type != Business.LegalTypes.COOP.value and\
+                (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
+            filing.effective_date = datetime.datetime.fromisoformat(fe_date)
+            filing.save()
         elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
             filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
