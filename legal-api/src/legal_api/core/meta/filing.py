@@ -250,7 +250,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             return str(date.fromisoformat(report_date).year)
         return None
 
-    def get_conditional_alteration_outputs(filing: FilingStorage):  # pylint: disable=no-self-use
+    def get_conditional_alteration_outputs(filing: FilingStorage):  # pylint: disable=no-self-argument
         """Return conditional alteration outputs."""
         reports = []
 
@@ -262,7 +262,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         return reports
 
-    def get_conditional_correction_outputs(filing: FilingStorage):
+    def get_conditional_correction_outputs(filing: FilingStorage):  # pylint: disable=no-self-argument
         """Return conditional correction outputs."""
         reports = []
 
