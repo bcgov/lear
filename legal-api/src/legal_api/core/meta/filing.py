@@ -254,8 +254,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return conditional alteration outputs."""
         reports = []
 
-        name_request = filing.filing_json.get('filing', {}).get('alteration', {}).get('nameRequest', None)
-        business = filing.filing_json.get('filing', {}).get('business', {})
+        name_request = filing.filing_json \
+            .get('filing', {}) \
+            .get('alteration', {}) \
+            .get('nameRequest', None)  # pylint: disable=no-member
+        business = filing.filing_json.get('filing', {}).get('business', {})  # pylint: disable=no-member
         if name_request and 'legalName' in name_request and \
                 name_request['legalName'] != business.get('legalName', None):
             reports.append('certificateOfNameChange')
@@ -266,7 +269,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return conditional correction outputs."""
         reports = []
 
-        if NameXService.has_correction_changed_name(filing.filing_json):
+        if NameXService.has_correction_changed_name(filing.filing_json):  # pylint: disable=no-member
             reports.append('certificate')
 
         return reports
