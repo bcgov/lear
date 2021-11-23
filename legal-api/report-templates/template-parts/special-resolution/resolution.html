@@ -9,16 +9,16 @@
     <div>
         <span class="section-sub-title">Signed By: </span>
         <span>
-            <span class="capitalize-text">{{ specialResolution.signatory.givenName }}</span>
+            <span class="capitalize-text">{{specialResolution.signatory.givenName}}</span>
             {% if specialResolution.signatory.additionalName %}
-                <span class="capitalize-text">{{ specialResolution.signatory.additionalName }}</span>
+                <span class="capitalize-text">{{specialResolution.signatory.additionalName}}</span>
             {% endif %}
-            <span class="capitalize-text">{{ specialResolution.signatory.familyName }}</span>
+            <span class="capitalize-text">{{specialResolution.signatory.familyName}}</span>
         </span>
     </div>
     <div>
         <span class="section-sub-title">Signed On: </span>
-        <span>{{ specialResolution.signingDate }}</span>
+        <span>{{specialResolution.signingDate}}</span>
     </div>
 </div>
 {% endif %}
