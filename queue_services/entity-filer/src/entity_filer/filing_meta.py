@@ -61,6 +61,7 @@ class FilingMeta:
 
     application_date: Optional[datetime] = None
     legal_filings: list = field(default_factory=list)
+    dissolution_type: Optional[str] = None
 
     @property
     def asjson(self):

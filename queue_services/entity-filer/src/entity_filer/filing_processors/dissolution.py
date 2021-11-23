@@ -45,7 +45,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
     business.dissolution_date = dissolution_date
 
-    # remove all directors and add custodial party if in filing
+    # add custodial party if in filing
     if parties := dissolution_filing.get('parties'):
         update_parties(business, parties)
 
@@ -64,7 +64,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
         filings.update_filing_court_order(filing, court_order_json)
 
-    if filing['business']['legalType'] == Business.LegalTypes.COOP.value:
+    if filing['business']['legalType'] == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec)
 
 
