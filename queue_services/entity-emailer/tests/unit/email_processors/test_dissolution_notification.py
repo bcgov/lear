@@ -15,7 +15,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from legal_api.models import Business
 
 from entity_emailer.email_processors import dissolution_notification
