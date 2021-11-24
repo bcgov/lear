@@ -61,6 +61,8 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
         del original_filing_json['filing']['correction']
         original_filing = factory_completed_filing(business, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
+    if report_type == 'specialResolution' and filing_type!='specialResolution':
+        filing_json['specialResolution'] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(business, filing_json)
 
     report = Report(filing)
@@ -158,6 +160,7 @@ def set_meta_info(report):
         ('CP CON', 'CP1234567', 'CP', 'changeOfName', 'changeOfName', CHANGE_OF_NAME),
         ('CP SR', 'CP1234567', 'CP', 'specialResolution', 'specialResolution', SPECIAL_RESOLUTION),
         ('CP DISSOLUTION', 'CP1234567', 'CP', 'dissolution', 'dissolution', DISSOLUTION),
+        ('CP DISSOLUTION', 'CP1234567', 'CP', 'specialResolution', 'dissolution', DISSOLUTION),
         ('BEN DISSOLUTION', 'BC1234567', 'BEN', 'dissolution', 'dissolution', DISSOLUTION),
         ('BC DISSOLUTION', 'BC1234567', 'BC', 'dissolution', 'dissolution', DISSOLUTION),
         ('CC DISSOLUTION', 'BC2345678', 'CC', 'dissolution', 'dissolution', DISSOLUTION),

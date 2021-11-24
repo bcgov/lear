@@ -1,0 +1,25 @@
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Special Resolution</div>
+</div>
+<div class="section-data mt-4">{{specialResolution.resolution}}</div>
+<div class="separator mt-4"></div>
+{% if specialResolution.signatory is defined  %}
+<div class="section-data mt-4">
+    <div>
+        <span class="section-sub-title">Signed By: </span>
+        <span>
+            <span class="capitalize-text">{{specialResolution.signatory.givenName}}</span>
+            {% if specialResolution.signatory.additionalName %}
+                <span class="capitalize-text">{{specialResolution.signatory.additionalName}}</span>
+            {% endif %}
+            <span class="capitalize-text">{{specialResolution.signatory.familyName}}</span>
+        </span>
+    </div>
+    <div>
+        <span class="section-sub-title">Signed On: </span>
+        <span>{{specialResolution.signingDate}}</span>
+    </div>
+</div>
+{% endif %}
+
