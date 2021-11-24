@@ -23,8 +23,9 @@ from pathlib import Path
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Business, Filing
+from legal_api.models import Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from requests.models import Response
 
 
 def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
@@ -102,7 +103,7 @@ def get_user_email_from_auth(user_name: str, token: str) -> str:
     return contacts[0]['email']
 
 
-def get_user_from_auth(user_name: str, token: str) -> str:
+def get_user_from_auth(user_name: str, token: str) -> Response:
     """Get user from auth."""
     headers = {
         'Accept': 'application/json',
