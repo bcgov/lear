@@ -150,7 +150,11 @@ FILINGS: Final = {
             'ULC': 'DIS_VOL',
             'CC': 'DIS_VOL',
             'LLC': 'DIS_VOL'
-        }
+        },
+        'additional': [
+            {'types': 'CP', 'outputs': ['certificateOfDissolution','specialResolution','affidavit']},
+            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+        ]
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',
