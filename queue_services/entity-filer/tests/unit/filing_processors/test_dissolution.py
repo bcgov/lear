@@ -30,16 +30,15 @@ from entity_filer.filing_processors import dissolution
 from tests.unit import create_business, create_filing
 
 
-@pytest.mark.parametrize('legal_type,identifier', [
-    ('BC', 'BC1234567'),
-    ('CP', 'CP1234567'),
+@pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
+    ('BC', 'BC1234567', 'voluntary'),
+    ('CP', 'CP1234567', 'voluntary'),
 ])
-def test_voluntary_dissolution(app, session, minio_server, legal_type, identifier):
+def test_voluntary_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
     """Assert that the dissolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)
     dissolution_date = '2018-04-08'
-    dissolution_type = 'voluntary'
     has_liabilities = False
     filing_json['filing']['header']['name'] = 'dissolution'
 
@@ -87,3 +86,5 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
         affidavit_obj = MinioService.get_file(affidavit_key)
         assert affidavit_obj
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
+
+    assert filing_meta.dissolution['dissolutionType'] == dissolution_type

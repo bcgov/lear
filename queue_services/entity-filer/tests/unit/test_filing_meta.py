@@ -64,12 +64,10 @@ def test_minimal_filing_meta():
 
     assert filing_meta
     assert asdict(filing_meta) == {'application_date': None,
-                                   'legal_filings': [],
-                                   'dissolution_type': None
+                                   'legal_filings': []
                                    }
     assert filing_meta.asjson == {'applicationDate': None,
-                                  'legalFilings': [],
-                                  'dissolutionType': None
+                                  'legalFilings': []
                                   }
 
 def test_added_unknown_field():
@@ -83,15 +81,13 @@ def test_added_unknown_field():
     # should not have the field in the asdict view
     assert not asdict(filing_meta).get('unknown')
     assert asdict(filing_meta) == {'application_date': None,
-                                   'legal_filings': [],
-                                   'dissolution_type': None
+                                   'legal_filings': []
                                    }
 
     # the field should be in the json property
     assert filing_meta.asjson.get('unknown')
     assert filing_meta.asjson == {'applicationDate': None,
                                   'legalFilings': [],
-                                  'dissolutionType': None,
                                   'unknown': 'an unknown field'}
 
 def test_added_filing_field():
@@ -105,13 +101,11 @@ def test_added_filing_field():
     # should not have the field in the asdict view
     assert not asdict(filing_meta).get(filing_name)
     assert asdict(filing_meta) == {'application_date': None,
-                                   'legal_filings': [],
-                                   'dissolution_type': None
+                                   'legal_filings': []
                                    }
 
     # the field should be in the json property
     assert filing_meta.asjson.get(filing_name) == {}
     assert filing_meta.asjson == {'applicationDate': None,
                                   'legalFilings': [],
-                                  'dissolutionType': None,
                                   filing_name: {}}
