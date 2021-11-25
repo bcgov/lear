@@ -157,7 +157,7 @@ FILINGS: Final = {
     'dissolution': {
         'name': 'dissolution',
         'title': 'Voluntary dissolution',
-        'displayName': 'Voluntary dissolution',
+        'displayName': 'Voluntary Dissolution',
         'codes': {
             'CP': 'DIS_VOL',
             'BC': 'DIS_VOL',
@@ -165,7 +165,11 @@ FILINGS: Final = {
             'ULC': 'DIS_VOL',
             'CC': 'DIS_VOL',
             'LLC': 'DIS_VOL'
-        }
+        },
+        'additional': [
+            {'types': 'CP', 'outputs': ['certificateOfDissolution', 'specialResolution', 'affidavit']},
+            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+        ]
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',
