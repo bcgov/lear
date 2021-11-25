@@ -1097,9 +1097,9 @@ def test_set_effective_date(session, identifier, base_filing, filing_name, legal
 
     ListFilingResource._set_effective_date(business, filing)
     if filing_name in ['incorporationApplication', 'dissolution'] and\
-        legal_type != Business.LegalTypes.COOP.value:
+        legal_type != Business.LegalTypes.COOP:
         assert filing.effective_date.isoformat() == future_effective_date
-    elif filing_name in ['changeOfAddress'] and legal_type != Business.LegalTypes.COOP.value:
+    elif filing_name in ['changeOfAddress'] and legal_type != Business.LegalTypes.COOP:
         assert filing.effective_date == LegislationDatetime.tomorrow_midnight()
     else:
         # default effective date is got from DB (might be only some millis different)

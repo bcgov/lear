@@ -790,11 +790,11 @@ class ListFilingResource():
             filing.effective_date = datetime.datetime.fromisoformat(fe_date)
             filing.save()
         elif filing_type == Filing.FILINGS['dissolution'].get('name') and\
-                business.legal_type != Business.LegalTypes.COOP.value and\
+                business.legal_type != Business.LegalTypes.COOP and\
                 (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
             filing.effective_date = datetime.datetime.fromisoformat(fe_date)
             filing.save()
-        elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
+        elif business.legal_type != Business.LegalTypes.COOP and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
             filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
             filing.effective_date = effective_date
