@@ -167,7 +167,6 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert parties[1]['officer']['partyType'] == 'organization'
         assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
-
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
@@ -201,11 +200,13 @@ def test_incorporation_filing_process_correction(app, session):
     del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
     corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
     corrected_filing_meta = FilingMeta(application_date=corrected_filing_rec.effective_date)
+    corrected_filing_meta.correction = {}
     corrected_business, corrected_filing_rec, corrected_filing_meta =\
         incorporation_filing.process(business, correction_filing, corrected_filing_rec, corrected_filing_meta)
     assert corrected_business.identifier == next_corp_num
     assert corrected_business.legal_name == \
         correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
+    assert corrected_filing_meta.correction['toLegalName'] == corrected_business.legal_name
     assert len(corrected_business.share_classes.all()) == 1
 
 
