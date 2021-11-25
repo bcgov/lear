@@ -17,13 +17,15 @@ import json
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, User
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_INCORPORATION,
+    DISSOLUTION,
+    FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
 )
@@ -39,6 +41,14 @@ FILING_TYPE_MAPPER = {
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'alteration': ALTERATION_FILING_TEMPLATE
 }
+
+
+def create_user(user_name: str):
+    """Return a new user model."""
+    user = User()
+    user.username = user_name
+    user.save()
+    return user
 
 
 def create_business(identifier, legal_type=None, legal_name=None):
@@ -87,6 +97,41 @@ def prep_incorp_filing(session, identifier, payment_id, option):
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
         filing.save()
+    return filing
+
+
+def prep_dissolution_filing(session, identifier, payment_id, option, legal_type, legal_name, submitter_role):
+    """Return a new dissolution filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'dissolution'
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+
+    filing_template['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    for party in filing_template['filing']['dissolution']['parties']:
+        for role in party['roles']:
+            if role['roleType'] == 'Custodian':
+                party['officer']['email'] = 'custodian@email.com'
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
     return filing
 
 
