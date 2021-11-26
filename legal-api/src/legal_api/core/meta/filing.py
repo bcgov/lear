@@ -77,7 +77,10 @@ FILINGS: Final = {
         'codes': {
             'BC': 'ALTER',
             'BEN': 'ALTER'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'annualReport': {
         'name': 'annualReport',
@@ -95,7 +98,10 @@ FILINGS: Final = {
         'codes': {
             'CP': 'OTADD',
             'BEN': 'BCADD'
-        }
+        },
+        'additional': [
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'changeOfDirectors': {
         'name': 'changeOfDirectors',
@@ -112,13 +118,16 @@ FILINGS: Final = {
             }
         },
         'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfName': {
         'name': 'changeOfName',
         'title': 'Change of Name Filing',
-        'displayName': 'Legal Name Change'
+        'displayName': 'Legal Name Change',
+        'additional': [
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'conversion': {
         'name': 'conversion',
@@ -132,7 +141,10 @@ FILINGS: Final = {
         'codes': {
             'BEN': 'CRCTN',
             'CP': 'CRCTN'
-        }
+        },
+        'additional': [
+            {'types': 'CP,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
     'courtOrder': {
         'name': 'courtOrder',
@@ -195,7 +207,10 @@ FILINGS: Final = {
         'codes': {
             'BC': 'TRANS',
             'BEN': 'TRANS'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     },
 }
 
@@ -244,3 +259,16 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if business_type in docs.get('types'):
                 return docs.get('outputs')
         return []
+
+    @staticmethod
+    def alter_outputs(filing_type: str, filing_meta_data: dict, outputs: set):
+        """Add or remove outputs conditionally."""
+        if filing_type == 'alteration':
+            if filing_meta_data.get('alteration', {}).get('toLegalName'):
+                outputs.add('certificateOfNameChange')
+        elif filing_type == 'correction':
+            if not filing_meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
+                # For IA correction, certificate will be populated in get_all_outputs since
+                # legalFilings list contains correction and incorporationApplication
+                # and it should be removed if correction does not contain name change.
+                outputs.remove('certificate')

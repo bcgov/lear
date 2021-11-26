@@ -471,6 +471,8 @@ class Filing:
                 # get extra outputs
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
+
+                FilingMeta.alter_outputs(filing.filing_type, filing.storage.meta_data, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
