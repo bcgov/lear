@@ -174,7 +174,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     change_of_name.process(business, filing, filing_meta)
 
                 elif filing.get('dissolution'):
-                    dissolution.process(business, filing, filing_meta)
+                    dissolution.process(business, filing, filing_submission, filing_meta)
 
                 elif filing.get('incorporationApplication'):
                     business, filing_submission, filing_meta = incorporation_filing.process(business,
