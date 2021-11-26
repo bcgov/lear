@@ -114,7 +114,7 @@ def _get_pdfs(
             certificate_encoded = base64.b64encode(certificate.content)
             pdfs.append(
                 {
-                    'fileName': 'Dissolution Certificate.pdf',
+                    'fileName': 'Certificate of Dissolution.pdf',
                     'fileBytes': certificate_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
