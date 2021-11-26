@@ -19,7 +19,6 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
-from legal_api.services.namex import NameXService
 from legal_api.utils.datetime import date
 
 
@@ -81,8 +80,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
-        ],
-        'hasConditionalOutputs': True
+        ]
     },
     'annualReport': {
         'name': 'annualReport',
@@ -146,8 +144,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'CP,BEN', 'outputs': ['noticeOfArticles', ]},
-        ],
-        'hasConditionalOutputs': True
+        ]
     },
     'courtOrder': {
         'name': 'courtOrder',
@@ -254,46 +251,24 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             return str(date.fromisoformat(report_date).year)
         return None
 
-    def get_conditional_alteration_outputs(filing: FilingStorage):  # pylint: disable=no-self-argument
-        """Return conditional alteration outputs."""
-        reports = []
-
-        name_request = (filing.filing_json  # pylint: disable=no-member
-                        .get('filing', {})
-                        .get('alteration', {})
-                        .get('nameRequest', None))
-        business = filing.filing_json.get('filing', {}).get('business', {})  # pylint: disable=no-member
-        if name_request and 'legalName' in name_request and \
-                name_request['legalName'] != business.get('legalName', None):
-            reports.append('certificateOfNameChange')
-
-        return reports
-
-    def get_conditional_correction_outputs(filing: FilingStorage):  # pylint: disable=no-self-argument
-        """Return conditional correction outputs."""
-        reports = []
-
-        if NameXService.has_correction_changed_name(filing.filing_json):  # pylint: disable=no-member
-            reports.append('certificate')
-
-        return reports
-
-    CONDITIONAL_OUTPUTS: Final = {
-        'alteration': get_conditional_alteration_outputs,
-        'correction': get_conditional_correction_outputs
-    }
-
     @staticmethod
-    def get_all_outputs(business_type: str, filing_name: str, storage: FilingStorage) -> list:
+    def get_all_outputs(business_type: str, filing_name: str) -> list:
         """Return list of all outputs."""
-        outputs = []
         filing = FILINGS.get(filing_name)
         for docs in filing.get('additional', []):
             if business_type in docs.get('types'):
-                outputs.extend(docs.get('outputs'))
+                return docs.get('outputs')
+        return []
 
-        if filing.get('hasConditionalOutputs', False):
-            conditional_outputs = FilingMeta.CONDITIONAL_OUTPUTS[filing_name](storage)
-            outputs.extend(conditional_outputs)
-
-        return outputs
+    @staticmethod
+    def alter_outputs(filing_type: str, filing_meta_data: dict, outputs: set):
+        """Add or remove outputs conditionally."""
+        if filing_type == 'alteration':
+            if filing_meta_data.get('alteration', {}).get('toLegalName'):
+                outputs.add('certificateOfNameChange')
+        elif filing_type == 'correction':
+            if not filing_meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
+                # For IA correction, certificate will be populated in get_all_outputs since
+                # legalFilings list contains correction and incorporationApplication
+                # and it should be removed if correction does not contain name change.
+                outputs.remove('certificate')
