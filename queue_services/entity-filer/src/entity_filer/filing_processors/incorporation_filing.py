@@ -160,6 +160,10 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     if is_correction:
         business_info.set_legal_name(business.identifier, business, business_info_obj)
+        if legal_name := business_info_obj.get('legalName', None):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromLegalName': business.legal_name,
+                                         'toLegalName': legal_name}}
     else:
 
         if filing_rec.colin_event_ids:

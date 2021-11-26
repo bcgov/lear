@@ -155,6 +155,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                      legal_filings=[item for sublist in
                                                     [list(x.keys()) for x in legal_filings]
                                                     for item in sublist])
+            if is_correction:
+                filing_meta.correction = {}
 
             for filing in legal_filings:
                 if filing.get('alteration'):
@@ -206,8 +208,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
-                                                      json.dumps(filing_meta.asjson, default=json_serial)
-                                                     )
+                json.dumps(filing_meta.asjson, default=json_serial)
+            )
 
             db.session.add(business)
             db.session.add(filing_submission)
@@ -216,7 +218,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
 
-                alteration.post_process(business, filing_submission, correction)
+                alteration.post_process(business, filing_submission, is_correction)
                 db.session.add(business)
                 db.session.commit()
                 AccountService.update_entity(
