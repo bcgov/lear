@@ -655,6 +655,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'documentType': 'coop_memorandum'
         },
         'affidavit': {
-            'affidavit': 'affidavit'
+            'documentType': 'affidavit'
         }
     }
