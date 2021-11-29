@@ -164,7 +164,7 @@ FILINGS: Final = {
             'LLC': 'DIS_VOL'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certificateOfDissolution', 'specialResolution', 'affidavit']},
+            {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
             {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
         ]
     },
