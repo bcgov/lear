@@ -131,7 +131,7 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'http://localhost:5000'
+base_url = 'https://LEGAL_API_BASE_URL'
 CORRECTION = {
     'correctedFilingId': 4,
     'correctedFilingType': 'incorporationApplication',
