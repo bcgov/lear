@@ -131,7 +131,7 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'https://LEGAL_API_BASE_URL'
+base_url = 'http://localhost:5000'
 CORRECTION = {
     'correctedFilingId': 4,
     'correctedFilingType': 'incorporationApplication',
@@ -282,18 +282,18 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      HTTPStatus.OK, None
      ),
     ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     'dissolution', DISSOLUTION, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED,
      {
          'documents': {
              'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
              'certificateOfDissolution':
              f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
-                 'specialResolution':
-                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution',
                  'affidavit':
                      f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
                  'legalFilings': [
                      {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+                     {'specialResolution':
+                          f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                  ]
          }
      },
