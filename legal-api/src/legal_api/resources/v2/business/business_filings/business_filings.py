@@ -177,7 +177,7 @@ def delete_filings(identifier, filing_id=None):
         return ListFilingResource.create_deletion_locked_response(identifier, filing)
 
     try:
-        ListFilingResource._delete_from_minio(filing)
+        ListFilingResource.delete_from_minio(filing)
         filing.delete()
     except BusinessException as err:
         return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
@@ -782,7 +782,8 @@ class ListFilingResource():
         return is_future_effective
 
     @staticmethod
-    def _delete_from_minio(filing):
+    def delete_from_minio(filing):
+        """Delete file from minio."""
         if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name') \
                 and (cooperative := filing.filing_json
                      .get('filing', {})
