@@ -40,6 +40,7 @@ from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
     DocumentMetaService,
+    MinioService,
     RegistrationBootstrapService,
     authorized,
     namex,
@@ -176,6 +177,7 @@ def delete_filings(identifier, filing_id=None):
         return ListFilingResource.create_deletion_locked_response(identifier, filing)
 
     try:
+        ListFilingResource._delete_from_minio(filing)
         filing.delete()
     except BusinessException as err:
         return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
@@ -778,3 +780,21 @@ class ListFilingResource():
         if effective_date:
             is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         return is_future_effective
+
+    @staticmethod
+    def _delete_from_minio(filing):
+        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name') \
+                and (cooperative := filing.filing_json
+                     .get('filing', {})
+                     .get('incorporationApplication', {})
+                     .get('cooperative', None)):
+            if rules_file_key := cooperative.get('rulesFileKey', None):
+                MinioService.delete_file(rules_file_key)
+            if memorandum_file_key := cooperative.get('memorandumFileKey', None):
+                MinioService.delete_file(memorandum_file_key)
+        elif filing.filing_type == Filing.FILINGS['dissolution'].get('name') \
+                and (affidavit_file_key := filing.filing_json
+                     .get('filing', {})
+                     .get('dissolution', {})
+                     .get('affidavitFileKey', None)):
+            MinioService.delete_file(affidavit_file_key)
