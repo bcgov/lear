@@ -257,12 +257,21 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _delete_from_minio(filing):
-        if cooperative := filing. \
-                filing_json.get('filing', {}).get('incorporationApplication', {}).get('cooperative', None):
+        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name') \
+                and (cooperative := filing.filing_json
+                     .get('filing', {})
+                     .get('incorporationApplication', {})
+                     .get('cooperative', None)):
             if rules_file_key := cooperative.get('rulesFileKey', None):
                 MinioService.delete_file(rules_file_key)
             if memorandum_file_key := cooperative.get('memorandumFileKey', None):
                 MinioService.delete_file(memorandum_file_key)
+        elif filing.filing_type == Filing.FILINGS['dissolution'].get('name') \
+                and (affidavit_file_key := filing.filing_json
+                     .get('filing', {})
+                     .get('dissolution', {})
+                     .get('affidavitFileKey', None)):
+            MinioService.delete_file(affidavit_file_key)
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):
