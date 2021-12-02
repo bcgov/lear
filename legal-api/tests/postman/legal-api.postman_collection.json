@@ -13911,6 +13911,134 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Certified Rules (only for CP)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certifiedRules",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certifiedRules"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certified Memorandum (only for CP)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certifiedMemorandum",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certifiedMemorandum"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
