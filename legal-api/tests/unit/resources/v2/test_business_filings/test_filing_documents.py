@@ -185,11 +185,14 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      ),
     ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
-                        'legalFilings': [
-                            {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
-                        ]
+     {'documents': {
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
+                    ]
                     }
       },
      HTTPStatus.OK, '2017-10-01'
