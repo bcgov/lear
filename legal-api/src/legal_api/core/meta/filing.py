@@ -180,7 +180,7 @@ FILINGS: Final = {
             'BEN': 'BCINC'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certificate']},
+            {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
