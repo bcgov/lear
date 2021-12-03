@@ -25,8 +25,8 @@ from legal_api.models import  Resolution
 @pytest.mark.parametrize('legal_type,identifier,special_resolution_type', [
     ('CP', 'CP1234567', 'specialResolution'),
 ])
-def test_voluntary_dissolution(app, session, legal_type, identifier, special_resolution_type):
-    """Assert that the dissolution is processed."""
+def test_special_resolution(app, session, legal_type, identifier, special_resolution_type):
+    """Assert that the resolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = special_resolution_type
