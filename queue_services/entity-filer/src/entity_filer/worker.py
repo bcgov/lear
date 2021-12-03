@@ -59,6 +59,7 @@ from entity_filer.filing_processors import (
     incorporation_filing,
     registrars_notation,
     registrars_order,
+    special_resolution,
     transition,
 )
 from entity_filer.filing_processors.filing_components import name_request
@@ -204,6 +205,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('transition'):
                     filing_submission = transition.process(business, filing_submission, filing, filing_meta)
+
+                if filing.get('specialResolution'):
+                    special_resolution.process(business, filing_submission, filing)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
