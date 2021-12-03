@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ef89460e-54da-4975-87bc-ab41fa2e701a",
+		"_postman_id": "167921ca-e925-4cf8-816f-3c63a182eafd",
 		"name": "legal-api",
 		"description": "version=2.8 - Legal API Postman Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -13386,6 +13386,2449 @@
 						"description": "Calculate fees by Corp Type and Filing type"
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Outputs",
+			"item": [
+				{
+					"name": "Alteration",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113355"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Alteration",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/alteration",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"alteration"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113355"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113355"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certificate Of Name Change (available when there is a name change)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certificateOfNameChange",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certificateOfNameChange"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113355"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Incorporation Application",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "112710"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Incorporation Application",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/incorporationApplication",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"incorporationApplication"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "112710"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles (available for BEN, BC)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "112710"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certificate",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certificate",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certificate"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "112710"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certified Rules (only for CP)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certifiedRules",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certifiedRules"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certified Memorandum (only for CP)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certifiedMemorandum",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certifiedMemorandum"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Correction of Incorporation Application",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113359"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Incorporation Application",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/incorporationApplication",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"incorporationApplication"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113359"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113359"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certificate (available when there is a name change)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certificate",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certificate"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113359"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Correction",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/correction",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"correction"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC0870770"
+										},
+										{
+											"key": "filing_id",
+											"value": "113359"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Annual Report",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113148"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Annual Report",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/annualReport",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"annualReport"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113148"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Change Of Address (available when there is a address change)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/changeOfAddress",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"changeOfAddress"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113148"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Change Of Directors (available when there is a director change)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/changeOfDirectors",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"changeOfDirectors"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113148"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Change Of Address",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113150"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Address Change",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/changeOfAddress",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"changeOfAddress"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113150"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles (available only for BEN)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Change Of Directors",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113248"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Director Change",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/changeOfDirectors",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"changeOfDirectors"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002169"
+										},
+										{
+											"key": "filing_id",
+											"value": "113248"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles (available only for BEN)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Change Of Name",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles (available only for BEN)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": ""
+										},
+										{
+											"key": "filing_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Legal Name Change",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/changeOfName",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"changeOfName"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0002168"
+										},
+										{
+											"key": "filing_id",
+											"value": "109769"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Special Resolution",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0000840"
+										},
+										{
+											"key": "filing_id",
+											"value": "112758"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Special Resolution",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/specialResolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"specialResolution"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP0000840"
+										},
+										{
+											"key": "filing_id",
+											"value": "112758"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Voluntary Dissolution",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP1002480"
+										},
+										{
+											"key": "filing_id",
+											"value": "113460"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Voluntary Dissolution",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/dissolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"dissolution"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP1002480"
+										},
+										{
+											"key": "filing_id",
+											"value": "113460"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Certificate Of Dissolution",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/certificateOfDissolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"certificateOfDissolution"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP1002480"
+										},
+										{
+											"key": "filing_id",
+											"value": "113460"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Affidavit (only for CP)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/affidavit",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"affidavit"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "CP1002480"
+										},
+										{
+											"key": "filing_id",
+											"value": "113460"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Transition Application",
+					"item": [
+						{
+							"name": "Receipt",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/receipt",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"receipt"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC1230038"
+										},
+										{
+											"key": "filing_id",
+											"value": "111190"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Transition Application",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/transition",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"transition"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC1230038"
+										},
+										{
+											"key": "filing_id",
+											"value": "111190"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Notice Of Articles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/pdf",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v2/businesses/:identifier/filings/:filing_id/documents/noticeOfArticles",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses",
+										":identifier",
+										"filings",
+										":filing_id",
+										"documents",
+										"noticeOfArticles"
+									],
+									"variable": [
+										{
+											"key": "identifier",
+											"value": "BC1230038"
+										},
+										{
+											"key": "filing_id",
+											"value": "111190"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		}
