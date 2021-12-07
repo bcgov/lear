@@ -1,7 +1,7 @@
 """add_sent_to_gazette
 
 Revision ID: d9e21a1b82ca
-Revises: 3d8eb786f4c2
+Revises: e6ff12b18bef
 Create Date: 2021-11-10 21:29:51.135585
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'd9e21a1b82ca'
-down_revision = '3d8eb786f4c2'
+down_revision = 'e6ff12b18bef'
 branch_labels = None
 depends_on = None
 
