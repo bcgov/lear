@@ -315,3 +315,52 @@ def test_nr_receipt_notification(app, session):
                         assert call_args[0][0]['content']['body']
                         assert call_args[0][0]['content']['attachments'] == pdfs
                         assert call_args[0][1] == token
+
+
+@pytest.mark.parametrize('email_msg', [
+    ({}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': 'test',
+            'attachments': []
+        }}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {}}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': {},
+            'attachments': []
+        }}),
+    ({
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': 'test',
+            'attachments': []
+        }}),
+    ({
+        'recipients': 'test@test.ca',
+        'requestBy': 'test@test.ca'}),
+    ({
+        'recipients': 'test@test.ca',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'attachments': []
+        }})
+])
+def test_send_email_with_incomplete_payload(app, session, email_msg):
+    """Assert that the email not have body can not be processed."""
+    # TEST
+    with pytest.raises(Exception) as excinfo:
+        worker.send_email(email_msg, None)
+
+    assert 'Unsuccessful sending email.' in str(excinfo)
