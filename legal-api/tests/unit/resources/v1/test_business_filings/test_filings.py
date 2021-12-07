@@ -20,27 +20,34 @@ import copy
 from datetime import datetime
 from http import HTTPStatus
 from typing import Final
+from unittest.mock import patch
 
 import datedelta
 import pytest
 from dateutil.parser import parse
 from flask import current_app
+from minio.error import S3Error
+from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    COOP_INCORPORATION,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
+    DISSOLUTION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business
+from legal_api.models import Business, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import Filing, ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services.bootstrap import RegistrationBootstrapService
+from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
@@ -52,6 +59,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_filing,
     factory_party_role
 )
+from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
 
 
@@ -153,7 +161,6 @@ def test_business_filing_ia_parties(session, client, jwt):
     )
     b.party_roles.append(party_role)
 
-
     rv = client.get(f'/api/v1/businesses/{identifier}/filings/{filings.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -165,7 +172,7 @@ def test_business_filing_ia_parties(session, client, jwt):
     assert party_1['lastName'] == 'Crane'
     assert party_1['middleName'] == 'Joe'
     assert 'organizationName' not in party_1
-    
+
     party_2 = rv.json['filing']['incorporationApplication']['parties'][1]['officer']
     assert party_2
     assert party_2['partyType'] == 'organization'
@@ -310,7 +317,7 @@ def test_post_only_validate_ar(session, client, jwt):
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
@@ -330,7 +337,7 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
                      founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
@@ -398,7 +405,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
 
@@ -548,7 +555,7 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
     ar['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
@@ -697,6 +704,63 @@ def test_delete_filing_in_draft(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
+def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
+    """Assert that a draft filing can be deleted."""
+    identifier = 'T1234567'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+    rules_file_key = _upload_file(letter)
+    memorandum_file_key = _upload_file(letter)
+    filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
+    filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
+    filing = factory_filing(Business(), filing_json, filing_type='incorporationApplication')
+    filing.temp_reg = identifier
+    filing.save()
+
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    with patch.object(RegistrationBootstrapService, 'deregister_bootstrap', return_value=HTTPStatus.OK):
+        with patch.object(RegistrationBootstrapService, 'delete_bootstrap', return_value=HTTPStatus.OK):
+            rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+            assert rv.status_code == HTTPStatus.OK
+            try:
+                MinioService.get_file_info(rules_file_key)
+            except S3Error as ex:
+                assert ex.code == 'NoSuchKey'
+
+            try:
+                MinioService.get_file_info(memorandum_file_key)
+            except S3Error as ex:
+                assert ex.code == 'NoSuchKey'
+
+
+def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
+    """Assert that a draft filing can be deleted."""
+    identifier = 'CP7654321'
+
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    file_key = _upload_file(letter)
+    filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
+    filing = factory_filing(b, filing_json, filing_type='dissolution')
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    try:
+        MinioService.get_file_info(file_key)
+    except S3Error as ex:
+        assert ex.code == 'NoSuchKey'
+
+
 def test_delete_filing_block_completed(session, client, jwt):
     """Assert that a completed filing cannot be deleted."""
     import copy
@@ -812,7 +876,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     filings = factory_completed_filing(business, ar)
@@ -836,7 +900,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
     filings = factory_filing(business, ar)
@@ -893,12 +957,12 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
     identifier = 'CP7654399'
     b = business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                )
+                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                    )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year , 2, 20).date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime(datetime.utcnow().year, 2, 20).date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
@@ -937,39 +1001,79 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
+DISSOLUTION_FILING = {
+    'filing': {
+        'header': {
+            'name': 'dissolution',
+            'availableOnPaperOnly': False,
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'date': '2020-02-18',
+            'routingSlipNumber': '123456789'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08T00:00:00+00:00',
+            'identifier': 'BC1234567',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
+            'legalName': 'legal name - BC1234567',
+            'legalType': 'BEN'
+        },
+        'dissolution': DISSOLUTION
+    }
+}
+
+
+def _get_expected_fee_code(free, filing_name, legal_type):
+    """Return fee codes for legal type."""
+    if free:
+        return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
+
+    return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
+
+
 @pytest.mark.parametrize(
-    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free',
+    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes',
     [
         ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BCOMP.value, False),
+            Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.COMP.value, False),
-        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, None, False),
-        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, None, False),
-        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False),
-        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True),
-        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, None, False),
-        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False),
-        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False),
-        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, None, False),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True),
+            Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True, []),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False, []),
+        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True, []),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
-         Business.LegalTypes.BCOMP.value, None, False)
+         Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
+        ('CP1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
+            ['AFDVT', 'SPRLN']),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
+            False, []),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
+            False, []),
+        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
+            False, []),
     ]
 )
-def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free):
+def test_get_correct_fee_codes(
+        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
-    if free:
-        expected_fee_code = Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(orig_legal_type)
-    else:
-        expected_fee_code = Filing.FILINGS[filing_name].get('codes', {}).get(orig_legal_type)
-    if identifier.startswith('T'):
-        business = None
-    else:
+    expected_fee_code = _get_expected_fee_code(free, filing_name, orig_legal_type)
+
+    business = None
+    if not identifier.startswith('T'):
         business = factory_business(identifier=identifier, entity_type=orig_legal_type)
 
     # set filing
@@ -1000,6 +1104,10 @@ def test_get_correct_fee_codes(session, identifier, base_filing, filing_name, or
 
     # verify fee code
     assert fee_code == expected_fee_code
+
+    assert all(elem in
+               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
+               for elem in additional_fee_codes)
 
 
 @integration_payment

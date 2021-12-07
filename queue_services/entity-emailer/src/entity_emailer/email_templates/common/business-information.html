@@ -1,0 +1,63 @@
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
+<div class="business-information">
+  <div>
+    {% if business.legalType == 'CP' %}
+    <div class="name bold">Cooperative Association Name:</div>
+    {% else %}
+    <div class="name bold">Company Name:</div>
+    {% endif %}
+
+    {% if business.legalName %}
+    <!-- try to get legal name from Business object -->
+    <div class="value">{{ business.legalName }}</div>
+    {% elif filing.nameRequest.legalName %}
+    <!-- try to get legal name from Name Request object -->
+    <div class="value">{{ filing.nameRequest.legalName }}</div>
+    {% elif business.legalType == 'BEN' %}
+    <!-- fallback BC label -->
+    <div class="value">Numbered Benefit Company</div>
+    {% else %}
+    <!-- add other cases here -->
+    <div class="value">Unknown</div>
+    {% endif %}
+  </div>
+
+  [[20px.html]]
+  <div>
+    <div class="name bold">Incorporation Number:</div>
+    {% if header.status == 'PAID' and filing_type == 'incorporationApplication' %}
+    <div class="value">Pending</div>
+    {% else %}
+    <!-- Eg, BC0878529 -->
+    <div class="value">{{ business.identifier }}</div>
+    {% endif %}
+  </div>
+  
+  {% if business.tax_id %}
+  [[20px.html]]
+  <div>
+    <div class="name bold">Business Number:</div>
+    <div class="value">{{ business.tax_id }}</div>
+  </div>
+  {% endif %}
+  
+  [[20px.html]]
+  <div>
+    <div class="name bold">Date and Time of Filing:</div>
+    <div class="value">{{ filing_date_time }}</div>
+  </div>
+
+  {% if header.isFutureEffective %}
+  [[20px.html]]
+  <div>
+    <div class="name bold">Effective Date and Time:</div>
+    <div class="value">{{ effective_date_time }}</div>
+  </div>
+  {% endif %}
+</div>
+
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]

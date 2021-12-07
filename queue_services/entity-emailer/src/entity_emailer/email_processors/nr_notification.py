@@ -67,6 +67,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
 
+    legal_name = ''
     for n_item in nr_data['names']:
         if n_item['state'] in ('APPROVED', 'CONDITION'):
             legal_name = n_item['name']

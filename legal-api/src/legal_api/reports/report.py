@@ -23,6 +23,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
+from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, CorpType, Document, Filing
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
@@ -133,6 +134,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/cooperativeAssociationType',
             'common/statement',
             'common/benefitCompanyStmt',
+            'dissolution/custodianOfRecords',
+            'dissolution/dissolutionStatement',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
             'common/resolutionDates',
@@ -141,6 +144,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/legalNameChange',
             'common/nameTranslation',
             'alteration-notice/companyProvisions',
+            'special-resolution/resolution',
             'addresses',
             'certification',
             'directors',
@@ -149,7 +153,6 @@ class Report:  # pylint: disable=too-few-public-methods
             'legalNameChange',
             'logo',
             'macros',
-            'resolution',
             'style'
         ]
 
@@ -181,6 +184,8 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['header']['status'] = self._filing.status
             if self._report_key == 'incorporationApplication':
                 self._format_incorporation_data(filing)
+            elif self._report_key == 'specialResolution':
+                self._format_special_resolution(filing)
             elif self._report_key == 'alterationNotice':
                 self._format_alteration_data(filing)
             else:
@@ -193,6 +198,9 @@ class Report:  # pylint: disable=too-few-public-methods
 
             if self._report_key == 'transition':
                 self._format_transition_data(filing)
+
+            if self._report_key == 'dissolution':
+                self._format_directors(filing['dissolution']['parties'])
 
             # since we reset _report_key with correction type
             if filing['header']['name'] == 'correction':
@@ -517,6 +525,17 @@ class Report:  # pylint: disable=too-few-public-methods
                 else:
                     share_class['series'] = [share_series]
 
+    def _format_special_resolution(self, filing):
+        filing['header']['displayName'] = FILINGS.get(self._filing.filing_type, {}).get('displayName')
+        resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
+        signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
+        if resolution_date_str:
+            resolution_date = datetime.fromisoformat(resolution_date_str)
+            filing['specialResolution']['resolutionDate'] = resolution_date.strftime('%B %-d, %Y')
+        if signing_date_str:
+            signing_date = datetime.fromisoformat(signing_date_str)
+            filing['specialResolution']['signingDate'] = signing_date.strftime('%B %-d, %Y')
+
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
@@ -617,7 +636,15 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfNameChange': {
             'filingDescription': 'Certificate of Name Change',
             'fileName': 'certificateOfNameChange'
-        }
+        },
+        'certificateOfDissolution': {
+            'filingDescription': 'Certificate of Dissolution',
+            'fileName': 'certificateOfDissolution'
+        },
+        'dissolution': {
+            'filingDescription': 'Dissolution Application',
+            'fileName': 'dissolution'
+        },
     }
 
     static_reports = {
@@ -626,5 +653,8 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         'certifiedMemorandum': {
             'documentType': 'coop_memorandum'
+        },
+        'affidavit': {
+            'documentType': 'affidavit'
         }
     }

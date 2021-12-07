@@ -4,5 +4,15 @@
         <div class="section-data mt-3">
             The alteration is to take effect at the time that this application is filed with the Registrar.
         </div>
-    {% endif %}    
+    {% endif %}
+    {% if header.reportType == 'dissolution' %}
+        <div class="section-title mt-4">Voluntary Dissolution Effective Date</div>
+        <div class="section-data mt-4">
+            {% if header.isFutureEffective %}
+                The voluntary dissolution will take effect on {{ effective_date_time }}.
+            {% else %}
+                The voluntary dissolution is to take effect at the time that this application is filed with the Registrar.
+            {% endif %}
+        </div>
+    {% endif %}
 </div>

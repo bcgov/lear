@@ -284,6 +284,21 @@ class Filing:
 
         return filings
 
+    @staticmethod
+    def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
+        """Return the most recent filing json."""
+        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+            submitter_displayname = REDACTED_STAFF_SUBMITTER
+            if (submitter := storage.filing_submitter) \
+                and submitter.username and jwt \
+                    and not Filing.redact_submitter(storage.submitter_roles, jwt):
+                submitter_displayname = submitter.username
+
+            filing_json = storage.json
+            filing_json['filing']['header']['submitter'] = submitter_displayname
+            return filing_json
+        return None
+
     def legal_filings(self, with_diff: bool = True) -> Optional[List]:
         """Return a list of the filings extracted from this filing submission.
 
@@ -311,7 +326,7 @@ class Filing:
         with suppress(KeyError, TypeError):
             if (UserRoles.STAFF.value in submitter_roles
                 or UserRoles.SYSTEM.value in submitter_roles) \
-                 and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+                    and not has_roles(jwt, [UserRoles.STAFF.value, ]):
                 return True
         return False
 
@@ -349,7 +364,7 @@ class Filing:
             if (submitter := filing.filing_submitter) \
                 and submitter.username and jwt \
                     and not Filing.redact_submitter(filing.submitter_roles, jwt):
-                submitter_displayname = submitter.username
+                submitter_displayname = submitter.display_name or submitter.username
 
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
@@ -430,6 +445,11 @@ class Filing:
                                                    'legal_filing_name': None})
 
         documents = {'documents': {}}
+        # for paper_only filings return and empty documents list
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        # return a receipt for filings completed in our system
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
@@ -451,6 +471,8 @@ class Filing:
                 # get extra outputs
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
+
+                FilingMeta.alter_outputs(filing.filing_type, filing.storage.meta_data, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 

@@ -113,9 +113,11 @@ AR_FILING = {
     }
 }
 
-def factory_user(username: str):
+def factory_user(username: str, firstname : str = None, lastname : str = None):
     user = User()
     user.username = username
+    user.firstname = firstname
+    user.lastname = lastname
     user.save()
     return user
 
