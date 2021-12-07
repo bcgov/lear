@@ -7266,6 +7266,184 @@
 			]
 		},
 		{
+			"name": "Alteration",
+			"item": [
+				{
+					"name": "post - Alteration - CP1000002",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n        \t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"name\": \"alteration\",\n            \"date\": \"{{today}}\"\n        },\n        \"business\": {\n\t        \"fiscalYearEndDate\": \"2019-08-28\",\n\t        \"foundingDate\": \"1986-06-30T00:00:00+00:00\",\n\t        \"identifier\": \"BC0870788\",\n\t        \"legalName\": \"0870788 B.C. LTD.\",\n            \"legalType\": \"BEN\"\n\t    },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"identifier\": \"BC0870788\",\n                \"legalType\": \"BEN\"\n            },\n            \"shareStructure\": {\n                \"resolutionDates\": [\"{{today}}\"],\n                \"shareClasses\": [{\n                    \"name\": \"class1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": false,\n                    \"series\": [{\n                        \"name\": \"series1\",\n                        \"priority\": 1,\n                        \"maxNumberOfShares\": 600,\n                        \"hasMaximumShares\": true,\n                        \"hasRightsOrRestrictions\": false\n                    }]\n                }]\n            },\n            \"contactPoint\": {\n                \"email\": \"no_one@never.get\"\n            }\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v2/businesses/:id/filings?only_validate=true",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"query": [
+								{
+									"key": "only_validate",
+									"value": "true"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "BC0870788"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post - Alteration - CP1000002 - resolution date is required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message is returned\", function () {",
+									"    pm.expect(jsonData.errors).to.exist;",
+									"    pm.expect(jsonData.errors.length).to.be.at.least(1);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var today = new Date()",
+									"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filing\": {\n        \"header\": {\n        \t\"certifiedBy\": \"full name\",\n            \"email\": \"no_one@never.get\",\n            \"name\": \"alteration\",\n            \"date\": \"{{today}}\"\n        },\n        \"business\": {\n\t        \"fiscalYearEndDate\": \"2019-08-28\",\n\t        \"foundingDate\": \"1986-06-30T00:00:00+00:00\",\n\t        \"identifier\": \"BC0870788\",\n\t        \"legalName\": \"0870788 B.C. LTD.\",\n            \"legalType\": \"BEN\"\n\t    },\n        \"alteration\": {\n            \"provisionsRemoved\": false,\n            \"business\": {\n                \"identifier\": \"BC0870788\",\n                \"legalType\": \"BEN\"\n            },\n            \"shareStructure\": {\n                \"resolutionDates\": [],\n                \"shareClasses\": [{\n                    \"name\": \"class1\",\n                    \"priority\": 1,\n                    \"maxNumberOfShares\": 600,\n                    \"parValue\": 1,\n                    \"currency\": \"CAD\",\n                    \"hasMaximumShares\": true,\n                    \"hasParValue\": true,\n                    \"hasRightsOrRestrictions\": true,\n                    \"series\": []\n                }]\n            },\n            \"contactPoint\": {\n                \"email\": \"no_one@never.get\"\n            }\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{url}}/api/v2/businesses/:id/filings?only_validate=true",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"businesses",
+								":id",
+								"filings"
+							],
+							"query": [
+								{
+									"key": "only_validate",
+									"value": "true"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "BC0870788"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Incorporation",
 			"item": [
 				{
