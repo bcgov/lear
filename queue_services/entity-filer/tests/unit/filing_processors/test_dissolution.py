@@ -32,6 +32,10 @@ from tests.unit import create_business, create_filing
 
 @pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
     ('BC', 'BC1234567', 'voluntary'),
+    ('BEN', 'BC1234567', 'voluntary'),
+    ('CC', 'BC1234567', 'voluntary'),
+    ('ULC', 'BC1234567', 'voluntary'),
+    ('LLC', 'BC1234567', 'voluntary'),
     ('CP', 'CP1234567', 'voluntary'),
 ])
 def test_voluntary_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
