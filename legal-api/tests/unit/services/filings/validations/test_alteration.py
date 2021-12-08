@@ -34,16 +34,17 @@ TEST_DATA = [
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
 ]
 
+
 class MockResponse:
-            def __init__(self, json_data, status_code):
-                self.json_data = json_data
-                self.status_code = status_code
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
 
-            def json(self):
-                return self.json_data
+    def json(self):
+        return self.json_data
 
 
-@ pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', TEST_DATA)
+@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', TEST_DATA)
 def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
@@ -63,15 +64,15 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         f['filing']['alteration']['nameRequest']['legalType'] = legal_type
 
         nr_json = {
-                    "state": "APPROVED",
-                    "expirationDate": "",
-                    "requestTypeCd": nr_type,
-                    "names": [{
-                        "name": new_name,
-                        "state": "APPROVED",
-                        "consumptionDate": ""
-                    }]
-                }
+            "state": "APPROVED",
+            "expirationDate": "",
+            "requestTypeCd": nr_type,
+            "names": [{
+                "name": new_name,
+                "state": "APPROVED",
+                "consumptionDate": ""
+            }]
+        }
 
         nr_response = MockResponse(nr_json, 200)
 
@@ -92,3 +93,59 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
         assert len(err.msg) == num_errors
+
+
+@pytest.mark.parametrize(
+    'test_name, should_pass, has_rights_or_restrictions, has_rights_or_restrictions_series, resolution_dates', [
+        ('SUCCESS_has_rights_or_restrictions', True, True, False, ['2020-05-23']),
+        ('SUCCESS', True, False, False, []),
+        ('FAILURE', False, True, False, []),
+        ('SUCCESS_series_has_rights_or_restrictions', True, False, True, ['2020-05-23']),
+        ('SUCCESS_series', True, False, False, []),
+        ('FAILURE_series', False, False, True, [])
+    ])
+def test_alteration_resolution_date(
+        session, test_name, should_pass, has_rights_or_restrictions,
+        has_rights_or_restrictions_series, resolution_dates):
+    """Test resolution date in share structure."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
+
+    f['filing']['alteration']['shareStructure']['shareClasses'][0]['hasRightsOrRestrictions'] = \
+        has_rights_or_restrictions
+    f['filing']['alteration']['shareStructure']['shareClasses'][0]['series'][0]['hasRightsOrRestrictions'] = \
+        has_rights_or_restrictions_series
+    f['filing']['alteration']['shareStructure']['resolutionDates'] = resolution_dates
+
+    err = validate(business, f)
+
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+
+
+def test_alteration_share_classes_optional(session):
+    """Assert shareClasses is optional in alteration."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
+    del f['filing']['alteration']['shareStructure']['shareClasses']
+    f['filing']['alteration']['shareStructure']['resolutionDates'] = ['2020-05-23']
+
+    err = validate(business, f)
+    assert None is err
