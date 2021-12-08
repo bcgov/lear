@@ -19,7 +19,7 @@ import pytz
 
 import pytest
 
-from legal_api.models import Business, Office, OfficeType
+from legal_api.models import Business, Office, OfficeType, Party, PartyRole
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
@@ -56,6 +56,25 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
         filing_json['filing']['dissolution']['affidavitFileName'] = 'affidavit.pdf'
 
     business = create_business(identifier, legal_type=legal_type)
+    member = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role.save()
+    curr_roles = len(business.party_roles.all())
+
     business.dissolution_date = None
     business_id = business.id
 
@@ -68,6 +87,7 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
 
     # validate
     assert business.dissolution_date == pytz.utc.localize(datetime.fromisoformat(dissolution_date))
+    assert len(business.party_roles.all()) == curr_roles + len(filing_json['filing']['dissolution']['parties'])
 
     custodial_office = session.query(Business, Office). \
             filter(Business.id == Office.business_id). \
