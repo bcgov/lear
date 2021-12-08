@@ -80,13 +80,13 @@ def send_email(email: dict, token: str):
             or 'content' not in email \
             or 'body' not in email['content']:
         logger.debug('Send email: email object(s) is empty')
-        raise QueueException('Unsuccessful sending email.')
+        raise QueueException('Unsuccessful sending email - required email object(s) is empty.')
 
     if not email['recipients'] \
             or not email['content'] \
             or not email['content']['body']:
         logger.debug('Send email: email object(s) is missing')
-        raise QueueException('Unsuccessful sending email.')
+        raise QueueException('Unsuccessful sending email - required email object(s) is missing. ')
 
     resp = requests.post(
         f'{APP_CONFIG.NOTIFY_API_URL}',

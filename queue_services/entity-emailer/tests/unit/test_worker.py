@@ -16,6 +16,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
@@ -360,7 +361,7 @@ def test_nr_receipt_notification(app, session):
 def test_send_email_with_incomplete_payload(app, session, email_msg):
     """Assert that the email not have body can not be processed."""
     # TEST
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(QueueException) as excinfo:
         worker.send_email(email_msg, None)
 
-    assert 'Unsuccessful sending email.' in str(excinfo)
+    assert 'Unsuccessful sending email' in str(excinfo)
