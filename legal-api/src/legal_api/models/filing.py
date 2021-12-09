@@ -573,11 +573,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         # As the JSON query is new for most, leaving the debug stmnt
         # that dumps the query for easier debugging.
-        current_app.logger.debug(
-            str(filing.statement.compile(
-                dialect=dialect(),
-                compile_kwargs={'literal_binds': True}))
-        )
+        # current_app.logger.debug(
+        #     str(filing.statement.compile(
+        #         dialect=dialect(),
+        #         compile_kwargs={'literal_binds': True}))
+        # )
 
         return filing.first()
 
