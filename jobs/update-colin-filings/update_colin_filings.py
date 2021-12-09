@@ -116,11 +116,6 @@ def clean_none(dictionary: dict = None):
             dictionary[key] = ''
 
 
-def is_test_coop(identifier: str):
-    """Return true if identifier is associated with a postgres only test coop."""
-    return 'CP1' in identifier
-
-
 def run():
     """Get filings that haven't been synced with colin and send them to the colin-api."""
     application = create_app()
@@ -137,7 +132,7 @@ def run():
             for filing in filings:
                 filing_id = filing['filingId']
                 identifier = filing['filing']['business']['identifier']
-                if identifier in corps_with_failed_filing or is_test_coop(identifier):
+                if identifier in corps_with_failed_filing:
                     # pylint: disable=no-member; false positive
                     application.logger.debug(f'Skipping filing {filing_id} for'
                                              f' {filing["filing"]["business"]["identifier"]}.')
