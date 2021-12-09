@@ -18,9 +18,8 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from flask import current_app
 from sqlalchemy import desc, event, func, inspect, or_, select
-from sqlalchemy.dialects.postgresql import JSONB, dialect
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
