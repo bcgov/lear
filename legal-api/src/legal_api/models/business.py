@@ -19,7 +19,7 @@ from enum import Enum, auto
 from typing import Final, Optional
 
 import datedelta
-from flask import current_app, url_for
+from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -336,9 +336,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
         if self.state_filing_id:
             base_url = current_app.config.get('LEGAL_API_BASE_URL')
-            filing_url = url_for('API2.get_filings', **{'identifier': self.identifier,
-                                                        'filing_id': self.state_filing_id})
-            d['stateFiling'] = f'{base_url}{filing_url}'
+            d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         return d
 
