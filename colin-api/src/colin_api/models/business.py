@@ -58,6 +58,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
         COMPANY_FROZEN = 'C'
         SELF_SERVED_FROZEN = 'S'  # Deprecated
 
+    class CorpStateTypes(Enum):
+        """Render an Enum of the CorpState Type Codes."""
+
+        VOLUNTARY_DISSOLUTION = 'HDV'
+
     # temp converter because legal doesn't have codes only class (legal_type)
     CORP_TYPE_CONVERSION = {
         LearBusinessTypes.COOP.value: [
