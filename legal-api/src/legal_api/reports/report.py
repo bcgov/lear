@@ -377,7 +377,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
                 self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
-            filing['shareClasses'] = filing['alteration']['shareStructure']['shareClasses']
+            filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
         # Get previous business type
         versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(

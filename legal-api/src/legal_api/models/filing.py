@@ -18,9 +18,8 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from flask import current_app
 from sqlalchemy import desc, event, func, inspect, or_, select
-from sqlalchemy.dialects.postgresql import JSONB, dialect
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
@@ -573,11 +572,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         # As the JSON query is new for most, leaving the debug stmnt
         # that dumps the query for easier debugging.
-        current_app.logger.debug(
-            str(filing.statement.compile(
-                dialect=dialect(),
-                compile_kwargs={'literal_binds': True}))
-        )
+        # current_app.logger.debug(
+        #     str(filing.statement.compile(
+        #         dialect=dialect(),
+        #         compile_kwargs={'literal_binds': True}))
+        # )
 
         return filing.first()
 
