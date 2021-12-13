@@ -21,7 +21,6 @@ from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
@@ -43,7 +42,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type}}
 
-    dissolution_date = datetime.fromisoformat(dissolution_filing.get('dissolutionDate'))
     # hasLiabilities can be derived from dissolutionStatementType
     # FUTURE: remove hasLiabilities from schema
     # has_liabilities = filing['dissolution'].get('hasLiabilities')
@@ -71,7 +69,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
-        filings.update_filing_court_order(filing, court_order_json)
+        filings.update_filing_court_order(filing_rec, court_order_json)
 
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec)

@@ -153,7 +153,7 @@ FILINGS: Final = {
         'code': 'NOFEE'},
     'dissolution': {
         'name': 'dissolution',
-        'title': 'Voluntary dissolution',
+        'title': 'Voluntary Dissolution',
         'displayName': 'Voluntary Dissolution',
         'codes': {
             'CP': 'DIS_VOL',
