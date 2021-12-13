@@ -71,7 +71,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
-        filings.update_filing_court_order(filing, court_order_json)
+        filings.update_filing_court_order(filing_rec, court_order_json)
 
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec)
