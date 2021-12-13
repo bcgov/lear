@@ -31,9 +31,11 @@ class Office:
         'RG': 'registeredOffice',
         'RC': 'recordsOffice',
         'LQ': 'liquidationOffice',
+        'DS': 'custodialOffice',
         'registeredOffice': 'RG',
         'recordsOffice': 'RC',
         'liquidationOffice': 'LQ',
+        'custodialOffice': 'DS'
     }
 
     delivery_address = None

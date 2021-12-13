@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9ac52b24-9444-4324-b1f8-5323b34de4db",
+		"_postman_id": "2fc9e177-5a43-4bee-af08-caa4cc46064d",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d3660690-6176-465b-80d1-3340fd490436",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -63,7 +62,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6f3ce790-2d80-4f74-a345-c79ef2da4162",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -111,7 +109,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "554aa929-4d1f-4970-b89b-687f995fda51",
 								"exec": [
 									"pm.test(\"Response time is less than 10000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -205,8 +202,7 @@
 						}
 					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "COOPS",
@@ -220,7 +216,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a229da39-b8b8-496c-a304-616f5237bbb4",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -241,7 +236,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "a701efa3-6629-43a5-8cd1-e9ffaec90db9",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -358,9 +352,7 @@
 							]
 						}
 					],
-					"description": "reset calls",
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					"description": "reset calls"
 				},
 				{
 					"name": "AR",
@@ -371,7 +363,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9caa47fb-4bf7-4d57-93ed-6004108d4c41",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -522,7 +513,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "56eefbad-f7b1-439d-9870-85ee0a32b3ab",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -577,7 +567,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "5268732b-d15b-4161-9f14-3179d164bac1",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -702,7 +691,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3ac05dfd-f1e6-4253-bef5-3274b1af9b1b",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -756,7 +744,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7f3484f0-0ba7-4293-bd0a-0427167f41ef",
 										"exec": [
 											""
 										],
@@ -862,7 +849,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3b6af67c-3c7f-43d9-b8d8-247598211795",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1024,7 +1010,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e4509588-1349-4f8d-b839-c36386a33d50",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -1186,7 +1171,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "71ffceba-d0cb-46cd-a31d-0eb0088d1ef5",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1243,7 +1227,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "29ba40b4-7716-4725-a5c2-2ef89b485dd2",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -1368,7 +1351,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a2181c54-8c20-46bb-a777-bc7e593f0cc0",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -1423,7 +1405,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "f24ebd14-b5fb-4092-8f9e-4f997e93ed85",
 										"exec": [
 											""
 										],
@@ -1523,9 +1504,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "business",
@@ -1536,7 +1515,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a68195db-08d7-42ac-b871-0ebd2b51d9db",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1661,7 +1639,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "aeb084c5-1219-44cf-97fd-b9b5105a87e8",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1782,7 +1759,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2e21c21c-c265-4964-b13a-005a901f99e4",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1828,7 +1804,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ef576437-ef08-400a-9cb2-a46e030ca823",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -1865,9 +1840,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "AR + COA + COD",
@@ -1878,7 +1851,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a80b4870-e0a1-4c96-8618-97ac359b28d1",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2042,7 +2014,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "53bb8fef-12ea-4ff9-ad83-f10c6be137d4",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2166,7 +2137,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "6f2c55aa-0e50-4424-8228-b31ce441a6bc",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -2176,16 +2146,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0b822be0-5734-418c-843a-e60e9b95331e",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Registered Office",
@@ -2196,7 +2163,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bb22e337-187d-4e31-9632-db1c412980ea",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -2337,7 +2303,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "09250e55-76df-462d-b676-59dce1c8b776",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -2414,7 +2379,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "b1d318c3-1b19-428a-b807-5e9c9c459d6a",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -2534,7 +2498,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "53e31454-aa69-485e-b9dd-83f12b596def",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2703,7 +2666,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "85dccae6-09b7-4a2b-b713-c64a700c276d",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.test(\"Response time is less than 10000ms\", function () {",
@@ -2877,9 +2839,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Directors",
@@ -2890,7 +2850,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "56e691e8-7bc9-4d16-bede-0e3b083e6e30",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3026,7 +2985,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "cdd9626a-1b5b-43af-b79e-455854ccfc00",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3112,7 +3070,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "241fa2a5-11c8-4ca5-bd76-59ccee9b14a3",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -3232,7 +3189,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7e991152-3f06-4c32-83f1-31079ef044d5",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3414,7 +3370,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "291c89a3-9e91-42b7-a186-67accf200de2",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3603,7 +3558,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "26d152c9-2bac-45ec-a5db-8d38654902ee",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -3690,7 +3644,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2088b8c4-d18a-427c-a1c5-ec801c71ece7",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))",
@@ -3808,20 +3761,17 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "VD",
 					"item": [
 						{
-							"name": "GET VD CP0002096",
+							"name": "GET VD CP0002096 (not used)",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "ba55574b-bb8a-4537-b0bb-a42b4841dbf5",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -3954,10 +3904,321 @@
 									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2010-09-17\",\n            \"identifier\": \"CP0002096\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2018-04-18\",\n            \"lastArDate\": \"2018-04-18\",\n            \"lastLedgerTimestamp\": \"2019-05-10T00:00:00-00:00\",\n            \"legalName\": \"WEAVING WELLNESS CO-OPERATIVE\",\n            \"legalType\": \"CP\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"N/A\",\n            \"date\": \"2019-05-10\",\n            \"email\": \"xxxx@xxxx.xxx\",\n            \"name\": \"voluntaryDissolution\"\n        },\n        \"voluntaryDissolution\": {\n            \"dissolutionDate\": \"2019-05-10\",\n            \"eventId\": 103250950\n        }\n    }\n}"
 								}
 							]
+						},
+						{
+							"name": "GET VD",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 20000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"var jsonData = pm.response.json()",
+											"pm.test(\"Returns the required fields for VD filing\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.dissolution).to.exist",
+											"    pm.expect(jsonData.filing.business).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"});",
+											"",
+											"pm.test(\"Returns the business for corresponding COOP\", () => {",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP3490248')",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for header\", () => {",
+											"    pm.expect(jsonData.filing.header.name).to.eql('dissolution')",
+											"    pm.expect(jsonData.filing.header.availableOnPaperOnly).to.be.true",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for Voluntary Dissolution\", () => {",
+											"    pm.expect(jsonData.filing.dissolution.eventId).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionDate).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.custodialOffice).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.eql('voluntary')",
+											"    pm.expect(jsonData.filing.dissolution.parties).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles[0].roleType).to.eql('Custodian')",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP/CP3490248/filings/dissolution/voluntary",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP",
+										"CP3490248",
+										"filings",
+										"dissolution",
+										"voluntary"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GET VD CP3490248",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/CP/CP3490248/filings/dissolution/voluntary",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"CP",
+												"CP3490248",
+												"filings",
+												"dissolution",
+												"voluntary"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Length",
+											"value": "1931"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, GET, OPTIONS, HEAD"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/2.27.0"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/1.0.1 Python/3.8.8"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 10 Dec 2021 23:22:16 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2021-09-27T16:05:45-00:00\",\n            \"identifier\": \"CP3490248\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": null,\n            \"lastArDate\": null,\n            \"lastLedgerTimestamp\": \"2021-12-10T21:40:26-00:00\",\n            \"legalName\": \"AC COOP 555555\",\n            \"legalType\": \"CP\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"dissolution\": {\n            \"custodialOffice\": {\n                \"deliveryAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"LANGLEY\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 102604962,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V2Z 1K7\",\n                    \"streetAddress\": \"2323334 16 AVE\",\n                    \"streetAddressAdditional\": \"\"\n                },\n                \"mailingAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"LANGLEY\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 102604963,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V2Z 1K7\",\n                    \"streetAddress\": \"2323334 16 AVE\",\n                    \"streetAddressAdditional\": \"\"\n                }\n            },\n            \"dissolutionDate\": \"2021-12-10T21:40:25-00:00\",\n            \"dissolutionType\": \"voluntary\",\n            \"eventId\": 503251127,\n            \"parties\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2021-12-09\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"MAPLE RIDGE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102604964,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V2W 1B7\",\n                        \"streetAddress\": \"23434 RIVER RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"MAPLE RIDGE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102604965,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V2W 1B7\",\n                        \"streetAddress\": \"23434 RIVER RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"jane\",\n                        \"lastName\": \"doe\",\n                        \"middleInitial\": \"\",\n                        \"orgName\": \"\"\n                    },\n                    \"roles\": [\n                        {\n                            \"appointmentDate\": \"2021-12-09\",\n                            \"cessationDate\": null,\n                            \"roleType\": \"Custodian\"\n                        }\n                    ],\n                    \"startEventId\": 503251127,\n                    \"title\": \"\"\n                }\n            ]\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"BCREGTEST Delphia EIGHTEEN\",\n            \"colinIds\": [\n                503251127\n            ],\n            \"date\": \"2021-12-10\",\n            \"effectiveDate\": \"2021-12-10T21:40:25-00:00\",\n            \"inColinOnly\": false,\n            \"name\": \"dissolution\",\n            \"source\": \"COLIN\"\n        }\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "POST VD",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 20000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"var jsonData = pm.response.json()",
+											"pm.test(\"Returns the required fields for VD filing\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.dissolution).to.exist",
+											"    pm.expect(jsonData.filing.specialResolution).to.exist",
+											"    pm.expect(jsonData.filing.business).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"});",
+											"",
+											"pm.test(\"Returns the business for corresponding COOP\", () => {",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP3490248')",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for header\", () => {",
+											"    pm.expect(jsonData.filing.header.name).to.eql('dissolution')",
+											"    pm.expect(jsonData.filing.header.availableOnPaperOnly).to.be.true",
+											"    pm.expect(jsonData.filing.header.colinIds).to.exist",
+											"    pm.expect(jsonData.filing.header.colinIds.length).to.eq(2)",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for Voluntary Dissolution\", () => {",
+											"    pm.expect(jsonData.filing.dissolution.eventId).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionDate).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.custodialOffice).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.eql('voluntary')",
+											"    pm.expect(jsonData.filing.dissolution.parties).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles[0].roleType).to.eql('Custodian')",
+											"    pm.expect(jsonData.filing.specialResolution.eventId).to.exist",
+											"    pm.expect(jsonData.filing.specialResolution.resolution).to.exist",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"filing\": {\n    \"business\": {\n      \"foundingDate\": \"2021-09-27T16:05:45.000+00:00\",\n      \"identifier\": \"CP3490248\",\n      \"legalName\": \"AC COOP 555555\",\n      \"legalType\": \"CP\"\n    },\n    \"dissolution\": {\n      \"affidavitConfirmed\": true,\n      \"affidavitFileKey\": \"142beb5e-e3cf-4afa-96e7-6693c279a998.pdf\",\n      \"affidavitFileLastModified\": 1632234883411,\n      \"affidavitFileName\": \"rules test.pdf\",\n      \"affidavitFileSize\": 20624,\n      \"custodialOffice\": {\n        \"deliveryAddress\": {\n          \"addressCity\": \"Langley\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V2Z 1K7\",\n          \"streetAddress\": \"2323334 16 Ave\",\n          \"streetAddressAdditional\": \"\"\n        },\n        \"mailingAddress\": {\n          \"addressCity\": \"Langley\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V2Z 1K7\",\n          \"streetAddress\": \"2323334 16 Ave\",\n          \"streetAddressAdditional\": \"\"\n        }\n      },\n      \"dissolutionDate\": \"2021-12-09\",\n      \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n      \"dissolutionType\": \"voluntary\",\n      \"parties\": [\n        {\n          \"deliveryAddress\": {\n            \"addressCity\": \"Maple Ridge\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V2W 1B7\",\n            \"streetAddress\": \"23434 River Rd\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"inheritMailingAddress\": true,\n          \"mailingAddress\": {\n            \"addressCity\": \"Maple Ridge\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V2W 1B7\",\n            \"streetAddress\": \"23434 River Rd\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"officer\": {\n            \"email\": \"argus@highwaythreesolutions.com\",\n            \"firstName\": \"jane\",\n            \"lastName\": \"doe\",\n            \"middleName\": \"asdf\",\n            \"organizationName\": \"\",\n            \"partyType\": \"person\"\n          },\n          \"roles\": [\n            {\n              \"appointmentDate\": \"2021-12-09\",\n              \"roleType\": \"Custodian\"\n            }\n          ]\n        }\n      ]\n    },\n    \"header\": {\n      \"certifiedBy\": \"BCREGTEST Delphia EIGHTEEN\",\n      \"date\": \"2021-12-09\",\n      \"isFutureEffective\": \"\",\n      \"learEffectiveDate\": \"2021-12-09T16:47:35.779484+00:00\",\n      \"name\": \"dissolution\"\n    },\n    \"specialResolution\": {\n      \"resolution\": \"jaklsdjflkjlaksdf\\n\\nasjkldfjlskdf\\n\\najsdlfjlksdfjkdsf\\n\\najskldfjlsdf\",\n      \"resolutionConfirmed\": true,\n      \"resolutionDate\": \"2021-09-27\",\n      \"signatory\": {\n        \"additionalName\": \"jaklsdf\",\n        \"familyName\": \"doe\",\n        \"givenName\": \"jane\"\n      },\n      \"signingDate\": \"2021-09-30\"\n    }\n  },\n  \"filingId\": 113459\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP/CP3490248/filings/dissolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP",
+										"CP3490248",
+										"filings",
+										"dissolution"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "POST VD CP3490248",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"filing\": {\n    \"business\": {\n      \"foundingDate\": \"2021-09-27T16:05:45.000+00:00\",\n      \"identifier\": \"CP3490248\",\n      \"legalName\": \"AC COOP 555555\",\n      \"legalType\": \"CP\"\n    },\n    \"dissolution\": {\n      \"affidavitConfirmed\": true,\n      \"affidavitFileKey\": \"142beb5e-e3cf-4afa-96e7-6693c279a998.pdf\",\n      \"affidavitFileLastModified\": 1632234883411,\n      \"affidavitFileName\": \"rules test.pdf\",\n      \"affidavitFileSize\": 20624,\n      \"custodialOffice\": {\n        \"deliveryAddress\": {\n          \"addressCity\": \"Langley\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V2Z 1K7\",\n          \"streetAddress\": \"2323334 16 Ave\",\n          \"streetAddressAdditional\": \"\"\n        },\n        \"mailingAddress\": {\n          \"addressCity\": \"Langley\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V2Z 1K7\",\n          \"streetAddress\": \"2323334 16 Ave\",\n          \"streetAddressAdditional\": \"\"\n        }\n      },\n      \"dissolutionDate\": \"2021-12-09\",\n      \"dissolutionStatementType\": \"197NoAssetsNoLiabilities\",\n      \"dissolutionType\": \"voluntary\",\n      \"parties\": [\n        {\n          \"deliveryAddress\": {\n            \"addressCity\": \"Maple Ridge\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V2W 1B7\",\n            \"streetAddress\": \"23434 River Rd\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"inheritMailingAddress\": true,\n          \"mailingAddress\": {\n            \"addressCity\": \"Maple Ridge\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V2W 1B7\",\n            \"streetAddress\": \"23434 River Rd\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"officer\": {\n            \"email\": \"argus@highwaythreesolutions.com\",\n            \"firstName\": \"jane\",\n            \"lastName\": \"doe\",\n            \"middleName\": \"asdf\",\n            \"organizationName\": \"\",\n            \"partyType\": \"person\"\n          },\n          \"roles\": [\n            {\n              \"appointmentDate\": \"2021-12-09\",\n              \"roleType\": \"Custodian\"\n            }\n          ]\n        }\n      ]\n    },\n    \"header\": {\n      \"certifiedBy\": \"BCREGTEST Delphia EIGHTEEN\",\n      \"date\": \"2021-12-09\",\n      \"isFutureEffective\": \"\",\n      \"learEffectiveDate\": \"2021-12-09T16:47:35.779484+00:00\",\n      \"name\": \"dissolution\"\n    },\n    \"specialResolution\": {\n      \"resolution\": \"jaklsdjflkjlaksdf\\n\\nasjkldfjlskdf\\n\\najsdlfjlksdfjkdsf\\n\\najskldfjlsdf\",\n      \"resolutionConfirmed\": true,\n      \"resolutionDate\": \"2021-09-27\",\n      \"signatory\": {\n        \"additionalName\": \"jaklsdf\",\n        \"familyName\": \"doe\",\n        \"givenName\": \"jane\"\n      },\n      \"signingDate\": \"2021-09-30\"\n    }\n  },\n  \"filingId\": 113459\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/CP/CP3490248/filings/dissolution",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"CP",
+												"CP3490248",
+												"filings",
+												"dissolution"
+											]
+										}
+									},
+									"status": "CREATED",
+									"code": 201,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Length",
+											"value": "2112"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "HEAD, POST, GET, OPTIONS"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/2.27.0"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/1.0.1 Python/3.8.8"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 10 Dec 2021 23:58:29 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2021-09-27T16:05:45-00:00\",\n            \"identifier\": \"CP3490248\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": null,\n            \"lastArDate\": null,\n            \"lastLedgerTimestamp\": \"2021-12-10T23:58:29-00:00\",\n            \"legalName\": \"AC COOP 555555\",\n            \"legalType\": \"CP\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"dissolution\": {\n            \"custodialOffice\": {\n                \"deliveryAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"LANGLEY\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 102604974,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V2Z 1K7\",\n                    \"streetAddress\": \"2323334 16 AVE\",\n                    \"streetAddressAdditional\": \"\"\n                },\n                \"mailingAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"LANGLEY\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 102604975,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V2Z 1K7\",\n                    \"streetAddress\": \"2323334 16 AVE\",\n                    \"streetAddressAdditional\": \"\"\n                }\n            },\n            \"dissolutionDate\": \"2021-12-10T23:58:28-00:00\",\n            \"dissolutionType\": \"voluntary\",\n            \"eventId\": 503251133,\n            \"parties\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2021-12-09\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"MAPLE RIDGE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102604976,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V2W 1B7\",\n                        \"streetAddress\": \"23434 RIVER RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"MAPLE RIDGE\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 102604977,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V2W 1B7\",\n                        \"streetAddress\": \"23434 RIVER RD\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"jane\",\n                        \"lastName\": \"doe\",\n                        \"middleInitial\": \"\",\n                        \"orgName\": \"\"\n                    },\n                    \"roles\": [\n                        {\n                            \"appointmentDate\": \"2021-12-09\",\n                            \"cessationDate\": null,\n                            \"roleType\": \"Custodian\"\n                        }\n                    ],\n                    \"startEventId\": 503251133,\n                    \"title\": \"\"\n                }\n            ]\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"BCREGTEST Delphia EIGHTEEN\",\n            \"colinIds\": [\n                503251133,\n                503251134\n            ],\n            \"date\": \"2021-12-10\",\n            \"effectiveDate\": \"2021-12-10T23:58:28-00:00\",\n            \"inColinOnly\": false,\n            \"name\": \"dissolution\",\n            \"source\": \"COLIN\"\n        },\n        \"specialResolution\": {\n            \"eventId\": 503251134,\n            \"meetingDate\": \"2021-12-10T23:58:29-00:00\",\n            \"resolution\": \"jaklsdjflkjlaksdf\\n\\nasjkldfjlskdf\\n\\najsdlfjlksdfjkdsf\\n\\najskldfjlsdf\"\n        }\n    }\n}"
+								}
+							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "SR",
@@ -3968,7 +4229,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "86b08de2-1487-4b19-9cc7-63037cc2716e",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4102,10 +4362,153 @@
 									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"cacheId\": 0,\n            \"corpState\": \"ACT\",\n            \"foundingDate\": \"2011-03-08\",\n            \"identifier\": \"CP0002108\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": \"2019-02-06\",\n            \"lastArDate\": \"2019-02-06\",\n            \"lastLedgerTimestamp\": \"2019-05-16T00:00:00-00:00\",\n            \"legalName\": \"FIRST AVENUE ATHLETES VILLAGE HOUSING CO-OPERATIVE\",\n            \"legalType\": \"CP\",\n            \"status\": \"Active\"\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"N/A\",\n            \"date\": \"2019-05-16\",\n            \"email\": \"xxxx@xxxx.xxx\",\n            \"name\": \"specialResolution\"\n        },\n        \"specialResolution\": {\n            \"eventId\": 103248201,\n            \"filedDate\": \"2019-05-16\",\n            \"resolution\": \"FORM 6                         S.R. RE: CHANGES IN RULES                           \"\n        }\n    }\n}"
 								}
 							]
+						},
+						{
+							"name": "GET SR CP3490248 (created from VD)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 20000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"var jsonData = pm.response.json()",
+											"pm.test(\"Returns the required fields for SR filing\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.specialResolution).to.exist",
+											"    pm.expect(jsonData.filing.business).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"});",
+											"",
+											"pm.test(\"Returns the business for corresponding COOP\", () => {",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql('CP0002108')",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for header\", () => {",
+											"    pm.expect(jsonData.filing.header.date).to.eql('2019-05-16')",
+											"    pm.expect(jsonData.filing.header.name).to.eql('specialResolution')",
+											"    pm.expect(jsonData.filing.header.availableOnPaperOnly).to.be.true",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for Special Resolution\", () => {",
+											"    pm.expect(jsonData.filing.specialResolution.resolution).to.exist",
+											"    pm.expect(jsonData.filing.specialResolution.meetingDate).to.exist",
+											"    pm.expect(jsonData.filing.specialResolution.eventId).to.exist",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/CP/CP0002108/filings/specialResolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"CP",
+										"CP0002108",
+										"filings",
+										"specialResolution"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GET SR CP3490248",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/CP/CP3490248/filings/specialResolution",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"CP",
+												"CP3490248",
+												"filings",
+												"specialResolution"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Length",
+											"value": "724"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, GET, OPTIONS, HEAD"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/2.27.0"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/1.0.1 Python/3.8.8"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 10 Dec 2021 23:27:04 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": null,\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2021-09-27T16:05:45-00:00\",\n            \"identifier\": \"CP3490248\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": null,\n            \"lastArDate\": null,\n            \"lastLedgerTimestamp\": \"2021-12-10T21:40:26-00:00\",\n            \"legalName\": \"AC COOP 555555\",\n            \"legalType\": \"CP\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"BCREGTEST Delphia EIGHTEEN\",\n            \"colinIds\": [\n                503251128\n            ],\n            \"date\": \"2021-12-10\",\n            \"effectiveDate\": \"2021-12-10T21:40:26-00:00\",\n            \"inColinOnly\": false,\n            \"name\": \"specialResolution\",\n            \"source\": \"COLIN\"\n        },\n        \"specialResolution\": {\n            \"eventId\": 503251128,\n            \"meetingDate\": \"2021-12-10T21:40:26-00:00\",\n            \"resolution\": \"jaklsdjflkjlaksdf\\n\\nasjkldfjlskdf\\n\\najsdlfjlksdfjkdsf\\n\\najskldfjlsdf\"\n        }\n    }\n}"
+								}
+							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "CON",
@@ -4116,7 +4519,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e99a0781-ac20-43b6-8fa4-8a47bb1a1b80",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4250,9 +4652,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Event",
@@ -4263,7 +4663,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1535ae96-bb35-4893-af03-75bee2a9c704",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -4408,9 +4807,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Historic Filings",
@@ -4421,7 +4818,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1fd3ba43-c559-4807-ae4a-0d863e9ded04",
 										"exec": [
 											"pm.test(\"Response time is less than 20000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
@@ -4553,12 +4949,9 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Benefit/BC/ULC Companies",
@@ -4572,7 +4965,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e047cc15-20c2-4ac4-aee4-05ac7d175b76",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -4702,7 +5094,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "0d921a18-41ba-4e6d-896c-5cd18825fd26",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -4712,16 +5103,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "156e1c03-987b-4575-9fe5-2a6f24d2b1a4",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Business",
@@ -4732,7 +5120,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2617899d-d545-4b82-8ced-dca16f897e34",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -4858,7 +5245,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ed4dab4a-bbcf-4043-be90-6913cdb77dec",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -4977,9 +5363,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Offices",
@@ -4990,7 +5374,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7cebbc44-5029-4bd5-8af3-e180ce2140f7",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5135,7 +5518,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b34ad834-3d2f-44f2-9cd2-b00f44d23aa8",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5274,9 +5656,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Parties",
@@ -5287,7 +5667,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a42a73d3-8bbf-4843-aa7a-3f976f1530cc",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5423,7 +5802,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "52aa5b22-b5e6-4438-ab95-6072eda8ccd4",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5553,9 +5931,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Share Structure",
@@ -5566,7 +5942,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "985587cb-012d-49de-a2a6-4d842a623598",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5630,7 +6005,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e1ee8685-4aa7-49bd-bc53-88eb58f66bd8",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -5688,9 +6062,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Names",
@@ -5701,7 +6073,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "77732e32-f7bc-4a68-b56f-d6e7cd27fa7f",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5835,7 +6206,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b6a8d459-795f-46a7-8bef-0a5b6cd324b5",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -5969,7 +6339,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "44a1cbe8-0426-47fa-b3c2-f610a0b84fa3",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6097,9 +6466,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Resolutions",
@@ -6110,7 +6477,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4f95e187-4e1a-4feb-8c6f-fd53cbedc5a2",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -6235,9 +6601,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Incorporation",
@@ -6248,7 +6612,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e4888516-46b2-4687-8857-b495042ed1e6",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6300,7 +6663,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d977de3e-2adf-4010-9d7d-5e024cc00726",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6410,7 +6772,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "d9313a10-943c-40fe-b1b7-42c87ce540c8",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -6462,7 +6823,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bf158ed0-ce40-4aa9-855e-6008464f6c5d",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6514,7 +6874,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9d7fb074-7359-4813-a8e6-128fbb52449b",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6624,7 +6983,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "f1614ce8-ffbc-4ade-b388-e9424cebc20a",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -6676,7 +7034,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9fce70c5-a457-4b19-8973-8626949ba656",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6728,7 +7085,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "51aae99e-8635-4777-a562-420f44af1196",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -6837,7 +7193,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "5e0c01e5-b82b-4149-992d-78d46024d919",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -6883,9 +7238,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "COD",
@@ -6896,7 +7249,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "bfd1418c-3174-42b6-9523-ef7ec7fafc8b",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -6971,7 +7323,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "4b5ca296-0ec6-4a3c-8d9b-2fd9eb38ba2b",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -7091,7 +7442,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ff5c1a87-0465-4982-ab45-3a7517af8cf4",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7242,7 +7592,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "71708c97-c72e-46c4-a615-01d9e2d710a8",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7420,7 +7769,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "a2b532fb-6f9f-4570-af65-135ba4f84f39",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -7430,16 +7778,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3c5a469c-d7ea-4280-a468-a0b9fcb72090",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "COA",
@@ -7450,7 +7795,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "543daf8b-8b4b-4ab0-8ba4-743ec55b009c",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"pm.environment.set(\"coaEventId\", jsonData.filing.changeOfAddress.eventId)",
@@ -7505,7 +7849,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "fb275be7-b6b7-459e-9fb4-5e34cb96171f",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -7625,7 +7968,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "83dc6b37-9fec-4e32-911b-c5e5fe3c9f5d",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7775,7 +8117,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f9b59470-425a-4aac-af9b-aecc4e729471",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -7937,7 +8278,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "f2de23f0-cb59-4ced-b2d0-e649c6f93b62",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -7947,16 +8287,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4a9f423c-fdaa-4d46-b940-8b625192fbf6",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "AR",
@@ -7967,7 +8304,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "80e7c626-eab5-4a7e-a3a6-518d46ce2013",
 										"exec": [
 											"// set event id variable (used for future tests)",
 											"var jsonData = pm.response.json()",
@@ -8010,7 +8346,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "addef49d-875a-4dcf-b5a5-e31c137b0bf5",
 										"exec": [
 											"var today = new Date()",
 											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
@@ -8135,7 +8470,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e51d099e-c6cb-42f0-bd6a-ce280794844f",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8275,7 +8609,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "09a769ad-ae70-4d87-800a-891239d1aa39",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8418,9 +8751,7 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Alteration/Transition",
@@ -8431,7 +8762,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "40909496-2fb8-48b1-81ca-cd493f4062d4",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -8494,7 +8824,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8daff432-724d-4bcc-b891-f1ee286d8cc5",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -8612,7 +8941,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1a8cac41-6755-4ce3-9c09-6aacdab4a4dd",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -8667,7 +8995,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0f3af86b-c02f-4f75-b0c2-a5ee1173b0b7",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -8811,7 +9138,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a3f577e6-cb07-4f8e-92af-c1ecc15b1653",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -8879,7 +9205,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9141ffbd-4736-4cff-b725-2229c6e75cc8",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -8996,7 +9321,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "ce3588b4-02b2-47f8-b46f-6f3ebb9b6ed9",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -9006,16 +9330,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e1f53254-6e98-4aae-b2e4-a3ba720ab2cc",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "corrections",
@@ -9026,7 +9347,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "edadd187-5b0d-4955-b5de-60f9f58e8584",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -9089,7 +9409,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "935174c1-397e-4d06-a203-fde0570db373",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -9152,7 +9471,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a88047c5-07b7-4a0f-b2ec-56c5644dd15b",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -9215,7 +9533,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1cf0a77e-baef-44e7-b9a4-68301ab361ff",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -9278,7 +9595,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d446f588-3f44-4bf4-a5fc-ec3c472d49ac",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -9402,7 +9718,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "d1ae7595-f2c0-4e90-8dbb-0bf3963523dd",
 										"exec": [
 											"var jsonData = pm.response.json();",
 											"",
@@ -9465,7 +9780,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b3e9e659-57bc-4610-811a-fb082f68f35b",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -9589,7 +9903,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7a49cccc-07f6-457a-bb3d-8cf4e5022747",
 										"exec": [
 											"pm.test(\"Response time is less than 10000ms\", function () {",
 											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
@@ -9727,7 +10040,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c02a009e-e4e2-41e5-8a39-8a1933fccc0a",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -9872,7 +10184,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "68f2f890-6940-4c95-a2ab-3dd6df06188b",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -10009,7 +10320,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "17480f15-4da1-442d-86e7-df633d9e971b",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -10067,9 +10377,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Transition",
@@ -10080,7 +10388,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ca2633d5-174e-4deb-b0ae-f5104a954fc2",
 										"exec": [
 											"var jsonData = pm.response.json()",
 											"",
@@ -10218,16 +10525,328 @@
 								}
 							]
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
+				},
+				{
+					"name": "VD",
+					"item": [
+						{
+							"name": "GET VD",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 20000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"var jsonData = pm.response.json()",
+											"pm.test(\"Returns the required fields for VD filing\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.dissolution).to.exist",
+											"    pm.expect(jsonData.filing.business).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"});",
+											"",
+											"pm.test(\"Returns the business for corresponding CORP\", () => {",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql('0702216')",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for header\", () => {",
+											"    pm.expect(jsonData.filing.header.name).to.eql('dissolution')",
+											"    pm.expect(jsonData.filing.header.availableOnPaperOnly).to.be.true",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for Voluntary Dissolution\", () => {",
+											"    pm.expect(jsonData.filing.dissolution.eventId).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionDate).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.custodialOffice).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.eql('voluntary')",
+											"    pm.expect(jsonData.filing.dissolution.parties).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles[0].roleType).to.eql('Custodian')",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/BC/0702216/filings/dissolution/voluntary",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"BC",
+										"0702216",
+										"filings",
+										"dissolution",
+										"voluntary"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GET VD BC0702216",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/BC/0702216/filings/dissolution/voluntary",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"BC",
+												"0702216",
+												"filings",
+												"dissolution",
+												"voluntary"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Length",
+											"value": "1960"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, GET, OPTIONS, HEAD"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/2.27.0"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/1.0.1 Python/3.8.8"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 10 Dec 2021 23:37:05 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": \"123\",\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2004-08-18T16:33:17-00:00\",\n            \"identifier\": \"0702216\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": null,\n            \"lastArDate\": \"2009-08-18\",\n            \"lastLedgerTimestamp\": \"2021-12-10T21:42:19-00:00\",\n            \"legalName\": \"M & D NEALIS CONTRACTING LTD.\",\n            \"legalType\": \"BC\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"dissolution\": {\n            \"custodialOffice\": {\n                \"deliveryAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"VICTORIA\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 7460317,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V8W 2C3\",\n                    \"streetAddress\": \"1012 DOUGLAS ST\",\n                    \"streetAddressAdditional\": \"SUITE 200\"\n                },\n                \"mailingAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"VICTORIA\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 7460318,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V8W 2C3\",\n                    \"streetAddress\": \"1012 DOUGLAS ST\",\n                    \"streetAddressAdditional\": \"SUITE 200\"\n                }\n            },\n            \"dissolutionDate\": \"2021-12-10T21:42:19-00:00\",\n            \"dissolutionType\": \"voluntary\",\n            \"eventId\": 9178264,\n            \"parties\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2021-12-02\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"VICTORIA\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 7460319,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V8W 2C3\",\n                        \"streetAddress\": \"1012 DOUGLAS ST\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"VICTORIA\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 7460320,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V8W 2C3\",\n                        \"streetAddress\": \"1012 DOUGLAS ST\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"jane\",\n                        \"lastName\": \"doe\",\n                        \"middleInitial\": \"\",\n                        \"orgName\": \"\"\n                    },\n                    \"roles\": [\n                        {\n                            \"appointmentDate\": \"2021-12-02\",\n                            \"cessationDate\": null,\n                            \"roleType\": \"Custodian\"\n                        }\n                    ],\n                    \"startEventId\": 9178264,\n                    \"title\": \"\"\n                }\n            ]\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"M & D NEALIS CONTRACTING LTD.\",\n            \"colinIds\": [\n                9178264\n            ],\n            \"date\": \"2021-12-10\",\n            \"effectiveDate\": \"2021-12-10T21:42:19-00:00\",\n            \"inColinOnly\": false,\n            \"name\": \"dissolution\",\n            \"source\": \"COLIN\"\n        }\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "POST VD",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 20000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(20000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"var jsonData = pm.response.json()",
+											"pm.test(\"Returns the required fields for VD filing\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.dissolution).to.exist",
+											"    pm.expect(jsonData.filing.business).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"});",
+											"",
+											"pm.test(\"Returns the business for corresponding CORP\", () => {",
+											"    pm.expect(jsonData.filing.business.identifier).to.eql('0702216')",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for header\", () => {",
+											"    pm.expect(jsonData.filing.header.name).to.eql('dissolution')",
+											"    pm.expect(jsonData.filing.header.availableOnPaperOnly).to.be.true",
+											"    pm.expect(jsonData.filing.header.colinIds).to.exist",
+											"    pm.expect(jsonData.filing.header.colinIds.length).to.eq(1)",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for Voluntary Dissolution\", () => {",
+											"    pm.expect(jsonData.filing.dissolution.eventId).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionDate).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.custodialOffice).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.dissolutionType).to.eql('voluntary')",
+											"    pm.expect(jsonData.filing.dissolution.parties).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles).to.exist",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles.length).to.eq(1)",
+											"    pm.expect(jsonData.filing.dissolution.parties[0].roles[0].roleType).to.eql('Custodian')",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"filing\": {\n    \"business\": {\n      \"foundingDate\": \"2021-12-01T23:20:31.000+00:00\",\n      \"identifier\": \"BC0702216\",\n      \"legalName\": \"0870868 B.C. LTD.\",\n      \"legalType\": \"BC\"\n    },\n    \"dissolution\": {\n      \"affidavitConfirmed\": true,\n      \"custodialOffice\": {\n        \"deliveryAddress\": {\n          \"addressCity\": \"Victoria\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V8W 2C3\",\n          \"streetAddress\": \"1012 Douglas St\",\n          \"streetAddressAdditional\": \"Suite 200\"\n        },\n        \"mailingAddress\": {\n          \"addressCity\": \"Victoria\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V8W 2C3\",\n          \"streetAddress\": \"1012 Douglas St\",\n          \"streetAddressAdditional\": \"Suite 200\"\n        }\n      },\n      \"dissolutionDate\": \"2021-12-02\",\n      \"dissolutionType\": \"voluntary\",\n      \"parties\": [\n        {\n          \"deliveryAddress\": {\n            \"addressCity\": \"Victoria\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V8W 2C3\",\n            \"streetAddress\": \"1012 Douglas St\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"inheritMailingAddress\": true,\n          \"mailingAddress\": {\n            \"addressCity\": \"Victoria\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V8W 2C3\",\n            \"streetAddress\": \"1012 Douglas St\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"officer\": {\n            \"email\": \"argus@highwaythreesolutions.com\",\n            \"firstName\": \"jane\",\n            \"lastName\": \"doe\",\n            \"middleName\": \"\",\n            \"organizationName\": \"\",\n            \"partyType\": \"person\"\n          },\n          \"roles\": [\n            {\n              \"appointmentDate\": \"2021-12-02\",\n              \"roleType\": \"Custodian\"\n            }\n          ]\n        }\n      ],\n      \"resolution\": {\n        \"resolutionConfirmed\": true\n      }\n    },\n    \"header\": {\n      \"certifiedBy\": \"M & D NEALIS CONTRACTING LTD.\",\n      \"date\": \"2021-12-02\",\n      \"effectiveDate\": \"2021-12-02T22:22:00.000+00:00\",\n      \"isFutureEffective\": true,\n      \"learEffectiveDate\": \"2021-12-09T17:13:38.164974+00:00\",\n      \"name\": \"dissolution\"\n    }\n  },\n  \"filingId\": 113549\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/BC/BC0702216/filings/dissolution",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"BC",
+										"BC0702216",
+										"filings",
+										"dissolution"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "POST VD BC0702216",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"filing\": {\n    \"business\": {\n      \"foundingDate\": \"2021-12-01T23:20:31.000+00:00\",\n      \"identifier\": \"BC0702216\",\n      \"legalName\": \"0870868 B.C. LTD.\",\n      \"legalType\": \"BC\"\n    },\n    \"dissolution\": {\n      \"affidavitConfirmed\": true,\n      \"custodialOffice\": {\n        \"deliveryAddress\": {\n          \"addressCity\": \"Victoria\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V8W 2C3\",\n          \"streetAddress\": \"1012 Douglas St\",\n          \"streetAddressAdditional\": \"Suite 200\"\n        },\n        \"mailingAddress\": {\n          \"addressCity\": \"Victoria\",\n          \"addressCountry\": \"CA\",\n          \"addressRegion\": \"BC\",\n          \"deliveryInstructions\": \"\",\n          \"postalCode\": \"V8W 2C3\",\n          \"streetAddress\": \"1012 Douglas St\",\n          \"streetAddressAdditional\": \"Suite 200\"\n        }\n      },\n      \"dissolutionDate\": \"2021-12-02\",\n      \"dissolutionType\": \"voluntary\",\n      \"parties\": [\n        {\n          \"deliveryAddress\": {\n            \"addressCity\": \"Victoria\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V8W 2C3\",\n            \"streetAddress\": \"1012 Douglas St\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"inheritMailingAddress\": true,\n          \"mailingAddress\": {\n            \"addressCity\": \"Victoria\",\n            \"addressCountry\": \"CA\",\n            \"addressRegion\": \"BC\",\n            \"deliveryInstructions\": \"\",\n            \"postalCode\": \"V8W 2C3\",\n            \"streetAddress\": \"1012 Douglas St\",\n            \"streetAddressAdditional\": \"\"\n          },\n          \"officer\": {\n            \"email\": \"argus@highwaythreesolutions.com\",\n            \"firstName\": \"jane\",\n            \"lastName\": \"doe\",\n            \"middleName\": \"\",\n            \"organizationName\": \"\",\n            \"partyType\": \"person\"\n          },\n          \"roles\": [\n            {\n              \"appointmentDate\": \"2021-12-02\",\n              \"roleType\": \"Custodian\"\n            }\n          ]\n        }\n      ],\n      \"resolution\": {\n        \"resolutionConfirmed\": true\n      }\n    },\n    \"header\": {\n      \"certifiedBy\": \"M & D NEALIS CONTRACTING LTD.\",\n      \"date\": \"2021-12-02\",\n      \"effectiveDate\": \"2021-12-02T22:22:00.000+00:00\",\n      \"isFutureEffective\": true,\n      \"learEffectiveDate\": \"2021-12-09T17:13:38.164974+00:00\",\n      \"name\": \"dissolution\"\n    }\n  },\n  \"filingId\": 113549\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/BC/BC0702216/filings/dissolution",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"BC",
+												"BC0702216",
+												"filings",
+												"dissolution"
+											]
+										}
+									},
+									"status": "CREATED",
+									"code": 201,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Length",
+											"value": "1960"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "OPTIONS, HEAD, POST, GET"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/2.27.0"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/1.0.1 Python/3.8.8"
+										},
+										{
+											"key": "Date",
+											"value": "Sat, 11 Dec 2021 00:11:31 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"filing\": {\n        \"business\": {\n            \"businessNumber\": \"123\",\n            \"corpState\": \"HDV\",\n            \"foundingDate\": \"2004-08-18T16:33:17-00:00\",\n            \"identifier\": \"0702216\",\n            \"jurisdiction\": \"BC\",\n            \"lastAgmDate\": null,\n            \"lastArDate\": \"2009-08-18\",\n            \"lastLedgerTimestamp\": \"2021-12-11T00:11:31-00:00\",\n            \"legalName\": \"M & D NEALIS CONTRACTING LTD.\",\n            \"legalType\": \"BC\",\n            \"status\": \"Voluntary Dissolution\"\n        },\n        \"dissolution\": {\n            \"custodialOffice\": {\n                \"deliveryAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"VICTORIA\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 7460325,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V8W 2C3\",\n                    \"streetAddress\": \"1012 DOUGLAS ST\",\n                    \"streetAddressAdditional\": \"SUITE 200\"\n                },\n                \"mailingAddress\": {\n                    \"actions\": [],\n                    \"addressCity\": \"VICTORIA\",\n                    \"addressCountry\": \"CANADA\",\n                    \"addressId\": 7460326,\n                    \"addressRegion\": \"BC\",\n                    \"deliveryInstructions\": \"\",\n                    \"postalCode\": \"V8W 2C3\",\n                    \"streetAddress\": \"1012 DOUGLAS ST\",\n                    \"streetAddressAdditional\": \"SUITE 200\"\n                }\n            },\n            \"dissolutionDate\": \"2021-12-11T00:11:31-00:00\",\n            \"dissolutionType\": \"voluntary\",\n            \"eventId\": 9178266,\n            \"parties\": [\n                {\n                    \"actions\": [],\n                    \"appointmentDate\": \"2021-12-02\",\n                    \"cessationDate\": null,\n                    \"deliveryAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"VICTORIA\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 7460327,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V8W 2C3\",\n                        \"streetAddress\": \"1012 DOUGLAS ST\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"endEventId\": \"\",\n                    \"mailingAddress\": {\n                        \"actions\": [],\n                        \"addressCity\": \"VICTORIA\",\n                        \"addressCountry\": \"CANADA\",\n                        \"addressId\": 7460328,\n                        \"addressRegion\": \"BC\",\n                        \"deliveryInstructions\": \"\",\n                        \"postalCode\": \"V8W 2C3\",\n                        \"streetAddress\": \"1012 DOUGLAS ST\",\n                        \"streetAddressAdditional\": \"\"\n                    },\n                    \"officer\": {\n                        \"firstName\": \"jane\",\n                        \"lastName\": \"doe\",\n                        \"middleInitial\": \"\",\n                        \"orgName\": \"\"\n                    },\n                    \"roles\": [\n                        {\n                            \"appointmentDate\": \"2021-12-02\",\n                            \"cessationDate\": null,\n                            \"roleType\": \"Custodian\"\n                        }\n                    ],\n                    \"startEventId\": 9178266,\n                    \"title\": \"\"\n                }\n            ]\n        },\n        \"header\": {\n            \"availableOnPaperOnly\": true,\n            \"certifiedBy\": \"M & D NEALIS CONTRACTING LTD.\",\n            \"colinIds\": [\n                9178266\n            ],\n            \"date\": \"2021-12-11\",\n            \"effectiveDate\": \"2021-12-11T00:11:31-00:00\",\n            \"inColinOnly\": false,\n            \"name\": \"dissolution\",\n            \"source\": \"COLIN\"\n        }\n    }\n}"
+								}
+							]
+						}
+					]
 				}
 			],
 			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "9b0ff37f-bc99-4ad3-8d29-33764c0feea9",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -10237,22 +10856,19 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "51bf2f00-fbf9-4823-8bdf-bebef009dbb8",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "7b390d6f-3cd2-4256-85ec-bed93df7ed1b",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -10262,13 +10878,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "fbb0cab8-0813-4b17-9a14-6df99fc11aa9",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
