@@ -460,16 +460,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
-            elif filing_type_code in ['OTVDS', 'ADVD2']:
-                insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
-                values_stmnt = values_stmnt + ", 'N', 'S')"
-                cursor.execute(
-                    insert_stmnt + values_stmnt,
-                    event_id=filing.event_id,
-                    filing_type_code=filing_type_code,
-                    effective_dt=filing.effective_date
-                )
-            elif filing_type_code in ['OTSPE']:
+            elif filing_type_code in ['OTVDS', 'ADVD2', 'OTSPE']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'S')"
                 cursor.execute(
@@ -736,7 +727,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             if 'parties' in components:
                 parties = []
-                if filing.filing_type == 'dissolution' and filing.filing_sub_type == 'voluntary':
+                if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
                     parties = Party.get_by_event(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Custodian')
                 else:
@@ -1013,7 +1004,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     cls._insert_ledger_text(cursor, filing, order_details)
 
                 # process voluntary dissolution
-                if filing.filing_type == 'dissolution' and filing.filing_sub_type == 'voluntary':
+                if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
                     Business.update_corp_state(cursor,
                                                filing.event_id,
                                                corp_num,
@@ -1041,7 +1032,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
-    def get_filing_sub_type(cls, filing_type: str, filing_body: dict) -> str:
+    def get_filing_sub_type(cls, filing_type: str, filing_body: dict) -> Optional[str]:
         """Retrieve filing sub-type if available."""
         if filing_body \
             and filing_type \
@@ -1056,6 +1047,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         """Return whether filing type has filing sub-type."""
         sub_type_list = Filing.FILING_TYPES.get(filing_type, {}).get('sub_type_list', [])
         return filing_sub_type in sub_type_list
+
+    @classmethod
+    def is_filing_type_match(cls, filing: Filing, filing_type: str, filing_sub_type: str):
+        """Return whether filing has specificed filing type and filing sub-type."""
+        return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
 
     @classmethod
     # pylint: disable=too-many-arguments;
@@ -1080,43 +1076,41 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _process_office(cls, cursor, filing: Filing) -> str:
         """Add offices from the filing."""
-        # offices in annualReport is redundant, skip it
         text = ''
-        if filing.filing_type != 'annualReport':
-            corp_num = filing.get_corp_num()
-            if filing.filing_type == 'dissolution' and \
-                    filing.filing_sub_type == 'voluntary':
-                office = filing.body.get('custodialOffice')
-                office_type = 'custodialOffice'
-                Office.create_new_office(
-                    cursor=cursor,
-                    addresses=office,
-                    event_id=filing.event_id,
-                    corp_num=corp_num,
-                    office_type=office_type
-                )
-                # create new ledger text for address change
+
+        # offices in annualReport is redundant, skip it
+        if filing.filing_type == 'annualReport':
+            return ''
+
+        corp_num = filing.get_corp_num()
+        if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+            office = filing.body.get('custodialOffice')
+            office_type = 'custodialOffice'
+            Office.create_new_office(
+                cursor=cursor,
+                addresses=office,
+                event_id=filing.event_id,
+                corp_num=corp_num,
+                office_type=office_type
+            )
+            office_desc = (office_type.replace('O', ' O')).title()
+            return f'Change to the {office_desc}.'
+
+        for office_type in filing.body.get('offices', []):
+            Office.create_new_office(
+                cursor=cursor,
+                addresses=filing.body['offices'][office_type],
+                event_id=filing.event_id,
+                corp_num=corp_num,
+                office_type=office_type
+            )
+            # create new ledger text for address change
+            if filing.filing_type != 'incorporationApplication':
                 office_desc = (office_type.replace('O', ' O')).title()
                 if text:
                     text = f'{text} Change to the {office_desc}.'
                 else:
                     text = f'Change to the {office_desc}.'
-            else:
-                for office_type in filing.body.get('offices', []):
-                    Office.create_new_office(
-                        cursor=cursor,
-                        addresses=filing.body['offices'][office_type],
-                        event_id=filing.event_id,
-                        corp_num=corp_num,
-                        office_type=office_type
-                    )
-                    # create new ledger text for address change
-                    if filing.filing_type != 'incorporationApplication':
-                        office_desc = (office_type.replace('O', ' O')).title()
-                        if text:
-                            text = f'{text} Change to the {office_desc}.'
-                        else:
-                            text = f'Change to the {office_desc}.'
         return text
 
     @classmethod
