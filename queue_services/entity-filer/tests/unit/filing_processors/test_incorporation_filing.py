@@ -19,7 +19,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
@@ -71,6 +71,7 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         assert business.founding_date == effective_date
         assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        assert business.state == Business.State.ACTIVE
         if legal_type == 'BC':
             assert len(business.share_classes.all()) == 2
             assert len(business.offices.all()) == 2  # One office is created in create_business method.

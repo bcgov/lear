@@ -51,6 +51,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # should we save dissolution_statement_type in businesses table?
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
     business.dissolution_date = dissolution_date
+    business.state = Business.State.HISTORICAL
+    business.state_filing_id = filing_rec.id
 
     # add custodial party if in filing
     if parties := dissolution_filing.get('parties'):

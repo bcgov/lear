@@ -180,6 +180,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         business = Business()
         business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
         business = _update_cooperative(incorp_filing, business, filing_rec)
+        business.state = Business.State.ACTIVE
 
         if nr_number := business_info_obj.get('nrNumber', None):
             filing_meta.incorporation_application = {**filing_meta.incorporation_application,
