@@ -268,7 +268,7 @@ def test_business_json(session):
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    d['dissolutionDate'] = business.dissolution_date.isoformat()
     assert business.json() == d
     business.dissolution_date = None
     d.pop('dissolutionDate')

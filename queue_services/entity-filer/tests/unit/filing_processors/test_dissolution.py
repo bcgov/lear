@@ -90,7 +90,7 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
     business.save()
 
     # validate
-    assert business.dissolution_date == pytz.utc.localize(datetime.fromisoformat(dissolution_date))
+    assert business.dissolution_date == filing.effective_date
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == curr_roles + len(filing_json['filing']['dissolution']['parties'])
