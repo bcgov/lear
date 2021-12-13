@@ -43,7 +43,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type}}
 
-    dissolution_date = datetime.fromisoformat(dissolution_filing.get('dissolutionDate'))
     # hasLiabilities can be derived from dissolutionStatementType
     # FUTURE: remove hasLiabilities from schema
     # has_liabilities = filing['dissolution'].get('hasLiabilities')
