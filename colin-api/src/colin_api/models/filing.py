@@ -503,9 +503,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             cursor.execute(
                 """
                 INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id, user_id)
-                VALUES (:event_id, sysdate, :notation, :dd_event_id, :user_id)
+                VALUES (:event_id, TO_TIMESTAMP_TZ(:ledger_text_dts, 'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), :notation,
+                        :dd_event_id, :user_id)
                 """,
                 event_id=filing.event_id,
+                ledger_text_dts=filing.effective_date,
                 notation=text,
                 dd_event_id=filing.event_id,
                 user_id=filing.user_id
