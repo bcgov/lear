@@ -25,7 +25,7 @@ from flask import current_app
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.models.corp_name import CorpName
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_utc_datetime, stringify_list
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, stringify_list
 
 
 class Business:  # pylint: disable=too-many-instance-attributes
@@ -279,7 +279,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business = Business()
             business.corp_name = filing_info['business']['legalName']
             business.corp_num = filing_info['business']['identifier']
-            business.founding_date = convert_to_utc_datetime(filing_info['header']['learEffectiveDate'])
+            business.founding_date = convert_to_pacific_time(filing_info['header']['learEffectiveDate'])
 
             if filing_info['business']['legalType'] in cls.CORP_TYPE_CONVERSION[cls.LearBusinessTypes.BCOMP.value]:
                 business.corp_num = business.corp_num[-7:]
