@@ -118,6 +118,14 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
                 return False
         return True
 
+    @classmethod
+    def find_by_id(cls, party_id: int) -> Party:
+        """Return a party by the internal id."""
+        party = None
+        if party_id:
+            party = cls.query.filter_by(id=party_id).one_or_none()
+        return party
+
 
 @event.listens_for(Party, 'before_insert')
 @event.listens_for(Party, 'before_update')

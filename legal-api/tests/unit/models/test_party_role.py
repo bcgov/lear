@@ -171,3 +171,80 @@ def test_find_party_by_name(session):
     assert should_find_michael.id == person.id
     assert should_find_testing.id == no_middle_initial.id
     assert should_find_testorg.id == org.id
+
+
+def test_get_party_roles(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    # Find by all party roles
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
+    assert len(party_roles) == 2
+
+    # Find by party role
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), PartyRole.RoleTypes.CUSTODIAN.value)
+    assert len(party_roles) == 1
+
+
+def test_get_party_roles_by_party_id(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    # Find by all party roles
+    party_roles = PartyRole.get_party_roles_by_party_id(business.id, member.id)
+    assert len(party_roles) == 2
+
+    party_roles = PartyRole.get_party_roles_by_party_id(business.id, 123)
+    assert len(party_roles) == 0
+
+
