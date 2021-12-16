@@ -25,7 +25,7 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business
 from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
-from colin_api.utils import convert_to_utc_datetime
+from colin_api.utils import convert_to_pacific_time
 from colin_api.utils.util import cors_preflight
 
 
@@ -194,7 +194,7 @@ class FilingInfo(Resource):
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
             filing.body = filing_body
             # get utc lear effective date and convert to pacific time for insert into oracle
-            filing.effective_date = convert_to_utc_datetime(filing.header['learEffectiveDate'])
+            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
 
             if filing_type != 'incorporationApplication':
                 filing.business = Business.find_by_identifier(identifier, corp_types, con)
