@@ -19,6 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, PartyRole
+from legal_api.utils.auth import jwt
 
 from .bp import bp
 
@@ -26,6 +27,7 @@ from .bp import bp
 @bp.route('/<string:identifier>/parties', methods=['GET', 'OPTIONS'])
 @bp.route('/<string:identifier>/parties/<int:party_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
+@jwt.requires_auth
 def get_parties(identifier, party_id=None):
     """Return a JSON of the parties."""
     business = Business.find_by_identifier(identifier)
