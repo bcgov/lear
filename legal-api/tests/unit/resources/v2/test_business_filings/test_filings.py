@@ -27,7 +27,7 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from minio.error import S3Error
-from registry_schemas.example_data.schema_data import COOP_INCORPORATION
+from registry_schemas.example_data.schema_data import COOP_INCORPORATION, COURT_ORDER_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
@@ -219,6 +219,46 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_post_not_allowed_historical(session, client, jwt):
+    """Assert that a filing is not allowed for historical business."""
+    identifier = 'CP7654321'
+    factory_business(identifier, state=Business.State.HISTORICAL)
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=ANNUAL_REPORT,
+                     headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
+                     )
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_post_allowed_historical(session, client, jwt):
+    """Assert that a filing is allowed for historical business."""
+    identifier = 'BC7654321'
+    factory_business(identifier, state=Business.State.HISTORICAL)
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=COURT_ORDER_FILING_TEMPLATE,
+                     headers=create_header(jwt, [STAFF_ROLE], 'user')
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+def test_post_allowed_filings(session, client, jwt):
+    """Assert that a filing is allowed filings."""
+    identifier = 'BC7654321'
+    factory_business(identifier, state=Business.State.HISTORICAL)
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?allowed_filings=true',
+                     json=COURT_ORDER_FILING_TEMPLATE,
+                     headers=create_header(jwt, [STAFF_ROLE], 'user')
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['allowedFilings']
 
 
 def test_post_draft_ar(session, client, jwt):

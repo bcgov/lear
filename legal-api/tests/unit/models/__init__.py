@@ -113,7 +113,8 @@ AR_FILING = {
     }
 }
 
-def factory_user(username: str, firstname : str = None, lastname : str = None):
+
+def factory_user(username: str, firstname: str = None, lastname: str = None):
     user = User()
     user.username = username
     user.firstname = firstname
@@ -121,8 +122,10 @@ def factory_user(username: str, firstname : str = None, lastname : str = None):
     user.save()
     return user
 
+
 def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None,
-                     entity_type=Business.LegalTypes.COOP.value):
+                     entity_type=Business.LegalTypes.COOP.value,
+                     state=Business.State.ACTIVE):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
@@ -136,7 +139,8 @@ def factory_business(identifier, founding_date=EPOCH_DATETIME, last_ar_date=None
                         identifier=identifier,
                         tax_id='BN123456789',
                         fiscal_year_end_date=FROZEN_DATETIME,
-                        legal_type=entity_type)
+                        legal_type=entity_type,
+                        state=state)
 
     # Versioning business
     uow = versioning_manager.unit_of_work(db.session)

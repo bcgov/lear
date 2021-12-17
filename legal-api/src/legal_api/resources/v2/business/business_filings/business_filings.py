@@ -46,6 +46,7 @@ from legal_api.services import (
     namex,
     queue,
 )
+from legal_api.services.authz import get_allowed, is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -61,6 +62,7 @@ class QueryModel(BaseModel):
 
     draft: Optional[bool]
     only_validate: Optional[bool]
+    allowed_filings: Optional[bool]
 
 
 FilingT = TypeVar('FilingT')
@@ -100,9 +102,10 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     if err_msg:
         return jsonify({'errors': [err_msg, ]}), err_code
     json_input = request.get_json()
+    business = Business.find_by_identifier(identifier)
 
     # check authorization
-    response, response_code = ListFilingResource.check_authorization(identifier, json_input)
+    response, response_code = ListFilingResource.check_authorization(identifier, json_input, query, business)
     if response:
         return response, response_code
 
@@ -111,11 +114,11 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
 
     if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
-            and not ListFilingResource.is_before_epoch_filing(json_input, Business.find_by_identifier(identifier)):
+            and not ListFilingResource.is_before_epoch_filing(json_input, business):
         if identifier.startswith('T'):
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
-            business_validate = Business.find_by_identifier(identifier)
+            business_validate = business
         err = validate(business_validate, json_input)
         if err or query.only_validate:
             if err:
@@ -404,17 +407,24 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: str, query: QueryModel, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
-        action = ['edit']
         filing_type = filing_json['filing']['header'].get('name')
+        state = business.state if business else None
+        legal_type = business.legal_type if business else filing_json['filing']['business'].get('legalType')
+
+        if query.allowed_filings:
+            return jsonify({'allowedFilings': get_allowed(state, legal_type, jwt)}), HTTPStatus.OK
+
+        action = ['edit']
         if filing_type == 'courtOrder':
             action = ['court_order']
         elif filing_type == 'registrarsNotation':
             action = ['registrars_notation']
         elif filing_type == 'registrarsOrder':
             action = ['registrars_order']
-        if not authorized(identifier, jwt, action=action):
+        if not authorized(identifier, jwt, action=action) or \
+                not is_allowed(state, filing_type, legal_type, jwt):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED

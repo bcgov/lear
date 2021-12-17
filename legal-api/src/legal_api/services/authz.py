@@ -13,13 +13,15 @@
 # limitations under the License.
 """This manages all of the authentication and authorization service."""
 from http import HTTPStatus
-from typing import List
+from typing import Final, List
 
 from flask import current_app
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from legal_api.models import Business
 
 
 SYSTEM_ROLE = 'system'
@@ -88,3 +90,100 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     if jwt.validate_roles(roles):
         return True
     return False
+
+
+ALLOWABLE_FILINGS_ACTIVE: Final = {
+    'alteration': {
+        'staff': ['BC', 'BEN'],
+        'user': ['BC', 'BEN'],
+    },
+    'annualReport': {
+        'staff': ['CP', 'BEN'],
+        'user': ['CP', 'BEN'],
+    },
+    'changeOfAddress': {
+        'staff': ['CP', 'BEN'],
+        'user': ['CP', 'BEN'],
+    },
+    'changeOfDirectors': {
+        'staff': ['CP', 'BEN'],
+        'user': ['CP', 'BEN'],
+    },
+    'correction': {
+        'staff': ['CP', 'BEN'],
+    },
+    'courtOrder': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'dissolution': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+        'user': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'incorporationApplication': {
+        'staff': ['CP', 'BC', 'BEN'],
+        'user': ['CP', 'BC', 'BEN'],
+    },
+    'restoration': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'specialResolution': {
+        'staff': ['CP'],
+        'user': ['CP'],
+    },
+    'transition': {
+        'staff': ['BC', 'BEN'],
+        'user': ['BC', 'BEN'],
+    },
+    'registrarsNotation': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'registrarsOrder': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+}
+
+ALLOWABLE_FILINGS_HISTORICAL: Final = {
+    'courtOrder': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'registrarsNotation': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'registrarsOrder': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+    'restoration': {
+        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+    },
+}
+
+
+def is_allowed(state: Business.State, filing_type: str, legal_type: str, jwt: JwtManager):
+    """Is allowed to do filing."""
+    user_role = 'user'
+    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+        user_role = 'staff'
+
+    allowable_filings = ALLOWABLE_FILINGS_ACTIVE
+    if state == Business.State.HISTORICAL:
+        allowable_filings = ALLOWABLE_FILINGS_HISTORICAL
+
+    allowable_legal_types = allowable_filings.get(filing_type, {}).get(user_role, [])
+    if legal_type in allowable_legal_types:
+        return True
+
+    return False
+
+
+def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
+    """Get allowed type of filing types for the current user."""
+    user_role = 'user'
+    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+        user_role = 'staff'
+
+    allowable_filings = ALLOWABLE_FILINGS_ACTIVE
+    if state == Business.State.HISTORICAL:
+        allowable_filings = ALLOWABLE_FILINGS_HISTORICAL
+
+    allowable_filing_types = filter(lambda x: legal_type in x[1].get(user_role, []), allowable_filings.items())
+    return [filing_type[0] for filing_type in allowable_filing_types]
