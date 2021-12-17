@@ -34,8 +34,15 @@ def convert_to_json_datetime(thedate: datetime.datetime) -> str:
     if not thedate:
         return None
     try:
-        # timezone info not in var (they are pacififc times so add timezone)
-        thedate = thedate.astimezone(timezone('US/Pacific'))
+        # timezone info not in var (they are pacific times so add timezone)
+        thedate = datetime.datetime(thedate.year,
+                                    thedate.month,
+                                    thedate.day,
+                                    thedate.hour,
+                                    thedate.minute,
+                                    thedate.second)
+        # treat date as naive date and add timezone by using localize function
+        thedate = timezone('US/Pacific').localize(thedate)
         # convert to utc time
         thedate = thedate.astimezone(timezone('UTC'))
         # return as string
