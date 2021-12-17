@@ -18,29 +18,43 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Filing
-from legal_api.utils.datetime import datetime
+from legal_api.models import Business, Document, Filing
+from legal_api.models.document import DocumentType
+from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
 from entity_filer.filing_processors.filing_components.parties import update_parties
+from entity_filer.utils import replace_file_with_certified_copy
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
         logger.error('Could not find Dissolution in: %s', filing)
         raise QueueException(f'legal_filing:Dissolution missing from {filing}')
 
     logger.debug('processing dissolution: %s', filing)
-    dissolution_date = datetime.fromisoformat(dissolution_filing.get('dissolutionDate'))
-    # Currently we don't use this for anything?
-    # has_liabilities = filing['dissolution'].get('hasLiabilities')
-    business.dissolution_date = dissolution_date
 
-    # remove all directors and add custodial party if in filing
+    filing_meta.dissolution = {}
+    with suppress(IndexError, KeyError, TypeError):
+        dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
+        filing_meta.dissolution = {**filing_meta.dissolution,
+                                   **{'dissolutionType': dissolution_type}}
+
+    # hasLiabilities can be derived from dissolutionStatementType
+    # FUTURE: remove hasLiabilities from schema
+    # has_liabilities = filing['dissolution'].get('hasLiabilities')
+
+    # should we save dissolution_statement_type in businesses table?
+    # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
+    business.dissolution_date = filing_rec.effective_date
+    business.state = Business.State.HISTORICAL
+    business.state_filing_id = filing_rec.id
+
+    # add custodial party if in filing
     if parties := dissolution_filing.get('parties'):
-        update_parties(business, parties)
+        update_parties(business, parties, False)
 
     # add custodial office if provided
     if custodial_office := dissolution_filing.get('custodialOffice'):
@@ -55,7 +69,28 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
-        filings.update_filing_court_order(filing, court_order_json)
+        filings.update_filing_court_order(filing_rec, court_order_json)
+
+    if business.legal_type == Business.LegalTypes.COOP:
+        _update_cooperative(dissolution_filing, business, filing_rec)
+
+
+def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing):
+    """Update COOP data."""
+    # create certified copy for affidavit document
+    affidavit_file_key = dissolution_filing.get('affidavitFileKey')
+    affidavit_file = MinioService.get_file(affidavit_file_key)
+    affidavit_file_name = dissolution_filing.get('affidavitFileName')
+    replace_file_with_certified_copy(affidavit_file.data, business, affidavit_file_key, filing.effective_date)
+
+    document = Document()
+    document.type = DocumentType.AFFIDAVIT.value
+    document.file_key = affidavit_file_key
+    document.file_name = affidavit_file_name
+    document.content_type = document.file_name.split('.')[-1]
+    document.business_id = business.id
+    document.filing_id = filing.id
+    business.documents.append(document)
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):  # pylint: disable=W0613

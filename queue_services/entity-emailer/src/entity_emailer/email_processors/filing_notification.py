@@ -129,7 +129,7 @@ def _get_pdfs(
             # add notice of articles
             noa = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=noa',
+                '?type=noticeOfArticles',
                 headers=headers
             )
             if noa.status_code != HTTPStatus.OK:

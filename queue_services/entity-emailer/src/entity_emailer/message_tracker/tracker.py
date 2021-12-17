@@ -80,6 +80,13 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             message_id = f'{etype}_{option}_{ar_year}_{business_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
+        if etype == 'dissolution' \
+                and (option := email.get('option', None)) \
+                and (filing_id := email.get('filingId', None)):
+            # option contains current status of filing - PAID or COMPLETED
+            message_id = f'{etype}_{option}_{filing_id}'
+            return create_message_context_properties(etype, message_id, None, None, False)
+
         if etype in filing_notification.FILING_TYPE_CONVERTER.keys() \
                 and (option := email.get('option', None)) \
                 and (filing_id := email.get('filingId', None)):

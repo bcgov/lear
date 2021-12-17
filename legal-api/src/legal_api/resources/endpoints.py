@@ -15,7 +15,7 @@
 from http import HTTPStatus
 from typing import Optional
 
-from flask import redirect, request, url_for, Flask  # noqa: I001
+from flask import current_app, redirect, request, url_for, Flask  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 
 from legal_api import errorhandlers
@@ -52,22 +52,22 @@ class Endpoints:
         def before_request():
             """Before routing the request, check the Accept Version header to route to the correct API."""
             if (version := request.headers.get('accept-version')) and request.endpoint:  # pylint: disable=R1705
-                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name+'.'):
-                    return redirect(
+                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name + '.'):
+                    return self._redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
                         ))
                 elif version == EndpointVersionEnum.V1 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V1.name+'.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name+'.'):
-                    return redirect(
+                    and not request.endpoint.startswith(EndpointEnum.API_V1.name + '.') \
+                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
+                    return self._redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
                         ))
                 elif version == EndpointVersionEnum.V2 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V2.name+'.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name+'.'):
-                    return redirect(
+                    and not request.endpoint.startswith(EndpointEnum.API_V2.name + '.') \
+                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
+                    return self._redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V2.name, 1)
                         ))
@@ -85,15 +85,29 @@ class Endpoints:
         def _handle_api_error(error):
             if request.path.startswith(EndpointEnum.API_V2.value):
                 path = request.path.replace(EndpointEnum.API_V2.value, EndpointEnum.API_V1.value)
-                return redirect(path, code=HTTPStatus.MOVED_PERMANENTLY)
+                return self._redirect(path)
 
             elif request.path.startswith(EndpointEnum.API.value) and not ('v1' in request.path or 'v2' in request.path):
                 path = request.path.replace(EndpointEnum.API.value, EndpointEnum.API_V1.value)
-                return redirect(path, code=HTTPStatus.MOVED_PERMANENTLY)
+                return self._redirect(path)
 
             return error
 
         errorhandlers.init_app(self.app)
+
+    def _redirect(self, path, code=302):
+        if request.method == 'OPTIONS':
+            options_resp = current_app.make_default_options_response()
+            self._set_access_control_header(options_resp)
+            return options_resp
+
+        resp = redirect(path, code=code)
+        self._set_access_control_header(resp)
+        return resp
+
+    def _set_access_control_header(self, response):  # pylint: disable=unused-variable
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""

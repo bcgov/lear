@@ -13,12 +13,15 @@
 # limitations under the License.
 
 """Tests to assure the Filing Domain is working as expected."""
+import datedelta
 import pytest
+from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
 from legal_api.models.user import UserRoles
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
+from legal_api.utils.datetime import datetime, timezone
 
 
 def test_filing_raw():
@@ -134,3 +137,62 @@ def test_filing_save(session):
     filing.save()
 
     assert filing.id
+
+
+def test_is_future_effective(session):
+    """Assert that is_future_effective property works as expected."""
+    filing = Filing()
+    filing_type = 'bogus type'
+    filing.storage.filing_json = {'filing': {'header': {'name': filing_type}}}
+    filing.storage._payment_token = '12345'
+    filing.storage._filing_type = filing_type
+
+    now = datetime(2019, 7, 1)
+    with freeze_time(now):
+        filing.storage.effective_date = now
+        assert not filing.is_future_effective
+
+        filing.storage.payment_completion_date = now
+        assert not filing.is_future_effective
+
+
+def test_set_effective(session):
+    """Assert that the core filing is saved to the backing store."""
+    now = datetime(2021, 9, 17, 7, 36, 43, 903557, tzinfo=timezone.utc)
+
+    with freeze_time(now):
+
+        payment_date  = now + datedelta.DAY
+
+        filing = Filing()
+        filing_type = 'annualReport'
+        filing.json = ANNUAL_REPORT
+        filing.save()
+
+        filing.storage._payment_token = '12345'
+        filing.storage._filing_type = filing_type
+        filing.storage.effective_date = now
+        filing._storage.skip_status_listener = True
+        filing._storage.payment_completion_date = payment_date
+        filing._storage.save()
+
+        filing.storage.set_processed()
+
+        # assert that the effective date is the payment date
+        assert filing._storage.effective_date
+        assert filing._storage.effective_date.replace(tzinfo=None) == payment_date.replace(tzinfo=None)
+        assert not filing.is_future_effective
+
+        future_date = now + datedelta.DAY
+        alt_payment_date  = now
+        filing._storage.skip_status_listener = True
+        filing._storage.payment_completion_date = alt_payment_date
+        filing._storage.save()
+
+        filing.storage.set_processed()
+
+        # assert that the effective date is the future date
+        assert filing._storage.effective_date
+        assert filing._storage.effective_date.replace(tzinfo=None) == future_date.replace(tzinfo=None)
+        assert filing.is_future_effective
+

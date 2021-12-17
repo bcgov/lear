@@ -23,7 +23,7 @@ from pathlib import Path
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Business, Filing
+from legal_api.models import Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -91,6 +91,31 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     return contacts[0]['email']
 
 
+def get_user_email_from_auth(user_name: str, token: str) -> str:
+    """Get user email from auth."""
+    user_info = get_user_from_auth(user_name, token)
+    contacts = user_info.json()['contacts']
+
+    if not contacts:
+        return user_info.get('email')  # idir user
+
+    return contacts[0]['email']
+
+
+def get_user_from_auth(user_name: str, token: str) -> requests.Response:
+    """Get user from auth."""
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    user_info = requests.get(
+        f'{current_app.config.get("AUTH_URL")}/users/{user_name}',
+        headers=headers
+    )
+    return user_info
+
+
 def substitute_template_parts(template_code: str) -> str:
     """Substitute template parts in main template.
 
@@ -105,6 +130,7 @@ def substitute_template_parts(template_code: str) -> str:
         'business-dashboard-link',
         'business-dashboard-link-alt',
         'business-info',
+        'business-information',
         'cra-notice',
         'nr-footer',
         'footer',

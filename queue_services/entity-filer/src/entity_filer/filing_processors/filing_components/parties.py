@@ -21,7 +21,7 @@ from legal_api.models import Business
 from entity_filer.filing_processors.filing_components import create_party, create_role
 
 
-def update_parties(business: Business, parties_structure: Dict) -> Optional[List]:
+def update_parties(business: Business, parties_structure: Dict, delete_existing=True) -> Optional[List]:
     """Manage the party and party roles for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -35,14 +35,15 @@ def update_parties(business: Business, parties_structure: Dict) -> Optional[List
     err = []
 
     if parties_structure:
-        try:
-            delete_parties(business)
-        except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
-            err.append(
-                {'error_code': 'FILER_UNABLE_TO_DELETE_PARTY_ROLES',
-                 'error_message': f"Filer: unable to delete party roles for :'{business.identifier}'"}
-            )
-            return err
+        if delete_existing:
+            try:
+                delete_parties(business)
+            except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
+                err.append(
+                    {'error_code': 'FILER_UNABLE_TO_DELETE_PARTY_ROLES',
+                     'error_message': f"Filer: unable to delete party roles for :'{business.identifier}'"}
+                )
+                return err
 
         try:
             for party_info in parties_structure:

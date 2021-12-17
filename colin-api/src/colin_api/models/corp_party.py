@@ -52,7 +52,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         'Liquidator': 'LIQ',
         'Officer': 'OFF',
         'Attorney': 'ATT',
-        'Completing Party': 'CPRTY'
+        'Completing Party': 'CPRTY',
+        'Custodian': 'RCC'
     }
 
     def __init__(self):

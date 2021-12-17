@@ -34,7 +34,8 @@ def factory_business(designation: str = '001'):
                     dissolution_date=None,
                     identifier='CP1234567',
                     tax_id=f'BN0000{designation}',
-                    fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
+                    fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
+                    state=Business.State.ACTIVE)
 
 
 def test_business_identifier(session):
@@ -74,6 +75,9 @@ def test_business(session):
     business.save()
 
     assert business.id is not None
+    assert business.state == Business.State.ACTIVE
+    assert business.admin_freeze is False
+
 
 
 def test_business_find_by_legal_name_pass(session):
@@ -255,14 +259,16 @@ def test_business_json(session):
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'arMinDate': '1971-01-01',
-        'arMaxDate': '1972-04-30'
+        'arMaxDate': '1972-04-30',
+        'adminFreeze': False,
+        'state': 'ACTIVE'
     }
 
     assert business.json() == d
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    d['dissolutionDate'] = business.dissolution_date.isoformat()
     assert business.json() == d
     business.dissolution_date = None
     d.pop('dissolutionDate')
@@ -308,3 +314,23 @@ def test_business_relationships_json(session):
     business.save()
 
     assert business.delivery_address.one_or_none()
+
+
+@pytest.mark.parametrize('business_type,expected',[
+    ('CP', True),
+    ('NOT_FOUND', False),
+])
+def test_get_next_value_from_sequence(session, business_type, expected):
+    """Assert that the sequence value is generated successfully."""
+    from legal_api.models import Business
+
+    if expected:
+        first_val = Business.get_next_value_from_sequence(business_type)
+        assert first_val
+
+        next_val = Business.get_next_value_from_sequence(business_type)
+        assert next_val
+        assert next_val == first_val + 1
+    
+    else:
+        assert not Business.get_next_value_from_sequence(business_type)

@@ -25,18 +25,19 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business
 from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
-from colin_api.utils import convert_to_utc_datetime
+from colin_api.utils import convert_to_pacific_time
 from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET, POST')
 @API.route('/<string:legal_type>/<string:identifier>/filings/<string:filing_type>')
+@API.route('/<string:legal_type>/<string:identifier>/filings/<string:filing_type>/<string:filing_sub_type>')
 class FilingInfo(Resource):
     """Meta information about the overall service."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(legal_type, identifier, filing_type):
+    def get(legal_type, identifier, filing_type, filing_sub_type=None):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
             if legal_type not in [x.value for x in Business.LearBusinessTypes]:
@@ -65,6 +66,8 @@ class FilingInfo(Resource):
             filing = Filing()
             filing.business = business
             filing.filing_type = filing_type
+            filing.filing_sub_type = filing_sub_type
+
             filing.event_id = event_id
             filing = Filing.get_filing(filing=filing, year=year)
             return jsonify(filing.as_dict())
@@ -126,7 +129,9 @@ class FilingInfo(Resource):
                     'transition': json_data.get('transition', None),
                     'registrarsNotation': json_data.get('registrarsNotation', None),
                     'registrarsOrder': json_data.get('registrarsOrder', None),
-                    'courtOrder': json_data.get('courtOrder', None)
+                    'courtOrder': json_data.get('courtOrder', None),
+                    'dissolution': json_data.get('dissolution', None),
+                    'specialResolution': json_data.get('specialResolution', None)
                 }
 
             # Filter out null-values in the filing_list dictionary
@@ -146,6 +151,7 @@ class FilingInfo(Resource):
                     sub_filing = Filing()
                     sub_filing.business = completed_filing.business
                     sub_filing.filing_type = filing_info['filing_type']
+                    sub_filing.filing_sub_type = filing_info['filing_sub_type']
                     sub_filing.event_id = filing_info['event_id']
                     sub_filing = Filing.get_filing(filing=sub_filing, con=con)
 
@@ -184,9 +190,11 @@ class FilingInfo(Resource):
             filing.header = json_data['header']
             filing.filing_date = filing.header['date']
             filing.filing_type = filing_type
-            filing.body = filing_list[filing_type]
+            filing_body = filing_list[filing_type]
+            filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
+            filing.body = filing_body
             # get utc lear effective date and convert to pacific time for insert into oracle
-            filing.effective_date = convert_to_utc_datetime(filing.header['learEffectiveDate'])
+            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
 
             if filing_type != 'incorporationApplication':
                 filing.business = Business.find_by_identifier(identifier, corp_types, con)
@@ -194,5 +202,7 @@ class FilingInfo(Resource):
                 filing.business = Business.create_corporation(con, json_data)
             # add the new filing
             event_id = Filing.add_filing(con, filing)
-            filings_added.append({'event_id': event_id, 'filing_type': filing_type})
+            filings_added.append({'event_id': event_id,
+                                  'filing_type': filing_type,
+                                  'filing_sub_type': filing.filing_sub_type})
         return filings_added

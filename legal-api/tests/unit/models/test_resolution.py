@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Resolution Model is working as expected.
 """
 
-from legal_api.models import Resolution
+from legal_api.models import Party, Resolution
 from tests.unit.models import factory_business
 
 
@@ -91,3 +91,43 @@ def test_find_resolution_by_business_and_type(session):
     assert res
     assert len(res) == 1
     assert res[0].json == resolution_2.json
+
+
+def test_special_resolution_with_optional_data(session):
+    """Assert that a valid resolution can be saved."""
+    identifier = 'CP1234567'
+    date_str = '2020-02-02'
+    business = factory_business(identifier)
+    signing_party = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe'
+    )
+    signing_party.save()
+    resolution = Resolution(
+        resolution_date=date_str,
+        resolution_type='SPECIAL',
+        business_id=business.id,
+        resolution_sub_type='dissolution',
+        signing_date=date_str,
+        resolution='This is a sample resolution.',
+        signing_party_id=signing_party.id
+    )
+    resolution.save()
+    assert resolution.id
+    resolution_json = {
+        'id': resolution.id,
+        'type': resolution.resolution_type,
+        'date': date_str,
+        'resolution': resolution.resolution,
+        'subType': resolution.resolution_sub_type,
+        'signingDate': date_str,
+        'signatory': {
+            'givenName': signing_party.first_name,
+            'familyName': signing_party.last_name,
+            'additionalName': signing_party.middle_initial
+        }
+    }
+    assert resolution_json == resolution.json
+
+

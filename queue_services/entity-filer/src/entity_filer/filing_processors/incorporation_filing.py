@@ -13,32 +13,36 @@
 # limitations under the License.
 """File processing rules and actions for the incorporation of a business."""
 import copy
-import io
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict
 
-import PyPDF2
 import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
+from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
-from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import PdfService
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.minio import MinioService
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
+from entity_filer.utils import replace_file_with_certified_copy
 
 
 def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from COLIN."""
+    # this gets called if the new services are generating the Business.identifier.
+    if legal_type in BusinessType:
+        if business_type := BusinessType.get_enum_by_value(legal_type):
+            return BusinessIdentifier.next_identifier(business_type)
+        return None
+
+    # legacy Business.Identifier generation
     try:
         # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
         if legal_type == Business.LegalTypes.BCOMP.value:
@@ -107,7 +111,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         rules_file_key = cooperative_obj.get('rulesFileKey')
         rules_file = MinioService.get_file(rules_file_key)
         rules_file_name = cooperative_obj.get('rulesFileName')
-        _replace_file_with_certified_copy(rules_file.data, business, rules_file_key)
+        replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
 
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
@@ -123,7 +127,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         memorandum_file_key = cooperative_obj.get('memorandumFileKey')
         memorandum_file = MinioService.get_file(memorandum_file_key)
         memorandum_file_name = cooperative_obj.get('memorandumFileName')
-        _replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key)
+        replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
 
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value
@@ -135,29 +139,6 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         business.documents.append(document)
 
     return business
-
-
-def _replace_file_with_certified_copy(_bytes, business, key):
-    open_pdf_file = io.BytesIO(_bytes)
-    pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
-    pdf_writer = PyPDF2.PdfFileWriter()
-    pdf_writer.appendPagesFromReader(pdf_reader)
-    output_original_pdf = io.BytesIO()
-    pdf_writer.write(output_original_pdf)
-    output_original_pdf.seek(0)
-
-    registrar_info = RegistrarInfo.get_registrar_info(business.founding_date)
-    registrars_signature = registrar_info['signatureAndText']
-    pdf_service = PdfService()
-    registrars_stamp = \
-        pdf_service.create_registrars_stamp(registrars_signature,
-                                            LegislationDatetime.as_legislation_timezone(business.founding_date),
-                                            business.identifier)
-    certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
-
-    MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
-
-    return key
 
 
 def process(business: Business,  # pylint: disable=too-many-branches
@@ -179,6 +160,10 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     if is_correction:
         business_info.set_legal_name(business.identifier, business, business_info_obj)
+        if legal_name := business_info_obj.get('legalName', None):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromLegalName': business.legal_name,
+                                         'toLegalName': legal_name}}
     else:
 
         if filing_rec.colin_event_ids:
@@ -195,6 +180,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         business = Business()
         business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
         business = _update_cooperative(incorp_filing, business, filing_rec)
+        business.state = Business.State.ACTIVE
 
         if nr_number := business_info_obj.get('nrNumber', None):
             filing_meta.incorporation_application = {**filing_meta.incorporation_application,

@@ -45,6 +45,7 @@ from entity_emailer.email_processors import (
     affiliation_notification,
     ar_reminder_notification,
     bn_notification,
+    dissolution_notification,
     filing_notification,
     mras_notification,
     name_request,
@@ -73,6 +74,20 @@ async def publish_event(payload: dict):
 
 def send_email(email: dict, token: str):
     """Send the email."""
+    # stop processing email when payload is incompleted.
+    if not email \
+            or 'recipients' not in email \
+            or 'content' not in email \
+            or 'body' not in email['content']:
+        logger.debug('Send email: email object(s) is empty')
+        raise QueueException('Unsuccessful sending email - required email object(s) is empty.')
+
+    if not email['recipients'] \
+            or not email['content'] \
+            or not email['content']['body']:
+        logger.debug('Send email: email object(s) is missing')
+        raise QueueException('Unsuccessful sending email - required email object(s) is missing. ')
+
     resp = requests.post(
         f'{APP_CONFIG.NOTIFY_API_URL}',
         json=email,
@@ -121,6 +136,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'annualReport' and option == 'reminder':
                 email = ar_reminder_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'dissolution':
+                email = dissolution_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:

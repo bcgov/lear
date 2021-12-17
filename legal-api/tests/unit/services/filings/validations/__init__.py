@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test Suite for all of the filing validations."""
-
+from datetime import datetime, timedelta
 
 def lists_are_equal(list_1, list_2) -> bool:
     """Assert that the unordered lists contain the same elements."""
@@ -92,3 +92,10 @@ def create_party_address(base_address=None,
            }
 
     return party_address
+
+def create_utc_future_date_str(days: int):
+    """Create a future utc date and return as string."""
+    now = datetime.utcnow().date()
+    td = timedelta(days=days)
+    result = (now + td).strftime('%Y-%m-%d')
+    return result

@@ -13,11 +13,12 @@
 # limitations under the License.
 """Test suite to ensure Voluntary Dissolution is validated correctly."""
 import copy
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from registry_schemas.example_data import FILING_HEADER, DISSOLUTION
+from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter, legal
 
 from legal_api.models import Business
@@ -59,8 +60,7 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
-        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
-            err = validate(business, filing)
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -99,8 +99,7 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
 
     # perform test
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
-        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
-            err = validate(business, filing)
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -152,8 +151,7 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'adssadkj'
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
-        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
-            err = validate(business, filing)
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code or expected_msg:
@@ -164,40 +162,18 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, dissolution_type, key, scenario, identifier, expected_code, expected_msg',
+    'test_name, legal_type, dissolution_type, identifier, has_special_resolution_filing, expected_code, expected_msg',
     [
-        ('SUCCESS', 'BC', 'voluntary', '', 'success', 'BC1234567', None, None),
-        ('SUCCESS', 'CP', 'voluntary', '', 'success', 'CP1234567', None, None),
-        ('FAIL_REQUIRED_SPECIAL_RESOLUTIONS', 'CP', 'voluntary', '', 'failRequiredSpecialResolutions', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'Special resolution is required.', 'path': '/filing/dissolution/specialResolution'
-         }]),
-        ('FAIL_INVALID_SPECIAL_RESOLUTIONS_FILE_KEY', 'CP', 'voluntary', 'resolutionFileKey',
-         'failSpecialResolutions', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'Invalid file.', 'path': '/filing/dissolution/specialResolution/resolutionFileKey'
-         }]),
-        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_KEY', 'CP', 'voluntary', 'resolutionFileKey', '', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'A valid special resolution key is required.',
-             'path': '/filing/dissolution/specialResolution/resolutionFileKey'
-         }]),
-        ('FAIL_REQUIRED_SPECIAL_RESOLUTION_FILE_NAME', 'CP', 'voluntary', 'resolutionFileName', '', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'A valid special resolution file name is required.',
-             'path': '/filing/dissolution/specialResolution/resolutionFileName'
-         }]),
-        ('FAIL_INVALID_SPECIAL_RESOLUTION_FILE', 'CP', 'voluntary', 'resolutionFileKey',
-         'invalidSpecialResolutionPageSize', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
-             'path': '/filing/dissolution/specialResolution/resolutionFileKey'
-         }]),
+        ('SUCCESS', 'BC', 'voluntary', 'BC1234567', False, None, None),
+        ('SUCCESS', 'CP', 'voluntary', 'CP1234567', True, None, None),
+        ('FAIL_REQUIRED_SPECIAL_RESOLUTIONS', 'CP', 'voluntary', 'CP1234567', False,
+         HTTPStatus.BAD_REQUEST, [{'error': 'Special Resolution is required.', 'path': '/filing/specialResolution'}])
     ]
 )
-def test_dissolution_special_resolution(session, minio_server, test_name, legal_type, dissolution_type, key, scenario,
-                                        identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
+def test_dissolution_special_resolution(session, test_name, legal_type, dissolution_type,
+        identifier, has_special_resolution_filing, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that special resolution can be validated."""
+    from legal_api.services.filings import validate
     # setup
     business = Business(identifier=identifier)
 
@@ -208,23 +184,11 @@ def test_dissolution_special_resolution(session, minio_server, test_name, legal_
     filing['filing']['dissolution']['dissolutionType'] = dissolution_type
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
-
-    if scenario:
-        if scenario == 'success':
-            if legal_type == Business.LegalTypes.COOP.value:
-                filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = _upload_file(letter)
-            else:
-                del filing['filing']['dissolution']['specialResolution']
-        elif scenario == 'failRequiredSpecialResolutions':
-            del filing['filing']['dissolution']['specialResolution']
-        elif scenario == 'failSpecialResolutions':
-            filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = 'invalid file key'
-        elif scenario == 'invalidSpecialResolutionPageSize':
-            filing['filing']['dissolution']['specialResolution']['resolutionFileKey'] = _upload_file(legal)
-    else:
-        # Assign key and value to test empty variables for failures
-        key_value = ''
-        filing['filing']['dissolution']['specialResolution'][key] = key_value
+    if has_special_resolution_filing:
+        filing['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+        resolution_date_str = filing['filing']['specialResolution']['resolutionDate']
+        resolution_date_time = datetime.strptime(resolution_date_str, '%Y-%m-%d')
+        business.founding_date = resolution_date_time - timedelta(days=1000)
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)
@@ -235,13 +199,6 @@ def test_dissolution_special_resolution(session, minio_server, test_name, legal_
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
-
-    # Cleanup
-    if file_key := filing['filing']['dissolution']\
-            .get('specialResolution', {})\
-            .get('resolutionFileKey', None):
-        MinioService.delete_file(file_key)
-
 
 @pytest.mark.parametrize(
     'test_name, legal_type, dissolution_type, key, scenario, identifier, expected_code, expected_msg',
@@ -297,8 +254,7 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
         key_value = ''
         filing['filing']['dissolution'][key] = key_value
 
-    with patch.object(dissolution, 'validate_special_resolution', return_value=None):
-        err = validate(business, filing)
+    err = validate(business, filing)
 
     # validate outcomes
     if expected_code:
@@ -341,8 +297,7 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
     filing['filing']['dissolution']['courtOrder'] = court_order
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
-        with patch.object(dissolution, 'validate_special_resolution', return_value=None):
-            err = validate(business, filing)
+        err = validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':

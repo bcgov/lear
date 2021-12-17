@@ -35,13 +35,14 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     COURT_ORDER,
+    DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
-from registry_schemas.example_data.schema_data import INCORPORATION
+from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
 
 from legal_api.core import Filing, FilingMeta, FILINGS
 from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
@@ -76,7 +77,7 @@ def test_not_authorized(session, client, jwt):
     """Assert the the call fails for unauthorized access."""
     business, filing = basic_test_helper()
 
-    MISSING_ROLES = ['SOME RANDO ROLE',]
+    MISSING_ROLES = ['SOME RANDO ROLE', ]
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, MISSING_ROLES, business.identifier))
@@ -93,7 +94,7 @@ def test_missing_business(session, client, jwt):
     not_the_business_identifier = 'ABC123'
 
     rv = client.get(f'/api/v2/businesses/{not_the_business_identifier}/filings/{filing.id}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE,], business.identifier))
+                    headers=create_header(jwt, [STAFF_ROLE, ], business.identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json.get('message')
@@ -107,7 +108,7 @@ def test_missing_filing(session, client, jwt):
     wrong_filing_number = 999999999
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{wrong_filing_number}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE,], business.identifier))
+                    headers=create_header(jwt, [STAFF_ROLE, ], business.identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json.get('message')
@@ -131,76 +132,279 @@ def test_unpaid_filing(session, client, jwt):
 
 
 base_url = 'https://LEGAL_API_BASE_URL'
+CORRECTION = {
+    'correctedFilingId': 4,
+    'correctedFilingType': 'incorporationApplication',
+    'correctedFilingDate': '2019-04-08',
+    'comment': """Sample Comment"""
+}
+CORRECTED_INCORPORATION = copy.deepcopy(CORRECTION_INCORPORATION['filing']['incorporationApplication'])
 
-@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code', [
-        ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND
-        ),
-        ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND
-        ),
-        ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID, 
-         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'legalFilings': [
-                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                        ]
-                        }
-         },
-        HTTPStatus.OK
-        ),
-        ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'legalFilings': [
-                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                        ]
-                        }
-         },
-        HTTPStatus.OK
-        ),
-        ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-         'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'legalFilings': [
-                            {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
-                            {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                        ]
-                        }
-         },
-        HTTPStatus.OK
-        ),
-        ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
-         {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                        'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
-                        'legalFilings': [
-                            {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
-                        ]
-                        }
-         },
-        HTTPStatus.OK
-        ),
-        ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-         'incorporationApplication', INCORPORATION_FILING_TEMPLATE, None, None, Filing.Status.COMPLETED,
-         {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                        'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
-                        'noa': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noa',
-                        'legalFilings': [
-                            {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                        ]
-                        }
-         },
-        HTTPStatus.OK
-        ),
-    ])
-def test_various_filing_states(session, client, jwt, 
-                               test_name,
-                               identifier,
-                               entity_type,
-                               filing_name_1, legal_filing_1, 
-                               filing_name_2, legal_filing_2,
-                               status, expected_msg, expected_http_code):
+ALTERATION_WITHOUT_NR = copy.deepcopy(ALTERATION)
+del ALTERATION_WITHOUT_NR['nameRequest']['nrNumber']
+del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
+
+
+@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
+    ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND, None
+     ),
+    ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND, None
+     ),
+    ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
+                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ben_correction_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'correction', CORRECTION, 'incorporationApplication', CORRECTED_INCORPORATION, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ben_alteration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
+     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ben_alteration_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'alteration', ALTERATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificateOfNameChange': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfNameChange',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ben_changeOfDirector', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
+     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value,
+     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'legalFilings': [
+             {'changeOfDirectors': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/changeOfDirectors'},
+         ]
+     }
+     },
+     HTTPStatus.OK, None
+     ),
+    ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'dissolution', DISSOLUTION, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
+                 'affidavit':
+                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+                     {'specialResolution':
+                          f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cp_dissolution_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_dissolution_completed', 'BC7654321', 'BEN',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_dissolution_paid', 'BC7654321', 'BEN',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('bc_dissolution_completed', 'BC7654321', 'BC',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cc_dissolution_completed', 'BC7654321', 'CC',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ulc_dissolution_completed', 'BC7654321', 'LLC',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('llc_dissolution_completed', 'BC7654321', 'LLC',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+             'certificateOfDissolution':
+             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     )
+])
+def test_document_list_for_various_filing_states(session, client, jwt,
+                                                 test_name,
+                                                 identifier,
+                                                 entity_type,
+                                                 filing_name_1, legal_filing_1,
+                                                 filing_name_2, legal_filing_2,
+                                                 status, expected_msg, expected_http_code,
+                                                 payment_completion_date):
     """Test document list based on filing states."""
     # Setup
     # identifier = 'CP7654321'
@@ -217,17 +421,32 @@ def test_various_filing_states(session, client, jwt,
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
+    filing._payment_completion_date = payment_completion_date
     filing.save()
 
     if status == 'COMPLETED':
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
         filing._meta_data = {'legalFilings': legal_filings}
+
+        if filing_name_1 == 'correction' and \
+                (legal_name := filing_json['filing']
+                 .get('incorporationApplication', {}).get('nameRequest', {}).get('legalName')):
+            filing._meta_data['correction'] = {}
+            filing._meta_data['correction']['fromLegalName'] = business.legal_name
+            filing._meta_data['correction']['toLegalName'] = legal_name
+
+        if filing_name_1 == 'alteration' and \
+                (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
+            filing._meta_data['alteration'] = {}
+            filing._meta_data['alteration']['fromLegalName'] = business.legal_name
+            filing._meta_data['alteration']['toLegalName'] = legal_name
+
         filing.save()
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], business.identifier))
-    
+
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
     expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))

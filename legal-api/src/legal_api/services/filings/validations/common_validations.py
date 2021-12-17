@@ -36,6 +36,26 @@ def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # 
     return None
 
 
+def validate_resolution_date_in_share_structure(filing_json, filing_type) -> Optional[dict]:
+    """Has resolution date in share structure when hasRightsOrRestrictions is true."""
+    share_structure = filing_json['filing'][filing_type].get('shareStructure', {})
+    share_classes = share_structure.get('shareClasses', [])
+    if any(x.get('hasRightsOrRestrictions', False) for x in share_classes) or \
+            any(has_rights_or_restrictions_true_in_share_series(x) for x in share_classes):
+        if len(share_structure.get('resolutionDates', [])) == 0:
+            return {
+                'error': 'Resolution date is required when hasRightsOrRestrictions is true in shareClasses.',
+                'path': f'/filing/{filing_type}/shareStructure/resolutionDates'
+            }
+    return None
+
+
+def has_rights_or_restrictions_true_in_share_series(share_class) -> bool:
+    """Has hasRightsOrRestrictions is true in series."""
+    series = share_class.get('series', [])
+    return any(x.get('hasRightsOrRestrictions', False) for x in series)
+
+
 def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \

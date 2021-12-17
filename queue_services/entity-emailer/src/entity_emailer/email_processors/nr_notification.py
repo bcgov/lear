@@ -23,6 +23,7 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.services import NameXService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import substitute_template_parts
@@ -38,7 +39,7 @@ class Option(Enum):
     REFUND = 'refund'
 
 
-def process(email_info: dict, option) -> dict:
+def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
     """
     Build the email for Name Request notification.
 
@@ -60,17 +61,24 @@ def process(email_info: dict, option) -> dict:
     expiration_date = ''
     if nr_data['expirationDate']:
         exp_date = datetime.fromisoformat(nr_data['expirationDate'])
-        expiration_date = exp_date.strftime('%Y-%m-%d')
+        expiration_date = LegislationDatetime.format_as_report_string(exp_date)
 
     refund_value = ''
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
+
+    legal_name = ''
+    for n_item in nr_data['names']:
+        if n_item['state'] in ('APPROVED', 'CONDITION'):
+            legal_name = n_item['name']
+            break
 
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
     html_out = mail_template.render(
         nr_number=nr_number,
         expiration_date=expiration_date,
+        legal_name=legal_name,
         refund_value=refund_value
     )
 

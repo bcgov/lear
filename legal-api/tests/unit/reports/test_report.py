@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_NAME,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_COMBINED_AR,
+    DISSOLUTION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
@@ -42,17 +43,16 @@ from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from tests.unit.models import factory_business, factory_completed_filing  # noqa:E501,I001
 
 
-def create_report(identifier, entity_type, report_type, template):
+def create_report(identifier, entity_type, report_type, filing_type, template):
     """Create an instance of the Report class."""
     if template.get('filing'):
         filing_json = copy.deepcopy(template)
     else:
         filing_json = copy.deepcopy(FILING_HEADER)
-        filing_json['filing'][f'{report_type}'] = copy.deepcopy(template)
+        filing_json['filing'][f'{filing_type}'] = copy.deepcopy(template)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['business']['legalType'] = entity_type
-    if report_type != 'certificate':
-        filing_json['filing']['header']['name'] = report_type
+    filing_json['filing']['header']['name'] = filing_type
 
     business = factory_business(identifier=identifier, entity_type=entity_type)
     if report_type == 'correction':
@@ -61,6 +61,8 @@ def create_report(identifier, entity_type, report_type, template):
         del original_filing_json['filing']['correction']
         original_filing = factory_completed_filing(business, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
+    if report_type == 'specialResolution' and filing_type!='specialResolution':
+        filing_json['specialResolution'] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(business, filing_json)
 
     report = Report(filing)
@@ -149,27 +151,36 @@ def set_meta_info(report):
 
 
 @pytest.mark.parametrize(
-    'test_name, identifier, entity_type, report_type, template',
+    'test_name, identifier, entity_type, report_type, filing_type, template',
     [
-        ('CP AR', 'CP1234567', 'CP', 'annualReport', ANNUAL_REPORT),
-        ('CP COA', 'CP1234567', 'CP', 'changeOfAddress', CHANGE_OF_ADDRESS),
-        ('CP COD', 'CP1234567', 'CP', 'changeOfDirectors', CHANGE_OF_DIRECTORS),
-        ('CP COR combined AR', 'CP1234567', 'CP', 'correction', CORRECTION_COMBINED_AR),
-        ('CP CON', 'CP1234567', 'CP', 'changeOfName', CHANGE_OF_NAME),
-        ('CP SR', 'CP1234567', 'CP', 'specialResolution', SPECIAL_RESOLUTION),
-        ('BEN AR', 'BC1234567', 'BEN', 'annualReport', ANNUAL_REPORT),
-        ('BEN COA', 'BC1234567', 'BEN', 'changeOfAddress', CORP_CHANGE_OF_ADDRESS),
-        ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
-        ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
-        ('BEN CER', 'BC1234567', 'BEN', 'certificate', INCORPORATION_FILING_TEMPLATE),
-        ('BEN TRANS', 'BC1234567', 'BEN', 'transition', TRANSITION_FILING_TEMPLATE),
+        ('CP AR', 'CP1234567', 'CP', 'annualReport', 'annualReport', ANNUAL_REPORT),
+        ('CP COA', 'CP1234567', 'CP', 'changeOfAddress', 'changeOfAddress',  CHANGE_OF_ADDRESS),
+        ('CP COD', 'CP1234567', 'CP', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS),
+        ('CP COR combined AR', 'CP1234567', 'CP', 'correction', 'correction', CORRECTION_COMBINED_AR),
+        ('CP CON', 'CP1234567', 'CP', 'changeOfName', 'changeOfName', CHANGE_OF_NAME),
+        ('CP SR', 'CP1234567', 'CP', 'specialResolution', 'specialResolution', SPECIAL_RESOLUTION),
+        ('CP DISSOLUTION', 'CP1234567', 'CP', 'dissolution', 'dissolution', DISSOLUTION),
+        ('CP DISSOLUTION', 'CP1234567', 'CP', 'specialResolution', 'dissolution', DISSOLUTION),
+        ('BEN DISSOLUTION', 'BC1234567', 'BEN', 'dissolution', 'dissolution', DISSOLUTION),
+        ('BC DISSOLUTION', 'BC1234567', 'BC', 'dissolution', 'dissolution', DISSOLUTION),
+        ('CC DISSOLUTION', 'BC2345678', 'CC', 'dissolution', 'dissolution', DISSOLUTION),
+        ('ULC DISSOLUTION', 'BC1234567', 'ULC', 'dissolution', 'dissolution', DISSOLUTION),
+        ('CP DISSOLUTION', 'CP1234567', 'CP', 'certificateOfDissolution', 'dissolution', DISSOLUTION),
+        ('BEN AR', 'BC1234567', 'BEN', 'annualReport', 'annualReport', ANNUAL_REPORT),
+        ('BEN COA', 'BC1234567', 'BEN', 'changeOfAddress', 'changeOfAddress', CORP_CHANGE_OF_ADDRESS),
+        ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors',  'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
+        ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', 'incorporationApplication',
+         INCORPORATION_FILING_TEMPLATE),
+        ('BEN CER', 'BC1234567', 'BEN', 'certificate', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
+        ('BEN TRANS', 'BC1234567', 'BEN', 'transition', 'transition', TRANSITION_FILING_TEMPLATE),
     ]
 )
-def test_get_pdf(session, test_name, identifier, entity_type, report_type, template):
+def test_get_pdf(session, test_name, identifier, entity_type, report_type, filing_type, template):
     """Assert all filings can be returned as a PDF."""
     # TODO: add checks on set_directors, noa
     # setup
-    report = create_report(identifier=identifier, entity_type=entity_type, report_type=report_type, template=template)
+    report = create_report(identifier=identifier, entity_type=entity_type, report_type=report_type,
+                           filing_type=filing_type, template=template)
 
     # verify
     populate_business_info_to_filing(report)

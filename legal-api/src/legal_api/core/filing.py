@@ -17,7 +17,6 @@ from __future__ import annotations
 
 # from dataclasses import dataclass, field
 import copy
-import json
 from contextlib import suppress
 from enum import Enum
 from typing import Dict, List, Optional
@@ -84,7 +83,7 @@ class Filing:
         self._completion_date: datetime
         self._filing_date: datetime
         self._filing_type: Optional[str] = None
-        self._effective_date: datetime
+        self._effective_date: Optional[datetime] = None
         self._payment_status_code: str
         self._payment_token: str
         self._payment_completion_date: datetime
@@ -137,17 +136,20 @@ class Filing:
 
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
-        with suppress(TypeError):
-            if ((submitter_roles := self._storage.submitter_roles)
-                and (UserRoles.STAFF.value in submitter_roles
-                     or UserRoles.SYSTEM.value in submitter_roles)
-                ) and (
-                 filing.get('filing', {}).get('header', {}).get('submitter')
-                 and not has_roles(jwt, [UserRoles.STAFF.value])
-               ):
-                filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
+        if (self._storage
+            and (submitter_roles := self._storage.submitter_roles)
+                and self.redact_submitter(submitter_roles, jwt)):
+            filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
 
         return filing
+
+    @property
+    def is_future_effective(self) -> bool:
+        """Return True if the effective date is in the future."""
+        with suppress(AttributeError, TypeError):
+            if self._storage.effective_date > self._storage.payment_completion_date:
+                return True
+        return False
 
     # json is returned as a property defined after this method
     def get_json(self, with_diff: bool = True) -> Optional[Dict]:
@@ -229,6 +231,7 @@ class Filing:
         if filing_json and correction_id and self._storage and self.status in [Filing.Status.COMPLETED.value,
                                                                                Filing.Status.PAID.value,
                                                                                Filing.Status.PENDING.value,
+                                                                               Filing.Status.PENDING_CORRECTION.value
                                                                                ]:
             if corrected_filing := Filing.find_by_id(correction_id):
                 if diff_nodes := diff_dict(filing_json,
@@ -270,7 +273,7 @@ class Filing:
         return None
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         storages = FilingStorage.get_filings_by_status(business_id, status, after_date)
         filings = []
@@ -280,6 +283,21 @@ class Filing:
             filings.append(filing)
 
         return filings
+
+    @staticmethod
+    def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
+        """Return the most recent filing json."""
+        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+            submitter_displayname = REDACTED_STAFF_SUBMITTER
+            if (submitter := storage.filing_submitter) \
+                and submitter.username and jwt \
+                    and not Filing.redact_submitter(storage.submitter_roles, jwt):
+                submitter_displayname = submitter.username
+
+            filing_json = storage.json
+            filing_json['filing']['header']['submitter'] = submitter_displayname
+            return filing_json
+        return None
 
     def legal_filings(self, with_diff: bool = True) -> Optional[List]:
         """Return a list of the filings extracted from this filing submission.
@@ -300,6 +318,19 @@ class Filing:
         return legal_filings
 
     @staticmethod
+    def redact_submitter(submitter_roles: list, jwt: JwtManager) -> Optional[bool]:
+        """Redact the submitter of the filing."""
+        if not (submitter_roles or jwt):
+            return None
+
+        with suppress(KeyError, TypeError):
+            if (UserRoles.STAFF.value in submitter_roles
+                or UserRoles.SYSTEM.value in submitter_roles) \
+                    and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+                return True
+        return False
+
+    @staticmethod
     def ledger(business_id: int,
                jwt: JwtManager = None,
                statuses: List(str) = None,
@@ -312,10 +343,6 @@ class Filing:
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
         """
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        if jwt:
-            redact_required = has_roles(jwt, [UserRoles.STAFF.value, UserRoles.SYSTEM.value])
-        else:
-            redact_required = True
 
         business = Business.find_by_internal_id(business_id)
 
@@ -332,6 +359,13 @@ class Filing:
 
         ledger = []
         for filing in query.all():
+
+            submitter_displayname = REDACTED_STAFF_SUBMITTER
+            if (submitter := filing.filing_submitter) \
+                and submitter.username and jwt \
+                    and not Filing.redact_submitter(filing.submitter_roles, jwt):
+                submitter_displayname = submitter.display_name or submitter.username
+
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': business.identifier,
@@ -341,7 +375,7 @@ class Filing:
                 'name': filing.filing_type,
                 'paymentStatusCode': filing.payment_status_code,
                 'status': filing.status,
-                'submitter': REDACTED_STAFF_SUBMITTER if redact_required else filing.filing_submitter.username,
+                'submitter': submitter_displayname,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
                 **Filing.common_ledger_items(business.identifier, filing),
@@ -368,14 +402,14 @@ class Filing:
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        filing = Filing()
+        filing._storage = filing_storage  # pylint: disable=protected-access
         return {
             'commentsCount': filing_storage.comments_count,
             'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
             'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents',
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
-            'isFutureEffective': (filing_storage.effective_date
-                                  and filing_storage._filing_date  # pylint: disable=protected-access
-                                  and (filing_storage.effective_date > filing_storage._filing_date)),  # pylint: disable=protected-access # noqa: E501
+            'isFutureEffective': filing.is_future_effective,
         }
 
     @staticmethod
@@ -405,13 +439,19 @@ class Filing:
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
-        doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
+        identifier = business.identifier if business else filing.storage.temp_reg
+        doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
 
-        documents = {'documents': {
-                     'receipt': f'{base_url}{doc_url}/receipt'
-                     }}
+        documents = {'documents': {}}
+        # for paper_only filings return and empty documents list
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        # return a receipt for filings completed in our system
+        if filing.storage and filing.storage.payment_completion_date:
+            documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         if filing.status in (
             Filing.Status.PAID,
@@ -424,17 +464,15 @@ class Filing:
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
         ) and filing.storage.meta_data:
-            meta = filing.storage.meta_data
-            if isinstance(meta, str):
-                meta = json.loads(meta)
-
-            if legal_filings := meta.get('legalFilings'):
+            if legal_filings := filing.storage.meta_data.get('legalFilings'):
                 documents['documents']['legalFilings'] = \
                     [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
 
                 # get extra outputs
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
+
+                FilingMeta.alter_outputs(filing.filing_type, filing.storage.meta_data, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 

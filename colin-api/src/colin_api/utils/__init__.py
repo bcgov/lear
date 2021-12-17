@@ -23,14 +23,7 @@ def convert_to_json_date(thedate: datetime.datetime) -> str:
     if not thedate:
         return None
     try:
-        utcdate = datetime.datetime(thedate.year,
-                                    thedate.month,
-                                    thedate.day,
-                                    thedate.hour,
-                                    thedate.minute,
-                                    thedate.second,
-                                    tzinfo=timezone('UTC'))
-        return utcdate.strftime('%Y-%m-%d')
+        return thedate.strftime('%Y-%m-%d')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.debug('Tried to convert {date}, but failed: {error}'.format(date=thedate, error=err))
         return None
@@ -41,24 +34,26 @@ def convert_to_json_datetime(thedate: datetime.datetime) -> str:
     if not thedate:
         return None
     try:
-        # timezone info not in var
-        # convert to utc time
-        utcdate = datetime.datetime(thedate.year,
+        # timezone info not in var (they are pacific times so add timezone)
+        thedate = datetime.datetime(thedate.year,
                                     thedate.month,
                                     thedate.day,
                                     thedate.hour,
                                     thedate.minute,
-                                    thedate.second,
-                                    tzinfo=timezone('UTC'))
+                                    thedate.second)
+        # treat date as naive date and add timezone by using localize function
+        thedate = timezone('US/Pacific').localize(thedate)
+        # convert to utc time
+        thedate = thedate.astimezone(timezone('UTC'))
         # return as string
-        return utcdate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
+        return thedate.strftime('%Y-%m-%dT%H:%M:%S-00:00')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.debug('Tried to convert {date}, but failed: {error}'.format(date=thedate, error=err))
         return None
 
 
-def convert_to_utc_datetime(thedate: str) -> str:
-    """Convert the datetime string to utc datetime string."""
+def convert_to_pacific_time(thedate: str) -> str:
+    """Convert the datetime string to pacific time string."""
     try:
         # tries converting two formats before bailing
         try:
@@ -66,7 +61,8 @@ def convert_to_utc_datetime(thedate: str) -> str:
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S+00:00')
         datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
-        return datetime_utc.strftime('%Y-%m-%dT%H:%M:%S')
+        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')
         raise err

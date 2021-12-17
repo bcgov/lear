@@ -65,9 +65,6 @@ def upgrade():
             },
             {
                 'identifier':'recordsOffice', 'description':'Records Office'
-            },
-            {
-                'identifier':'custodialOffice', 'description':'Custodial Office'
             }
         ]
     )

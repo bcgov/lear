@@ -18,9 +18,8 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from flask import current_app
 from sqlalchemy import desc, event, func, inspect, or_, select
-from sqlalchemy.dialects.postgresql import JSONB, dialect
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
@@ -59,6 +58,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
+        'affidavit': {
+            'name': 'affidavit',
+            'title': 'Affidavit',
+            'codes': {
+                'CP': 'AFDVT'
+            }
+        },
         'alteration': {
             'name': 'alteration',
             'title': 'Notice of Alteration Filing',
@@ -106,6 +112,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'CRCTN'
             }
         },
+        'dissolution': {
+            'name': 'dissolution',
+            'title': 'Voluntary dissolution',
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL'
+            }
+        },
         'incorporationApplication': {
             'name': 'incorporationApplication',
             'title': 'Incorporation Application',
@@ -123,8 +141,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
-                                  'CP': 'RES'}},
-        'dissolution': {'name': 'dissolution', 'title': 'Dissolution'},
+                                  'CP': 'SPRLN'}},
         'transition': {
             'name': 'transition',
             'title': 'Transition',
@@ -283,9 +300,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            if self.effective_date is None or \
-                    self.effective_date <= self._payment_completion_date:
-                self._status = Filing.Status.COMPLETED.value
+            # if self.effective_date is None or \
+            #         self.effective_date <= self._payment_completion_date:
+            #     self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -366,6 +383,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         Once a filing, with valid json has an invoice attached, it can no longer be altered and is locked.
         Exception to this rule, payment_completion_date requires the filing to be locked.
         """
+        if self.deletion_locked:
+            return True
+
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
@@ -375,9 +395,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return False
 
     def set_processed(self):
-        """Assign the completion date, unless it is already set."""
+        """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
+        if (self.effective_date is None or
+            (self.payment_completion_date
+             and self.effective_date < self.payment_completion_date)):  # pylint: disable=W0143; hybrid property
+            self.effective_date = self.payment_completion_date
 
     @staticmethod
     def _raise_default_lock_exception():
@@ -432,6 +456,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['status'] = self.status
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
+            json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
             if self.effective_date:
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
@@ -489,7 +514,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: [], after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
@@ -529,17 +554,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.one_or_none()
 
     @staticmethod
-    def get_most_recent_legal_filing(business_id: str, filing_type: str):
+    def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
         """Return the most recent filing containing the legal_filing type."""
-        # Filing._filing_json.has_any(filing_type))).\
-
-        expr = Filing._filing_json[('filing', filing_type)]
-        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
+        query = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing.business_id == business_id).\
-            filter(or_(Filing._filing_type == filing_type,
-                       expr.label('legal_filing_type').isnot(None))).\
-            filter(Filing._status == Filing.Status.COMPLETED.value).\
-            subquery()
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+        if filing_type:
+            expr = Filing._filing_json[('filing', filing_type)]
+            query = query.filter(or_(Filing._filing_type == filing_type,
+                                     expr.label('legal_filing_type').isnot(None)))
+        max_filing = query.subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
@@ -548,11 +572,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         # As the JSON query is new for most, leaving the debug stmnt
         # that dumps the query for easier debugging.
-        current_app.logger.debug(
-            str(filing.statement.compile(
-                dialect=dialect(),
-                compile_kwargs={'literal_binds': True}))
-        )
+        # current_app.logger.debug(
+        #     str(filing.statement.compile(
+        #         dialect=dialect(),
+        #         compile_kwargs={'literal_binds': True}))
+        # )
 
         return filing.first()
 
@@ -624,7 +648,7 @@ def block_filing_delete_listener_function(mapper, connection, target):  # pylint
     """Raise an error when a delete is attempted on a Filing."""
     filing = target
 
-    if filing.locked:
+    if filing.locked or filing.deletion_locked:
         raise BusinessException(
             error='Deletion not allowed.',
             status_code=HTTPStatus.FORBIDDEN

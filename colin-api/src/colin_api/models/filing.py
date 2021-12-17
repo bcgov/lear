@@ -41,7 +41,7 @@ from colin_api.utils import convert_to_json_date, convert_to_json_datetime, conv
 
 # Code smells:
 # Cognitive Complexity acceptable for deep method on filing types
-class Filing:
+class Filing:  # pylint: disable=too-many-instance-attributes;
     """Class to contain all model-like functions for filings such as getting and setting from database."""
 
     class LearSource(Enum):
@@ -119,7 +119,21 @@ class Filing:
         },
         'voluntaryDissolution': {
             'type_code_list': ['OTVDS'],
-            Business.TypeCodes.COOP.value: 'OTVDS',
+            Business.TypeCodes.COOP.value: 'OTVDS'
+        },
+        # Note: this should take care of voluntary dissolution filings now but leaving above
+        # `voluntaryDissolution filing type in place as unsure if it is being used in other places
+        'dissolution': {
+            'sub_type_property': 'dissolutionType',
+            'sub_type_list': ['voluntary'],
+            'type_code_list': ['OTVDS', 'ADVD2'],
+            'voluntary': {
+                Business.TypeCodes.COOP.value: 'OTVDS',
+                Business.TypeCodes.BCOMP.value: 'ADVD2',
+                Business.TypeCodes.BC_COMP.value: 'ADVD2',
+                Business.TypeCodes.ULC_COMP.value: 'ADVD2',
+                Business.TypeCodes.CCC_COMP.value: 'ADVD2'
+            }
         },
         'changeOfName': {
             'type_code_list': ['OTNCN'],
@@ -180,7 +194,8 @@ class Filing:
         Business.TypeCodes.COOP.value: 'COOPER',
         Business.TypeCodes.BCOMP.value: 'BCOMPS',
         Business.TypeCodes.BC_COMP.value: 'BCOMPS',
-        Business.TypeCodes.ULC_COMP.value: 'BCOMPS'
+        Business.TypeCodes.ULC_COMP.value: 'BCOMPS',
+        Business.TypeCodes.CCC_COMP.value: 'BCOMPS'
     }
     # dicts
     body = None
@@ -191,6 +206,7 @@ class Filing:
     effective_date = None
     event_id = None
     filing_type = None
+    filing_sub_type = None
     filing_date = None
     paper_only = None
     colin_only = None
@@ -221,8 +237,13 @@ class Filing:
             return self.body['contactPoint']['email']
         return self.header.get('email', '')
 
-    def get_filing_type_code(self) -> Optional[str]:
+    def get_filing_type_code(self, filing_sub_type: str = None) -> Optional[str]:
         """Get filing type code."""
+        sub_type = filing_sub_type or self.filing_sub_type
+        if sub_type:
+            return Filing.FILING_TYPES.get(self.filing_type, {})\
+                .get(self.filing_sub_type, {})\
+                .get(self.business.corp_type, None)
         return Filing.FILING_TYPES.get(self.filing_type, {}).get(self.business.corp_type, None)
 
     def as_dict(self) -> Dict:
@@ -289,7 +310,7 @@ class Filing:
             cursor.execute(
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-                VALUES (:event_id, :corp_num, :event_type, current_timestamp at time zone dbtimezone, NULL)
+                VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
@@ -343,7 +364,7 @@ class Filing:
         return None
 
     @classmethod
-    def _insert_filing(cls, cursor, filing, ar_date: str, agm_date: str):
+    def _insert_filing(cls, cursor, filing, ar_date: str, agm_date: str):  # pylint: disable=too-many-statements;
         """Add record to FILING."""
         try:
             insert_stmnt = (
@@ -439,6 +460,15 @@ class Filing:
                     arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
+            elif filing_type_code in ['OTVDS', 'ADVD2', 'OTSPE']:
+                insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", 'N', 'S')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date
+                )
             else:
                 current_app.logger.error(f'error in filing: Did not recognize filing type code: {filing_type_code}')
                 raise InvalidFilingTypeException(filing_type=filing_type_code)
@@ -473,9 +503,11 @@ class Filing:
             cursor.execute(
                 """
                 INSERT INTO ledger_text (event_id, ledger_text_dts, notation, dd_event_id, user_id)
-                VALUES (:event_id, sysdate, :notation, :dd_event_id, :user_id)
+                VALUES (:event_id, TO_TIMESTAMP_TZ(:ledger_text_dts, 'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), :notation,
+                        :dd_event_id, :user_id)
                 """,
                 event_id=filing.event_id,
+                ledger_text_dts=filing.effective_date,
                 notation=text,
                 dd_event_id=filing.event_id,
                 user_id=filing.user_id
@@ -673,6 +705,13 @@ class Filing:
 
                 filing.body['offices'] = Office.convert_obj_list(office_obj_list)
 
+            if 'custodialOffice' in components:
+                event_id = filing_event_info['event_id']
+                office_obj_list = Office.get_by_event(cursor, event_id)
+                converted_offices_list = Office.convert_obj_list(office_obj_list)
+                filing.body['custodialOffice'] = converted_offices_list.get('custodialOffice')
+                filing.paper_only = True
+
             if 'directors' in components:
                 event_id = filing_event_info['event_id']
                 # special rules for coop ARs with directors included
@@ -689,8 +728,13 @@ class Filing:
                 filing.body['directors'] = [x.as_dict() for x in directors]
 
             if 'parties' in components:
-                parties = Party.get_by_event(
-                    cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type=None)
+                parties = []
+                if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+                    parties = Party.get_by_event(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Custodian')
+                else:
+                    parties = Party.get_by_event(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type=None)
                 if not parties:
                     raise PartiesNotFoundException(identifier=corp_num)
                 filing.body['parties'] = [x.as_dict() for x in parties]
@@ -772,6 +816,9 @@ class Filing:
                 filing.body['resolution'] = cls._get_notation(
                     cursor=cursor, corp_num=corp_num, filing_event_info=filing_event_info)
                 filing.paper_only = True
+
+            if 'dissolutionType' in components:
+                filing.body['dissolutionType'] = filing.filing_sub_type
 
             if 'dissolutionDate' in components:
                 filing.body['dissolutionDate'] = convert_to_json_datetime(filing.effective_date)
@@ -881,7 +928,14 @@ class Filing:
         try:
             if filing.filing_type not in ['annualReport', 'changeOfAddress', 'changeOfDirectors',
                                           'incorporationApplication', 'alteration', 'transition', 'correction',
-                                          'registrarsNotation', 'registrarsOrder', 'courtOrder']:
+                                          'registrarsNotation', 'registrarsOrder', 'courtOrder', 'dissolution',
+                                          'specialResolution']:
+                raise InvalidFilingTypeException(filing_type=filing.filing_type)
+
+            if filing.filing_sub_type \
+                    and not Filing.is_supported_filing_sub_type(filing.filing_type, filing.filing_sub_type):
+                current_app.logger.\
+                    error(f'Filing type of {filing.filing_type} does not support sub type: {filing.filing_sub_type}')
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             legal_type = filing.business.corp_type
@@ -951,6 +1005,18 @@ class Filing:
                     order_details = filing.body.get('orderDetails')
                     cls._insert_ledger_text(cursor, filing, order_details)
 
+                # process voluntary dissolution
+                if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+                    Business.update_corp_state(cursor,
+                                               filing.event_id,
+                                               corp_num,
+                                               Business.CorpStateTypes.VOLUNTARY_DISSOLUTION.value)
+
+                # process special resolution
+                if filing.filing_type == 'specialResolution':
+                    resolution_text = filing.body.get('resolution')
+                    cls._insert_ledger_text(cursor, filing, resolution_text)
+
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
                 Business.update_corporation(
@@ -966,6 +1032,28 @@ class Filing:
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def get_filing_sub_type(cls, filing_type: str, filing_body: dict) -> Optional[str]:
+        """Retrieve filing sub-type if available."""
+        if filing_body \
+            and filing_type \
+            and (sub_type_property := Filing.FILING_TYPES
+                 .get(filing_type, {})
+                 .get('sub_type_property', None)):
+            return filing_body.get(sub_type_property, None)
+        return None
+
+    @classmethod
+    def is_supported_filing_sub_type(cls, filing_type: str, filing_sub_type: str):
+        """Return whether filing type has filing sub-type."""
+        sub_type_list = Filing.FILING_TYPES.get(filing_type, {}).get('sub_type_list', [])
+        return filing_sub_type in sub_type_list
+
+    @classmethod
+    def is_filing_type_match(cls, filing: Filing, filing_type: str, filing_sub_type: str):
+        """Return whether filing has specificed filing type and filing sub-type."""
+        return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
 
     @classmethod
     # pylint: disable=too-many-arguments;
@@ -990,26 +1078,41 @@ class Filing:
     @classmethod
     def _process_office(cls, cursor, filing: Filing) -> str:
         """Add offices from the filing."""
-        # offices in annualReport is redundant, skip it
         text = ''
-        if filing.filing_type != 'annualReport':
-            corp_num = filing.get_corp_num()
 
-            for office_type in filing.body.get('offices', []):
-                Office.create_new_office(
-                    cursor=cursor,
-                    addresses=filing.body['offices'][office_type],
-                    event_id=filing.event_id,
-                    corp_num=corp_num,
-                    office_type=office_type
-                )
-                # create new ledger text for address change
-                if filing.filing_type != 'incorporationApplication':
-                    office_desc = (office_type.replace('O', ' O')).title()
-                    if text:
-                        text = f'{text} Change to the {office_desc}.'
-                    else:
-                        text = f'Change to the {office_desc}.'
+        # offices in annualReport is redundant, skip it
+        if filing.filing_type == 'annualReport':
+            return ''
+
+        corp_num = filing.get_corp_num()
+        if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+            office = filing.body.get('custodialOffice')
+            office_type = 'custodialOffice'
+            Office.create_new_office(
+                cursor=cursor,
+                addresses=office,
+                event_id=filing.event_id,
+                corp_num=corp_num,
+                office_type=office_type
+            )
+            office_desc = (office_type.replace('O', ' O')).title()
+            return f'Change to the {office_desc}.'
+
+        for office_type in filing.body.get('offices', []):
+            Office.create_new_office(
+                cursor=cursor,
+                addresses=filing.body['offices'][office_type],
+                event_id=filing.event_id,
+                corp_num=corp_num,
+                office_type=office_type
+            )
+            # create new ledger text for address change
+            if filing.filing_type != 'incorporationApplication':
+                office_desc = (office_type.replace('O', ' O')).title()
+                if text:
+                    text = f'{text} Change to the {office_desc}.'
+                else:
+                    text = f'Change to the {office_desc}.'
         return text
 
     @classmethod

@@ -1,0 +1,23 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Dissolution Statement</div>
+    <div class="section-data mt-4">
+        {% if business.legalType == 'CP' %}
+            {% if dissolutionStatementType == '197NoAssetsNoLiabilities' %}
+                The Cooperative Association has, by special resolution, voluntarily resolved to dissolve
+                the Cooperative Association under section 197 of the Cooperative Association Act.
+                The Cooperative Association has no assets and has no liabilities.
+            {% else %}
+                The Cooperative Association has, by special resolution, voluntarily resolved to dissolve the
+                Cooperative Association under section 197 of the Cooperative Association Act. The Cooperative
+                Association has no assets and has made provision for the payment of each of the Cooperative Association's
+                unpaid liabilities and has obtained the written consent to that provision for payment from each
+                creditor whose identity is known to the Cooperative Association and who has an unpaid claim against
+                the Cooperative Association that exceeds $200.00.
+            {% endif %}
+        {% else %}
+             The affidavit required by section 316(1)(a) of the Business Corporations Act has been completed
+             and deposited in the company's records book.
+        {% endif %}
+    </div>
+</div>

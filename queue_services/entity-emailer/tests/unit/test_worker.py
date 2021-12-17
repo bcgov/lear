@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the worker is operating correctly."""
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
 from entity_emailer.email_processors import ar_reminder_notification, filing_notification, name_request, nr_notification
@@ -202,17 +205,28 @@ def test_process_bn_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
 
-@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', None, None),
-    ('expired', 'NR 1234567', 'Expired', None, None),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45')
+default_legal_name = 'TEST COMP'
+default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
+
+
+@pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value',
+                         'expected_legal_name', 'names'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST2 Company Name',
+        [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
+        [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
+    ('expired', 'NR 1234567', 'Expired', None, None, None,
+     [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
 ])
-def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value):
+def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value,
+                         expected_legal_name, names):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
+        'names': names,
         'applicants': {
             'emailAddress': 'test@test.com'
         }
@@ -248,6 +262,12 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                 assert call_args[0][0]['content']['attachments'] == []
                 assert mock_query_nr_number.call_args[0][0] == nr_number
                 assert call_args[0][1] == token
+
+                if option == nr_notification.Option.BEFORE_EXPIRY.value:
+                    assert nr_number in call_args[0][0]['content']['body']
+                    assert expected_legal_name in call_args[0][0]['content']['body']
+                    exp_date = LegislationDatetime.format_as_report_string(datetime.fromisoformat(expiration_date))
+                    assert exp_date in call_args[0][0]['content']['body']
 
 
 def test_nr_receipt_notification(app, session):
@@ -296,3 +316,52 @@ def test_nr_receipt_notification(app, session):
                         assert call_args[0][0]['content']['body']
                         assert call_args[0][0]['content']['attachments'] == pdfs
                         assert call_args[0][1] == token
+
+
+@pytest.mark.parametrize('email_msg', [
+    ({}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': 'test',
+            'attachments': []
+        }}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {}}),
+    ({
+        'recipients': '',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': {},
+            'attachments': []
+        }}),
+    ({
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'body': 'test',
+            'attachments': []
+        }}),
+    ({
+        'recipients': 'test@test.ca',
+        'requestBy': 'test@test.ca'}),
+    ({
+        'recipients': 'test@test.ca',
+        'requestBy': 'test@test.ca',
+        'content': {
+            'subject': 'test',
+            'attachments': []
+        }})
+])
+def test_send_email_with_incomplete_payload(app, session, email_msg):
+    """Assert that the email not have body can not be processed."""
+    # TEST
+    with pytest.raises(QueueException) as excinfo:
+        worker.send_email(email_msg, None)
+
+    assert 'Unsuccessful sending email' in str(excinfo)

@@ -19,24 +19,21 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-import requests
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from legal_api.services.pdf_service import _write_text
 from registry_schemas.example_data import (
     COOP_INCORPORATION_FILING_TEMPLATE,
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
 )
 import PyPDF2
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
 from tests.unit import create_filing
+from tests.utils import upload_file, assert_pdf_contains_text
 
 
 @pytest.mark.parametrize('legal_type,filing', [
@@ -52,8 +49,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
         if legal_type == 'CP':
-            rules_file_key_uploaded_by_user = _upload_file()
-            memorandum_file_key_uploaded_by_user = _upload_file()
+            rules_file_key_uploaded_by_user = upload_file('rules.pdf')
+            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
             filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
                 rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
@@ -74,6 +71,7 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         assert business.founding_date == effective_date
         assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+        assert business.state == Business.State.ACTIVE
         if legal_type == 'BC':
             assert len(business.share_classes.all()) == 2
             assert len(business.offices.all()) == 2  # One office is created in create_business method.
@@ -94,45 +92,12 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
 
             rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
             assert rules_files_obj
-            _assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+            assert_pdf_contains_text('Filed on ', rules_files_obj.read())
             memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
             assert memorandum_file_obj
-            _assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
+            assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
-
-
-def _assert_pdf_contains_text(search_text, pdf_raw_bytes: bytes):
-    pdf_obj = PyPDF2.PdfFileReader(io.BytesIO(pdf_raw_bytes))
-    pdf_page = pdf_obj.getPage(0)
-    text = pdf_page.extractText()
-    assert search_text in text
-
-
-def _upload_file():
-    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, data=_create_pdf_file().read(), headers={'Content-Type': 'application/octet-stream'})
-    return key
-
-
-def _create_pdf_file():
-    buffer = io.BytesIO()
-    can = canvas.Canvas(buffer, pagesize=letter)
-    doc_height = letter[1]
-
-    for _ in range(3):
-        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
-        text_x_margin = 100
-        text_y_margin = doc_height - 300
-        line_height = 14
-        _write_text(can, text, line_height, text_x_margin, text_y_margin)
-        can.showPage()
-
-    can.save()
-    buffer.seek(0)
-    return buffer
 
 
 def test_incorporation_filing_process_no_nr(app, session):
@@ -167,7 +132,6 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert parties[1]['officer']['partyType'] == 'organization'
         assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
-
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
@@ -201,11 +165,13 @@ def test_incorporation_filing_process_correction(app, session):
     del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
     corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
     corrected_filing_meta = FilingMeta(application_date=corrected_filing_rec.effective_date)
+    corrected_filing_meta.correction = {}
     corrected_business, corrected_filing_rec, corrected_filing_meta =\
         incorporation_filing.process(business, correction_filing, corrected_filing_rec, corrected_filing_meta)
     assert corrected_business.identifier == next_corp_num
     assert corrected_business.legal_name == \
         correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
+    assert corrected_filing_meta.correction['toLegalName'] == corrected_business.legal_name
     assert len(corrected_business.share_classes.all()) == 1
 
 

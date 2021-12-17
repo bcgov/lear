@@ -15,26 +15,30 @@
 
 The Business class and Schema are held in this module
 """
-from enum import Enum
-from typing import Final
+from enum import Enum, auto
+from typing import Final, Optional
 
 import datedelta
+from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
+from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
+from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
+
+
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
@@ -46,8 +50,15 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
+    class State(BaseEnum):
+        """Enum for the Business state."""
+
+        ACTIVE = auto()
+        HISTORICAL = auto()
+        LIQUIDATION = auto()
+
     # NB: commented out items that exist in namex but are not yet supported by Lear
-    class LegalTypes(Enum):
+    class LegalTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
 
         COOP = 'CP'  # aka COOPERATIVE in namex
@@ -129,6 +140,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     __mapper_args__ = {
         'include_properties': [
             'id',
+            'admin_freeze',
             'association_type',
             'dissolution_date',
             'fiscal_year_end_date',
@@ -146,6 +158,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'legal_name',
             'legal_type',
             'restriction_ind',
+            'state',
+            'state_filing_id',
             'submitter_userid',
             'tax_id'
         ]
@@ -170,7 +184,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
     association_type = db.Column('association_type', db.String(50))
-
+    state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
+    state_filing_id = db.Column('state_filing_id', db.Integer)
+    admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
 
@@ -284,6 +300,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         d = {
             'arMinDate': ar_min_date.isoformat(),
             'arMaxDate': ar_max_date.isoformat(),
+            'adminFreeze': self.admin_freeze or False,
+            'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
             'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
@@ -311,11 +329,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 ).isoformat()
 
         if self.dissolution_date:
-            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
+            d['dissolutionDate'] = self.dissolution_date.isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
             d['taxId'] = self.tax_id
+        if self.state_filing_id:
+            base_url = current_app.config.get('LEGAL_API_BASE_URL')
+            d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         return d
 
@@ -367,6 +388,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
+
+    @classmethod
+    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+        """Return the next value from the sequence."""
+        sequence_mapping = {
+            'CP': 'business_identifier_coop',
+        }
+        if sequence_name := sequence_mapping.get(business_type, None):
+            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+        return None
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:

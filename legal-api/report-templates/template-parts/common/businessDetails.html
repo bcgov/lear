@@ -1,7 +1,7 @@
 <div class="business-details-container">
    <table class="business-details-table" role="presentation">
       <tr>
-         {% if header.reportType == 'noa' %}
+         {% if header.reportType == 'noticeOfArticles' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Issued Date and Time:</div>
@@ -11,6 +11,19 @@
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
+            </td>
+         {% elif header.reportType == 'specialResolution' %}
+            <td>
+               <div class="bold">Incorporation Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Special Resolution Type:</div>
+               <div class="bold pt-2">Resolution Date:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">{{header.displayName}}</div>
+                <div class="pt-2">{{specialResolution.resolutionDate}}</div>
             </td>
          {% elif header.name == 'incorporationApplication' %}
             <td class="col-33">
@@ -103,6 +116,21 @@
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
+            </td>
+          {% elif header.name == 'dissolution' %}
+            <td>
+               <div class="bold">Incorporation Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               {% if business.legalType != 'CP' %}
+                  <div class="bold pt-2">Effective Date and Time:</div>
+               {% endif %}
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               {% if business.legalType != 'CP' %}
+                  <div class="pt-2">{{effective_date_time}}</div>
+               {% endif %}
             </td>
          {% endif %}
 

@@ -58,7 +58,7 @@ class User(db.Model):
         If there is actual name info, return that; otherwise username.
         """
         if self.firstname or self.lastname:
-            return ' '.join([self.firstname, self.lastname]).strip()
+            return ' '.join(filter(None, [self.firstname, self.lastname])).strip()
 
         # parse off idir\ or @idir
         if self.username[:4] == 'idir':
