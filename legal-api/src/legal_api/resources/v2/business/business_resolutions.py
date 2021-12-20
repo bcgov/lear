@@ -18,6 +18,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, Resolution
+from legal_api.utils.auth import jwt
 
 from .bp import bp
 
@@ -25,6 +26,7 @@ from .bp import bp
 @bp.route('/<string:identifier>/resolutions', methods=['GET', 'OPTIONS'])
 @bp.route('/<string:identifier>/resolutions/<int:resolution_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
+@jwt.requires_auth
 def get_resolutions(identifier, resolution_id=None):
     """Return a JSON of the resolutions."""
     business = Business.find_by_identifier(identifier)

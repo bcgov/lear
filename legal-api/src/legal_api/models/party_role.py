@@ -117,3 +117,26 @@ class PartyRole(db.Model):
             filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)). \
             all()
         return directors
+
+    @staticmethod
+    def get_party_roles(business_id: int, end_date: datetime, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.business_id == business_id). \
+            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
+            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+
+        if role is not None:
+            party_roles = party_roles.filter(PartyRole.role == role.lower())
+
+        party_roles = party_roles.all()
+        return party_roles
+
+    @staticmethod
+    def get_party_roles_by_party_id(business_id: int, party_id: int) -> list:
+        """Return the parties that match the filter conditions."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.business_id == business_id). \
+            filter(PartyRole.party_id == party_id). \
+            all()
+        return party_roles
