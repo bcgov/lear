@@ -17,8 +17,9 @@
 Test-Suite to ensure that the PartyRole Model is working as expected.
 """
 import datetime
+import json
 
-from legal_api.models import Party, PartyRole
+from legal_api.models import Filing, Party, PartyRole
 from tests.unit.models import factory_business
 
 
@@ -248,3 +249,47 @@ def test_get_party_roles_by_party_id(session):
     assert len(party_roles) == 0
 
 
+def test_get_party_roles_by_filing(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+
+    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_data = json.dumps(data)
+    filing.save()
+    assert filing.id is not None
+
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        filing_id=filing.id
+    )
+    party_role_2.save()
+    # Find
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.utcnow())
+    assert len(party_roles) == 1
+
+    party_roles = PartyRole.get_party_roles_by_filing(filing.id, datetime.datetime.utcnow())
+    assert len(party_roles) == 1
