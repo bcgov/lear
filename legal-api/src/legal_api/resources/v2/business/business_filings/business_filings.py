@@ -62,7 +62,6 @@ class QueryModel(BaseModel):
 
     draft: Optional[bool]
     only_validate: Optional[bool]
-    allowed_filings: Optional[bool]
 
 
 FilingT = TypeVar('FilingT')
@@ -105,7 +104,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     business = Business.find_by_identifier(identifier)
 
     # check authorization
-    response, response_code = ListFilingResource.check_authorization(identifier, json_input, query, business)
+    response, response_code = ListFilingResource.check_authorization(identifier, json_input, business)
     if response:
         return response, response_code
 
@@ -407,14 +406,15 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str, query: QueryModel, business: Business) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: str, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
-        state = business.state if business else None
+        sub_filing_type = None
+        if filing_type == 'restoration':
+            sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+        state = business.state if business else Business.State.ACTIVE
         legal_type = business.legal_type if business else filing_json['filing']['business'].get('legalType')
-
-        if query.allowed_filings:
-            return jsonify({'allowedFilings': get_allowed(state, legal_type, jwt)}), HTTPStatus.OK
+        admin_freeze = business.admin_freeze if business else False
 
         action = ['edit']
         if filing_type == 'courtOrder':
@@ -423,8 +423,9 @@ class ListFilingResource():
             action = ['registrars_notation']
         elif filing_type == 'registrarsOrder':
             action = ['registrars_order']
-        if not authorized(identifier, jwt, action=action) or \
-                not is_allowed(state, filing_type, legal_type, jwt):
+        if admin_freeze or \
+                not authorized(identifier, jwt, action=action) or \
+                not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED

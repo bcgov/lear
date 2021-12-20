@@ -245,21 +245,24 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         # active business
         ('staff_active_cp', Business.State.ACTIVE, 'CP', 'staff', [STAFF_ROLE],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction',
-            'courtOrder', 'dissolution', 'incorporationApplication', 'restoration',
+            'courtOrder', 'dissolution', 'incorporationApplication',
             'specialResolution', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_bc', Business.State.ACTIVE, 'BC', 'staff', [STAFF_ROLE],
          ['alteration', 'courtOrder', 'dissolution', 'incorporationApplication',
-            'restoration', 'transition', 'registrarsNotation', 'registrarsOrder']),
+            'transition', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_ben', Business.State.ACTIVE, 'BEN', 'staff', [STAFF_ROLE],
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction',
             'courtOrder', 'dissolution', 'incorporationApplication',
-            'restoration', 'transition', 'registrarsNotation', 'registrarsOrder']),
+            'transition', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_cc', Business.State.ACTIVE, 'CC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'dissolution', 'restoration', 'registrarsNotation', 'registrarsOrder']),
+         ['courtOrder', 'dissolution',
+         'registrarsNotation', 'registrarsOrder']),
         ('staff_active_ulc', Business.State.ACTIVE, 'ULC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'dissolution', 'restoration', 'registrarsNotation', 'registrarsOrder']),
+         ['alteration', 'courtOrder', 'dissolution',
+         'registrarsNotation', 'registrarsOrder']),
         ('staff_active_llc', Business.State.ACTIVE, 'LLC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'dissolution', 'restoration', 'registrarsNotation', 'registrarsOrder']),
+         ['courtOrder', 'dissolution',
+         'registrarsNotation', 'registrarsOrder']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -270,22 +273,28 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
             'dissolution', 'incorporationApplication', 'transition']),
         ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
-        ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['dissolution']),
+        ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration']}]),
         ('staff_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_ulc', Business.State.HISTORICAL, 'ULC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_llc', Business.State.HISTORICAL, 'LLC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'restoration']),
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
 
         ('user_historical_llc', Business.State.HISTORICAL, 'LLC', 'user', [BASIC_USER], []),
     ]
@@ -305,225 +314,206 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
 
 
 @pytest.mark.parametrize(
-    'test_name,state,filing_type,legal_types,username,roles,expected',
+    'test_name,state,filing_type,sub_filing_type,legal_types,username,roles,expected',
     [
         # active business
-        ('staff_active_allowed', Business.State.ACTIVE, 'alteration', ['BC', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'alteration',
-         ['CP', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
+        ('staff_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BC', 'BEN', 'ULC'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'alteration', None,
+         ['CP', 'CC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'annualReport', ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'annualReport',
-         ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
-
-        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfAddress', ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'changeOfAddress',
-         ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
-
-        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfDirectors',
+        ('staff_active_allowed', Business.State.ACTIVE, 'annualReport', None,
          ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'changeOfDirectors',
+        ('staff_active', Business.State.ACTIVE, 'annualReport', None,
          ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'correction', ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'correction',
+        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfAddress', None,
+         ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'changeOfAddress', None,
          ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'courtOrder',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'courtOrder', [], 'staff', [STAFF_ROLE], False),
+        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfDirectors', None,
+         ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'changeOfDirectors', None,
+         ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'dissolution',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'dissolution', [], 'staff', [STAFF_ROLE], False),
+        ('staff_active_allowed', Business.State.ACTIVE, 'correction', None,
+         ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'correction', None,
+         ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication',
+        ('staff_active_allowed', Business.State.ACTIVE, 'courtOrder', None,
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', None,
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'incorporationApplication', [], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'restoration',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'restoration', [], 'staff', [STAFF_ROLE], False),
+        ('staff_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
+        ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'specialResolution', ['CP'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'specialResolution',
+        ('staff_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'transition', ['BC', 'BEN'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'transition', ['CP', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
+        ('staff_active_allowed', Business.State.ACTIVE, 'transition', None,
+         ['BC', 'BEN'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'transition', None,
+         ['CP', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsNotation',
+        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'registrarsNotation', [], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsOrder',
+        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'registrarsOrder', [], 'staff', [STAFF_ROLE], False),
 
 
-        ('user_active_allowed', Business.State.ACTIVE, 'alteration', ['BC', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'alteration',
-         ['CP', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+        ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BC', 'BEN', 'ULC'], 'user', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'alteration', None,
+         ['CP', 'CC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'annualReport', ['CP', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'annualReport',
+        ('user_active_allowed', Business.State.ACTIVE, 'annualReport', None, ['CP', 'BEN'], 'user', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'annualReport', None,
          ['BC', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfAddress', ['CP', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'changeOfAddress',
-         ['BC', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
-
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfDirectors',
+        ('user_active_allowed', Business.State.ACTIVE, 'changeOfAddress', None,
          ['CP', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'changeOfDirectors',
+        ('user_active', Business.State.ACTIVE, 'changeOfAddress', None,
          ['BC', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'correction', [], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'correction',
+        ('user_active_allowed', Business.State.ACTIVE, 'changeOfDirectors', None,
+         ['CP', 'BEN'], 'user', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'changeOfDirectors', None,
+         ['BC', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+
+        ('user_active', Business.State.ACTIVE, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'courtOrder', [], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'courtOrder',
+        ('user_active', Business.State.ACTIVE, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'dissolution',
+        ('user_active_allowed', Business.State.ACTIVE, 'dissolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'dissolution', [], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication',
+        ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'incorporationApplication', [], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'restoration', [], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'restoration',
+        ('user_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'specialResolution', ['CP'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'specialResolution',
+        ('user_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+
+        ('user_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'user', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'transition', ['BC', 'BEN'], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'transition', ['CP', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+        ('user_active_allowed', Business.State.ACTIVE, 'transition', None, ['BC', 'BEN'], 'user', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'transition', None,
+         ['CP', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'registrarsNotation', [], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'registrarsNotation',
+        ('user_active', Business.State.ACTIVE, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'registrarsOrder', [], 'user', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'registrarsOrder',
+        ('user_active', Business.State.ACTIVE, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
         # historical business
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'alteration', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'alteration',
+        ('staff_historical', Business.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'annualReport', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'annualReport',
+        ('staff_historical', Business.State.HISTORICAL, 'annualReport', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'changeOfAddress', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'changeOfAddress',
+        ('staff_historical', Business.State.HISTORICAL, 'changeOfAddress', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'changeOfDirectors', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'changeOfDirectors',
+        ('staff_historical', Business.State.HISTORICAL, 'changeOfDirectors', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'correction', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'correction',
+        ('staff_historical', Business.State.HISTORICAL, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'courtOrder',
+        ('staff_historical_allowed', Business.State.HISTORICAL, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'courtOrder', [], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'dissolution', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'dissolution',
+        ('staff_historical', Business.State.HISTORICAL, 'dissolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'incorporationApplication',
-         [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'incorporationApplication',
+        ('staff_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration',
+        ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'restoration', [], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'specialResolution', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'specialResolution',
+        ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
+         ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
+        ('staff_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
+         ['CP'], 'staff', [STAFF_ROLE], False),
+
+        ('staff_historical', Business.State.HISTORICAL, 'specialResolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'transition', [], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'transition',
+        ('staff_historical', Business.State.HISTORICAL, 'transition', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsNotation',
+        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'registrarsNotation', [], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsOrder',
+        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
-        ('staff_historical', Business.State.HISTORICAL, 'registrarsOrder', [], 'staff', [STAFF_ROLE], False),
 
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'alteration', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'alteration',
+        ('user_historical', Business.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'annualReport', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'annualReport',
+        ('user_historical', Business.State.HISTORICAL, 'annualReport', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'changeOfAddress', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'changeOfAddress',
+        ('user_historical', Business.State.HISTORICAL, 'changeOfAddress', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'changeOfDirectors',
-         [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'changeOfDirectors',
+        ('user_historical', Business.State.HISTORICAL, 'changeOfDirectors', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'correction', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'correction',
+        ('user_historical', Business.State.HISTORICAL, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'courtOrder', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'courtOrder',
+        ('user_historical', Business.State.HISTORICAL, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'dissolution', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'dissolution',
+        ('user_historical', Business.State.HISTORICAL, 'dissolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'incorporationApplication',
-         [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'incorporationApplication',
+        ('user_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'restoration', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'restoration',
+        ('user_historical', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'specialResolution', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'specialResolution',
+        ('user_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'transition', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'transition',
+        ('user_historical', Business.State.HISTORICAL, 'specialResolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'registrarsNotation', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'registrarsNotation',
+        ('user_historical', Business.State.HISTORICAL, 'transition', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
-        ('user_historical_allowed', Business.State.HISTORICAL, 'registrarsOrder', [], 'user', [BASIC_USER], True),
-        ('user_historical', Business.State.HISTORICAL, 'registrarsOrder',
+        ('user_historical', Business.State.HISTORICAL, 'registrarsNotation', None,
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+
+        ('user_historical', Business.State.HISTORICAL, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
     ]
 )
-def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, legal_types, username, roles, expected):
+def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_filing_type,
+                    legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {'Authorization': 'Bearer ' + token}
@@ -534,5 +524,5 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, legal_
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
-            filing_types = is_allowed(state, filing_type, legal_type, jwt)
+            filing_types = is_allowed(state, filing_type, legal_type, jwt, sub_filing_type)
             assert filing_types == expected

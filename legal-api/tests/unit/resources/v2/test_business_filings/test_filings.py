@@ -247,20 +247,6 @@ def test_post_allowed_historical(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
 
 
-def test_post_allowed_filings(session, client, jwt):
-    """Assert that a filing is allowed filings."""
-    identifier = 'BC7654321'
-    factory_business(identifier, state=Business.State.HISTORICAL)
-
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?allowed_filings=true',
-                     json=COURT_ORDER_FILING_TEMPLATE,
-                     headers=create_header(jwt, [STAFF_ROLE], 'user')
-                     )
-
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['allowedFilings']
-
-
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'

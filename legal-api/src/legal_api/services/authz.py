@@ -92,87 +92,58 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     return False
 
 
-ALLOWABLE_FILINGS_ACTIVE: Final = {
-    'alteration': {
-        'staff': ['BC', 'BEN'],
-        'user': ['BC', 'BEN'],
+ALLOWABLE_FILINGS: Final = {
+    'staff': {
+        Business.State.ACTIVE: {
+            'alteration': ['BC', 'BEN', 'ULC'],
+            'annualReport': ['CP', 'BEN'],
+            'changeOfAddress': ['CP', 'BEN'],
+            'changeOfDirectors': ['CP', 'BEN'],
+            'correction': ['CP', 'BEN'],
+            'courtOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'incorporationApplication': ['CP', 'BC', 'BEN'],
+            'specialResolution': ['CP'],
+            'transition': ['BC', 'BEN'],
+            'registrarsNotation': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+        },
+        Business.State.HISTORICAL: {
+            'courtOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsNotation': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'restoration': {
+                'fullRestoration': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
+            },
+        }
     },
-    'annualReport': {
-        'staff': ['CP', 'BEN'],
-        'user': ['CP', 'BEN'],
-    },
-    'changeOfAddress': {
-        'staff': ['CP', 'BEN'],
-        'user': ['CP', 'BEN'],
-    },
-    'changeOfDirectors': {
-        'staff': ['CP', 'BEN'],
-        'user': ['CP', 'BEN'],
-    },
-    'correction': {
-        'staff': ['CP', 'BEN'],
-    },
-    'courtOrder': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'dissolution': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-        'user': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'incorporationApplication': {
-        'staff': ['CP', 'BC', 'BEN'],
-        'user': ['CP', 'BC', 'BEN'],
-    },
-    'restoration': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'specialResolution': {
-        'staff': ['CP'],
-        'user': ['CP'],
-    },
-    'transition': {
-        'staff': ['BC', 'BEN'],
-        'user': ['BC', 'BEN'],
-    },
-    'registrarsNotation': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'registrarsOrder': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-}
-
-ALLOWABLE_FILINGS_HISTORICAL: Final = {
-    'courtOrder': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'registrarsNotation': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'registrarsOrder': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
-    'restoration': {
-        'staff': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-    },
+    'user': {
+        Business.State.ACTIVE: {
+            'alteration': ['BC', 'BEN', 'ULC'],
+            'annualReport': ['CP', 'BEN'],
+            'changeOfAddress': ['CP', 'BEN'],
+            'changeOfDirectors': ['CP', 'BEN'],
+            'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'incorporationApplication': ['CP', 'BC', 'BEN'],
+            'specialResolution': ['CP'],
+            'transition': ['BC', 'BEN'],
+        },
+    }
 }
 
 
-def is_allowed(state: Business.State, filing_type: str, legal_type: str, jwt: JwtManager):
+def is_allowed(state: Business.State, filing_type: str, legal_type: str, jwt: JwtManager, sub_filing_type: str = None):
     """Is allowed to do filing."""
     user_role = 'user'
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = 'staff'
 
-    allowable_filings = ALLOWABLE_FILINGS_ACTIVE
-    if state == Business.State.HISTORICAL:
-        allowable_filings = ALLOWABLE_FILINGS_HISTORICAL
+    allowable_filing = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {}).get(filing_type, [])
+    if allowable_filing and sub_filing_type:
+        allowable_filing = allowable_filing.get(sub_filing_type, [])
 
-    allowable_legal_types = allowable_filings.get(filing_type, {}).get(user_role, [])
-    if legal_type in allowable_legal_types:
-        return True
-
-    return False
+    return legal_type in allowable_filing
 
 
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
@@ -181,9 +152,18 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = 'staff'
 
-    allowable_filings = ALLOWABLE_FILINGS_ACTIVE
-    if state == Business.State.HISTORICAL:
-        allowable_filings = ALLOWABLE_FILINGS_HISTORICAL
+    allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
 
-    allowable_filing_types = filter(lambda x: legal_type in x[1].get(user_role, []), allowable_filings.items())
-    return [filing_type[0] for filing_type in allowable_filing_types]
+    allowable_filing_types = []
+    for allowable_filing in allowable_filings.items():
+        types = allowable_filing[1]
+        if isinstance(types, list):
+            if legal_type in types:
+                allowable_filing_types.append(allowable_filing[0])
+        else:
+            sub_filing_types = filter(lambda x: legal_type in x[1], types.items())
+            allowable_filing_types.append({
+                allowable_filing[0]: [sub_filing_type[0] for sub_filing_type in sub_filing_types]
+            })
+
+    return allowable_filing_types
