@@ -16,12 +16,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from legal_api.models import Business, Filing, PartyRole
+from legal_api.models import Business
 
 from entity_filer.filing_processors.filing_components import create_party, create_role
 
 
-def update_parties(business: Business, parties_structure: Dict, filing: Filing, delete_existing=True) -> Optional[List]:
+def update_parties(business: Business, parties_structure: Dict, delete_existing=True) -> Optional[List]:
     """Manage the party and party roles for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -49,18 +49,13 @@ def update_parties(business: Business, parties_structure: Dict, filing: Filing, 
             for party_info in parties_structure:
                 party = create_party(business_id=business.id, party_info=party_info, create=False)
                 for role_type in party_info.get('roles'):
-                    role_str = role_type.get('roleType', '').lower()
                     role = {
-                        'roleType': role_str,
+                        'roleType': role_type.get('roleType', '').lower(),
                         'appointmentDate': role_type.get('appointmentDate', None),
                         'cessationDate': role_type.get('cessationDate', None)
                     }
                     party_role = create_role(party=party, role_info=role)
-                    if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value,
-                                           PartyRole.RoleTypes.INCORPORATOR.value]:
-                        filing.party_roles.append(party_role)
-                    else:
-                        business.party_roles.append(party_role)
+                    business.party_roles.append(party_role)
         except KeyError:
             err.append(
                 {'error_code': 'FILER_UNABLE_TO_SAVE_PARTIES',

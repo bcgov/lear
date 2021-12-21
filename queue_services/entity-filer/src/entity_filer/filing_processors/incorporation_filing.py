@@ -194,7 +194,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         update_offices(business, offices)
 
     if parties := incorp_filing.get('parties'):
-        update_parties(business, parties, filing_rec)
+        update_parties(business, parties)
 
     if share_structure := incorp_filing.get('shareStructure'):
         shares.update_share_structure(business, share_structure)

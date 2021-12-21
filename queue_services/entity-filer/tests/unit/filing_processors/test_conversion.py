@@ -153,5 +153,4 @@ def test_conversion_bc_company_from_colin(app, session, legal_type):
     assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
     assert len(business.share_classes.all()) == 2
-    assert len(business.party_roles.all()) == 1
-    assert len(filing_rec.party_roles.all()) == 2
+    assert len(business.party_roles.all()) == 3
