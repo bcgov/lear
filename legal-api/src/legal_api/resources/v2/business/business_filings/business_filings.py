@@ -46,7 +46,7 @@ from legal_api.services import (
     namex,
     queue,
 )
-from legal_api.services.authz import get_allowed, is_allowed
+from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -412,6 +412,8 @@ class ListFilingResource():
         sub_filing_type = None
         if filing_type == 'restoration':
             sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+
+        # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
         legal_type = business.legal_type if business else filing_json['filing']['business'].get('legalType')
         admin_freeze = business.admin_freeze if business else False
