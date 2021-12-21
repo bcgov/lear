@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
+import json
+import datetime
 import pytest
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
@@ -112,7 +114,16 @@ def test_manage_parties_structure__parties(
     """Assert that the parties and party roles gets set."""
     business = Business()
     business.save()
-    update_and_validate_party_and_roles(business, parties_structure, 3, 1)
+
+    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_data = json.dumps(data)
+    filing.save()
+    assert filing.id is not None
+
+    update_and_validate_party_and_roles(business, parties_structure, 1, 1, filing, 2)
 
 
 @pytest.mark.parametrize('test_name,parties_structure,expected_error', [
@@ -122,14 +133,30 @@ def test_manage_parties_structure__delete_and_recreate(app, session, test_name, 
     """Assert that the parties and party roles gets set."""
     business = Business()
     business.save()
-    update_and_validate_party_and_roles(business, parties_structure, 3, 1)
-    update_and_validate_party_and_roles(business, SECOND_PARTY, 1, 1)
+
+    data = {'filing': 'not a real filing, fail validation'}
+    filing1 = Filing()
+    filing1.business_id = business.id
+    filing1.filing_date = datetime.datetime.utcnow()
+    filing1.filing_data = json.dumps(data)
+    filing1.save()
+
+    update_and_validate_party_and_roles(business, parties_structure, 1, 1, filing1, 2)
+
+    filing2 = Filing()
+    filing2.business_id = business.id
+    filing2.filing_date = datetime.datetime.utcnow()
+    filing2.filing_data = json.dumps(data)
+    filing2.save()
+
+    update_and_validate_party_and_roles(business, SECOND_PARTY, 1, 1, filing2, 0)
 
 
-def update_and_validate_party_and_roles(business, parties_structure, roles_count, parties_count):
+def update_and_validate_party_and_roles(business, parties_structure, roles_count, parties_count, filing,
+                                        filing_parties_count):
     """Validate that party and party roles get created."""
     party_id_list = []
-    err = update_parties(business, parties_structure['parties'])
+    err = update_parties(business, parties_structure['parties'], filing)
     business.save()
     check_business = Business.find_by_internal_id(business.id)
     check_party_roles = check_business.party_roles.all()
@@ -138,4 +165,5 @@ def update_and_validate_party_and_roles(business, parties_structure, roles_count
             party_id_list.append(role.party_id)
     assert len(check_party_roles) == roles_count
     assert len(party_id_list) == parties_count
+    assert len(filing.party_roles.all()) == filing_parties_count
     assert not err
