@@ -54,7 +54,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     # add custodial party if in filing
     if parties := dissolution_filing.get('parties'):
-        update_parties(business, parties, filing_rec, False)
+        update_parties(business, parties, False)
 
     # add custodial office if provided
     if custodial_office := dissolution_filing.get('custodialOffice'):

@@ -39,7 +39,7 @@ def process(business: Business, filing_rec: Filing, filing: Dict, filing_meta: F
         update_offices(business, offices)
 
     if parties := transition_filing.get('parties'):
-        update_parties(business, parties, filing_rec)
+        update_parties(business, parties)
 
     if share_structure := transition_filing['shareStructure']:
         shares.update_share_structure(business, share_structure)
