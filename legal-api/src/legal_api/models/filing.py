@@ -241,7 +241,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
-    filing_party_roles = db.relationship('PartyRole', lazy='dynamic')
+    party_roles = db.relationship('PartyRole', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
