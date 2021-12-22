@@ -94,7 +94,7 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == 2
-    assert len(filing.party_roles.all()) == 1
+    assert len(filing.filing_party_roles.all()) == 1
 
     custodial_office = session.query(Business, Office). \
             filter(Business.id == Office.business_id). \

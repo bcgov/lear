@@ -58,7 +58,7 @@ def update_parties(business: Business, parties_structure: Dict, filing: Filing, 
                     party_role = create_role(party=party, role_info=role)
                     if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value,
                                            PartyRole.RoleTypes.INCORPORATOR.value]:
-                        filing.party_roles.append(party_role)
+                        filing.filing_party_roles.append(party_role)
                     else:
                         business.party_roles.append(party_role)
         except KeyError:

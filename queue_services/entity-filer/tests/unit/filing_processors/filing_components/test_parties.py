@@ -165,5 +165,5 @@ def update_and_validate_party_and_roles(business, parties_structure, roles_count
             party_id_list.append(role.party_id)
     assert len(check_party_roles) == roles_count
     assert len(party_id_list) == parties_count
-    assert len(filing.party_roles.all()) == filing_parties_count
+    assert len(filing.filing_party_roles.all()) == filing_parties_count
     assert not err

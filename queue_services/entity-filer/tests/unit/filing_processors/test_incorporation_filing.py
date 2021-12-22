@@ -74,9 +74,9 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         assert business.state == Business.State.ACTIVE
         assert len(business.party_roles.all()) == 1
         if legal_type == 'BC':
-            assert len(filing_rec.party_roles.all()) == 2
+            assert len(filing_rec.filing_party_roles.all()) == 2
         if legal_type == 'CP':
-            assert len(filing_rec.party_roles.all()) == 1
+            assert len(filing_rec.filing_party_roles.all()) == 1
         if legal_type == 'BC':
             assert len(business.share_classes.all()) == 2
             assert len(business.offices.all()) == 2  # One office is created in create_business method.
@@ -128,7 +128,7 @@ def test_incorporation_filing_process_no_nr(app, session):
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
         assert len(business.party_roles.all()) == 1
-        assert len(filing_rec.party_roles.all()) == 2
+        assert len(filing_rec.filing_party_roles.all()) == 2
 
         # Parties
         parties = filing_rec.filing_json['filing']['incorporationApplication']['parties']
@@ -165,7 +165,7 @@ def test_incorporation_filing_process_correction(app, session):
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
         assert len(business.party_roles.all()) == 1
-        assert len(filing_rec.party_roles.all()) == 2
+        assert len(filing_rec.filing_party_roles.all()) == 2
 
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
@@ -183,7 +183,7 @@ def test_incorporation_filing_process_correction(app, session):
     assert corrected_filing_meta.correction['toLegalName'] == corrected_business.legal_name
     assert len(corrected_business.share_classes.all()) == 1
     assert len(corrected_business.party_roles.all()) == 1
-    assert len(corrected_filing_rec.party_roles.all()) == 1
+    assert len(corrected_filing_rec.filing_party_roles.all()) == 1
 
 
 @pytest.mark.parametrize('test_name,response,expected', [
