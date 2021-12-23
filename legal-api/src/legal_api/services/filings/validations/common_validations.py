@@ -179,7 +179,7 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
                         'path': file_key_path})
 
         file_info = MinioService.get_file_info(file_key)
-        if file_info.size > 10000000:
+        if file_info.size > 30000000:
             msg.append({'error': _('File exceeds maximum size.'), 'path': file_key_path})
 
         if pdf_reader.isEncrypted:
