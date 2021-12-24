@@ -221,10 +221,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
-
                 alteration.post_process(business, filing_submission, is_correction)
-                db.session.add(business)
-                db.session.commit()
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,
