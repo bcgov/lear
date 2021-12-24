@@ -359,7 +359,7 @@ def validate_pdf(file_key: str):
             msg.append({'error': babel('Document must be set to fit onto 8.5” x 11” letter-size paper.')})
 
         file_info = MinioService.get_file_info(file_key)
-        if file_info.size > 10000000:
+        if file_info.size > 30000000:
             msg.append({'error': babel('File exceeds maximum size.')})
 
         if pdf_reader.isEncrypted:
