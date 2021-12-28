@@ -22,10 +22,11 @@ from http import HTTPStatus
 import registry_schemas
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
+from tests.unit.models import factory_business
 from tests.unit.services.utils import create_header
 
 
@@ -203,3 +204,15 @@ def test_get_business_info_missing_business(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_get_business_with_allowed_filings(session, client, jwt):
+    """Assert that the allowed filings are returned with business."""
+    identifier = 'CP0000001'
+    factory_business(identifier, state=Business.State.HISTORICAL)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}?allowed_filings=true',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['allowedFilings']

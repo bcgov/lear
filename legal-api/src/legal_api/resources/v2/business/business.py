@@ -26,6 +26,7 @@ from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services import RegistrationBootstrapService
+from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -55,6 +56,11 @@ def get_businesses(identifier: str):
     if recent_filing_json:
         business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
         business_json['lastModified'] = recent_filing_json['filing']['header']['date']
+
+    allowed_filings = str(request.args.get('allowed_filings', None)).lower() == 'true'
+    if allowed_filings:
+        business_json['allowedFilings'] = get_allowed(business.state, business.legal_type, jwt)
+
     return jsonify(business=business_json)
 
 
