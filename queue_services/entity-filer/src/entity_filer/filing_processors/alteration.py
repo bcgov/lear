@@ -54,7 +54,6 @@ def process(
             filing_meta.alteration = {**filing_meta.alteration,
                                       **{'fromLegalName': business.legal_name,
                                          'toLegalName': legal_name}}
-        name_request.set_legal_name(business, name_request_json)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -70,6 +69,11 @@ def process(
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.util.get(filing, '/alteration/shareStructure')
         shares.update_share_structure(business, share_structure)
+
+    # Alter the business name, if any
+    with suppress(IndexError, KeyError, TypeError):
+        business_json = dpath.util.get(filing, '/alteration/nameRequest')
+        business_info.set_legal_name(business.identifier, business, business_json)
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):
@@ -88,8 +92,3 @@ def post_process(business: Business, filing: Filing, correction: bool = False):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id},error:{err}',
                 level='error')
-
-    # Alter the business name, if any
-    with suppress(IndexError, KeyError, TypeError):
-        business_json = dpath.util.get(filing.filing_json, '/filing/alteration/nameRequest')
-        business_info.set_legal_name(business.identifier, business, business_json)

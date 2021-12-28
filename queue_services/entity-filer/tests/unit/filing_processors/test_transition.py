@@ -46,3 +46,4 @@ def test_transition_filing_process(app, session):
     assert len(business.aliases.all()) == len(filing['filing']['transition']['nameTranslations'])
     assert len(business.resolutions.all()) == len(filing['filing']['transition']['shareStructure']['resolutionDates'])
     assert len(business.party_roles.all()) == 2
+    assert len(filing_rec.filing_party_roles.all()) == 0
