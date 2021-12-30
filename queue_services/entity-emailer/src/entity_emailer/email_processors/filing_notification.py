@@ -349,9 +349,7 @@ def get_additional_info(filing: Filing) -> dict:
         if original_filing_type == 'incorporationApplication':
             additional_info['nameChange'] = NameXService.has_correction_changed_name(filing.filing_json)
     elif filing.filing_type == 'alteration':
-        name_request = filing.filing_json.get('filing', {}).get('alteration', {}).get('nameRequest', None)
-        business = filing.filing_json.get('filing', {}).get('business', {})
-        additional_info['nameChange'] = name_request and 'legalName' in name_request and \
-            name_request['legalName'] != business.get('legalName', None)
+        meta_data_alteration = filing.meta_data.get('alteration', {})
+        additional_info['nameChange'] = 'toLegalName' in meta_data_alteration
 
     return additional_info
