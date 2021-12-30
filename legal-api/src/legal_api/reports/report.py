@@ -206,13 +206,7 @@ class Report:  # pylint: disable=too-few-public-methods
             if filing['header']['name'] == 'correction':
                 self._format_with_diff_data(filing)
 
-            # name change from named company to numbered company case
-            if self._report_key in ('certificateOfNameChange', 'alterationNotice') and 'nameRequest' in \
-                    filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
-                versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
-                                                                                       self._business.id)
-                filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
+            filing['meta_data'] = {**self._filing.meta_data}
 
         filing['header']['reportType'] = self._report_key
 
