@@ -206,7 +206,7 @@ class Report:  # pylint: disable=too-few-public-methods
             if filing['header']['name'] == 'correction':
                 self._format_with_diff_data(filing)
 
-            filing['meta_data'] = {**self._filing.meta_data}
+            filing['meta_data'] = self._filing.meta_data or {}
 
         filing['header']['reportType'] = self._report_key
 
