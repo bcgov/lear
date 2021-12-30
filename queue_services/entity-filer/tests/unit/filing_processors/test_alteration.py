@@ -108,6 +108,59 @@ async def test_worker_alteration(app, session, mocker, orig_legal_type, new_lega
     assert business.legal_type == new_legal_type
 
 
+@pytest.mark.parametrize(
+    'test_name, legal_name, new_legal_name',
+    [
+        ('numbered_to_name', '1234567 B.C. LTD.', 'New Name'),
+        ('name_to_numbered', 'Old Name', '1234567 B.C. LTD.'),
+        ('no_change', '1234567 B.C. LTD.', None),  # No change in name
+    ]
+)
+async def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_legal_name):
+    """Assert the worker process calls the alteration correctly."""
+    identifier = 'BC1234567'
+    business = create_business(identifier)
+    business.legal_name = legal_name
+    business.save()
+    filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    if test_name == 'numbered_to_name':
+        filing['filing']['alteration']['nameRequest']['legalName'] = new_legal_name
+    elif test_name == 'name_to_numbered':
+        del filing['filing']['alteration']['nameRequest']['nrNumber']
+        del filing['filing']['alteration']['nameRequest']['legalName']
+    else:
+        del filing['filing']['alteration']['nameRequest']
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    # Test
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    business = Business.find_by_internal_id(business.id)
+    final_filing = Filing.find_by_id(filing_id)
+    alteration = final_filing.meta_data.get('alteration', {})
+    if new_legal_name:
+        assert business.legal_name == new_legal_name
+        assert alteration.get('toLegalName') == new_legal_name
+        assert alteration.get('fromLegalName') == legal_name
+    else:
+        assert business.legal_name == legal_name
+        assert alteration.get('toLegalName') is None
+        assert alteration.get('fromLegalName') is None
+
+
 async def test_worker_alteration_court_order(app, session, mocker):
     """Assert the worker process calls the alteration correctly."""
     identifier = 'BC1234567'
