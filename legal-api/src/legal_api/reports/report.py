@@ -373,13 +373,13 @@ class Report:  # pylint: disable=too-few-public-methods
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
+
         # Get previous business type
-        versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
-            self._filing.id, self._business.id)
-        prev_legal_type = versioned_business['legalType']
+        meta_data = self._filing.meta_data or {}
+        prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
         filing['previousLegalType'] = prev_legal_type
         corp_type = CorpType.find_by_id(prev_legal_type)
-        filing['previousLegalTypeDescription'] = corp_type.full_desc
+        filing['previousLegalTypeDescription'] = corp_type.full_desc if corp_type else None
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
