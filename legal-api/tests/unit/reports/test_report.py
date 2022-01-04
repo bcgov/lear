@@ -61,7 +61,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
         del original_filing_json['filing']['correction']
         original_filing = factory_completed_filing(business, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
-    if report_type == 'specialResolution' and filing_type!='specialResolution':
+    if report_type == 'specialResolution' and filing_type != 'specialResolution':
         filing_json['specialResolution'] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(business, filing_json)
 
@@ -154,7 +154,7 @@ def set_meta_info(report):
     'test_name, identifier, entity_type, report_type, filing_type, template',
     [
         ('CP AR', 'CP1234567', 'CP', 'annualReport', 'annualReport', ANNUAL_REPORT),
-        ('CP COA', 'CP1234567', 'CP', 'changeOfAddress', 'changeOfAddress',  CHANGE_OF_ADDRESS),
+        ('CP COA', 'CP1234567', 'CP', 'changeOfAddress', 'changeOfAddress', CHANGE_OF_ADDRESS),
         ('CP COD', 'CP1234567', 'CP', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS),
         ('CP COR combined AR', 'CP1234567', 'CP', 'correction', 'correction', CORRECTION_COMBINED_AR),
         ('CP CON', 'CP1234567', 'CP', 'changeOfName', 'changeOfName', CHANGE_OF_NAME),
@@ -168,7 +168,7 @@ def set_meta_info(report):
         ('CP DISSOLUTION', 'CP1234567', 'CP', 'certificateOfDissolution', 'dissolution', DISSOLUTION),
         ('BEN AR', 'BC1234567', 'BEN', 'annualReport', 'annualReport', ANNUAL_REPORT),
         ('BEN COA', 'BC1234567', 'BEN', 'changeOfAddress', 'changeOfAddress', CORP_CHANGE_OF_ADDRESS),
-        ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors',  'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
+        ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
         ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', 'incorporationApplication',
          INCORPORATION_FILING_TEMPLATE),
         ('BEN CER', 'BC1234567', 'BEN', 'certificate', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
@@ -222,7 +222,7 @@ def test_alteration_name_change(session):
     named_company_report_template = named_company_report._get_template()
     assert named_company_report_template
     named_company_report_template_data = named_company_report._get_template_data()
-    assert named_company_report_template_data['alteration']['nameRequest']['legalName'] == named_company_name
+    assert named_company_report_template_data['meta_data']['alteration']['toLegalName'] == named_company_name
 
     # changes its name to a numbered company
     numbered_company_filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
@@ -238,7 +238,7 @@ def test_alteration_name_change(session):
     numbered_company_template = numbered_company_report._get_template()
     assert numbered_company_template
     numbered_company_template_data = numbered_company_report._get_template_data()
-    assert numbered_company_template_data['alteration']['nameRequest']['legalName'] == numbered_company_name
+    assert numbered_company_template_data['meta_data']['alteration']['toLegalName'] == numbered_company_name
 
 
 def update_business_legal_name(business, legal_name):
@@ -254,6 +254,13 @@ def filing_named_company(business, template, legal_name):
     filing_json = copy.deepcopy(template)
     filing_json['filing']['alteration']['nameRequest']['legalName'] = legal_name
     filing = factory_completed_filing(business, filing_json)
+    filing._meta_data = {
+        'alteration': {
+            'fromLegalName': business.legal_name,
+            'toLegalName': legal_name
+        }
+    }
+    filing.save()
     return filing
 
 
@@ -261,7 +268,15 @@ def filing_numbered_company(business, template, legal_name):
     """Create a filing for a name change with for numbered company."""
     filing_json = copy.deepcopy(template)
     del filing_json['filing']['alteration']['nameRequest']['legalName']
+    del filing_json['filing']['alteration']['nameRequest']['nrNumber']
     filing = factory_completed_filing(business, filing_json)
+    filing._meta_data = {
+        'alteration': {
+            'fromLegalName': business.legal_name,
+            'toLegalName': legal_name
+        }
+    }
+    filing.save()
     return filing
 
 
