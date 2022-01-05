@@ -25,6 +25,7 @@ from .business_filings import delete_filings, get_documents, get_filings, patch_
 from .business_parties import get_parties
 from .business_resolutions import get_resolutions
 from .business_share_classes import get_share_class
+from .business_summary import get_summary
 from .business_tasks import get_tasks
 from .filing_comments import get_filing_comments, not_allowed_filing_comments, post_filing_comments
 

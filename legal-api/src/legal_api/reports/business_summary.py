@@ -1,0 +1,120 @@
+# Copyright © 2021 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Produces a PDF output based on templates and JSON messages."""
+import base64
+import json
+import os
+from http import HTTPStatus
+from pathlib import Path
+
+import requests
+from flask import current_app, jsonify
+
+from legal_api.models import Business, CorpType
+from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
+
+
+class BusinessSummary:  # pylint: disable=too-few-public-methods
+    # TODO review pylint warning and alter as required
+    """Service to create business summary output."""
+
+    def __init__(self, business):
+        """Create the Report instance."""
+        self._business = business
+        self._report_date_time = LegislationDatetime.now()
+
+    def get_pdf(self):
+        """Render the business summary pdf."""
+        headers = {
+            'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'reportName': self._get_report_filename(),
+            'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
+            'templateVars': self._get_template_data()
+        }
+        response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
+        if response.status_code != HTTPStatus.OK:
+            return jsonify(message=str(response.content)), response.status_code
+        return response.content, response.status_code
+
+    def _get_report_filename(self):
+        report_date = str(self._report_date_time)[:19]
+        return '{}_{}_{}.pdf'.format(self._business.identifier, report_date, 'Summary').replace(' ', '_')
+
+    def _get_template(self):
+        try:
+            template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
+            template_code = Path(f'{template_path}/businessSummary.html').read_text()
+            # substitute template parts
+            template_code = self._substitute_template_parts(template_code)
+        except Exception as err:
+            current_app.logger.error(err)
+            raise err
+        return template_code
+
+    @staticmethod
+    def _substitute_template_parts(template_code):
+        template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
+        template_parts = [
+            'common/style',
+            'common/businessDetails',
+            'footer',
+            'logo',
+            'macros'
+        ]
+        # substitute template parts - marked up by [[filename]]
+        for template_part in template_parts:
+            template_part_code = Path(f'{template_path}/template-parts/{template_part}.html').read_text()
+            template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
+        return template_code
+
+    def _get_template_data(self):  # pylint: disable=too-many-branches
+        business_json = {}
+        business_json['reportType'] = 'businessSummary'
+        business_json['business'] = self._business.json()
+        business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        self._set_dates(business_json)
+        self._set_description(business_json)
+        self._set_meta_info(business_json)
+        return business_json
+
+    def _set_description(self, business: dict):
+        legal_type = self._business.legal_type
+        corp_type = CorpType.find_by_id(legal_type)
+        business['entityDescription'] = corp_type.full_desc
+        act = {
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+        }  # This could be the legislation column from CorpType. Yet to discuss.
+        business['entityAct'] = act.get(legal_type, 'Business Corporations Act')
+
+    def _set_dates(self, business: dict):
+        founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
+        business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
+        business['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
+
+    def _set_meta_info(self, business: dict):
+        business['environment'] = f'{self._get_environment()} BUSINESS #{self._business.identifier}'.lstrip()
+        business['meta_title'] = 'Business Summary on {}'.format(business['report_date_time'])
+        business['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
+
+    @staticmethod
+    def _get_environment():
+        namespace = os.getenv('POD_NAMESPACE', '').lower()
+        if namespace.endswith('dev'):
+            return 'DEV'
+        if namespace.endswith('test'):
+            return 'TEST'
+        return ''

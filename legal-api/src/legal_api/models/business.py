@@ -294,6 +294,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
@@ -335,9 +336,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.tax_id:
             d['taxId'] = self.tax_id
         if self.state_filing_id:
-            base_url = current_app.config.get('LEGAL_API_BASE_URL')
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
-
+        d['summary'] = f'{base_url}/{self.identifier}/summary'
         return d
 
     @classmethod
