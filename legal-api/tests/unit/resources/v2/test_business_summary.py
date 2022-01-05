@@ -22,10 +22,12 @@ from http import HTTPStatus
 
 
 from legal_api.services.authz import STAFF_ROLE
+from tests import integration_reports
 from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
+@integration_reports
 def test_get_summary(requests_mock, session, client, jwt):
     """Assert that business summary is returned."""
     # setup
