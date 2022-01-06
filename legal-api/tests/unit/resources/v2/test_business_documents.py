@@ -28,7 +28,7 @@ from tests.unit.services.utils import create_header
 
 
 @integration_reports
-def test_get_summary(requests_mock, session, client, jwt):
+def test_get_document(requests_mock, session, client, jwt):
     """Assert that business summary is returned."""
     # setup
     identifier = 'CP7654321'
@@ -36,46 +36,49 @@ def test_get_summary(requests_mock, session, client, jwt):
     requests_mock.post(current_app.config.get('REPORT_SVC_URL'), json={'foo': 'bar'})
     headers = create_header(jwt, [STAFF_ROLE], identifier, **{'accept': 'application/pdf'})
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/summary', headers=headers)
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents/summary', headers=headers)
     # check
     assert rv.status_code == HTTPStatus.OK
     assert requests_mock.called_once
     assert requests_mock.last_request._request.headers.get('Content-Type') == 'application/json'
 
 
-def test_get_summary_invalid_business(session, client, jwt):
+def test_get_document_invalid_business(session, client, jwt):
     """Assert that business summary is not returned."""
     # setup
     identifier = 'CP7654321'
     factory_business(identifier)
 
     # test
-    rv = client.get(f'/api/v2/businesses/test/summary',
+    rv = client.get(f'/api/v2/businesses/test/documents/summary',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_get_business_summary_invalid_content_type(session, client, jwt):
+def test_get_business_documents(session, client, jwt):
     """Assert that business summary is not returned."""
     # setup
     identifier = 'CP7654321'
     factory_business(identifier)
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/summary',
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
     # check
-    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.status_code == HTTPStatus.OK
+    docs_json = rv.json
+    assert docs_json['documents']
+    assert docs_json['documents']['summary']
 
 
-def test_get_summary_invalid_authorization(session, client, jwt):
+def test_get_document_invalid_authorization(session, client, jwt):
     """Assert that business summary is not returned."""
     # setup
     identifier = 'CP7654321'
     factory_business(identifier)
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/summary')
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents/summary')
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED

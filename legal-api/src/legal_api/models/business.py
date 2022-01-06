@@ -337,7 +337,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
-        d['summary'] = f'{base_url}/{self.identifier}/summary'
         return d
 
     @classmethod

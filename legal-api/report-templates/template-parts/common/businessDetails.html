@@ -1,7 +1,7 @@
 <div class="business-details-container">
    <table class="business-details-table" role="presentation">
       <tr>
-         {% if reportType == 'businessSummary' %}
+         {% if reportType == 'summary' %}
              <td>
                  <div class="bold">Incorporation Number:</div>
                  <div class="bold pt-2">Business Number:</div>
@@ -172,7 +172,7 @@
 </div>
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
-    {% if reportType == 'businessSummary' %}
+    {% if reportType == 'summary' %}
           <span>Incorporation #{{business.identifier}}</span>
     {% else %}
          Filing #{{header.filingId}}

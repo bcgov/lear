@@ -12,34 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test-Suite to ensure that the Business Summary Report class is working as expected."""
+"""Test-Suite to ensure that the Business Report class is working as expected."""
 import pytest
 
-from legal_api.reports.business_summary import BusinessSummary  # noqa:I001
+from legal_api.reports.business_document import BusinessDocument  # noqa:I001
 
 from tests.unit.models import factory_business
 
 
 @pytest.mark.parametrize(
-    'identifier, entity_type',
+    'identifier, entity_type, document_name',
     [
-        ('CP1234567', 'CP'),
-        ('BC1234567', 'BC'),
-        ('BC7654321', 'BEN'),
-        ('BC1234567', 'CC'),
-        ('BC7654321', 'ULC'),
-        ('BC1234567', 'LLC'),
+        ('CP1234567', 'CP', 'summary'),
+        ('BC1234567', 'BC', 'summary'),
+        ('BC7654321', 'BEN', 'summary'),
+        ('BC1234567', 'CC', 'summary'),
+        ('BC7654321', 'ULC', 'summary'),
+        ('BC1234567', 'LLC', 'summary'),
     ]
 )
-def test_get_pdf(session, identifier, entity_type):
-    """Assert business summary can be returned as a PDF."""
+def test_get_pdf(session, identifier, entity_type, document_name):
+    """Assert business document can be returned as a PDF."""
     business = factory_business(identifier='CP7654321', entity_type='CP')
-    summary = BusinessSummary(business)
-    filename = summary._get_report_filename()
+    report = BusinessDocument(business, document_name)
+    filename = report._get_report_filename()
     assert filename
-    template = summary._get_template()
+    template = report._get_template()
     assert template
-    template_data = summary._get_template_data()
+    template_data = report._get_template_data()
     assert template_data
     assert template_data['business'] == business.json()
     assert template_data['formatted_founding_date_time']

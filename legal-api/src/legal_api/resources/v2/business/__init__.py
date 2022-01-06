@@ -21,11 +21,11 @@ from .business_address import get_addresses
 from .business_aliases import get_aliases
 from .business_comments import get_comments, post_comments
 from .business_directors import get_directors
+from .business_documents import get_business_documents
 from .business_filings import delete_filings, get_documents, get_filings, patch_filings, saving_filings
 from .business_parties import get_parties
 from .business_resolutions import get_resolutions
 from .business_share_classes import get_share_class
-from .business_summary import get_summary
 from .business_tasks import get_tasks
 from .filing_comments import get_filing_comments, not_allowed_filing_comments, post_filing_comments
 

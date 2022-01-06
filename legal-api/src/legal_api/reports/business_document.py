@@ -24,13 +24,14 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-class BusinessSummary:  # pylint: disable=too-few-public-methods
+class BusinessDocument:  # pylint: disable=too-few-public-methods
     # TODO review pylint warning and alter as required
     """Service to create business summary output."""
 
-    def __init__(self, business):
+    def __init__(self, business, document_key):
         """Create the Report instance."""
         self._business = business
+        self._document_key = document_key
         self._report_date_time = LegislationDatetime.now()
 
     def get_pdf(self):
@@ -82,7 +83,7 @@ class BusinessSummary:  # pylint: disable=too-few-public-methods
 
     def _get_template_data(self):  # pylint: disable=too-many-branches
         business_json = {}
-        business_json['reportType'] = 'businessSummary'
+        business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
         self._set_dates(business_json)
