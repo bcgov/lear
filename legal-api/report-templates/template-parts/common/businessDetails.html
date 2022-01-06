@@ -1,7 +1,30 @@
 <div class="business-details-container">
    <table class="business-details-table" role="presentation">
       <tr>
-         {% if header.reportType == 'noticeOfArticles' %}
+         {% if reportType == 'summary' %}
+             <td>
+                 <div class="bold">Incorporation Number:</div>
+                 <div class="bold pt-2">Business Number:</div>
+                 <div class="bold pt-2">Recognition Date and Time:</div>
+                 <div class="bold pt-2">Summary Date and Time:</div>
+                 <div class="bold pt-2">Company Status:</div>
+              </td>
+              <td>
+                 <div>{{business.identifier}}</div>
+                 <div class="pt-2">
+                   {% if business.tax_id is defined %}
+                      <span>{{business.tax_id}}</span>
+                   {% else %}
+                      <span>Not Available</span>
+                   {% endif %}
+                 </div>
+                 <div class="pt-2">{{formatted_founding_date_time}}</div>
+                 <div class="pt-2">{{report_date_time}}</div>
+                 <div class="pt-2 capitalize-text">
+                   <span class="">{{business.state}}</span>
+                 </div>
+              </td>
+         {% elif header.reportType == 'noticeOfArticles' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Issued Date and Time:</div>
@@ -149,9 +172,13 @@
 </div>
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
-   Filing #{{header.filingId}}
-   {% if header.name != 'incorporationApplication' %}
-      <!-- not required for incorporationApplication -->
-      <span> | Incorporation #{{business.identifier}}</span>
-   {% endif %}
+    {% if reportType == 'summary' %}
+          <span>Incorporation #{{business.identifier}}</span>
+    {% else %}
+         Filing #{{header.filingId}}
+        {% if header.name != 'incorporationApplication' %}
+          <!-- not required for incorporationApplication -->
+          <span> | Incorporation #{{business.identifier}}</span>
+        {% endif %}
+    {% endif %}
 </div>

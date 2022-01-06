@@ -17,6 +17,7 @@
 Test-Suite to ensure that the Business Model is working as expected.
 """
 from datetime import datetime, timedelta
+from flask import current_app
 
 import datedelta
 import pytest
@@ -244,6 +245,7 @@ def test_business_json(session):
                         restriction_ind=True
                         )
     # basic json
+    base_url = current_app.config.get('LEGAL_API_BASE_URL')
     d = {
         'legalName': 'legal_name',
         'legalType': 'CP',
