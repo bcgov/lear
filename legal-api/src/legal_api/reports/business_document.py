@@ -10,6 +10,7 @@
 # specific language governing permissions and limitations under the License.
 """Produces a PDF output based on templates and JSON messages."""
 import base64
+ 
 import json
 import os
 from http import HTTPStatus
@@ -18,10 +19,13 @@ from pathlib import Path
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Business, CorpType
+from legal_api.models import Business, CorpType, PartyRole
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.resources.v2.business import get_addresses
+from legal_api.resources.v2.business import get_directors
+
 
 
 class BusinessDocument:  # pylint: disable=too-few-public-methods
@@ -69,8 +73,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'common/addresses',
             'common/style',
             'common/businessDetails',
+            'notice-of-articles/directors',
             'footer',
             'logo',
             'macros'
@@ -81,11 +87,13 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
         return template_code
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self):
         business_json = {}
         business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        business_json['parties'] = get_directors(self._business.identifier).json['directors']
+        business_json['offices'] = get_addresses(self._business.identifier).json
         self._set_dates(business_json)
         self._set_description(business_json)
         self._set_meta_info(business_json)

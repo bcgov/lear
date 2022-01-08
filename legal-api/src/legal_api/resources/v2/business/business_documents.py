@@ -19,7 +19,7 @@ from flask_cors import cross_origin
 
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business
-from legal_api.reports import get_business_document
+from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -49,7 +49,7 @@ def get_business_documents(identifier: str, document_name: str = None):
         return _get_document_list(business)
 
     if document_name and ('application/pdf' in request.accept_mimetypes):
-        return get_business_document(business, document_name)
+        return BusinessDocument(business, document_name).get_pdf()
     return {}, HTTPStatus.NOT_FOUND
 
 
