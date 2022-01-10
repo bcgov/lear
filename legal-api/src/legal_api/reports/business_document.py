@@ -117,7 +117,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_addresses(self, business: dict):
         address_json = get_addresses(self._business.identifier).json
         for office_type in ['registeredOffice', 'recordsOffice']:
-            if address_json[office_type]:
+            if office_type in address_json:
                 for key, value in address_json[office_type].items():
                     address_json[office_type][key] = BusinessDocument._format_address(value)
         business['offices'] = address_json
