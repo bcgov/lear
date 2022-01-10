@@ -14,7 +14,6 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_babel import _
 
-
 from .report import Report
 
 
@@ -25,4 +24,3 @@ def get_pdf(filing, report_type=None):
     except FileNotFoundError:
         # We don't have a template for it, so it must only be available on paper.
         return jsonify({'message': _('Available on paper only.')}), HTTPStatus.NOT_FOUND
-
