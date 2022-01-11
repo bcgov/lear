@@ -19,7 +19,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, Business, CorpType
+from legal_api.models import Alias, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.utils.auth import jwt
@@ -71,6 +71,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/stateTransition',
+            'business-summary/recordKeeper',
             'common/addresses',
             'common/businessDetails',
             'common/nameTranslation',
@@ -97,6 +99,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_description(business_json)
         self._set_meta_info(business_json)
         self._set_name_translations(business_json)
+        self._set_business_state_changes(business_json)
+        self._set_record_keepers(business_json)
         return business_json
 
     def _set_description(self, business: dict):
@@ -133,6 +137,32 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         aliases = Alias.find_by_type(self._business.id, 'TRANSLATION')
         business['listOfTranslations'] = [alias.json for alias in aliases]
 
+    def _set_business_state_changes(self, business: dict):
+        state_filings = []
+        # Any filings like restoration, liquidation etc. that changes the state must be included here
+        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution']):
+            state_filings.append(BusinessDocument._format_state_filing(filing))
+        business['stateFilings'] = state_filings
+
+    def _set_record_keepers(self, business: dict):
+        custodian_json = [party_role.json for party_role in self._business.party_roles.all()
+                          if party_role.role == 'custodian']
+        for custodian in custodian_json:
+            custodian['mailingAddress'] = BusinessDocument._format_address(custodian['mailingAddress'])
+            custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
+        business['custodians'] = custodian_json
+
+    @staticmethod
+    def _format_state_filing(filing: Filing) -> dict:
+        filing_info = {}
+        filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
+        filing_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+        filing_meta = filing.meta_data
+        if filing.filing_type == 'dissolution':
+            filing_info['filing_name'] = BusinessDocument.\
+                _get_summary_display_name(filing.filing_type, filing_meta['dissolution']['dissolutionType'])
+        return filing_info
+
     @staticmethod
     def _format_address(address):
         country = address['addressCountry']
@@ -154,3 +184,16 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         if namespace.endswith('test'):
             return 'TEST'
         return ''
+
+    @staticmethod
+    def _get_summary_display_name(filing_type: str, filing_sub_type: str) -> str:
+        if filing_sub_type:
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
+        else:
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
+
+    FILING_SUMMARY_DISPLAY_NAME = {
+        'dissolution': {
+            'voluntary': 'Voluntary Dissolution Application'
+        }
+    }

@@ -22,6 +22,9 @@
                  <div class="pt-2">{{report_date_time}}</div>
                  <div class="pt-2 capitalize-text">
                    <span class="">{{business.state}}</span>
+                   {% if business.state == 'HISTORICAL' %}
+                     <span> - {{stateFilings[0].filing_name}} - {{stateFilings[0].filing_date_time}}</span>
+                   {% endif %}
                  </div>
               </td>
          {% elif header.reportType == 'noticeOfArticles' %}

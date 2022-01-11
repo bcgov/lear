@@ -540,6 +540,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_filings_by_types(business_id: int, filing_types):
+        """Return the filings of a particular type."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type.in_(filing_types)). \
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            order_by(desc(Filing.filing_date)). \
+            all()
+        print(filings)
+        return filings
+
+    @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
