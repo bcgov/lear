@@ -91,7 +91,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
-        business_json['parties'] = get_directors(self._business.identifier).json['directors']
+        self._set_directors(business_json)
         self._set_addresses(business_json)
         self._set_dates(business_json)
         self._set_description(business_json)
@@ -122,6 +122,13 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                     address_json[office_type][key] = BusinessDocument._format_address(value)
         business['offices'] = address_json
 
+    def _set_directors(self, business: dict):
+        directors_json = get_directors(self._business.identifier).json['directors']
+        for director in directors_json:
+            director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
+            director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
+        business['parties'] = directors_json
+
     def _set_name_translations(self, business: dict):
         aliases = Alias.find_by_type(self._business.id, 'TRANSLATION')
         business['listOfTranslations'] = [alias.json for alias in aliases]
@@ -131,6 +138,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         country = address['addressCountry']
         country = pycountry.countries.search_fuzzy(country)[0].name
         address['addressCountry'] = country
+        address['addressCountryDescription'] = country
         return address
 
     def _set_meta_info(self, business: dict):
