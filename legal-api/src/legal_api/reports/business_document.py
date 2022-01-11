@@ -15,11 +15,13 @@ import os
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Business, CorpType
+from legal_api.models import Alias, Business, CorpType
 from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -69,11 +71,14 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
-            'common/style',
+            'common/addresses',
             'common/businessDetails',
+            'common/nameTranslation',
+            'common/style',
             'footer',
             'logo',
-            'macros'
+            'macros',
+            'notice-of-articles/directors'
         ]
         # substitute template parts - marked up by [[filename]]
         for template_part in template_parts:
@@ -81,14 +86,17 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
         return template_code
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self):
         business_json = {}
         business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        self._set_directors(business_json)
+        self._set_addresses(business_json)
         self._set_dates(business_json)
         self._set_description(business_json)
         self._set_meta_info(business_json)
+        self._set_name_translations(business_json)
         return business_json
 
     def _set_description(self, business: dict):
@@ -105,6 +113,33 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
         business['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
+
+    def _set_addresses(self, business: dict):
+        address_json = get_addresses(self._business.identifier).json
+        for office_type in ['registeredOffice', 'recordsOffice']:
+            if office_type in address_json:
+                for key, value in address_json[office_type].items():
+                    address_json[office_type][key] = BusinessDocument._format_address(value)
+        business['offices'] = address_json
+
+    def _set_directors(self, business: dict):
+        directors_json = get_directors(self._business.identifier).json['directors']
+        for director in directors_json:
+            director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
+            director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
+        business['parties'] = directors_json
+
+    def _set_name_translations(self, business: dict):
+        aliases = Alias.find_by_type(self._business.id, 'TRANSLATION')
+        business['listOfTranslations'] = [alias.json for alias in aliases]
+
+    @staticmethod
+    def _format_address(address):
+        country = address['addressCountry']
+        country = pycountry.countries.search_fuzzy(country)[0].name
+        address['addressCountry'] = country
+        address['addressCountryDescription'] = country
+        return address
 
     def _set_meta_info(self, business: dict):
         business['environment'] = f'{self._get_environment()} BUSINESS #{self._business.identifier}'.lstrip()

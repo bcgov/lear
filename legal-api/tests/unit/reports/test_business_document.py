@@ -16,8 +16,10 @@
 import pytest
 
 from legal_api.reports.business_document import BusinessDocument  # noqa:I001
+from legal_api.services.authz import STAFF_ROLE
+from tests.unit.services.utils import create_header
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_business_mailing_address
 
 
 @pytest.mark.parametrize(
@@ -31,21 +33,26 @@ from tests.unit.models import factory_business
         ('BC1234567', 'LLC', 'summary'),
     ]
 )
-def test_get_pdf(session, identifier, entity_type, document_name):
+def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
     """Assert business document can be returned as a PDF."""
-    business = factory_business(identifier='CP7654321', entity_type='CP')
-    report = BusinessDocument(business, document_name)
-    filename = report._get_report_filename()
-    assert filename
-    template = report._get_template()
-    assert template
-    template_data = report._get_template_data()
-    assert template_data
-    assert template_data['business'] == business.json()
-    assert template_data['formatted_founding_date_time']
-    assert template_data['formatted_founding_date']
-    assert template_data['registrarInfo']
-    assert template_data['entityDescription']
-    assert template_data['entityAct']
+    request_ctx = app.test_request_context(
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+    with request_ctx:
+        business = factory_business(identifier='CP7654321', entity_type='CP')
+        factory_business_mailing_address(business)
+        report = BusinessDocument(business, document_name)
+        filename = report._get_report_filename()
+        assert filename
+        template = report._get_template()
+        assert template
+        template_data = report._get_template_data()
+        assert template_data
+        assert template_data['business'] == business.json()
+        assert template_data['formatted_founding_date_time']
+        assert template_data['formatted_founding_date']
+        assert template_data['registrarInfo']
+        assert template_data['entityDescription']
+        assert template_data['entityAct']
 
 

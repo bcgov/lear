@@ -14,9 +14,6 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_babel import _
 
-from legal_api.models import Business
-
-from .business_document import BusinessDocument
 from .report import Report
 
 
@@ -27,8 +24,3 @@ def get_pdf(filing, report_type=None):
     except FileNotFoundError:
         # We don't have a template for it, so it must only be available on paper.
         return jsonify({'message': _('Available on paper only.')}), HTTPStatus.NOT_FOUND
-
-
-def get_business_document(business: Business, document_key: str):
-    """Render a PDF for the business summary."""
-    return BusinessDocument(business, document_key).get_pdf()

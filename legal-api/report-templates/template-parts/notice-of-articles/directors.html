@@ -24,7 +24,9 @@
           &nbsp;{{ party.mailingAddress.postalCode }}
         </div>
         <div>{{ party.mailingAddress.addressCountryDescription }}</div>
-        <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+        {% if party.mailingAddress.deliveryInstructions %}
+          <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+        {% endif %}
       </td>
       <td class="col-33">
         <div class="section-sub-title">Delivery Address</div>
@@ -36,7 +38,9 @@
           &nbsp;{{ party.deliveryAddress.postalCode }}
         </div>
         <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
-        <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+        {% if party.deliveryAddress.deliveryInstructions %}
+          <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+        {% endif %}
       </td>
     </tr>
   {% endfor %}
