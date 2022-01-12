@@ -546,9 +546,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.filing_date)). \
+            order_by(desc(Filing.effective_date)). \
             all()
-        print(filings)
         return filings
 
     @staticmethod

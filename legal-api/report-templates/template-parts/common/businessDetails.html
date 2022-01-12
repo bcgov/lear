@@ -20,8 +20,8 @@
                  </div>
                  <div class="pt-2">{{formatted_founding_date_time}}</div>
                  <div class="pt-2">{{report_date_time}}</div>
-                 <div class="pt-2 capitalize-text">
-                   <span class="">{{business.state}}</span>
+                 <div class="pt-2">
+                   <span class="capitalize-text">{{business.state}}</span>
                    {% if business.state == 'HISTORICAL' %}
                      <span> - {{stateFilings[0].filing_name}} - {{stateFilings[0].filing_date_time}}</span>
                    {% endif %}

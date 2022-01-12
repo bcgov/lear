@@ -71,6 +71,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/nameChanges',
             'business-summary/stateTransition',
             'business-summary/recordKeeper',
             'common/addresses',
@@ -101,6 +102,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_name_translations(business_json)
         self._set_business_state_changes(business_json)
         self._set_record_keepers(business_json)
+        self._set_business_name_changes(business_json)
         return business_json
 
     def _set_description(self, business: dict):
@@ -145,12 +147,37 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['stateFilings'] = state_filings
 
     def _set_record_keepers(self, business: dict):
-        custodian_json = [party_role.json for party_role in self._business.party_roles.all()
-                          if party_role.role == 'custodian']
-        for custodian in custodian_json:
-            custodian['mailingAddress'] = BusinessDocument._format_address(custodian['mailingAddress'])
-            custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
-        business['custodians'] = custodian_json
+        if self._business.state.name == 'HISTORICAL':
+            custodian_json = [party_role.json for party_role in self._business.party_roles.all()
+                              if party_role.role.lower() == 'custodian']
+            for custodian in custodian_json:
+                custodian['mailingAddress'] = BusinessDocument._format_address(custodian['mailingAddress'])
+                custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
+            business['custodians'] = custodian_json
+
+    def _set_business_name_changes(self, business: dict):
+        name_changes = []
+        # Any filings like restoration, liquidation etc. that changes the state must be included here
+        for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
+            filing_meta = filing.meta_data
+            filing_changes = filing_meta.get(filing.filing_type, {})
+            filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
+            formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
+            if filing.filing_type == 'alteration':
+                if filing_changes.get('fromLegalType') == filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
+                    name_change_info = {}
+                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['filingDateTime'] = formatted_filing_date_time
+                    name_changes.append(name_change_info)
+            else:
+                if filing_changes.get('fromLegalName'):
+                    name_change_info = {}
+                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['filingDateTime'] = formatted_filing_date_time
+                    name_changes.append(name_change_info)
+        business['nameChanges'] = name_changes
 
     @staticmethod
     def _format_state_filing(filing: Filing) -> dict:
