@@ -131,7 +131,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_directors(self, business: dict):
         directors_json = get_directors(self._business.identifier).json['directors']
         for director in directors_json:
-            director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
+            if director.get('mailingAddress'):
+                director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
             director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
         business['parties'] = directors_json
 
@@ -142,7 +143,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_business_state_changes(self, business: dict):
         state_filings = []
         # Any filings like restoration, liquidation etc. that changes the state must be included here
-        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution']):
+        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication']):
             state_filings.append(BusinessDocument._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -188,6 +189,9 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         if filing.filing_type == 'dissolution':
             filing_info['filing_name'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, filing_meta['dissolution']['dissolutionType'])
+        else:
+            filing_info['filing_name'] = BusinessDocument. \
+                _get_summary_display_name(filing.filing_type, None)
         return filing_info
 
     @staticmethod
@@ -222,5 +226,6 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
             'voluntary': 'Voluntary Dissolution Application'
-        }
+        },
+        'restorationApplication': 'Restoration Application'
     }
