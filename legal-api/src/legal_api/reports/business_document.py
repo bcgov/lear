@@ -183,7 +183,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
             formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
             if filing.filing_type == 'alteration':
-                if filing_changes.get('fromLegalType') == filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
+                if filing_changes.get('fromLegalType') == \
+                        filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
                     name_change_info = {}
                     name_change_info['fromLegalName'] = filing_changes['fromLegalName']
                     name_change_info['toLegalName'] = filing_changes['toLegalName']
