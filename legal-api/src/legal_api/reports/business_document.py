@@ -71,6 +71,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/businessDetails',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
             'business-summary/recordKeeper',
@@ -94,6 +95,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        self._set_business_details(business_json)
         self._set_directors(business_json)
         self._set_addresses(business_json)
         self._set_dates(business_json)
@@ -104,6 +106,22 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_record_keepers(business_json)
         self._set_business_name_changes(business_json)
         return business_json
+
+    def _set_business_details(self, business: dict):
+        business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
+            if self._business.association_type else 'Not Available'
+        if self._business.last_ar_date:
+            last_ar_date = LegislationDatetime.as_legislation_timezone(self._business.last_ar_date).\
+                strftime('%B %-d, %Y')
+        else:
+            last_ar_date = 'Not Available'
+        business['business']['last_ar_date'] = last_ar_date
+        if self._business.last_agm_date:
+            last_agm_date = LegislationDatetime.as_legislation_timezone(self._business.last_agm_date).\
+                strftime('%B %-d, %Y')
+        else:
+            last_agm_date = 'Not Available'
+        business['business']['last_agm_date'] = last_agm_date
 
     def _set_description(self, business: dict):
         legal_type = self._business.legal_type
@@ -228,4 +246,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'voluntary': 'Voluntary Dissolution Application'
         },
         'restorationApplication': 'Restoration Application'
+    }
+
+    CP_TYPE_DESCRIPTION = {
+        'CP': 'Cooperative',
+        'CSC': 'Community Service Cooperative',
+        'HC': 'Housing Cooperative'
     }

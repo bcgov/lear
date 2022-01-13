@@ -161,14 +161,16 @@
          {% endif %}
 
          <td class="registar-certify-section">
-            <div class="certified-copy-text">CERTIFIED COPY</div>
-            <div class="doc-description">of a document filed with the</div>
-            <div class="doc-description">Province of British Columbia</div>
-            <div class="registrar-title">Registrar of Companies</div>
-            <div class="registrar-signature">
-               <img alt="signature" src={{registrarInfo.signature}}>
-            </div>
-            <div class="registrar-name">{{ registrarInfo.name }}</div>
+            {% if reportType != 'summary' %}
+               <div class="certified-copy-text">CERTIFIED COPY</div>
+               <div class="doc-description">of a document filed with the</div>
+               <div class="doc-description">Province of British Columbia</div>
+               <div class="registrar-title">Registrar of Companies</div>
+               <div class="registrar-signature">
+                  <img alt="signature" src={{registrarInfo.signature}}>
+               </div>
+               <div class="registrar-name">{{ registrarInfo.name }}</div>
+            {% endif %}
          </td>
       </tr>
    </table>
