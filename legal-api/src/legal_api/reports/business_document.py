@@ -176,7 +176,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     def _set_business_name_changes(self, business: dict):
         name_changes = []
-        # Any filings like restoration, liquidation etc. that changes the state must be included here
+        # Any future filings that includes a company name change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
             filing_meta = filing.meta_data
             filing_changes = filing_meta.get(filing.filing_type, {})
