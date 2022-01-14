@@ -14,20 +14,24 @@
           {% endif %}
         </div>
       </td>
-      <td class="col-33">
-        <div class="section-sub-title">Mailing Address</div>
-        <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
-        <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
-        <div>
-          {{ party.mailingAddress.addressCity }}
-          {{ party.mailingAddress.addressRegion }}
-          &nbsp;{{ party.mailingAddress.postalCode }}
-        </div>
-        <div>{{ party.mailingAddress.addressCountryDescription }}</div>
-        {% if party.mailingAddress.deliveryInstructions %}
-          <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
-        {% endif %}
-      </td>
+        <td class="col-33">
+          <div class="section-sub-title">Mailing Address</div>
+          {% if party.mailingAddress %}
+          <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+          <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+          <div>
+            {{ party.mailingAddress.addressCity }}
+            {{ party.mailingAddress.addressRegion }}
+            &nbsp;{{ party.mailingAddress.postalCode }}
+          </div>
+          <div>{{ party.mailingAddress.addressCountryDescription }}</div>
+          {% if party.mailingAddress.deliveryInstructions %}
+            <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+          {% endif %}
+           {% else %}
+             Not Available
+           {% endif %}
+        </td>
       <td class="col-33">
         <div class="section-sub-title">Delivery Address</div>
         <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>

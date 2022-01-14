@@ -48,7 +48,7 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         assert template
         template_data = report._get_template_data()
         assert template_data
-        assert template_data['business'] == business.json()
+        assert template_data['business']
         assert template_data['formatted_founding_date_time']
         assert template_data['formatted_founding_date']
         assert template_data['registrarInfo']

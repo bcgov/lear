@@ -19,7 +19,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, Business, CorpType
+from legal_api.models import Alias, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.utils.auth import jwt
@@ -71,6 +71,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/businessDetails',
+            'business-summary/nameChanges',
+            'business-summary/stateTransition',
+            'business-summary/recordKeeper',
             'common/addresses',
             'common/businessDetails',
             'common/nameTranslation',
@@ -91,13 +95,33 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business_json['reportType'] = self._document_key
         business_json['business'] = self._business.json()
         business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        self._set_business_details(business_json)
         self._set_directors(business_json)
         self._set_addresses(business_json)
         self._set_dates(business_json)
         self._set_description(business_json)
         self._set_meta_info(business_json)
         self._set_name_translations(business_json)
+        self._set_business_state_changes(business_json)
+        self._set_record_keepers(business_json)
+        self._set_business_name_changes(business_json)
         return business_json
+
+    def _set_business_details(self, business: dict):
+        business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
+            if self._business.association_type else 'Not Available'
+        if self._business.last_ar_date:
+            last_ar_date = LegislationDatetime.as_legislation_timezone(self._business.last_ar_date).\
+                strftime('%B %-d, %Y')
+        else:
+            last_ar_date = 'Not Available'
+        business['business']['last_ar_date'] = last_ar_date
+        if self._business.last_agm_date:
+            last_agm_date = LegislationDatetime.as_legislation_timezone(self._business.last_agm_date).\
+                strftime('%B %-d, %Y')
+        else:
+            last_agm_date = 'Not Available'
+        business['business']['last_agm_date'] = last_agm_date
 
     def _set_description(self, business: dict):
         legal_type = self._business.legal_type
@@ -125,13 +149,69 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_directors(self, business: dict):
         directors_json = get_directors(self._business.identifier).json['directors']
         for director in directors_json:
-            director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
+            if director.get('mailingAddress'):
+                director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
             director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
         business['parties'] = directors_json
 
     def _set_name_translations(self, business: dict):
         aliases = Alias.find_by_type(self._business.id, 'TRANSLATION')
         business['listOfTranslations'] = [alias.json for alias in aliases]
+
+    def _set_business_state_changes(self, business: dict):
+        state_filings = []
+        # Any filings like restoration, liquidation etc. that changes the state must be included here
+        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication']):
+            state_filings.append(BusinessDocument._format_state_filing(filing))
+        business['stateFilings'] = state_filings
+
+    def _set_record_keepers(self, business: dict):
+        if self._business.state.name == 'HISTORICAL':
+            custodian_json = [party_role.json for party_role in self._business.party_roles.all()
+                              if party_role.role.lower() == 'custodian']
+            for custodian in custodian_json:
+                custodian['mailingAddress'] = BusinessDocument._format_address(custodian['mailingAddress'])
+                custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
+            business['custodians'] = custodian_json
+
+    def _set_business_name_changes(self, business: dict):
+        name_changes = []
+        # Any future filings that includes a company name change must be added here
+        for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
+            filing_meta = filing.meta_data
+            filing_changes = filing_meta.get(filing.filing_type, {})
+            filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
+            formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
+            if filing.filing_type == 'alteration':
+                if filing_changes.get('fromLegalType') == \
+                        filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
+                    name_change_info = {}
+                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['filingDateTime'] = formatted_filing_date_time
+                    name_changes.append(name_change_info)
+            else:
+                if filing_changes.get('fromLegalName'):
+                    name_change_info = {}
+                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['filingDateTime'] = formatted_filing_date_time
+                    name_changes.append(name_change_info)
+        business['nameChanges'] = name_changes
+
+    @staticmethod
+    def _format_state_filing(filing: Filing) -> dict:
+        filing_info = {}
+        filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
+        filing_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+        filing_meta = filing.meta_data
+        if filing.filing_type == 'dissolution':
+            filing_info['filing_name'] = BusinessDocument.\
+                _get_summary_display_name(filing.filing_type, filing_meta['dissolution']['dissolutionType'])
+        else:
+            filing_info['filing_name'] = BusinessDocument. \
+                _get_summary_display_name(filing.filing_type, None)
+        return filing_info
 
     @staticmethod
     def _format_address(address):
@@ -154,3 +234,23 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         if namespace.endswith('test'):
             return 'TEST'
         return ''
+
+    @staticmethod
+    def _get_summary_display_name(filing_type: str, filing_sub_type: str) -> str:
+        if filing_sub_type:
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
+        else:
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
+
+    FILING_SUMMARY_DISPLAY_NAME = {
+        'dissolution': {
+            'voluntary': 'Voluntary Dissolution Application'
+        },
+        'restorationApplication': 'Restoration Application'
+    }
+
+    CP_TYPE_DESCRIPTION = {
+        'CP': 'Cooperative',
+        'CSC': 'Community Service Cooperative',
+        'HC': 'Housing Cooperative'
+    }

@@ -1,0 +1,27 @@
+<div class="mt-2">
+    {% if business.legalType == 'CP' %}
+        <div class="mt-2">
+            <span class="section-sub-title">Cooperative Type: </span>
+            <span class="section-data">{{business.coopType}}</span>
+        </div>
+    {% endif %}
+
+    <div class="mt-2">
+        <span class="section-sub-title">Last Annual Report: </span>
+        <span class="section-data">{{business.last_ar_date}}</span>
+    </div>
+    {% if business.legalType == 'CP' %}
+        <div>
+            <span class="section-sub-title">Last Annual General Meeting: </span>
+            <span class="section-data">{{business.last_agm_date}}</span>
+        </div>
+    {% endif %}
+    <div class = "mt-2">
+        <span class="section-sub-title">In Liquidation: </span>
+        {% if business.state == 'LIQUIDATION' %}
+            <span class="section-data">Yes</span>
+        {% else %}
+            <span class="section-data">No</span>
+        {% endif %}
+    </div>
+</div>
