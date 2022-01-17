@@ -1,0 +1,31 @@
+{% if alterations|length > 0 %}
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Transformation From/div>
+</div>
+<table class="section-data section-translation-table mt-4" role="presentation">
+  {% for alteration in alterations %}
+      <tr class="no-page-break">
+        <td class="col-50">
+            <div class="section-sub-title">From</div>
+            <div>{{ alteration.fromLegalType }}</div>
+            {% if alteration.fromLegalName %}
+                <div class="upper-text">{{ alteration.fromLegalName }}</div>
+            {% endif %}
+        </td>
+        <td class="col-50">
+           <div class="section-sub-title">To</div>
+           <div>{{ alteration.toLegalType }}</div>
+           {% if alteration.toLegalName %}
+                <div class="upper-text">{{ alteration.toLegalName }}</div>
+           {% endif %}
+        </td>
+      </tr>
+      <tr>
+          <td class="section-data" colspan="2">
+              Date of Company Change: {{alteration.filingDateTime }}
+          </td>
+      </tr>
+  {% endfor %}
+</table>
+{% endif %}

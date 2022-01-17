@@ -71,6 +71,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/alterations',
             'business-summary/businessDetails',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
@@ -180,22 +181,31 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                 custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
             business['custodians'] = custodian_json
 
-    def _set_business_name_changes(self, business: dict):
+    def _set_business_changes(self, business: dict):
         name_changes = []
-        # Any future filings that includes a company name change must be added here
+        alterations = []
+        # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
             filing_meta = filing.meta_data
             filing_changes = filing_meta.get(filing.filing_type, {})
             filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
             formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
             if filing.filing_type == 'alteration':
-                if filing_changes.get('fromLegalType') == \
-                        filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
-                    name_change_info = {}
-                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
-                    name_change_info['toLegalName'] = filing_changes['toLegalName']
-                    name_change_info['filingDateTime'] = formatted_filing_date_time
-                    name_changes.append(name_change_info)
+                change_info = {}
+                name_change_info['filingDateTime'] = formatted_filing_date_time
+                if filing_changes.get('fromLegalType') != filing_changes.get('toLegalType'):
+                    change_info['fromLegalType'] = BusinessDocument.\
+                        _get_legal_type_description(filing_changes['fromLegalType'])
+                    change_info['toLegalType'] = BusinessDocument.\
+                        _get_legal_type_description(filing_changes['toLegalType'])
+                if filing_changes.get('fromLegalName'):
+                    change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    change_info['toLegalName'] = filing_changes['toLegalName']
+
+                if change_info.get('fromLegalType'):
+                    alterations.append(change_info)
+                elif change_info.get('fromLegalName'):
+                    name_changes.append(change_info)
             else:
                 if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
                     name_change_info = {}
@@ -204,6 +214,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                     name_change_info['filingDateTime'] = formatted_filing_date_time
                     name_changes.append(name_change_info)
         business['nameChanges'] = name_changes
+        business['alterations'] = alterations
 
     @staticmethod
     def _format_state_filing(filing: Filing) -> dict:
@@ -248,6 +259,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
+    @staticmethod
+    def _get_legal_type_description(legal_type: str) -> str:
+        return BusinessDocument.LEGAL_TYPE_DESCRIPTION[legal_type]
+
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
             'voluntary': 'Voluntary Dissolution Application'
@@ -260,3 +275,13 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'CSC': 'Community Service Cooperative',
         'HC': 'Housing Cooperative'
     }
+
+    LEGAL_TYPE_DESCRIPTION = {
+        'ULC': 'BC Unlimited Liability Company',
+        'BEN': 'BC Benefit Company',
+        'CP': 'BC Cooperative Association',
+        'BC': 'BC Limited Company',
+        'CC': 'BC Community Contribution Company',
+        'LLC': 'Limited Liability Company'
+    }
+
