@@ -1,3 +1,9 @@
+{% if business.epochFilingDate %}
+  <div class="mt-2 section-data">
+      The filing information before {{ business.epochFilingDate }} may be available on paper only.
+  </div>
+  <div class="separator mt-4"></div>
+{% endif %}
 <div class="mt-2">
     {% if business.legalType == 'CP' %}
         <div class="mt-2">

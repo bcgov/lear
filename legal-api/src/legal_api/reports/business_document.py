@@ -122,6 +122,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         else:
             last_agm_date = 'Not Available'
         business['business']['last_agm_date'] = last_agm_date
+        epoch_filing = Filing.get_filings_by_status(self._business.id, [Filing.Status.EPOCH])
+        if epoch_filing:
+            epoch_filing_date = epoch_filing[0].effective_date
+            epoch_filing_date = LegislationDatetime.as_legislation_timezone(epoch_filing_date). \
+                strftime('%B %-d, %Y')
+            business['business']['epochFilingDate'] = epoch_filing_date
 
     def _set_description(self, business: dict):
         legal_type = self._business.legal_type
@@ -191,10 +197,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                     name_change_info['filingDateTime'] = formatted_filing_date_time
                     name_changes.append(name_change_info)
             else:
-                if filing_changes.get('fromLegalName'):
+                if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
                     name_change_info = {}
-                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
-                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['fromLegalName'] = filing_changes.get('fromLegalName', 'Not Available')
+                    name_change_info['toLegalName'] = filing_changes.get('toLegalName', 'Not Available')
                     name_change_info['filingDateTime'] = formatted_filing_date_time
                     name_changes.append(name_change_info)
         business['nameChanges'] = name_changes
