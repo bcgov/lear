@@ -169,7 +169,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_business_state_changes(self, business: dict):
         state_filings = []
         # Any filings like restoration, liquidation etc. that changes the state must be included here
-        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication']):
+        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication',
+                                                                      'dissolved']):
             state_filings.append(BusinessDocument._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -272,7 +273,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'dissolution': {
             'voluntary': 'Voluntary Dissolution Application'
         },
-        'restorationApplication': 'Restoration Application'
+        'restorationApplication': 'Restoration Application',
+        'dissolved': 'Dissolution Application'
     }
 
     CP_TYPE_DESCRIPTION = {
