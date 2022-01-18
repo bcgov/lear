@@ -92,24 +92,21 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         return template_code
 
     def _get_template_data(self):
-        try:
-            business_json = {}
-            business_json['reportType'] = self._document_key
-            business_json['business'] = self._business.json()
-            business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
-            self._set_business_details(business_json)
-            self._set_directors(business_json)
-            self._set_addresses(business_json)
-            self._set_dates(business_json)
-            self._set_description(business_json)
-            self._set_meta_info(business_json)
-            self._set_name_translations(business_json)
-            self._set_business_state_changes(business_json)
-            self._set_record_keepers(business_json)
-            self._set_business_changes(business_json)
-            return business_json
-        except Exception as e:
-            print(e)
+        business_json = {}
+        business_json['reportType'] = self._document_key
+        business_json['business'] = self._business.json()
+        business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+        self._set_business_details(business_json)
+        self._set_directors(business_json)
+        self._set_addresses(business_json)
+        self._set_dates(business_json)
+        self._set_description(business_json)
+        self._set_meta_info(business_json)
+        self._set_name_translations(business_json)
+        self._set_business_state_changes(business_json)
+        self._set_record_keepers(business_json)
+        self._set_business_changes(business_json)
+        return business_json
 
     def _set_business_details(self, business: dict):
         business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
@@ -292,4 +289,3 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'CC': 'BC Community Contribution Company',
         'LLC': 'Limited Liability Company'
     }
-
