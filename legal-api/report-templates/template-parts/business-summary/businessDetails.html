@@ -1,8 +1,32 @@
 {% if business.epochFilingDate %}
   <div class="mt-2 section-data">
-      The filing information before {{ business.epochFilingDate }} may be available on paper only.
+      <div>
+          To request copies of paper documents pertaining to filings this summary marks as Not Available,
+          contact BC Registries staff:
+
+           <ul class="section-data registry-contact-details">
+               <li class="registry-contact-details-item pt-2">
+                   <span>Canada and U.S. Toll Free:</span>
+                   <span>
+                       <a href="tel:+18775261526">1-877-526-1526</a>
+                   </span>
+               </li>
+               <li class="registry-contact-details-item pt-2">
+                   <span>Victoria Office:</span>
+                   <span>
+                       <a href="tel:+12509520568">250-952-0568</a>
+                   </span>
+               </li>
+               <li class="registry-contact-details-item pt-2">
+                   <span>Email:</span>
+                   <span>
+                       <a href="mailto:BCRegistries@gov.bc.ca">BCRegistries@gov.bc.ca</a>
+                   </span>
+               </li>
+            </ul>
+      </div>
+  <div class="separator mt-4 mb-6"></div>
   </div>
-  <div class="separator mt-4"></div>
 {% endif %}
 <div class="mt-2">
     {% if business.legalType == 'CP' %}
