@@ -92,21 +92,24 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         return template_code
 
     def _get_template_data(self):
-        business_json = {}
-        business_json['reportType'] = self._document_key
-        business_json['business'] = self._business.json()
-        business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
-        self._set_business_details(business_json)
-        self._set_directors(business_json)
-        self._set_addresses(business_json)
-        self._set_dates(business_json)
-        self._set_description(business_json)
-        self._set_meta_info(business_json)
-        self._set_name_translations(business_json)
-        self._set_business_state_changes(business_json)
-        self._set_record_keepers(business_json)
-        self._set_business_name_changes(business_json)
-        return business_json
+        try:
+            business_json = {}
+            business_json['reportType'] = self._document_key
+            business_json['business'] = self._business.json()
+            business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+            self._set_business_details(business_json)
+            self._set_directors(business_json)
+            self._set_addresses(business_json)
+            self._set_dates(business_json)
+            self._set_description(business_json)
+            self._set_meta_info(business_json)
+            self._set_name_translations(business_json)
+            self._set_business_state_changes(business_json)
+            self._set_record_keepers(business_json)
+            self._set_business_changes(business_json)
+            return business_json
+        except Exception as e:
+            print(e)
 
     def _set_business_details(self, business: dict):
         business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
@@ -158,7 +161,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         for director in directors_json:
             if director.get('mailingAddress'):
                 director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
-            director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
+            if director.get('deliveryAddress'):
+                director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
         business['parties'] = directors_json
 
     def _set_name_translations(self, business: dict):
@@ -187,17 +191,21 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
             filing_meta = filing.meta_data
+            filing_json = filing.filing_json
             filing_changes = filing_meta.get(filing.filing_type, {})
             filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
             formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
             if filing.filing_type == 'alteration':
                 change_info = {}
-                name_change_info['filingDateTime'] = formatted_filing_date_time
+                change_info['filingDateTime'] = formatted_filing_date_time
                 if filing_changes.get('fromLegalType') != filing_changes.get('toLegalType'):
                     change_info['fromLegalType'] = BusinessDocument.\
                         _get_legal_type_description(filing_changes['fromLegalType'])
                     change_info['toLegalType'] = BusinessDocument.\
                         _get_legal_type_description(filing_changes['toLegalType'])
+                    if not filing_changes.get('fromLegalName'):
+                        change_info['fromLegalName'] = filing_json['filing']['business']['legalName']
+                        change_info['toLegalName'] = filing_json['filing']['business']['legalName']
                 if filing_changes.get('fromLegalName'):
                     change_info['fromLegalName'] = filing_changes['fromLegalName']
                     change_info['toLegalName'] = filing_changes['toLegalName']

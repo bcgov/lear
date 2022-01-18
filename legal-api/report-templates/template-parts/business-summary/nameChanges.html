@@ -3,21 +3,21 @@
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">Company Name Information</div>
 </div>
-<table class="section-data section-translation-table mt-4" role="presentation">
+<table class="section-data business-change-table mt-4" role="presentation">
   {% for nameChange in nameChanges %}
       <tr class="no-page-break">
         <td class="col-50">
             <div class="section-sub-title">From</div>
-            <div class="{{'upper-text' if nameChange.fromLegalName!='Not Available'}}">{{ nameChange.fromLegalName }}</div>
+            <div class="{{'upper-text' if nameChange.fromLegalName!='Not Available'}} pt-2">{{ nameChange.fromLegalName }}</div>
         </td>
         <td class="col-50">
            <div class="section-sub-title">To</div>
-           <div class="{{'upper-text' if nameChange.fromLegalName!='Not Available'}}">{{ nameChange.toLegalName }}</div>
+           <div class="{{'upper-text' if nameChange.fromLegalName!='Not Available'}} pt-2">{{ nameChange.toLegalName }}</div>
         </td>
       </tr>
       <tr>
           <td class="section-data" colspan="2">
-              Date of Company Name Change: {{nameChange.filingDateTime }}
+              <div class="mt-1">Date of Company Name Change: {{nameChange.filingDateTime }}</div>
           </td>
       </tr>
   {% endfor %}

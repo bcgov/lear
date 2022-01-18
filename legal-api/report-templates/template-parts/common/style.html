@@ -435,4 +435,31 @@
 	a {
 	    color: #1A5A96;
 	}
+
+	.business-change-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+	}
+
+	.business-change-table td {
+		vertical-align: top;
+		overflow-wrap: break-word;
+  		word-wrap: break-word;
+	}
+
+	/* border between rows */
+	.business-change-table tr:not(:first-child):nth-child(odd){
+		border-top: solid 0.5px #BCBEC5;
+	}
+
+	/* vertical padding to upper border */
+	.business-change-table tr:not(:first-child):nth-child(odd) td {
+		padding-top: 1rem;
+	}
+
+	/* vertical padding to lower border */
+	.business-change-table tr:not(:last-child) td {
+		padding-bottom: 1rem;
+	}
 </style>
