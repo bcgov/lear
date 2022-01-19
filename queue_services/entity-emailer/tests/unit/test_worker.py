@@ -215,7 +215,7 @@ default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
         [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
     ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
         [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
-    ('expired', 'NR 1234567', 'Expired', None, None, None,
+    ('expired', 'NR 1234567', 'Expired', None, None, 'TEST Expired Company Name',
      [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
     ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
     ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
