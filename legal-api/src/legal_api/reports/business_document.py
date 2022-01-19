@@ -71,6 +71,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _substitute_template_parts(template_code):
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
+            'business-summary/alterations',
             'business-summary/businessDetails',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
@@ -104,7 +105,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_name_translations(business_json)
         self._set_business_state_changes(business_json)
         self._set_record_keepers(business_json)
-        self._set_business_name_changes(business_json)
+        self._set_business_changes(business_json)
         return business_json
 
     def _set_business_details(self, business: dict):
@@ -122,6 +123,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         else:
             last_agm_date = 'Not Available'
         business['business']['last_agm_date'] = last_agm_date
+        epoch_filing = Filing.get_filings_by_status(self._business.id, [Filing.Status.EPOCH])
+        if epoch_filing:
+            epoch_filing_date = epoch_filing[0].effective_date
+            epoch_filing_date = LegislationDatetime.as_legislation_timezone(epoch_filing_date). \
+                strftime('%B %-d, %Y')
+            business['business']['epochFilingDate'] = epoch_filing_date
 
     def _set_description(self, business: dict):
         legal_type = self._business.legal_type
@@ -151,7 +158,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         for director in directors_json:
             if director.get('mailingAddress'):
                 director['mailingAddress'] = BusinessDocument._format_address(director['mailingAddress'])
-            director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
+            if director.get('deliveryAddress'):
+                director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
         business['parties'] = directors_json
 
     def _set_name_translations(self, business: dict):
@@ -161,7 +169,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     def _set_business_state_changes(self, business: dict):
         state_filings = []
         # Any filings like restoration, liquidation etc. that changes the state must be included here
-        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication']):
+        for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication',
+                                                                      'dissolved']):
             state_filings.append(BusinessDocument._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -174,30 +183,44 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                 custodian['deliveryAddress'] = BusinessDocument._format_address(custodian['deliveryAddress'])
             business['custodians'] = custodian_json
 
-    def _set_business_name_changes(self, business: dict):
+    def _set_business_changes(self, business: dict):
         name_changes = []
-        # Any future filings that includes a company name change must be added here
+        alterations = []
+        # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
             filing_meta = filing.meta_data
+            filing_json = filing.filing_json
             filing_changes = filing_meta.get(filing.filing_type, {})
             filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
             formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
             if filing.filing_type == 'alteration':
-                if filing_changes.get('fromLegalType') == \
-                        filing_changes.get('toLegalType') and filing_changes.get('fromLegalName'):
-                    name_change_info = {}
-                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
-                    name_change_info['toLegalName'] = filing_changes['toLegalName']
-                    name_change_info['filingDateTime'] = formatted_filing_date_time
-                    name_changes.append(name_change_info)
-            else:
+                change_info = {}
+                change_info['filingDateTime'] = formatted_filing_date_time
+                if filing_changes.get('fromLegalType') != filing_changes.get('toLegalType'):
+                    change_info['fromLegalType'] = BusinessDocument.\
+                        _get_legal_type_description(filing_changes['fromLegalType'])
+                    change_info['toLegalType'] = BusinessDocument.\
+                        _get_legal_type_description(filing_changes['toLegalType'])
+                    if not filing_changes.get('fromLegalName'):
+                        change_info['fromLegalName'] = filing_json['filing']['business']['legalName']
+                        change_info['toLegalName'] = filing_json['filing']['business']['legalName']
                 if filing_changes.get('fromLegalName'):
+                    change_info['fromLegalName'] = filing_changes['fromLegalName']
+                    change_info['toLegalName'] = filing_changes['toLegalName']
+
+                if change_info.get('fromLegalType'):
+                    alterations.append(change_info)
+                elif change_info.get('fromLegalName'):
+                    name_changes.append(change_info)
+            else:
+                if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
                     name_change_info = {}
-                    name_change_info['fromLegalName'] = filing_changes['fromLegalName']
-                    name_change_info['toLegalName'] = filing_changes['toLegalName']
+                    name_change_info['fromLegalName'] = filing_changes.get('fromLegalName', 'Not Available')
+                    name_change_info['toLegalName'] = filing_changes.get('toLegalName', 'Not Available')
                     name_change_info['filingDateTime'] = formatted_filing_date_time
                     name_changes.append(name_change_info)
         business['nameChanges'] = name_changes
+        business['alterations'] = alterations
 
     @staticmethod
     def _format_state_filing(filing: Filing) -> dict:
@@ -242,15 +265,29 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
+    @staticmethod
+    def _get_legal_type_description(legal_type: str) -> str:
+        return BusinessDocument.LEGAL_TYPE_DESCRIPTION[legal_type]
+
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
             'voluntary': 'Voluntary Dissolution Application'
         },
-        'restorationApplication': 'Restoration Application'
+        'restorationApplication': 'Restoration Application',
+        'dissolved': 'Dissolution Application'
     }
 
     CP_TYPE_DESCRIPTION = {
         'CP': 'Cooperative',
         'CSC': 'Community Service Cooperative',
         'HC': 'Housing Cooperative'
+    }
+
+    LEGAL_TYPE_DESCRIPTION = {
+        'ULC': 'BC Unlimited Liability Company',
+        'BEN': 'BC Benefit Company',
+        'CP': 'BC Cooperative Association',
+        'BC': 'BC Limited Company',
+        'CC': 'BC Community Contribution Company',
+        'LLC': 'Limited Liability Company'
     }

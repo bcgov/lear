@@ -34,16 +34,20 @@
         </td>
       <td class="col-33">
         <div class="section-sub-title">Delivery Address</div>
-        <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
-        <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
-        <div>
-          {{ party.deliveryAddress.addressCity }}
-          {{ party.deliveryAddress.addressRegion }}
-          &nbsp;{{ party.deliveryAddress.postalCode }}
-        </div>
-        <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
-        {% if party.deliveryAddress.deliveryInstructions %}
-          <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+        {% if party.deliveryAddress %}
+          <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
+          <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+          <div>
+            {{ party.deliveryAddress.addressCity }}
+            {{ party.deliveryAddress.addressRegion }}
+            &nbsp;{{ party.deliveryAddress.postalCode }}
+          </div>
+          <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
+          {% if party.deliveryAddress.deliveryInstructions %}
+            <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+          {% endif %}
+        {% else %}
+          Not Available
         {% endif %}
       </td>
     </tr>
