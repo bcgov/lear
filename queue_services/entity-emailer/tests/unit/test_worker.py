@@ -273,6 +273,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                     assert nr_number in call_args[0][0]['content']['body']
                     assert expected_legal_name in call_args[0][0]['content']['body']
 
+
 def test_nr_receipt_notification(app, session):
     """Assert that the nr payment notification can be processed."""
     nr_number = 'NR 1234567'
