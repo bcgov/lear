@@ -269,6 +269,9 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                     exp_date = LegislationDatetime.format_as_report_string(datetime.fromisoformat(expiration_date))
                     assert exp_date in call_args[0][0]['content']['body']
 
+                if option == nr_notification.Option.EXPIRED.value:
+                    assert nr_number in call_args[0][0]['content']['body']
+                    assert expected_legal_name in call_args[0][0]['content']['body']
 
 def test_nr_receipt_notification(app, session):
     """Assert that the nr payment notification can be processed."""
