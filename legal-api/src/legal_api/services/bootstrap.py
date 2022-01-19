@@ -61,15 +61,17 @@ class RegistrationBootstrapService:
         return HTTPStatus.OK
 
     @staticmethod
-    def register_bootstrap(bootstrap: RegistrationBootstrap, business_name: str) \
-            -> Union[HTTPStatus, Dict]:
+    def register_bootstrap(bootstrap: RegistrationBootstrap,
+                           business_name: str,
+                           corp_type_code: str = 'TMP') -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
         rv = AccountService.create_affiliation(account=bootstrap.account,
                                                business_registration=bootstrap.identifier,
-                                               business_name=business_name)
+                                               business_name=business_name,
+                                               corp_type_code=corp_type_code)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
