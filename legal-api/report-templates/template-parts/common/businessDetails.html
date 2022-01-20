@@ -2,14 +2,14 @@
    <table class="business-details-table" role="presentation">
       <tr>
          {% if reportType == 'summary' %}
-             <td>
+             <td class="col-33">
                  <div class="bold">Incorporation Number:</div>
                  <div class="bold pt-2">Business Number:</div>
                  <div class="bold pt-2">Recognition Date and Time:</div>
                  <div class="bold pt-2">Summary Date and Time:</div>
                  <div class="bold pt-2">Company Status:</div>
               </td>
-              <td>
+              <td class="col-67">
                  <div>{{business.identifier}}</div>
                  <div class="pt-2">
                    {% if business.tax_id is defined %}
@@ -18,7 +18,11 @@
                       <span>Not Available</span>
                    {% endif %}
                  </div>
-                 <div class="pt-2">{{formatted_founding_date_time}}</div>
+                 <div class="pt-2">{{formatted_founding_date_time}}
+                    {% if business.amalgamatedEntity %}
+                        <span>(as a result of an Amalgamation)</span>
+                    {% endif %}
+                 </div>
                  <div class="pt-2">{{report_date_time}}</div>
                  <div class="pt-2">
                    <span class="capitalize-text">{{business.state}}</span>
@@ -159,9 +163,8 @@
                {% endif %}
             </td>
          {% endif %}
-
+         {% if reportType != 'summary' %}
          <td class="registar-certify-section">
-            {% if reportType != 'summary' %}
                <div class="certified-copy-text">CERTIFIED COPY</div>
                <div class="doc-description">of a document filed with the</div>
                <div class="doc-description">Province of British Columbia</div>
@@ -170,8 +173,8 @@
                   <img alt="signature" src={{registrarInfo.signature}}>
                </div>
                <div class="registrar-name">{{ registrarInfo.name }}</div>
-            {% endif %}
          </td>
+          {% endif %}
       </tr>
    </table>
 </div>
