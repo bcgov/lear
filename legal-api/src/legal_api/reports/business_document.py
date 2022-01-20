@@ -271,7 +271,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
-            'voluntary': 'Voluntary Dissolution Application'
+            'voluntary': 'Voluntary Dissolution'
         },
         'restorationApplication': 'Restoration Application',
         'dissolved': 'Dissolution Application'

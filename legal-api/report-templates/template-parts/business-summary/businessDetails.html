@@ -1,23 +1,29 @@
 {% if business.epochFilingDate %}
   <div class="mt-2 section-data">
       <div>
-          To request copies of paper documents pertaining to filings this summary marks as Not Available,
-          contact BC Registries staff:
-
+          {% if business.legalType == 'CP' %}
+            Due to system limitations resulting from the modernization of data across databases, name change information
+            is not available for cooperative association filings. To request copies of paper documents this summary marks
+            as Not Available, contact BC Registries staff.
+          {% elif business.legalType == 'BEN' %}
+            Due to system limitations resulting from the modernization of data across databases, information on filings
+            made in Corporate Online while the company was a limited or unlimited liability company are not available.
+            To request copies of paper documents this summary marks as Not Available, contact BC Registries staff.
+          {% endif %}
            <ul class="section-data registry-contact-details">
-               <li class="registry-contact-details-item pt-2">
+               <li class="registry-contact-details-item">
                    <span>Canada and U.S. Toll Free:</span>
                    <span>
                        <a href="tel:+18775261526">1-877-526-1526</a>
                    </span>
                </li>
-               <li class="registry-contact-details-item pt-2">
+               <li class="registry-contact-details-item pt-1">
                    <span>Victoria Office:</span>
                    <span>
                        <a href="tel:+12509520568">250-952-0568</a>
                    </span>
                </li>
-               <li class="registry-contact-details-item pt-2">
+               <li class="registry-contact-details-item pt-1">
                    <span>Email:</span>
                    <span>
                        <a href="mailto:BCRegistries@gov.bc.ca">BCRegistries@gov.bc.ca</a>
