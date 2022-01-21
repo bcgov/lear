@@ -35,6 +35,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._business = business
         self._document_key = document_key
         self._report_date_time = LegislationDatetime.now()
+        self._epoch_filing_date = None
 
     def get_pdf(self):
         """Render the business summary pdf."""
@@ -72,6 +73,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
             'business-summary/alterations',
+            'business-summary/amalgamations',
             'business-summary/businessDetails',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
@@ -106,6 +108,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_business_state_changes(business_json)
         self._set_record_keepers(business_json)
         self._set_business_changes(business_json)
+        self._set_amalgamation_details(business_json)
         return business_json
 
     def _set_business_details(self, business: dict):
@@ -126,6 +129,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         epoch_filing = Filing.get_filings_by_status(self._business.id, [Filing.Status.EPOCH])
         if epoch_filing:
             epoch_filing_date = epoch_filing[0].effective_date
+            self._epoch_filing_date = epoch_filing_date
             epoch_filing_date = LegislationDatetime.as_legislation_timezone(epoch_filing_date). \
                 strftime('%B %-d, %Y')
             business['business']['epochFilingDate'] = epoch_filing_date
@@ -232,9 +236,23 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             filing_info['filing_name'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, filing_meta['dissolution']['dissolutionType'])
         else:
-            filing_info['filing_name'] = BusinessDocument. \
+            filing_info['filing_name'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None)
         return filing_info
+
+    def _set_amalgamation_details(self, business: dict):
+        amalgamated_businesses = []
+        amalgamation_application = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
+        if amalgamation_application:
+            business['business']['amalgamatedEntity'] = True
+            # else condition will have to be added when we do amalgamation in the new system
+            if self._epoch_filing_date and amalgamation_application[0].effective_date < self._epoch_filing_date:
+                amalgamated_businesses_info = {
+                    'legalName': 'Not Available',
+                    'identifier': 'Not Available'
+                }
+                amalgamated_businesses.append(amalgamated_businesses_info)
+        business['amalgamatedEntities'] = amalgamated_businesses
 
     @staticmethod
     def _format_address(address):
@@ -274,7 +292,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'voluntary': 'Voluntary Dissolution'
         },
         'restorationApplication': 'Restoration Application',
-        'dissolved': 'Dissolution Application'
+        'dissolved': 'Involuntary Dissolution'
     }
 
     CP_TYPE_DESCRIPTION = {
