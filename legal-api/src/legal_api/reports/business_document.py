@@ -35,6 +35,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._business = business
         self._document_key = document_key
         self._report_date_time = LegislationDatetime.now()
+        self._epoch_filing_date = None
 
     def get_pdf(self):
         """Render the business summary pdf."""
