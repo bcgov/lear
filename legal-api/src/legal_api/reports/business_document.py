@@ -75,6 +75,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'business-summary/alterations',
             'business-summary/amalgamations',
             'business-summary/businessDetails',
+            'business-summary/liquidation',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
             'business-summary/recordKeeper',
@@ -109,9 +110,11 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         self._set_record_keepers(business_json)
         self._set_business_changes(business_json)
         self._set_amalgamation_details(business_json)
+        self._set_liquidation_details(business_json)
         return business_json
 
     def _set_business_details(self, business: dict):
+        business['business']['displayState'] = business['business']['state']
         business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
             if self._business.association_type else 'Not Available'
         if self._business.last_ar_date:
@@ -142,6 +145,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             Business.LegalTypes.COOP.value: 'Cooperative Association Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
         business['entityAct'] = act.get(legal_type, 'Business Corporations Act')
+        description = {
+            Business.LegalTypes.COOP.value: 'Cooperative Association'
+        }
+        business['entityShortDescription'] = description.get(legal_type, 'Corporation')
 
     def _set_dates(self, business: dict):
         founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
@@ -253,6 +260,22 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                 }
                 amalgamated_businesses.append(amalgamated_businesses_info)
         business['amalgamatedEntities'] = amalgamated_businesses
+
+    def _set_liquidation_details(self, business: dict):
+        liquidation_info = {}
+        liquidation = Filing.get_filings_by_types(self._business.id, ['voluntaryLiquidation'])
+        if liquidation:
+            filing_datetime = LegislationDatetime.as_legislation_timezone(liquidation[0].filing_date)
+            liquidation_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+            business['business']['state'] = Business.State.LIQUIDATION.name
+            business['business']['displayState'] = Business.State.HISTORICAL.name
+            if self._epoch_filing_date and liquidation[0].effective_date < self._epoch_filing_date:
+                liquidation_info['custodian'] = 'Not Available'
+                records_office_info = {}
+                records_office_info['deliveryAddress'] = 'Not Available'
+                records_office_info['mailingAddress'] = 'Not Available'
+                liquidation_info['recordsOffice'] = records_office_info
+        business['liquidation'] = liquidation_info
 
     @staticmethod
     def _format_address(address):

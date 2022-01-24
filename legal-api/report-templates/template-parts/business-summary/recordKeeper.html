@@ -1,7 +1,7 @@
 {% if custodians|length > 0 %}
 <div class="no-page-break">
   <div class="separator mt-4"></div>
-  <div class="section-title mt-4">Custodian of Dissolved Company's Records</div>
+  <div class="section-title mt-4">Custodian of Dissolved {{ entityShortDescription }}'s Records</div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
   {% for party in custodians  |  sort(attribute='officer.lastName') %}
