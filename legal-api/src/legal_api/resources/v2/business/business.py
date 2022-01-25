@@ -94,7 +94,7 @@ def post_businesses():
     except KeyError:
         business_name = bootstrap.identifier
 
-    corp_type_code = Filing.FILINGS[filing_type]['temperoryCorpTypeCode']
+    corp_type_code = Filing.FILINGS[filing_type]['temporaryCorpTypeCode']
     rv = RegistrationBootstrapService.register_bootstrap(bootstrap, business_name, corp_type_code)
     if not isinstance(rv, HTTPStatus):
         with suppress(Exception):
