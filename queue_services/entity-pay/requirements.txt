@@ -17,7 +17,7 @@ pyrsistent==0.16.0
 python-dotenv==0.13.0
 sentry-sdk==0.14.4
 six==1.15.0
-urllib3==1.25.9
+urllib3==1.26.5
 zipp==3.1.0
 git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
