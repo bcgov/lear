@@ -19,7 +19,7 @@ python-dateutil==2.8.1
 python-dotenv==0.17.1
 sentry-sdk==1.0.0
 six==1.15.0
-urllib3==1.26.4
+urllib3==1.26.5
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.1
