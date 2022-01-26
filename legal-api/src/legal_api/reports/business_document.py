@@ -319,7 +319,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
     }
 
     CP_TYPE_DESCRIPTION = {
-        'CP': 'Cooperative',
+        'CP': 'Ordinary Cooperative',
         'CSC': 'Community Service Cooperative',
         'HC': 'Housing Cooperative'
     }
