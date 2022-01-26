@@ -118,14 +118,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
             if self._business.association_type else 'Not Available'
         if self._business.last_ar_date:
-            last_ar_date = LegislationDatetime.as_legislation_timezone(self._business.last_ar_date).\
-                strftime('%B %-d, %Y')
+            last_ar_date = self._business.last_ar_date.strftime('%B %-d, %Y')
         else:
             last_ar_date = 'Not Available'
         business['business']['last_ar_date'] = last_ar_date
         if self._business.last_agm_date:
-            last_agm_date = LegislationDatetime.as_legislation_timezone(self._business.last_agm_date).\
-                strftime('%B %-d, %Y')
+            last_agm_date = self._business.last_agm_date.strftime('%B %-d, %Y')
         else:
             last_agm_date = 'Not Available'
         business['business']['last_agm_date'] = last_agm_date
