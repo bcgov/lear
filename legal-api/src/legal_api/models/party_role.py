@@ -34,6 +34,8 @@ class PartyRole(db.Model):
         COMPLETING_PARTY = 'completing_party'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'
+        PROPRIETOR = 'proprietor'
+        PARTNER = 'partner'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'

@@ -1,1 +1,1 @@
-git+https://github.com/bcgov/business-schemas.git@2.15.14#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.15.15#egg=registry_schemas
