@@ -268,7 +268,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             filing_datetime = LegislationDatetime.as_legislation_timezone(liquidation[0].filing_date)
             liquidation_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
             business['business']['state'] = Business.State.LIQUIDATION.name
-            business['business']['displayState'] = Business.State.HISTORICAL.name
+            business['business']['displayState'] = Business.State.ACTIVE.name
             if self._epoch_filing_date and liquidation[0].effective_date < self._epoch_filing_date:
                 liquidation_info['custodian'] = 'Not Available'
                 records_office_info = {}
