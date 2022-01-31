@@ -28,16 +28,13 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     legal_filing_name = 'annualReport'
     agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
     ar_date = filing[legal_filing_name].get('annualReportDate')
+
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
         logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
 
-    # save the annual report date to the filing meta info
-    filing_meta.application_date = ar_date
-    filing_meta.annual_report = {'annualReportDate': ar_date.isoformat(),
-                                 'annualGeneralMeetingDate': agm_date}
     business.last_ar_date = ar_date
     if agm_date and validations.annual_report.requires_agm(business):
         with suppress(ValueError):
@@ -46,3 +43,9 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
             business.last_ar_date = agm_date
 
     business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1
+
+    # save the annual report date to the filing meta info
+    filing_meta.application_date = ar_date
+    filing_meta.annual_report = {'annualReportDate': ar_date.isoformat(),
+                                 'annualGeneralMeetingDate': agm_date,
+                                 'annualReportFilingYear': business.last_ar_year}

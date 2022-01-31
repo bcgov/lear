@@ -19,7 +19,6 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
-from legal_api.utils.datetime import date
 
 
 class AutoName(str, Enum):
@@ -247,8 +246,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
         """Render a year as a string, given all filing mechanisms."""
         with suppress(IndexError, KeyError, TypeError):
-            report_date = filing_meta_data['annualReport']['annualReportDate']
-            return str(date.fromisoformat(report_date).year)
+            return str(filing_meta_data['annualReport']['annualReportFilingYear'])
         return None
 
     @staticmethod
