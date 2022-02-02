@@ -61,7 +61,8 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     expiration_date = ''
     if nr_data['expirationDate']:
         exp_date = datetime.fromisoformat(nr_data['expirationDate'])
-        expiration_date = LegislationDatetime.format_as_report_string(exp_date)
+        exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
+        expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
 
     refund_value = ''
     if option == Option.REFUND.value:
