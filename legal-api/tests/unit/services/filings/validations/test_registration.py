@@ -16,12 +16,12 @@ import copy
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
-from freezegun import freeze_time
 
 import pytest
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from legal_api.services.filings.validations.registration import validate
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 GP_REGISTRATION = copy.deepcopy(FILING_HEADER)
@@ -151,25 +151,25 @@ def test_invalid_business_address(session, test_name, filing):
     assert err.msg[1]['error'] == "Address Country must be 'CA'."
 
 
-now = datetime(2022, 1, 28)
-
-
 @pytest.mark.parametrize(
-    'test_name, start_date, is_valid',
+    'test_name, delta_date, is_valid',
     [
-        ('today', now.strftime('%Y-%m-%d'), True),
-        ('greater', (now + timedelta(days=180)).strftime('%Y-%m-%d'), True),
-        ('invalid_greater', (now + timedelta(days=181)).strftime('%Y-%m-%d'), False),
-        ('lesser', (now + relativedelta(years=-50)).strftime('%Y-%m-%d'), True),
-        ('invalid_lesser', (now + relativedelta(years=-51)).strftime('%Y-%m-%d'), False)
+        ('today', None, True),
+        ('greater', timedelta(days=90), True),
+        ('invalid_greater', timedelta(days=91), False),
+        ('lesser', relativedelta(years=-2), True),
+        ('invalid_lesser', relativedelta(years=-2, days=-1), False)
     ]
 )
-def test_validate_start_date(session, test_name, start_date, is_valid):
+def test_validate_start_date(session, test_name, delta_date, is_valid):
     """Assert that start date is validated."""
+    start_date = LegislationDatetime.now()
+    if delta_date:
+        start_date = start_date + delta_date
+
     filing = copy.deepcopy(SP_REGISTRATION)
-    filing['filing']['registration']['startDate'] = start_date
-    with freeze_time(now):
-        err = validate(filing)
+    filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
+    err = validate(filing)
 
     if is_valid:
         assert not err

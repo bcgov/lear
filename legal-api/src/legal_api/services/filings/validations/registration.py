@@ -84,16 +84,16 @@ def validate_party(filing: Dict, legal_type: str):
 
 def validate_start_date(filing: Dict):
     """Validate start date."""
-    # Less than or equal to 50 years in the past, Less than or equal to 180 days in the future
+    # Less than or equal to 2 years in the past, Less than or equal to 90 days in the future
     msg = []
     start_date_path = '/filing/registration/startDate'
     start_date = get_date(filing, start_date_path)
     now = LegislationDatetime.now().date()
-    greater = now + timedelta(days=180)
-    lesser = now + relativedelta(years=-50)
+    greater = now + timedelta(days=90)
+    lesser = now + relativedelta(years=-2)
     if start_date < lesser or start_date > greater:
-        msg.append({'error': 'Start Date must be less than or equal to 50 years in the past and \
-          less than or equal to 180 days in the future.', 'path': start_date_path})
+        msg.append({'error': 'Start Date must be less than or equal to 2 years in the past and \
+          less than or equal to 90 days in the future.', 'path': start_date_path})
 
     return msg
 
