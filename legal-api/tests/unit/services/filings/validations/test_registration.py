@@ -24,17 +24,19 @@ from legal_api.services.filings.validations.registration import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
+now = datetime.now().strftime('%Y-%m-%d')
+
 GP_REGISTRATION = copy.deepcopy(FILING_HEADER)
 GP_REGISTRATION['filing']['header']['name'] = 'registration'
 GP_REGISTRATION['filing']['business']['legalType'] = 'GP'
 GP_REGISTRATION['filing']['registration'] = copy.deepcopy(REGISTRATION)
-GP_REGISTRATION['filing']['registration']['startDate'] = datetime.now().strftime('%Y-%m-%d')
+GP_REGISTRATION['filing']['registration']['startDate'] = now
 
 SP_REGISTRATION = copy.deepcopy(FILING_HEADER)
 SP_REGISTRATION['filing']['header']['name'] = 'registration'
 SP_REGISTRATION['filing']['business']['legalType'] = 'SP'
 SP_REGISTRATION['filing']['registration'] = copy.deepcopy(REGISTRATION)
-SP_REGISTRATION['filing']['registration']['startDate'] = datetime.now().strftime('%Y-%m-%d')
+SP_REGISTRATION['filing']['registration']['startDate'] = now
 SP_REGISTRATION['filing']['registration']['nameRequest']['legalType'] = 'SP'
 SP_REGISTRATION['filing']['registration']['businessType'] = 'SP'
 SP_REGISTRATION['filing']['registration']['parties'][0]['roles'] = [
@@ -56,7 +58,7 @@ DBA_REGISTRATION = copy.deepcopy(FILING_HEADER)
 DBA_REGISTRATION['filing']['header']['name'] = 'registration'
 DBA_REGISTRATION['filing']['business']['legalType'] = 'SP'
 DBA_REGISTRATION['filing']['registration'] = copy.deepcopy(REGISTRATION)
-DBA_REGISTRATION['filing']['registration']['startDate'] = datetime.now().strftime('%Y-%m-%d')
+DBA_REGISTRATION['filing']['registration']['startDate'] = now
 DBA_REGISTRATION['filing']['registration']['nameRequest']['legalType'] = 'SP'
 DBA_REGISTRATION['filing']['registration']['businessType'] = 'DBA'
 DBA_REGISTRATION['filing']['registration']['parties'][0]['roles'] = [

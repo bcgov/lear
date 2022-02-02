@@ -13,13 +13,12 @@
 # limitations under the License.
 """Validation for the Registration filing."""
 from datetime import timedelta
-from dateutil.relativedelta import relativedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Dict, Final
+from typing import Dict, Final, Optional
 
 import pycountry
+from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
-
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -28,7 +27,7 @@ from ...utils import get_date, get_str
 from .common_validations import validate_court_order
 
 
-def validate(registration_json: Dict):
+def validate(registration_json: Dict) -> Optional[list]:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
@@ -46,7 +45,7 @@ def validate(registration_json: Dict):
     return None
 
 
-def validate_business_type(filing: Dict, legal_type: str):
+def validate_business_type(filing: Dict, legal_type: str) -> list:
     """Validate business_type."""
     msg = []
     business_type_path = '/filing/registration/businessType'
@@ -56,7 +55,7 @@ def validate_business_type(filing: Dict, legal_type: str):
     return msg
 
 
-def validate_party(filing: Dict, legal_type: str):
+def validate_party(filing: Dict, legal_type: str) -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
@@ -82,7 +81,7 @@ def validate_party(filing: Dict, legal_type: str):
     return msg
 
 
-def validate_start_date(filing: Dict):
+def validate_start_date(filing: Dict) -> list:
     """Validate start date."""
     # Less than or equal to 2 years in the past, Less than or equal to 90 days in the future
     msg = []
@@ -98,7 +97,7 @@ def validate_start_date(filing: Dict):
     return msg
 
 
-def validate_delivery_address(filing: Dict) -> Error:
+def validate_delivery_address(filing: Dict) -> list:
     """Validate the delivery address of the registration filing."""
     addresses = filing['filing']['registration']['businessAddress']
     msg = []
@@ -122,7 +121,7 @@ def validate_delivery_address(filing: Dict) -> Error:
     return msg
 
 
-def _validate_court_order(filing: Dict):
+def _validate_court_order(filing: Dict) -> list:
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('registration', {}).get('courtOrder', None):
         court_order_path: Final = '/filing/registration/courtOrder'
