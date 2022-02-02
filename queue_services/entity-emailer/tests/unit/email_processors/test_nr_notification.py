@@ -83,7 +83,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
             exp_date = datetime.fromisoformat(expiration_date)
             exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
             assert_expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
-            assert assert_expiration_date in call_args[0][0]['content']['body']
+            assert assert_expiration_date in email[0][0]['content']['body']
 
         if option == nr_notification.Option.EXPIRED.value:
             assert nr_number in email['content']['body']
