@@ -27,7 +27,7 @@ from ...utils import get_date, get_str
 from .common_validations import validate_court_order
 
 
-def validate(registration_json: Dict) -> Optional[list]:
+def validate(registration_json: Dict) -> Optional[Error]:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
