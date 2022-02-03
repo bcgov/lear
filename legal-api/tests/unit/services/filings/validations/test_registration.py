@@ -71,7 +71,7 @@ DBA_REGISTRATION['filing']['registration']['parties'][1] = {
     'officer': {
         'id': 2,
         'organizationName': 'Xyz Inc.',
-        'incorporationNumber': 'BC1234567',
+        'identifier': 'BC1234567',
         'taxId': '123456789',
         'email': 'peter@email.com',
         'partyType': 'organization'
