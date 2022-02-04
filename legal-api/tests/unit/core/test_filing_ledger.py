@@ -71,3 +71,25 @@ def test_simple_ledger_search(session):
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
+
+
+def test_common_ledger_items(session):
+    """Assert that common ledger items works as expected."""
+    identifier = 'BC1234567'
+    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None,
+                                entity_type=Business.LegalTypes.BCOMP.value)
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing']['header']['name'] = 'Involuntary Dissolution'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
+    assert common_ledger_items['documentsLink'] is None
+
+    filing['filing']['header']['name'] = 'dissolution'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
+    assert common_ledger_items['documentsLink'] is not None
+
+
