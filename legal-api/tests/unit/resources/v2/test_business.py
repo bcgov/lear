@@ -18,6 +18,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 from http import HTTPStatus
+import pytest
 
 import registry_schemas
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
@@ -64,13 +65,17 @@ def test_create_bootstrap_failure_filing(client, jwt):
 
 
 @integration_affiliation
-def test_create_bootstrap_minimal_draft_filing(client, jwt):
+@pytest.mark.parametrize('filing_name', [
+    'incorporationApplication',
+    'registration'
+])
+def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
     filing = {'filing':
               {
                   'header':
                   {
-                      'name': 'incorporationApplication',
+                      'name': filing_name,
                       'accountId': 28
                   }
               }
@@ -82,7 +87,7 @@ def test_create_bootstrap_minimal_draft_filing(client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json['filing']['business']['identifier']
     assert rv.json['filing']['header']['accountId'] == 28
-    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+    assert rv.json['filing']['header']['name'] == filing_name
 
 
 @integration_affiliation

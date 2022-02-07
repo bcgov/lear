@@ -133,7 +133,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'ULC': 'BCINC',
                 'CC': 'BCINC',
                 'CP': 'OTINC'
-            }
+            },
+            'temporaryCorpTypeCode': 'TMP'
+        },
+        'registration': {
+            'name': 'registration',
+            'title': 'Registration',
+            'codes': {
+                'SP': 'FRREG',
+                'GP': 'FRREG'
+            },
+            'temporaryCorpTypeCode': 'RTMP'
         },
         'conversion': {
             'name': 'conversion',
