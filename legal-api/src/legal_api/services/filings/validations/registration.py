@@ -21,6 +21,7 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
+from legal_api.services import namex
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
@@ -31,9 +32,17 @@ def validate(registration_json: Dict) -> Optional[Error]:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
-    legal_type = get_str(registration_json, '/filing/business/legalType')
-    msg = []
 
+    legal_type_path = '/filing/business/legalType'
+    legal_type = get_str(registration_json, legal_type_path)
+    if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        return Error(
+            HTTPStatus.BAD_REQUEST,
+            [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
+        )
+
+    msg = []
+    msg.extend(validate_name_request(registration_json, legal_type))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
@@ -45,8 +54,28 @@ def validate(registration_json: Dict) -> Optional[Error]:
     return None
 
 
+def validate_name_request(filing: Dict, legal_type: str) -> list:
+    """Validate name request."""
+    nr_path = '/filing/registration/nameRequest/nrNumber'
+    nr_number = get_str(filing, nr_path)
+    msg = []
+
+    # ensure NR is approved or conditionally approved
+    nr_response = namex.query_nr_number(nr_number)
+    validation_result = namex.validate_nr(nr_response.json())
+    if not validation_result['is_consumable']:
+        msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
+
+    path = '/filing/registration/nameRequest/legalType'
+    nr_legal_type = get_str(filing, path)
+    if nr_legal_type != legal_type:
+        msg.append({'error': babel('Name Request has invalid legalType.'), 'path': path})
+
+    return msg
+
+
 def validate_business_type(filing: Dict, legal_type: str) -> list:
-    """Validate business_type."""
+    """Validate business type."""
     msg = []
     business_type_path = '/filing/registration/businessType'
     if legal_type == Business.LegalTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:

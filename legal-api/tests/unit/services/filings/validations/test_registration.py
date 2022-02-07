@@ -14,6 +14,7 @@
 """Test suite to ensure Registration is validated correctly."""
 import copy
 from datetime import datetime, timedelta
+from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
@@ -21,6 +22,7 @@ import pytest
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from legal_api.services.filings.validations.registration import validate
+from legal_api.services.namex import NameXService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -92,30 +94,78 @@ DBA_REGISTRATION['filing']['registration']['parties'][1] = {
     ]
 }
 
+nr_response = {
+    'state': 'APPROVED',
+    'expirationDate': '',
+    'names': [{
+        'name': 'legal_name',
+        'state': 'APPROVED',
+        'consumptionDate': ''
+    }]
+}
+
+
+class MockResponse:
+    """Mock http response."""
+
+    def __init__(self, json_data):
+        """Initialize mock http response."""
+        self.json_data = json_data
+
+    def json(self):
+        """Return mock json data."""
+        return self.json_data
+
 
 def test_gp_registration(session):
     """Assert that the general partnership registration is valid."""
-    err = validate(GP_REGISTRATION)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(GP_REGISTRATION)
+
     assert not err
 
 
 def test_sp_registration(session):
     """Assert that the general partnership registration is valid."""
-    err = validate(SP_REGISTRATION)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(SP_REGISTRATION)
+
     assert not err
 
 
 def test_dba_registration(session):
     """Assert that the general partnership registration is valid."""
-    err = validate(DBA_REGISTRATION)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(DBA_REGISTRATION)
+
     assert not err
+
+
+def test_invalid_nr_registration(session):
+    """Assert that nr is invalid."""
+    filing = copy.deepcopy(SP_REGISTRATION)
+    invalid_nr_response = {
+        'state': 'INPROGRESS',
+        'expirationDate': '',
+        'names': [{
+            'name': 'legal_name',
+            'state': 'INPROGRESS',
+            'consumptionDate': ''
+        }]
+    }
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
+        err = validate(filing)
+
+    assert err
 
 
 def test_business_type_required(session):
     """Assert that business type is required."""
     filing = copy.deepcopy(SP_REGISTRATION)
     del filing['filing']['registration']['businessType']
-    err = validate(filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(filing)
+
     assert err
 
 
@@ -130,7 +180,9 @@ def test_business_type_required(session):
 def test_invalid_party(session, test_name, filing, expected_msg):
     """Assert that party is invalid."""
     filing['filing']['registration']['parties'] = []
-    err = validate(filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(filing)
+
     assert err
     assert err.msg[0]['error'] == expected_msg
 
@@ -147,7 +199,9 @@ def test_invalid_business_address(session, test_name, filing):
     """Assert that delivery business address is invalid."""
     filing['filing']['registration']['businessAddress']['deliveryAddress']['addressRegion'] = 'invalid'
     filing['filing']['registration']['businessAddress']['deliveryAddress']['addressCountry'] = 'invalid'
-    err = validate(filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(filing)
+
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
     assert err.msg[1]['error'] == "Address Country must be 'CA'."
@@ -171,7 +225,8 @@ def test_validate_start_date(session, test_name, delta_date, is_valid):
 
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
-    err = validate(filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(filing)
 
     if is_valid:
         assert not err
@@ -196,7 +251,8 @@ def test_registration_court_orders(session, test_status, file_number, effect_of_
         court_order['fileNumber'] = file_number
     filing['filing']['registration']['courtOrder'] = court_order
 
-    err = validate(filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        err = validate(filing)
 
     # validate outcomes
     if test_status == 'FAIL':
