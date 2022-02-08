@@ -323,11 +323,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.last_coa_date)
-                ).isoformat()
+            ).isoformat()
         if self.last_cod_date:
             d['lastDirectorChangeDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.last_cod_date)
-                ).isoformat()
+            ).isoformat()
 
         if self.dissolution_date:
             d['dissolutionDate'] = self.dissolution_date.isoformat()
@@ -424,7 +424,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         except ValueError:
             return False
         # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ('CP', 'XCP', 'BC'):
+        if identifier[:-7] not in ('CP', 'XCP', 'BC', 'FM'):
             return False
 
         return True

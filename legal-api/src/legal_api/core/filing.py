@@ -72,6 +72,7 @@ class Filing:
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         RESTORATIONAPPLICATION = 'restorationApplication'
+        REGISTRATION = 'registration'
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
 
@@ -457,6 +458,8 @@ class Filing:
 
         if filing.status in (
             Filing.Status.PAID,
+        ) and filing.filing_type not in (
+            Filing.FilingTypes.REGISTRATION.value
         ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]

@@ -193,6 +193,15 @@ FILINGS: Final = {
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
         'code': 'NOFEE'},
+    'registration': {
+        'name': 'registration',
+        'title': 'Registration',
+        'displayName': 'Registration',
+        'code': {
+            'SP': 'FRREG',
+            'GP': 'FRREG'
+        },
+    },
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
