@@ -96,21 +96,25 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     def _get_template_data(self):
         business_json = {}
-        business_json['reportType'] = self._document_key
-        business_json['business'] = self._business.json()
-        business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
-        self._set_business_details(business_json)
-        self._set_directors(business_json)
-        self._set_addresses(business_json)
-        self._set_dates(business_json)
-        self._set_description(business_json)
-        self._set_meta_info(business_json)
-        self._set_name_translations(business_json)
-        self._set_business_state_changes(business_json)
-        self._set_record_keepers(business_json)
-        self._set_business_changes(business_json)
-        self._set_amalgamation_details(business_json)
-        self._set_liquidation_details(business_json)
+        try:
+            business_json['reportType'] = self._document_key
+            business_json['business'] = self._business.json()
+            business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+            self._set_business_details(business_json)
+            self._set_directors(business_json)
+            self._set_addresses(business_json)
+            self._set_dates(business_json)
+            self._set_description(business_json)
+            self._set_meta_info(business_json)
+            self._set_name_translations(business_json)
+            self._set_business_state_changes(business_json)
+            self._set_record_keepers(business_json)
+            self._set_business_changes(business_json)
+            self._set_amalgamation_details(business_json)
+            self._set_liquidation_details(business_json)
+        except Exception as e:
+            current_app.logger.error(e)
+            raise e
         return business_json
 
     def _set_business_details(self, business: dict):
@@ -181,7 +185,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         for filing in Filing.get_filings_by_types(self._business.id, ['dissolution', 'restorationApplication',
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
-                                                                      'Involuntary Dissolution']):
+                                                                      'Involuntary Dissolution',
+                                                                      'voluntaryLiquidation']):
             state_filings.append(BusinessDocument._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -268,7 +273,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             filing_datetime = LegislationDatetime.as_legislation_timezone(liquidation[0].filing_date)
             liquidation_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
             business['business']['state'] = Business.State.LIQUIDATION.name
-            business['business']['displayState'] = Business.State.ACTIVE.name
+            business['business']['displayState'] = Business.State.HISTORICAL.name
             if self._epoch_filing_date and liquidation[0].effective_date < self._epoch_filing_date:
                 liquidation_info['custodian'] = 'Not Available'
                 records_office_info = {}
@@ -318,7 +323,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'restoration': 'Restoration Application',
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
-        'Involuntary Dissolution': 'Involuntary Dissolution'
+        'Involuntary Dissolution': 'Involuntary Dissolution',
+        'voluntaryLiquidation': 'Voluntary Liquidation'
     }
 
     CP_TYPE_DESCRIPTION = {
