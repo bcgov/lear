@@ -196,7 +196,10 @@ FILINGS: Final = {
     'registration': {
         'name': 'registration',
         'title': 'Registration',
-        'displayName': 'Registration',
+        'displayName': {
+            'SP': 'BC Sole Proprietorship Registration',
+            'GP': 'BC General Partnership Registration'
+        },
         'code': {
             'SP': 'FRREG',
             'GP': 'FRREG'
