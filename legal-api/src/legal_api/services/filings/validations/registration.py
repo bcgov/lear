@@ -33,7 +33,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
 
-    legal_type_path = '/filing/business/legalType'
+    legal_type_path = '/filing/registration/nameRequest/legalType'
     legal_type = get_str(registration_json, legal_type_path)
     if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return Error(
@@ -42,7 +42,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
         )
 
     msg = []
-    msg.extend(validate_name_request(registration_json, legal_type))
+    msg.extend(validate_name_request(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
@@ -54,22 +54,20 @@ def validate(registration_json: Dict) -> Optional[Error]:
     return None
 
 
-def validate_name_request(filing: Dict, legal_type: str) -> list:
+def validate_name_request(filing: Dict) -> list:
     """Validate name request."""
     nr_path = '/filing/registration/nameRequest/nrNumber'
     nr_number = get_str(filing, nr_path)
     msg = []
 
     # ensure NR is approved or conditionally approved
-    nr_response = namex.query_nr_number(nr_number)
-    validation_result = namex.validate_nr(nr_response.json())
-    if not validation_result['is_consumable']:
-        msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
-
-    path = '/filing/registration/nameRequest/legalType'
-    nr_legal_type = get_str(filing, path)
-    if nr_legal_type != legal_type:
-        msg.append({'error': babel('Name Request has invalid legalType.'), 'path': path})
+    try:
+        nr_response = namex.query_nr_number(nr_number)
+        validation_result = namex.validate_nr(nr_response.json())
+        if not validation_result['is_consumable']:
+            msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
+    except KeyError:
+        msg.append({'error': babel('Invalid Name Request.'), 'path': nr_path})
 
     return msg
 

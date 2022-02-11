@@ -415,7 +415,9 @@ class ListFilingResource():
 
         # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
-        legal_type = business.legal_type if business else filing_json['filing']['business'].get('legalType')
+        # for incorporationApplication and registration, get legalType from nameRequest
+        legal_type = business.legal_type if business else \
+            filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         admin_freeze = business.admin_freeze if business else False
 
         action = ['edit']
@@ -611,8 +613,11 @@ class ListFilingResource():
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        if filing_type == 'incorporationApplication':
-            legal_type = filing_json['filing']['business']['legalType']
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
         else:
             legal_type = business.legal_type
 
@@ -680,13 +685,22 @@ class ListFilingResource():
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
 
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            mailing_address = Address.create_address(
-                filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
+        if filing.filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            if filing.filing_type == Filing.FILINGS['incorporationApplication']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+            elif filing.filing_type == Filing.FILINGS['registration']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['registration']['businessAddress']['mailingAddress'])
+
+            corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
+                'legalType', Business.LegalTypes.BCOMP.value)
 
             try:
-                business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
+                business.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
                 business.legal_name = business.identifier
 
