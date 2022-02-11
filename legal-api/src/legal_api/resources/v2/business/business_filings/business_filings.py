@@ -97,11 +97,11 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
                    filing_id: Optional[int] = None):
     """Modify an incomplete filing for the business."""
     # basic checks
-    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request)
+    business = Business.find_by_identifier(identifier)
+    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request, business)
     if err_msg:
         return jsonify({'errors': [err_msg, ]}), err_code
     json_input = request.get_json()
-    business = Business.find_by_identifier(identifier)
 
     # check authorization
     response, response_code = ListFilingResource.check_authorization(identifier, json_input, business)
@@ -390,7 +390,7 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+    def put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -402,6 +402,12 @@ class ListFilingResource():
             return ({'message':
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
+
+        if json_input['filing']['header']['name'] not in [
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ] and business is None:
+            return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         return None, None
 
