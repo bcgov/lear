@@ -19,6 +19,7 @@ from typing import Dict, Final, Optional
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
+
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import namex
