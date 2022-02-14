@@ -173,7 +173,7 @@ def test_post_filing_no_business(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_post_empty_annual_report_to_a_business(session, client, jwt):
@@ -901,7 +901,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
