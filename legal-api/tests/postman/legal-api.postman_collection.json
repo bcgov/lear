@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "86e7eb7b-bd75-4485-8cb7-4c8aa12ab647",
+		"_postman_id": "bf0c0f44-577a-4d32-9d70-2ae10fe45721",
 		"name": "legal-api",
 		"description": "version=2.8 - Legal API Postman Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -16121,6 +16121,396 @@
 							""
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "Registration",
+			"item": [
+				{
+					"name": "Sole Proprietorship",
+					"item": [
+						{
+							"name": "1. Save draft SP",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"",
+											"// clear filing_id ",
+											"pm.environment.set('filing_id', '')",
+											"",
+											"// set today",
+											"var today = new Date()",
+											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json()",
+											"",
+											"pm.test(\"Status code is 201/Created\", function () {",
+											"    pm.response.to.have.status(201);",
+											"    ",
+											"    // success, so set filing_id",
+											"    pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+											"    pm.environment.set(\"draft_filing_url\", pm.environment.get('url') + '/api/v2/businesses/' + jsonData.filing.business.identifier + '/filings/' + jsonData.filing.header.filingId)",
+											"    jsonData.filing.header.date = pm.environment.get('today')",
+											"    jsonData.filing.registration.business.identifier = jsonData.filing.business.identifier",
+											"    pm.environment.set(\"draft_filing\", JSON.stringify(jsonData.filing))",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Returns draft registration filing.\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"    pm.expect(jsonData.filing.header.status).to.eql('DRAFT')",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"filing\": {\r\n        \"header\": {\r\n            \"accountId\": 28,\r\n        \t\"certifiedBy\": \"full name\",\r\n            \"email\": \"no_one@never.get\",\r\n            \"name\": \"registration\",\r\n            \"date\": \"{{today}}\"\r\n        },\r\n        \"registration\": {\r\n            \"business\": {\r\n                \"natureOfBusiness\": \"sample business\"\r\n            },\r\n            \"businessType\": \"SP\",\r\n\t        \"businessAddress\": {\r\n                \"deliveryAddress\": {\r\n                    \"streetAddress\": \"delivery_address - address line one\",\r\n                    \"addressCity\": \"delivery_address city\",\r\n                    \"addressCountry\": \"Canada\",\r\n                    \"postalCode\": \"H0H0H0\",\r\n                    \"addressRegion\": \"BC\"\r\n                },\r\n                \"mailingAddress\": {\r\n                    \"streetAddress\": \"mailing_address - address line one\",\r\n                    \"addressCity\": \"mailing_address city\",\r\n                    \"addressCountry\": \"Canada\",\r\n                    \"postalCode\": \"H0H0H0\",\r\n                    \"addressRegion\": \"BC\"\r\n                }\r\n            },\r\n            \"contactPoint\": {\r\n                \"email\": \"no_one@never.get\"\r\n            },\r\n            \"startDate\": \"{{today}}\",\r\n            \"nameRequest\": {\r\n                \"nrNumber\": \"NR 1234567\",\r\n                \"legalName\": \"HAULER MEDIA INC.\",\r\n                \"legalType\": \"SP\"\r\n            },\r\n            \"parties\": [\r\n                {\r\n                    \"officer\": {\r\n                        \"id\": 1,\r\n                        \"firstName\": \"Joe\",\r\n                        \"lastName\": \"Swanson\",\r\n                        \"middleName\": \"P\",\r\n                        \"email\": \"joe@email.com\",\r\n                        \"organizationName\": \"\",\r\n                        \"partyType\": \"person\"\r\n                    },\r\n                    \"mailingAddress\": {\r\n                        \"streetAddress\": \"mailing_address - address line one\",\r\n                        \"streetAddressAdditional\": \"\",\r\n                        \"addressCity\": \"mailing_address city\",\r\n                        \"addressCountry\": \"CA\",\r\n                        \"postalCode\": \"H0H0H0\",\r\n                        \"addressRegion\": \"BC\"\r\n                    },\r\n                    \"deliveryAddress\": {\r\n                        \"streetAddress\": \"delivery_address - address line one\",\r\n                        \"streetAddressAdditional\": \"\",\r\n                        \"addressCity\": \"delivery_address city\",\r\n                        \"addressCountry\": \"CA\",\r\n                        \"postalCode\": \"H0H0H0\",\r\n                        \"addressRegion\": \"BC\"\r\n                    },\r\n                    \"roles\": [\r\n                        {\r\n                            \"roleType\": \"Completing Party\",\r\n                            \"appointmentDate\": \"2022-01-01\"\r\n\r\n                        },\r\n                        {\r\n                            \"roleType\": \"Proprietor\",\r\n                            \"appointmentDate\": \"2022-01-01\"\r\n                        }\r\n                    ]\r\n                }\r\n            ]\r\n    \t}\r\n    }\r\n}"
+								},
+								"url": {
+									"raw": "{{url}}/api/v2/businesses?draft=true",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses"
+									],
+									"query": [
+										{
+											"key": "draft",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Validate draft SP",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json()",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Returns Invalid Name Request.\", () => {",
+											"    pm.expect(jsonData.errors).to.exist",
+											"    pm.expect(jsonData.errors[0].error).to.eql('Invalid Name Request.')",
+											"    pm.expect(jsonData.errors[0].path).to.eql('/filing/registration/nameRequest/nrNumber')",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"filing\": {{draft_filing}}\r\n}"
+								},
+								"url": {
+									"raw": "{{draft_filing_url}}?only_validate=true",
+									"host": [
+										"{{draft_filing_url}}"
+									],
+									"query": [
+										{
+											"key": "only_validate",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Delete Draft SP",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{draft_filing_url}}",
+									"host": [
+										"{{draft_filing_url}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "General Partnership",
+					"item": [
+						{
+							"name": "1. Save draft GP",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"",
+											"// clear filing_id ",
+											"pm.environment.set('filing_id', '')",
+											"",
+											"// set today",
+											"var today = new Date()",
+											"pm.environment.set(\"today\", today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2))"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json()",
+											"",
+											"pm.test(\"Status code is 201/Created\", function () {",
+											"    pm.response.to.have.status(201);",
+											"    ",
+											"    // success, so set filing_id",
+											"    pm.environment.set(\"filing_id\", jsonData.filing.header.filingId)",
+											"    pm.environment.set(\"draft_filing_url\", pm.environment.get('url') + '/api/v2/businesses/' + jsonData.filing.business.identifier + '/filings/' + jsonData.filing.header.filingId)",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Returns draft registration filing.\", () => {",
+											"    pm.expect(jsonData.filing).to.exist",
+											"    pm.expect(jsonData.filing.header).to.exist",
+											"    pm.expect(jsonData.filing.header.status).to.eql('DRAFT')",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"filing\": {\r\n        \"header\": {\r\n            \"accountId\": 28,\r\n        \t\"certifiedBy\": \"full name\",\r\n            \"email\": \"no_one@never.get\",\r\n            \"name\": \"registration\",\r\n            \"date\": \"{{today}}\"\r\n        },\r\n        \"business\": {\r\n            \"legalType\": \"GP\"\r\n        },\r\n        \"registration\": {\r\n            \"businessAddress\": {\r\n                \"deliveryAddress\": {\r\n                    \"streetAddress\": \"delivery_address - address line one\",\r\n                    \"addressCity\": \"delivery_address city\",\r\n                    \"addressCountry\": \"Canada\",\r\n                    \"postalCode\": \"H0H0H0\",\r\n                    \"addressRegion\": \"BC\"\r\n                },\r\n                \"mailingAddress\": {\r\n                    \"streetAddress\": \"mailing_address - address line one\",\r\n                    \"addressCity\": \"mailing_address city\",\r\n                    \"addressCountry\": \"Canada\",\r\n                    \"postalCode\": \"H0H0H0\",\r\n                    \"addressRegion\": \"BC\"\r\n                }\r\n            },\r\n            \"contactPoint\": {\r\n                \"email\": \"no_one@never.get\"\r\n            },\r\n            \"startDate\": \"{{today}}\",\r\n            \"nameRequest\": {\r\n                \"nrNumber\": \"NR 8798956\",\r\n                \"legalName\": \"HAULER MEDIA INC.\",\r\n                \"legalType\": \"GP\"\r\n            },\r\n            \"parties\": [\r\n                {\r\n                    \"officer\": {\r\n                        \"id\": 1,\r\n                        \"firstName\": \"Joe\",\r\n                        \"lastName\": \"Swanson\",\r\n                        \"middleName\": \"P\",\r\n                        \"email\": \"joe@email.com\",\r\n                        \"organizationName\": \"\",\r\n                        \"partyType\": \"person\"\r\n                    },\r\n                    \"mailingAddress\": {\r\n                        \"streetAddress\": \"mailing_address - address line one\",\r\n                        \"streetAddressAdditional\": \"\",\r\n                        \"addressCity\": \"mailing_address city\",\r\n                        \"addressCountry\": \"CA\",\r\n                        \"postalCode\": \"H0H0H0\",\r\n                        \"addressRegion\": \"BC\"\r\n                    },\r\n                    \"deliveryAddress\": {\r\n                        \"streetAddress\": \"delivery_address - address line one\",\r\n                        \"streetAddressAdditional\": \"\",\r\n                        \"addressCity\": \"delivery_address city\",\r\n                        \"addressCountry\": \"CA\",\r\n                        \"postalCode\": \"H0H0H0\",\r\n                        \"addressRegion\": \"BC\"\r\n                    },\r\n                    \"roles\": [\r\n                        {\r\n                            \"roleType\": \"Completing Party\",\r\n                            \"appointmentDate\": \"2022-01-01\"\r\n\r\n                        },\r\n                        {\r\n                            \"roleType\": \"Partner\",\r\n                            \"appointmentDate\": \"2022-01-01\"\r\n                        }\r\n                    ]\r\n                },\r\n                {\r\n                    \"officer\": {\r\n                        \"id\": 2,\r\n                        \"firstName\": \"Peter\",\r\n                        \"lastName\": \"Griffin\",\r\n                        \"middleName\": \"\",\r\n                        \"partyType\": \"person\"\r\n                    },\r\n                    \"mailingAddress\": {\r\n                        \"streetAddress\": \"mailing_address - address line one\",\r\n                        \"streetAddressAdditional\": \"\",\r\n                        \"addressCity\": \"mailing_address city\",\r\n                        \"addressCountry\": \"CA\",\r\n                        \"postalCode\": \"H0H0H0\",\r\n                        \"addressRegion\": \"BC\"\r\n                    },\r\n                    \"roles\": [\r\n                        {\r\n                            \"roleType\": \"Partner\",\r\n                            \"appointmentDate\": \"2022-01-01\"\r\n                        }\r\n                    ]\r\n                }\r\n            ]\r\n    \t}\r\n    }\r\n}"
+								},
+								"url": {
+									"raw": "{{url}}/api/v2/businesses?draft=true",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"businesses"
+									],
+									"query": [
+										{
+											"key": "draft",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Validate draft GP",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json()",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Returns Invalid Name Request.\", () => {",
+											"    pm.expect(jsonData.errors).to.exist",
+											"    pm.expect(jsonData.errors[0].error).to.eql('Invalid Name Request.')",
+											"    pm.expect(jsonData.errors[0].path).to.eql('/filing/registration/nameRequest/nrNumber')",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"filing\": {{draft_filing}}\r\n}"
+								},
+								"url": {
+									"raw": "{{draft_filing_url}}?only_validate=true",
+									"host": [
+										"{{draft_filing_url}}"
+									],
+									"query": [
+										{
+											"key": "only_validate",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Delete Draft GP",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{draft_filing_url}}",
+									"host": [
+										"{{draft_filing_url}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}
