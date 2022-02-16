@@ -140,8 +140,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/restrictions',
             'common/resolutionDates',
             'alteration-notice/businessTypeChange',
+            'alteration-notice/legalNameChange',
+            'alteration-notice/statement',
             'common/effectiveDate',
-            'common/legalNameChange',
             'common/nameTranslation',
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
@@ -374,12 +375,29 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
 
-        # Get previous business type
-        meta_data = self._filing.meta_data or {}
-        prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
+        if self._filing.status == 'COMPLETED':
+            meta_data = self._filing.meta_data or {}
+            prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
+            new_legal_type = meta_data.get('alteration', {}).get('toLegalType')
+            prev_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+        else:
+            prev_legal_type = filing.get('business').get('legalType')
+            new_legal_type = filing.get('alteration').get('business').get('legalType')
+            prev_legal_name = filing.get('business').get('legalName')
+            identifier = filing.get('business').get('identifier')
+            name_request_json =filing.get('alteration').get('nameRequest')
+            to_legal_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
+
+        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+            filing['previousLegalName'] = prev_legal_name
+            filing['newLegalName'] = to_legal_name
         filing['previousLegalType'] = prev_legal_type
-        corp_type = CorpType.find_by_id(prev_legal_type)
-        filing['previousLegalTypeDescription'] = corp_type.full_desc if corp_type else None
+        filing['newLegalType'] = new_legal_type
+        filing['previousLegalTypeDescription'] = ReportMeta.legal_type_description[prev_legal_type]\
+            if prev_legal_type else None
+        filing['newLegalTypeDescription'] = ReportMeta.legal_type_description[new_legal_type]\
+            if new_legal_type else None
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
@@ -651,4 +669,13 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'affidavit': {
             'documentType': 'affidavit'
         }
+    }
+
+    legal_type_description = {
+        'ULC': 'BC Unlimited Liability Company',
+        'BEN': 'BC Benefit Company',
+        'CP': 'BC Cooperative Association',
+        'BC': 'BC Limited Company',
+        'CC': 'BC Community Contribution Company',
+        'LLC': 'Limited Liability Company'
     }
