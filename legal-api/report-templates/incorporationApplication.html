@@ -27,7 +27,7 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if not incorporationApplication.nameRequest.nrNumber %}
+            {% if business.legalType == 'BEN' and not incorporationApplication.nameRequest.nrNumber %}
                Numbered Benefit Company
             {% else %}
                {{ incorporationApplication.nameRequest.legalName }}

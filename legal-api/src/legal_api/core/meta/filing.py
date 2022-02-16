@@ -19,6 +19,7 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
+from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
 
 
 class AutoName(str, Enum):
@@ -238,8 +239,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                             for word in
                             re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
 
+        business_revision = business
+        # retrieve business revision at time of filing so legal type is correct when returned for display name
+        if filing.transaction_id and \
+                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business)):
+            business_revision = bus_rev_temp
+
         if isinstance(names, MutableMapping):
-            name = names.get(business.legal_type)
+            name = names.get(business_revision.legal_type)
         else:
             name = names
 
@@ -248,7 +255,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                name = f'{name} - {FilingMeta.display_name(business, filing.children[0], False)}'
+                name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'

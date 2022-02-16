@@ -15,9 +15,9 @@
                   <span class="capitalize-text">{{ party.officer.middleName }}</span>
                 {% endif %}
               </div>
-              {% if party.hasCorrected %}
+              {% if party.hasCorrected is defined and party.hasCorrected %}
                 <span class="chip">CORRECTED</span>
-              {% elif party.hasRemoved %}
+              {% elif party.hasRemoved is defined and party.hasRemoved %}
                 <span class="chip">REMOVED</span>
               {% endif %}
             </td>

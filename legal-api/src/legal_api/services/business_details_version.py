@@ -218,6 +218,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
+    def get_business_revision_obj(transaction_id, business):
+        """Return business version object associated with a given transaction id for a business."""
+        business_version = version_class(Business)
+        business_revision = db.session.query(business_version) \
+            .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.operation_type != 2) \
+            .filter(business_version.id == business.id) \
+            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                        business_version.end_transaction_id > transaction_id)) \
+            .order_by(business_version.transaction_id).one_or_none()
+        return business_revision
+
+    @staticmethod
     def get_business_revision_before_filing(filing_id, business_id) -> dict:
         """Consolidates the business info of the previous filing."""
         business = Business.find_by_internal_id(business_id)
