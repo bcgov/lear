@@ -386,7 +386,7 @@ class Report:  # pylint: disable=too-few-public-methods
             new_legal_type = filing.get('alteration').get('business').get('legalType')
             prev_legal_name = filing.get('business').get('legalName')
             identifier = filing.get('business').get('identifier')
-            name_request_json =filing.get('alteration').get('nameRequest')
+            name_request_json = filing.get('alteration').get('nameRequest')
             to_legal_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
 
         if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
