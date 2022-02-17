@@ -469,8 +469,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
             json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
-            if self.effective_date:
-                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
+            if self.effective_date:  # pylint: disable=using-constant-test
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
             if self._payment_status_code:
                 json_submission['filing']['header']['paymentStatusCode'] = self.payment_status_code
             if self._payment_token:
