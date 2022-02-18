@@ -72,16 +72,12 @@
             </td>
          {% elif header.name == 'registration' %}
             <td class="col-33">
-               {% if header.status == 'COMPLETED' %}
-                  <div class="bold">Registration Number:</div>
-               {% endif %}
+               <div class="bold">Registration Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
             </td>
             <td>
-               {% if header.status == 'COMPLETED' %}
-                  <div>{{business.identifier}}</div>
-               {% endif %}
+               <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
                   {% if business.taxId is defined %}
