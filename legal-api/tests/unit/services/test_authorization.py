@@ -316,7 +316,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         filing_types = get_allowed(state, legal_type, jwt)
-        assert filing_types == expected
+        assert sorted(filing_types) == sorted(expected)
 
 
 @pytest.mark.parametrize(
@@ -555,4 +555,4 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_fi
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
             filing_types = is_allowed(state, filing_type, legal_type, jwt, sub_filing_type)
-            assert filing_types == expected
+            assert sorted(filing_types) == sorted(expected)
