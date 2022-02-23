@@ -224,6 +224,18 @@ FILINGS: Final = {
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
+    'changeOfRegistration': {
+        'name': 'changeOfRegistration',
+        'title': 'Change of Registration',
+        'displayName': {
+            'SP': 'Change of Proprietor Registration',
+            'GP': 'Change of Partnership Registration'
+        },
+        'code': {
+            'SP': 'FMCHG',
+            'GP': 'FMCHG'
+        },
+    }
 }
 
 

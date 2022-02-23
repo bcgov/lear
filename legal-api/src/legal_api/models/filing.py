@@ -160,6 +160,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'TRANS'
             }
         },
+        'changeOfRegistration': {
+            'name': 'changeOfRegistration',
+            'title': 'Change of Registration',
+            'codes': {
+                'SP': 'FMCHG',
+                'GP': 'FMCHG'
+            }
+        },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
