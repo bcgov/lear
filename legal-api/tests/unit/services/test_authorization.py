@@ -264,9 +264,9 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['registration', 'changeOfRegistration']),
+         ['changeOfRegistration', 'registration']),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['registration', 'changeOfRegistration']),
+         ['changeOfRegistration', 'registration']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -279,8 +279,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
         ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
-        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['registration', 'changeOfRegistration']),
-        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['registration', 'changeOfRegistration']),
+        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
+        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
@@ -316,7 +316,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         filing_types = get_allowed(state, legal_type, jwt)
-        assert sorted(filing_types) == sorted(expected)
+        assert filing_types == expected
 
 
 @pytest.mark.parametrize(
@@ -555,4 +555,4 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_fi
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
             filing_types = is_allowed(state, filing_type, legal_type, jwt, sub_filing_type)
-            assert sorted(filing_types) == sorted(expected)
+            assert filing_types == expected
