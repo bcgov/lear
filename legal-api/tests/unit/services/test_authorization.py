@@ -263,6 +263,10 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_active_llc', Business.State.ACTIVE, 'LLC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
+        ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
+         ['changeOfRegistration', 'registration']),
+        ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
+         ['changeOfRegistration', 'registration']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -275,6 +279,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
         ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
+        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
+        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
@@ -371,6 +377,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
         ('staff_active_allowed', Business.State.ACTIVE, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
 
+        ('staff_active_allowed', Business.State.ACTIVE, 'registration', None,
+         ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
+
 
         ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC'], 'user', [BASIC_USER], True),
@@ -402,6 +414,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
 
         ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN'], 'user', [BASIC_USER], True),
+
+        ('user_active_allowed', Business.State.ACTIVE, 'registration', None,
+         ['SP', 'GP'], 'user', [BASIC_USER], True),
+
+        ('user_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'user', [BASIC_USER], True),
 
         ('user_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
@@ -468,6 +486,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
         ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
 
+        ('staff_historical', Business.State.HISTORICAL, 'registration', None,
+         ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
+
+        ('staff_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
+
 
         ('user_historical', Business.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
@@ -510,6 +534,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
 
         ('user_historical', Business.State.HISTORICAL, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+
+        ('user_historical', Business.State.HISTORICAL, 'registration', None,
+         ['SP', 'GP'], 'user', [BASIC_USER], False),
+
+        ('user_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'user', [BASIC_USER], False),
     ]
 )
 def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_filing_type,
