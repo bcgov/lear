@@ -232,8 +232,8 @@ FILINGS: Final = {
             'GP': 'Change of Partnership Registration'
         },
         'code': {
-            'SP': 'FMCHG',
-            'GP': 'FMCHG'
+            'SP': 'FMCHANGE',
+            'GP': 'FMCHANGE'
         },
     }
 }

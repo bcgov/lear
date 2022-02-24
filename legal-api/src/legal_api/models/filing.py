@@ -164,8 +164,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'changeOfRegistration',
             'title': 'Change of Registration',
             'codes': {
-                'SP': 'FMCHG',
-                'GP': 'FMCHG'
+                'SP': 'FMCHANGE',
+                'GP': 'FMCHANGE'
             }
         },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
