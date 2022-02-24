@@ -70,6 +70,23 @@
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
             </td>
+         {% elif header.name == 'registration' %}
+            <td class="col-33">
+               <div class="bold">Registration Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Business Number:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">
+                  {% if business.taxId is defined %}
+                      <span>{{ business.taxId }}</span>
+                  {% else %}
+                      <span>Not Available</span>
+                  {% endif %}
+               </div>
+            </td>
          {% elif header.name == 'changeOfAddress' %}
             <td>
                <div class="bold">Incorporation Number:</div>
@@ -184,7 +201,9 @@
           <span>Incorporation #{{business.identifier}}</span>
     {% else %}
          Filing #{{header.filingId}}
-        {% if header.name != 'incorporationApplication' %}
+        {% if header.name == 'registration' %}
+         <span> | Corporate Registry #{{business.identifier}}</span>
+        {% elif header.name != 'incorporationApplication' %}
           <!-- not required for incorporationApplication -->
           <span> | Incorporation #{{business.identifier}}</span>
         {% endif %}

@@ -81,7 +81,7 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
         legal_entity_number = self._business.identifier if self._business else \
-            self._filing.filing_json['filing']['business']['identifier']
+            self._filing.filing_json['filing'].get('business', {}).get('identifier', '')
         description = ReportMeta.reports[self._report_key]['filingDescription']
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
 
@@ -132,6 +132,10 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
             'incorporation-application/cooperativeAssociationType',
+            'registration/nameRequest',
+            'registration/addresses',
+            'registration/completingParty',
+            'registration/party',
             'common/statement',
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
@@ -189,6 +193,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_special_resolution(filing)
             elif self._report_key == 'alterationNotice':
                 self._format_alteration_data(filing)
+            elif self._report_key == 'registration':
+                self._format_registration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -239,7 +245,9 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['entityDescription'] = corp_type.full_desc
 
         act = {
-            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act',
+            Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
+            Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
         filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
@@ -363,6 +371,14 @@ class Report:  # pylint: disable=too-few-public-methods
         if cooperative := filing['incorporationApplication'].get('cooperative', None):
             cooperative['associationTypeName'] = \
                 ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
+
+    def _format_registration_data(self, filing):
+        self._format_address(filing['registration']['businessAddress']['deliveryAddress'])
+        self._format_address(filing['registration']['businessAddress']['mailingAddress'])
+        self._format_directors(filing['registration']['parties'])
+
+        start_date = datetime.fromisoformat(filing['registration']['startDate'])
+        filing['registration']['startDate'] = start_date.strftime('%B %-d, %Y')
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -663,6 +679,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'dissolution': {
             'filingDescription': 'Dissolution Application',
             'fileName': 'dissolution'
+        },
+        'registration': {
+            'filingDescription': 'Statement of Registration',
+            'fileName': 'registration'
         },
     }
 
