@@ -26,6 +26,7 @@ from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
+from .change_of_registration import validate as change_of_registration_validate
 from .correction import validate as correction_validate
 from .court_order import validate as court_order_validate
 from .dissolution import validate as dissolution_validate
@@ -126,6 +127,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['registration'].get('name'):
                     err = registration_validate(filing_json)
+
+                elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
+                    err = change_of_registration_validate(filing_json)
 
                 if err:
                     return err
