@@ -48,16 +48,16 @@ def validate(registration_json: Dict) -> Optional[Error]:
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
     msg.extend(validate_delivery_address(registration_json))
-    msg.extend(_validate_court_order(registration_json))
+    msg.extend(validate_registration_court_order(registration_json))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
 
-def validate_name_request(filing: Dict) -> list:
+def validate_name_request(filing: Dict, filing_type='registration') -> list:
     """Validate name request."""
-    nr_path = '/filing/registration/nameRequest/nrNumber'
+    nr_path = f'/filing/{filing_type}/nameRequest/nrNumber'
     nr_number = get_str(filing, nr_path)
     msg = []
 
@@ -83,13 +83,13 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
     return msg
 
 
-def validate_party(filing: Dict, legal_type: str) -> list:
+def validate_party(filing: Dict, legal_type: str, filing_type='registration') -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
     proprietor_parties = 0
     partner_parties = 0
-    parties = filing['filing']['registration']['parties']
+    parties = filing['filing'][filing_type]['parties']
     for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
         for role in party.get('roles', []):
             role_type = role.get('roleType').lower().replace(' ', '_')
@@ -125,9 +125,9 @@ def validate_start_date(filing: Dict) -> list:
     return msg
 
 
-def validate_delivery_address(filing: Dict) -> list:
+def validate_delivery_address(filing: Dict, filing_type='registration') -> list:
     """Validate the delivery address of the registration filing."""
-    addresses = filing['filing']['registration']['businessAddress']
+    addresses = filing['filing'][filing_type]['businessAddress']
     msg = []
 
     if delivery_address := addresses.get('deliveryAddress'):
@@ -135,7 +135,7 @@ def validate_delivery_address(filing: Dict) -> list:
         country = delivery_address['addressCountry']
 
         if region != 'BC':
-            region_path = '/filing/registration/businessAddress/deliveryAddress/addressRegion'
+            region_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressRegion'
             msg.append({'error': "Address Region must be 'BC'.", 'path': region_path})
 
         try:
@@ -143,16 +143,16 @@ def validate_delivery_address(filing: Dict) -> list:
             if country != 'CA':
                 raise LookupError
         except LookupError:
-            country_path = '/filing/registration/businessAddress/deliveryAddress/addressCountry'
+            country_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressCountry'
             msg.append({'error': "Address Country must be 'CA'.", 'path': country_path})
 
     return msg
 
 
-def _validate_court_order(filing: Dict) -> list:
+def validate_registration_court_order(filing: Dict, filing_type='registration') -> list:
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get('registration', {}).get('courtOrder', None):
-        court_order_path: Final = '/filing/registration/courtOrder'
+    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
+        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err
