@@ -47,6 +47,12 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
     # organization
     organization_name = db.Column('organization_name', db.String(150))
 
+    # Incorporation Number of organization
+    identifier = db.Column('identifier', db.String(10))
+    # CRA Business Number of organization
+    tax_id = db.Column('tax_id', db.String(15))
+    email = db.Column(db.String(254))
+
     # parent keys
     delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
     mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
@@ -68,6 +74,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.party_type == Party.PartyTypes.PERSON.value:
             member = {
                 'officer': {
+                    'partyType': self.party_type,
                     'firstName': self.first_name,
                     'lastName': self.last_name
                 }
@@ -78,7 +85,13 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
                 member['officer']['middleInitial'] = self.middle_initial
         else:
             member = {
-                'officer': {'organizationName': self.organization_name}
+                'officer': {
+                    'partyType': self.party_type,
+                    'organizationName': self.organization_name,
+                    'identifier': self.identifier,
+                    'taxId': self.tax_id,
+                    'email': self.email
+                }
             }
 
         if self.delivery_address:
