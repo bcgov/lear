@@ -35,7 +35,7 @@ class AutoName(str, Enum):
 
 
 class ReportTitles(str, Enum):
-    """Enum of the system error codes."""
+    """Enum of the report titles."""
 
     ALTERATION_NOTICE = 'Alteration Notice'
     CERTIFICATE = 'Certificate'
@@ -43,10 +43,11 @@ class ReportTitles(str, Enum):
     CERTIFIED_MEMORANDUM = 'Certified Memorandum'
     CERTIFIED_RULES = 'Certified Rules'
     NOTICE_OF_ARTICLES = 'Notice of Articles'
+    AMENDED_REGISTRATION_STATEMENT = 'Amended Registration Statement'
 
 
 class ReportNames(AutoName):
-    """Enum of the system error codes."""
+    """Enum of the report names."""
 
     ALTERATION_NOTICE = auto()
     CERTIFICATE = auto()
@@ -54,10 +55,11 @@ class ReportNames(AutoName):
     CERTIFIED_MEMORANDUM = auto()
     CERTIFIED_RULES = auto()
     NOTICE_OF_ARTICLES = auto()
+    AMENDED_REGISTRATION_STATEMENT = auto()
 
 
 class FilingTitles(str, Enum):
-    """Enum of the system error codes."""
+    """Enum of the filing titles."""
 
     INCORPORATION_APPLICATION_DEFAULT = 'Incorporation Application'
 
@@ -235,6 +237,9 @@ FILINGS: Final = {
             'SP': 'FMCHANGE',
             'GP': 'FMCHANGE'
         },
+        'additional': [
+            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
+        ]
     }
 }
 
