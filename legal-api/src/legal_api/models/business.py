@@ -168,7 +168,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'tax_id',
             'naics_key',
             'naics_code',
-            'naics_title'
+            'naics_description'
         ]
     }
 
@@ -200,7 +200,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
-    naics_title = db.Column(db.String(150))
+    naics_description = db.Column(db.String(150))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -330,7 +330,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'legalType': self.legal_type,
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
-            'naicsTitle': self.naics_title,
+            'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),

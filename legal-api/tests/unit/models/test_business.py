@@ -259,7 +259,7 @@ def test_business_json(session):
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'naicsKey': None,
         'naicsCode': None,
-        'naicsTitle': None,
+        'naicsDescription': None,
         'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
