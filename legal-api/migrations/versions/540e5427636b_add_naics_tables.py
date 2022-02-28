@@ -77,7 +77,13 @@ def upgrade():
                     sa.Column('year', sa.Integer(), nullable=False),
                     sa.Column('version', sa.Integer(), nullable=False),
                     sa.Column('class_title', sa.String(length=150), nullable=False),
-                    sa.Column('element_type', sa.String(length=30), nullable=False),
+                    sa.Column('element_type',
+                              sa.Enum('ALL_EXAMPLES',
+                                      'ILLUSTRATIVE_EXAMPLES',
+                                      'INCLUSIONS',
+                                      'EXCLUSIONS',
+                                       name='element_type'),
+                              nullable=False),
                     sa.Column('element_description', sa.String(length=500), nullable=False),
                     sa.Column('naics_structure_id', sa.Integer(), nullable=False),
                     sa.ForeignKeyConstraint(['naics_structure_id'], ['naics_structures.id'], ),
@@ -115,4 +121,5 @@ def upgrade():
 
 def downgrade():
     op.drop_table('naics_elements')
+    op.execute("DROP TYPE element_type;")
     op.drop_table('naics_structures')

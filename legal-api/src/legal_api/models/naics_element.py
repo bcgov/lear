@@ -15,7 +15,9 @@
 
 Element types can be examples, illustrative examples, inclusions and exclusions.
 """
-from enum import Enum
+from enum import auto
+
+from legal_api.utils.base import BaseEnum
 
 from .db import db  # noqa: I001
 
@@ -26,13 +28,13 @@ class NaicsElement(db.Model):
     Represents NAICS Element.
     """
 
-    class ElementType(str, Enum):
+    class ElementType(BaseEnum):
         """Render an Enum of the Element Types."""
 
-        ALL_EXAMPLES = 'all_examples'
-        ILLUSTRATIVE_EXAMPLES = 'illustrative_examples'
-        INCLUSIONS = 'inclusions'
-        EXCLUSIONS = 'exclusions'
+        ALL_EXAMPLES = auto()
+        ILLUSTRATIVE_EXAMPLES = auto()
+        INCLUSIONS = auto()
+        EXCLUSIONS = auto()
 
     __tablename__ = 'naics_elements'
 
@@ -42,7 +44,7 @@ class NaicsElement(db.Model):
     year = db.Column('year', db.Integer, index=True, nullable=False)
     version = db.Column('version', db.Integer, index=True, nullable=False)
     class_title = db.Column('class_title', db.String(150), index=True, nullable=False)
-    element_type = db.Column('element_type', db.String(30), index=True, nullable=False)
+    element_type = db.Column('element_type', db.Enum(ElementType), index=True, nullable=False)
     element_description = db.Column('element_description', db.String(500), index=True, nullable=False)
 
     # parent keys
