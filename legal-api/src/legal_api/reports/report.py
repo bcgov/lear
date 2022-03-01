@@ -240,7 +240,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
-        legal_type = self._filing.filing_json['filing']['business'].get('legalType', 'NA')
+        legal_type = self._filing.filing_json['filing'].get('business', {}).get('legalType', 'NA')
         corp_type = CorpType.find_by_id(legal_type)
         filing['entityDescription'] = corp_type.full_desc
 
@@ -587,10 +587,10 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._report_key == 'noticeOfArticles':
             filing['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
         else:
-            legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
+            legal_name = self._filing.filing_json['filing'].get('business', {}).get('legalName', 'NA')
             filing['meta_subject'] = '{} ({})'.format(
                 legal_name,
-                self._filing.filing_json['filing']['business']['identifier'])
+                self._filing.filing_json['filing'].get('business', {}).get('identifier', 'NA'))
 
     @staticmethod
     def _get_environment():
