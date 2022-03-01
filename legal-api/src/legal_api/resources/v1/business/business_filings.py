@@ -342,8 +342,9 @@ class ListFilingResource(Resource):
     def _check_and_update_nr(filing):
         """Check and update NR to extend expiration date as needed."""
         # if this is an incorporation filing for a name request
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            nr_number = filing.json['filing']['incorporationApplication']['nameRequest'].get('nrNumber', None)
+        if filing.filing_type in (Filing.FILINGS['incorporationApplication']['name'],
+                                  Filing.FILINGS['registration']['name']):
+            nr_number = filing.json['filing'][filing.filing_type]['nameRequest'].get('nrNumber', None)
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
                 effective_date = datetime.datetime.fromisoformat(effective_date)
@@ -583,8 +584,11 @@ class ListFilingResource(Resource):
     @staticmethod
     def _get_legal_type(filing_type: str, filing_json: dict, business: Business):
         """Get the legal type from a filing."""
-        if filing_type == 'incorporationApplication':
-            return filing_json['filing']['business']['legalType']
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            return filing_json['filing'][filing_type]['nameRequest']['legalType']
 
         return business.legal_type
 
@@ -687,13 +691,22 @@ class ListFilingResource(Resource):
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
 
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            mailing_address = Address.create_address(
-                filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
+        if filing.filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            if filing.filing_type == Filing.FILINGS['incorporationApplication']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+            elif filing.filing_type == Filing.FILINGS['registration']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['registration']['businessAddress']['mailingAddress'])
+
+            corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
+                'legalType', Business.LegalTypes.BCOMP.value)
 
             try:
-                business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
+                business.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
                 business.legal_name = business.identifier
 
@@ -771,7 +784,10 @@ class ListFilingResource(Resource):
     @staticmethod
     def _set_effective_date(business: Business, filing: Filing):
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
             fe_date = filing.filing_json['filing']['header'].get('futureEffectiveDate')
             if fe_date:
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)

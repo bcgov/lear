@@ -347,8 +347,9 @@ class ListFilingResource():
     def check_and_update_nr(filing):
         """Check and update NR to extend expiration date as needed."""
         # if this is an incorporation filing for a name request
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            nr_number = filing.json['filing']['incorporationApplication']['nameRequest'].get('nrNumber', None)
+        if filing.filing_type in (Filing.FILINGS['incorporationApplication']['name'],
+                                  Filing.FILINGS['registration']['name']):
+            nr_number = filing.json['filing'][filing.filing_type]['nameRequest'].get('nrNumber', None)
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
                 effective_date = datetime.datetime.fromisoformat(effective_date)
@@ -793,10 +794,13 @@ class ListFilingResource():
     def set_effective_date(business: Business, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type == Filing.FILINGS['incorporationApplication'].get('name') and \
-           (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
-            filing.effective_date = datetime.datetime.fromisoformat(fe_date)
-            filing.save()
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            if fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate'):
+                filing.effective_date = datetime.datetime.fromisoformat(fe_date)
+                filing.save()
 
         elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
