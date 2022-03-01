@@ -19,8 +19,9 @@ import pytest
 from legal_api.core.business import BusinessIdentifier, BusinessType
 
 
-@pytest.mark.parametrize('business_type,expected',[
+@pytest.mark.parametrize('business_type,expected', [
     (BusinessType.COOPERATIVE, True),
+    (BusinessType.PARTNERSHIP_AND_SOLE_PROP, True),
     ('NOT_FOUND', False),
 ])
 def test_business_next_identifier(session, business_type, expected):
@@ -34,7 +35,9 @@ def test_business_next_identifier(session, business_type, expected):
     else:
         assert identifier is None
 
+
 def test_get_enum_by_value():
     """Assert that the get_enum_by_value function returns the correct enum."""
     assert BusinessType.get_enum_by_value('CP') == BusinessType.COOPERATIVE
+    assert BusinessType.get_enum_by_value('FM') == BusinessType.PARTNERSHIP_AND_SOLE_PROP
     assert BusinessType.get_enum_by_value('NOT_FOUND') is None

@@ -80,7 +80,6 @@ def test_business(session):
     assert business.admin_freeze is False
 
 
-
 def test_business_find_by_legal_name_pass(session):
     """Assert that the business can be found by name."""
     designation = '001'
@@ -251,12 +250,16 @@ def test_business_json(session):
         'legalType': 'CP',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
+        'businessStartDate': '',
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReportDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
+        'naicsKey': None,
+        'naicsCode': None,
+        'naicsDescription': None,
         'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
@@ -318,7 +321,7 @@ def test_business_relationships_json(session):
     assert business.delivery_address.one_or_none()
 
 
-@pytest.mark.parametrize('business_type,expected',[
+@pytest.mark.parametrize('business_type,expected', [
     ('CP', True),
     ('NOT_FOUND', False),
 ])
@@ -333,6 +336,6 @@ def test_get_next_value_from_sequence(session, business_type, expected):
         next_val = Business.get_next_value_from_sequence(business_type)
         assert next_val
         assert next_val == first_val + 1
-    
+
     else:
         assert not Business.get_next_value_from_sequence(business_type)

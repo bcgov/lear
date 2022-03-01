@@ -35,6 +35,7 @@ def test_party_json(session):
     )
     person_json = {
         'officer': {
+            'partyType': Party.PartyTypes.PERSON.value,
             'firstName': person.first_name,
             'lastName': person.last_name,
             'middleInitial': person.middle_initial
@@ -47,7 +48,11 @@ def test_party_json(session):
     )
     organization_json = {
         'officer': {
+            'partyType': Party.PartyTypes.ORGANIZATION.value,
             'organizationName': organization.organization_name,
+            'identifier': None,
+            'taxId': None,
+            'email': None
         },
     }
 

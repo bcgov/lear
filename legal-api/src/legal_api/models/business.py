@@ -135,6 +135,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         CP_HOUSING_COOPERATIVE = 'HC'
         CP_COMMUNITY_SERVICE_COOPERATIVE = 'CSC'
 
+        SP_SOLE_PROPRIETORSHIP = 'SP'
+        SP_DOING_BUSINESS_AS = 'DBA'
+
     __versioned__ = {}
     __tablename__ = 'businesses'
     __mapper_args__ = {
@@ -145,6 +148,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'dissolution_date',
             'fiscal_year_end_date',
             'founding_date',
+            'business_start_date',
             'identifier',
             'last_agm_date',
             'last_ar_date',
@@ -161,7 +165,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'state',
             'state_filing_id',
             'submitter_userid',
-            'tax_id'
+            'tax_id',
+            'naics_key',
+            'naics_code',
+            'naics_description'
         ]
     }
 
@@ -178,6 +185,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
+    business_start_date = db.Column('business_start_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -189,6 +197,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+
+    naics_key = db.Column(db.String(50))
+    naics_code = db.Column(db.String(10))
+    naics_description = db.Column(db.String(150))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -304,6 +316,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'adminFreeze': self.admin_freeze or False,
             'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
+            'businessStartDate': self.business_start_date.isoformat() if self.business_start_date else '',
             'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
@@ -315,6 +328,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastModified': self.last_modified.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
+            'naicsKey': self.naics_key,
+            'naicsCode': self.naics_code,
+            'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
@@ -393,6 +409,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the next value from the sequence."""
         sequence_mapping = {
             'CP': 'business_identifier_coop',
+            'FM': 'business_identifier_sp_gp',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
             return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
@@ -433,5 +450,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 ASSOCIATION_TYPE_DESC: Final = {
     Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
     Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
-    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative'
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative',
+
+    Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
+    Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
 }
