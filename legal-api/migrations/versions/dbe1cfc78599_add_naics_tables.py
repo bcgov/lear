@@ -1,8 +1,8 @@
 """add_naics_tables
 
-Revision ID: 540e5427636b
-Revises: 94586877d4bc
-Create Date: 2022-02-24 15:39:31.575461
+Revision ID: dbe1cfc78599
+Revises: 33501a263f32
+Create Date: 2022-03-01 06:13:11.004608
 
 """
 from flask import current_app
@@ -18,8 +18,8 @@ from migrations.bulk_data.naics_structures_2017_v3_subset_testing_only import na
 from migrations.bulk_data.naics_elements_2017_v3_subset_testing_only import naics_elements_test_only
 
 # revision identifiers, used by Alembic.
-revision = '540e5427636b'
-down_revision = '94586877d4bc'
+revision = 'dbe1cfc78599'
+down_revision = '33501a263f32'
 branch_labels = None
 depends_on = None
 
@@ -28,7 +28,7 @@ def upgrade():
 
     # Notes: bulk dictionary data for naics_structure and naics_element data used for the bulk inserts below were
     # generated via a Jupyter notebook(/lear/tests/data/naics/create_alembic_import_data_from_naics_csvs.ipynb).
-    # The dictionary data are immported from migrations.bulk_data to make this migration file more readable and
+    # The dictionary data are imported from migrations.bulk_data to make this migration file more readable and
     # also easier to work with.
     #
     # Different data sets are used to overcome the slow performance of using the actual NAICS dataset for testing
@@ -82,7 +82,7 @@ def upgrade():
                                       'ILLUSTRATIVE_EXAMPLES',
                                       'INCLUSIONS',
                                       'EXCLUSIONS',
-                                       name='element_type'),
+                                      name='element_type'),
                               nullable=False),
                     sa.Column('element_description', sa.String(length=500), nullable=False),
                     sa.Column('naics_structure_id', sa.Integer(), nullable=False),
