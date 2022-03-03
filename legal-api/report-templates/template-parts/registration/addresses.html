@@ -2,7 +2,8 @@
   <div class="section-data mt-4">
     <table class="section-data-table">
       <tr class="no-page-break">
-        <td>
+        {% if registration.businessAddress.mailingAddress is defined %}
+        <td class="col-33">
           <div class="section-sub-title">Mailing Address</div>
           <div class=" pt-2">{{ registration.businessAddress.mailingAddress.streetAddress }}</div>
           <div>{{ registration.businessAddress.mailingAddress.streetAddressAdditional }}</div>
@@ -12,7 +13,9 @@
           <div>{{ registration.businessAddress.mailingAddress.addressCountry }}</div>
           <div>{{ registration.businessAddress.mailingAddress.deliveryInstructions }}</div>
         </td>
-        <td>
+        {% endif %}
+        {% if registration.businessAddress.deliveryAddress is defined %}
+        <td class="col-33">
           <div class="section-sub-title">Delivery Address</div>
           <div class=" pt-2">{{ registration.businessAddress.deliveryAddress.streetAddress }}</div>
           <div>{{ registration.businessAddress.deliveryAddress.streetAddressAdditional }}</div>
@@ -22,6 +25,8 @@
           <div>{{ registration.businessAddress.deliveryAddress.addressCountry }}</div>
           <div>{{ registration.businessAddress.deliveryAddress.deliveryInstructions }}</div>
         </td>
+        {% endif %}
+        <td class="col-33"></td>
       </tr>
     </table>
   </div>

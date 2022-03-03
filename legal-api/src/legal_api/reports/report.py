@@ -373,8 +373,10 @@ class Report:  # pylint: disable=too-few-public-methods
                 ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
 
     def _format_registration_data(self, filing):
-        self._format_address(filing['registration']['businessAddress']['deliveryAddress'])
-        self._format_address(filing['registration']['businessAddress']['mailingAddress'])
+        with suppress(KeyError):
+            self._format_address(filing['registration']['businessAddress']['deliveryAddress'])
+        with suppress(KeyError):
+            self._format_address(filing['registration']['businessAddress']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
 
         start_date = datetime.fromisoformat(filing['registration']['startDate'])

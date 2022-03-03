@@ -136,6 +136,7 @@ def client_id():
 
     return f'client-{_id}'
 
+
 @pytest.fixture(scope='session')
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
@@ -180,6 +181,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         upgrade()
 
         return _db
+
 
 @pytest.fixture(scope='function')
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name

@@ -71,7 +71,7 @@
                <div class="pt-2">{{effective_date_time}}</div>
             </td>
          {% elif header.name == 'registration' %}
-            <td class="col-33">
+            <td class="col-22">
                <div class="bold">Registration Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
@@ -181,7 +181,8 @@
             </td>
          {% endif %}
          {% if reportType != 'summary' %}
-         <td class="registar-certify-section">
+         <td class="business-details-registar-td">
+            <div class="registar-certify-section">
                <div class="certified-copy-text">CERTIFIED COPY</div>
                <div class="doc-description">of a document filed with the</div>
                <div class="doc-description">Province of British Columbia</div>
@@ -190,6 +191,7 @@
                   <img alt="signature" src={{registrarInfo.signature}}>
                </div>
                <div class="registrar-name">{{ registrarInfo.name }}</div>
+            </div>
          </td>
           {% endif %}
       </tr>
@@ -202,7 +204,7 @@
     {% else %}
          Filing #{{header.filingId}}
         {% if header.name == 'registration' %}
-         <span> | Corporate Registry #{{business.identifier}}</span>
+         <span> | Registration #{{business.identifier}}</span>
         {% elif header.name != 'incorporationApplication' %}
           <!-- not required for incorporationApplication -->
           <span> | Incorporation #{{business.identifier}}</span>

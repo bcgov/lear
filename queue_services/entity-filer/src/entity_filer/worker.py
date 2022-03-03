@@ -59,6 +59,7 @@ from entity_filer.filing_processors import (
     incorporation_filing,
     registrars_notation,
     registrars_order,
+    registration,
     special_resolution,
     transition,
 )
@@ -185,6 +186,12 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                                                                             filing_submission,
                                                                                             filing_meta)
 
+                elif filing.get('registration'):
+                    business, filing_submission, filing_meta = registration.process(business,
+                                                                                    filing_core_submission.json,
+                                                                                    filing_submission,
+                                                                                    filing_meta)
+
                 elif filing.get('conversion'):
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
@@ -249,6 +256,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                             f'on Queue with error:{err}',
                             level='error'
                         )
+
+            if any('registration' in x for x in legal_filings):
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                registration.update_affiliation(business, filing_submission)
+                name_request.consume_nr(business, filing_submission, '/filing/registration/nameRequest/nrNumber')
+                registration.post_process(business, filing_submission)
 
             if any('conversion' in x for x in legal_filings):
                 filing_submission.business_id = business.id

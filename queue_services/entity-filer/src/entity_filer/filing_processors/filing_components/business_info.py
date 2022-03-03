@@ -14,7 +14,10 @@
 """Manages the type of Business."""
 from typing import Dict
 
+import requests
+from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
+from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Filing
 
 
@@ -49,4 +52,32 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
         business.last_coa_date = filing.effective_date
         business.last_cod_date = filing.effective_date
         return business
+    return None
+
+
+def get_next_corp_num(legal_type: str):
+    """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
+    # this gets called if the new services are generating the Business.identifier.
+    if legal_type in BusinessType:
+        if business_type := BusinessType.get_enum_by_value(legal_type):
+            return BusinessIdentifier.next_identifier(business_type)
+        return None
+
+    # legacy Business.Identifier generation
+    try:
+        # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
+        if legal_type == Business.LegalTypes.BCOMP.value:
+            business_type = 'BC'
+        else:
+            business_type = legal_type
+        resp = requests.post(f'{current_app.config["COLIN_API"]}/{business_type}')
+    except requests.exceptions.ConnectionError:
+        current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
+        return None
+
+    if resp.status_code == 200:
+        new_corpnum = int(resp.json()['corpNum'])
+        if new_corpnum and new_corpnum <= 9999999:
+            # TODO: Fix endpoint
+            return f'{business_type}{new_corpnum:07d}'
     return None

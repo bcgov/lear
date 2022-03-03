@@ -14,7 +14,6 @@
 """The Unit Tests for the Incorporation filing."""
 
 import copy
-import io
 from datetime import datetime
 from unittest.mock import patch
 
@@ -28,10 +27,10 @@ from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
 )
-import PyPDF2
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
+from entity_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
 
@@ -44,7 +43,7 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -109,7 +108,7 @@ def test_incorporation_filing_process_no_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
         filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
         create_filing('123', filing)
 
@@ -146,7 +145,7 @@ def test_incorporation_filing_process_correction(app, session):
     """Assert that the incorporation correction is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
         filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
         create_filing('123', filing)
 
@@ -195,12 +194,10 @@ def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
     from flask import current_app
 
-    from entity_filer.filing_processors.incorporation_filing import get_next_corp_num
-
     with app.app_context():
         requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={'corpNum': response})
 
-        corp_num = get_next_corp_num('BEN')
+        corp_num = business_info.get_next_corp_num('BEN')
 
     assert corp_num == expected
 

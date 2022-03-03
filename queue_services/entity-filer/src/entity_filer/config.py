@@ -128,6 +128,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
     MINIO_SECURE = True
 
+    # determines which year of NAICS data will be used to drive NAICS search
+    NAICS_YEAR = int(os.getenv('NAICS_YEAR', '2017'))
+    # determines which version of NAICS data will be used to drive NAICS search
+    NAICS_VERSION = int(os.getenv('NAICS_VERSION', '3'))
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
