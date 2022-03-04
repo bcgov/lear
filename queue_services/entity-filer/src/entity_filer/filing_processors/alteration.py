@@ -80,7 +80,7 @@ def post_process(business: Business, filing: Filing, correction: bool = False):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    if not correction and name_request.has_new_nr_for_alteration(business, filing.filing_json):
+    if not correction and name_request.has_new_nr_for_filing(business, filing.filing_json, 'alteration'):
         name_request.consume_nr(business, filing, '/filing/alteration/nameRequest/nrNumber')
 
     with suppress(IndexError, KeyError, TypeError):

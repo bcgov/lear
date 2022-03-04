@@ -52,6 +52,7 @@ from entity_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    change_of_registration,
     conversion,
     correction,
     court_order,
@@ -213,6 +214,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('transition'):
                     filing_submission = transition.process(business, filing_submission, filing, filing_meta)
 
+                elif filing.get('changeOfRegistration'):
+                    change_of_registration.process(business, filing_submission, filing, filing_meta)
+
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
@@ -229,6 +233,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             # post filing changes to other services
             if any('alteration' in x for x in legal_filings):
                 alteration.post_process(business, filing_submission, is_correction)
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type
+                )
+
+            if any('changeOfRegistration' in x for x in legal_filings):
+                change_of_registration.post_process(business, filing_submission)
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,
