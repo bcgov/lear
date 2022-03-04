@@ -148,6 +148,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'dissolution_date',
             'fiscal_year_end_date',
             'founding_date',
+            'business_start_date',
             'identifier',
             'last_agm_date',
             'last_ar_date',
@@ -184,6 +185,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
+    business_start_date = db.Column('business_start_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -314,6 +316,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'adminFreeze': self.admin_freeze or False,
             'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
+            'businessStartDate': self.business_start_date.isoformat() if self.business_start_date else '',
             'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,

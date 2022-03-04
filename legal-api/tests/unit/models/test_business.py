@@ -250,6 +250,7 @@ def test_business_json(session):
         'legalType': 'CP',
         'identifier': 'CP1234567',
         'foundingDate': EPOCH_DATETIME.isoformat(),
+        'businessStartDate': '',
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
