@@ -17,7 +17,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Address, Business, Filing, Party, PartyRole
+from legal_api.models import Address, Business, Filing, NaicsStructure, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile,\
@@ -26,7 +26,6 @@ from entity_filer.filing_processors.filing_components import business_info, busi
 
 def process(business: Business, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
     """Render the change of registration filing onto the business model objects."""
-    print(business.legal_name)
     filing_meta.change_of_registration = {}
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
@@ -34,12 +33,19 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
         if name_request_json.get('legalName'):
             from_legal_name = business.legal_name
             business_info.set_legal_name(business.identifier, business, name_request_json)
-            print(from_legal_name)
-            print(business.legal_name)
             if from_legal_name != business.legal_name:
                 filing_meta.change_of_registration = {**filing_meta.change_of_registration,
                                                     **{'fromLegalName': from_legal_name,
                                                        'toLegalName': business.legal_name}}
+    # Update Nature of Business
+    if naics := change_filing.get('business', {}).get('naics'):
+        naics_code = naics.get('naicsCode')
+        if business.naics_code !=  naics_code:
+            naics_structure = NaicsStructure.find_by_code(naics_code)
+            business.naics_key = naics_structure.naics_key
+            business.naics_code = naics_code
+            business.naics_description = naics_structure.class_title
+
     # Update business address if present
     with suppress(IndexError, KeyError, TypeError):
         business_address_json = dpath.util.get(change_filing, '/changeOfRegistration/businessAddress')
@@ -49,9 +55,10 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                 if address:
                     update_address(address, updated_address)
 
+    # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(change_filing, '/changeOfRegistration/parties')
-        # _update_parties(business, party_json, change_filing_rec)
+        update_parties(business, party_json, change_filing_rec)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -59,19 +66,19 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
 
-def _update_parties(business: Business, parties: dict, change_filing_rec: Filing):
+def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     for party_info in parties:
         # Create if id not present
-        if not party_info.get('id'):
+        if not party_info.get('officer').get('id'):
             _create_party_info(business, change_filing_rec, party_info)
         else:
             # Update if id is present
             _update_party(party_info)
 
     # Cease the party roles not present in the edit request
-    end_date_time = datetime.utcnow()
-    parties_to_update = [party.get('id') for party in parties if party.get('id') is not None]
+    end_date_time = datetime.datetime.utcnow()
+    parties_to_update = [party.get('officer').get('id') for party in parties if party.get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
     for party_role in existing_party_roles:
         if party_role.party_id not in parties_to_update:
@@ -79,14 +86,17 @@ def _update_parties(business: Business, parties: dict, change_filing_rec: Filing
 
 
 def _update_party(party_info):
-    party = Party.find_party_by_id(party_id=party_info.get('id'))
+    party = Party.find_by_id(party_id=party_info.get('officer').get('id'))
     if party:
-        party.first_name = party_info['officer'].get('firstName', '').upper(),
-        party.last_name = party_info['officer'].get('lastName', '').upper(),
-        party.middle_initial = party_info['officer'].get('middleInitial', '').upper(),
-        party.title = party_info.get('title', '').upper(),
-        party.organization_name = party_info['officer'].get('organizationName', '').upper(),
+        party.first_name = party_info['officer'].get('firstName', '').upper()
+        party.last_name = party_info['officer'].get('lastName', '').upper()
+        party.middle_initial = party_info['officer'].get('middleInitial', '').upper()
+        party.title = party_info.get('title', '').upper()
+        party.organization_name = party_info['officer'].get('organizationName', '').upper()
         party.party_type = party_info['officer'].get('partyType')
+        party.email = party_info['officer'].get('email','').lower()
+        party.identifier = party_info['officer'].get('identifier','').upper()
+        party.tax_id = party_info['officer'].get('taxId','').upper()
         # add addresses to party
         if party_info.get('deliveryAddress', None):
             update_address(party.delivery_address, party_info.get('deliveryAddress'))

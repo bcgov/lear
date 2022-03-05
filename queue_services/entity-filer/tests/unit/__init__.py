@@ -493,24 +493,31 @@ def create_office_address(business, office, address_type):
 def create_party(party_json):
     """Create a director."""
     from legal_api.models import Address, Party
-    new_address = Address(
-        street=party_json['deliveryAddress']['streetAddress'],
-        city=party_json['deliveryAddress']['addressCity'],
-        country='CA',
-        postal_code=party_json['deliveryAddress']['postalCode'],
-        region=party_json['deliveryAddress']['addressRegion'],
-        delivery_instructions=party_json['deliveryAddress'].get('deliveryInstructions', '').upper()
-    )
-    new_address.save()
     new_party = Party(
         first_name=party_json['officer'].get('firstName', '').upper(),
         last_name=party_json['officer'].get('lastName', '').upper(),
-        middle_initial=party_json['officer'].get('middleInitial', '').upper(),
-        appointment_date=party_json['appointmentDate'],
-        cessation_date=None,
-        delivery_address=new_address,
-        mailing_address=new_address
+        middle_initial=party_json['officer'].get('middleInitial', '').upper()
     )
+    if party_json.get('mailingAddress'):
+        mailing_address = Address(
+            street=party_json['mailingAddress']['streetAddress'],
+            city=party_json['mailingAddress']['addressCity'],
+            country='CA',
+            postal_code=party_json['mailingAddress']['postalCode'],
+            region=party_json['mailingAddress']['addressRegion'],
+            delivery_instructions=party_json['mailingAddress'].get('deliveryInstructions', '').upper()
+        )
+        new_party.mailing_address = mailing_address
+    if party_json.get('deliveryAddress'):
+        delivery_address = Address(
+            street=party_json['deliveryAddress']['streetAddress'],
+            city=party_json['deliveryAddress']['addressCity'],
+            country='CA',
+            postal_code=party_json['deliveryAddress']['postalCode'],
+            region=party_json['deliveryAddress']['addressRegion'],
+            delivery_instructions=party_json['deliveryAddress'].get('deliveryInstructions', '').upper()
+        )
+        new_party.delivery_address = delivery_address
     new_party.save()
     return new_party
 

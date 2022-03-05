@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Final
 
 import pytest
-from legal_api.models import Address, Business, Filing
+from legal_api.models import Address, Business, Filing, PartyRole
 from registry_schemas.example_data import (
     REGISTRATION,
     CHANGE_OF_REGISTRATION_TEMPLATE,
@@ -232,3 +232,125 @@ async def test_worker_change_of_registration_court_order(app, session, mocker,te
     assert file_number == final_filing.court_order_file_number
     assert datetime.fromisoformat(order_date) == final_filing.court_order_date
     assert effect_of_order == final_filing.court_order_effect_of_order
+
+
+async def test_worker_proprietor_name_and_address_change(app, session, mocker):
+    """Assert the worker process process the court order correctly."""
+    identifier = 'FM1234567'
+    business = create_entity(identifier, 'SP', 'Test Entity')
+    business_id = business.id
+
+    party = create_party(SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
+    party_id = party.id
+
+    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+
+    filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
+    filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
+    filing['filing']['changeOfRegistration']['parties'][0]['officer']['id'] = party_id
+    filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'] = 'New Name'
+    filing['filing']['changeOfRegistration']['parties'][0]['officer']['middleInitial'] = 'New Name'
+    filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
+    filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
+
+    del filing['filing']['changeOfRegistration']['nameRequest']
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    # Test
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    business = Business.find_by_internal_id(business_id)
+    party = business.party_roles.all()[0].party
+    assert party.first_name == filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'].upper()
+    assert party.delivery_address.street ==\
+           filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
+    assert party.mailing_address.street == \
+           filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
+
+
+@pytest.mark.parametrize(
+    'test_name',
+    [
+        'gp_add_partner',
+        'gp_edit_partner_name_and_address',
+        'gp_delete_partner',
+    ]
+)
+async def test_worker_partner_name_and_address_change(app, session, mocker, test_name):
+    """Assert the worker process process the court order correctly."""
+    identifier = 'FM1234567'
+    business = create_entity(identifier, 'GP', 'Test Entity')
+    business_id = business.id
+
+    party1 = create_party(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
+    party_id_1 = party1.id
+    party2 = create_party(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][1])
+    party_id_2 = party2.id
+
+    create_party_role(business, party1, ['partner'], datetime.utcnow())
+    create_party_role(business, party2, ['partner'], datetime.utcnow())
+
+    filing = copy.deepcopy(GP_CHANGE_OF_REGISTRATION)
+    filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
+
+    if test_name == 'gp_edit_partner_name_and_address':
+        filing['filing']['changeOfRegistration']['parties'][0]['officer']['id'] = party_id_1
+        filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'] = 'New Name a'
+        filing['filing']['changeOfRegistration']['parties'][0]['officer']['middleInitial'] = 'New Name a'
+        filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
+        filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
+        filing['filing']['changeOfRegistration']['parties'][1]['officer']['id'] = party_id_2
+
+    if test_name == 'gp_delete_partner':
+        del filing['filing']['changeOfRegistration']['parties'][1]
+
+    del filing['filing']['changeOfRegistration']['nameRequest']
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    # Test
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    business = Business.find_by_internal_id(business_id)
+
+    if test_name == 'gp_edit_partner_name_and_address':
+        party = business.party_roles.all()[0].party
+        assert party.first_name == filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'].upper()
+        assert party.delivery_address.street ==\
+               filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
+        assert party.mailing_address.street == \
+               filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
+        assert business.party_roles.all()[0].cessation_date is None
+        assert business.party_roles.all()[1].cessation_date is None
+
+    if test_name == 'gp_delete_partner':
+        for role in business.party_roles.all():
+            print(role.cessation_date)
+
+
+
