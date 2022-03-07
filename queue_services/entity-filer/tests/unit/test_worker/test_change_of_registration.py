@@ -306,6 +306,14 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
     filing = copy.deepcopy(GP_CHANGE_OF_REGISTRATION)
     filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
 
+    if test_name == 'gp_add_partner':
+        filing['filing']['changeOfRegistration']['parties'][0]['officer']['id'] = party_id_1
+        filing['filing']['changeOfRegistration']['parties'][1]['officer']['id'] = party_id_2
+        new_party_json = GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][1]
+        del new_party_json['officer']['id']
+        new_party_json['officer']['firstName'] = 'New Name'
+        filing['filing']['changeOfRegistration']['parties'].append(new_party_json)
+
     if test_name == 'gp_edit_partner_name_and_address':
         filing['filing']['changeOfRegistration']['parties'][0]['officer']['id'] = party_id_1
         filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'] = 'New Name a'
@@ -349,8 +357,16 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         assert business.party_roles.all()[1].cessation_date is None
 
     if test_name == 'gp_delete_partner':
-        for role in business.party_roles.all():
-            print(role.cessation_date)
+        deleted_role = PartyRole.get_party_roles_by_party_id(business_id, party_id_2)[0]
+        assert deleted_role.cessation_date is not None
+
+    if test_name == 'gp_add_partner':
+        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 3
+        assert len(business.party_roles.all()) == 3
+        for party_role in business.party_roles.all():
+            assert party_role.cessation_date is None
+
+
 
 
 

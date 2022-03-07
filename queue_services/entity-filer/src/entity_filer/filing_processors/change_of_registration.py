@@ -17,11 +17,19 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
+import sentry_sdk
 from legal_api.models import Address, Business, Filing, NaicsStructure, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile,\
-    create_party, create_role, filings, update_address, name_request
+from entity_filer.filing_processors.filing_components import (
+    business_info,
+    business_profile,
+    create_party,
+    create_role,
+    filings,
+    name_request,
+    update_address,
+)
 
 
 def process(business: Business, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
@@ -35,12 +43,12 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
             business_info.set_legal_name(business.identifier, business, name_request_json)
             if from_legal_name != business.legal_name:
                 filing_meta.change_of_registration = {**filing_meta.change_of_registration,
-                                                    **{'fromLegalName': from_legal_name,
-                                                       'toLegalName': business.legal_name}}
+                                                      **{'fromLegalName': from_legal_name,
+                                                         'toLegalName': business.legal_name}}
     # Update Nature of Business
     if naics := change_filing.get('business', {}).get('naics'):
         naics_code = naics.get('naicsCode')
-        if business.naics_code !=  naics_code:
+        if business.naics_code != naics_code:
             naics_structure = NaicsStructure.find_by_code(naics_code)
             business.naics_key = naics_structure.naics_key
             business.naics_code = naics_code
@@ -68,6 +76,16 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
+    # Cease the party roles not present in the edit request
+    end_date_time = datetime.datetime.utcnow()
+    parties_to_update = [party.get('officer').get('id') for party in parties if
+                         party.get('officer').get('id') is not None]
+    existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
+    for party_role in existing_party_roles:
+        if party_role.party_id not in parties_to_update:
+            party_role.cessation_date = end_date_time
+
+    # Create and Update
     for party_info in parties:
         # Create if id not present
         if not party_info.get('officer').get('id'):
@@ -75,14 +93,6 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
         else:
             # Update if id is present
             _update_party(party_info)
-
-    # Cease the party roles not present in the edit request
-    end_date_time = datetime.datetime.utcnow()
-    parties_to_update = [party.get('officer').get('id') for party in parties if party.get('id') is not None]
-    existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
-    for party_role in existing_party_roles:
-        if party_role.party_id not in parties_to_update:
-            party_role.cessation_date = end_date_time
 
 
 def _update_party(party_info):
@@ -94,9 +104,9 @@ def _update_party(party_info):
         party.title = party_info.get('title', '').upper()
         party.organization_name = party_info['officer'].get('organizationName', '').upper()
         party.party_type = party_info['officer'].get('partyType')
-        party.email = party_info['officer'].get('email','').lower()
-        party.identifier = party_info['officer'].get('identifier','').upper()
-        party.tax_id = party_info['officer'].get('taxId','').upper()
+        party.email = party_info['officer'].get('email', '').lower()
+        party.identifier = party_info['officer'].get('identifier', '').upper()
+        party.tax_id = party_info['officer'].get('taxId', '').upper()
         # add addresses to party
         if party_info.get('deliveryAddress', None):
             update_address(party.delivery_address, party_info.get('deliveryAddress'))
