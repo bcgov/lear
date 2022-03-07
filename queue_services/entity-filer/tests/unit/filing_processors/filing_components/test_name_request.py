@@ -23,7 +23,7 @@ from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
-from entity_filer.filing_processors.filing_components import name_request
+from entity_filer.filing_processors.filing_components import business_info, name_request
 from tests.unit import create_filing
 
 
@@ -35,7 +35,7 @@ def test_has_new_nr_for_correction(app, session, test_name, nr_number, expected_
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
-    with patch.object(incorporation_filing, 'get_next_corp_num', return_value=next_corp_num):
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
         filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier

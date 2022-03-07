@@ -5,9 +5,9 @@
     <div class="pt-2">
         <span class="bold">Business Name: </span>{{registration.nameRequest.legalName}}
     </div>
-    {% if registration.business.naics %}
+    {% if business.naicsDescription %}
     <div class="pt-2">
-        <span class="bold">Nature of Business: </span>{{registration.business.naics.naicsDescription}}
+        <span class="bold">Nature of Business: </span>{{business.naicsDescription}}
     </div>
     {% endif %}
     <div class="pt-2">
