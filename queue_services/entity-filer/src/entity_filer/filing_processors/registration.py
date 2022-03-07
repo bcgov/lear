@@ -20,7 +20,7 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
-from legal_api.models import Business, Filing, NaicsStructure, RegistrationBootstrap
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 
@@ -100,10 +100,12 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business.founding_date = datetime.fromisoformat(registration_filing.get('startDate'))
     if naics := registration_filing.get('business', {}).get('naics'):
         naics_code = naics.get('naicsCode')
-        naics_structure = NaicsStructure.find_by_code(naics_code)
-        business.naics_key = naics_structure.naics_key
         business.naics_code = naics_code
-        business.naics_description = naics_structure.class_title
+        business.naics_description = naics.get('naicsDescription')
+        # TODO: Replace below lines (#11385) while implementing NAICS endpoints
+        # naics_structure = NaicsStructure.find_by_code(naics_code)
+        # business.naics_key = naics_structure.naics_key
+        # business.naics_description = naics_structure.class_title
     business.state = Business.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):
