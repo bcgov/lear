@@ -51,7 +51,8 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
         if business.naics_code != naics_code:
             filing_meta.change_of_registration = {**filing_meta.change_of_registration,
                                                   **{'fromNaicsCode': business.naics_code,
-                                                     'toNaicsCode': naics_code}}
+                                                     'toNaicsCode': naics_code,
+                                                     'naicsDescription': naics.get('naicsDescription')}}
             business.naics_code = naics_code
             business.naics_description = naics.get('naicsDescription')
 
