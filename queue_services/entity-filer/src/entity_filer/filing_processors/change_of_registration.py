@@ -18,7 +18,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from legal_api.models import Address, Business, Filing, NaicsStructure, Party, PartyRole
+from legal_api.models import Address, Business, Filing, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -49,15 +49,16 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
     if naics := change_filing.get('business', {}).get('naics'):
         naics_code = naics.get('naicsCode')
         if business.naics_code != naics_code:
-            naics_structure = NaicsStructure.find_by_code(naics_code)
-            business.naics_key = naics_structure.naics_key
+            filing_meta.change_of_registration = {**filing_meta.change_of_registration,
+                                                  **{'fromNaicsCode': business.naics_code,
+                                                     'toNaicsCode': naics_code}}
             business.naics_code = naics_code
-            business.naics_description = naics_structure.class_title
+            business.naics_description = naics.get('naicsDescription')
 
     # Update business address if present
     with suppress(IndexError, KeyError, TypeError):
         business_address_json = dpath.util.get(change_filing, '/changeOfRegistration/businessAddress')
-        for k, updated_address in business_address_json.items():
+        for updated_address in business_address_json.values():
             if updated_address.get('id', None):
                 address = Address.find_by_id(updated_address.get('id'))
                 if address:
@@ -136,7 +137,7 @@ def post_process(business: Business, filing: Filing):
     THIS SHOULD NOT ALTER THE MODEL
     """
     if name_request.has_new_nr_for_filing(business, filing.filing_json, 'changeOfRegistration'):
-        name_request.consume_nr(business, filing, '/filing/changeOfRegistration/nrNumber')
+        name_request.consume_nr(business, filing, '/filing/changeOfRegistration/nameRequest/nrNumber')
 
     with suppress(IndexError, KeyError, TypeError):
         if err := business_profile.update_business_profile(

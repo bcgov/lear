@@ -56,22 +56,6 @@ SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['roles
 ]
 
 
-DBA_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
-DBA_CHANGE_OF_REGISTRATION['filing']['business']['legalType'] = 'SP'
-DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['nameRequest']['legalType'] = 'SP'
-DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['businessType'] = 'DBA'
-DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['roles'] = [
-    {
-        'roleType': 'Completing Party',
-        'appointmentDate': '2022-01-01'
-    },
-    {
-        'roleType': 'Proprietor',
-        'appointmentDate': '2022-01-01'
-    }
-]
-
-
 @pytest.mark.parametrize(
     'test_name, legal_name, new_legal_name,legal_type, filing_template',
     [
@@ -173,9 +157,6 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
     await process_filing(filing_msg, app)
 
     # Check outcome
-    del filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['id']
-    del filing['filing']['changeOfRegistration']['businessAddress']['mailingAddress']['id']
-
     changed_delivery_address = Address.find_by_id(business_delivery_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
