@@ -72,10 +72,10 @@ def has_new_nr_for_correction(filing: dict):
     return False
 
 
-def has_new_nr_for_alteration(business: Business, filing: dict):
+def has_new_nr_for_filing(business: Business, filing: dict, filing_type: str):
     """Return whether a alteration filing has new NR."""
-    nr_number = get_str(filing, '/filing/alteration/nameRequest/nrNumber')
-    legal_name = get_str(filing, '/filing/alteration/nameRequest/legalName')
+    nr_number = get_str(filing, f'/filing/{filing_type}/nameRequest/nrNumber')
+    legal_name = get_str(filing, f'/filing/{filing_type}/nameRequest/legalName')
     if nr_number and legal_name and business.legal_name:
         # legal api validates legal name in filing json, confirm both are different
         return legal_name.lower() != business.legal_name.lower()

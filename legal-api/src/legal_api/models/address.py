@@ -91,3 +91,11 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
         address.delivery_instructions = new_info.get('deliveryInstructions')
 
         return address
+
+    @classmethod
+    def find_by_id(cls, internal_id: int = None):
+        """Return the address by the internal id."""
+        address = None
+        if internal_id:
+            address = cls.query.filter_by(id=internal_id).one_or_none()
+        return address
