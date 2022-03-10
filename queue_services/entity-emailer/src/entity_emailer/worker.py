@@ -50,7 +50,7 @@ from entity_emailer.email_processors import (
     mras_notification,
     name_request,
     nr_notification,
-    registration_notification
+    registration_notification,
 )
 
 from .message_tracker import tracker as tracker_util

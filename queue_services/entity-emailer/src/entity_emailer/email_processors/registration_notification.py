@@ -26,10 +26,7 @@ from jinja2 import Template
 from legal_api.models import Business, CorpType, Filing
 from sentry_sdk import capture_message
 
-from entity_emailer.email_processors import (
-    get_filing_info,
-    substitute_template_parts,
-)
+from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 
 
 def _get_pdfs(
