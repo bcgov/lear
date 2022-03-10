@@ -29,7 +29,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
-    REGISTRATION
+    REGISTRATION,
 )
 from sqlalchemy_continuum import versioning_manager
 
