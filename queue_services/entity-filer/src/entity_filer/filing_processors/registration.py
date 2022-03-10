@@ -131,6 +131,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     registration_json = copy.deepcopy(filing_rec.filing_json)
     registration_json['filing']['business'] = {}
     registration_json['filing']['business']['identifier'] = business.identifier
+    registration_json['filing']['registration']['business']['identifier'] = business.identifier
     registration_json['filing']['business']['legalType'] = business.legal_type
     registration_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data

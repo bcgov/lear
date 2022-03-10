@@ -30,7 +30,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
-    business = (filing.json)['filing']['business']
+    business = (filing.json)['filing'].get('business')
 
     filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
@@ -47,21 +47,22 @@ def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
     return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_recipients(option: str, filing_json: dict, token: str = None) -> str:
+def get_recipients(option: str, filing_json: dict, token: str = None, filing_type: str = None) -> str:
     """Get the recipients for the email output."""
     recipients = ''
-    if filing_json['filing'].get('incorporationApplication'):
-        recipients = filing_json['filing']['incorporationApplication']['contactPoint']['email']
+    filing_type = filing_type if filing_type else 'incorporationApplication'
+    if filing_json['filing'].get(filing_type):
+        recipients = filing_json['filing'][filing_type]['contactPoint']['email']
         if option in [Filing.Status.PAID.value, 'bn'] and \
-                filing_json['filing']['header']['name'] == 'incorporationApplication':
-            parties = filing_json['filing']['incorporationApplication'].get('parties')
+                filing_json['filing']['header']['name'] == filing_type:
+            parties = filing_json['filing'][filing_type].get('parties')
             comp_party_email = None
             for party in parties:
                 for role in party['roles']:
-                    if role['roleType'] == 'Completing Party':
-                        comp_party_email = party['officer']['email']
+                    if role['roleType'] == 'Completing Party' and \
+                            (comp_party_email := party['officer'].get('email')):
+                        recipients = f'{recipients}, {comp_party_email}'
                         break
-            recipients = f'{recipients}, {comp_party_email}'
     else:
         identifier = filing_json['filing']['business']['identifier']
         if not identifier[:2] == 'CP':
@@ -131,6 +132,7 @@ def substitute_template_parts(template_code: str) -> str:
         'business-dashboard-link-alt',
         'business-info',
         'business-information',
+        'reg-business-info',
         'cra-notice',
         'nr-footer',
         'footer',

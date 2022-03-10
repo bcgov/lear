@@ -183,6 +183,38 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
+         }),
+        ('dissolution_PAID_1112223333',
+         {
+             'email': {
+                 'type': 'dissolution',
+                 'option': 'PAID',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('dissolution_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'dissolution',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('registration_PAID_1112223333',
+         {
+             'email': {
+                 'type': 'registration',
+                 'option': 'PAID',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('registration_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'registration',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
          })
     ]
 )

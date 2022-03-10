@@ -18,17 +18,12 @@
 
           <div class="container">
             <p>
-              Canada Revenue Agency has provided a Business Number for the company {{business.legalName}},
-              Incorporation Number {{business.identifier}}.
+              Canada Revenue Agency has provided a Business Number for the 
+              {{ entityDescription }} {{business.legalName}}, Number {{business.identifier}}.
             </p>
 
             [[whitespace-16px.html]]
-            <table class="business-info-table" cellspacing="10" role="presentation">
-              <tr>
-                <td class="name">Business Number:</td>
-                <td class="value">{{business.taxId}}</td>
-              </tr>
-            </table>
+            <div>Business Number: {{business.taxId}}</div>
 
             [[whitespace-16px.html]]
             [[footer.html]]
