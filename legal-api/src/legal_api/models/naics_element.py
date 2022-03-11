@@ -59,7 +59,7 @@ class NaicsElement(db.Model):
             'year': self.year,
             'version': self.version,
             'classTitle': self.class_title,
-            'elementType': self.element_type,
+            'elementType': self.element_type.name,
             'elementDescription': self.element_description
         }
         return naics_element

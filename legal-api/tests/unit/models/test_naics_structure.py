@@ -29,7 +29,7 @@ def test_naics_find_by_search_term(session):
     """
     results = NaicsStructure.find_by_search_term('roast')
     assert results
-    assert len(results) == 9
+    assert len(results) == 7
 
     # verify elements are filtered correctly
     results_with_more_than_one_element = [result for result in results if len(result.naics_elements) > 0]
@@ -38,9 +38,37 @@ def test_naics_find_by_search_term(session):
     results_with_3_elements = [result for result in results if len(result.naics_elements) == 3]
     assert len(results_with_3_elements) == 2
 
-    # verify naics structures with no naics element matches are returned
-    results_with_no_elements = [result for result in results if len(result.naics_elements) == 0]
-    assert len(results_with_no_elements) == 2
+def test_exact_match_search_naics(session, client, jwt):
+    """Assert that search results are returned when searching with exact search term."""
+
+    # test
+    results = NaicsStructure.find_by_search_term('chocolate confectionery manufacturing')
+
+    # check
+    assert results
+    assert len(results) == 1
+    assert len(results[0].naics_elements) == 10
+
+
+def test_non_exact_match_search_naics(session, client, jwt):
+    """Assert that search results are returned when searching with non-exact search term."""
+
+    # test
+    results = NaicsStructure.find_by_search_term('confectionery chocolate')
+
+    # check
+    assert results
+    assert len(results) == 3
+
+    # verify elements are filtered correctly
+    results_with_7_elements = [result for result in results if len(result.naics_elements) == 7]
+    assert len(results_with_7_elements) == 1
+
+    results_with_2_elements = [result for result in results if len(result.naics_elements) == 2]
+    assert len(results_with_2_elements) == 1
+
+    results_with_4_elements = [result for result in results if len(result.naics_elements) == 4]
+    assert len(results_with_4_elements) == 1
 
 
 def test_naics_find_by_search_term_no_results(session):
