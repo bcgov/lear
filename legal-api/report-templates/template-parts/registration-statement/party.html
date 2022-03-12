@@ -1,22 +1,20 @@
 <div class="no-page-break">
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">
-    {% if registration.nameRequest.legalType == 'SP' %}
+    {% if business.legalType == 'SP' %}
       <span>Proprietor</span>
-    {% elif registration.nameRequest.legalType == 'GP' %}
+    {% elif business.legalType == 'GP' %}
       <span>Partner</span>
     {% endif %} Information
   </div>
   <div class="mt-4">
-    {% if registration.nameRequest.legalType == 'SP' %}
+    {% if business.legalType == 'SP' %}
       <div class="section-data">The Proprietor listed below is the only member of the Sole Proprietorship.</div>
     {% endif %}
   </div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
-  {% for party in (registration.parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + registration.parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
-    {% for party_role in party.roles %}
-      {% if party_role.roleType in ['Partner', 'Proprietor'] %}
+  {% for party in (parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
         <tr class="no-page-break">
           <td class="col-33">
             <div class="section-sub-title">
@@ -49,7 +47,7 @@
               {{ party.mailingAddress.addressRegion }}
               &nbsp;{{ party.mailingAddress.postalCode }}
             </div>
-            <div>{{ party.mailingAddress.addressCountry }}</div>
+            <div>{{ party.mailingAddress.addressCountryDescription }}</div>
             <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
           </td>
           {% endif %}
@@ -63,12 +61,10 @@
                 {{ party.deliveryAddress.addressRegion }}
                 &nbsp;{{ party.deliveryAddress.postalCode }}
              </div>
-             <div>{{ party.deliveryAddress.addressCountry }}</div>
+             <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
              <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
           </td>
           {% endif %}
         </tr>
-      {% endif %}
-    {% endfor %}
   {% endfor %}
 </table>

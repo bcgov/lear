@@ -136,6 +136,8 @@ class Report:  # pylint: disable=too-few-public-methods
             'registration/addresses',
             'registration/completingParty',
             'registration/party',
+            'registration-statement/party',
+            'registration-statement/business-info',
             'common/statement',
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
@@ -180,9 +182,10 @@ class Report:  # pylint: disable=too-few-public-methods
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):  # pylint: disable=too-many-branches
-        if self._report_key == 'noticeOfArticles':
+        if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
+
         else:
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
@@ -264,6 +267,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
+            filing['recognition_date_utc'] = self._business.founding_date.strftime('%B %-d, %Y')
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -686,6 +690,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Statement of Registration',
             'fileName': 'registration'
         },
+        'amendedRegistrationStatement': {
+            'filingDescription': 'Amended Registration Statement',
+            'fileName': 'amendedRegistrationStatement'
+        }
     }
 
     static_reports = {
