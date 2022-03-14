@@ -21,6 +21,7 @@ from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.filings.validations.registration import (
     validate_delivery_address,
+    validate_naics,
     validate_name_request,
     validate_party,
     validate_registration_court_order,
@@ -50,6 +51,8 @@ def validate(filing: Dict) -> Optional[Error]:
         msg.extend(validate_party(filing, legal_type, filing_type))
     if filing.get('filing', {}).get('changeOfRegistration', {}).get('businessAddress', None):
         msg.extend(validate_delivery_address(filing, filing_type))
+
+    msg.extend(validate_naics(filing, filing_type))
     msg.extend(validate_registration_court_order(filing, filing_type))
 
     if msg:

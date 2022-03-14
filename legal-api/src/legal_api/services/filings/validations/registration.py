@@ -22,7 +22,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import namex
+from legal_api.services import NaicsService, namex
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
@@ -44,6 +44,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     msg = []
     msg.extend(validate_name_request(registration_json))
+    msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
@@ -79,6 +80,16 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
     business_type_path = '/filing/registration/businessType'
     if legal_type == Business.LegalTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
         msg.append({'error': 'Business Type is required.', 'path': business_type_path})
+
+    return msg
+
+
+def validate_naics(filing: Dict, filing_type='registration') -> list:
+    """Validate naics."""
+    msg = []
+    naics_code_path = f'/filing/{filing_type}/business/naics/naicsCode'
+    if (naics_code := get_str(filing, naics_code_path)) and not NaicsService.find_by_code(naics_code):
+        msg.append({'error': 'Invalid naics code.', 'path': naics_code_path})
 
     return msg
 

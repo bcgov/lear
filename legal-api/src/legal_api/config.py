@@ -143,6 +143,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = int(os.getenv('NAICS_VERSION', '3'))
 
+    NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
+
     TESTING = False
     DEBUG = False
 
