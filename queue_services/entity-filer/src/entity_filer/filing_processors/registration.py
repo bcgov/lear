@@ -98,14 +98,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     business.founding_date = datetime.fromisoformat(registration_filing.get('startDate'))
-    if naics := registration_filing.get('business', {}).get('naics'):
-        naics_code = naics.get('naicsCode')
-        business.naics_code = naics_code
-        business.naics_description = naics.get('naicsDescription')
-        # TODO: Replace below lines (#11385) while implementing NAICS endpoints
-        # naics_structure = NaicsStructure.find_by_code(naics_code)
-        # business.naics_key = naics_structure.naics_key
-        # business.naics_description = naics_structure.class_title
+    if (naics := registration_filing.get('business', {}).get('naics')) and naics.get('naicsCode'):
+        business_info.update_naics_info(business, naics)
     business.state = Business.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):

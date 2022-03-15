@@ -19,6 +19,7 @@ from unittest.mock import patch
 
 import pytest
 from legal_api.models import Business, Filing
+from legal_api.services import NaicsService
 from registry_schemas.example_data import (
     FILING_HEADER,
     REGISTRATION
@@ -26,16 +27,10 @@ from registry_schemas.example_data import (
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
-from entity_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
 
 
 now = datetime.now().strftime('%Y-%m-%d')
-
-REGISTRATION['business']['naics'] = {
-    'naicsCode': '112320',
-    'naicsDescription': 'Broiler and other meat-type chicken production'
-}
 
 GP_REGISTRATION = copy.deepcopy(FILING_HEADER)
 GP_REGISTRATION['filing']['header']['name'] = 'registration'
@@ -79,14 +74,23 @@ def test_registration_process(app, session, legal_type, filing):
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
+    naics_response = {
+        'code': REGISTRATION['business']['naics']['naicsCode'],
+        'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+    }
+
     # test
-    business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier.startswith('FM')
     assert business.founding_date == datetime.fromisoformat(now)
     assert business.legal_type == filing['filing']['registration']['nameRequest']['legalType']
     assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
+    assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
+    assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
+    assert business.naics_key == naics_response['naicsKey']
     assert business.state == Business.State.ACTIVE
     if legal_type == 'SP':
         assert len(filing_rec.filing_party_roles.all()) == 1

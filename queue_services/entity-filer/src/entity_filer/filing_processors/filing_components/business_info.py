@@ -19,6 +19,7 @@ from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Filing
+from legal_api.services import NaicsService
 
 
 def set_corp_type(business: Business, business_info: Dict) -> Dict:
@@ -53,6 +54,14 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
         business.last_cod_date = filing.effective_date
         return business
     return None
+
+
+def update_naics_info(business: Business, naics: Dict):
+    """Update naics info."""
+    business.naics_code = naics.get('naicsCode')
+    business.naics_description = naics.get('naicsDescription')
+    naics_structure = NaicsService.find_by_code(business.naics_code)
+    business.naics_key = naics_structure['naicsKey']
 
 
 def get_next_corp_num(legal_type: str):
