@@ -88,8 +88,11 @@ def validate_naics(filing: Dict, filing_type='registration') -> list:
     """Validate naics."""
     msg = []
     naics_code_path = f'/filing/{filing_type}/business/naics/naicsCode'
-    if (naics_code := get_str(filing, naics_code_path)) and not NaicsService.find_by_code(naics_code):
-        msg.append({'error': 'Invalid naics code.', 'path': naics_code_path})
+    naics_desc = get_str(filing, f'/filing/{filing_type}/business/naics/naicsDescription')
+    if naics_code := get_str(filing, naics_code_path):
+        naics = NaicsService.find_by_code(naics_code)
+        if not naics or naics['classTitle'] != naics_desc:
+            msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
 
     return msg
 

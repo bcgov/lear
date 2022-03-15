@@ -104,6 +104,11 @@ nr_response = {
     }]
 }
 
+naics_response = {
+    'code': REGISTRATION['business']['naics']['naicsCode'],
+    'classTitle': REGISTRATION['business']['naics']['naicsDescription']
+}
+
 
 class MockResponse:
     """Mock http response."""
@@ -120,7 +125,7 @@ class MockResponse:
 def test_gp_registration(session):
     """Assert that the general partnership registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(GP_REGISTRATION)
 
     assert not err
@@ -129,7 +134,7 @@ def test_gp_registration(session):
 def test_sp_registration(session):
     """Assert that the general partnership registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(SP_REGISTRATION)
 
     assert not err
@@ -138,7 +143,7 @@ def test_sp_registration(session):
 def test_dba_registration(session):
     """Assert that the general partnership registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(DBA_REGISTRATION)
 
     assert not err
@@ -157,10 +162,11 @@ def test_invalid_nr_registration(session):
         }]
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     assert err
+    assert err.msg[0]['error'] == 'Name Request is not approved.'
 
 
 def test_business_type_required(session):
@@ -168,10 +174,22 @@ def test_business_type_required(session):
     filing = copy.deepcopy(SP_REGISTRATION)
     del filing['filing']['registration']['businessType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     assert err
+    assert err.msg[0]['error'] == 'Business Type is required.'
+
+
+def test_naics_invalid(session):
+    """Assert that naics is invalid."""
+    filing = copy.deepcopy(SP_REGISTRATION)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        with patch.object(NaicsService, 'find_by_code', return_value={}):
+            err = validate(filing)
+
+    assert err
+    assert err.msg[0]['error'] == 'Invalid naics code or description.'
 
 
 @pytest.mark.parametrize(
@@ -186,7 +204,7 @@ def test_invalid_party(session, test_name, filing, expected_msg):
     """Assert that party is invalid."""
     filing['filing']['registration']['parties'] = []
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     assert err
@@ -206,7 +224,7 @@ def test_invalid_business_address(session, test_name, filing):
     filing['filing']['registration']['businessAddress']['deliveryAddress']['addressRegion'] = 'invalid'
     filing['filing']['registration']['businessAddress']['deliveryAddress']['addressCountry'] = 'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     assert err
@@ -233,7 +251,7 @@ def test_validate_start_date(session, test_name, delta_date, is_valid):
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     if is_valid:
@@ -260,7 +278,7 @@ def test_registration_court_orders(session, test_status, file_number, effect_of_
     filing['filing']['registration']['courtOrder'] = court_order
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=MockResponse({})):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
     # validate outcomes
