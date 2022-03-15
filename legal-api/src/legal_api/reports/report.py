@@ -24,7 +24,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
-from legal_api.models import Business, CorpType, Document, Filing
+from legal_api.models import Business, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
@@ -138,6 +138,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'registration/party',
             'registration-statement/party',
             'registration-statement/business-info',
+            'registration-statement/completingParty',
             'common/statement',
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
@@ -185,7 +186,6 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
-
         else:
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
@@ -225,7 +225,18 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_tax_id(filing)
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
+        self._set_completing_party(filing)
         return filing
+
+    def _set_completing_party(self, filing):
+        completing_party_role = PartyRole.get_party_roles_by_filing(
+            self._filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)
+        if completing_party_role:
+            filing['completingParty'] = completing_party_role[0].party.json
+            with suppress(KeyError):
+                self._format_address(filing['completingParty']['deliveryAddress'])
+            with suppress(KeyError):
+                self._format_address(filing['completingParty']['mailingAddress'])
 
     def _set_registrar_info(self, filing):
         if filing.get('correction'):
