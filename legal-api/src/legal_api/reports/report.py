@@ -126,6 +126,11 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/style',
             'common/businessDetails',
             'common/directors',
+            'change-of-registration/legal-name',
+            'change-of-registration/nature-of-business',
+            'change-of-registration/addresses',
+            'change-of-registration/parties',
+            'change-of-registration/completingParty',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -198,6 +203,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_alteration_data(filing)
             elif self._report_key == 'registration':
                 self._format_registration_data(filing)
+            elif self._report_key == 'changeOfRegistration':
+                self._format_change_of_registration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -433,6 +440,24 @@ class Report:  # pylint: disable=too-few-public-methods
             if prev_legal_type else None
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
+
+    def _format_change_of_registration_data(self, filing):
+        to_legal_name = None
+        if self._filing.status == 'COMPLETED':
+            meta_data = self._filing.meta_data or {}
+            prev_legal_name = meta_data.get('changeOfRegistration', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('changeOfRegistration', {}).get('toLegalName')
+            filing['newNaicsDescription'] = meta_data.get('changeOfRegistration', {}).get('naicsDescription')
+        else:
+            prev_legal_name = filing.get('business').get('legalName')
+            name_request_json = filing.get('changeOfRegistration').get('nameRequest')
+            if name_request_json:
+                to_legal_name = name_request_json.get('legalName')
+
+        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+            filing['previousLegalName'] = prev_legal_name
+            filing['newLegalName'] = to_legal_name
+
 
     @staticmethod
     def _get_legal_type_description(legal_type):
@@ -704,6 +729,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'amendedRegistrationStatement': {
             'filingDescription': 'Amended Registration Statement',
             'fileName': 'amendedRegistrationStatement'
+        },
+        'changeOfRegistration': {
+            'filingDescription': 'Change of Registration',
+            'fileName': 'changeOfRegistration'
         }
     }
 
