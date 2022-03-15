@@ -29,6 +29,7 @@ def create_filing_msg(identifier):
 def get_filing_id_from_msg(msg: nats.aio.client.Msg):
     """Return the identifier of the filing in the NATS msg."""
     try:
+        print(msg.data.decode('utf-8'))
         token = json.loads(msg.data.decode('utf-8'))
         return token['filing'].get('id')
     except (AttributeError, NameError, json.decoder.JSONDecodeError):
@@ -36,10 +37,11 @@ def get_filing_id_from_msg(msg: nats.aio.client.Msg):
 
 
 def get_data_from_msg(msg: nats.aio.client.Msg, key):
-    """Return the identifier of the filing in the NATS msg."""
+    """Return the identifier of the filing in the NATS msg. """
     try:
-        token = json.loads(msg.data.decode('utf-8'))
-        return token['filing'].get(str)
+        print(msg.data.decode('utf-8'))
+        token = json.loads(msg.data.decode('utf-8'))     
+        return list(token.values())[0][key]
     except (AttributeError, NameError, json.decoder.JSONDecodeError):
         return None
 

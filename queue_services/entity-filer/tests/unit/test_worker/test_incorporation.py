@@ -97,7 +97,6 @@ def test_update_affiliation_error(mocker):
         level='error'
     )
 
-
 @pytest.mark.skip("AttributeError: can't set attribute")
 @pytest.mark.asyncio
 async def test_publish_email_message(app, session, stan_server, event_loop, client_id, entity_stan, future):
@@ -131,9 +130,9 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     # Test
     filing = Filing()
     filing.id = 101
-    filing.filing_type = 'incorporationApplication'
+    filing._filing_type = 'incorporationApplication'
     filing_date = datetime.datetime.utcnow()
-    filing.filing_date = filing_date
+    filing._filing_date = filing_date
     filing.effective_date = filing_date
 
     await publish_email_message(qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'registered')
