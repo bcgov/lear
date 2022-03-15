@@ -20,8 +20,8 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
+from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings.validations.change_of_registration import validate
-from legal_api.services.namex import NameXService
 
 
 now = datetime.now().strftime('%Y-%m-%d')
@@ -71,6 +71,11 @@ nr_response = {
     }]
 }
 
+naics_response = {
+    'code': REGISTRATION['business']['naics']['naicsCode'],
+    'classTitle': REGISTRATION['business']['naics']['naicsDescription']
+}
+
 
 class MockResponse:
     """Mock http response."""
@@ -87,14 +92,16 @@ class MockResponse:
 def test_gp_change_of_registration(session):
     """Assert that the general partnership change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(GP_CHANGE_OF_REGISTRATION)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(GP_CHANGE_OF_REGISTRATION)
     assert not err
 
 
 def test_sp_change_of_registration(session):
     """Assert that the sole proprietor change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(SP_CHANGE_OF_REGISTRATION)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(SP_CHANGE_OF_REGISTRATION)
 
     assert not err
 
@@ -102,7 +109,8 @@ def test_sp_change_of_registration(session):
 def test_dba_change_of_registration(session):
     """Assert that the dba change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(DBA_CHANGE_OF_REGISTRATION)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(DBA_CHANGE_OF_REGISTRATION)
 
     assert not err
 
@@ -120,7 +128,8 @@ def test_invalid_nr_change_of_registration(session):
         }]
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-        err = validate(filing)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(filing)
 
     assert err
 
@@ -128,16 +137,20 @@ def test_invalid_nr_change_of_registration(session):
 @pytest.mark.parametrize(
     'test_name, filing, expected_msg',
     [
-        ('sp_invalid_party', copy.deepcopy(SP_CHANGE_OF_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('dba_invalid_party', copy.deepcopy(DBA_CHANGE_OF_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', copy.deepcopy(GP_CHANGE_OF_REGISTRATION), '2 Partners and a Completing Party is required.'),
+        ('sp_invalid_party', copy.deepcopy(SP_CHANGE_OF_REGISTRATION),
+         '1 Proprietor and a Completing Party is required.'),
+        ('dba_invalid_party', copy.deepcopy(DBA_CHANGE_OF_REGISTRATION),
+         '1 Proprietor and a Completing Party is required.'),
+        ('gp_invalid_party', copy.deepcopy(GP_CHANGE_OF_REGISTRATION),
+         '2 Partners and a Completing Party is required.'),
     ]
 )
 def test_invalid_party(session, test_name, filing, expected_msg):
     """Assert that party is invalid."""
     filing['filing']['changeOfRegistration']['parties'][0]['roles'] = []
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(filing)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(filing)
 
     assert err
     assert err.msg[0]['error'] == expected_msg
@@ -156,7 +169,8 @@ def test_invalid_business_address(session, test_name, filing):
     filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['addressRegion'] = 'invalid'
     filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['addressCountry'] = 'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(filing)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(filing)
 
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
@@ -182,7 +196,8 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
     filing['filing']['changeOfRegistration']['courtOrder'] = court_order
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(filing)
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(filing)
 
     # validate outcomes
     if test_status == 'FAIL':
