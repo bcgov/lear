@@ -90,11 +90,13 @@
          {% elif header.reportType == 'amendedRegistrationStatement' %}
             <td class="col-22">
                <div class="bold">Registration Number:</div>
+               <div class="bold pt-2">Registration Date:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
+               <div class="pt-2">{{effective_date}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
                   {% if taxId is defined %}
