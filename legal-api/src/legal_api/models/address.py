@@ -67,6 +67,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         return {
+            'id': self.id,
             'streetAddress': self.street,
             'streetAddressAdditional': self.street_additional,
             'addressType': self.address_type,
