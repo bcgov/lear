@@ -29,6 +29,7 @@ class NaicsService:
         """Return NAICS Structure matching code."""
         try:
             naics_url = current_app.config.get('NAICS_API_URL')
+            current_app.logger.error(naics_url)
             token = AccountService.get_bearer_token()
             response = requests.get(naics_url + '/' + naics_code, headers={
                 'Content-Type': 'application/json',
@@ -40,6 +41,5 @@ class NaicsService:
             else:
                 return None
         except Exception as err:
-            current_app.logger.error(naics_url)
             current_app.logger.error(err)
             raise err
