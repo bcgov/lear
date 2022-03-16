@@ -40,5 +40,6 @@ class NaicsService:
             else:
                 return None
         except Exception as err:
+            current_app.logger.error(naics_url)
             current_app.logger.error(err)
             raise err
