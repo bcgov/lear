@@ -31,8 +31,9 @@ def test_address_json(session):
         region='BC',
         address_type=Address.MAILING
     )
-
+    address.save()
     address_json = {
+        'id': address.id,
         'streetAddress': address.street,
         'streetAddressAdditional': address.street_additional,
         'addressType': address.address_type,
