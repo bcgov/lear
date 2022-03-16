@@ -628,6 +628,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
         return filings
 
+    @staticmethod
+    def get_previous_completed_filing(filing):
+        """Return the previous completed filing."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == filing.business_id). \
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            filter(Filing.id < filing.id). \
+            filter(Filing.effective_date < filing.effective_date). \
+            order_by(Filing.effective_date.desc()).all()
+        if filings:
+            return filings[0]
+        return None
+
     def save(self):
         """Save and commit immediately."""
         db.session.add(self)

@@ -56,27 +56,30 @@ class Report:  # pylint: disable=too-few-public-methods
         return response.data, response.status
 
     def _get_report(self):
-        if self._report_key == 'correction':
-            self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
-        elif self._report_key == 'alteration':
-            self._report_key = 'alterationNotice'
-        if self._filing.business_id:
-            self._business = Business.find_by_internal_id(self._filing.business_id)
-            Report._populate_business_info_to_filing(self._filing, self._business)
-        headers = {
-            'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
-            'Content-Type': 'application/json'
-        }
-        data = {
-            'reportName': self._get_report_filename(),
-            'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
-            'templateVars': self._get_template_data()
-        }
-        response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
+        try:
+            if self._report_key == 'correction':
+                self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
+            elif self._report_key == 'alteration':
+                self._report_key = 'alterationNotice'
+            if self._filing.business_id:
+                self._business = Business.find_by_internal_id(self._filing.business_id)
+                Report._populate_business_info_to_filing(self._filing, self._business)
+            headers = {
+                'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
+                'Content-Type': 'application/json'
+            }
+            data = {
+                'reportName': self._get_report_filename(),
+                'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
+                'templateVars': self._get_template_data()
+            }
+            response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
-        if response.status_code != HTTPStatus.OK:
-            return jsonify(message=str(response.content)), response.status_code
-        return response.content, response.status_code
+            if response.status_code != HTTPStatus.OK:
+                return jsonify(message=str(response.content)), response.status_code
+            return response.content, response.status_code
+        except Exception as e:
+            print(e)
 
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
@@ -442,22 +445,53 @@ class Report:  # pylint: disable=too-few-public-methods
             if new_legal_type else None
 
     def _format_change_of_registration_data(self, filing):
-        to_legal_name = None
-        if self._filing.status == 'COMPLETED':
-            meta_data = self._filing.meta_data or {}
-            prev_legal_name = meta_data.get('changeOfRegistration', {}).get('fromLegalName')
-            to_legal_name = meta_data.get('changeOfRegistration', {}).get('toLegalName')
-            filing['newNaicsDescription'] = meta_data.get('changeOfRegistration', {}).get('naicsDescription')
-        else:
-            prev_legal_name = filing.get('business').get('legalName')
-            name_request_json = filing.get('changeOfRegistration').get('nameRequest')
-            if name_request_json:
-                to_legal_name = name_request_json.get('legalName')
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        versioned_business = VersionedBusinessDetailsService.\
+            get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
 
-        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = to_legal_name
+        # Change of Name
+        prev_legal_name = versioned_business.legal_name
+        name_request_json = filing.get('changeOfRegistration').get('nameRequest')
+        if name_request_json:
+            to_legal_name = name_request_json.get('legalName')
+            if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = to_legal_name
 
+        # Change of Nature of Business
+        prev_naics_code = versioned_business.naics_code
+        naics_json = filing.get('changeOfRegistration').get('business',{}).get('naics', {})
+        if naics_json:
+            to_naics_code = naics_json.get('naicsCode')
+            if prev_naics_code and to_naics_code and prev_naics_code != to_naics_code:
+                filing['newNaicsDescription'] =  naics_json.get('naicsDescription')
+
+        # Change of Address
+        if filing.get('changeOfRegistration').get('businessAddress'):
+            offices_json = \
+                VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.transaction_id,
+                                                                    self._filing.business_id)
+            filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed'] = self.\
+                _compare_address(filing.get('changeOfRegistration').get('businessAddress').get('mailingAddress'),
+                                 offices_json['registeredOffice']['mailingAddress'])
+            filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] =\
+                self._compare_address(filing.get('changeOfRegistration').get('businessAddress').get('deliveryAddress'),
+                           offices_json['registeredOffice']['deliveryAddress'])
+            filing['changeOfRegistration']['businessAddress']['changed'] =\
+                filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed']\
+                or filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed']
+
+    @staticmethod
+    def _compare_address(new_address, existing_address):
+        changed = False
+        excluded_keys = ['addressCountry', 'addressCountryDescription', 'addressType']
+        for key in existing_address:
+            if key not in excluded_keys:
+                if new_address.get(key, '') != (existing_address.get(key) or ''):
+                    changed = True
+        if new_address.get('addressCountry', '') != existing_address.get('addressCountryDescription', ''):
+            changed = True
+        return changed
 
     @staticmethod
     def _get_legal_type_description(legal_type):
