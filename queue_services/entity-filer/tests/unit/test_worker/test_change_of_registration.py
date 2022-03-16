@@ -16,14 +16,15 @@ import copy
 import random
 from datetime import datetime
 from typing import Final
+from unittest.mock import patch
 
 import pytest
 from legal_api.models import Address, Business, Filing, PartyRole
+from legal_api.services import NaicsService
 from registry_schemas.example_data import (
-    REGISTRATION,
     CHANGE_OF_REGISTRATION_TEMPLATE,
-    BUSINESS,
-    COURT_ORDER
+    COURT_ORDER,
+    REGISTRATION,
 )
 
 from entity_filer.worker import process_filing
@@ -54,6 +55,11 @@ SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['roles
 
     }
 ]
+
+naics_response = {
+    'code': REGISTRATION['business']['naics']['naicsCode'],
+    'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+}
 
 
 @pytest.mark.parametrize(
@@ -93,7 +99,8 @@ async def test_change_of_registration_legal_name(app, session, mocker, test_name
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -154,17 +161,18 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
 
     # Check outcome
     changed_delivery_address = Address.find_by_id(business_delivery_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
-               filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress'][key]
+            filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress'][key]
     changed_mailing_address = Address.find_by_id(business_mailing_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
-               filing['filing']['changeOfRegistration']['businessAddress']['mailingAddress'][key]
+            filing['filing']['changeOfRegistration']['businessAddress']['mailingAddress'][key]
 
 
 @pytest.mark.parametrize(
@@ -174,7 +182,7 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
         ('sp_court_order', 'SP', SP_CHANGE_OF_REGISTRATION)
     ]
 )
-async def test_worker_change_of_registration_court_order(app, session, mocker,test_name, legal_type, filing_template):
+async def test_worker_change_of_registration_court_order(app, session, mocker, test_name, legal_type, filing_template):
     """Assert the worker process process the court order correctly."""
     identifier = 'FM1234567'
     business = create_entity(identifier, legal_type, 'Test Entity')
@@ -206,7 +214,8 @@ async def test_worker_change_of_registration_court_order(app, session, mocker,te
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -250,16 +259,17 @@ async def test_worker_proprietor_name_and_address_change(app, session, mocker):
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
     party = business.party_roles.all()[0].party
     assert party.first_name == filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'].upper()
     assert party.delivery_address.street ==\
-           filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
+        filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
     assert party.mailing_address.street == \
-           filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
+        filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
 
 
 @pytest.mark.parametrize(
@@ -322,18 +332,20 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
     mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
 
     if test_name == 'gp_edit_partner_name_and_address':
         party = business.party_roles.all()[0].party
-        assert party.first_name == filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'].upper()
-        assert party.delivery_address.street ==\
-               filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
+        assert party.first_name == \
+            filing['filing']['changeOfRegistration']['parties'][0]['officer']['firstName'].upper()
+        assert party.delivery_address.street == \
+            filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']['streetAddress']
         assert party.mailing_address.street == \
-               filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
+            filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']['streetAddress']
         assert business.party_roles.all()[0].cessation_date is None
         assert business.party_roles.all()[1].cessation_date is None
 
@@ -346,8 +358,3 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         assert len(business.party_roles.all()) == 3
         for party_role in business.party_roles.all():
             assert party_role.cessation_date is None
-
-
-
-
-

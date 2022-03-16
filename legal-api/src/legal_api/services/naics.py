@@ -27,14 +27,19 @@ class NaicsService:
     @staticmethod
     def find_by_code(naics_code: str):
         """Return NAICS Structure matching code."""
-        naics_url = current_app.config.get('NAICS_API_URL')
-        token = AccountService.get_bearer_token()
-        response = requests.get(naics_url + '/' + naics_code, headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        })
+        try:
+            naics_url = current_app.config.get('NAICS_API_URL')
+            current_app.logger.error(naics_url)
+            token = AccountService.get_bearer_token()
+            response = requests.get(naics_url + '/' + naics_code, headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            })
 
-        if response.ok:
-            return response.json()
-        else:
-            return None
+            if response.ok:
+                return response.json()
+            else:
+                return None
+        except Exception as err:
+            current_app.logger.error(err)
+            raise err

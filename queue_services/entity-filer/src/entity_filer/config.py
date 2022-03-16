@@ -128,6 +128,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
     MINIO_SECURE = True
 
+    NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
@@ -158,6 +160,8 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     MINIO_ACCESS_SECRET = 'minio123'
     MINIO_BUCKET_BUSINESSES = 'businesses'
     MINIO_SECURE = False
+
+    NAICS_API_URL = 'https://NAICS_API_URL/api/v2/naics'
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
