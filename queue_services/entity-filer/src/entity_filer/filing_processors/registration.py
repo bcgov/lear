@@ -111,7 +111,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         raise QueueException(f'Registration {filing_rec.id}, Unable to create business.')
 
     if business_address := registration_filing['businessAddress']:
-        update_offices(business, {'registeredOffice': business_address})
+        update_offices(business, {'businessOffice': business_address})
 
     if parties := registration_filing.get('parties'):
         update_parties(business, parties, filing_rec)
