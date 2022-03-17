@@ -52,7 +52,7 @@ def compare_addresses(business_address: dict, filing_address: dict):
             pycountry.countries.search_fuzzy(value)[0].alpha_2 == \
                 pycountry.countries.search_fuzzy(filing_address.get('addressCountry'))[0].alpha_2
             assert business_address[key] == 'CA'
-        elif key != 'addressType':
+        elif key not in ('addressType', 'id'):
             assert business_address.get(key) == filing_address.get(key)
 
 
