@@ -102,7 +102,7 @@ def _update_party(party_info):
     if party:
         party.first_name = party_info['officer'].get('firstName', '').upper()
         party.last_name = party_info['officer'].get('lastName', '').upper()
-        party.middle_initial = party_info['officer'].get('middleInitial', '').upper()
+        party.middle_initial = party_info['officer'].get('middleName', '').upper()
         party.title = party_info.get('title', '').upper()
         party.organization_name = party_info['officer'].get('organizationName', '').upper()
         party.party_type = party_info['officer'].get('partyType')

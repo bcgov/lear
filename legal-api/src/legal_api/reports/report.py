@@ -132,8 +132,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'change-of-registration/legal-name',
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
-            'change-of-registration/parties',
+            'change-of-registration/proprietor',
             'change-of-registration/completingParty',
+            'change-of-registration/partner',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -473,24 +474,70 @@ class Report:  # pylint: disable=too-few-public-methods
                                                                     self._filing.business_id)
             filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed'] = self.\
                 _compare_address(filing.get('changeOfRegistration').get('businessAddress').get('mailingAddress'),
-                                 offices_json['registeredOffice']['mailingAddress'])
+                                 offices_json['businessOffice']['mailingAddress'])
             filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] =\
                 self._compare_address(filing.get('changeOfRegistration').get('businessAddress').get('deliveryAddress'),
-                           offices_json['registeredOffice']['deliveryAddress'])
+                           offices_json['businessOffice']['deliveryAddress'])
             filing['changeOfRegistration']['businessAddress']['changed'] =\
                 filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed']\
                 or filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed']
 
+        # Change of party
+        if filing.get('changeOfRegistration').get('parties'):
+            self._format_directors(filing['changeOfRegistration']['parties'])
+            filing['partyChange'] = False
+            for party in filing.get('changeOfRegistration').get('parties'):
+                if party['officer'].get('id'):
+                    prev_party =\
+                        VersionedBusinessDetailsService.get_party_revision(prev_completed_filing.transaction_id,
+                                                                            party['officer'].get('id'))
+                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+                        prev_completed_filing.transaction_id, prev_party, True )
+                    if self._has_party_name_change(prev_party_json, party):
+                        party['nameChanged']=True
+                        party['previousName']=self._get_party_name(prev_party_json)
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('mailingAddress'), prev_party_json['mailingAddress']):
+                        party['mailingAddress']['changed'] = True
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('deliveryAddress'), prev_party_json['deliveryAddress']):
+                        party['deliveryAddress']['changed'] = True
+                        filing['partyChange'] = True
+
+    @staticmethod
+    def _get_party_name(party_json):
+        if party_json.get('officer').get('partyType') == 'person':
+            last_name = party_json['officer'].get('lastName')
+            first_name = party_json['officer'].get('firstName')
+            return f'{last_name}, {first_name}'
+        elif party_json.get('officer').get('partyType') == 'organization':
+            return party_json['officer'].get('organizationName')
+
+
+    @staticmethod
+    def _has_party_name_change(prev_party_json, current_party_json):
+        changed = False
+        if current_party_json.get('officer').get('partyType') == 'person':
+            if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
+                    upper() or prev_party_json['officer'].get('middleName', '').upper() != \
+                    current_party_json['officer'].get('middleName', '').upper() or \
+                    prev_party_json['officer'].get('lastName').upper() != current_party_json['officer'].\
+                    get('lastName').upper():
+                changed=True
+        elif current_party_json.get('officer').get('partyType') == 'organization':
+            if prev_party_json['officer'].get('organizationName').upper() != \
+                    current_party_json['officer'].get('organizationName').upper():
+                changed=True
+        return changed
+
     @staticmethod
     def _compare_address(new_address, existing_address):
         changed = False
-        excluded_keys = ['addressCountry', 'addressCountryDescription', 'addressType']
+        excluded_keys = ['addressCountryDescription', 'addressType', 'addressCountry']
         for key in existing_address:
             if key not in excluded_keys:
                 if new_address.get(key, '') != (existing_address.get(key) or ''):
                     changed = True
-        if new_address.get('addressCountry', '') != existing_address.get('addressCountryDescription', ''):
-            changed = True
         return changed
 
     @staticmethod

@@ -409,7 +409,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
-        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision)
+        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision.party_id)
         party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
 
         if is_ia_or_after:
@@ -429,13 +429,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return party
 
     @staticmethod
-    def get_party_revision(transaction_id, party_role_revision) -> dict:
+    def get_party_revision(transaction_id, party_id) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_version = version_class(Party)
         party = db.session.query(party_version) \
             .filter(party_version.transaction_id <= transaction_id) \
             .filter(party_version.operation_type != 2) \
-            .filter(party_version.id == party_role_revision.party_id) \
+            .filter(party_version.id == party_id) \
             .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_version.end_transaction_id > transaction_id)) \
             .order_by(party_version.transaction_id).one_or_none()
