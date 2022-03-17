@@ -14,51 +14,51 @@
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
-                  {% if offices.registeredOffice.mailingAddress.hasCorrected %}
+                  {% if offices.businessOffice.mailingAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
-               <div class="pt-2">{{ offices.registeredOffice.mailingAddress.streetAddress }}</div>
-               {% if offices.registeredOffice.mailingAddress.streetAddressAdditional is defined %}
-                    <div>{{ offices.registeredOffice.mailingAddress.streetAddressAdditional }}</div>
+               <div class="pt-2">{{ offices.businessOffice.mailingAddress.streetAddress }}</div>
+               {% if offices.businessOffice.mailingAddress.streetAddressAdditional is defined %}
+                    <div>{{ offices.businessOffice.mailingAddress.streetAddressAdditional }}</div>
                {% endif %}
                <div>
-                  {{ offices.registeredOffice.mailingAddress.addressCity }}
-                  {{ offices.registeredOffice.mailingAddress.addressRegion }}
-                  &nbsp;{{ offices.registeredOffice.mailingAddress.postalCode }}
+                  {{ offices.businessOffice.mailingAddress.addressCity }}
+                  {{ offices.businessOffice.mailingAddress.addressRegion }}
+                  &nbsp;{{ offices.businessOffice.mailingAddress.postalCode }}
                </div>
-               {% if offices.registeredOffice.mailingAddress.addressCountryDescription %}
-                  <div>{{ offices.registeredOffice.mailingAddress.addressCountryDescription }}</div>
+               {% if offices.businessOffice.mailingAddress.addressCountryDescription %}
+                  <div>{{ offices.businessOffice.mailingAddress.addressCountryDescription }}</div>
                {% else %}
-                  <div>{{ offices.registeredOffice.mailingAddress.addressCountry }}</div>
+                  <div>{{ offices.businessOffice.mailingAddress.addressCountry }}</div>
                {% endif %}
                <div class="delivery-instructions pt-1">
-                  {{ offices.registeredOffice.mailingAddress.deliveryInstructions }}
+                  {{ offices.businessOffice.mailingAddress.deliveryInstructions }}
                </div>
             </td>
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.registeredOffice.deliveryAddress.hasCorrected %}
+                  {% if offices.businessOffice.deliveryAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
-               <div class="pt-2">{{ offices.registeredOffice.deliveryAddress.streetAddress }}</div>
-               {% if offices.registeredOffice.deliveryAddress.streetAddressAdditional is defined %}
-                    <div>{{ offices.registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
+               <div class="pt-2">{{ offices.businessOffice.deliveryAddress.streetAddress }}</div>
+               {% if offices.businessOffice.deliveryAddress.streetAddressAdditional is defined %}
+                    <div>{{ offices.businessOffice.deliveryAddress.streetAddressAdditional }}</div>
                {% endif %}
                <div>
-                  {{ offices.registeredOffice.deliveryAddress.addressCity }}
-                  {{ offices.registeredOffice.deliveryAddress.addressRegion }}
-                  &nbsp;{{ offices.registeredOffice.deliveryAddress.postalCode }}
+                  {{ offices.businessOffice.deliveryAddress.addressCity }}
+                  {{ offices.businessOffice.deliveryAddress.addressRegion }}
+                  &nbsp;{{ offices.businessOffice.deliveryAddress.postalCode }}
                </div>
-               {% if offices.registeredOffice.deliveryAddress.addressCountryDescription %}
-                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% if offices.businessOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ offices.businessOffice.deliveryAddress.addressCountryDescription }}</div>
                {% else %}
-                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountry }}</div>
+                  <div>{{ offices.businessOffice.deliveryAddress.addressCountry }}</div>
                {% endif %}
                <div class="delivery-instructions pt-1">
-                  {{ offices.registeredOffice.deliveryAddress.deliveryInstructions }}
+                  {{ offices.businessOffice.deliveryAddress.deliveryInstructions }}
                </div>
             </td>
             <td class="col-33"></td>

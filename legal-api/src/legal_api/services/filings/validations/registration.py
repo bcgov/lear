@@ -48,7 +48,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
-    msg.extend(validate_delivery_address(registration_json))
+    msg.extend(validate_business_address(registration_json))
     msg.extend(validate_registration_court_order(registration_json))
 
     if msg:
@@ -139,8 +139,8 @@ def validate_start_date(filing: Dict) -> list:
     return msg
 
 
-def validate_delivery_address(filing: Dict, filing_type='registration') -> list:
-    """Validate the delivery address of the registration filing."""
+def validate_business_address(filing: Dict, filing_type='registration') -> list:
+    """Validate the business address of registration filing."""
     addresses = filing['filing'][filing_type]['businessAddress']
     msg = []
 
