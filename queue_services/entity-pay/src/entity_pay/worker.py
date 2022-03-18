@@ -151,7 +151,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         if APP_CONFIG.ENVIRONMENT == 'prod':
             capture_message(
                     f'Queue Error: cannot find filing:{json.dumps(payment_token)} on Queue with error:{err}',
-                    level='error')            
+                    level='error')
             logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
