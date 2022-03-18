@@ -56,30 +56,27 @@ class Report:  # pylint: disable=too-few-public-methods
         return response.data, response.status
 
     def _get_report(self):
-        try:
-            if self._report_key == 'correction':
-                self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
-            elif self._report_key == 'alteration':
-                self._report_key = 'alterationNotice'
-            if self._filing.business_id:
-                self._business = Business.find_by_internal_id(self._filing.business_id)
-                Report._populate_business_info_to_filing(self._filing, self._business)
-            headers = {
-                'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
-                'Content-Type': 'application/json'
-            }
-            data = {
-                'reportName': self._get_report_filename(),
-                'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
-                'templateVars': self._get_template_data()
-            }
-            response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
+        if self._report_key == 'correction':
+            self._report_key = self._filing.filing_json['filing']['correction']['correctedFilingType']
+        elif self._report_key == 'alteration':
+            self._report_key = 'alterationNotice'
+        if self._filing.business_id:
+            self._business = Business.find_by_internal_id(self._filing.business_id)
+            Report._populate_business_info_to_filing(self._filing, self._business)
+        headers = {
+            'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'reportName': self._get_report_filename(),
+            'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
+            'templateVars': self._get_template_data()
+        }
+        response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
 
-            if response.status_code != HTTPStatus.OK:
-                return jsonify(message=str(response.content)), response.status_code
-            return response.content, response.status_code
-        except Exception as e:
-            print(e)
+        if response.status_code != HTTPStatus.OK:
+            return jsonify(message=str(response.content)), response.status_code
+        return response.content, response.status_code
 
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
@@ -461,11 +458,11 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # Change of Nature of Business
         prev_naics_code = versioned_business.naics_code
-        naics_json = filing.get('changeOfRegistration').get('business',{}).get('naics', {})
+        naics_json = filing.get('changeOfRegistration').get('business', {}).get('naics', {})
         if naics_json:
             to_naics_code = naics_json.get('naicsCode')
             if prev_naics_code and to_naics_code and prev_naics_code != to_naics_code:
-                filing['newNaicsDescription'] =  naics_json.get('naicsDescription')
+                filing['newNaicsDescription'] = naics_json.get('naicsDescription')
 
         # Change of Address
         if filing.get('changeOfRegistration').get('businessAddress'):
@@ -475,10 +472,10 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed'] = self.\
                 _compare_address(filing.get('changeOfRegistration').get('businessAddress').get('mailingAddress'),
                                  offices_json['businessOffice']['mailingAddress'])
-            filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] =\
-                self._compare_address(filing.get('changeOfRegistration').get('businessAddress').get('deliveryAddress'),
-                           offices_json['businessOffice']['deliveryAddress'])
-            filing['changeOfRegistration']['businessAddress']['changed'] =\
+            filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] = \
+                self._compare_address(filing.get('changeOfRegistration').get('businessAddress').
+                                      get('deliveryAddress'), offices_json['businessOffice']['deliveryAddress'])
+            filing['changeOfRegistration']['businessAddress']['changed'] = \
                 filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed']\
                 or filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed']
 
@@ -486,16 +483,17 @@ class Report:  # pylint: disable=too-few-public-methods
         if filing.get('changeOfRegistration').get('parties'):
             self._format_directors(filing['changeOfRegistration']['parties'])
             filing['partyChange'] = False
+            filing['newParties'] = []
             for party in filing.get('changeOfRegistration').get('parties'):
                 if party['officer'].get('id'):
                     prev_party =\
-                        VersionedBusinessDetailsService.get_party_revision(prev_completed_filing.transaction_id,
-                                                                            party['officer'].get('id'))
+                        VersionedBusinessDetailsService.get_party_revision(
+                            prev_completed_filing.transaction_id, party['officer'].get('id'))
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
-                        prev_completed_filing.transaction_id, prev_party, True )
+                        prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
-                        party['nameChanged']=True
-                        party['previousName']=self._get_party_name(prev_party_json)
+                        party['nameChanged'] = True
+                        party['previousName'] = self._get_party_name(prev_party_json)
                         filing['partyChange'] = True
                     if self._compare_address(party.get('mailingAddress'), prev_party_json['mailingAddress']):
                         party['mailingAddress']['changed'] = True
@@ -503,6 +501,9 @@ class Report:  # pylint: disable=too-few-public-methods
                     if self._compare_address(party.get('deliveryAddress'), prev_party_json['deliveryAddress']):
                         party['deliveryAddress']['changed'] = True
                         filing['partyChange'] = True
+                else:
+                    if [role for role in party.get('roles', []) if role['roleType'].lower() in ['partner']]:
+                        filing['newParties'].append(party)
 
     @staticmethod
     def _get_party_name(party_json):
@@ -513,7 +514,6 @@ class Report:  # pylint: disable=too-few-public-methods
         elif party_json.get('officer').get('partyType') == 'organization':
             return party_json['officer'].get('organizationName')
 
-
     @staticmethod
     def _has_party_name_change(prev_party_json, current_party_json):
         changed = False
@@ -523,11 +523,11 @@ class Report:  # pylint: disable=too-few-public-methods
                     current_party_json['officer'].get('middleName', '').upper() or \
                     prev_party_json['officer'].get('lastName').upper() != current_party_json['officer'].\
                     get('lastName').upper():
-                changed=True
+                changed = True
         elif current_party_json.get('officer').get('partyType') == 'organization':
             if prev_party_json['officer'].get('organizationName').upper() != \
                     current_party_json['officer'].get('organizationName').upper():
-                changed=True
+                changed = True
         return changed
 
     @staticmethod

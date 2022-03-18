@@ -409,7 +409,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
             if party_role_revision.cessation_date else None
-        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role_revision.party_id)
+        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id,
+                                                                            party_role_revision.party_id)
         party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
 
         if is_ia_or_after:
