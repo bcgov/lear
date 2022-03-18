@@ -262,6 +262,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:
             return registered_office.addresses.filter(Address.address_type == 'mailing')
+        elif (business_office := db.session.query(Office)  # SP/GP
+              .filter(Office.business_id == self.id)
+              .filter(Office.office_type == 'businessOffice').one_or_none()):
+            return business_office.addresses.filter(Address.address_type == 'mailing')
 
         return db.session.query(Address).filter(Address.business_id == self.id). \
             filter(Address.address_type == Address.MAILING)
@@ -273,6 +277,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:
             return registered_office.addresses.filter(Address.address_type == 'delivery')
+        elif (business_office := db.session.query(Office)  # SP/GP
+              .filter(Office.business_id == self.id)
+              .filter(Office.office_type == 'businessOffice').one_or_none()):
+            return business_office.addresses.filter(Address.address_type == 'mailing')
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)

@@ -88,19 +88,22 @@ def create_office(business, office_type, addresses) -> Office:
 def create_party(business_id: int, party_info: dict, create: bool = True) -> Party:
     """Create a new party or get them if they already exist."""
     party = None
+    if not (middle_initial := party_info['officer'].get('middleInitial')):
+        middle_initial = party_info['officer'].get('middleName', '')
+
     if create:
         party = PartyRole.find_party_by_name(
             business_id=business_id,
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
-            middle_initial=party_info['officer'].get('middleInitial', '').upper(),
+            middle_initial=middle_initial.upper(),
             org_name=party_info['officer'].get('organizationName', '').upper()
         )
     if not party:
         party = Party(
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
-            middle_initial=party_info['officer'].get('middleInitial', '').upper(),
+            middle_initial=middle_initial.upper(),
             title=party_info.get('title', '').upper(),
             organization_name=party_info['officer'].get('organizationName', '').upper(),
             email=party_info['officer'].get('email'),
