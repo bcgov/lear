@@ -508,10 +508,9 @@ class Report:  # pylint: disable=too-few-public-methods
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.transaction_id,self._business.id, True)
+                prev_completed_filing.transaction_id, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
-
 
     @staticmethod
     def _get_party_name(party_json):
