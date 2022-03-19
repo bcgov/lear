@@ -484,8 +484,10 @@ class Report:  # pylint: disable=too-few-public-methods
             self._format_directors(filing['changeOfRegistration']['parties'])
             filing['partyChange'] = False
             filing['newParties'] = []
+            parties_to_edit = []
             for party in filing.get('changeOfRegistration').get('parties'):
                 if party['officer'].get('id'):
+                    parties_to_edit.append(str(party['officer'].get('id')))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
                             prev_completed_filing.transaction_id, party['officer'].get('id'))
@@ -505,14 +507,22 @@ class Report:  # pylint: disable=too-few-public-methods
                     if [role for role in party.get('roles', []) if role['roleType'].lower() in ['partner']]:
                         filing['newParties'].append(party)
 
+            existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
+                prev_completed_filing.transaction_id,self._business.id, True)
+            parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
+            filing['ceasedParties'] = parties_deleted
+
+
     @staticmethod
     def _get_party_name(party_json):
+        party_name = ''
         if party_json.get('officer').get('partyType') == 'person':
             last_name = party_json['officer'].get('lastName')
             first_name = party_json['officer'].get('firstName')
-            return f'{last_name}, {first_name}'
+            party_name = f'{last_name}, {first_name}'
         elif party_json.get('officer').get('partyType') == 'organization':
-            return party_json['officer'].get('organizationName')
+            party_name = party_json['officer'].get('organizationName')
+        return party_name
 
     @staticmethod
     def _has_party_name_change(prev_party_json, current_party_json):
