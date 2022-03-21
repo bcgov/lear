@@ -15,7 +15,7 @@ defaults:
 jobs:
   setup-job:
     runs-on: ubuntu-20.04
-
+    
     if: github.repository == 'bcgov/lear'
 
     steps:
@@ -58,11 +58,16 @@ jobs:
       DATABASE_HOST: localhost
       DATABASE_PASSWORD: postgres
       NATS_SERVERS: "nats://nats:4222"
-      NATS_CLIENT_NAME: entity.email.tester
+      NATS_CLIENT_NAME: entity.filing.worker
       NATS_CLUSTER_ID: test-cluster
-      NATS_FILER_SUBJECT: entity.email
-      NATS_QUEUE: entity-email-worker
+      NATS_FILER_SUBJECT: entity.filing.filer
+      NATS_QUEUE: filing-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
+      TEST_NATS_DOCKER: True
+      STAN_CLUSTER_NAME: test-cluster      
+      GO_LIVE_DATE: 2019-08-12
+      NATS_SUBJECT: entity.filings
+      NATS_EMAILER_SUBJECT: entity.email
 
     runs-on: ubuntu-20.04
 

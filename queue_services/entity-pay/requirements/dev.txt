@@ -1,7 +1,7 @@
 # Everything the developer needs outside of the production requirements
 
 # Testing
-pytest<=5.0.1
+pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
