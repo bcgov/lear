@@ -126,6 +126,12 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/style',
             'common/businessDetails',
             'common/directors',
+            'change-of-registration/legal-name',
+            'change-of-registration/nature-of-business',
+            'change-of-registration/addresses',
+            'change-of-registration/proprietor',
+            'change-of-registration/completingParty',
+            'change-of-registration/partner',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -198,6 +204,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_alteration_data(filing)
             elif self._report_key == 'registration':
                 self._format_registration_data(filing)
+            elif self._report_key == 'changeOfRegistration':
+                self._format_change_of_registration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -433,6 +441,113 @@ class Report:  # pylint: disable=too-few-public-methods
             if prev_legal_type else None
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
+
+    def _format_change_of_registration_data(self, filing):  # pylint: disable=too-many-locals
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        versioned_business = VersionedBusinessDetailsService.\
+            get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
+
+        # Change of Name
+        prev_legal_name = versioned_business.legal_name
+        name_request_json = filing.get('changeOfRegistration').get('nameRequest')
+        if name_request_json:
+            to_legal_name = name_request_json.get('legalName')
+            if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = to_legal_name
+
+        # Change of Nature of Business
+        prev_naics_code = versioned_business.naics_code
+        naics_json = filing.get('changeOfRegistration').get('business', {}).get('naics', {})
+        if naics_json:
+            to_naics_code = naics_json.get('naicsCode')
+            if prev_naics_code and to_naics_code and prev_naics_code != to_naics_code:
+                filing['newNaicsDescription'] = naics_json.get('naicsDescription')
+
+        # Change of Address
+        if filing.get('changeOfRegistration').get('businessAddress'):
+            offices_json = \
+                VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.transaction_id,
+                                                                    self._filing.business_id)
+            filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed'] = self.\
+                _compare_address(filing.get('changeOfRegistration').get('businessAddress').get('mailingAddress'),
+                                 offices_json['businessOffice']['mailingAddress'])
+            filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] = \
+                self._compare_address(filing.get('changeOfRegistration').get('businessAddress').
+                                      get('deliveryAddress'), offices_json['businessOffice']['deliveryAddress'])
+            filing['changeOfRegistration']['businessAddress']['changed'] = \
+                filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed']\
+                or filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed']
+
+        # Change of party
+        if filing.get('changeOfRegistration').get('parties'):
+            self._format_directors(filing['changeOfRegistration']['parties'])
+            filing['partyChange'] = False
+            filing['newParties'] = []
+            parties_to_edit = []
+            for party in filing.get('changeOfRegistration').get('parties'):
+                if party['officer'].get('id'):
+                    parties_to_edit.append(str(party['officer'].get('id')))
+                    prev_party =\
+                        VersionedBusinessDetailsService.get_party_revision(
+                            prev_completed_filing.transaction_id, party['officer'].get('id'))
+                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+                        prev_completed_filing.transaction_id, prev_party, True)
+                    if self._has_party_name_change(prev_party_json, party):
+                        party['nameChanged'] = True
+                        party['previousName'] = self._get_party_name(prev_party_json)
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('mailingAddress'), prev_party_json['mailingAddress']):
+                        party['mailingAddress']['changed'] = True
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('deliveryAddress'), prev_party_json['deliveryAddress']):
+                        party['deliveryAddress']['changed'] = True
+                        filing['partyChange'] = True
+                else:
+                    if [role for role in party.get('roles', []) if role['roleType'].lower() in ['partner']]:
+                        filing['newParties'].append(party)
+
+            existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
+                prev_completed_filing.transaction_id, self._business.id, True)
+            parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
+            filing['ceasedParties'] = parties_deleted
+
+    @staticmethod
+    def _get_party_name(party_json):
+        party_name = ''
+        if party_json.get('officer').get('partyType') == 'person':
+            last_name = party_json['officer'].get('lastName')
+            first_name = party_json['officer'].get('firstName')
+            party_name = f'{last_name}, {first_name}'
+        elif party_json.get('officer').get('partyType') == 'organization':
+            party_name = party_json['officer'].get('organizationName')
+        return party_name
+
+    @staticmethod
+    def _has_party_name_change(prev_party_json, current_party_json):
+        changed = False
+        if current_party_json.get('officer').get('partyType') == 'person':
+            if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
+                    upper() or prev_party_json['officer'].get('middleName', '').upper() != \
+                    current_party_json['officer'].get('middleName', '').upper() or \
+                    prev_party_json['officer'].get('lastName').upper() != current_party_json['officer'].\
+                    get('lastName').upper():
+                changed = True
+        elif current_party_json.get('officer').get('partyType') == 'organization':
+            if prev_party_json['officer'].get('organizationName').upper() != \
+                    current_party_json['officer'].get('organizationName').upper():
+                changed = True
+        return changed
+
+    @staticmethod
+    def _compare_address(new_address, existing_address):
+        changed = False
+        excluded_keys = ['addressCountryDescription', 'addressType', 'addressCountry']
+        for key in existing_address:
+            if key not in excluded_keys:
+                if new_address.get(key, '') != (existing_address.get(key) or ''):
+                    changed = True
+        return changed
 
     @staticmethod
     def _get_legal_type_description(legal_type):
@@ -704,6 +819,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'amendedRegistrationStatement': {
             'filingDescription': 'Amended Registration Statement',
             'fileName': 'amendedRegistrationStatement'
+        },
+        'changeOfRegistration': {
+            'filingDescription': 'Change of Registration',
+            'fileName': 'changeOfRegistration'
         }
     }
 

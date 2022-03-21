@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
    <head>
-      <title>Amended Registration Statement</title>
+      <title>Change of Registration</title>
       <meta charset="UTF-8">
       <meta name="author" content="BC Registries and Online Services">
       [[common/style.html]]
@@ -16,7 +16,7 @@
                </td>
                <td>
                   <div class="report-type">
-                     AMENDED - STATEMENT OF REGISTRATION
+                     CHANGE OF REGISTRATION
                   </div>
                   <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
                </td>
@@ -30,10 +30,16 @@
       </div>
       [[common/businessDetails.html]]
 
-      <div class="container pt-4">
-         <div class="section-title">Business Information</div>
-          [[registration-statement/business-info.html]]
-          [[registration-statement/party.html]]
+      <div class="container">
+          [[change-of-registration/legal-name.html]]
+          [[change-of-registration/nature-of-business.html]]
+          [[change-of-registration/addresses.html]]
+          {% if business.legalType == 'GP' %}
+            [[change-of-registration/partner.html]]
+          {% elif business.legalType == 'SP' %}
+            [[change-of-registration/proprietor.html]]
+          {% endif %}
+          [[change-of-registration/completingParty.html]]
       </div>
    </body>
 </html>
