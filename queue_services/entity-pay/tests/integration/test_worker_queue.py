@@ -82,7 +82,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # Get modified data
@@ -134,7 +134,7 @@ async def test_publish_filing(app, session, stan_server, event_loop, client_id, 
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # check it out
@@ -183,7 +183,7 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # check it out
