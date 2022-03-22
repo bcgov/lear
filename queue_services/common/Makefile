@@ -13,7 +13,7 @@ PROJECT_NAME:=entity_queue_common
 #################################################################################
 setup: install install-dev ## Setup the project
 
-clean: clean-build clean-pyc clean-test ## Clean the project
+clean: clean-build clean-pyc clean-test  ## Clean the project
 	rm -rf venv/
 
 clean-build: ## Clean build files
