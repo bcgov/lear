@@ -203,38 +203,40 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         name_changes = []
         alterations = []
         # Any future filings that includes a company name/type change must be added here
-        for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName']):
+        for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName',
+                                                                      'specialResolution']):
             filing_meta = filing.meta_data
             filing_json = filing.filing_json
-            filing_changes = filing_meta.get(filing.filing_type, {})
-            filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
-            formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
-            if filing.filing_type == 'alteration':
-                change_info = {}
-                change_info['filingDateTime'] = formatted_filing_date_time
-                if filing_changes.get('fromLegalType') != filing_changes.get('toLegalType'):
-                    change_info['fromLegalType'] = BusinessDocument.\
-                        _get_legal_type_description(filing_changes['fromLegalType'])
-                    change_info['toLegalType'] = BusinessDocument.\
-                        _get_legal_type_description(filing_changes['toLegalType'])
-                    if not filing_changes.get('fromLegalName'):
-                        change_info['fromLegalName'] = filing_json['filing']['business']['legalName']
-                        change_info['toLegalName'] = filing_json['filing']['business']['legalName']
-                if filing_changes.get('fromLegalName'):
-                    change_info['fromLegalName'] = filing_changes['fromLegalName']
-                    change_info['toLegalName'] = filing_changes['toLegalName']
+            if filing_meta:
+                filing_changes = filing_meta.get(filing.filing_type, {})
+                filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
+                formatted_filing_date_time = LegislationDatetime.format_as_report_string(filing_datetime)
+                if filing.filing_type == 'alteration':
+                    change_info = {}
+                    change_info['filingDateTime'] = formatted_filing_date_time
+                    if filing_changes.get('fromLegalType') != filing_changes.get('toLegalType'):
+                        change_info['fromLegalType'] = BusinessDocument.\
+                            _get_legal_type_description(filing_changes['fromLegalType'])
+                        change_info['toLegalType'] = BusinessDocument.\
+                            _get_legal_type_description(filing_changes['toLegalType'])
+                        if not filing_changes.get('fromLegalName'):
+                            change_info['fromLegalName'] = filing_json['filing']['business']['legalName']
+                            change_info['toLegalName'] = filing_json['filing']['business']['legalName']
+                    if filing_changes.get('fromLegalName'):
+                        change_info['fromLegalName'] = filing_changes['fromLegalName']
+                        change_info['toLegalName'] = filing_changes['toLegalName']
 
-                if change_info.get('fromLegalType'):
-                    alterations.append(change_info)
-                elif change_info.get('fromLegalName'):
-                    name_changes.append(change_info)
-            else:
-                if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
-                    name_change_info = {}
-                    name_change_info['fromLegalName'] = filing_changes.get('fromLegalName', 'Not Available')
-                    name_change_info['toLegalName'] = filing_changes.get('toLegalName', 'Not Available')
-                    name_change_info['filingDateTime'] = formatted_filing_date_time
-                    name_changes.append(name_change_info)
+                    if change_info.get('fromLegalType'):
+                        alterations.append(change_info)
+                    elif change_info.get('fromLegalName'):
+                        name_changes.append(change_info)
+                else:
+                    if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
+                        name_change_info = {}
+                        name_change_info['fromLegalName'] = filing_changes.get('fromLegalName', 'Not Available')
+                        name_change_info['toLegalName'] = filing_changes.get('toLegalName', 'Not Available')
+                        name_change_info['filingDateTime'] = formatted_filing_date_time
+                        name_changes.append(name_change_info)
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 
