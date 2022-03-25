@@ -237,6 +237,14 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                         name_change_info['toLegalName'] = filing_changes.get('toLegalName', 'Not Available')
                         name_change_info['filingDateTime'] = formatted_filing_date_time
                         name_changes.append(name_change_info)
+                    elif filing_meta.get('changeOfName'):  # For compound filing like CP special resolution
+                        name_change_info = {}
+                        name_change_info['fromLegalName'] = filing_meta.get('changeOfName').get('fromLegalName',
+                                                                                                'Not Available')
+                        name_change_info['toLegalName'] = filing_meta.get('changeOfName').get('toLegalName',
+                                                                                              'Not Available')
+                        name_change_info['filingDateTime'] = formatted_filing_date_time
+                        name_changes.append(name_change_info)
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 
