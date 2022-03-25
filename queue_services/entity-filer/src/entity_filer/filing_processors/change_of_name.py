@@ -15,18 +15,31 @@
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 
 from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.filing_components import name_request
 
 
 def process(business: Business, filing: Dict, filing_meta: FilingMeta):
-    """Render the annual_report onto the business model objects."""
+    """Render the change of name into the business model objects."""
     logger.debug('processing Change of Name: %s', filing)
 
-    new_name = filing['changeOfName'].get('legalName')
+    if name_request_json := filing['changeOfName'].get('nameRequest'):
+        new_name = name_request_json.get('legalName')
+    else:
+        new_name = filing['changeOfName'].get('legalName')
 
     filing_meta.change_of_name = {'fromLegalName': business.legal_name,
                                   'toLegalName': new_name}
 
     business.legal_name = new_name
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for change of name.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    if name_request.has_new_nr_for_filing(business, filing.filing_json, 'changeOfName'):
+        name_request.consume_nr(business, filing, '/filing/changeOfName/nameRequest/nrNumber')
