@@ -277,6 +277,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 name_request.consume_nr(business, filing_submission, '/filing/registration/nameRequest/nrNumber')
                 registration.post_process(business, filing_submission)
 
+            if any('changeOfName' in x for x in legal_filings):
+                change_of_name.post_process(business, filing_submission)
+
             if any('conversion' in x for x in legal_filings):
                 filing_submission.business_id = business.id
                 db.session.add(filing_submission)
