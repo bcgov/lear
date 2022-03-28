@@ -253,6 +253,8 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         filing_info = {}
         filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
         filing_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+        effective_datetime = LegislationDatetime.as_legislation_timezone(filing.effective_date)
+        filing_info['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_datetime)
         filing_meta = filing.meta_data
         if filing.filing_type == 'dissolution':
             filing_info['filing_name'] = BusinessDocument.\
