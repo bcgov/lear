@@ -136,7 +136,7 @@ def post_process(business: Business, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    name_request.consume_nr(business, filing, '/filing/changeOfRegistration/nameRequest/nrNumber')
+    name_request.consume_nr(business, filing, 'changeOfRegistration')
 
     with suppress(IndexError, KeyError, TypeError):
         if err := business_profile.update_business_profile(

@@ -41,4 +41,4 @@ def post_process(business: Business, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    name_request.consume_nr(business, filing, '/filing/changeOfName/nameRequest/nrNumber')
+    name_request.consume_nr(business, filing, 'changeOfName')
