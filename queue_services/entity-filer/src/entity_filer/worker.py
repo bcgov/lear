@@ -274,7 +274,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 db.session.add(filing_submission)
                 db.session.commit()
                 registration.update_affiliation(business, filing_submission)
-                name_request.consume_nr(business, filing_submission, '/filing/registration/nameRequest/nrNumber')
+                name_request.consume_nr(business, filing_submission, 'registration')
                 registration.post_process(business, filing_submission)
 
             if any('changeOfName' in x for x in legal_filings):

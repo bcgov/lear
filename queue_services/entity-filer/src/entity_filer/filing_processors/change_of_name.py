@@ -41,5 +41,4 @@ def post_process(business: Business, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    if name_request.has_new_nr_for_filing(business, filing.filing_json, 'changeOfName'):
-        name_request.consume_nr(business, filing, '/filing/changeOfName/nameRequest/nrNumber')
+    name_request.consume_nr(business, filing, 'changeOfName')
