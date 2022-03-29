@@ -7,11 +7,6 @@
       <span>Partner</span>
     {% endif %} Information
   </div>
-  <div class="mt-4">
-    {% if business.legalType == 'SP' %}
-      <div class="section-data">The Proprietor listed below is the only member of the Sole Proprietorship.</div>
-    {% endif %}
-  </div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
   {% for party in (parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
