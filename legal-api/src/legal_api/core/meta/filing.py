@@ -300,6 +300,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing_type == 'alteration':
             if filing_meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
+        elif filing_type == 'specialResolution' and 'changeOfName' in filing_meta_data.get('legalFilings', []):
+            outputs.add('certificateOfNameChange')
         elif filing_type == 'correction':
             if not filing_meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
                 # For IA correction, certificate will be populated in get_all_outputs since
