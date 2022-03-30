@@ -56,7 +56,8 @@ class DissolutionStatementTypes(str, Enum):
 
 DISSOLUTION_MAPPING = {
     'COOP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION],
-    'CORP': [DissolutionTypes.VOLUNTARY]
+    'CORP': [DissolutionTypes.VOLUNTARY],
+    'FIRMS': [DissolutionTypes.VOLUNTARY]
 }
 
 
@@ -97,8 +98,12 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     dissolution_type_path = '/filing/dissolution/dissolutionType'
     dissolution_type = get_str(filing_json, dissolution_type_path)
     if dissolution_type:
+        # pylint: disable=too-many-boolean-expressions
         if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
-                or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']):
+                or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']) \
+                or (legal_type in (
+                Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value) and dissolution_type not in
+                    DISSOLUTION_MAPPING['FIRMS']):
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
     else:
