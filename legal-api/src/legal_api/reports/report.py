@@ -414,7 +414,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._filing.filing_type == 'alteration':
             from_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
             to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
-        if self._filing.filing_type == 'specialResolution' and filing.get('changeOfName'):
+        if self._filing.filing_type == 'specialResolution' and 'changeOfName' in meta_data.get('legalFilings', []):
             from_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
             to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
         filing['fromLegalName'] = from_legal_name
