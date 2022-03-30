@@ -169,7 +169,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
-            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+            {'types': 'BC,BEN,CC,ULC,LLC,SP,GP', 'outputs': ['certificateOfDissolution']},
         ]
     },
     'incorporationApplication': {
