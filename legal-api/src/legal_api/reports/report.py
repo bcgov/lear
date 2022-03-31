@@ -206,6 +206,8 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_registration_data(filing)
             elif self._report_key == 'changeOfRegistration':
                 self._format_change_of_registration_data(filing)
+            elif self._report_key == 'certificateOfNameChange':
+                self._format_name_change_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -404,6 +406,19 @@ class Report:  # pylint: disable=too-few-public-methods
 
         start_date = datetime.fromisoformat(filing['registration']['startDate'])
         filing['registration']['startDate'] = start_date.strftime('%B %-d, %Y')
+
+    def _format_name_change_data(self, filing):
+        meta_data = self._filing.meta_data or {}
+        from_legal_name = ''
+        to_legal_name = ''
+        if self._filing.filing_type == 'alteration':
+            from_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+        if self._filing.filing_type == 'specialResolution' and 'changeOfName' in meta_data.get('legalFilings', []):
+            from_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
+        filing['fromLegalName'] = from_legal_name
+        filing['toLegalName'] = to_legal_name
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion

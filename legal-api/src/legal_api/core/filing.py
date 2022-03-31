@@ -470,14 +470,15 @@ class Filing:
             Filing.Status.CORRECTED,
         ) and filing.storage.meta_data:
             if legal_filings := filing.storage.meta_data.get('legalFilings'):
+                legal_filings_copy = copy.deepcopy(legal_filings)
                 if (filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
                         business.legal_type == Business.LegalTypes.COOP.value and
                         Filing.FilingTypes.CHANGEOFNAME.value in legal_filings):
                     # suppress change of name output for MVP since the design is outdated.
-                    legal_filings.remove(Filing.FilingTypes.CHANGEOFNAME.value)
+                    legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
 
                 documents['documents']['legalFilings'] = \
-                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
+                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
 
                 # get extra outputs
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
