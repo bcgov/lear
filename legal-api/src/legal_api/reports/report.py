@@ -397,9 +397,9 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _format_registration_data(self, filing):
         with suppress(KeyError):
-            self._format_address(filing['registration']['businessAddress']['deliveryAddress'])
+            self._format_address(filing['registration']['offices']['businessOffice']['deliveryAddress'])
         with suppress(KeyError):
-            self._format_address(filing['registration']['businessAddress']['mailingAddress'])
+            self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
 
         start_date = datetime.fromisoformat(filing['registration']['startDate'])
@@ -465,19 +465,19 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['newNaicsDescription'] = naics_json.get('naicsDescription')
 
         # Change of Address
-        if filing.get('changeOfRegistration').get('businessAddress'):
-            offices_json = \
-                VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.transaction_id,
-                                                                    self._filing.business_id)
-            filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed'] = self.\
-                _compare_address(filing.get('changeOfRegistration').get('businessAddress').get('mailingAddress'),
-                                 offices_json['businessOffice']['mailingAddress'])
-            filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed'] = \
-                self._compare_address(filing.get('changeOfRegistration').get('businessAddress').
-                                      get('deliveryAddress'), offices_json['businessOffice']['deliveryAddress'])
-            filing['changeOfRegistration']['businessAddress']['changed'] = \
-                filing['changeOfRegistration']['businessAddress']['mailingAddress']['changed']\
-                or filing['changeOfRegistration']['businessAddress']['deliveryAddress']['changed']
+        if business_office := filing.get('changeOfRegistration').get('offices', {}).get('businessOffice'):
+            offices_json = VersionedBusinessDetailsService.get_office_revision(
+                prev_completed_filing.transaction_id,
+                self._filing.business_id)
+            filing['changeOfRegistration']['offices']['businessOffice']['mailingAddress']['changed'] = \
+                self._compare_address(business_office.get('mailingAddress'),
+                                      offices_json['businessOffice']['mailingAddress'])
+            filing['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['changed'] = \
+                self._compare_address(business_office.get('deliveryAddress'),
+                                      offices_json['businessOffice']['deliveryAddress'])
+            filing['changeOfRegistration']['offices']['businessOffice']['changed'] = \
+                filing['changeOfRegistration']['offices']['businessOffice']['mailingAddress']['changed']\
+                or filing['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['changed']
 
         # Change of party
         if filing.get('changeOfRegistration').get('parties'):

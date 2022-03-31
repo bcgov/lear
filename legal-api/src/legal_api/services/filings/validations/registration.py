@@ -48,7 +48,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
-    msg.extend(validate_business_address(registration_json))
+    msg.extend(validate_offices(registration_json))
     msg.extend(validate_registration_court_order(registration_json))
 
     if msg:
@@ -139,17 +139,17 @@ def validate_start_date(filing: Dict) -> list:
     return msg
 
 
-def validate_business_address(filing: Dict, filing_type='registration') -> list:
+def validate_offices(filing: Dict, filing_type='registration') -> list:
     """Validate the business address of registration filing."""
-    addresses = filing['filing'][filing_type]['businessAddress']
+    offices = filing['filing'][filing_type]['offices']
     msg = []
 
-    if delivery_address := addresses.get('deliveryAddress'):
+    if delivery_address := offices.get('businessOffice', {}).get('deliveryAddress'):
         region = delivery_address['addressRegion']
         country = delivery_address['addressCountry']
 
         if region != 'BC':
-            region_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressRegion'
+            region_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressRegion'
             msg.append({'error': "Address Region must be 'BC'.", 'path': region_path})
 
         try:
@@ -157,7 +157,7 @@ def validate_business_address(filing: Dict, filing_type='registration') -> list:
             if country != 'CA':
                 raise LookupError
         except LookupError:
-            country_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressCountry'
+            country_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressCountry'
             msg.append({'error': "Address Country must be 'CA'.", 'path': country_path})
 
     return msg

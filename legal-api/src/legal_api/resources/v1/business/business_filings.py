@@ -700,7 +700,7 @@ class ListFilingResource(Resource):
                     filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
             elif filing.filing_type == Filing.FILINGS['registration']['name']:
                 mailing_address = Address.create_address(
-                    filing.json['filing']['registration']['businessAddress']['mailingAddress'])
+                    filing.json['filing']['registration']['offices']['businessOffice']['mailingAddress'])
 
             corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
                 'legalType', Business.LegalTypes.BCOMP.value)

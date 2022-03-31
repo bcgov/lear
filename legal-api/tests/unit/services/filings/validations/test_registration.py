@@ -221,8 +221,8 @@ def test_invalid_party(session, test_name, filing, expected_msg):
 )
 def test_invalid_business_address(session, test_name, filing):
     """Assert that delivery business address is invalid."""
-    filing['filing']['registration']['businessAddress']['deliveryAddress']['addressRegion'] = 'invalid'
-    filing['filing']['registration']['businessAddress']['deliveryAddress']['addressCountry'] = 'invalid'
+    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = 'invalid'
+    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = 'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)

@@ -144,8 +144,10 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
 
     del filing['filing']['changeOfRegistration']['nameRequest']
 
-    filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['id'] = business_delivery_address_id
-    filing['filing']['changeOfRegistration']['businessAddress']['mailingAddress']['id'] = business_mailing_address_id
+    filing['filing']['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['id'] = \
+        business_delivery_address_id
+    filing['filing']['changeOfRegistration']['offices']['businessOffice']['mailingAddress']['id'] = \
+        business_mailing_address_id
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -168,11 +170,11 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
     changed_delivery_address = Address.find_by_id(business_delivery_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
-            filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress'][key]
+            filing['filing']['changeOfRegistration']['offices']['businessOffice']['deliveryAddress'][key]
     changed_mailing_address = Address.find_by_id(business_mailing_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
-            filing['filing']['changeOfRegistration']['businessAddress']['mailingAddress'][key]
+            filing['filing']['changeOfRegistration']['offices']['businessOffice']['mailingAddress'][key]
 
 
 @pytest.mark.parametrize(

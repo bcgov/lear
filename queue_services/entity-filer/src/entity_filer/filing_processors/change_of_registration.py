@@ -55,10 +55,10 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                                                      'naicsDescription': naics.get('naicsDescription')}}
             business_info.update_naics_info(business, naics)
 
-    # Update business address if present
+    # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        business_address_json = dpath.util.get(change_filing, '/changeOfRegistration/businessAddress')
-        for updated_address in business_address_json.values():
+        business_office_json = dpath.util.get(change_filing, '/changeOfRegistration/offices/businessOffice')
+        for updated_address in business_office_json.values():
             if updated_address.get('id', None):
                 address = Address.find_by_id(updated_address.get('id'))
                 if address:
