@@ -264,9 +264,9 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'registration']),
+         ['changeOfRegistration', 'dissolution', 'registration',]),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'registration']),
+         ['changeOfRegistration', 'dissolution', 'registration',]),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -279,8 +279,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
         ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
-        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
-        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration']),
+        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
+        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
@@ -352,7 +352,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', None,
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN'], 'staff', [STAFF_ROLE], True),
@@ -410,7 +410,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'dissolution', None,
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], True),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'user', [BASIC_USER], True),
 
         ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN'], 'user', [BASIC_USER], True),
@@ -461,7 +461,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], True),
 
         ('staff_historical', Business.State.HISTORICAL, 'dissolution', None,
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
         ('staff_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
@@ -512,7 +512,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
         ('user_historical', Business.State.HISTORICAL, 'dissolution', None,
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP', 'SP', 'GP'], 'user', [BASIC_USER], False),
 
         ('user_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
