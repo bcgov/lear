@@ -264,9 +264,9 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'registration', 'dissolution']),
+         ['changeOfRegistration', 'dissolution', 'registration',]),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'registration', 'dissolution']),
+         ['changeOfRegistration', 'dissolution', 'registration',]),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
