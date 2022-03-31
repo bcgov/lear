@@ -121,7 +121,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'DIS_VOL',
                 'ULC': 'DIS_VOL',
                 'CC': 'DIS_VOL',
-                'LLC': 'DIS_VOL'
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
             }
         },
         'incorporationApplication': {

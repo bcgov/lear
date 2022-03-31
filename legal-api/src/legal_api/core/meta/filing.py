@@ -163,11 +163,13 @@ FILINGS: Final = {
             'BEN': 'DIS_VOL',
             'ULC': 'DIS_VOL',
             'CC': 'DIS_VOL',
-            'LLC': 'DIS_VOL'
+            'LLC': 'DIS_VOL',
+            'SP': 'DIS_VOL',
+            'GP': 'DIS_VOL'
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
-            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+            {'types': 'BC,BEN,CC,ULC,LLC,SP,GP', 'outputs': ['certificateOfDissolution']},
         ]
     },
     'incorporationApplication': {
