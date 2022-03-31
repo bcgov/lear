@@ -279,8 +279,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
         ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
-        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration', 'dissolution']),
-        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'registration', 'dissolution']),
+        ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
+        ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
