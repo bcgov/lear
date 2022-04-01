@@ -48,10 +48,10 @@ def _get_pdfs(
     if status == Filing.Status.PAID.value:
         # add filing pdf
         filing_pdf = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=changeOfRegistration',
-                headers=headers
-            )
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            f'?type=changeOfRegistration',
+            headers=headers
+        )
         if filing_pdf.status_code != HTTPStatus.OK:
             logger.error('Failed to get pdf for filing: %s', filing.id)
             capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
