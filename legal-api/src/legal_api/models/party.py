@@ -87,6 +87,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         else:
             member = {
                 'officer': {
+                    'id': self.id,
                     'partyType': self.party_type,
                     'organizationName': self.organization_name,
                     'identifier': self.identifier,
