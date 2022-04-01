@@ -26,10 +26,7 @@ from jinja2 import Template
 from legal_api.models import Business, Filing
 from sentry_sdk import capture_message
 
-from entity_emailer.email_processors import (
-    get_filing_info,
-    substitute_template_parts
-)
+from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 
 
 def _get_pdfs(
@@ -47,7 +44,6 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
-    legal_type = business.get('legalType', None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -63,7 +59,7 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    'fileName': f'Change of Registration.pdf',
+                    'fileName': 'Change of Registration.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -159,18 +155,12 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     for party in filing.filing_json['filing']['changeOfRegistration']['parties']:
         for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
+            if role['roleType'] in ('Partner', 'Proprietor', 'Completing Party'):
                 recipients.append(party['officer'].get('email'))
                 break
 
-    if status == Filing.Status.COMPLETED.value:
+    if filing.filing_json['filing']['changeOfRegistration'].get('contactPoint'):
         recipients.append(filing.filing_json['filing']['changeOfRegistration']['contactPoint']['email'])
-
-        for party in filing.filing_json['filing']['changeOfRegistration']['parties']:
-            for role in party['roles']:
-                if role['roleType'] in ('Partner', 'Proprietor'):
-                    recipients.append(party['officer'].get('email'))
-                    break
 
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
