@@ -62,6 +62,7 @@ def test_party_role_json(session):
         'cessationDate': party_role.cessation_date,
         'role': party_role.role,
         'officer': {
+            'id': member.id,
             'firstName': member.first_name,
             'lastName': member.last_name,
             'middleInitial': member.middle_initial,
