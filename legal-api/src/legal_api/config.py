@@ -139,9 +139,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     MINIO_SECURE = True
 
     # determines which year of NAICS data will be used to drive NAICS search
-    NAICS_YEAR = int(os.getenv('NAICS_YEAR', '2017'))
+    NAICS_YEAR = int(os.getenv('NAICS_YEAR', '2022'))
     # determines which version of NAICS data will be used to drive NAICS search
-    NAICS_VERSION = int(os.getenv('NAICS_VERSION', '3'))
+    NAICS_VERSION = int(os.getenv('NAICS_VERSION', '1'))
 
     NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
 
@@ -238,6 +238,11 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     MINIO_ACCESS_SECRET = 'minio123'
     MINIO_BUCKET_BUSINESSES = 'businesses'
     MINIO_SECURE = False
+
+    # determines which year of NAICS data will be used to drive NAICS search
+    NAICS_YEAR = 2022
+    # determines which version of NAICS data will be used to drive NAICS search
+    NAICS_VERSION = 1
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
