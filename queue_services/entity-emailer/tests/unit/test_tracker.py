@@ -215,6 +215,22 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
+         }),
+        ('change_of_registration_PAID_1112223333',
+         {
+             'email': {
+                 'type': 'changeOfRegistration',
+                 'option': 'PAID',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('change_of_registration_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'changeOfRegistration',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
          })
     ]
 )
