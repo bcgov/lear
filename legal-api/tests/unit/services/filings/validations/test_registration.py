@@ -98,7 +98,7 @@ nr_response = {
     'state': 'APPROVED',
     'expirationDate': '',
     'names': [{
-        'name': 'legal_name',
+        'name': REGISTRATION['nameRequest']['legalName'],
         'state': 'APPROVED',
         'consumptionDate': ''
     }]

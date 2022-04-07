@@ -64,10 +64,18 @@ def validate_name_request(filing: Dict, filing_type='registration') -> list:
 
     # ensure NR is approved or conditionally approved
     try:
-        nr_response = namex.query_nr_number(nr_number)
-        validation_result = namex.validate_nr(nr_response.json())
+        nr_json = namex.query_nr_number(nr_number).json()
+        validation_result = namex.validate_nr(nr_json)
         if not validation_result['is_consumable']:
             msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
+
+        # ensure NR request has the same legal name
+        legal_name_path = f'/filing/{filing_type}/nameRequest/legalName'
+        legal_name = get_str(filing, legal_name_path)
+        nr_name = namex.get_approved_name(nr_json)
+        if not legal_name or nr_name != legal_name:
+            msg.append({'error': babel(f'{filing_type} of Name Request has a different legal name.'),
+                        'path': legal_name_path})
     except KeyError:
         msg.append({'error': babel('Invalid Name Request.'), 'path': nr_path})
 
