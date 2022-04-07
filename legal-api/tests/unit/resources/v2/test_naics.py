@@ -21,6 +21,7 @@ from http import HTTPStatus
 from legal_api.services.authz import BASIC_USER
 from tests.unit.services.utils import create_header
 
+
 def test_search_naics_using_search_term_with_results(session, client, jwt):
     """Assert that search results are returned when searching with search term.
 
@@ -45,7 +46,7 @@ def test_search_naics_using_search_term_with_results(session, client, jwt):
     results_with_3_elements = [result for result in results if len(result['naicsElements']) == 3]
     assert len(results_with_3_elements) == 2
 
-def test_exact_match_search_naics(session, client, jwt):
+def test_exact_match_search_naics(app, session, client, jwt):
     """Assert that search results are returned when searching with exact search term."""
 
     # test
@@ -57,7 +58,9 @@ def test_exact_match_search_naics(session, client, jwt):
     assert 'results' in rv.json
     results = rv.json['results']
     assert len(results) == 1
-    assert len(results[0]['naicsElements']) == 10
+    assert len(results[0]['naicsElements']) == 15
+    assert results[0]['year'] == int(app.config.get('NAICS_YEAR'))
+    assert results[0]['version'] == int(app.config.get('NAICS_VERSION'))
 
 
 def test_non_exact_match_search_naics(session, client, jwt):
@@ -74,14 +77,14 @@ def test_non_exact_match_search_naics(session, client, jwt):
     assert len(results) == 3
 
     # verify elements are filtered correctly
-    results_with_7_elements = [result for result in results if len(result['naicsElements']) == 7]
-    assert len(results_with_7_elements) == 1
+    results_with_11_elements = [result for result in results if len(result['naicsElements']) == 11]
+    assert len(results_with_11_elements) == 1
 
     results_with_2_elements = [result for result in results if len(result['naicsElements']) == 2]
     assert len(results_with_2_elements) == 1
 
-    results_with_4_elements = [result for result in results if len(result['naicsElements']) == 4]
-    assert len(results_with_4_elements) == 1
+    results_with_5_elements = [result for result in results if len(result['naicsElements']) == 5]
+    assert len(results_with_5_elements) == 1
 
 
 def test_search_naics_using_code_with_result(session, client, jwt):
@@ -168,7 +171,7 @@ def test_search_naics_with_search_term_param_too_short(session, client, jwt):
     assert 'search_term cannot be less than 3 characters.' in rv.json['message']
 
 
-def test_get_naics_code_by_code(session, client, jwt):
+def test_get_naics_code_by_code(app, session, client, jwt):
     """Assert that naics code can be retrieved using code."""
 
     # setup
@@ -188,14 +191,17 @@ def test_get_naics_code_by_code(session, client, jwt):
 
     assert 'naicsElements' in rv.json
     assert len(rv.json['naicsElements']) == 3
+    assert rv.json['year'] == int(app.config.get('NAICS_YEAR'))
+    assert rv.json['version'] == int(app.config.get('NAICS_VERSION'))
 
 
-def test_get_naics_code_by_key(session, client, jwt):
+
+def test_get_naics_code_by_key(app, session, client, jwt):
     """Assert that naics code can be retrieved using key."""
 
     # setup
     naics_code = '311911'
-    naics_key = 'd2fca3f1-f391-49a7-8b67-00381b569612'
+    naics_key = 'a201b79d-d39d-42d4-94ab-21885809fce2'
 
     # test
     rv = client.get(f'/api/v2/naics/{naics_key}',
@@ -213,6 +219,8 @@ def test_get_naics_code_by_key(session, client, jwt):
 
     assert 'naicsElements' in rv.json
     assert len(rv.json['naicsElements']) == 3
+    assert rv.json['year'] == int(app.config.get('NAICS_YEAR'))
+    assert rv.json['version'] == int(app.config.get('NAICS_VERSION'))
 
 
 def test_get_naics_code_invalid_code_or_key_format(session, client, jwt):

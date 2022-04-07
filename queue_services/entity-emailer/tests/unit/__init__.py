@@ -23,6 +23,7 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_REGISTRATION,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
@@ -187,6 +188,58 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
         for role in party['roles']:
             if role['roleType'] == 'Custodian':
                 party['officer']['email'] = 'custodian@email.com'
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_change_of_registration_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a new change of registration filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+
+    gp_change_of_registration = copy.deepcopy(FILING_HEADER)
+    gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
+    gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    sp_change_of_registration = copy.deepcopy(FILING_HEADER)
+    sp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
+    sp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['roles'] = [
+        {
+            'roleType': 'Completing Party',
+            'appointmentDate': '2022-01-01'
+
+        },
+        {
+            'roleType': 'Proprietor',
+            'appointmentDate': '2022-01-01'
+
+        }
+    ]
+    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    if legal_type == Business.LegalTypes.SOLE_PROP.value:
+        filing_template = sp_change_of_registration
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        filing_template = gp_change_of_registration
+
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
 
     filing = create_filing(
         token=payment_id,

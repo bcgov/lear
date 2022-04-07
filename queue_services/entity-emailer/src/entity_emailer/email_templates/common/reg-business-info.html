@@ -4,20 +4,23 @@
 <div class="business-information">
   <div>
     <div class="name bold">Business Name:</div>
-
-    {% if filing.nameRequest.legalName %}
-    <!-- try to get legal name from Name Request object -->
-    <div class="value">{{ filing.nameRequest.legalName }}</div>
+    {% if  filing_type == 'registration' %}
+      {% if filing.nameRequest.legalName %}
+      <!-- try to get legal name from Name Request object -->
+      <div class="value">{{ filing.nameRequest.legalName }}</div>
+      {% else %}
+      <!-- add other cases here -->
+      <div class="value">Unknown</div>
+      {% endif %}
     {% else %}
-    <!-- add other cases here -->
-    <div class="value">Unknown</div>
+      <div class="value">{{ business.legalName }}</div>
     {% endif %}
   </div>
 
   [[20px.html]]
   <div>
     <div class="name bold">Registration Number:</div>
-    {% if status == 'PAID' %}
+    {% if status == 'PAID' and filing_type == 'registration' %}
     <div class="value">Pending</div>
     {% else %}
     <!-- Eg, FM1234567 -->
