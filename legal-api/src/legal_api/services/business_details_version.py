@@ -462,10 +462,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             member = {
                 'officer': {
                     'organizationName': party_revision.organization_name,
-                    'partyType': Party.PartyTypes.ORGANIZATION.value
+                    'partyType': Party.PartyTypes.ORGANIZATION.value,
+                    'identifier': party_revision.identifier,
+                    'taxId': party_revision.tax_id
                 }
             }
-
+        if party_revision.email:
+            member['email'] = party_revision.email
         return member
 
     @staticmethod
