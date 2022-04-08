@@ -48,7 +48,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
     msg.extend(validate_start_date(registration_json))
-    msg.extend(validate_business_address(registration_json))
+    msg.extend(validate_offices(registration_json))
     msg.extend(validate_registration_court_order(registration_json))
 
     if msg:
@@ -64,10 +64,18 @@ def validate_name_request(filing: Dict, filing_type='registration') -> list:
 
     # ensure NR is approved or conditionally approved
     try:
-        nr_response = namex.query_nr_number(nr_number)
-        validation_result = namex.validate_nr(nr_response.json())
+        nr_json = namex.query_nr_number(nr_number).json()
+        validation_result = namex.validate_nr(nr_json)
         if not validation_result['is_consumable']:
             msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
+
+        # ensure NR request has the same legal name
+        legal_name_path = f'/filing/{filing_type}/nameRequest/legalName'
+        legal_name = get_str(filing, legal_name_path)
+        nr_name = namex.get_approved_name(nr_json)
+        if not legal_name or nr_name != legal_name:
+            msg.append({'error': babel(f'{filing_type} of Name Request has a different legal name.'),
+                        'path': legal_name_path})
     except KeyError:
         msg.append({'error': babel('Invalid Name Request.'), 'path': nr_path})
 
@@ -139,17 +147,17 @@ def validate_start_date(filing: Dict) -> list:
     return msg
 
 
-def validate_business_address(filing: Dict, filing_type='registration') -> list:
+def validate_offices(filing: Dict, filing_type='registration') -> list:
     """Validate the business address of registration filing."""
-    addresses = filing['filing'][filing_type]['businessAddress']
+    offices = filing['filing'][filing_type]['offices']
     msg = []
 
-    if delivery_address := addresses.get('deliveryAddress'):
+    if delivery_address := offices.get('businessOffice', {}).get('deliveryAddress'):
         region = delivery_address['addressRegion']
         country = delivery_address['addressCountry']
 
         if region != 'BC':
-            region_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressRegion'
+            region_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressRegion'
             msg.append({'error': "Address Region must be 'BC'.", 'path': region_path})
 
         try:
@@ -157,7 +165,7 @@ def validate_business_address(filing: Dict, filing_type='registration') -> list:
             if country != 'CA':
                 raise LookupError
         except LookupError:
-            country_path = f'/filing/{filing_type}/businessAddress/deliveryAddress/addressCountry'
+            country_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressCountry'
             msg.append({'error': "Address Country must be 'CA'.", 'path': country_path})
 
     return msg

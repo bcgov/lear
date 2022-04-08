@@ -65,7 +65,7 @@ nr_response = {
     'state': 'APPROVED',
     'expirationDate': '',
     'names': [{
-        'name': 'legal_name',
+        'name': REGISTRATION['nameRequest']['legalName'],
         'state': 'APPROVED',
         'consumptionDate': ''
     }]
@@ -166,8 +166,10 @@ def test_invalid_party(session, test_name, filing, expected_msg):
 )
 def test_invalid_business_address(session, test_name, filing):
     """Assert that delivery business address is invalid."""
-    filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['addressRegion'] = 'invalid'
-    filing['filing']['changeOfRegistration']['businessAddress']['deliveryAddress']['addressCountry'] = 'invalid'
+    filing['filing']['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = \
+        'invalid'
+    filing['filing']['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = \
+        'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
