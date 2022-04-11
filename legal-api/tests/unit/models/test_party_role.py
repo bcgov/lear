@@ -66,7 +66,8 @@ def test_party_role_json(session):
             'firstName': member.first_name,
             'lastName': member.last_name,
             'middleInitial': member.middle_initial,
-            'partyType': 'person'
+            'partyType': 'person',
+            'email': None
         },
         'title': member.title
     }

@@ -91,11 +91,10 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
                     'partyType': self.party_type,
                     'organizationName': self.organization_name,
                     'identifier': self.identifier,
-                    'taxId': self.tax_id,
-                    'email': self.email
+                    'taxId': self.tax_id
                 }
             }
-
+        member['officer']['email'] = self.email
         if self.delivery_address:
             member_address = self.delivery_address.json
             if 'addressType' in member_address:
