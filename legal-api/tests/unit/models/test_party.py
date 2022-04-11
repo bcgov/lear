@@ -40,7 +40,8 @@ def test_party_json(session):
             'partyType': Party.PartyTypes.PERSON.value,
             'firstName': person.first_name,
             'lastName': person.last_name,
-            'middleInitial': person.middle_initial
+            'middleInitial': person.middle_initial,
+            'email': None
         },
         'title': person.title
     }

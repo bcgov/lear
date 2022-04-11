@@ -47,11 +47,17 @@ def get_parties(identifier, party_id=None):
     party_role_dict = {}
     party_list = []
     for party_role in party_roles:
-        party_role_dict.setdefault(party_role.party_id, []).append(party_role.role)
+        party_role_json = party_role.json
+        party_role_dict.setdefault(party_role.party_id, []).append(
+              {'roleType': party_role_json['role'].replace('_', ' ').title(),
+               'appointmentDate': party_role_json['appointmentDate'],
+               'cessationDate': party_role_json['cessationDate']})
     for key, value in party_role_dict.items():
         party = [x for x in party_roles if x.party_id == key][0]
         party_json = party.json
         del party_json['role']
+        del party_json['appointmentDate']
+        del party_json['cessationDate']
         party_json['roles'] = value
         party_list.append(party_json)
 
