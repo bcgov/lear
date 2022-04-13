@@ -30,7 +30,7 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, db
+from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -675,7 +675,7 @@ class ListFilingResource(Resource):
         return filing_types
 
     @staticmethod
-    def _create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches
+    def _create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
                         filing: Filing,
                         filing_types: list,
                         user_jwt: JwtManager,
@@ -735,8 +735,14 @@ class ListFilingResource(Resource):
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
 
-        if user_jwt.validate_roles([STAFF_ROLE]) or \
-                user_jwt.validate_roles([SYSTEM_ROLE]):
+        if user_jwt.validate_roles([STAFF_ROLE]):
+            special_role = UserRoles.STAFF.value
+        elif user_jwt.validate_roles([SYSTEM_ROLE]):
+            special_role = UserRoles.SYSTEM.value
+        else:
+            special_role = None
+
+        if special_role:
             account_info = {}
             routing_slip_number = get_str(filing.filing_json, 'filing/header/routingSlipNumber')
             if routing_slip_number:
@@ -767,6 +773,7 @@ class ListFilingResource(Resource):
             filing.payment_token = pid
             filing.payment_status_code = rv.json().get('statusCode', '')
             filing.payment_account = payment_account_id
+            filing.submitter_roles = special_role
             filing.save()
             return {'isPaymentActionRequired': rv.json().get('isPaymentActionRequired', False)}, HTTPStatus.CREATED
 
