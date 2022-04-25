@@ -28,6 +28,7 @@ from .office import Office, OfficeType
 from .party_role import Party, PartyRole
 from .registration_bootstrap import RegistrationBootstrap
 from .resolution import Resolution
+from .request_tracker import RequestTracker
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
@@ -35,5 +36,5 @@ from .user import User, UserRoles
 
 __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Document',
-           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
+           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution', 'RequestTracker',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')
