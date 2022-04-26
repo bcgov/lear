@@ -14,6 +14,7 @@
 """This module holds data for request tracker."""
 from __future__ import annotations
 
+from datetime import datetime
 from enum import auto
 
 from legal_api.utils.base import BaseEnum
@@ -44,6 +45,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     response_object = db.Column(db.Text)
     retry_number = db.Column('retry_number', db.Integer, default=0, nullable=False)
     service_name = db.Column('service_name', db.Enum(ServiceName), nullable=False)
+    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))

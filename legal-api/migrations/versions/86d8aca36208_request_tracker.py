@@ -26,6 +26,8 @@ def upgrade():
     sa.Column('retry_number', sa.Integer(), nullable=False),
     sa.Column('service_name', sa.Enum('BN_HUB', name='request_tracker_servicename'), nullable=False),
     sa.Column('business_id', sa.Integer(), nullable=True),
+    sa.Column('creation_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
