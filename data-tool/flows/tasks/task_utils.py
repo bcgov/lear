@@ -1,4 +1,7 @@
+from flask_sqlalchemy import SQLAlchemy
 from prefect import Task
+from sqlalchemy import create_engine
+
 
 class LearInitTask(Task):
 
@@ -13,6 +16,16 @@ class LearInitTask(Task):
         FLASK_APP.config.from_object(config)
         db.init_app(FLASK_APP)
         FLASK_APP.app_context().push()
-        return db
+        return FLASK_APP, db
+
+
+class ColinInitTask(Task):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def run(self, config):
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
+        return engine
 
 
