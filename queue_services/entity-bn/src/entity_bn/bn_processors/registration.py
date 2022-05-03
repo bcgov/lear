@@ -52,9 +52,9 @@ def process(business: Business):  # pylint: disable=too-many-branches
         if inform_cra_tracker.retry_number < max_retry:
             raise BNException(f'Retry number: {inform_cra_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
-        else:
-            raise QueueException(
-                f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
+
+        raise QueueException(
+            f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
 
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -76,9 +76,9 @@ def process(business: Business):  # pylint: disable=too-many-branches
         if get_bn_tracker.retry_number < max_retry:
             raise BNException(f'Retry number: {get_bn_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
-        else:
-            raise QueueException(
-                f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
+
+        raise QueueException(
+            f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
 
 
 def _inform_cra(business: Business, request_tracker: RequestTracker):

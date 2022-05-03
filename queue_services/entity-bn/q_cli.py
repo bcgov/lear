@@ -100,7 +100,6 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
                          payload=json.dumps(payload).encode('utf-8'))
 
     except Exception as e:  # pylint: disable=broad-except
-        # TODO tighten this error and decide when to bail on the infinite reconnect
         logger.error(e)
 
 
