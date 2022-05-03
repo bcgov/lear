@@ -46,8 +46,7 @@ from entity_bn.exceptions import BNException
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
-# #pragma warning disable S4502; not valid since no api exposed
-FLASK_APP = Flask(__name__)
+FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 
