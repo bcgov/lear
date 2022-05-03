@@ -41,8 +41,7 @@ def process(business: Business):  # pylint: disable=too-many-branches
         inform_cra_tracker.business_id = business.id
         inform_cra_tracker.request_type = RequestTracker.RequestType.INFORM_CRA
         inform_cra_tracker.service_name = RequestTracker.ServiceName.BN_HUB
-    else:
-        inform_cra_tracker = request_trackers.pop()
+    elif (inform_cra_tracker := request_trackers.pop()) and not inform_cra_tracker.is_processed:
         inform_cra_tracker.last_modified = datetime.utcnow()
         inform_cra_tracker.retry_number += 1
 
@@ -65,8 +64,7 @@ def process(business: Business):  # pylint: disable=too-many-branches
         get_bn_tracker.business_id = business.id
         get_bn_tracker.request_type = RequestTracker.RequestType.GET_BN
         get_bn_tracker.service_name = RequestTracker.ServiceName.BN_HUB
-    else:
-        get_bn_tracker = request_trackers.pop()
+    elif (get_bn_tracker := request_trackers.pop()) and not get_bn_tracker.is_processed:
         get_bn_tracker.last_modified = datetime.utcnow()
         get_bn_tracker.retry_number += 1
 
@@ -149,7 +147,7 @@ def _build_input_xml(template_name, data):
 
 def _request_bn(input_xml):
     """Get request to BN Hub."""
-    url = f'{current_app.config.get("BN_HUB_API_URL")}?inputXML={input_xml}'
+    url = current_app.config.get('BN_HUB_API_URL')
     username = current_app.config.get('BN_HUB_CLIENT_ID')
     secret = current_app.config.get('BN_HUB_CLIENT_SECRET')
-    return requests.get(url=url, auth=(username, secret))
+    return requests.get(url=url, params={'inputXML': input_xml}, auth=(username, secret))
