@@ -1,0 +1,17 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats",
+            "bn-hub"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "entity-bn",
+            "sentry"
+        ]
+    }
+]

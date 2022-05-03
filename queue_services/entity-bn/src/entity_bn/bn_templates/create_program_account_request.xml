@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<SBNCreateProgramAccountRequest>
+  <header>
+    <requestMode>A</requestMode>
+    <documentSubType>000</documentSubType>
+    <senderID>CPPR</senderID>
+    <receiverID>BCSBNHUB</receiverID>
+    <partnerNote>{{business.identifier}}</partnerNote>
+    <CCRAHeader>
+      <userApplication>BI</userApplication>
+      <userRole>01</userRole>
+    </CCRAHeader>
+  </header>
+  <body>
+    <businessProgramIdentifier>BC</businessProgramIdentifier>
+    <SBNProgramTypeCode>{{program_type_code}}</SBNProgramTypeCode>
+    <businessCore>
+      <programAccountTypeCode>01</programAccountTypeCode>
+      <crossReferenceProgramNumber>{{business.identifier}}</crossReferenceProgramNumber>
+      <businessTypeCode>{{business_type_code}}</businessTypeCode>
+      <businessSubTypeCode>{{business_sub_type_code}}</businessSubTypeCode>
+    </businessCore>
+    <programAccountStatus>
+      <programAccountStatusCode>01</programAccountStatusCode>
+      <effectiveDate>{{founding_date}}</effectiveDate>
+    </programAccountStatus>
+    <legalName>{{legal_names}}</legalName>
+    <operatingName>
+      <operatingName>{{business.legalName}}</operatingName>
+      <operatingNamesequenceNumber>1</operatingNamesequenceNumber>
+    </operatingName>
+    <businessAddress>
+      <foreignLegacy>
+        <addressDetailLine1>{{delivery_address.streetAddress}}</addressDetailLine1>
+      </foreignLegacy>
+      <municipality>{{delivery_address.addressCity}}</municipality>
+      <provinceStateCode>{{delivery_address.addressRegion}}</provinceStateCode>
+      <postalCode>{{delivery_address.postalCode}}</postalCode>
+      <countryCode>{{delivery_address.addressCountry}}</countryCode>
+    </businessAddress>
+    <mailingAddress>
+      <foreignLegacy>
+        <addressDetailLine1>{{mailing_address.streetAddress}}</addressDetailLine1>
+      </foreignLegacy>
+      <municipality>{{mailing_address.addressCity}}</municipality>
+      <provinceStateCode>{{mailing_address.addressRegion}}</provinceStateCode>
+      <postalCode>{{mailing_address.postalCode}}</postalCode>
+      <countryCode>{{mailing_address.addressCountry}}</countryCode>
+    </mailingAddress>
+    {% for party in parties %}
+    <owner>
+      <ownerIndividual>
+      {% if party.officer.partyType == 'person' %}
+        <lastName>{{party.officer.lastName}}</lastName>
+        <givenName>{{party.officer.firstName}}</givenName>
+      {% elif party.officer.partyType == 'organization' %}
+        <lastName>{{party.officer.organizationName}}</lastName>
+      {% endif %}
+      </ownerIndividual>
+    </owner>
+    {% endfor %}
+    <businessActivityDeclaration>
+      <businessActivityDescription>{{business.naicsDescription}}</businessActivityDescription>
+    </businessActivityDeclaration>
+  </body>
+</SBNCreateProgramAccountRequest>
