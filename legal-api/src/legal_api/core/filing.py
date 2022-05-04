@@ -481,6 +481,11 @@ class Filing:
                     [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
 
                 # get extra outputs
+                if filing.storage.transaction_id and \
+                        (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
+                        filing.storage.transaction_id, business)):
+                    business = bus_rev_temp
+
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 
