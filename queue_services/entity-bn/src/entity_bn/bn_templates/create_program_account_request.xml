@@ -35,7 +35,7 @@
       </foreignLegacy>
       <municipality>{{delivery_address.addressCity}}</municipality>
       <provinceStateCode>{{delivery_address.addressRegion}}</provinceStateCode>
-      <postalCode>{{delivery_address.postalCode}}</postalCode>
+      <postalCode>{{delivery_address.postalCode | replace(' ', '')}}</postalCode>
       <countryCode>{{delivery_address.addressCountry}}</countryCode>
     </businessAddress>
     <mailingAddress>
@@ -44,7 +44,7 @@
       </foreignLegacy>
       <municipality>{{mailing_address.addressCity}}</municipality>
       <provinceStateCode>{{mailing_address.addressRegion}}</provinceStateCode>
-      <postalCode>{{mailing_address.postalCode}}</postalCode>
+      <postalCode>{{mailing_address.postalCode | replace(' ', '')}}</postalCode>
       <countryCode>{{mailing_address.addressCountry}}</countryCode>
     </mailingAddress>
     {% for party in parties %}
