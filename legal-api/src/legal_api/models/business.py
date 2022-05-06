@@ -165,6 +165,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'state_filing_id',
             'submitter_userid',
             'tax_id',
+            'incomplete_business_info',
             'naics_key',
             'naics_code',
             'naics_description'
@@ -195,6 +196,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+    incomplete_business_info = db.Column('incomplete_business_info', db.Boolean, unique=False, default=False)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
@@ -325,6 +327,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
+            'incompleteBusinessInfo': self.incomplete_business_info or False,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),

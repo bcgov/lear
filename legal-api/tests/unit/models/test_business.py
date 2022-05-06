@@ -78,6 +78,7 @@ def test_business(session):
     assert business.id is not None
     assert business.state == Business.State.ACTIVE
     assert business.admin_freeze is False
+    assert business.incomplete_business_info is False
 
 
 def test_business_find_by_legal_name_pass(session):
@@ -238,6 +239,7 @@ def test_business_json(session):
                         founding_date=EPOCH_DATETIME,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
+                        incomplete_business_info=False,
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
                         last_agm_date=EPOCH_DATETIME,
@@ -249,6 +251,7 @@ def test_business_json(session):
         'legalName': 'legal_name',
         'legalType': 'CP',
         'identifier': 'CP1234567',
+        "incompleteBusinessInfo": False,
         'foundingDate': EPOCH_DATETIME.isoformat(),
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
@@ -338,3 +341,20 @@ def test_get_next_value_from_sequence(session, business_type, expected):
 
     else:
         assert not Business.get_next_value_from_sequence(business_type)
+
+
+def test_incomplete_business_info(session):
+    """Assert that the business model saves incomplete_business_info correctly."""
+    designation = '001'
+    business = Business(legal_name=f'legal_name-{designation}',
+                        founding_date=datetime.utcfromtimestamp(0),
+                        incomplete_business_info=True,
+                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                        dissolution_date=None,
+                        identifier='CP1234567',
+                        tax_id=f'BN0000{designation}',
+                        fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
+    business.save()
+    b = Business.find_by_identifier('CP1234567')
+
+    assert b.incomplete_business_info is True
