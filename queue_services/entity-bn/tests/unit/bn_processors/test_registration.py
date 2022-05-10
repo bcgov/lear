@@ -21,7 +21,6 @@ from legal_api.models import Business, RequestTracker
 from entity_bn.exceptions import BNException
 
 from entity_bn.worker import process_event
-from tests import MockResponse
 from tests.unit import create_business, create_filing, create_party, create_party_role
 
 
@@ -100,11 +99,11 @@ async def test_registration(app, session, mocker, legal_type):
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
         if root.tag == 'SBNCreateProgramAccountRequest':
-            return MockResponse(200, text=acknowledgement_response)
+            return 200, acknowledgement_response
         elif root.tag == 'SBNClientBasicInformationSearchRequest':
-            return MockResponse(200, text=search_response)
+            return 200, search_response
 
-    mocker.patch('entity_bn.bn_processors.registration._request_bn', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
 
     await process_event({
         'type': 'bc.registry.business.registration',
@@ -152,14 +151,11 @@ async def test_retry_registration(app, session, mocker, request_type):
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
         if root.tag == 'SBNCreateProgramAccountRequest':
-            return MockResponse(
-                200,
-                text='' if is_inform_cra else acknowledgement_response
-            )
+            return 200, '' if is_inform_cra else acknowledgement_response
         elif root.tag == 'SBNClientBasicInformationSearchRequest':
-            return MockResponse(200, text='')
+            return 200, ''
 
-    mocker.patch('entity_bn.bn_processors.registration._request_bn', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
 
     for _ in range(10):
         try:

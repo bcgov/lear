@@ -22,9 +22,14 @@ from legal_api.models import Business, PartyRole, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from entity_bn.bn_processors import (
+    build_input_xml,
+    business_sub_type_code,
+    business_type_code,
+    program_type_code,
+    request_bn_hub,
+)
 from entity_bn.exceptions import BNException
-
-from . import build_input_xml, business_sub_type_code, business_type_code, program_type_code, request_bn_hub
 
 
 def process(business: Business):  # pylint: disable=too-many-branches
