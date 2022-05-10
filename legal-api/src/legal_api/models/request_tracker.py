@@ -35,6 +35,9 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
 
         INFORM_CRA = auto()
         GET_BN = auto()
+        CHANGE_ADDRESS = auto()
+        CHANGE_NAME = auto()
+        CHANGE_STATUS = auto()
 
     __tablename__ = 'request_tracker'
 
@@ -49,7 +52,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -68,7 +72,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     def find_by(cls,
                 business_id: int,
                 service_name: ServiceName,
-                request_type: RequestType = None):
+                request_type: RequestType = None,
+                filing_id: int = None):
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
             filter(RequestTracker.business_id == business_id). \
@@ -76,6 +81,9 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
 
         if request_type:
             query = query.filter(RequestTracker.request_type == request_type)
+
+        if filing_id:
+            query = query.filter(RequestTracker.filing_id == filing_id)
 
         request_trackers = query.all()
         return request_trackers

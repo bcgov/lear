@@ -19,7 +19,7 @@ Test-Suite to ensure that the RequestTracker Model is working as expected.
 
 from legal_api.models import RequestTracker
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_filing
 
 
 def test_valid_request_tracker_save(session):
@@ -124,8 +124,10 @@ def test_find_request_tracker_by(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
     business = factory_business(identifier)
+    filing = factory_filing(business, {'filing': {'header': {'name': 'registration'}}}, filing_type='registration')
     request_tracker = RequestTracker(
         business_id=business.id,
+        filing_id=filing.id,
         service_name=RequestTracker.ServiceName.BN_HUB,
         request_type=RequestTracker.RequestType.INFORM_CRA,
         request_object=sample_xml
@@ -140,5 +142,12 @@ def test_find_request_tracker_by(session):
     res = RequestTracker.find_by(business.id,
                                  RequestTracker.ServiceName.BN_HUB,
                                  RequestTracker.RequestType.INFORM_CRA)
+    assert len(res) == 1
+    assert res[0].id == request_tracker.id
+
+    res = RequestTracker.find_by(business.id,
+                                 RequestTracker.ServiceName.BN_HUB,
+                                 RequestTracker.RequestType.INFORM_CRA,
+                                 filing_id=filing.id)
     assert len(res) == 1
     assert res[0].id == request_tracker.id

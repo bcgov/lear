@@ -15,19 +15,16 @@
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
-from pathlib import Path
 
-import requests
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
-from jinja2 import Template
 from legal_api.models import Business, PartyRole, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_bn.exceptions import BNException
 
-from . import business_sub_type_code, business_type_code, program_type_code
+from . import build_input_xml, business_sub_type_code, business_type_code, program_type_code, request_bn_hub
 
 
 def process(business: Business):  # pylint: disable=too-many-branches
@@ -88,7 +85,7 @@ def _inform_cra(business: Business, request_tracker: RequestTracker):
     parties = [party_role.party for party_role in business.party_roles.all()
                if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value)]
 
-    input_xml = _build_input_xml('create_program_account_request', {
+    input_xml = build_input_xml('create_program_account_request', {
         'business': business.json(),
         'program_type_code': program_type_code[business.legal_type],
         'business_type_code': business_type_code[business.legal_type],
@@ -101,13 +98,13 @@ def _inform_cra(business: Business, request_tracker: RequestTracker):
     })
 
     request_tracker.request_object = input_xml
-    response = _request_bn(input_xml)
-    if response.status_code == HTTPStatus.OK:
+    status_code, response = request_bn_hub(input_xml)
+    if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):
-            root = Et.fromstring(response.content)
+            root = Et.fromstring(response)
             if root.tag == 'SBNAcknowledgement':
                 request_tracker.is_processed = True
-    request_tracker.response_object = response.text
+    request_tracker.response_object = response
     request_tracker.save()
 
 
@@ -116,38 +113,21 @@ def _get_bn(business: Business, request_tracker: RequestTracker):
     if request_tracker.is_processed:
         return
 
-    input_xml = _build_input_xml('basic_information_search_request', {
+    input_xml = build_input_xml('basic_information_search_request', {
         'legal_name': business.legal_name,
         'business_type_code': business_type_code[business.legal_type],
     })
 
     request_tracker.request_object = input_xml
-    response = _request_bn(input_xml)
-    if response.status_code == HTTPStatus.OK:
+    status_code, response = request_bn_hub(input_xml)
+    if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):
-            root = Et.fromstring(response.content)
+            root = Et.fromstring(response)
             if root.tag == 'SBNClientBasicInformationSearchResponse' and (
                     business_number := root.find('./body/clientBasicInformationSearchResult/businessRegistrationNumber')
             ) is not None:
                 business.tax_id = business_number.text
                 business.save()
                 request_tracker.is_processed = True
-    request_tracker.response_object = response.text
+    request_tracker.response_object = response
     request_tracker.save()
-
-
-def _build_input_xml(template_name, data):
-    """Build input XML."""
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml'
-    ).read_text()
-    jnja_template = Template(template, autoescape=True)
-    return jnja_template.render(data)
-
-
-def _request_bn(input_xml):
-    """Get request to BN Hub."""
-    url = current_app.config.get('BN_HUB_API_URL')
-    username = current_app.config.get('BN_HUB_CLIENT_ID')
-    secret = current_app.config.get('BN_HUB_CLIENT_SECRET')
-    return requests.get(url=url, params={'inputXML': input_xml}, auth=(username, secret))
