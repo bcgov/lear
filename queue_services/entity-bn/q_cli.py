@@ -65,7 +65,7 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
 
     def subscription_options():
         return {
-            'subject': os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'error'),
+            'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'error'),
             'queue': os.getenv('NATS_QUEUE', 'error'),
             'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable'
         }

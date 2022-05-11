@@ -280,7 +280,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         elif (business_office := db.session.query(Office)  # SP/GP
               .filter(Office.business_id == self.id)
               .filter(Office.office_type == 'businessOffice').one_or_none()):
-            return business_office.addresses.filter(Address.address_type == 'mailing')
+            return business_office.addresses.filter(Address.address_type == 'delivery')
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)

@@ -65,6 +65,7 @@ class Filing:
         CHANGEOFADDRESS = 'changeOfAddress'
         CHANGEOFDIRECTORS = 'changeOfDirectors'
         CHANGEOFNAME = 'changeOfName'
+        CHANGEOFREGISTRATION = 'changeOfRegistration'
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'
