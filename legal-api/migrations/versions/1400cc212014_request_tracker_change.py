@@ -25,7 +25,7 @@ def upgrade():
 
         DROP TYPE request_tracker_type;
         
-        CREATE TYPE request_tracker_type AS ENUM ('INFORM_CRA', 'GET_BN', 'CHANGE_STATUS', 'CHANGE_NAME', 'CHANGE_ADDRESS');
+        CREATE TYPE request_tracker_type AS ENUM ('INFORM_CRA', 'GET_BN', 'CHANGE_STATUS', 'CHANGE_NAME', 'CHANGE_DELIVERY_ADDRESS', 'CHANGE_MAILING_ADDRESS');
 
         ALTER TABLE request_tracker ALTER COLUMN request_type TYPE request_tracker_type USING (request_type::request_tracker_type);
     ''')

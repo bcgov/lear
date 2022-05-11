@@ -35,7 +35,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
 
         INFORM_CRA = auto()
         GET_BN = auto()
-        CHANGE_ADDRESS = auto()
+        CHANGE_DELIVERY_ADDRESS = auto()
+        CHANGE_MAILING_ADDRESS = auto()
         CHANGE_NAME = auto()
         CHANGE_STATUS = auto()
 
