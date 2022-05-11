@@ -34,7 +34,7 @@ from entity_bn.exceptions import BNException
 
 def process(business: Business):  # pylint: disable=too-many-branches
     """Process the incoming registration request."""
-    max_retry = current_app.config.get('MAX_RETRY')
+    max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
                                               RequestTracker.RequestType.INFORM_CRA)
