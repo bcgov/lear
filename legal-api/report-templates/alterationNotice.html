@@ -29,11 +29,10 @@
         <div class="container pt-4">
             [[common/effectiveDate.html]]
             [[alteration-notice/businessTypeChange.html]]
-            {% if previousLegalType and business.legalType != previousLegalType %}
-                [[common/statement.html]]
+            {% if previousLegalType != newLegalType %}
+                [[alteration-notice/statement.html]]
             {% endif %}
-            [[common/benefitCompanyStmt.html]]
-            [[common/legalNameChange.html]]
+            [[alteration-notice/legalNameChange.html]]
             [[common/nameTranslation.html]]
             [[alteration-notice/companyProvisions.html]]
             [[common/resolutionDates.html]]

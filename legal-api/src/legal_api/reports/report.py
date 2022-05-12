@@ -24,7 +24,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
-from legal_api.models import Business, CorpType, Document, Filing
+from legal_api.models import Business, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
@@ -81,7 +81,7 @@ class Report:  # pylint: disable=too-few-public-methods
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
         legal_entity_number = self._business.identifier if self._business else \
-            self._filing.filing_json['filing']['business']['identifier']
+            self._filing.filing_json['filing'].get('business', {}).get('identifier', '')
         description = ReportMeta.reports[self._report_key]['filingDescription']
         return '{}_{}_{}.pdf'.format(legal_entity_number, filing_date, description).replace(' ', '_')
 
@@ -126,12 +126,25 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/style',
             'common/businessDetails',
             'common/directors',
+            'change-of-registration/legal-name',
+            'change-of-registration/nature-of-business',
+            'change-of-registration/addresses',
+            'change-of-registration/proprietor',
+            'change-of-registration/completingParty',
+            'change-of-registration/partner',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
             'incorporation-application/cooperativeAssociationType',
+            'registration/nameRequest',
+            'registration/addresses',
+            'registration/completingParty',
+            'registration/party',
+            'registration-statement/party',
+            'registration-statement/business-info',
+            'registration-statement/completingParty',
             'common/statement',
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
@@ -140,8 +153,9 @@ class Report:  # pylint: disable=too-few-public-methods
             'notice-of-articles/restrictions',
             'common/resolutionDates',
             'alteration-notice/businessTypeChange',
+            'alteration-notice/legalNameChange',
+            'alteration-notice/statement',
             'common/effectiveDate',
-            'common/legalNameChange',
             'common/nameTranslation',
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
@@ -175,7 +189,7 @@ class Report:  # pylint: disable=too-few-public-methods
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):  # pylint: disable=too-many-branches
-        if self._report_key == 'noticeOfArticles':
+        if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
         else:
@@ -188,6 +202,12 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_special_resolution(filing)
             elif self._report_key == 'alterationNotice':
                 self._format_alteration_data(filing)
+            elif self._report_key == 'registration':
+                self._format_registration_data(filing)
+            elif self._report_key == 'changeOfRegistration':
+                self._format_change_of_registration_data(filing)
+            elif self._report_key == 'certificateOfNameChange':
+                self._format_name_change_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -206,13 +226,7 @@ class Report:  # pylint: disable=too-few-public-methods
             if filing['header']['name'] == 'correction':
                 self._format_with_diff_data(filing)
 
-            # name change from named company to numbered company case
-            if self._report_key in ('certificateOfNameChange', 'alterationNotice') and 'nameRequest' in \
-                    filing['alteration'] and 'legalName' not in filing['alteration']['nameRequest']:
-                versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_after_filing(self._filing.id,
-                                                                                       self._business.id)
-                filing['alteration']['nameRequest']['legalName'] = versioned_business['legalName']
+            filing['meta_data'] = self._filing.meta_data or {}
 
         filing['header']['reportType'] = self._report_key
 
@@ -221,7 +235,18 @@ class Report:  # pylint: disable=too-few-public-methods
         self._set_tax_id(filing)
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
+        self._set_completing_party(filing)
         return filing
+
+    def _set_completing_party(self, filing):
+        completing_party_role = PartyRole.get_party_roles_by_filing(
+            self._filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)
+        if completing_party_role:
+            filing['completingParty'] = completing_party_role[0].party.json
+            with suppress(KeyError):
+                self._format_address(filing['completingParty']['deliveryAddress'])
+            with suppress(KeyError):
+                self._format_address(filing['completingParty']['mailingAddress'])
 
     def _set_registrar_info(self, filing):
         if filing.get('correction'):
@@ -239,12 +264,14 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
-        legal_type = self._filing.filing_json['filing']['business'].get('legalType', 'NA')
+        legal_type = self._filing.filing_json['filing'].get('business', {}).get('legalType', 'NA')
         corp_type = CorpType.find_by_id(legal_type)
         filing['entityDescription'] = corp_type.full_desc
 
         act = {
-            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act',
+            Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
+            Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
         filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
@@ -261,6 +288,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
+            filing['recognition_date_utc'] = self._business.founding_date.strftime('%B %-d, %Y')
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -369,6 +397,29 @@ class Report:  # pylint: disable=too-few-public-methods
             cooperative['associationTypeName'] = \
                 ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
 
+    def _format_registration_data(self, filing):
+        with suppress(KeyError):
+            self._format_address(filing['registration']['offices']['businessOffice']['deliveryAddress'])
+        with suppress(KeyError):
+            self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
+        self._format_directors(filing['registration']['parties'])
+
+        start_date = datetime.fromisoformat(filing['registration']['startDate'])
+        filing['registration']['startDate'] = start_date.strftime('%B %-d, %Y')
+
+    def _format_name_change_data(self, filing):
+        meta_data = self._filing.meta_data or {}
+        from_legal_name = ''
+        to_legal_name = ''
+        if self._filing.filing_type == 'alteration':
+            from_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+        if self._filing.filing_type == 'specialResolution' and 'changeOfName' in meta_data.get('legalFilings', []):
+            from_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
+        filing['fromLegalName'] = from_legal_name
+        filing['toLegalName'] = to_legal_name
+
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
         if 'nameTranslations' in filing['alteration']:
@@ -379,13 +430,144 @@ class Report:  # pylint: disable=too-few-public-methods
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
-        # Get previous business type
-        versioned_business = VersionedBusinessDetailsService.get_business_revision_before_filing(
-            self._filing.id, self._business.id)
-        prev_legal_type = versioned_business['legalType']
+
+        to_legal_name = None
+        if self._filing.status == 'COMPLETED':
+            meta_data = self._filing.meta_data or {}
+            prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
+            new_legal_type = meta_data.get('alteration', {}).get('toLegalType')
+            prev_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
+            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+        else:
+            prev_legal_type = filing.get('business').get('legalType')
+            new_legal_type = filing.get('alteration').get('business').get('legalType')
+            prev_legal_name = filing.get('business').get('legalName')
+            identifier = filing.get('business').get('identifier')
+            name_request_json = filing.get('alteration').get('nameRequest')
+            if name_request_json:
+                to_legal_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
+
+        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+            filing['previousLegalName'] = prev_legal_name
+            filing['newLegalName'] = to_legal_name
         filing['previousLegalType'] = prev_legal_type
-        corp_type = CorpType.find_by_id(prev_legal_type)
-        filing['previousLegalTypeDescription'] = corp_type.full_desc
+        filing['newLegalType'] = new_legal_type
+        filing['previousLegalTypeDescription'] = self._get_legal_type_description(prev_legal_type)\
+            if prev_legal_type else None
+        filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
+            if new_legal_type else None
+
+    def _format_change_of_registration_data(self, filing):  # pylint: disable=too-many-locals
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        versioned_business = VersionedBusinessDetailsService.\
+            get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
+
+        # Change of Name
+        prev_legal_name = versioned_business.legal_name
+        name_request_json = filing.get('changeOfRegistration').get('nameRequest')
+        if name_request_json:
+            to_legal_name = name_request_json.get('legalName')
+            if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = to_legal_name
+
+        # Change of Nature of Business
+        prev_naics_code = versioned_business.naics_code
+        naics_json = filing.get('changeOfRegistration').get('business', {}).get('naics', {})
+        if naics_json:
+            to_naics_code = naics_json.get('naicsCode')
+            if prev_naics_code and to_naics_code and prev_naics_code != to_naics_code:
+                filing['newNaicsDescription'] = naics_json.get('naicsDescription')
+
+        # Change of Address
+        if business_office := filing.get('changeOfRegistration').get('offices', {}).get('businessOffice'):
+            offices_json = VersionedBusinessDetailsService.get_office_revision(
+                prev_completed_filing.transaction_id,
+                self._filing.business_id)
+            filing['changeOfRegistration']['offices']['businessOffice']['mailingAddress']['changed'] = \
+                self._compare_address(business_office.get('mailingAddress'),
+                                      offices_json['businessOffice']['mailingAddress'])
+            filing['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['changed'] = \
+                self._compare_address(business_office.get('deliveryAddress'),
+                                      offices_json['businessOffice']['deliveryAddress'])
+            filing['changeOfRegistration']['offices']['businessOffice']['changed'] = \
+                filing['changeOfRegistration']['offices']['businessOffice']['mailingAddress']['changed']\
+                or filing['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['changed']
+
+        # Change of party
+        if filing.get('changeOfRegistration').get('parties'):
+            self._format_directors(filing['changeOfRegistration']['parties'])
+            filing['partyChange'] = False
+            filing['newParties'] = []
+            parties_to_edit = []
+            for party in filing.get('changeOfRegistration').get('parties'):
+                if party['officer'].get('id'):
+                    parties_to_edit.append(str(party['officer'].get('id')))
+                    prev_party =\
+                        VersionedBusinessDetailsService.get_party_revision(
+                            prev_completed_filing.transaction_id, party['officer'].get('id'))
+                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+                        prev_completed_filing.transaction_id, prev_party, True)
+                    if self._has_party_name_change(prev_party_json, party):
+                        party['nameChanged'] = True
+                        party['previousName'] = self._get_party_name(prev_party_json)
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('mailingAddress'), prev_party_json['mailingAddress']):
+                        party['mailingAddress']['changed'] = True
+                        filing['partyChange'] = True
+                    if self._compare_address(party.get('deliveryAddress'), prev_party_json['deliveryAddress']):
+                        party['deliveryAddress']['changed'] = True
+                        filing['partyChange'] = True
+                else:
+                    if [role for role in party.get('roles', []) if role['roleType'].lower() in ['partner']]:
+                        filing['newParties'].append(party)
+
+            existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
+                prev_completed_filing.transaction_id, self._business.id, True)
+            parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
+            filing['ceasedParties'] = parties_deleted
+
+    @staticmethod
+    def _get_party_name(party_json):
+        party_name = ''
+        if party_json.get('officer').get('partyType') == 'person':
+            last_name = party_json['officer'].get('lastName')
+            first_name = party_json['officer'].get('firstName')
+            party_name = f'{last_name}, {first_name}'
+        elif party_json.get('officer').get('partyType') == 'organization':
+            party_name = party_json['officer'].get('organizationName')
+        return party_name
+
+    @staticmethod
+    def _has_party_name_change(prev_party_json, current_party_json):
+        changed = False
+        if current_party_json.get('officer').get('partyType') == 'person':
+            if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
+                    upper() or prev_party_json['officer'].get('middleName', '').upper() != \
+                    current_party_json['officer'].get('middleName', '').upper() or \
+                    prev_party_json['officer'].get('lastName').upper() != current_party_json['officer'].\
+                    get('lastName').upper():
+                changed = True
+        elif current_party_json.get('officer').get('partyType') == 'organization':
+            if prev_party_json['officer'].get('organizationName').upper() != \
+                    current_party_json['officer'].get('organizationName').upper():
+                changed = True
+        return changed
+
+    @staticmethod
+    def _compare_address(new_address, existing_address):
+        changed = False
+        excluded_keys = ['addressCountryDescription', 'addressType', 'addressCountry']
+        for key in existing_address:
+            if key not in excluded_keys:
+                if new_address.get(key, '') != (existing_address.get(key) or ''):
+                    changed = True
+        return changed
+
+    @staticmethod
+    def _get_legal_type_description(legal_type):
+        corp_type = CorpType.find_by_id(legal_type)
+        return corp_type.full_desc if corp_type else None
 
     def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
         """Check to fix the hole in diff.
@@ -552,10 +734,10 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._report_key == 'noticeOfArticles':
             filing['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
         else:
-            legal_name = self._filing.filing_json['filing']['business'].get('legalName', 'NA')
+            legal_name = self._filing.filing_json['filing'].get('business', {}).get('legalName', 'NA')
             filing['meta_subject'] = '{} ({})'.format(
                 legal_name,
-                self._filing.filing_json['filing']['business']['identifier'])
+                self._filing.filing_json['filing'].get('business', {}).get('identifier', 'NA'))
 
     @staticmethod
     def _get_environment():
@@ -645,6 +827,18 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Dissolution Application',
             'fileName': 'dissolution'
         },
+        'registration': {
+            'filingDescription': 'Statement of Registration',
+            'fileName': 'registration'
+        },
+        'amendedRegistrationStatement': {
+            'filingDescription': 'Amended Registration Statement',
+            'fileName': 'amendedRegistrationStatement'
+        },
+        'changeOfRegistration': {
+            'filingDescription': 'Change of Registration',
+            'fileName': 'changeOfRegistration'
+        }
     }
 
     static_reports = {

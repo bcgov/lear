@@ -19,7 +19,7 @@ from pathlib import Path
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
+from legal_api.models import Business, CorpType, Filing
 
 from entity_emailer.email_processors import get_recipients, substitute_template_parts
 
@@ -34,16 +34,21 @@ def process(email_msg: dict) -> dict:
 
     # get filing and business json
     business = Business.find_by_identifier(email_msg['identifier'])
-    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, 'incorporationApplication'))
+    filing_type = 'incorporationApplication'
+    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        filing_type = 'registration'
+    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, filing_type))
+    corp_type = CorpType.find_by_id(business.legal_type)
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
-        business=business.json()
+        business=business.json(),
+        entityDescription=corp_type.full_desc if corp_type else ''
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json)
+    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing_type)
     return {
         'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',

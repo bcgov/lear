@@ -17,8 +17,9 @@
 Test-Suite to ensure that the PartyRole Model is working as expected.
 """
 import datetime
+import json
 
-from legal_api.models import Party, PartyRole
+from legal_api.models import Filing, Party, PartyRole
 from tests.unit.models import factory_business
 
 
@@ -61,9 +62,12 @@ def test_party_role_json(session):
         'cessationDate': party_role.cessation_date,
         'role': party_role.role,
         'officer': {
+            'id': member.id,
             'firstName': member.first_name,
             'lastName': member.last_name,
-            'middleInitial': member.middle_initial
+            'middleInitial': member.middle_initial,
+            'partyType': 'person',
+            'email': None
         },
         'title': member.title
     }
@@ -171,3 +175,124 @@ def test_find_party_by_name(session):
     assert should_find_michael.id == person.id
     assert should_find_testing.id == no_middle_initial.id
     assert should_find_testorg.id == org.id
+
+
+def test_get_party_roles(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    # Find by all party roles
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
+    assert len(party_roles) == 2
+
+    # Find by party role
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), PartyRole.RoleTypes.CUSTODIAN.value)
+    assert len(party_roles) == 1
+
+
+def test_get_party_roles_by_party_id(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    # Find by all party roles
+    party_roles = PartyRole.get_party_roles_by_party_id(business.id, member.id)
+    assert len(party_roles) == 2
+
+    party_roles = PartyRole.get_party_roles_by_party_id(business.id, 123)
+    assert len(party_roles) == 0
+
+
+def test_get_party_roles_by_filing(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+
+    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_data = json.dumps(data)
+    filing.save()
+    assert filing.id is not None
+
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.CUSTODIAN.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        filing_id=filing.id
+    )
+    party_role_2.save()
+    # Find
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.utcnow())
+    assert len(party_roles) == 1
+
+    party_roles = PartyRole.get_party_roles_by_filing(filing.id, datetime.datetime.utcnow())
+    assert len(party_roles) == 1

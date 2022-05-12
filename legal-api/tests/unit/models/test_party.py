@@ -33,11 +33,15 @@ def test_party_json(session):
         middle_initial='Joe',
         title='VP'
     )
+    person.save()
     person_json = {
         'officer': {
+            'id': person.id,
+            'partyType': Party.PartyTypes.PERSON.value,
             'firstName': person.first_name,
             'lastName': person.last_name,
-            'middleInitial': person.middle_initial
+            'middleInitial': person.middle_initial,
+            'email': None
         },
         'title': person.title
     }
@@ -45,9 +49,15 @@ def test_party_json(session):
         party_type=Party.PartyTypes.ORGANIZATION.value,
         organization_name='organization'
     )
+    organization.save()
     organization_json = {
         'officer': {
+            'id': organization.id,
+            'partyType': Party.PartyTypes.ORGANIZATION.value,
             'organizationName': organization.organization_name,
+            'identifier': None,
+            'taxId': None,
+            'email': None
         },
     }
 

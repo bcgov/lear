@@ -183,6 +183,7 @@
 		padding-bottom: 0.25rem;
 	}
 
+	td.col-22 { width: 22% !important; }
 	td.col-33 { width: 33% !important; }
 	td.col-67 { width: 67% !important; }
 	td.col-50 { width: 50% !important; }
@@ -252,6 +253,10 @@
 
 	.business-details-table td:nth-child(2) {
 		width: 45%;
+	}
+
+	.business-details-registar-td {
+		float: right;
 	}
 
 	.bold {
@@ -384,9 +389,9 @@
 		text-transform: capitalize;
 	}
 
-    .upper-text {
-        text-transform: uppercase;
-    }
+	.upper-text {
+		text-transform: uppercase;
+	}
 
 	.right-align {
 		text-align: right;
@@ -434,5 +439,59 @@
 
 	a {
 	    color: #1A5A96;
+	}
+
+	.business-change-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+	}
+
+	.business-change-table td {
+		vertical-align: top;
+		overflow-wrap: break-word;
+  		word-wrap: break-word;
+	}
+
+	/* border between rows */
+	.business-change-table tr:not(:first-child):nth-child(odd){
+		border-top: solid 0.5px #BCBEC5;
+	}
+
+	/* vertical padding to upper border */
+	.business-change-table tr:not(:first-child):nth-child(odd) td {
+		padding-top: 1rem;
+	}
+
+	/* vertical padding to lower border */
+	.business-change-table tr:not(:last-child) td {
+		padding-bottom: 1rem;
+	}
+
+	.registry-contact-details{
+		list-style-type: disc;
+
+	}
+
+	.amalgamation-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+	}
+
+	.amalgamation-table td {
+		vertical-align: top;
+		overflow-wrap: break-word;
+  		word-wrap: break-word;
+	}
+
+	/* vertical padding to upper border */
+	.amalgamation-table tr:not(:first-child):nth-child(odd) td {
+		padding-top: 0.25rem;
+	}
+
+	/* vertical padding to lower border */
+	.amalgamation-table tr:not(:last-child) td {
+		padding-bottom: 0.25rem;
 	}
 </style>

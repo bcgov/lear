@@ -26,6 +26,7 @@ from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
+from .change_of_registration import validate as change_of_registration_validate
 from .correction import validate as correction_validate
 from .court_order import validate as court_order_validate
 from .dissolution import validate as dissolution_validate
@@ -33,11 +34,12 @@ from .incorporation_application import validate as incorporation_application_val
 from .incorporation_application import validate_correction_ia
 from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
+from .registration import validate as registration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 
 
-def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches
+def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches,too-many-statements
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
@@ -122,6 +124,12 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['registrarsOrder'].get('name'):
                     err = registrars_order_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['registration'].get('name'):
+                    err = registration_validate(filing_json)
+
+                elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
+                    err = change_of_registration_validate(filing_json)
 
                 if err:
                     return err

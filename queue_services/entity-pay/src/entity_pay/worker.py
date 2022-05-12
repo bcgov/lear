@@ -149,9 +149,9 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except FilingException:
         # log to sentry and absorb the error, ie: do NOT raise it, otherwise the message would be put back on the queue
         if APP_CONFIG.ENVIRONMENT == 'prod':
-            capture_message('Queue Error: cannot find filing: %s' % json.dumps(payment_token), level='error')
+            capture_message(f'Queue Error: cannot find filing:{json.dumps(payment_token)}', level='error')
             logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
-    except (QueueException, Exception):  # pylint: disable=broad-except
+    except (QueueException, Exception):  # pylint: disable=broad-except  # noqa: B902
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message('Queue Error:' + json.dumps(payment_token), level='error')
+        capture_message(f'Queue Error: {json.dumps(payment_token)}', level='error')
         logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)

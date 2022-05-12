@@ -59,7 +59,8 @@ class DocumentMetaService():
         self._business_identifier = business_identifier
         # if this is a temp registration then there is no business, so get legal type from filing
         if self._business_identifier.startswith('T'):
-            self._legal_type = filing['filing']['incorporationApplication']['nameRequest']['legalType']
+            filing_type = filing['filing']['header']['name']
+            self._legal_type = filing['filing'][filing_type]['nameRequest']['legalType']
         else:
             business = Business.find_by_identifier(self._business_identifier)
             if not business:

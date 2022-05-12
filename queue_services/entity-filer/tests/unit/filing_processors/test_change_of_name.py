@@ -34,3 +34,30 @@ def test_change_of_name_process(app, session):
 
     # validate
     assert business.legal_name == new_name
+
+
+def test_change_of_name_with_nr_process(app, session):
+    """Assert that the legal name is changed."""
+    # setup
+    new_name = 'new legal_name'
+    identifier = 'CP1234567'
+    con = {
+        'changeOfName': {
+            'nameRequest': {
+                'nrNumber': 'NR 8798956',
+                'legalName': new_name,
+                'legalType': 'BC'
+            }
+        }
+    }
+
+    business = create_business(identifier)
+    business.legal_name = 'original name'
+
+    filing_meta = FilingMeta()
+
+    # test
+    change_of_name.process(business, con, filing_meta)
+
+    # validate
+    assert business.legal_name == new_name

@@ -120,3 +120,7 @@ venv.bak/
 
 # History
 .history/
+
+# Notebooks
+tests/**/*setup*.ipynb
+

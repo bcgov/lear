@@ -18,14 +18,16 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 from http import HTTPStatus
+import pytest
 
 import registry_schemas
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
+from tests.unit.models import factory_business
 from tests.unit.services.utils import create_header
 
 
@@ -63,13 +65,17 @@ def test_create_bootstrap_failure_filing(client, jwt):
 
 
 @integration_affiliation
-def test_create_bootstrap_minimal_draft_filing(client, jwt):
+@pytest.mark.parametrize('filing_name', [
+    'incorporationApplication',
+    'registration'
+])
+def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
     filing = {'filing':
               {
                   'header':
                   {
-                      'name': 'incorporationApplication',
+                      'name': filing_name,
                       'accountId': 28
                   }
               }
@@ -81,7 +87,7 @@ def test_create_bootstrap_minimal_draft_filing(client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json['filing']['business']['identifier']
     assert rv.json['filing']['header']['accountId'] == 28
-    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+    assert rv.json['filing']['header']['name'] == filing_name
 
 
 @integration_affiliation
@@ -203,3 +209,15 @@ def test_get_business_info_missing_business(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_get_business_with_allowed_filings(session, client, jwt):
+    """Assert that the allowed filings are returned with business."""
+    identifier = 'CP0000001'
+    factory_business(identifier, state=Business.State.HISTORICAL)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}?allowed_filings=true',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['allowedFilings']

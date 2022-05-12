@@ -46,6 +46,7 @@ from legal_api.services import (
     namex,
     queue,
 )
+from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -96,13 +97,14 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
                    filing_id: Optional[int] = None):
     """Modify an incomplete filing for the business."""
     # basic checks
-    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request)
+    business = Business.find_by_identifier(identifier)
+    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request, business)
     if err_msg:
         return jsonify({'errors': [err_msg, ]}), err_code
     json_input = request.get_json()
 
     # check authorization
-    response, response_code = ListFilingResource.check_authorization(identifier, json_input)
+    response, response_code = ListFilingResource.check_authorization(identifier, json_input, business)
     if response:
         return response, response_code
 
@@ -111,11 +113,11 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
 
     if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
-            and not ListFilingResource.is_before_epoch_filing(json_input, Business.find_by_identifier(identifier)):
+            and not ListFilingResource.is_before_epoch_filing(json_input, business):
         if identifier.startswith('T'):
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
-            business_validate = Business.find_by_identifier(identifier)
+            business_validate = business
         err = validate(business_validate, json_input)
         if err or query.only_validate:
             if err:
@@ -257,8 +259,9 @@ class ListFilingResource():
             return jsonify(rv.redacted(rv.raw, jwt))
 
         if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
-            # This is required until #5302 ticket implements
-            rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
+            if diff := rv.json['filing']['correction'].get('diff'):
+                # This is required until #5302 ticket implements
+                rv.storage._filing_json['filing']['correction']['diff'] = diff  # pylint: disable=protected-access; # noqa: E501;
 
         if str(request.accept_mimetypes) == 'application/pdf':
             report_type = request.args.get('type', None)
@@ -345,8 +348,9 @@ class ListFilingResource():
     def check_and_update_nr(filing):
         """Check and update NR to extend expiration date as needed."""
         # if this is an incorporation filing for a name request
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            nr_number = filing.json['filing']['incorporationApplication']['nameRequest'].get('nrNumber', None)
+        if filing.filing_type in (Filing.FILINGS['incorporationApplication']['name'],
+                                  Filing.FILINGS['registration']['name']):
+            nr_number = filing.json['filing'][filing.filing_type]['nameRequest'].get('nrNumber', None)
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
                 effective_date = datetime.datetime.fromisoformat(effective_date)
@@ -388,7 +392,7 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+    def put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -401,20 +405,39 @@ class ListFilingResource():
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
+        if json_input['filing']['header']['name'] not in [
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ] and business is None:
+            return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
+
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: str, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
-        action = ['edit']
         filing_type = filing_json['filing']['header'].get('name')
+        sub_filing_type = None
+        if filing_type == 'restoration':
+            sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+
+        # While filing IA business object will be None. Setting default values in that case.
+        state = business.state if business else Business.State.ACTIVE
+        # for incorporationApplication and registration, get legalType from nameRequest
+        legal_type = business.legal_type if business else \
+            filing_json['filing'][filing_type]['nameRequest'].get('legalType')
+        admin_freeze = business.admin_freeze if business else False
+
+        action = ['edit']
         if filing_type == 'courtOrder':
             action = ['court_order']
         elif filing_type == 'registrarsNotation':
             action = ['registrars_notation']
         elif filing_type == 'registrarsOrder':
             action = ['registrars_order']
-        if not authorized(identifier, jwt, action=action):
+        if admin_freeze or \
+                not authorized(identifier, jwt, action=action) or \
+                not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -598,8 +621,11 @@ class ListFilingResource():
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        if filing_type == 'incorporationApplication':
-            legal_type = filing_json['filing']['business']['legalType']
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
         else:
             legal_type = business.legal_type
 
@@ -667,13 +693,22 @@ class ListFilingResource():
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
 
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name'):
-            mailing_address = Address.create_address(
-                filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
-            corp_type = filing.json['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
+        if filing.filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            if filing.filing_type == Filing.FILINGS['incorporationApplication']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+            elif filing.filing_type == Filing.FILINGS['registration']['name']:
+                mailing_address = Address.create_address(
+                    filing.json['filing']['registration']['offices']['businessOffice']['mailingAddress'])
+
+            corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
+                'legalType', Business.LegalTypes.BCOMP.value)
 
             try:
-                business.legal_name = filing.json['filing']['incorporationApplication']['nameRequest']['legalName']
+                business.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
                 business.legal_name = business.identifier
 
@@ -760,10 +795,13 @@ class ListFilingResource():
     def set_effective_date(business: Business, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type == Filing.FILINGS['incorporationApplication'].get('name') and \
-           (fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate')):
-            filing.effective_date = datetime.datetime.fromisoformat(fe_date)
-            filing.save()
+        if filing_type in (
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ):
+            if fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate'):
+                filing.effective_date = datetime.datetime.fromisoformat(fe_date)
+                filing.save()
 
         elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()

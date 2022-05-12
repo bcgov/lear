@@ -67,6 +67,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         return {
+            'id': self.id,
             'streetAddress': self.street,
             'streetAddressAdditional': self.street_additional,
             'addressType': self.address_type,
@@ -90,4 +91,12 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
         address.postal_code = new_info.get('postalCode')
         address.delivery_instructions = new_info.get('deliveryInstructions')
 
+        return address
+
+    @classmethod
+    def find_by_id(cls, internal_id: int = None):
+        """Return the address by the internal id."""
+        address = None
+        if internal_id:
+            address = cls.query.filter_by(id=internal_id).one_or_none()
         return address

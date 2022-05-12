@@ -1,7 +1,11 @@
 <div class="no-page-break">
     {% if listOfTranslations|length or previousNameTranslations|length %}
         <div class="separator mt-4"></div>
-        <div class="section-title mt-4">Company Name Translation(s)</div>
+        {% if reportType == 'summary' %}
+            <div class="section-sub-title mt-4">Translation(s) of Company Name:</div>
+        {% else %}
+            <div class="section-title mt-4">Company Name Translation(s)</div>
+        {% endif %}
         <div class="section-data mt-3">
             <table class="section-translation-table" role="presentation">
                 {% if listOfTranslations|length == 0 and previousNameTranslations|length %}

@@ -14,6 +14,7 @@
 """The Unit Tests and the helper routines."""
 import copy
 import json
+from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
@@ -22,12 +23,14 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_REGISTRATION,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
+    REGISTRATION,
 )
 from sqlalchemy_continuum import versioning_manager
 
@@ -100,6 +103,72 @@ def prep_incorp_filing(session, identifier, payment_id, option):
     return filing
 
 
+def prep_registration_filing(session, identifier, payment_id, option, legal_type, legal_name):
+    """Return a new registration filing prepped for email notification."""
+    now = datetime.now().strftime('%Y-%m-%d')
+    REGISTRATION['business']['naics'] = {
+        'naicsCode': '112320',
+        'naicsDescription': 'Broiler and other meat-type chicken production'
+    }
+
+    gp_registration = copy.deepcopy(FILING_HEADER)
+    gp_registration['filing']['header']['name'] = 'registration'
+    gp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
+    gp_registration['filing']['registration']['startDate'] = now
+    gp_registration['filing']['registration']['nameRequest']['legalName'] = legal_name
+    gp_registration['filing']['registration']['parties'][1]['officer']['email'] = 'party@email.com'
+
+    sp_registration = copy.deepcopy(FILING_HEADER)
+    sp_registration['filing']['header']['name'] = 'registration'
+    sp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
+    sp_registration['filing']['registration']['startDate'] = now
+    sp_registration['filing']['registration']['nameRequest']['legalType'] = 'SP'
+    sp_registration['filing']['registration']['nameRequest']['legalName'] = legal_name
+    sp_registration['filing']['registration']['businessType'] = 'SP'
+    sp_registration['filing']['registration']['parties'][0]['roles'] = [
+        {
+            'roleType': 'Completing Party',
+            'appointmentDate': '2022-01-01'
+
+        },
+        {
+            'roleType': 'Proprietor',
+            'appointmentDate': '2022-01-01'
+
+        }
+    ]
+    del sp_registration['filing']['registration']['parties'][1]
+
+    if legal_type == Business.LegalTypes.SOLE_PROP.value:
+        filing_template = sp_registration
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        filing_template = gp_registration
+
+    business_id = None
+    if option == 'PAID':
+        del filing_template['filing']['business']
+    elif option == 'COMPLETED':
+        business = create_business(identifier, legal_type)
+        business.founding_date = datetime.fromisoformat(now)
+        business.save()
+        business_id = business.id
+        filing_template['filing']['business'] = {
+            'identifier': business.identifier,
+            'legalType': business.legal_type,
+            'foundingDate': business.founding_date.isoformat()
+        }
+
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business_id)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+    if option in ['COMPLETED']:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+    return filing
+
+
 def prep_dissolution_filing(session, identifier, payment_id, option, legal_type, legal_name, submitter_role):
     """Return a new dissolution filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
@@ -119,6 +188,58 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
         for role in party['roles']:
             if role['roleType'] == 'Custodian':
                 party['officer']['email'] = 'custodian@email.com'
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_change_of_registration_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a new change of registration filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+
+    gp_change_of_registration = copy.deepcopy(FILING_HEADER)
+    gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
+    gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    sp_change_of_registration = copy.deepcopy(FILING_HEADER)
+    sp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
+    sp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['roles'] = [
+        {
+            'roleType': 'Completing Party',
+            'appointmentDate': '2022-01-01'
+
+        },
+        {
+            'roleType': 'Proprietor',
+            'appointmentDate': '2022-01-01'
+
+        }
+    ]
+    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    if legal_type == Business.LegalTypes.SOLE_PROP.value:
+        filing_template = sp_change_of_registration
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        filing_template = gp_change_of_registration
+
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
 
     filing = create_filing(
         token=payment_id,

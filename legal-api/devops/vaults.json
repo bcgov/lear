@@ -2,7 +2,8 @@
     {
         "vault": "shared",
         "application": [
-            "nats"
+            "nats",
+            "naics"
         ]
     },
     {

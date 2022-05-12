@@ -32,6 +32,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_REGISTRATION,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     COURT_ORDER,
@@ -39,6 +40,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
+    REGISTRATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
@@ -186,15 +188,15 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
     ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {
-                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
                     ]
-                    }
-      },
+     }
+     },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
@@ -296,7 +298,7 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                  'legalFilings': [
                      {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
                      {'specialResolution':
-                          f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
+                      f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                  ]
          }
      },
@@ -392,6 +394,104 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                  'legalFilings': [
                      {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
                  ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_registration_paid', 'FM7654321', 'SP',
+     'registration', REGISTRATION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_registration_completed', 'FM7654321', 'SP',
+     'registration', REGISTRATION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'registration': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/registration'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('gp_registration_paid', 'FM7654321', 'GP',
+     'registration', REGISTRATION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('gp_registration_completed', 'FM7654321', 'GP',
+     'registration', REGISTRATION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'registration': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/registration'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_change_of_registration_paid', 'FM7654321', 'SP',
+     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'changeOfRegistration':
+                      f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_change_of_registration_completed', 'FM7654321', 'SP',
+     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'amendedRegistrationStatement':
+                 f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/amendedRegistrationStatement',
+             'legalFilings': [
+                 {'changeOfRegistration':
+                      f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('gp_change_of_registration_paid', 'FM7654321', 'GP',
+     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'changeOfRegistration':
+                      f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('gp_change_of_registration_completed', 'FM7654321', 'GP',
+     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'amendedRegistrationStatement':
+                 f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/amendedRegistrationStatement',
+             'legalFilings': [
+                 {'changeOfRegistration':
+                      f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
+             ]
          }
      },
      HTTPStatus.OK, '2017-10-01'

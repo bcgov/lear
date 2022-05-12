@@ -1,0 +1,27 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "bn-hub"
+        ]
+    },
+    {
+        "vault": "nats",
+        "application": [
+            "base",
+            "entity-bn"
+        ]
+    },
+    {
+        "vault": "database",
+        "application": [
+            "entity-db"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
+        ]
+    }
+]

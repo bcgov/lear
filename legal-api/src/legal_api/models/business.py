@@ -135,6 +135,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         CP_HOUSING_COOPERATIVE = 'HC'
         CP_COMMUNITY_SERVICE_COOPERATIVE = 'CSC'
 
+        SP_SOLE_PROPRIETORSHIP = 'SP'
+        SP_DOING_BUSINESS_AS = 'DBA'
+
     __versioned__ = {}
     __tablename__ = 'businesses'
     __mapper_args__ = {
@@ -161,7 +164,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'state',
             'state_filing_id',
             'submitter_userid',
-            'tax_id'
+            'tax_id',
+            'naics_key',
+            'naics_code',
+            'naics_description'
         ]
     }
 
@@ -189,6 +195,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+
+    naics_key = db.Column(db.String(50))
+    naics_code = db.Column(db.String(10))
+    naics_description = db.Column(db.String(150))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -252,6 +262,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:
             return registered_office.addresses.filter(Address.address_type == 'mailing')
+        elif (business_office := db.session.query(Office)  # SP/GP
+              .filter(Office.business_id == self.id)
+              .filter(Office.office_type == 'businessOffice').one_or_none()):
+            return business_office.addresses.filter(Address.address_type == 'mailing')
 
         return db.session.query(Address).filter(Address.business_id == self.id). \
             filter(Address.address_type == Address.MAILING)
@@ -263,6 +277,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Office.office_type == 'registeredOffice').one_or_none()
         if registered_office:
             return registered_office.addresses.filter(Address.address_type == 'delivery')
+        elif (business_office := db.session.query(Office)  # SP/GP
+              .filter(Office.business_id == self.id)
+              .filter(Office.office_type == 'businessOffice').one_or_none()):
+            return business_office.addresses.filter(Address.address_type == 'delivery')
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)
@@ -294,6 +312,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
@@ -314,6 +333,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastModified': self.last_modified.isoformat(),
             'legalName': self.legal_name,
             'legalType': self.legal_type,
+            'naicsKey': self.naics_key,
+            'naicsCode': self.naics_code,
+            'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
@@ -322,11 +344,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.last_coa_date)
-                ).isoformat()
+            ).isoformat()
         if self.last_cod_date:
             d['lastDirectorChangeDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.last_cod_date)
-                ).isoformat()
+            ).isoformat()
 
         if self.dissolution_date:
             d['dissolutionDate'] = self.dissolution_date.isoformat()
@@ -335,9 +357,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.tax_id:
             d['taxId'] = self.tax_id
         if self.state_filing_id:
-            base_url = current_app.config.get('LEGAL_API_BASE_URL')
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
-
         return d
 
     @classmethod
@@ -394,6 +414,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the next value from the sequence."""
         sequence_mapping = {
             'CP': 'business_identifier_coop',
+            'FM': 'business_identifier_sp_gp',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
             return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
@@ -425,7 +446,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         except ValueError:
             return False
         # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ('CP', 'XCP', 'BC'):
+        if identifier[:-7] not in ('CP', 'XCP', 'BC', 'FM'):
             return False
 
         return True
@@ -434,5 +455,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 ASSOCIATION_TYPE_DESC: Final = {
     Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
     Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
-    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative'
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative',
+
+    Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
+    Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
 }

@@ -1,0 +1,19 @@
+{
+	"name": "Python Notebook",
+	"context": "..",
+	"dockerFile": "Dockerfile",
+	"settings": {
+		// "terminal.integrated.shell.linux": "/bin/bash",
+		"python.pythonPath": "/usr/local/bin/python",
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": true,
+		"python.linting.pylintPath": "/usr/local/bin/pylint"
+	},
+	"extensions": [
+		"ms-python.python"
+	],
+	"appPort": [
+	],
+	"postCreateCommand": "pip install -r requirements.txt",
+}
+

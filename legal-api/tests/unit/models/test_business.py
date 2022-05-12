@@ -17,6 +17,7 @@
 Test-Suite to ensure that the Business Model is working as expected.
 """
 from datetime import datetime, timedelta
+from flask import current_app
 
 import datedelta
 import pytest
@@ -77,7 +78,6 @@ def test_business(session):
     assert business.id is not None
     assert business.state == Business.State.ACTIVE
     assert business.admin_freeze is False
-
 
 
 def test_business_find_by_legal_name_pass(session):
@@ -244,6 +244,7 @@ def test_business_json(session):
                         restriction_ind=True
                         )
     # basic json
+    base_url = current_app.config.get('LEGAL_API_BASE_URL')
     d = {
         'legalName': 'legal_name',
         'legalType': 'CP',
@@ -255,6 +256,9 @@ def test_business_json(session):
         'lastModified': EPOCH_DATETIME.isoformat(),
         'lastAnnualReportDate': datetime.date(EPOCH_DATETIME).isoformat(),
         'lastAnnualGeneralMeetingDate': datetime.date(EPOCH_DATETIME).isoformat(),
+        'naicsKey': None,
+        'naicsCode': None,
+        'naicsDescription': None,
         'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
         'goodStanding': False,  # good standing will be false because the epoch is 1970
@@ -316,7 +320,7 @@ def test_business_relationships_json(session):
     assert business.delivery_address.one_or_none()
 
 
-@pytest.mark.parametrize('business_type,expected',[
+@pytest.mark.parametrize('business_type,expected', [
     ('CP', True),
     ('NOT_FOUND', False),
 ])
@@ -331,6 +335,6 @@ def test_get_next_value_from_sequence(session, business_type, expected):
         next_val = Business.get_next_value_from_sequence(business_type)
         assert next_val
         assert next_val == first_val + 1
-    
+
     else:
         assert not Business.get_next_value_from_sequence(business_type)

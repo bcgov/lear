@@ -1,0 +1,24 @@
+
+{% if newLegalName and previousLegalName %}
+    <div class="no-page-break">
+        <div class="separator mt-4"></div>
+        <div class="section-title mt-4">Change of Company Name</div>
+        <div class="section-data mt-4">
+            <table class="section-data-table" role="presentation">
+                <tr class="no-page-break">
+                <td><strong>From</strong>
+                    <div class="pt-1">{{previousLegalName}}</div>
+                </td>
+                <td><strong>To</strong>
+                    <div class="pt-1">{{newLegalName}}</div>
+                </td>
+                
+                </tr>         
+            </table>
+            {% if alteration.nameRequest.nrNumber %}
+                <div class="pt-4"><strong>Name Request Number</strong></div>
+                <div class="pt-1">{{alteration.nameRequest.nrNumber}}</div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}

@@ -34,6 +34,8 @@ JSON_ROLE_CONVERTER = {
     'completing party': PartyRole.RoleTypes.COMPLETING_PARTY.value,
     'director': PartyRole.RoleTypes.DIRECTOR.value,
     'incorporator': PartyRole.RoleTypes.INCORPORATOR.value,
+    'proprietor': PartyRole.RoleTypes.PROPRIETOR.value,
+    'partner': PartyRole.RoleTypes.PARTNER.value,
 }
 
 
@@ -86,21 +88,27 @@ def create_office(business, office_type, addresses) -> Office:
 def create_party(business_id: int, party_info: dict, create: bool = True) -> Party:
     """Create a new party or get them if they already exist."""
     party = None
+    if not (middle_initial := party_info['officer'].get('middleInitial')):
+        middle_initial = party_info['officer'].get('middleName', '')
+
     if create:
         party = PartyRole.find_party_by_name(
             business_id=business_id,
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
-            middle_initial=party_info['officer'].get('middleInitial', '').upper(),
+            middle_initial=middle_initial.upper(),
             org_name=party_info['officer'].get('organizationName', '').upper()
         )
     if not party:
         party = Party(
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
-            middle_initial=party_info['officer'].get('middleInitial', '').upper(),
+            middle_initial=middle_initial.upper(),
             title=party_info.get('title', '').upper(),
             organization_name=party_info['officer'].get('organizationName', '').upper(),
+            email=party_info['officer'].get('email'),
+            identifier=party_info['officer'].get('identifier'),
+            tax_id=party_info['officer'].get('taxId'),
             party_type=party_info['officer'].get('partyType')
         )
 

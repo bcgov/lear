@@ -22,9 +22,12 @@ from .comment import Comment
 from .corp_type import CorpType
 from .document import Document
 from .filing import Filing
+from .naics_element import NaicsElement
+from .naics_structure import NaicsStructure
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
 from .registration_bootstrap import RegistrationBootstrap
+from .request_tracker import RequestTracker
 from .resolution import Resolution
 from .share_class import ShareClass
 from .share_series import ShareSeries
@@ -33,5 +36,5 @@ from .user import User, UserRoles
 
 __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType', 'Document',
-           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'Resolution',
-           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles')
+           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')

@@ -45,11 +45,13 @@ from entity_emailer.email_processors import (
     affiliation_notification,
     ar_reminder_notification,
     bn_notification,
+    change_of_registration_notification,
     dissolution_notification,
     filing_notification,
     mras_notification,
     name_request,
     nr_notification,
+    registration_notification,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -139,6 +141,12 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'dissolution':
                 email = dissolution_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'registration':
+                email = registration_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'changeOfRegistration':
+                email = change_of_registration_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:

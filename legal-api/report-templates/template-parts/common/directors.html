@@ -3,7 +3,7 @@
   <div class="section-title mt-4">Director Information</div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
-  {% for party in parties | selectattr("officer.partyType", "equalto", "person") |  sort(attribute='officer.lastName') %}
+  {% for party in parties | selectattr("officer.partyType", "in", '["person", "Person"]') |  sort(attribute='officer.lastName') %}
     {% for party_role in party.roles %}
       {% if party_role.roleType == 'Director' %}
           <tr class="no-page-break">
@@ -15,9 +15,9 @@
                   <span class="capitalize-text">{{ party.officer.middleName }}</span>
                 {% endif %}
               </div>
-              {% if party.hasCorrected %}
+              {% if party.hasCorrected is defined and party.hasCorrected %}
                 <span class="chip">CORRECTED</span>
-              {% elif party.hasRemoved %}
+              {% elif party.hasRemoved is defined and party.hasRemoved %}
                 <span class="chip">REMOVED</span>
               {% endif %}
             </td>

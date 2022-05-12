@@ -65,6 +65,7 @@ class Filing:
         CHANGEOFADDRESS = 'changeOfAddress'
         CHANGEOFDIRECTORS = 'changeOfDirectors'
         CHANGEOFNAME = 'changeOfName'
+        CHANGEOFREGISTRATION = 'changeOfRegistration'
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'
@@ -72,6 +73,7 @@ class Filing:
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         RESTORATIONAPPLICATION = 'restorationApplication'
+        REGISTRATION = 'registration'
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
 
@@ -401,13 +403,15 @@ class Filing:
     @staticmethod
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
+        no_output_filing_types = ['Involuntary Dissolution']
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
             'commentsCount': filing_storage.comments_count,
             'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
-            'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents',
+            'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents' if
+            filing_storage.filing_type not in no_output_filing_types else None,
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
             'isFutureEffective': filing.is_future_effective,
         }
@@ -455,6 +459,8 @@ class Filing:
 
         if filing.status in (
             Filing.Status.PAID,
+        ) and filing.filing_type not in (
+            Filing.FilingTypes.REGISTRATION.value
         ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
@@ -465,10 +471,22 @@ class Filing:
             Filing.Status.CORRECTED,
         ) and filing.storage.meta_data:
             if legal_filings := filing.storage.meta_data.get('legalFilings'):
+                legal_filings_copy = copy.deepcopy(legal_filings)
+                if (filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
+                        business.legal_type == Business.LegalTypes.COOP.value and
+                        Filing.FilingTypes.CHANGEOFNAME.value in legal_filings):
+                    # suppress change of name output for MVP since the design is outdated.
+                    legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
+
                 documents['documents']['legalFilings'] = \
-                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings]
+                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
 
                 # get extra outputs
+                if filing.storage.transaction_id and \
+                        (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
+                        filing.storage.transaction_id, business)):
+                    business = bus_rev_temp
+
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 

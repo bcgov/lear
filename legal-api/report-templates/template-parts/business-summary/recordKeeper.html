@@ -1,0 +1,45 @@
+{% if custodians|length > 0 %}
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Custodian of Dissolved {{ entityShortDescription }}'s Records</div>
+</div>
+<table class="section-data section-data-table mt-4" role="presentation">
+  {% for party in custodians  |  sort(attribute='officer.lastName') %}
+      <tr class="no-page-break">
+        <td class="col-33">
+          <div class="section-sub-title">
+            <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+            <span class="capitalize-text">{{ party.officer.firstName }}</span>
+            {% if party.officer.middleName %}
+              <span class="capitalize-text">{{ party.officer.middleName }}</span>
+            {% endif %}
+          </div>
+        </td>
+        <td class="col-33">
+          <div class="section-sub-title">Mailing Address</div>
+          <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+          <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+          <div>
+            {{ party.mailingAddress.addressCity }}
+            {{ party.mailingAddress.addressRegion }}
+            &nbsp;{{ party.mailingAddress.postalCode }}
+          </div>
+          <div>{{ party.mailingAddress.addressCountry }}</div>
+          <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+        </td>
+        <td class="col-33">
+          <div class="section-sub-title">Delivery Address</div>
+          <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
+          <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+          <div>
+            {{ party.deliveryAddress.addressCity }}
+            {{ party.deliveryAddress.addressRegion }}
+            &nbsp;{{ party.deliveryAddress.postalCode }}
+          </div>
+          <div>{{ party.deliveryAddress.addressCountry }}</div>
+          <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+        </td>
+      </tr>
+  {% endfor %}
+</table>
+{% endif %}

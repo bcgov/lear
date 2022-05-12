@@ -1,0 +1,40 @@
+{% set businessOffice = changeOfRegistration.offices.businessOffice if changeOfRegistration.offices else None %}
+{% if businessOffice and businessOffice.changed %}
+  <div class="section-title mt-4">Change of Business Addresses</div>
+  <div class="section-data mt-4">
+    <table class="section-data-table">
+      <tr class="no-page-break">
+        {% if businessOffice.mailingAddress is defined %}
+        <td class="col-33">
+          <div class="section-sub-title">Mailing Address
+            <span>{% if businessOffice.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+          </div>
+          <div class=" pt-2">{{ businessOffice.mailingAddress.streetAddress }}</div>
+          <div>{{ businessOffice.mailingAddress.streetAddressAdditional }}</div>
+          <div>{{ businessOffice.mailingAddress.addressCity }}
+            {{ businessOffice.mailingAddress.addressRegion }}
+            &nbsp;{{ businessOffice.mailingAddress.postalCode }}</div>
+          <div>{{ businessOffice.mailingAddress.addressCountry }}</div>
+          <div>{{ businessOffice.mailingAddress.deliveryInstructions }}</div>
+        </td>
+        {% endif %}
+        {% if businessOffice.deliveryAddress is defined %}
+        <td class="col-33">
+          <div class="section-sub-title">Delivery Address
+            <span>{% if businessOffice.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+          </div>
+          <div class=" pt-2">{{ businessOffice.deliveryAddress.streetAddress }}</div>
+          <div>{{ businessOffice.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ businessOffice.deliveryAddress.addressCity }}
+            {{ businessOffice.deliveryAddress.addressRegion }}
+            &nbsp;{{ businessOffice.deliveryAddress.postalCode }}</div>
+          <div>{{ businessOffice.deliveryAddress.addressCountry }}</div>
+          <div>{{ businessOffice.deliveryAddress.deliveryInstructions }}</div>
+        </td>
+        {% endif %}
+        <td class="col-33"></td>
+      </tr>
+    </table>
+  </div>
+  <div class="separator mt-4"></div>
+{% endif %}

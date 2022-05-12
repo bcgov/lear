@@ -82,7 +82,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # Get modified data
@@ -134,7 +134,7 @@ async def test_publish_filing(app, session, stan_server, event_loop, client_id, 
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # check it out
@@ -174,20 +174,20 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     # Test
     filing = Filing()
     filing.id = 101
-    filing.filing_type = 'incorporationApplication'
+    filing._filing_type = 'incorporationApplication'
     filing_date = datetime.datetime.utcnow()
-    filing.filing_date = filing_date
+    filing._filing_date = filing_date
     filing.effective_date = filing_date
 
-    await publish_email_message(filing)
+    await publish_email_message(qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'registered')
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         print(err)
 
     # check it out
     assert len(msgs) == 1
-    assert get_data_from_msg(msgs[0], 'id') == filing.id
-    assert get_data_from_msg(msgs[0], 'type') == filing.filing_type
-    assert get_data_from_msg(msgs[0], 'option') == 'PAID'
+    assert get_data_from_msg(msgs[0], 'filingId') == filing.id
+    assert get_data_from_msg(msgs[0], 'type') == filing._filing_type
+    assert get_data_from_msg(msgs[0], 'option') == 'registered'

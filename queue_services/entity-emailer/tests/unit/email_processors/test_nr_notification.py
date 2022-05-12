@@ -33,8 +33,8 @@ default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
         [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
     ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
         [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
-    ('expired', 'NR 1234567', 'Expired', None, None, None,
-     [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
+    ('expired', 'NR 1234567', 'Expired', None, None, 'TEST4 Company Name',
+        [{'name': 'TEST5 Company Name', 'state': 'NE'}, {'name': 'TEST4 Company Name', 'state': 'APPROVED'}]),
     ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
     ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
     ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
@@ -80,5 +80,11 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
         if option == nr_notification.Option.BEFORE_EXPIRY.value:
             assert nr_number in email['content']['body']
             assert expected_legal_name in email['content']['body']
-            exp_date = LegislationDatetime.format_as_report_string(datetime.fromisoformat(expiration_date))
-            assert exp_date in email['content']['body']
+            exp_date = datetime.fromisoformat(expiration_date)
+            exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
+            assert_expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
+            assert assert_expiration_date in email['content']['body']
+
+        if option == nr_notification.Option.EXPIRED.value:
+            assert nr_number in email['content']['body']
+            assert expected_legal_name in email['content']['body']

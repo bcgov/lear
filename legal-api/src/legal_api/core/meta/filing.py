@@ -19,7 +19,7 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
-from legal_api.utils.datetime import date
+from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
 
 
 class AutoName(str, Enum):
@@ -35,7 +35,7 @@ class AutoName(str, Enum):
 
 
 class ReportTitles(str, Enum):
-    """Enum of the system error codes."""
+    """Enum of the report titles."""
 
     ALTERATION_NOTICE = 'Alteration Notice'
     CERTIFICATE = 'Certificate'
@@ -43,10 +43,11 @@ class ReportTitles(str, Enum):
     CERTIFIED_MEMORANDUM = 'Certified Memorandum'
     CERTIFIED_RULES = 'Certified Rules'
     NOTICE_OF_ARTICLES = 'Notice of Articles'
+    AMENDED_REGISTRATION_STATEMENT = 'Amended Registration Statement'
 
 
 class ReportNames(AutoName):
-    """Enum of the system error codes."""
+    """Enum of the report names."""
 
     ALTERATION_NOTICE = auto()
     CERTIFICATE = auto()
@@ -54,10 +55,11 @@ class ReportNames(AutoName):
     CERTIFIED_MEMORANDUM = auto()
     CERTIFIED_RULES = auto()
     NOTICE_OF_ARTICLES = auto()
+    AMENDED_REGISTRATION_STATEMENT = auto()
 
 
 class FilingTitles(str, Enum):
-    """Enum of the system error codes."""
+    """Enum of the filing titles."""
 
     INCORPORATION_APPLICATION_DEFAULT = 'Incorporation Application'
 
@@ -161,11 +163,13 @@ FILINGS: Final = {
             'BEN': 'DIS_VOL',
             'ULC': 'DIS_VOL',
             'CC': 'DIS_VOL',
-            'LLC': 'DIS_VOL'
+            'LLC': 'DIS_VOL',
+            'SP': 'DIS_VOL',
+            'GP': 'DIS_VOL'
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
-            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+            {'types': 'BC,BEN,CC,ULC,LLC,SP,GP', 'outputs': ['certificateOfDissolution']},
         ]
     },
     'incorporationApplication': {
@@ -194,6 +198,18 @@ FILINGS: Final = {
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
         'code': 'NOFEE'},
+    'registration': {
+        'name': 'registration',
+        'title': 'Registration',
+        'displayName': {
+            'SP': 'BC Sole Proprietorship Registration',
+            'GP': 'BC General Partnership Registration'
+        },
+        'code': {
+            'SP': 'FRREG',
+            'GP': 'FRREG'
+        },
+    },
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
@@ -212,6 +228,21 @@ FILINGS: Final = {
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
+    'changeOfRegistration': {
+        'name': 'changeOfRegistration',
+        'title': 'Change of Registration',
+        'displayName': {
+            'SP': 'Change of Proprietor Registration',
+            'GP': 'Change of Partnership Registration'
+        },
+        'code': {
+            'SP': 'FMCHANGE',
+            'GP': 'FMCHANGE'
+        },
+        'additional': [
+            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
+        ]
+    }
 }
 
 
@@ -227,8 +258,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                             for word in
                             re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
 
+        business_revision = business
+        # retrieve business revision at time of filing so legal type is correct when returned for display name
+        if filing.transaction_id and \
+                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business)):
+            business_revision = bus_rev_temp
+
         if isinstance(names, MutableMapping):
-            name = names.get(business.legal_type)
+            name = names.get(business_revision.legal_type)
         else:
             name = names
 
@@ -237,7 +274,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                name = f'{name} - {FilingMeta.display_name(business, filing.children[0], False)}'
+                name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
@@ -247,8 +284,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
         """Render a year as a string, given all filing mechanisms."""
         with suppress(IndexError, KeyError, TypeError):
-            report_date = filing_meta_data['annualReport']['annualReportDate']
-            return str(date.fromisoformat(report_date).year)
+            return str(filing_meta_data['annualReport']['annualReportFilingYear'])
         return None
 
     @staticmethod
@@ -266,6 +302,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing_type == 'alteration':
             if filing_meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
+        elif filing_type == 'specialResolution' and 'changeOfName' in filing_meta_data.get('legalFilings', []):
+            outputs.add('certificateOfNameChange')
         elif filing_type == 'correction':
             if not filing_meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
                 # For IA correction, certificate will be populated in get_all_outputs since

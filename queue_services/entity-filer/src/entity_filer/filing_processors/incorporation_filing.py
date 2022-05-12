@@ -17,11 +17,8 @@ from contextlib import suppress
 from http import HTTPStatus
 from typing import Dict
 
-import requests
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
-from flask import current_app
-from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Document, Filing, RegistrationBootstrap
 from legal_api.models.document import DocumentType
 from legal_api.services.bootstrap import AccountService
@@ -32,34 +29,6 @@ from entity_filer.filing_processors.filing_components import aliases, business_i
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
-
-
-def get_next_corp_num(legal_type: str):
-    """Retrieve the next available sequential corp-num from COLIN."""
-    # this gets called if the new services are generating the Business.identifier.
-    if legal_type in BusinessType:
-        if business_type := BusinessType.get_enum_by_value(legal_type):
-            return BusinessIdentifier.next_identifier(business_type)
-        return None
-
-    # legacy Business.Identifier generation
-    try:
-        # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
-        if legal_type == Business.LegalTypes.BCOMP.value:
-            business_type = 'BC'
-        else:
-            business_type = legal_type
-        resp = requests.post(f'{current_app.config["COLIN_API"]}/{business_type}')
-    except requests.exceptions.ConnectionError:
-        current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
-        return None
-
-    if resp.status_code == 200:
-        new_corpnum = int(resp.json()['corpNum'])
-        if new_corpnum and new_corpnum <= 9999999:
-            # TODO: Fix endpoint
-            return f'{business_type}{new_corpnum:07d}'
-    return None
 
 
 def update_affiliation(business: Business, filing: Filing):
@@ -171,7 +140,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
         else:
             # Reserve the Corp Number for this entity
-            corp_num = get_next_corp_num(business_info_obj['legalType'])
+            corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
             if not corp_num:
                 raise QueueException(
                     f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
@@ -194,7 +163,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         update_offices(business, offices)
 
     if parties := incorp_filing.get('parties'):
-        update_parties(business, parties)
+        update_parties(business, parties, filing_rec)
 
     if share_structure := incorp_filing.get('shareStructure'):
         shares.update_share_structure(business, share_structure)
@@ -208,6 +177,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
         if not ia_json['filing'].get('business'):
             ia_json['filing']['business'] = {}
         ia_json['filing']['business']['identifier'] = business.identifier
+        ia_json['filing']['business']['legalType'] = business.legal_type
         ia_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
     return business, filing_rec, filing_meta

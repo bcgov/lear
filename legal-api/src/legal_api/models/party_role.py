@@ -34,6 +34,8 @@ class PartyRole(db.Model):
         COMPLETING_PARTY = 'completing_party'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'
+        PROPRIETOR = 'proprietor'
+        PARTNER = 'partner'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
@@ -44,6 +46,7 @@ class PartyRole(db.Model):
     cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
 
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
 
     # relationships
@@ -117,3 +120,40 @@ class PartyRole(db.Model):
             filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)). \
             all()
         return directors
+
+    @staticmethod
+    def get_party_roles(business_id: int, end_date: datetime, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.business_id == business_id). \
+            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
+            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+
+        if role is not None:
+            party_roles = party_roles.filter(PartyRole.role == role.lower())
+
+        party_roles = party_roles.all()
+        return party_roles
+
+    @staticmethod
+    def get_party_roles_by_party_id(business_id: int, party_id: int) -> list:
+        """Return the parties that match the filter conditions."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.business_id == business_id). \
+            filter(PartyRole.party_id == party_id). \
+            all()
+        return party_roles
+
+    @staticmethod
+    def get_party_roles_by_filing(filing_id: int, end_date: datetime, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.filing_id == filing_id). \
+            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
+            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+
+        if role is not None:
+            party_roles = party_roles.filter(PartyRole.role == role.lower())
+
+        party_roles = party_roles.all()
+        return party_roles

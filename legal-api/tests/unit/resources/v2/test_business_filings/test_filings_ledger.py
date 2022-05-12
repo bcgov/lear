@@ -221,7 +221,8 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     today = date.today().isoformat()
     annual_report_meta = {'annualReport':{
         'annualReportDate': today,
-        'annualGeneralMeetingDate': today
+        'annualGeneralMeetingDate': today,
+        'annualReportFilingYear': date.fromisoformat(today).year
     }}
     meta_data = {**{'applicationDate': today}, **annual_report_meta}
 

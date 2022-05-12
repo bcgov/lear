@@ -121,7 +121,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'DIS_VOL',
                 'ULC': 'DIS_VOL',
                 'CC': 'DIS_VOL',
-                'LLC': 'DIS_VOL'
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
             }
         },
         'incorporationApplication': {
@@ -133,7 +135,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'ULC': 'BCINC',
                 'CC': 'BCINC',
                 'CP': 'OTINC'
-            }
+            },
+            'temporaryCorpTypeCode': 'TMP'
+        },
+        'registration': {
+            'name': 'registration',
+            'title': 'Registration',
+            'codes': {
+                'SP': 'FRREG',
+                'GP': 'FRREG'
+            },
+            'temporaryCorpTypeCode': 'RTMP'
         },
         'conversion': {
             'name': 'conversion',
@@ -148,6 +160,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'codes': {
                 'BC': 'TRANS',
                 'BEN': 'TRANS'
+            }
+        },
+        'changeOfRegistration': {
+            'name': 'changeOfRegistration',
+            'title': 'Change of Registration',
+            'codes': {
+                'SP': 'FMCHANGE',
+                'GP': 'FMCHANGE'
             }
         },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
@@ -241,6 +261,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
+    filing_party_roles = db.relationship('PartyRole', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
@@ -458,8 +479,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
             json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
-            if self.effective_date:
-                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
+            if self.effective_date:  # pylint: disable=using-constant-test
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
             if self._payment_status_code:
                 json_submission['filing']['header']['paymentStatusCode'] = self.payment_status_code
             if self._payment_token:
@@ -539,6 +560,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_filings_by_types(business_id: int, filing_types):
+        """Return the filings of a particular type."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type.in_(filing_types)). \
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            order_by(desc(Filing.effective_date)). \
+            all()
+        return filings
+
+    @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
@@ -597,6 +629,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
         return filings
+
+    @staticmethod
+    def get_previous_completed_filing(filing):
+        """Return the previous completed filing."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == filing.business_id). \
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            filter(Filing.id < filing.id). \
+            filter(Filing.effective_date < filing.effective_date). \
+            order_by(Filing.effective_date.desc()).all()
+        if filings:
+            return filings[0]
+        return None
 
     def save(self):
         """Save and commit immediately."""

@@ -1,7 +1,37 @@
 <div class="business-details-container">
    <table class="business-details-table" role="presentation">
       <tr>
-         {% if header.reportType == 'noticeOfArticles' %}
+         {% if reportType == 'summary' %}
+             <td class="col-33">
+                 <div class="bold">Incorporation Number:</div>
+                 <div class="bold pt-2">Business Number:</div>
+                 <div class="bold pt-2">Recognition Date and Time:</div>
+                 <div class="bold pt-2">Summary Date and Time:</div>
+                 <div class="bold pt-2">Company Status:</div>
+              </td>
+              <td class="col-67">
+                 <div>{{business.identifier}}</div>
+                 <div class="pt-2">
+                   {% if business.taxId is defined %}
+                      <span>{{ business.taxId }}</span>
+                   {% else %}
+                      <span>Not Available</span>
+                   {% endif %}
+                 </div>
+                 <div class="pt-2">{{formatted_founding_date_time}}
+                    {% if business.amalgamatedEntity %}
+                        <span>(as a result of an Amalgamation)</span>
+                    {% endif %}
+                 </div>
+                 <div class="pt-2">{{report_date_time}}</div>
+                 <div class="pt-2">
+                   <span class="capitalize-text">{{business.displayState}}</span>
+                   {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
+                     <span> - {{stateFilings[0].filing_name}} - Effective {{stateFilings[0].effective_date_time}}</span>
+                   {% endif %}
+                 </div>
+              </td>
+         {% elif header.reportType == 'noticeOfArticles' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Issued Date and Time:</div>
@@ -39,6 +69,61 @@
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
+            </td>
+         {% elif header.name == 'registration' %}
+            <td class="col-22">
+               <div class="bold">Registration Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Business Number:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">
+                  {% if business.taxId is defined %}
+                      <span>{{ business.taxId }}</span>
+                  {% else %}
+                      <span>Not Available</span>
+                  {% endif %}
+               </div>
+            </td>
+         {% elif header.reportType == 'amendedRegistrationStatement' %}
+            <td class="col-22">
+               <div class="bold">Registration Number:</div>
+               <div class="bold pt-2">Registration Date:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Business Number:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{effective_date}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">
+                  {% if taxId is defined %}
+                      <span>{{ taxId }}</span>
+                  {% else %}
+                      <span>Not Available</span>
+                  {% endif %}
+               </div>
+            </td>
+         {% elif header.reportType == 'changeOfRegistration' %}
+            <td class="col-22">
+               <div class="bold">Registration Number:</div>
+               <div class="bold pt-2">Registration Date:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Business Number:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{effective_date}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">
+                  {% if taxId is defined %}
+                      <span>{{ taxId }}</span>
+                  {% else %}
+                      <span>Not Available</span>
+                  {% endif %}
+               </div>
             </td>
          {% elif header.name == 'changeOfAddress' %}
             <td>
@@ -133,25 +218,34 @@
                {% endif %}
             </td>
          {% endif %}
-
-         <td class="registar-certify-section">
-            <div class="certified-copy-text">CERTIFIED COPY</div>
-            <div class="doc-description">of a document filed with the</div>
-            <div class="doc-description">Province of British Columbia</div>
-            <div class="registrar-title">Registrar of Companies</div>
-            <div class="registrar-signature">
-               <img alt="signature" src={{registrarInfo.signature}}>
+         {% if reportType != 'summary' %}
+         <td class="business-details-registar-td">
+            <div class="registar-certify-section">
+               <div class="certified-copy-text">CERTIFIED COPY</div>
+               <div class="doc-description">of a document filed with the</div>
+               <div class="doc-description">Province of British Columbia</div>
+               <div class="registrar-title">Registrar of Companies</div>
+               <div class="registrar-signature">
+                  <img alt="signature" src={{registrarInfo.signature}}>
+               </div>
+               <div class="registrar-name">{{ registrarInfo.name }}</div>
             </div>
-            <div class="registrar-name">{{ registrarInfo.name }}</div>
          </td>
+          {% endif %}
       </tr>
    </table>
 </div>
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
-   Filing #{{header.filingId}}
-   {% if header.name != 'incorporationApplication' %}
-      <!-- not required for incorporationApplication -->
-      <span> | Incorporation #{{business.identifier}}</span>
-   {% endif %}
+    {% if reportType == 'summary' %}
+          <span>Incorporation #{{business.identifier}}</span>
+    {% else %}
+         Filing #{{header.filingId}}
+        {% if header.name == 'registration' %}
+         <span> | Registration #{{business.identifier}}</span>
+        {% elif header.name != 'incorporationApplication' %}
+          <!-- not required for incorporationApplication -->
+          <span> | Incorporation #{{business.identifier}}</span>
+        {% endif %}
+    {% endif %}
 </div>

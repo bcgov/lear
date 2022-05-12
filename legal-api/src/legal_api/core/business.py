@@ -41,7 +41,7 @@ class BusinessType(str, Enum, metaclass=BaseMeta):
 
     COOPERATIVE = 'CP'
     INDIVIDUAL = 'FP'
-    PARTNERSHIP = 'GP'
+    PARTNERSHIP_AND_SOLE_PROP = 'FM'
     TRUST = 'TRUST'
     OTHER = 'OT'
     DEFAULT = 'OT'

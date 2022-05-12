@@ -450,3 +450,90 @@ def create_user(username='temp_user', firstname='firstname', lastname='lastname'
     new_user.save()
 
     return new_user
+
+
+def create_entity(identifier, legal_type, legal_name):
+    """Return a test business."""
+    from legal_api.models import Address, Business
+    business = Business()
+    business.identifier = identifier
+    business.legal_type = legal_type
+    business.legal_name = legal_name
+    business.save()
+    return business
+
+
+def create_office(business, office_type: str):
+    from legal_api.models import Address, Office
+    office = Office(office_type=office_type)
+    business.offices.append(office)
+    business.save()
+    return office
+
+
+def create_office_address(business, office, address_type):
+    """Create an address."""
+    from legal_api.models import Address, Office
+    address = Address(
+        city='Test City',
+        street=f'{business.identifier}-Test Street',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+    )
+    if address_type == 'mailing':
+        address.address_type = Address.MAILING
+    else:
+        address.address_type = Address.DELIVERY
+    office.addresses.append(address)
+    business.save()
+    return address
+
+
+def create_party(party_json):
+    """Create a director."""
+    from legal_api.models import Address, Party
+    new_party = Party(
+        first_name=party_json['officer'].get('firstName', '').upper(),
+        last_name=party_json['officer'].get('lastName', '').upper(),
+        middle_initial=party_json['officer'].get('middleInitial', '').upper()
+    )
+    if party_json.get('mailingAddress'):
+        mailing_address = Address(
+            street=party_json['mailingAddress']['streetAddress'],
+            city=party_json['mailingAddress']['addressCity'],
+            country='CA',
+            postal_code=party_json['mailingAddress']['postalCode'],
+            region=party_json['mailingAddress']['addressRegion'],
+            delivery_instructions=party_json['mailingAddress'].get('deliveryInstructions', '').upper()
+        )
+        new_party.mailing_address = mailing_address
+    if party_json.get('deliveryAddress'):
+        delivery_address = Address(
+            street=party_json['deliveryAddress']['streetAddress'],
+            city=party_json['deliveryAddress']['addressCity'],
+            country='CA',
+            postal_code=party_json['deliveryAddress']['postalCode'],
+            region=party_json['deliveryAddress']['addressRegion'],
+            delivery_instructions=party_json['deliveryAddress'].get('deliveryInstructions', '').upper()
+        )
+        new_party.delivery_address = delivery_address
+    new_party.save()
+    return new_party
+
+
+def create_party_role(business, party, roles, appointment_date):
+    """Create a director."""
+    from legal_api.models import PartyRole
+    for role in roles:
+        party_role = PartyRole(
+            role=role,
+            party=party,
+            appointment_date=appointment_date,
+            cessation_date=None
+        )
+        business.party_roles.append(party_role)
+
+    return business
+
+

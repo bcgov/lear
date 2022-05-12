@@ -47,14 +47,17 @@ def process(
                                      'toLegalType': business_json.get('legalType')}}
         business_info.set_corp_type(business, business_json)
 
-    # Alter the corp name, if any
+    # Alter the business name, if any
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(filing, '/alteration/nameRequest')
-        if legal_name := name_request_json.get('legalName', None):
+        # if nameRequest is present then there could be a name change
+        # from name -> numbered OR name -> name OR numbered to name
+        business_json = dpath.util.get(filing, '/alteration/nameRequest')
+        from_legal_name = business.legal_name
+        business_info.set_legal_name(business.identifier, business, business_json)
+        if from_legal_name != business.legal_name:
             filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalName': business.legal_name,
-                                         'toLegalName': legal_name}}
-        name_request.set_legal_name(business, name_request_json)
+                                      **{'fromLegalName': from_legal_name,
+                                         'toLegalName': business.legal_name}}
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -77,8 +80,8 @@ def post_process(business: Business, filing: Filing, correction: bool = False):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    if not correction and name_request.has_new_nr_for_alteration(business, filing.filing_json):
-        name_request.consume_nr(business, filing, '/filing/alteration/nameRequest/nrNumber')
+    if not correction:
+        name_request.consume_nr(business, filing, 'alteration')
 
     with suppress(IndexError, KeyError, TypeError):
         if err := business_profile.update_business_profile(
@@ -88,8 +91,3 @@ def post_process(business: Business, filing: Filing, correction: bool = False):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id},error:{err}',
                 level='error')
-
-    # Alter the business name, if any
-    with suppress(IndexError, KeyError, TypeError):
-        business_json = dpath.util.get(filing.filing_json, '/filing/alteration/nameRequest')
-        business_info.set_legal_name(business.identifier, business, business_json)

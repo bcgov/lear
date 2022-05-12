@@ -1,0 +1,19 @@
+{% if stateFilings|length > 0 %}
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Dissolution/Restoration Information</div>
+</div>
+<table class="section-data section-data-table mt-4" role="presentation">
+  {% for filing in stateFilings %}
+    <tr class="no-page-break">
+        <td>
+            <div class="section-sub-title">{{filing.filing_name}}</div>
+            <div class="pt-2">
+                <span>Filing Date:</span>
+                <span>{{filing.filing_date_time}}</span>
+            </div>
+        </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endif %}

@@ -1,0 +1,100 @@
+import re
+
+
+def clean_naics_data(filing_data: dict):
+
+    naics_code = filing_data['bd_naics_code']
+    naics_desc = filing_data['bd_description']
+
+    if naics_code:
+        if is_naics_code_format(naics_code):
+            naics_desc = re.sub(r"\s*\[NAICS-\d{6}\]", '', naics_desc)
+            naics_desc = naics_desc.strip()
+            filing_data['bd_description'] = naics_desc
+        elif naics_code == 'N/A' or naics_code == '0000':
+            filing_data['bd_naics_code'] = None
+        else:
+            filing_data['bd_description'] = f'{naics_desc} (NAICS - {naics_code})'
+    else:
+        filing_data['bd_naics_code'] = None
+
+    if naics_desc:
+        naics_desc = re.sub(r"\s*\[NAICS-N/A\]", '', naics_desc)
+        naics_desc = naics_desc.strip()
+        filing_data['bd_description'] = naics_desc
+
+
+def is_naics_code_format(value: str) -> bool:
+    """Determine whether input value is a valid NAICS code format."""
+    pattern = '\\d{6}'
+    result = bool(re.fullmatch(pattern, value))
+    return result
+
+
+def clean_corp_party_data(filing_data: dict):
+    corp_parties_data = filing_data['corp_parties']
+    corp_type = filing_data['c_corp_type_cd']
+
+    for corp_party in corp_parties_data:
+        # corp party type related cleaning/validation
+        corp_party_type = corp_party['cp_party_typ_cd']
+        if not corp_party_type:
+            raise Exception('no corp party type provided')
+
+        if corp_party_type in ('FBI'):
+            if not(corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']):
+                raise Exception(f'no first, last or middle name provided for {corp_party_type}')
+
+            corp_party['cp_business_name'] = ''
+            corp_party['cp_bus_company_num'] = ''
+        elif corp_party_type == 'FCP':
+            if not(corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']
+                   or corp_party['cp_business_name']):
+                raise Exception(f'no cp_business_name provided or first, last or middle name provided for {corp_party_type}')
+
+            if corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']:
+                corp_party['cp_business_name'] = ''
+                corp_party['cp_bus_company_num'] = ''
+            else:
+                corp_party['cp_first_name'] = ''
+                corp_party['cp_last_name'] = ''
+                corp_party['cp_middle_name'] = ''
+        elif corp_party_type == 'FBO':
+            if not(corp_party['cp_business_name']):
+                raise Exception(f'no cp_business_name provided for {corp_party_type}')
+
+            corp_party['cp_first_name'] = ''
+            corp_party['cp_last_name'] = ''
+            corp_party['cp_middle_name'] = ''
+
+        # clean addresses
+        if corp_party['ma_addr_id']:
+            clean_address_data(corp_party, 'ma_')
+        if corp_party['da_addr_id']:
+            clean_address_data(corp_party, 'da_')
+
+
+def clean_offices_data(filing_data: dict):
+    offices_data = filing_data['offices']
+
+    for office in offices_data:
+        if office['ma_addr_id']:
+            clean_address_data(office, 'ma_')
+        if office['da_addr_id']:
+            clean_address_data(office, 'da_')
+
+
+def clean_address_data(address_data: dict, address_prefix: str):
+    address_format_type_key = f'{address_prefix}address_format_type'
+    address_format_type = address_data[address_format_type_key]
+
+    if not address_format_type:
+        raise Exception('no address format type provided')
+
+    if address_format_type == 'OR':
+        address_format_type = 'FOR'
+        address_data[address_format_type_key] = address_format_type
+        return
+
+    if address_format_type not in ('BAS', 'FOR', 'ADV'):
+        raise Exception('unknown address format type: ' + address_format_type)

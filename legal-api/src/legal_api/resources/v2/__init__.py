@@ -19,6 +19,7 @@ from flask import Flask
 from .business import bp as businesses_bp
 from .document_signature import bp as document_signature_bp
 from .meta import bp as meta_bp
+from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 
 
@@ -40,6 +41,7 @@ class V2Endpoint:
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(document_signature_bp)
         self.app.register_blueprint(namerequest_bp)
+        self.app.register_blueprint(naics_bp)
 
 
 v2_endpoint = V2Endpoint()
