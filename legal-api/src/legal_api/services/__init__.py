@@ -15,6 +15,7 @@
 from .authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, SYSTEM_ROLE, authorized
 from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
+from .compliance import check_compliance
 from .document_meta import DocumentMetaService
 from .flags import Flags
 from .minio import MinioService

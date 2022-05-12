@@ -25,7 +25,7 @@ from flask import current_app, jsonify
 from flask_cors import cross_origin
 
 from legal_api.models import Business, Filing
-from legal_api.services import namex
+from legal_api.services import check_compliance, namex
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -61,6 +61,13 @@ def get_tasks(identifier):
         else:
             rv = []
     else:
+        compliance_warnings = check_compliance(business)
+        if len(compliance_warnings) > 0:
+            rv = []
+            business.compliance_warnings = compliance_warnings
+            rv.append(create_conversion_filing_todo(business, 1, True))
+            return jsonify(tasks=rv)
+
         rv = construct_task_list(business)
         if not rv and is_nr:
             paid_completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value,
@@ -94,7 +101,7 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
     tasks = []
     order = 1
 
-    # Retrieve filings that are either incomplete, or drafts
+# Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                  Filing.Status.PENDING.value,
                                                                  Filing.Status.PENDING_CORRECTION.value,
@@ -181,6 +188,24 @@ def create_incorporate_nr_todo(name_request, order, enabled):
                 'nameRequest': name_request,
                 'header': {
                     'name': 'nameRequest',
+                    'status': 'NEW'
+                }
+            }
+        },
+        'order': order,
+        'enabled': enabled
+    }
+    return todo
+
+
+def create_conversion_filing_todo(business, order, enabled):
+    """Return a to-do JSON object."""
+    todo = {
+        'task': {
+            'todo': {
+                'business': business.json(),
+                'header': {
+                    'name': 'conversion',
                     'status': 'NEW'
                 }
             }
