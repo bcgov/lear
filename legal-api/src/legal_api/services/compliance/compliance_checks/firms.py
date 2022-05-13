@@ -101,10 +101,10 @@ def check_firm_parties(legal_type: str, party_roles: list) -> list:
             'code': ComplianceWarningCodes.NO_PROPRIETOR,
             'message': 'A proprietor is required.',
         })
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and not partner_parties:
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and len(partner_parties) < 2:
         result.append({
             'code': ComplianceWarningCodes.NO_PARTNER,
-            'message': 'A partner is required.',
+            'message': '2 partners are required.',
         })
 
     return result
