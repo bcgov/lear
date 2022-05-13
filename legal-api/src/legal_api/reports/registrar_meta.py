@@ -41,6 +41,14 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'signatureImage': 'registrar_signature_3.png',
             'signatureImageAndText': 'registrar_signature_and_text_3.png',
             'startDate': '2012-07-13T00:00:00',
+            'endDate': '2022-05-31T23:59:59'
+        },
+        {
+            'name': 'KAINE SPARKS',
+            'title': 'Registrar of Companies',
+            'signatureImage': 'registrar_signature_4.png',
+            'signatureImageAndText': 'registrar_signature_and_text_4.png',
+            'startDate': '2022-06-01T00:00:00',
             'endDate': None
         }
     ]
