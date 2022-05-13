@@ -77,7 +77,7 @@ def check_parties(legal_type: str, business: Business) -> list:
         completing_party_filing = Filing \
             .get_most_recent_legal_filing(business.id, 'registration')
 
-    result.extend(check_completing_party_for_filing(legal_type, completing_party_filing))
+    result.extend(check_completing_party_for_filing(completing_party_filing))
     return result
 
 
@@ -110,7 +110,7 @@ def check_firm_parties(legal_type: str, party_roles: list) -> list:
     return result
 
 
-def check_completing_party_for_filing(legal_type: str, filing: Filing) -> list:
+def check_completing_party_for_filing(filing: Filing) -> list:
     """Check for non-compliant completing party data for conversion or registration filing."""
     result = []
 
