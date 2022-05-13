@@ -138,7 +138,11 @@ def validate_parties_address(filing_json, legal_type) -> Optional[list]:
 
     Address must be in Canada for COOP and BC for CORP.
     Both mailing and delivery address are mandatory.
+    This needs not to be validated for SP and GP
     """
+    if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        return None
+
     parties_json = filing_json['filing']['dissolution']['parties']
     parties = list(filter(lambda x: _is_dissolution_party_role(x.get('roles', [])), parties_json))
     msg = []
