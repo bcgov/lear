@@ -19,11 +19,11 @@ from flask_restx import Namespace, Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import ProgramAccount
-from colin_api.resources.business import API
 from colin_api.utils.util import cors_preflight
 
 
 API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNIT link data.')
+
 
 @cors_preflight('GET')
 @API.route('/<string:identifier>')

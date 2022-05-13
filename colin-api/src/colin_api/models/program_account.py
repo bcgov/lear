@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Program account details from BNIT link"""
+"""Program account details from BNIT link."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
 
 from flask import current_app
 
@@ -60,7 +60,8 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
         }
 
     @classmethod
-    def get_program_account(cls, transaction_id=None, cross_reference_program_no=None, con=None) -> ProgramAccount:
+    def get_program_account(cls, transaction_id=None,
+                            cross_reference_program_no=None, con=None) -> Optional[ProgramAccount]:
         """Get program account.
 
         transaction_id or cross_reference_program_no is required. only one will be considered.
