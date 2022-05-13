@@ -173,8 +173,7 @@ def validate_parties_address(filing_json, legal_type) -> Optional[list]:
 def _is_dissolution_party_role(roles: list) -> bool:
     return any(role.get('roleType', '').lower() in
                [PartyRole.RoleTypes.CUSTODIAN.value,
-                PartyRole.RoleTypes.LIQUIDATOR.value,
-                PartyRole.RoleTypes.PROPRIETOR.value] for role in roles)
+                PartyRole.RoleTypes.LIQUIDATOR.value] for role in roles)
 
 
 def _validate_address_location(parties):
