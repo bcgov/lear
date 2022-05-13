@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Program account details from BNIT link."""
+"""Program account details from BNI DB link."""
 from __future__ import annotations
 
 from typing import Dict, Optional
@@ -70,7 +70,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             return None
 
         try:
-            bnit_link = current_app.config.get('ORACLE_BNI_DB_LINK')
+            bni_db_link = current_app.config.get('ORACLE_BNI_DB_LINK')
             if not con:
                 con = DB.connection
 
@@ -91,7 +91,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
                   cross_reference_program_no,
                   transaction_tmstmp,
                   transaction_id
-                FROM program_account@{bnit_link}
+                FROM program_account@{bni_db_link}
                 WHERE '{where}'
                 """
             )
@@ -114,6 +114,6 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             program_account.transaction_id = data['transaction_id']
             return program_account
         except Exception as err:
-            current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bnit_link} ' +
+            current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bni_db_link} ' +
                                      f'for {transaction_id or cross_reference_program_no}')
             raise err

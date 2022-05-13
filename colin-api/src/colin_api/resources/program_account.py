@@ -22,7 +22,7 @@ from colin_api.models import ProgramAccount
 from colin_api.utils.util import cors_preflight
 
 
-API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNIT link data.')
+API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNI DB link data.')
 
 
 @cors_preflight('GET')
@@ -34,7 +34,7 @@ class ProgramAccountInfo(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     def get(identifier: str, transaction_id: str = None):
-        """Return the BNIT link program account."""
+        """Return the BNI DB link program account."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
