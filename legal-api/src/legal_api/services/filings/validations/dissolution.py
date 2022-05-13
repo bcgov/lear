@@ -142,7 +142,7 @@ def validate_parties_address(filing_json, legal_type) -> Optional[list]:
     This needs not to be validated for SP and GP
     """
 
-    if legal_type == Business.LegalTypes.SOLE_PROP.value or legal_type == Business.LegalTypes.PARTNERSHIP.value:
+    if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
 
     parties_json = filing_json['filing']['dissolution']['parties']
