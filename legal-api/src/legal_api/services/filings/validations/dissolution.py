@@ -140,7 +140,6 @@ def validate_parties_address(filing_json, legal_type) -> Optional[list]:
     Both mailing and delivery address are mandatory.
     This needs not to be validated for SP and GP
     """
-
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
 
