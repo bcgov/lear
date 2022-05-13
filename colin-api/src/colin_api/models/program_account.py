@@ -70,7 +70,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             return None
 
         try:
-            bnit_link = current_app.config.get('ORACLE_BNIT_LINK')
+            bnit_link = current_app.config.get('ORACLE_BNI_DB_LINK')
             if not con:
                 con = DB.connection
 
