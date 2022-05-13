@@ -135,6 +135,7 @@ def validate_dissolution_statement_type(filing_json, legal_type) -> Optional[lis
 
 def validate_parties_address(filing_json, legal_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.
+
     Address must be in Canada for COOP and BC for CORP.
     Both mailing and delivery address are mandatory.
     This needs not to be validated for SP and GP
