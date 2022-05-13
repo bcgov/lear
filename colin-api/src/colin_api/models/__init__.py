@@ -5,4 +5,5 @@ from .corp_name import CorpName
 from .corp_party import Party
 from .filing_type import FilingType
 from .office import Office
+from .program_account import ProgramAccount
 from .shares import ShareObject

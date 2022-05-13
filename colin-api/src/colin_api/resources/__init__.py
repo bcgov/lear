@@ -30,6 +30,7 @@ from .meta import API as META_API
 from .office import API as OFFICE_API
 from .ops import API as OPS_API
 from .parties import API as DIRECTORS_API
+from .program_account import API as PROGRAM_ACCOUNT_API
 from .reset import API as RESET_API
 from .share_struct import API as SHARES_API
 
@@ -73,3 +74,4 @@ API.add_namespace(OFFICE_API, path='/businesses/office')
 API.add_namespace(FILING_API, path='/businesses/filings')
 API.add_namespace(RESET_API, path='/reset')
 API.add_namespace(SHARES_API, path='/businesses/sharestructure')
+API.add_namespace(PROGRAM_ACCOUNT_API, path='/programAccount')

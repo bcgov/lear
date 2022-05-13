@@ -70,6 +70,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     ORACLE_DB_NAME = os.getenv('ORACLE_DB_NAME', '')
     ORACLE_HOST = os.getenv('ORACLE_HOST', '')
     ORACLE_PORT = int(os.getenv('ORACLE_PORT', '1521'))
+    ORACLE_BNIT_LINK = os.getenv('ORACLE_BNIT_LINK', '')
 
     TESTING = False
     DEBUG = False
