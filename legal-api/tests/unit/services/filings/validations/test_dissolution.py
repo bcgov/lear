@@ -116,6 +116,8 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
     [
         ('FAIL', 'CP', 'not_in_ca', 'CP1234567', HTTPStatus.BAD_REQUEST, 'Address must be in Canada.'),
         ('FAIL', 'BC', 'not_in_bc', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Address must be in BC.'),
+        ('PASS', 'SP', 'not_in_bc', 'BC1234567', None, None),
+        ('PASS', 'GP', 'not_in_bc', 'BC1234567', None, None),
         ('FAIL', 'BC', 'mailing_address_required', 'BC1234567',
          HTTPStatus.BAD_REQUEST, 'mailingAddress is required.'),
         ('FAIL', 'BC', 'party_address_required', 'BC1234567',
