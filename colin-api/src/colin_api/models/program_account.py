@@ -23,7 +23,7 @@ from colin_api.resources.db import DB
 
 class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all these fields
     """Class to contain all model-like to get from database.
-    
+
     PROGRAM_ACCOUNT_PK                        NOT NULL NUMBER(9)
     BUSINESS_NO                               NOT NULL NUMBER(9)
     BUSINESS_PROGRAM_ID                       NOT NULL VARCHAR2(2)
@@ -35,7 +35,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
     TRANSACTION_TMSTMP                        NOT NULL TIMESTAMP(6)
     TRANSACTION_ID                            NOT NULL VARCHAR2(15)
     """
-    
+
     business_no = None
     business_program_id = None
     program_account_ref_no = None
@@ -43,7 +43,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
     cross_reference_program_no = None
     transaction_tmstmp = None
     transaction_id = None
-    
+
     def __init__(self):
         """Initialize with all values None."""
 
@@ -62,7 +62,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
     @classmethod
     def get_program_account(cls, transaction_id=None, cross_reference_program_no=None, con=None) -> ProgramAccount:
         """Get program account.
-        
+
         transaction_id or cross_reference_program_no is required. only one will be considered.
         """
         if not transaction_id and not cross_reference_program_no:
@@ -76,9 +76,9 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             where = ''
             # get data with transaction_id if available
             if transaction_id:
-              where = f"transaction_id = '{transaction_id}'"
+                where = f"transaction_id = '{transaction_id}'"
             elif cross_reference_program_no:
-              where = f"cross_reference_program_no = '{cross_reference_program_no}'"
+                where = f"cross_reference_program_no = '{cross_reference_program_no}'"
 
             cursor = con.cursor()
             cursor.execute(
@@ -113,6 +113,6 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             program_account.transaction_id = data['transaction_id']
             return program_account
         except Exception as err:
-            current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bnit_link} ' + 
-                                    f'for {transaction_id or cross_reference_program_no}')
+            current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bnit_link} ' +
+                                     f'for {transaction_id or cross_reference_program_no}')
             raise err

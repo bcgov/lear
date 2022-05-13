@@ -33,13 +33,13 @@ class ProgramAccountInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    def get(identifier: str, transaction_id: str=None):
+    def get(identifier: str, transaction_id: str = None):
         """Return the BNIT link program account."""
         if not identifier:
             return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
-            program_account = ProgramAccount.get_program_account(transaction_id=transaction_id, 
+            program_account = ProgramAccount.get_program_account(transaction_id=transaction_id,
                                                                  cross_reference_program_no=identifier)
             if not program_account:
                 return jsonify(
