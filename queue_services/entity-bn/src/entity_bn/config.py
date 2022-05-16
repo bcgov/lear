@@ -61,6 +61,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    COLIN_API = os.getenv('COLIN_API', '')
 
     BN_HUB_API_URL = os.getenv('BN_HUB_API_URL', None)
     BN_HUB_CLIENT_ID = os.getenv('BN_HUB_CLIENT_ID', None)
