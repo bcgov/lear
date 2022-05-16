@@ -13,6 +13,12 @@
         ]
     },
     {
+        "vault": "api",
+        "application": [
+            "colin-api-entity"
+        ]
+    },
+    {
         "vault": "database",
         "application": [
             "entity-db"
