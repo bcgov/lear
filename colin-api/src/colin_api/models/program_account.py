@@ -92,7 +92,7 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
                   transaction_tmstmp,
                   transaction_id
                 FROM program_account@{bni_db_link}
-                WHERE '{where}'
+                WHERE {where}
                 """
             )
             data = cursor.fetchone()
