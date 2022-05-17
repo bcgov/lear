@@ -480,6 +480,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
             json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
+            json_submission['filing']['header']['isSavedOnce'] = self.is_saved_once
 
             if self.effective_date:  # pylint: disable=using-constant-test
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
