@@ -556,6 +556,7 @@ class ListFilingResource(Resource):
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
+            filing.is_saved_once = True
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
