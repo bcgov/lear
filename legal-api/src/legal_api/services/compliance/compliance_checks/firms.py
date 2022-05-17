@@ -114,6 +114,13 @@ def check_completing_party_for_filing(filing: Filing) -> list:
     """Check for non-compliant completing party data for conversion or registration filing."""
     result = []
 
+    if not filing:
+        result.append({
+            'code': ComplianceWarningCodes.NO_COMPLETING_PARTY,
+            'message': 'A completing party is required.',
+        })
+        return result
+
     completing_party_role = filing.filing_party_roles \
         .filter(PartyRole.role == PartyRole.RoleTypes.COMPLETING_PARTY.value) \
         .one_or_none()
@@ -177,11 +184,6 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
             result.append({
                 'code': ComplianceWarningCodes.NO_PARTNER_ORG_NAME,
                 'message': f'{role} organization name is required.',
-            })
-        if no_org_identifier_warning:
-            result.append({
-                'code': ComplianceWarningCodes.NO_PARTNER_ORG_IDENTIFIER,
-                'message': f'{role} organization identifier is required.',
             })
 
     return result

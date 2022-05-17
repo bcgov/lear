@@ -28,6 +28,7 @@ from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_business
+from tests.unit.services.compliance.compliance_checks import create_business
 from tests.unit.services.utils import create_header
 
 
@@ -221,3 +222,44 @@ def test_get_business_with_allowed_filings(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['business']['allowedFilings']
+
+
+
+@pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, compliance_warning_expected', [
+    ('WARNINGS_EXIST_MISSING_DATA', 'SP', 'FM0000001', True, True),
+    ('WARNINGS_EXIST_MISSING_DATA', 'GP', 'FM0000002', True, True),
+    ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'SP', 'FM0000003', False, False),
+    ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'GP', 'FM0000004', False, False),
+    ('NO_WARNINGS_NON_FIRM', 'CP', 'CP7654321', True, False),
+    ('NO_WARNINGS_NON_FIRM', 'BEN', 'CP7654321', True, False),
+    ('NO_WARNINGS_NON_FIRM', 'BC', 'BC7654321', True, False),
+])
+def test_get_business_with_incomplete_info(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
+                                           compliance_warning_expected):
+    """Assert that SP/GPs with missing business info, populating complianceWarnings list."""
+
+    if has_missing_business_info:
+        factory_business(entity_type=legal_type, identifier=identifier)
+    else:
+        create_business(legal_type=legal_type,
+                        identifier=identifier,
+                        create_office=True,
+                        create_office_mailing_address=True,
+                        create_office_delivery_address=True,
+                        firm_num_persons_roles=2,
+                        create_firm_party_address=True,
+                        filing_types=['registration'],
+                        filing_has_completing_party=[True],
+                        create_completing_party_address=[True])
+
+    session.commit()
+    rv = client.get(f'/api/v2/businesses/{identifier}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    rv_json = rv.json
+
+    if compliance_warning_expected:
+        assert len(rv_json['business']['complianceWarnings']) > 0
+    else:
+        assert len(rv_json['business']['complianceWarnings']) == 0

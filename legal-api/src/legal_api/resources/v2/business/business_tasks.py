@@ -101,6 +101,12 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
     tasks = []
     order = 1
 
+    is_firm = bool(business and business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                                        Business.LegalTypes.PARTNERSHIP.value))
+    # SP/GPs don’t have annual reports or other legislated filings that they need to do
+    if is_firm:
+        return []
+
 # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                  Filing.Status.PENDING.value,
