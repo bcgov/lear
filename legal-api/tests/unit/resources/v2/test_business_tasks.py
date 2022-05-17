@@ -308,11 +308,14 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
     rv_json = rv.json
 
     if conversion_task_expected:
-        assert len(rv_json['tasks']) == 1
-        assert rv_json['tasks'][0]['task']['todo']['header']['name'] == 'conversion'
-        assert rv_json['tasks'][0]['task']['todo']['header']['status'] == 'NEW'
+        conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
+                                and x['task']['todo']['header']['status'] == 'NEW'
+                                for x in rv_json['tasks'])
+        assert conversion_to_do
     else:
-        conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion' for x in rv_json['tasks'])
+        conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
+                               and x['task']['todo']['header']['status'] == 'NEW'
+                               for x in rv_json['tasks'])
         assert not conversion_to_do
 
 

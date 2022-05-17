@@ -61,13 +61,6 @@ def get_tasks(identifier):
         else:
             rv = []
     else:
-        compliance_warnings = check_compliance(business)
-        if len(compliance_warnings) > 0:
-            rv = []
-            business.compliance_warnings = compliance_warnings
-            rv.append(create_conversion_filing_todo(business, 1, True))
-            return jsonify(tasks=rv)
-
         rv = construct_task_list(business)
         if not rv and is_nr:
             paid_completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value,
@@ -101,11 +94,11 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
     tasks = []
     order = 1
 
-    is_firm = bool(business and business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
-                                                        Business.LegalTypes.PARTNERSHIP.value))
-    # SP/GPs don’t have annual reports or other legislated filings that they need to do
-    if is_firm:
-        return []
+    compliance_warnings = check_compliance(business)
+    if len(compliance_warnings) > 0:
+        business.compliance_warnings = compliance_warnings
+        tasks.append(create_conversion_filing_todo(business, order, True))
+        order += 1
 
 # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
