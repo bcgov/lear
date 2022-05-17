@@ -91,10 +91,10 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
                 filing_meta.conversion = {**filing_meta.conversion, **{'fromLegalName': from_legal_name,
                                                                        'toLegalName': business.legal_name}}
     # Update Nature of Business
-    if (naics := conversion_filing.get('filing', {}).get('business', {}).get('naics')) and \
-            (naics_description := naics.get('naicsDescription')):
-        filing_meta.conversion = {**filing_meta.conversion, **{'naicsDescription': naics_description}}
-        business.naics_description = naics_description
+    if (naics := conversion_filing.get('filing', {}).get('conversion', {}).get('business', {}).get('naics')) and \
+            naics.get('naicsDescription'):
+        business_info.update_naics_info(business, naics)
+        filing_meta.conversion = {**filing_meta.conversion, **{'naicsDescription': naics.get('naicsDescription')}}
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):

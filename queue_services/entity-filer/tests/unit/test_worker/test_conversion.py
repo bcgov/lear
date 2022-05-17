@@ -111,3 +111,6 @@ async def test_conversion(app, session, mocker, test_name, legal_name, new_legal
     assert len(business.offices.all()) == 1
     assert business.offices.first().office_type == 'businessOffice'
 
+    assert business.naics_description == \
+           filing_template['filing']['conversion']['business']['naics']['naicsDescription']
+
