@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the registration of a business."""
+import json
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
 
-from entity_queue_common.service_utils import QueueException
+import requests
+from entity_queue_common.service_utils import QueueException, logger
 from flask import current_app
 from legal_api.models import Business, PartyRole, RequestTracker
 from legal_api.utils.datetime import datetime
@@ -57,6 +59,9 @@ def process(business: Business):  # pylint: disable=too-many-branches
         raise QueueException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
 
+    root = Et.fromstring(inform_cra_tracker.response_object)
+    transaction_id = root.find('./header/transactionID').text
+
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
                                               RequestTracker.RequestType.GET_BN)
@@ -70,7 +75,7 @@ def process(business: Business):  # pylint: disable=too-many-branches
         get_bn_tracker.last_modified = datetime.utcnow()
         get_bn_tracker.retry_number += 1
 
-    _get_bn(business, get_bn_tracker)
+    _get_bn(business, get_bn_tracker, transaction_id)
 
     if not get_bn_tracker.is_processed:
         if get_bn_tracker.retry_number < max_retry:
@@ -113,26 +118,33 @@ def _inform_cra(business: Business, request_tracker: RequestTracker):
     request_tracker.save()
 
 
-def _get_bn(business: Business, request_tracker: RequestTracker):
+def _get_bn(business: Business, request_tracker: RequestTracker, transaction_id: str):
     """Get business number from CRA."""
     if request_tracker.is_processed:
         return
 
-    input_xml = build_input_xml('basic_information_search_request', {
-        'legal_name': business.legal_name,
-        'business_type_code': business_type_code[business.legal_type],
-    })
+    request_tracker.request_object = f'{business.identifier}/{transaction_id}'
 
-    request_tracker.request_object = input_xml
-    status_code, response = request_bn_hub(input_xml)
+    status_code, response = _get_program_account(business.identifier, transaction_id)
     if status_code == HTTPStatus.OK:
-        with suppress(Et.ParseError):
-            root = Et.fromstring(response)
-            if root.tag == 'SBNClientBasicInformationSearchResponse' and (
-                    business_number := root.find('./body/clientBasicInformationSearchResult/businessRegistrationNumber')
-            ) is not None:
-                business.tax_id = business_number.text
-                business.save()
-                request_tracker.is_processed = True
-    request_tracker.response_object = response
+        program_account_ref_no = str(response['program_account_ref_no']).zfill(4)
+        bn15 = f"{response['business_no']}{response['business_program_id']}{program_account_ref_no}"
+        business.tax_id = bn15
+        business.save()
+        request_tracker.is_processed = True
+
+    request_tracker.response_object = json.dumps(response)
     request_tracker.save()
+
+
+def _get_program_account(identifier, transaction_id):
+    """Get program_account from colin-api BNI link."""
+    try:
+        # Note: Dev don’t have BN environment. So this will never work in Dev environment.
+        # Use Test environment for testing.
+        url = f'{current_app.config["COLIN_API"]}/programAccount/{identifier}/{transaction_id}'
+        response = requests.get(url)
+        return response.status_code, response.json()
+    except requests.exceptions.RequestException as err:
+        logger.error(err, exc_info=True)
+        return None, str(err)

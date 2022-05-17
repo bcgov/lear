@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests and the helper routines."""
+import copy
+
 from tests import EPOCH_DATETIME
 
 
-def create_filing(token=None, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, json_filing=None, business_id=None,
+                  filing_date=EPOCH_DATETIME, transaction_id: str = None):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
@@ -27,23 +30,21 @@ def create_filing(token=None, json_filing=None, business_id=None, filing_date=EP
         filing.filing_json = json_filing
     if business_id:
         filing.business_id = business_id
-    if bootstrap_id:
-        filing.temp_reg = bootstrap_id
+    if transaction_id:
+        filing.transaction_id = transaction_id
 
-    filing.save()
     return filing
 
 
 def create_business(identifier, legal_type=None, legal_name=None):
     """Return a test business."""
-    from legal_api.models import Address, Business
+    from legal_api.models import Business
     business = Business()
     business.identifier = identifier
     business.legal_type = legal_type
     business.legal_name = legal_name
     office = create_business_address()
     business.offices.append(office)
-    business.save()
     return business
 
 
@@ -118,3 +119,59 @@ def create_party_role(business, party, roles, appointment_date=EPOCH_DATETIME):
             cessation_date=None
         )
         business.party_roles.append(party_role)
+
+
+def create_registration_data(legal_type, identifier='FM1234567'):
+    """Test data for registration."""
+    person_json = {
+        'officer': {
+            'id': 2,
+            'firstName': 'Peter',
+            'lastName': 'Griffin',
+            'middleName': '',
+            'partyType': 'person'
+        },
+        'mailingAddress': {
+            'streetAddress': 'mailing_address - address line one',
+            'streetAddressAdditional': '',
+            'addressCity': 'mailing_address city',
+            'addressCountry': 'CA',
+            'postalCode': 'H0H0H0',
+            'addressRegion': 'BC'
+        }
+    }
+
+    org_json = copy.deepcopy(person_json)
+    org_json['officer'] = {
+        'id': 2,
+        'organizationName': 'Xyz Inc.',
+        'identifier': 'BC1234567',
+        'taxId': '123456789',
+        'email': 'peter@email.com',
+        'partyType': 'organization'
+    }
+
+    business = create_business(identifier,
+                               legal_type=legal_type,
+                               legal_name='test-reg-' + legal_type)
+
+    json_filing = {
+        'filing': {
+            'header': {
+                'name': 'registration'
+            },
+            'registration': {
+
+            }
+        }
+    }
+    filing = create_filing(json_filing=json_filing)
+    party = create_party(person_json if legal_type == 'SP' else org_json)
+    role = 'proprietor' if legal_type == 'SP' else 'partner'
+    create_party_role(business, party, [role])
+
+    business.save()
+    filing.business_id = business.id
+    filing.save()
+
+    return filing.id, business.id
