@@ -40,7 +40,7 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_bn import config
-from entity_bn.bn_processors import registration
+from entity_bn.bn_processors import change_of_registration, registration
 from entity_bn.exceptions import BNException
 
 
@@ -57,7 +57,8 @@ async def process_event(filing_msg: Dict, flask_app: Flask):  # pylint: disable=
     Start the migration to using core/Filing
     """
     if not filing_msg or filing_msg.get('type') not in [
-        'bc.registry.business.registration'
+        'bc.registry.business.registration',
+        'bc.registry.business.changeOfRegistration'
     ]:
         return None
 
@@ -77,6 +78,8 @@ async def process_event(filing_msg: Dict, flask_app: Flask):  # pylint: disable=
 
         if filing_submission.filing_type == filing_core_submission.FilingTypes.REGISTRATION.value:
             registration.process(business)
+        elif filing_submission.filing_type == filing_core_submission.FilingTypes.CHANGEOFREGISTRATION.value:
+            change_of_registration.process(business, filing_core_submission.storage)
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):

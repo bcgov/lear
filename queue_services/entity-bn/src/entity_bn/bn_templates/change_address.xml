@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<SBNChangeAddress>
+  <header>
+    <requestMode>A</requestMode>
+    <documentSubType>{{documentSubType}}</documentSubType>
+    <senderID>CPPR</senderID>
+    <receiverID>BCSBNHUB</receiverID>
+    <partnerNote>{{business.identifier}}</partnerNote>
+  </header>
+  <body>
+    <businessRegistrationNumber>{{businessRegistrationNumber}}</businessRegistrationNumber>
+    <businessProgramIdentifier>{{businessProgramIdentifier}}</businessProgramIdentifier>
+    <businessProgramAccountReferenceNumber>{{businessProgramAccountReferenceNumber}}</businessProgramAccountReferenceNumber>
+    <addressTypeCode>{{addressTypeCode}}</addressTypeCode>
+    <updateReasonCode>03</updateReasonCode>
+    <address>
+      <foreignLegacy>
+        <addressDetailLine1>{{address.streetAddress}}</addressDetailLine1>
+      </foreignLegacy>
+      <municipality>{{address.addressCity}}</municipality>
+      <provinceStateCode>{{address.addressRegion}}</provinceStateCode>
+      <postalCode>{{address.postalCode | replace(' ', '')}}</postalCode>
+      <countryCode>{{address.addressCountry}}</countryCode>
+      <effectiveDate>{{effectiveDate}}</effectiveDate>
+    </address>
+  </body>
+</SBNChangeAddress>
