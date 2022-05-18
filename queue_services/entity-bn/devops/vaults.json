@@ -2,16 +2,32 @@
     {
         "vault": "shared",
         "application": [
-            "nats",
             "bn-hub"
         ]
     },
     {
-        "vault": "entity",
+        "vault": "nats",
         "application": [
-            "postgres-legal",
-            "entity-bn",
-            "sentry"
+            "base",
+            "entity-bn"
+        ]
+    },
+    {
+        "vault": "api",
+        "application": [
+            "colin-api-entity"
+        ]
+    },
+    {
+        "vault": "database",
+        "application": [
+            "entity-db"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

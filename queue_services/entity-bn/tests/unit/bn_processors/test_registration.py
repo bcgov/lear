@@ -12,67 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the registration is operating correctly."""
-import copy
-import pytest
 import xml.etree.ElementTree as Et
 
+import pytest
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, RequestTracker
+
 from entity_bn.exceptions import BNException
-
 from entity_bn.worker import process_event
-from tests import MockResponse
-from tests.unit import create_business, create_filing, create_party, create_party_role
+from tests.unit import create_registration_data
 
 
-person_json = {
-    'officer': {
-        'id': 2,
-        'firstName': 'Peter',
-        'lastName': 'Griffin',
-        'middleName': '',
-        'partyType': 'person'
-    },
-    'mailingAddress': {
-        'streetAddress': 'mailing_address - address line one',
-        'streetAddressAdditional': '',
-        'addressCity': 'mailing_address city',
-        'addressCountry': 'CA',
-        'postalCode': 'H0H0H0',
-        'addressRegion': 'BC'
-    }
-}
-
-org_json = copy.deepcopy(person_json)
-org_json['officer'] = {
-    'id': 2,
-    'organizationName': 'Xyz Inc.',
-    'identifier': 'BC1234567',
-    'taxId': '123456789',
-    'email': 'peter@email.com',
-    'partyType': 'organization'
-}
-
-
-def create_data(legal_type, identifier='FM1234567'):
-    """Test data for registration."""
-    business = create_business(identifier, legal_type=legal_type, legal_name='test-reg-' + legal_type)
-    json_filing = {
-        'filing': {
-            'header': {
-                'name': 'registration'
-            },
-            'registration': {
-
-            }
-        }
-    }
-    filing = create_filing(json_filing=json_filing, business_id=business.id)
-    party = create_party(person_json if legal_type == 'SP' else org_json)
-    role = 'proprietor' if legal_type == 'SP' else 'partner'
-    create_party_role(business, party, [role])
-    business.save()
-    return filing.id, business.id
+acknowledgement_response = """<?xml version="1.0"?>
+    <SBNAcknowledgement>
+        <header>
+            <transactionID>BNTUQ0E1OC0</transactionID>
+        </header>
+        <body>A Valid SBNCreateProgramAccountRequest Document Type was received.</body>
+    </SBNAcknowledgement>"""
 
 
 @pytest.mark.parametrize('legal_type', [
@@ -81,30 +38,24 @@ def create_data(legal_type, identifier='FM1234567'):
 ])
 async def test_registration(app, session, mocker, legal_type):
     """Test inform cra about new SP/GP registration."""
-    filing_id, business_id = create_data(legal_type)
-    business_number = '993775204'
-    acknowledgement_response = """<?xml version="1.0"?>
-        <SBNAcknowledgement>
-            <header></header>
-            <body>A Valid SBNCreateProgramAccountRequest Document Type was received.</body>
-        </SBNAcknowledgement>"""
-    search_response = f"""<?xml version="1.0"?>
-        <SBNClientBasicInformationSearchResponse>
-            <body>
-                <clientBasicInformationSearchResult>
-                    <businessRegistrationNumber>{business_number}</businessRegistrationNumber>
-                </clientBasicInformationSearchResult>
-            </body>
-        </SBNClientBasicInformationSearchResponse>"""
+    filing_id, business_id = create_registration_data(legal_type)
 
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
         if root.tag == 'SBNCreateProgramAccountRequest':
-            return MockResponse(200, text=acknowledgement_response)
-        elif root.tag == 'SBNClientBasicInformationSearchRequest':
-            return MockResponse(200, text=search_response)
+            return 200, acknowledgement_response
 
-    mocker.patch('entity_bn.bn_processors.registration._request_bn', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
+
+    business_number = '993775204'
+    business_program_id = 'BC'
+    program_account_ref_no = 1
+    mocker.patch('entity_bn.bn_processors.registration._get_program_account', return_value=(200, {
+        'business_no': business_number,
+        'business_program_id': business_program_id,
+        'cross_reference_program_no': 'FM1234567',
+        'program_account_ref_no': program_account_ref_no})
+    )
 
     await process_event({
         'type': 'bc.registry.business.registration',
@@ -132,7 +83,7 @@ async def test_registration(app, session, mocker, legal_type):
     assert request_trackers[0].retry_number == 0
 
     business = Business.find_by_internal_id(business_id)
-    assert business.tax_id == business_number
+    assert business.tax_id == f'{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}'
 
 
 @pytest.mark.parametrize('request_type', [
@@ -142,24 +93,17 @@ async def test_registration(app, session, mocker, legal_type):
 async def test_retry_registration(app, session, mocker, request_type):
     """Test retry new SP/GP registration."""
     is_inform_cra = request_type == RequestTracker.RequestType.INFORM_CRA
-    filing_id, business_id = create_data('SP')
-    acknowledgement_response = """<?xml version="1.0"?>
-        <SBNAcknowledgement>
-            <header></header>
-            <body>A Valid SBNCreateProgramAccountRequest Document Type was received.</body>
-        </SBNAcknowledgement>"""
+    filing_id, business_id = create_registration_data('SP')
 
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
         if root.tag == 'SBNCreateProgramAccountRequest':
-            return MockResponse(
-                200,
-                text='' if is_inform_cra else acknowledgement_response
-            )
-        elif root.tag == 'SBNClientBasicInformationSearchRequest':
-            return MockResponse(200, text='')
+            return 200, '' if is_inform_cra else acknowledgement_response
 
-    mocker.patch('entity_bn.bn_processors.registration._request_bn', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration._get_program_account', return_value=(500, {
+        'message': 'Error when trying to retrieve program account from COLIN'})
+    )
 
     for _ in range(10):
         try:

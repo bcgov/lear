@@ -15,6 +15,13 @@
 
 Processors hold the logic to communicate with CRA.
 """
+from pathlib import Path
+
+import requests
+from entity_queue_common.service_utils import logger
+from flask import current_app
+from jinja2 import Template
+
 
 program_type_code = {
     'SP': '113',
@@ -30,3 +37,25 @@ business_sub_type_code = {
     'SP': '01',
     'GP': '99'
 }
+
+
+def build_input_xml(template_name, data):
+    """Build input XML."""
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml'
+    ).read_text()
+    jnja_template = Template(template, autoescape=True)
+    return jnja_template.render(data)
+
+
+def request_bn_hub(input_xml):
+    """Get request to BN Hub."""
+    try:
+        url = current_app.config.get('BN_HUB_API_URL')
+        username = current_app.config.get('BN_HUB_CLIENT_ID')
+        secret = current_app.config.get('BN_HUB_CLIENT_SECRET')
+        response = requests.get(url=url, params={'inputXML': input_xml}, auth=(username, secret))
+        return response.status_code, response.text
+    except requests.exceptions.RequestException as err:
+        logger.error(err, exc_info=True)
+        return None, str(err)

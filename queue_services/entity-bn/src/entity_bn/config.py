@@ -61,21 +61,22 @@ class _Config():  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    COLIN_API = f"{os.getenv('COLIN_SVC_URL', '')}{os.getenv('COLIN_SVC_VERSION', '')}"
 
     BN_HUB_API_URL = os.getenv('BN_HUB_API_URL', None)
     BN_HUB_CLIENT_ID = os.getenv('BN_HUB_CLIENT_ID', None)
     BN_HUB_CLIENT_SECRET = os.getenv('BN_HUB_CLIENT_SECRET', None)
-    MAX_RETRY = int(os.getenv('MAX_RETRY', '9'))
+    BN_HUB_MAX_RETRY = int(os.getenv('BN_HUB_MAX_RETRY', '9'))
     TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
+    DB_USER = os.getenv('ENTITY_DATABASE_USERNAME', '')
+    DB_PASSWORD = os.getenv('ENTITY_DATABASE_PASSWORD', '')
+    DB_NAME = os.getenv('ENTITY_DATABASE_NAME', '')
+    DB_HOST = os.getenv('ENTITY_DATABASE_HOST', '')
+    DB_PORT = os.getenv('ENTITY_DATABASE_PORT', '5432')
     SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
     NATS_CONNECTION_OPTIONS = {

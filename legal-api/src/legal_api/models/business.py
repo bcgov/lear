@@ -280,7 +280,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         elif (business_office := db.session.query(Office)  # SP/GP
               .filter(Office.business_id == self.id)
               .filter(Office.office_type == 'businessOffice').one_or_none()):
-            return business_office.addresses.filter(Address.address_type == 'mailing')
+            return business_office.addresses.filter(Address.address_type == 'delivery')
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)
@@ -325,6 +325,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
+            'complianceWarnings': self.compliance_warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
@@ -359,6 +360,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
         return d
+
+    @property
+    def compliance_warnings(self):
+        """Return compliance warnings."""
+        if not hasattr(self, '_compliance_warnings'):
+            return []
+
+        return self._compliance_warnings
+
+    @compliance_warnings.setter
+    def compliance_warnings(self, value):
+        """Set compliance warnings."""
+        self._compliance_warnings = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

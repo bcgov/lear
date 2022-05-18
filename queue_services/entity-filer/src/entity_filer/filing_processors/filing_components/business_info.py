@@ -59,9 +59,10 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
 def update_naics_info(business: Business, naics: Dict):
     """Update naics info."""
     business.naics_code = naics.get('naicsCode')
+    if business.naics_code:
+        naics_structure = NaicsService.find_by_code(business.naics_code)
+        business.naics_key = naics_structure['naicsKey']
     business.naics_description = naics.get('naicsDescription')
-    naics_structure = NaicsService.find_by_code(business.naics_code)
-    business.naics_key = naics_structure['naicsKey']
 
 
 def get_next_corp_num(legal_type: str):

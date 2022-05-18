@@ -30,6 +30,7 @@ from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
+from tests.unit.services.compliance.compliance_checks import create_business
 
 
 AR_FILING_CURRENT_YEAR = {
@@ -257,9 +258,9 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('BCOMP no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BCOMP.value, 0),
     ('BCOMP 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BCOMP.value, 3),
     ('BCOMP current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BCOMP.value, 0),
-    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),    
+    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),
     ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
-    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),    
+    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),
 ])
 def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
@@ -273,3 +274,48 @@ def test_construct_task_list(session, client, jwt, test_name, identifier, foundi
     # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late
     if tasks_length:
         assert tasks[0]['task']['todo']['business']['nextAnnualReport'][-14:] != '00:00:00+00:00'
+
+
+@pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, conversion_task_expected', [
+    ('CONVERSION_TODO_EXISTS_MISSING_DATA', 'SP', 'FM0000001', True, True),
+    ('CONVERSION_TODO_EXISTS_MISSING_DATA', 'GP', 'FM0000002', True, True),
+    ('NO_CONVERSION_TODO_NO_MISSING_DATA', 'SP', 'FM0000003', False, False),
+    ('NO_CONVERSION_TODO_NO_MISSING_DATA', 'GP', 'FM0000004', False, False),
+    ('NO_CONVERSION_TODO_NON_FIRM', 'CP', 'CP7654321', True, False),
+    ('NO_CONVERSION_TODO_NON_FIRM', 'BEN', 'CP7654321', True, False),
+    ('NO_CONVERSION_TODO_NON_FIRM', 'BC', 'BC7654321', True, False),
+])
+def test_conversion_filing_task(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
+                                conversion_task_expected):
+    """Assert conversion todo shows up for only SP/GPs with missing business info."""
+    if has_missing_business_info:
+        factory_business(entity_type=legal_type, identifier=identifier)
+    else:
+        create_business(legal_type=legal_type,
+                        identifier=identifier,
+                        create_office=True,
+                        create_office_mailing_address=True,
+                        create_office_delivery_address=True,
+                        firm_num_persons_roles=2,
+                        create_firm_party_address=True,
+                        filing_types=['registration'],
+                        filing_has_completing_party=[True],
+                        create_completing_party_address=[True])
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    rv_json = rv.json
+
+    if conversion_task_expected:
+        conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
+                                and x['task']['todo']['header']['status'] == 'NEW'
+                                for x in rv_json['tasks'])
+        assert conversion_to_do
+    else:
+        conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
+                               and x['task']['todo']['header']['status'] == 'NEW'
+                               for x in rv_json['tasks'])
+        assert not conversion_to_do
+
+
