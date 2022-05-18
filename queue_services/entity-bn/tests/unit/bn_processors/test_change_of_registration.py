@@ -58,9 +58,7 @@ async def test_change_of_registration(app, session, mocker, legal_type):
 
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
-        if root.tag == 'SBNChangeName':
-            return 200, acknowledgement_response
-        elif root.tag == 'SBNChangeAddress':
+        if root.tag in ['SBNChangeName', 'SBNChangeAddress']:
             return 200, acknowledgement_response
 
     mocker.patch('entity_bn.bn_processors.change_of_registration.request_bn_hub', side_effect=side_effect)

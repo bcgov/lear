@@ -179,7 +179,7 @@ def _change_address(business: Business, filing: Filing,  # pylint: disable=too-m
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 
-def has_previous_address(transaction_id, office_id, address_type) -> dict:
+def has_previous_address(transaction_id, office_id, address_type) -> bool:
     """Has previous address for the given transaction and office id."""
     address_version = version_class(Address)
     address = db.session.query(address_version) \
