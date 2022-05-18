@@ -48,7 +48,8 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
                 _change_address(business, filing, RequestTracker.RequestType.CHANGE_MAILING_ADDRESS)
 
 
-def _change_name(business: Business, filing: Filing, name_type: RequestTracker.RequestType):
+def _change_name(business: Business, filing: Filing,  # pylint: disable=too-many-locals
+                 name_type: RequestTracker.RequestType):
     """Inform CRA about change of name."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
     request_trackers = RequestTracker.find_by(business.id,
@@ -113,7 +114,8 @@ def _change_name(business: Business, filing: Filing, name_type: RequestTracker.R
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 
-def _change_address(business: Business, filing: Filing, address_type: RequestTracker.RequestType):
+def _change_address(business: Business, filing: Filing,  # pylint: disable=too-many-locals
+                    address_type: RequestTracker.RequestType):
     """Inform CRA about change of address."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 
@@ -186,4 +188,4 @@ def has_previous_address(transaction_id, office_id, address_type) -> dict:
         .filter(address_version.address_type == address_type) \
         .filter(address_version.end_transaction_id == transaction_id).one_or_none()
 
-    return True if address else False
+    return bool(address)
