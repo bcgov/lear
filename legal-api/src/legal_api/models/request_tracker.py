@@ -39,6 +39,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         CHANGE_MAILING_ADDRESS = auto()
         CHANGE_NAME = auto()
         CHANGE_STATUS = auto()
+        CHANGE_PARTY = auto()
 
     __tablename__ = 'request_tracker'
 
