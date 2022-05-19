@@ -21,6 +21,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
+from legal_api.models import RequestTracker
 
 
 program_type_code = {
@@ -36,6 +37,13 @@ business_type_code = {
 business_sub_type_code = {
     'SP': '01',
     'GP': '99'
+}
+
+document_sub_type = {
+    # RequestTracker.RequestType.CHANGE_PARTY: '102',
+    RequestTracker.RequestType.CHANGE_NAME: '103',
+    RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS: '107',
+    RequestTracker.RequestType.CHANGE_MAILING_ADDRESS: '108'
 }
 
 
