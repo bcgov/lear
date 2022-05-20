@@ -618,6 +618,7 @@ class ListFilingResource(Resource):
             filing_types.append({
                 'filingTypeCode': filing_type_code,
                 'futureEffective': ListFilingResource._is_future_effective_filing(filing_json),
+                'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
             })
             if legal_type == Business.LegalTypes.COOP.value:
