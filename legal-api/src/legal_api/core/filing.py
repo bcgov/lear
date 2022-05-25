@@ -433,6 +433,7 @@ class Filing:
     @staticmethod
     def get_document_list(business, filing, request) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
+        no_output_filings = ['conversion']
         if not filing \
             or filing.status in (
                 Filing.Status.PAPER_ONLY,
@@ -450,7 +451,7 @@ class Filing:
 
         documents = {'documents': {}}
         # for paper_only filings return and empty documents list
-        if filing.storage and filing.storage.paper_only:
+        if filing.storage and (filing.storage.paper_only or filing.storage.filing_type in no_output_filings):
             return documents
 
         # return a receipt for filings completed in our system
