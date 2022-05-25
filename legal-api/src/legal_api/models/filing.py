@@ -149,7 +149,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'conversion': {
             'name': 'conversion',
-            'title': 'Conversion Ledger'
+            'title': 'Conversion Ledger',
+            'codes': {
+                'SP': 'FMCONV',
+                'GP': 'FMCONV'
+            },
         },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
