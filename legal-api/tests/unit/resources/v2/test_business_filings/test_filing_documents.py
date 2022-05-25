@@ -39,6 +39,7 @@ from registry_schemas.example_data import (
     DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
+    FIRMS_CONVERSION,
     INCORPORATION_FILING_TEMPLATE,
     REGISTRATION,
     SPECIAL_RESOLUTION,
@@ -495,6 +496,16 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
          }
      },
      HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_ia_completed', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
+     'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
+     {'documents': {} },
+     HTTPStatus.OK, None
+     ),
+    ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value,
+     'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
+     {'documents': {} },
+     HTTPStatus.OK, None
      )
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,

@@ -134,7 +134,11 @@ FILINGS: Final = {
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
-        'displayName': 'Conversion',
+        'displayName': {
+            'BEN': 'Conversion',
+            'SP': 'Record Conversion',
+            'GP': 'Record Conversion',
+        },
         'codes': {
             'SP': 'FMCONV',
             'GP': 'FMCONV'
