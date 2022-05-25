@@ -403,7 +403,7 @@ class Filing:
     @staticmethod
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
-        no_output_filing_types = ['Involuntary Dissolution']
+        no_output_filing_types = ['Involuntary Dissolution', 'conversion']
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
