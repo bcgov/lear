@@ -5,7 +5,7 @@
     <documentSubType>000</documentSubType>
     <senderID>CPPR</senderID>
     <receiverID>BCSBNHUB</receiverID>
-    <partnerNote>{{business.identifier}}</partnerNote>
+    <partnerNote>{{business.identifier}}-{{retry_number}}</partnerNote>
     <CCRAHeader>
       <userApplication>BI</userApplication>
       <userRole>01</userRole>
@@ -31,19 +31,29 @@
     </operatingName>
     <businessAddress>
       <foreignLegacy>
-        <addressDetailLine1>{{delivery_address.streetAddress}}</addressDetailLine1>
+        <addressDetailLine1>{{delivery_address.streetAddress[0:30]}}</addressDetailLine1>
+        {% if delivery_address.streetAddressAdditional is not none %}
+        <addressDetailLine2>{{delivery_address.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        {% endif %}
       </foreignLegacy>
-      <municipality>{{delivery_address.addressCity}}</municipality>
+      <municipality>{{delivery_address.addressCity[0:30]}}</municipality>
+      {% if delivery_address.addressRegion|length %}
       <provinceStateCode>{{delivery_address.addressRegion}}</provinceStateCode>
+      {% endif %}
       <postalCode>{{delivery_address.postalCode | replace(' ', '')}}</postalCode>
       <countryCode>{{delivery_address.addressCountry}}</countryCode>
     </businessAddress>
     <mailingAddress>
       <foreignLegacy>
-        <addressDetailLine1>{{mailing_address.streetAddress}}</addressDetailLine1>
+        <addressDetailLine1>{{mailing_address.streetAddress[0:30]}}</addressDetailLine1>
+        {% if mailing_address.streetAddressAdditional is not none %}
+        <addressDetailLine2>{{mailing_address.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        {% endif %}
       </foreignLegacy>
-      <municipality>{{mailing_address.addressCity}}</municipality>
+      <municipality>{{mailing_address.addressCity[0:30]}}</municipality>
+      {% if mailing_address.addressRegion|length %}
       <provinceStateCode>{{mailing_address.addressRegion}}</provinceStateCode>
+      {% endif %}
       <postalCode>{{mailing_address.postalCode | replace(' ', '')}}</postalCode>
       <countryCode>{{mailing_address.addressCountry}}</countryCode>
     </mailingAddress>

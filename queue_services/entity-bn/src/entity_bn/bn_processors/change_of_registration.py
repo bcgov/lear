@@ -19,9 +19,10 @@ from http import HTTPStatus
 import dpath
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
-from legal_api.models import Address, Business, Filing, RequestTracker, db
+from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from sqlalchemy import and_
 from sqlalchemy_continuum import version_class
 
 from entity_bn.bn_processors import build_input_xml, document_sub_type, request_bn_hub
@@ -36,6 +37,11 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
 
     if filing.meta_data and filing.meta_data.get('changeOfRegistration', {}).get('toLegalName'):
         _change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
+
+    with suppress(KeyError, ValueError):
+        if dpath.util.get(filing.filing_json, 'filing/changeOfRegistration/parties') and \
+                has_party_name_changed(business, filing):
+            _change_name(business, filing, RequestTracker.RequestType.CHANGE_PARTY)
 
     with suppress(KeyError, ValueError):
         if dpath.util.get(filing.filing_json, 'filing/changeOfRegistration/offices/businessOffice'):
@@ -54,14 +60,16 @@ def _change_name(business: Business, filing: Filing,  # pylint: disable=too-many
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
-                                              RequestTracker.RequestType.CHANGE_NAME,
+                                              name_type,
                                               filing.id)
     if not request_trackers:
         request_tracker = RequestTracker()
         request_tracker.business_id = business.id
         request_tracker.filing_id = filing.id
-        request_tracker.request_type = RequestTracker.RequestType.CHANGE_NAME
+        request_tracker.request_type = name_type
         request_tracker.service_name = RequestTracker.ServiceName.BN_HUB
+        request_tracker.retry_number = 0
+        request_tracker.is_processed = False
     elif (request_tracker := request_trackers.pop()) and not request_tracker.is_processed:
         request_tracker.last_modified = datetime.utcnow()
         request_tracker.retry_number += 1
@@ -74,17 +82,27 @@ def _change_name(business: Business, filing: Filing,  # pylint: disable=too-many
     business_program_account_reference_number = business.tax_id[11:15]
 
     client_name_type_code = {
-        # RequestTracker.RequestType.CHANGE_PARTY: '01',
+        RequestTracker.RequestType.CHANGE_PARTY: '01',
         RequestTracker.RequestType.CHANGE_NAME: '02'
     }
     update_reason_code = {
-        # RequestTracker.RequestType.CHANGE_PARTY: '03',
+        RequestTracker.RequestType.CHANGE_PARTY: '03',
         RequestTracker.RequestType.CHANGE_NAME: '01'
     }
 
-    new_name = business.legal_name if name_type == RequestTracker.RequestType.CHANGE_NAME else ''
+    if name_type == RequestTracker.RequestType.CHANGE_NAME:
+        new_name = business.legal_name
+    elif name_type == RequestTracker.RequestType.CHANGE_PARTY:
+        parties = [party_role.party for party_role in business.party_roles.all()
+                   if party_role.role.lower() in (
+                       PartyRole.RoleTypes.PARTNER.value,
+                       PartyRole.RoleTypes.PROPRIETOR.value) and not party_role.cessation_date
+                   ]
+        new_name = ','.join(party.name for party in parties)
 
     input_xml = build_input_xml('change_name', {
+        'retryNumber': str(request_tracker.retry_number),
+        'filingId': str(filing.id),
         'documentSubType': document_sub_type[name_type],
         'clientNameTypeCode': client_name_type_code[name_type],
         'updateReasonCode': update_reason_code[name_type],
@@ -134,6 +152,8 @@ def _change_address(business: Business, filing: Filing,  # pylint: disable=too-m
         request_tracker.filing_id = filing.id
         request_tracker.request_type = address_type
         request_tracker.service_name = RequestTracker.ServiceName.BN_HUB
+        request_tracker.retry_number = 0
+        request_tracker.is_processed = False
     elif (request_tracker := request_trackers.pop()) and not request_tracker.is_processed:
         request_tracker.last_modified = datetime.utcnow()
         request_tracker.retry_number += 1
@@ -150,6 +170,8 @@ def _change_address(business: Business, filing: Filing,  # pylint: disable=too-m
                if address_type == RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS
                else business.mailing_address)
     input_xml = build_input_xml('change_address', {
+        'retryNumber': str(request_tracker.retry_number),
+        'filingId': str(filing.id),
         'business': business.json(),
         'documentSubType': document_sub_type[address_type],
         'addressTypeCode': address_type_code[address_type],
@@ -179,7 +201,7 @@ def _change_address(business: Business, filing: Filing,  # pylint: disable=too-m
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 
-def has_previous_address(transaction_id, office_id, address_type) -> bool:
+def has_previous_address(transaction_id: int, office_id: int, address_type: str) -> bool:
     """Has previous address for the given transaction and office id."""
     address_version = version_class(Address)
     address = db.session.query(address_version) \
@@ -189,3 +211,54 @@ def has_previous_address(transaction_id, office_id, address_type) -> bool:
         .filter(address_version.end_transaction_id == transaction_id).one_or_none()
 
     return bool(address)
+
+
+def has_party_name_changed(business: Business, filing: Filing) -> bool:
+    """Has party name changed in the given filing."""
+    party_role_version = version_class(PartyRole)
+    party_roles = db.session.query(party_role_version)\
+        .filter(party_role_version.transaction_id == filing.transaction_id) \
+        .filter(party_role_version.operation_type != 2) \
+        .filter(party_role_version.business_id == business.id) \
+        .filter(party_role_version.role in (
+            PartyRole.RoleTypes.PARTNER.value,
+            PartyRole.RoleTypes.PROPRIETOR.value
+        )).all()
+
+    if len(party_roles) > 0:  # New party added or party deleted by setting cessation_date
+        return True
+
+    party_names = {}
+    for party_role in business.party_roles.all():
+        if party_role.role.lower() in (
+                PartyRole.RoleTypes.PARTNER.value,
+                PartyRole.RoleTypes.PROPRIETOR.value) and party_role.cessation_date is None:
+            party_names[party_role.party.id] = party_role.party.name
+
+    parties = _get_modified_parties(filing.transaction_id, business.id)
+    for party in parties:
+        if party_names[party.id] != _get_name(party):
+            return True
+
+    return False
+
+
+def _get_name(party) -> str:
+    """Return the full name of the party for comparison."""
+    if party.party_type == Party.PartyTypes.PERSON.value:
+        if party.middle_initial:
+            return ' '.join((party.first_name, party.middle_initial, party.last_name)).strip().upper()
+        return ' '.join((party.first_name, party.last_name)).strip().upper()
+    return party.organization_name.strip().upper()
+
+
+def _get_modified_parties(transaction_id, business_id):
+    """Get all party values before the given transaction id."""
+    party_version = version_class(Party)
+    parties = db.session.query(party_version) \
+        .join(PartyRole, and_(PartyRole.party_id == party_version.id, PartyRole.business_id == business_id)) \
+        .filter(PartyRole.role.in_([PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value])) \
+        .filter(party_version.operation_type != 2) \
+        .filter(party_version.end_transaction_id == transaction_id) \
+        .all()
+    return parties

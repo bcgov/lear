@@ -5,7 +5,7 @@
     <documentSubType>{{documentSubType}}</documentSubType>
     <senderID>CPPR</senderID>
     <receiverID>BCSBNHUB</receiverID>
-    <partnerNote>{{business.identifier}}</partnerNote>
+    <partnerNote>{{business.identifier}}-{{filingId}}-{{documentSubType}}-{{retryNumber}}</partnerNote>
     <CCRAHeader>
       <userApplication>BI</userApplication>
       <userRole>01</userRole>

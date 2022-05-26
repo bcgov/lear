@@ -41,7 +41,8 @@ async def test_change_of_registration(app, session, mocker, legal_type):
                         'mailingAddress': {},
                         'deliveryAddress': {}
                     }
-                }
+                },
+                'parties': [{}]
             }
         }
     }
@@ -63,6 +64,7 @@ async def test_change_of_registration(app, session, mocker, legal_type):
 
     mocker.patch('entity_bn.bn_processors.change_of_registration.request_bn_hub', side_effect=side_effect)
     mocker.patch('entity_bn.bn_processors.change_of_registration.has_previous_address', return_value=True)
+    mocker.patch('entity_bn.bn_processors.change_of_registration.has_party_name_changed', return_value=True)
 
     await process_event({
         'type': 'bc.registry.business.changeOfRegistration',
@@ -76,6 +78,15 @@ async def test_change_of_registration(app, session, mocker, legal_type):
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
                                               RequestTracker.RequestType.CHANGE_NAME,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert request_trackers[0].is_processed
+    assert request_trackers[0].retry_number == 0
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_PARTY,
                                               filing_id=filing_id)
     assert request_trackers
     assert len(request_trackers) == 1
@@ -103,6 +114,7 @@ async def test_change_of_registration(app, session, mocker, legal_type):
 
 @pytest.mark.parametrize('request_type, data', [
     (RequestTracker.RequestType.CHANGE_NAME, {'nameRequest': {'legalName': 'new name'}}),
+    (RequestTracker.RequestType.CHANGE_PARTY, {'parties': [{}]}),
     (RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS, {'offices': {'businessOffice': {'mailingAddress': {},
                                                                                          'deliveryAddress': {}}}}),
     (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, {'offices': {'businessOffice': {'mailingAddress': {},
@@ -134,6 +146,7 @@ async def test_retry_registration(app, session, mocker, request_type, data):
         return False
 
     mocker.patch('entity_bn.bn_processors.change_of_registration.has_previous_address', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.change_of_registration.has_party_name_changed', return_value=True)
 
     for _ in range(10):
         try:

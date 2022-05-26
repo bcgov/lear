@@ -40,7 +40,7 @@ business_sub_type_code = {
 }
 
 document_sub_type = {
-    # RequestTracker.RequestType.CHANGE_PARTY: '102',
+    RequestTracker.RequestType.CHANGE_PARTY: '102',
     RequestTracker.RequestType.CHANGE_NAME: '103',
     RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS: '107',
     RequestTracker.RequestType.CHANGE_MAILING_ADDRESS: '108'
