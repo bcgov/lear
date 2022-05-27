@@ -180,6 +180,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('dissolution'):
                     dissolution.process(business, filing, filing_submission, filing_meta)
+                    if business.legal_type in ('SP', 'GP'):
+                        AccountService.update_entity(
+                            business_registration=business.identifier,
+                            business_name=business.legal_name,
+                            corp_type_code=business.legal_type,
+                            state=Business.State.HISTORICAL
+                        )
 
                 elif filing.get('incorporationApplication'):
                     business, filing_submission, filing_meta = incorporation_filing.process(business,
@@ -210,6 +217,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing, filing_meta)
+                    if business.legal_type in ('SP', 'GP'):
+                        AccountService.update_entity(
+                            business_registration=business.identifier,
+                            business_name=business.legal_name,
+                            corp_type_code=business.legal_type,
+                            state=Business.State.ACTIVE
+                        )
 
                 elif filing.get('transition'):
                     filing_submission = transition.process(business, filing_submission, filing, filing_meta)
