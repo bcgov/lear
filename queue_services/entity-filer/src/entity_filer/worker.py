@@ -232,15 +232,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.commit()
 
             # post filing changes to other services
-            if (any('restoration' in x for x in legal_filings)):
-                if business.state == Business.State.HISTORICAL:
-                    AccountService.update_entity(
-                        business_registration=business.identifier,
-                        business_name=business.legal_name,
-                        corp_type_code=business.legal_type,
-                        state=Business.State.ACTIVE
-                    )
-
             if (any('dissolution') in x for x in legal_filings):
                 AccountService.update_entity(
                         business_registration=business.identifier,
