@@ -217,7 +217,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing, filing_meta)
-                    if business.legal_type in ('SP', 'GP'):
+                    if business.legal_type in ('SP', 'GP') and business.state == Business.State.HISTORICAL:
                         AccountService.update_entity(
                             business_registration=business.identifier,
                             business_name=business.legal_name,
