@@ -216,6 +216,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('correction'):
                     filing_submission = correction.process(filing_submission, filing, filing_meta)
+
+                elif filing.get('transition'):
+                    filing_submission = transition.process(business, filing_submission, filing, filing_meta)
+
+                elif filing.get('changeOfRegistration'):
+                    change_of_registration.process(business, filing_submission, filing, filing_meta)
+
+                elif filing.get('restoration'):
                     if business.state == Business.State.HISTORICAL:
                         AccountService.update_entity(
                             business_registration=business.identifier,
@@ -223,12 +231,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                             corp_type_code=business.legal_type,
                             state=Business.State.ACTIVE
                         )
-
-                elif filing.get('transition'):
-                    filing_submission = transition.process(business, filing_submission, filing, filing_meta)
-
-                elif filing.get('changeOfRegistration'):
-                    change_of_registration.process(business, filing_submission, filing, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
