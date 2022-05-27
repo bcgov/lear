@@ -263,3 +263,25 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
         assert len(rv_json['business']['complianceWarnings']) > 0
     else:
         assert len(rv_json['business']['complianceWarnings']) == 0
+
+
+def test_get_business_statuses_with_identifiers(session, client, jwt):
+    """Assert that business identifiers and states return."""
+    identifiers = [f'CP000001{i}' for i in range(0, 5)]
+    [factory_business(identifier, state=Business.State.HISTORICAL) for identifier in identifiers]
+    # Add an identifier that doesn't exist.
+    identifiers.append('CP9000009')
+
+    rv = client.post('/api/v2/businesses/states',
+                     headers=create_header(jwt, [STAFF_ROLE]), json=identifiers)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json) == 5
+
+    # Try over 200 identifiers, should error.
+    identifiers = [f'CP000001{i}' for i in range(0, 201)]
+    rv = client.post('/api/v2/businesses/states',
+                     headers=create_header(jwt, [STAFF_ROLE]), json=identifiers)
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json == {'error': 'Too many business identifiers.'}

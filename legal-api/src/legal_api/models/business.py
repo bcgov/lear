@@ -16,7 +16,7 @@
 The Business class and Schema are held in this module
 """
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 import datedelta
 from flask import current_app
@@ -433,6 +433,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if sequence_name := sequence_mapping.get(business_type, None):
             return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
         return None
+
+    @classmethod
+    def get_business_identifier_state_tuple_by_identifiers(cls, business_identifiers: List[str]):
+        """Return the identifiers + states for the identifiers provided."""
+        return cls.query.filter(Business._identifier.in_(business_identifiers)) \
+                        .with_entities(Business._identifier, Business.state) \
+                        .all()
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:

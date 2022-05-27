@@ -105,3 +105,18 @@ def post_businesses():
             HTTPStatus.SERVICE_UNAVAILABLE
 
     return ListFilingResource.put(bootstrap.identifier, None)
+
+
+@bp.route('/states', methods=['POST'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def post_business_states():
+    """Reduced call to determine business states."""
+    business_identifiers = request.get_json()
+    if len(business_identifiers) > 200:
+        return {'error': babel('Too many business identifiers.')}, \
+            HTTPStatus.BAD_REQUEST
+    business_states = Business.get_business_identifier_state_tuple_by_identifiers(business_identifiers)
+    business_dict = [{business_state[0]: business_state[1].name if business_state[1] else Business.State.ACTIVE.name}
+                     for business_state in business_states]
+    return jsonify(business_dict)
