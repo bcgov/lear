@@ -180,12 +180,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('dissolution'):
                     dissolution.process(business, filing, filing_submission, filing_meta)
-                    AccountService.update_entity(
-                        business_registration=business.identifier,
-                        business_name=business.legal_name,
-                        corp_type_code=business.legal_type,
-                        state=Business.State.HISTORICAL
-                    )
+
 
                 elif filing.get('incorporationApplication'):
                     business, filing_submission, filing_meta = incorporation_filing.process(business,
@@ -223,15 +218,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('changeOfRegistration'):
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
-                elif filing.get('restoration'):
-                    if business.state == Business.State.HISTORICAL:
-                        AccountService.update_entity(
-                            business_registration=business.identifier,
-                            business_name=business.legal_name,
-                            corp_type_code=business.legal_type,
-                            state=Business.State.ACTIVE
-                        )
-
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
@@ -246,6 +232,23 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.commit()
 
             # post filing changes to other services
+            if (any('restoration' in x for x in legal_filings)):
+                if business.state == Business.State.HISTORICAL:
+                    AccountService.update_entity(
+                        business_registration=business.identifier,
+                        business_name=business.legal_name,
+                        corp_type_code=business.legal_type,
+                        state=Business.State.ACTIVE
+                    )
+
+            if (any('dissolution') in x for x in legal_filings):
+                AccountService.update_entity(
+                        business_registration=business.identifier,
+                        business_name=business.legal_name,
+                        corp_type_code=business.legal_type,
+                        state=Business.State.HISTORICAL
+                    )
+
             if any('alteration' in x for x in legal_filings):
                 alteration.post_process(business, filing_submission, is_correction)
                 AccountService.update_entity(
