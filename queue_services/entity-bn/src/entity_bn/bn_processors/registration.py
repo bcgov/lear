@@ -45,6 +45,8 @@ def process(business: Business):  # pylint: disable=too-many-branches
         inform_cra_tracker.business_id = business.id
         inform_cra_tracker.request_type = RequestTracker.RequestType.INFORM_CRA
         inform_cra_tracker.service_name = RequestTracker.ServiceName.BN_HUB
+        inform_cra_tracker.retry_number = 0
+        inform_cra_tracker.is_processed = False
     elif (inform_cra_tracker := request_trackers.pop()) and not inform_cra_tracker.is_processed:
         inform_cra_tracker.last_modified = datetime.utcnow()
         inform_cra_tracker.retry_number += 1
@@ -71,6 +73,8 @@ def process(business: Business):  # pylint: disable=too-many-branches
         get_bn_tracker.business_id = business.id
         get_bn_tracker.request_type = RequestTracker.RequestType.GET_BN
         get_bn_tracker.service_name = RequestTracker.ServiceName.BN_HUB
+        get_bn_tracker.retry_number = 0
+        get_bn_tracker.is_processed = False
     elif (get_bn_tracker := request_trackers.pop()) and not get_bn_tracker.is_processed:
         get_bn_tracker.last_modified = datetime.utcnow()
         get_bn_tracker.retry_number += 1
@@ -97,6 +101,7 @@ def _inform_cra(business: Business, request_tracker: RequestTracker):
 
     input_xml = build_input_xml('create_program_account_request', {
         'business': business.json(),
+        'retry_number': str(request_tracker.retry_number),
         'program_type_code': program_type_code[business.legal_type],
         'business_type_code': business_type_code[business.legal_type],
         'business_sub_type_code': business_sub_type_code[business.legal_type],
