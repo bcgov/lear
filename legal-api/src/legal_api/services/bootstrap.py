@@ -174,7 +174,8 @@ class AccountService:
     def update_entity(cls,
                       business_registration: str,
                       business_name: str,
-                      corp_type_code: str):
+                      corp_type_code: str,
+                      state: str = None):
         """Update an entity."""
         account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
 
@@ -187,7 +188,8 @@ class AccountService:
         entity_data = json.dumps({
             'businessIdentifier': business_registration,
             'corpTypeCode': corp_type_code,
-            'name': business_name
+            'name': business_name,
+            'state' if state else None: state
         })
         entity_record = requests.patch(
             url=account_svc_entity_url + '/' + business_registration,
