@@ -236,7 +236,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         business_registration=business.identifier,
                         business_name=business.legal_name,
                         corp_type_code=business.legal_type,
-                        state=Business.State.HISTORICAL
+                        state=Business.State.HISTORICAL.name
                     )
 
             if any('alteration' in x for x in legal_filings):
