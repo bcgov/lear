@@ -89,7 +89,10 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
     # Create and Update
     for party_info in parties:
         # Create if id not present
-        if not party_info.get('officer').get('id'):
+        # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
+        # The backend will have an id of type int
+        if not party_info.get('officer').get('id') or \
+                (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
             _create_party_info(business, change_filing_rec, party_info)
         else:
             # Update if id is present
