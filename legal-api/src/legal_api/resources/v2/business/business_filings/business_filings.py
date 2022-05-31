@@ -711,7 +711,16 @@ class ListFilingResource():
                 business.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
                 business.legal_name = business.identifier
-
+        elif filing.filing_type == Filing.FILINGS['conversion']['name']:
+            if (mailing_address_json :=
+                filing.json['filing']['conversion']
+                    .get('offices', {})
+                    .get('businessOffice', {}).get('mailingAddress', None)):
+                mailing_address = Address.create_address(mailing_address_json)
+            else:
+                mailing_address = business.mailing_address.one_or_none()
+            corp_type = business.legal_type if business.legal_type else \
+                filing.json['filing']['business'].get('legalType')
         else:
             mailing_address = business.mailing_address.one_or_none()
             corp_type = business.legal_type if business.legal_type else \
