@@ -134,7 +134,8 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'https://LEGAL_API_BASE_URL'
+#base_url = 'https://LEGAL_API_BASE_URL'
+base_url = 'http://localhost:5000'
 CORRECTION = {
     'correctedFilingId': 4,
     'correctedFilingType': 'incorporationApplication',
@@ -506,6 +507,27 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
      {'documents': {} },
      HTTPStatus.OK, None
+     ),
+    ('sp_dissolution_completed', 'FM7654321', 'SP',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
+             'legalFilings': [
+                 {'dissolution': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/dissolution'},
+             ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('sp_dissolution_paid', 'FM7654321', 'SP',
+     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
      )
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,
