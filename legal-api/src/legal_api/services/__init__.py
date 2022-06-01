@@ -15,7 +15,6 @@
 from .authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, SYSTEM_ROLE, authorized
 from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
-from .compliance import check_compliance
 from .document_meta import DocumentMetaService
 from .flags import Flags
 from .minio import MinioService
@@ -23,6 +22,8 @@ from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
 from .queue import QueueService
+from .warnings.business import check_business
+from .warnings.warning import check_warnings
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.

@@ -326,6 +326,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
             'complianceWarnings': self.compliance_warnings,
+            'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
@@ -373,6 +374,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     def compliance_warnings(self, value):
         """Set compliance warnings."""
         self._compliance_warnings = value
+
+    @property
+    def warnings(self):
+        """Return warnings."""
+        if not hasattr(self, '_warnings'):
+            return []
+
+        return self._warnings
+
+    @warnings.setter
+    def warnings(self, value):
+        """Set warnings."""
+        self._warnings = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

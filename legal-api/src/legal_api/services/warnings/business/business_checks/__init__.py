@@ -1,7 +1,7 @@
 # Copyright © 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# you may not use this file except in business with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Service to manage the compliance checks."""
+"""Service to manage the business checks."""
 from enum import Enum
 
 
-class ComplianceWarningCodes(str, Enum):
-    """Render an Enum of the Compliance Warning Codes."""
+class BusinessWarningCodes(str, Enum):
+    """Render an Enum of the Business Warning Codes."""
 
     NO_BUSINESS_OFFICE = 'NO_BUSINESS_OFFICE'
 
@@ -63,16 +63,16 @@ class ComplianceWarningCodes(str, Enum):
     NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION = 'NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION'
 
 
-class ComplianceWarningReferers(str, Enum):
-    """Enum for for compliance warning referers."""
+class BusinessWarningReferers(str, Enum):
+    """Enum for for business warning referers."""
 
     BUSINESS_OFFICE = 'BUSINESS_OFFICE'
     BUSINESS_PARTY = 'BUSINESS_PARTY'
     COMPLETING_PARTY = 'COMPLETING_PARTY'
 
 
-class ComplianceWarnings(str, Enum):
-    """Enum for for compliance warnings."""
+class BusinessWarnings(str, Enum):
+    """Enum for for business warnings."""
 
     NO_ADDRESS = 'NO_ADDRESS'
     NO_ADDRESS_STREET = 'NO_ADDRESS_STREET'
@@ -82,118 +82,145 @@ class ComplianceWarnings(str, Enum):
     NO_ADDRESS_REGION = 'NO_ADDRESS_REGION'
 
 
+WARNING_MESSAGE_BASE = {'warningType': 'MISSING_REQUIRED_BUSINESS_INFO'}
+
+
 REFERER_WARNINGS_MAPPING = {
-    ComplianceWarningReferers.BUSINESS_OFFICE: {
+    BusinessWarningReferers.BUSINESS_OFFICE: {
         'addresses': {
             'mailing': {
-                ComplianceWarnings.NO_ADDRESS: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS,
+                BusinessWarnings.NO_ADDRESS: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS,
                     'message': 'Business office mailing address is required.'
                 },
-                ComplianceWarnings.NO_ADDRESS_STREET: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_STREET,
+                BusinessWarnings.NO_ADDRESS_STREET: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_STREET,
                     'message': 'Street is required for business office mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_CITY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_CITY,
+                BusinessWarnings.NO_ADDRESS_CITY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_CITY,
                     'message': 'City is required for business office mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_COUNTRY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_COUNTRY,
+                BusinessWarnings.NO_ADDRESS_COUNTRY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_COUNTRY,
                     'message': 'Country is required for business office mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_POSTAL_CODE: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_POSTAL_CODE,
+                BusinessWarnings.NO_ADDRESS_POSTAL_CODE: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_POSTAL_CODE,
                     'message': 'Postal code is required for business office mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_REGION: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_REGION,
+                BusinessWarnings.NO_ADDRESS_REGION: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_MAILING_ADDRESS_REGION,
                     'message': 'Region is required for business office mailing address.'
                 }
             },
             'delivery': {
-                ComplianceWarnings.NO_ADDRESS: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS,
+                BusinessWarnings.NO_ADDRESS: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS,
                     'message': 'Business office delivery address is required.'
                 },
-                ComplianceWarnings.NO_ADDRESS_STREET: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_STREET,
+                BusinessWarnings.NO_ADDRESS_STREET: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_STREET,
                     'message': 'Street is required for business office delivery address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_CITY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_CITY,
+                BusinessWarnings.NO_ADDRESS_CITY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_CITY,
                     'message': 'City is required for business office delivery address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_COUNTRY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_COUNTRY,
+                BusinessWarnings.NO_ADDRESS_COUNTRY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_COUNTRY,
                     'message': 'Country is required for business office delivery address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_POSTAL_CODE: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_POSTAL_CODE,
+                BusinessWarnings.NO_ADDRESS_POSTAL_CODE: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_POSTAL_CODE,
                     'message': 'Postal code is required for business office delivery address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_REGION: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_REGION,
+                BusinessWarnings.NO_ADDRESS_REGION: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_REGION,
                     'message': 'Region is required for business office delivery address.'
                 }
             }
         }
     },
-    ComplianceWarningReferers.BUSINESS_PARTY: {
+    BusinessWarningReferers.BUSINESS_PARTY: {
         'addresses': {
             'mailing': {
-                ComplianceWarnings.NO_ADDRESS: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS,
+                BusinessWarnings.NO_ADDRESS: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS,
                     'message': 'Business party mailing address is required.'
                 },
-                ComplianceWarnings.NO_ADDRESS_STREET: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_STREET,
+                BusinessWarnings.NO_ADDRESS_STREET: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_STREET,
                     'message': 'Street is required for business party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_CITY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_CITY,
+                BusinessWarnings.NO_ADDRESS_CITY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_CITY,
                     'message': 'City is required for business party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_COUNTRY: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY,
+                BusinessWarnings.NO_ADDRESS_COUNTRY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY,
                     'message': 'Country is required for business party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_POSTAL_CODE: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE,
+                BusinessWarnings.NO_ADDRESS_POSTAL_CODE: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE,
                     'message': 'Postal code is required for business party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_REGION: {
-                    'code': ComplianceWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_REGION,
+                BusinessWarnings.NO_ADDRESS_REGION: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_BUSINESS_PARTY_MAILING_ADDRESS_REGION,
                     'message': 'Region is required for business party mailing address.'
                 }
             }
         }
     },
-    ComplianceWarningReferers.COMPLETING_PARTY: {
+    BusinessWarningReferers.COMPLETING_PARTY: {
         'addresses': {
             'mailing': {
-                ComplianceWarnings.NO_ADDRESS: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS,
+                BusinessWarnings.NO_ADDRESS: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS,
                     'message': 'Completing party mailing address is required.'
                 },
-                ComplianceWarnings.NO_ADDRESS_STREET: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_STREET,
+                BusinessWarnings.NO_ADDRESS_STREET: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_STREET,
                     'message': 'Street is required for completing party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_CITY: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_CITY,
+                BusinessWarnings.NO_ADDRESS_CITY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_CITY,
                     'message': 'City is required for completing party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_COUNTRY: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY,
+                BusinessWarnings.NO_ADDRESS_COUNTRY: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY,
                     'message': 'Country is required for completing party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_POSTAL_CODE: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE,
+                BusinessWarnings.NO_ADDRESS_POSTAL_CODE: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE,
                     'message': 'Postal code is required for completing party mailing address.'
                 },
-                ComplianceWarnings.NO_ADDRESS_REGION: {
-                    'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION,
+                BusinessWarnings.NO_ADDRESS_REGION: {
+                    **WARNING_MESSAGE_BASE,
+                    'code': BusinessWarningCodes.NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION,
                     'message': 'Region is required for completing party mailing address.'
                 }
             }
@@ -202,10 +229,10 @@ REFERER_WARNINGS_MAPPING = {
 }
 
 
-def get_address_compliance_warning(address_referer: ComplianceWarningReferers,
-                                   address_type: str,
-                                   compliance_warnings: ComplianceWarnings) -> dict:
-    """Retrieve compliance warnings for an address."""
+def get_address_business_warning(address_referer: BusinessWarningReferers,
+                                 address_type: str,
+                                 business_warnings: BusinessWarnings) -> dict:
+    """Retrieve business warnings for an address."""
     warning_code = \
-        REFERER_WARNINGS_MAPPING[address_referer]['addresses'][address_type][compliance_warnings]
+        REFERER_WARNINGS_MAPPING[address_referer]['addresses'][address_type][business_warnings]
     return warning_code

@@ -266,7 +266,8 @@ def test_business_json(session):
         'arMaxDate': '1972-04-30',
         'adminFreeze': False,
         'state': 'ACTIVE',
-        'complianceWarnings': []
+        'complianceWarnings': [],
+        'warnings': []
     }
 
     assert business.json() == d
