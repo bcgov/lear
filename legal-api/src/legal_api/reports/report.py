@@ -223,8 +223,8 @@ class Report:  # pylint: disable=too-few-public-methods
 
             if self._report_key == 'dissolution':
                 filing['dissolution']['dissolution_date_str'] = \
-                    datetime.utcnow().strptime( filing['dissolution']['dissolutionDate'], '%Y-%m-%d').\
-                        date().strftime('%B %-d, %Y')
+                    datetime.utcnow().strptime(filing['dissolution']['dissolutionDate'], '%Y-%m-%d').\
+                    date().strftime('%B %-d, %Y')
                 self._format_directors(filing['dissolution']['parties'])
                 filing['parties'] = filing['dissolution']['parties']
 
