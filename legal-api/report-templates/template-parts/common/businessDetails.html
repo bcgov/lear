@@ -204,17 +204,39 @@
             </td>
           {% elif header.name == 'dissolution' %}
             <td>
-               <div class="bold">Incorporation Number:</div>
+               <div class="bold">
+                  {% if business.legalType in ['GP', 'SP'] %}
+                     <span>Registration Number:</span>
+                  {% else %}
+                     <span>Incorporation Number:</span>
+                  {% endif %}
+               </div>
+               {% if business.legalType in ['GP', 'SP'] %}
+               <div class="bold pt-2">Registration Date:</div>
+               {% endif %}
                <div class="bold pt-2">Filed Date and Time:</div>
-               {% if business.legalType != 'CP' %}
+               {% if business.legalType not in ['CP', 'SP', 'GP'] %}
                   <div class="bold pt-2">Effective Date and Time:</div>
+               {% endif %}
+               {% if business.legalType in ['GP', 'SP'] %}
+                  <div class="bold pt-2">Business Number:</div>
                {% endif %}
             </td>
             <td>
                <div>{{business.identifier}}</div>
+               {% if business.legalType in ['SP', 'GP'] %}
+                  <div class="pt-2">{{ recognition_date_utc }}</div>
+               {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
-               {% if business.legalType != 'CP' %}
+               {% if business.legalType not in ['CP', 'SP', 'GP'] %}
                   <div class="pt-2">{{effective_date_time}}</div>
+               {% endif %}
+               {% if business.legalType in ['GP', 'SP'] %}
+                   {% if business.taxId is defined %}
+                      <div class="pt-2">{{ business.taxId }}</div>
+                   {% else %}
+                      <div class="pt-2">Not Available</div>
+                   {% endif %}
                {% endif %}
             </td>
          {% endif %}
