@@ -36,7 +36,8 @@ def update_affiliation(business: Business, filing: Filing):
         #  used for testing purposes to see how things look in entity dashboard - remove when done testing
         # rv = AccountService.create_affiliation(
         #     # account=bootstrap.account,
-        #     account=2596,
+        #     account=2596, # DEV account
+        #     # account=1009, # TEST account
         #     business_registration=business.identifier,
         #     business_name=business.legal_name,
         #     corp_type_code=business.legal_type

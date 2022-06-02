@@ -1,10 +1,18 @@
 
-def get_base_sp_registration_json(num_parties: int):
+def get_base_registration_filing_json(num_parties: int):
     registration_json = get_base_registration_json()
     parties = registration_json['filing']['registration']['parties']
     for x in range(num_parties):
         parties.append(get_base_party_json())
     return registration_json
+
+
+def get_base_change_registration_filing_json(num_parties: int):
+    change_registration_json = get_base_change_registration_json()
+    parties = change_registration_json['filing']['changeOfRegistration']['parties']
+    for x in range(num_parties):
+        parties.append(get_base_party_json())
+    return change_registration_json
 
 
 def get_base_registration_json():
@@ -68,6 +76,67 @@ def get_base_registration_json():
         }
     }
     return registration_json
+
+
+def get_base_change_registration_json():
+    change_registration_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'changeOfRegistration',
+                'certifiedBy': None,
+                'folioNumber': '',
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            'changeOfRegistration': {
+                'offices': {
+                    'businessOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    }
+                },
+                'parties': [],
+                'business': {
+                    'naics': {
+                        'naicsCode': None,
+                        'naicsDescription': None
+                    },
+                    'identifier': None
+                },
+                'nameRequest': {
+                    'nrNumber': None,
+                    'legalName': None,
+                    'legalType': None
+                },
+                'contactPoint': {
+                    'email': None,
+                    'phone': None
+                }
+            }
+        }
+    }
+    return change_registration_json
 
 
 def get_base_party_json():

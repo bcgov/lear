@@ -51,6 +51,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     Used as the base for all the other configurations.
     """
 
+    DATA_LOAD_ENV = os.getenv('DATA_LOAD_ENV', '')
+
     # POSTGRESQL COLIN MIGRATION DB
     DB_USER_COLIN_MIGR = os.getenv('DATABASE_USERNAME_COLIN_MIGR', '')
     DB_PASSWORD_COLIN_MIGR = os.getenv('DATABASE_PASSWORD_COLIN_MIGR', '')

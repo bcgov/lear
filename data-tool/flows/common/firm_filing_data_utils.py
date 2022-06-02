@@ -8,7 +8,7 @@ def get_certified_by(filing_data: dict):
         last_name = filing_data.get('u_last_name')
         if first_name or middle_name or last_name:
             result = f'{first_name} {middle_name} {last_name}'
-            result = result.strip()
+            result = result.replace('  ', ' ')
             return result
         return user_id
 
@@ -38,7 +38,7 @@ def get_party_role_type(corp_type_cd: str, role_type: str):
         return None
 
 
-def get_party_type(role_type: str, filing_party_data: dict):
+def get_party_type(filing_party_data: dict):
     corp_party_business_name = filing_party_data['cp_business_name']
     if corp_party_business_name:
         return 'organization'
