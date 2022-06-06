@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Compliance checks for businesses."""
-from .compliance_checks.compliance import check_compliance
+"""Checks for businesses."""
+from .business_checks.business import check_business
 
 
-__all__ = ('check_compliance',)
+__all__ = ('check_business', )

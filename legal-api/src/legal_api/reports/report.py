@@ -575,7 +575,7 @@ class Report:  # pylint: disable=too-few-public-methods
         corp_type = CorpType.find_by_id(legal_type)
         return corp_type.full_desc if corp_type else None
 
-    def _has_change(self, old_value, new_value):  # pylint: disable=no-self-use;
+    def _has_change(self, old_value, new_value):
         """Check to fix the hole in diff.
 
         example:
@@ -603,7 +603,7 @@ class Report:  # pylint: disable=too-few-public-methods
             self._format_party_with_diff_data(incorporation_application, diff)
             self._format_share_class_with_diff_data(incorporation_application, diff)
 
-    def _format_name_translations_with_diff_data(self, filing, diff):  # pylint: disable=no-self-use;
+    def _format_name_translations_with_diff_data(self, filing, diff):
         name_translations_path = '/filing/incorporationApplication/nameTranslations'
         name_translations = next((x for x in diff if x['path']
                                   .startswith(name_translations_path)
@@ -659,7 +659,7 @@ class Report:  # pylint: disable=too-few-public-methods
             party['hasRemoved'] = True
             parties.append(party)
 
-    def _format_share_class_with_diff_data(self, incorporation_application, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_class_with_diff_data(self, incorporation_application, diff):  # pylint: disable=too-many-locals; # noqa: E501;
         share_classes_path = '/filing/incorporationApplication/shareStructure/shareClasses/'
         share_classes_corrected = \
             set([re.search(r'\/shareClasses\/([\w\-]+)', x['path'])[1] for x in diff if  # pylint:disable=consider-using-set-comprehension; # noqa: E501
@@ -682,7 +682,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         self._format_share_series_with_diff_data(share_classes, share_classes_path, diff)
 
-    def _format_share_series_with_diff_data(self, share_classes, share_classes_path, diff):  # pylint: disable=too-many-locals,no-self-use; # noqa: E501;
+    def _format_share_series_with_diff_data(self, share_classes, share_classes_path, diff):  # pylint: disable=too-many-locals; # noqa: E501;
         share_series_corrected = \
             [re.search(r'\/shareClasses\/([\w\-]+)\/series\/([\w\-]+)', x['path']) for x in diff if
              x['path'].startswith(share_classes_path)

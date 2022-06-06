@@ -244,7 +244,7 @@ class DocumentMetaService():
 
         return reports
 
-    def get_transition_reports(self):  # pylint: disable=no-self-use
+    def get_transition_reports(self):
         """Return transition meta object(s)."""
         reports = []
 
@@ -274,7 +274,7 @@ class DocumentMetaService():
 
         return reports
 
-    def get_alteration_reports(self, filing: dict):  # pylint: disable=no-self-use
+    def get_alteration_reports(self, filing: dict):
         """Return alteration meta object(s)."""
         reports = []
 

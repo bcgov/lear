@@ -25,7 +25,7 @@ from flask_cors import cross_origin
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
-from legal_api.services import RegistrationBootstrapService, check_compliance
+from legal_api.services import RegistrationBootstrapService, check_warnings
 from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
 
@@ -51,8 +51,10 @@ def get_businesses(identifier: str):
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    compliance_warnings = check_compliance(business)
-    business.compliance_warnings = compliance_warnings
+    warnings = check_warnings(business)
+    # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
+    business.compliance_warnings = warnings
+    business.warnings = warnings
     business_json = business.json()
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:
