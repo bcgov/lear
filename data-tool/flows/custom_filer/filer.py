@@ -31,10 +31,12 @@ from typing import Dict
 from flask import Flask
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
+from legal_api.models.colin_event_id import ColinEventId
+from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration
+from .filing_processors import registration, change_of_registration
 
 
 def get_filing_types(legal_filings: dict):
@@ -95,10 +97,9 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
                                                                                 filing_submission,
                                                                                 filing_meta,
                                                                                 filing_event_data)
+            elif filing.get('changeOfRegistration'):
+                change_of_registration.process(business, filing_submission, filing, filing_meta)
 
-            # elif filing.get('changeOfRegistration'):
-            #     change_of_registration.process(business, filing_submission, filing, filing_meta)
-            #
 
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
@@ -106,19 +107,22 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
             json.dumps(filing_meta.asjson, default=json_serial)
         )
 
+        colin_event_id = ColinEventId()
+        colin_event_id.colin_event_id = int(filing_event_data['e_event_id'])
+        filing_submission.colin_event_ids.append(colin_event_id)
+
         db.session.add(business)
         db.session.add(filing_submission)
         db.session.commit()
 
-        #
-        # if any('changeOfRegistration' in x for x in legal_filings):
-        #     change_of_registration.post_process(business, filing_submission)
-        #     AccountService.update_entity(
-        #         business_registration=business.identifier,
-        #         business_name=business.legal_name,
-        #         corp_type_code=business.legal_type
-        #     )
-        #
+
+        if any('changeOfRegistration' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type
+            )
+
 
         if any('registration' in x for x in legal_filings):
             filing_submission.business_id = business.id
