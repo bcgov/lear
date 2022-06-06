@@ -105,5 +105,5 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 assert mock_get_pdfs.call_args[0][0] == status
                 assert mock_get_pdfs.call_args[0][1] == token
                 assert mock_get_pdfs.call_args[0][2] == \
-                    {'identifier': 'BC1234567', 'legalName': legal_name, 'legalType': legal_type}
+                    {'identifier': 'FM1234567', 'legalName': legal_name, 'legalType': legal_type}
                 assert mock_get_pdfs.call_args[0][3] == filing
