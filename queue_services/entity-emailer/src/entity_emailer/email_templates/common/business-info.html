@@ -6,6 +6,8 @@
   <tr>
     {% if business.legalType == 'CP' %}
     <td class="name">Cooperative Association Name:</td>
+    {% elif business.legalType in ['SP', 'GP'] %}
+    <td class="name">Business Name:</td>
     {% else %}
     <td class="name">Company Name:</td>
     {% endif %}
@@ -26,7 +28,11 @@
   </tr>
 
   <tr>
-    <td class="name">Incorporation Number:</td>
+    {% if business.legalType in ['SP', 'GP'] %}
+      <td class="name">Registration Number:</td>
+    {% else %}
+      <td class="name">Incorporation Number:</td>
+    {% endif %}
     {% if header.status == 'PAID' and filing_type == 'incorporationApplication'
     %}
     <td class="value bold">Pending</td>
