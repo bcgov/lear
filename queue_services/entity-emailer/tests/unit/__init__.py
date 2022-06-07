@@ -188,6 +188,8 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
         for role in party['roles']:
             if role['roleType'] == 'Custodian':
                 party['officer']['email'] = 'custodian@email.com'
+            elif role['roleType'] == 'Completing Party':
+                party['officer']['email'] = 'cp@email.com'
 
     filing = create_filing(
         token=payment_id,

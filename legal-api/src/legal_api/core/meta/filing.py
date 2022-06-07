@@ -164,7 +164,16 @@ FILINGS: Final = {
     'dissolution': {
         'name': 'dissolution',
         'title': 'Voluntary Dissolution',
-        'displayName': 'Voluntary Dissolution',
+        'displayName': {
+            'CP': 'Voluntary Dissolution',
+            'BC': 'Voluntary Dissolution',
+            'BEN': 'Voluntary Dissolution',
+            'ULC': 'Voluntary Dissolution',
+            'CC': 'Voluntary Dissolution',
+            'LLC': 'Voluntary Dissolution',
+            'SP': 'Statement of Dissolution',
+            'GP': 'Statement of Dissolution'
+        },
         'codes': {
             'CP': 'DIS_VOL',
             'BC': 'DIS_VOL',
