@@ -237,7 +237,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if legal_type in ['SP', 'GP']:  # Send email to all proprietor, partner, completing party
         business_data = Business.find_by_internal_id(filing.business_id)
         for party in filing.filing_json['filing']['dissolution']['parties']:
-            recipients.append(party['officer']['email'])
+            if party['officer'].get('email'):
+                recipients.append(party['officer']['email'])
         for party_role in business_data.party_roles.all():
             if party_role.party.email:
                 recipients.append(party_role.party.email)

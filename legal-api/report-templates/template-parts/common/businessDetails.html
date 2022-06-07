@@ -263,11 +263,13 @@
           <span>Incorporation #{{business.identifier}}</span>
     {% else %}
          Filing #{{header.filingId}}
-        {% if header.name == 'registration' %}
-         <span> | Registration #{{business.identifier}}</span>
-        {% elif header.name != 'incorporationApplication' %}
-          <!-- not required for incorporationApplication -->
-          <span> | Incorporation #{{business.identifier}}</span>
+        {% if business.legalType in ['SP', 'GP'] %}
+            <span> | Registration #{{business.identifier}}</span>
+        {% else %}
+           {% if header.name != 'incorporationApplication' %}
+             <!-- not required for incorporationApplication -->
+             <span> | Incorporation #{{business.identifier}}</span>
+           {% endif %}
         {% endif %}
     {% endif %}
 </div>
