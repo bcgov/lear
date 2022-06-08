@@ -126,6 +126,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/style',
             'common/businessDetails',
             'common/directors',
+            'common/completingParty',
             'change-of-registration/legal-name',
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
@@ -149,6 +150,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
             'dissolution/dissolutionStatement',
+            'dissolution/firmsDissolutionDate',
             'notice-of-articles/directors',
             'notice-of-articles/restrictions',
             'common/resolutionDates',
@@ -220,7 +222,11 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_transition_data(filing)
 
             if self._report_key == 'dissolution':
+                filing['dissolution']['dissolution_date_str'] = \
+                    datetime.utcnow().strptime(filing['dissolution']['dissolutionDate'], '%Y-%m-%d').\
+                    date().strftime('%B %-d, %Y')
                 self._format_directors(filing['dissolution']['parties'])
+                filing['parties'] = filing['dissolution']['parties']
 
             # since we reset _report_key with correction type
             if filing['header']['name'] == 'correction':

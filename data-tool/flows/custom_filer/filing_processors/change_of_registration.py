@@ -17,19 +17,17 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from legal_api.models import Address, Business, Filing, Party, PartyRole
 
-from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
+from ..filing_meta import FilingMeta
+from .filing_components import (
     business_info,
-    business_profile,
     create_party,
     create_role,
     filings,
-    name_request,
     update_address,
 )
+from flask import current_app
 
 
 def process(business: Business, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
@@ -78,7 +76,9 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    end_date_time = datetime.datetime.utcnow()
+    end_date_time = change_filing_rec.effective_date \
+        if change_filing_rec.effective_date \
+        else change_filing_rec.filing_date
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
@@ -89,10 +89,7 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
     # Create and Update
     for party_info in parties:
         # Create if id not present
-        # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
-        # The backend will have an id of type int
-        if not party_info.get('officer').get('id') or \
-                (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
+        if not party_info.get('officer').get('id'):
             _create_party_info(business, change_filing_rec, party_info)
         else:
             # Update if id is present
@@ -109,7 +106,8 @@ def _update_party(party_info):
         party.organization_name = party_info['officer'].get('organizationName', '').upper()
         party.party_type = party_info['officer'].get('partyType')
         party.email = party_info['officer'].get('email', '').lower()
-        party.identifier = party_info['officer'].get('identifier', '').upper()
+        identifier = party_info['officer'].get('identifier', '')
+        party.identifier = identifier.upper() if identifier else identifier
         party.tax_id = party_info['officer'].get('taxId', '').upper()
         # add addresses to party
         if party_info.get('deliveryAddress', None):
@@ -132,20 +130,3 @@ def _create_party_info(business, change_filing_rec, party_info):
             change_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for change of registration.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'changeOfRegistration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['changeOfRegistration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

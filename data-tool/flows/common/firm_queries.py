@@ -1,22 +1,47 @@
-def get_unprocessed_firms_query():
+def get_unprocessed_firms_query(data_load_env: str):
     query = f"""
             select tbl_fe.*, cp.flow_name, cp.processed_status
             from (select e.corp_num,
                          count(e.corp_num)                         as cnt,
-                         string_agg(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ', '
+                         string_agg(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ','
                                     order by e.event_id)           as event_file_types,
                          array_agg(e.event_id order by e.event_id) as event_ids,
                          min(e.event_id)                           as first_event_id
                   from event e
                            left outer join filing f on e.event_id = f.event_id
                   where 1 = 1
+--                     and e.corp_num = 'FM0632494'
+--                     and e.corp_num in ('FM0614946', 'FM0614924', 'FM0613627', 'FM0613561', 'FM0272480', 'FM0272488')
                   group by e.corp_num) as tbl_fe
-                     left outer join corp_processing cp on cp.corp_num = tbl_fe.corp_num and cp.flow_name = 'sp-gp-flow'
+                     left outer join corp_processing cp on 
+                        cp.corp_num = tbl_fe.corp_num 
+                        and cp.flow_name = 'sp-gp-flow'
+                        and cp.environment = '{data_load_env}'
             where 1 = 1
-             and tbl_fe.event_file_types like 'FILE_FRREG%'
+                   and tbl_fe.event_file_types = 'FILE_FRREG'
+--                 and tbl_fe.event_file_types like 'FILE_FRREG%'
+--                 and tbl_fe.event_file_types like '%FILE_FRREG,%FRCHG%'
+--                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
+--                 and tbl_fe.event_file_types like '%CONVFMACP_FRMEM%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRCHG%'
+--                 and tbl_fe.event_file_types like '%CONVFMNC_FRCHG%'
+--                 and tbl_fe.event_file_types like '%CONVFMREGI_FRCHG%'
+--                 and tbl_fe.event_file_types like '%FILE_ADDGP%'
+--                 and tbl_fe.event_file_types like '%FILE_ADDSP%'
+--                 and tbl_fe.event_file_types like '%FILE_CHGGP%'
+--                 and tbl_fe.event_file_types like '%FILE_CHGSP%'
+--                 and tbl_fe.event_file_types like 'FILE_FRREG,FILE_CHGSP%'
+--                 and tbl_fe.event_file_types like '%FILE_FRNAM%'
+--                 and tbl_fe.event_file_types like '%FILE_FRNAT%'
+--                 and tbl_fe.event_file_types like '%FILE_MEMGP%'
+--                 and tbl_fe.event_file_types like '%FILE_NAMGP%'
+--                 and tbl_fe.event_file_types like '%FILE_NAMSP%'
+--                 and tbl_fe.event_file_types like '%FILE_NATGP%'
+--                 and tbl_fe.event_file_types like '%FILE_NATSP%'
+
               and (cp.processed_status is null or cp.processed_status <> 'COMPLETED')
             order by tbl_fe.first_event_id
-            limit 100
+            limit 1
             ;
         """
     return query
@@ -29,10 +54,12 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
+            e.event_timerstamp     as e_event_dt,
             e.trigger_dts          as e_trigger_dts,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
+            f.effective_dt         as f_effective_dt,
             TO_TIMESTAMP(to_char(f.effective_dt, 'YYYY-MM-DD'), 'YYYY-MM-DD') as f_effective_dts,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             f.ods_type_cd          as f_ods_type,
@@ -102,7 +129,32 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
     return query
 
 
-def get_firm_event_filing_corp_party_data_query(corp_num: str, event_id: int):
+def get_firm_event_filing_corp_party_data_query(corp_num: str,
+                                                event_id: int,
+                                                prev_event_ids: list,
+                                                event_filing_data_dict: dict):
+    effective_dt = event_filing_data_dict['f_effective_dt']
+    event_dt = event_filing_data_dict['e_event_dt']
+    appointment_dt = effective_dt if effective_dt else event_dt
+    appoint_dt_str = appointment_dt.strftime('%Y-%m-%d')
+
+    sub_condition = ''
+
+    if prev_event_ids:
+        prev_event_ids_str =  ",".join([str(i) for i in prev_event_ids])
+        sub_condition = \
+            f"""
+                or (cp.start_event_id != {event_id} and 
+                    cp.start_event_id in ({prev_event_ids_str}) and 
+                    cp.end_event_id is null and
+                    cp.party_typ_cd != 'FCP') 
+                or (cp.start_event_id != {event_id} and
+                    cp.start_event_id in ({prev_event_ids_str}) and
+                    cp.end_event_id != {event_id} and
+                    cp.end_event_id not in ({prev_event_ids_str}) and
+                    cp.party_typ_cd != 'FCP')
+            """
+
     query = f"""
         select cp.corp_party_id                                                     as cp_corp_party_id,
                cp.mailing_addr_id                                                   as cp_mailing_addr_id,
@@ -111,8 +163,17 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str, event_id: int):
                cp.party_typ_cd                                                      as cp_party_typ_cd,
                cp.start_event_id                                                    as cp_start_event_id,
                cp.end_event_id                                                      as cp_end_event_id,
-               cp.prev_party_id                                                     as cp_prev_party_id,
-               TO_CHAR(cp.appointment_dt, 'YYYY-MM-DD')                             as cp_appointment_dt,
+               case 
+                    when cp.party_typ_cd = 'FCP' 
+                        THEN NULL
+                    else cp.prev_party_id 
+               end cp_prev_party_id,
+               case
+                    when cp.start_event_id = {event_id} 
+                         and (cp.party_typ_cd = 'FCP' or cp.prev_party_id is null) 
+                         THEN '{appoint_dt_str}' 
+                    else NULL
+               end cp_appointment_dt,
                cp.last_name              as cp_last_name,
                cp.middle_name            as cp_middle_name,
                cp.first_name             as cp_first_name,
@@ -174,7 +235,7 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str, event_id: int):
                  left outer join address da on cp.delivery_addr_id = da.addr_id
         where 1 = 1
           and e.corp_num = '{corp_num}'
-          and e.event_id = {event_id}
+          and (e.event_id = {event_id} {sub_condition})
         order by e.event_id
         ;
         """

@@ -16,7 +16,11 @@
                </td>
                <td>
                   <div class="report-type">
-                     VOLUNTARY DISSOLUTION APPLICATION
+                     {% if business.legalType in ['GP', 'SP'] %}
+                         <span>STATEMENT OF DISSOLUTION</span>
+                     {% else %}
+                        <span>VOLUNTARY DISSOLUTION APPLICATION</span>
+                     {% endif %}
                   </div>
                   <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
                </td>
@@ -28,10 +32,15 @@
       </div>
       [[common/businessDetails.html]]
       <div class="container">
-        [[common/effectiveDate.html]]
-        [[dissolution/custodianOfRecords.html]]
-        [[dissolution/dissolutionStatement.html]]
-        [[certification.html]]
+         {% if business.legalType in ['GP', 'SP'] %}
+            [[dissolution/firmsDissolutionDate.html]]
+            [[common/completingParty.html]]
+         {% else %}
+            [[common/effectiveDate.html]]
+            [[dissolution/custodianOfRecords.html]]
+            [[dissolution/dissolutionStatement.html]]
+            [[certification.html]]
+         {% endif %}
       </div>
    </body>
 </html>

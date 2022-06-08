@@ -174,7 +174,8 @@ class AccountService:
     def update_entity(cls,
                       business_registration: str,
                       business_name: str,
-                      corp_type_code: str):
+                      corp_type_code: str,
+                      state: str = None):
         """Update an entity."""
         account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
 
@@ -184,16 +185,19 @@ class AccountService:
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
-        entity_data = json.dumps({
+        entity_data = {
             'businessIdentifier': business_registration,
             'corpTypeCode': corp_type_code,
             'name': business_name
-        })
+        }
+        if state:
+            entity_data['state'] = state
+
         entity_record = requests.patch(
             url=account_svc_entity_url + '/' + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=entity_data,
+            data=json.dumps(entity_data),
             timeout=cls.timeout
         )
 
