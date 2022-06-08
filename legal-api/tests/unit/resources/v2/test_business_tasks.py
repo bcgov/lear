@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /tasks endpoint is working as expected.
 """
 import copy
-from datetime import datetime, timezone
+from datetime import datetime
 from http import HTTPStatus
 
 import datedelta
@@ -30,7 +30,7 @@ from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
-from tests.unit.services.compliance.compliance_checks import create_business
+from tests.unit.services.warnings import create_business
 
 
 AR_FILING_CURRENT_YEAR = {

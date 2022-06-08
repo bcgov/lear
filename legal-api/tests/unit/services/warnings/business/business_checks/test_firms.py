@@ -1,7 +1,7 @@
 # Copyright © 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
-# you may not use this file except in compliance with the License.
+# you may not use this file except in business with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -11,19 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test suite to ensure Firms compliance checks work correctly."""
+"""Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
 
 import pytest
 
-from . import factory_party_role_person, factory_party_role_organization, factory_party_roles, create_business, \
-    factory_address, create_filing
+from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles,\
+    create_business, factory_address, create_filing
 
 from legal_api.models import Address, Business, Office, PartyRole
-from legal_api.services.compliance.compliance_checks import ComplianceWarningReferers
-from legal_api.services.compliance.compliance_checks import firms
-from legal_api.services.compliance.compliance_checks.firms import check_address, check_firm_party, check_firm_parties, \
-    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_compliance
+from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
+from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
+    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business
 
 
 
@@ -31,59 +30,59 @@ from legal_api.services.compliance.compliance_checks.firms import check_address,
     'test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg',
     [
         # business office mailing address checks
-        ('SUCCESS', 'mailing', None, ComplianceWarningReferers.BUSINESS_OFFICE, None, None),
-        ('FAIL_NO_STREET', 'mailing', 'street', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('SUCCESS', 'mailing', None, BusinessWarningReferers.BUSINESS_OFFICE, None, None),
+        ('FAIL_NO_STREET', 'mailing', 'street', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_MAILING_ADDRESS_STREET', 'Street is required for business office mailing address.'),
-        ('FAIL_NO_CITY', 'mailing', 'city', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_CITY', 'mailing', 'city', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_MAILING_ADDRESS_CITY', 'City is required for business office mailing address.'),
-        ('FAIL_NO_COUNTRY', 'mailing', 'country', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_COUNTRY', 'mailing', 'country', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_MAILING_ADDRESS_COUNTRY', 'Country is required for business office mailing address.'),
-        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for business office mailing address.'),
-        ('FAIL_NO_REGION', 'mailing', 'region', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_REGION', 'mailing', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_MAILING_ADDRESS_REGION', 'Region is required for business office mailing address.'),
 
         # business office delivery address checks
-        ('SUCCESS', 'delivery', None, ComplianceWarningReferers.BUSINESS_OFFICE, None, None),
-        ('FAIL_NO_STREET', 'delivery', 'street', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('SUCCESS', 'delivery', None, BusinessWarningReferers.BUSINESS_OFFICE, None, None),
+        ('FAIL_NO_STREET', 'delivery', 'street', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_STREET', 'Street is required for business office delivery address.'),
-        ('FAIL_NO_CITY', 'delivery', 'city', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_CITY', 'delivery', 'city', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_CITY', 'City is required for business office delivery address.'),
-        ('FAIL_NO_COUNTRY', 'delivery', 'country', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_COUNTRY', 'delivery', 'country', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_COUNTRY', 'Country is required for business office delivery address.'),
-        ('FAIL_NO_POSTAL_CODE', 'delivery', 'postal_code', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_POSTAL_CODE', 'delivery', 'postal_code', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_POSTAL_CODE', 'Postal code is required for business office delivery address.'),
-        ('FAIL_NO_REGION', 'delivery', 'region', ComplianceWarningReferers.BUSINESS_OFFICE,
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for business office delivery address.'),
 
         # business office mailing address checks
-        ('SUCCESS', 'mailing', None, ComplianceWarningReferers.BUSINESS_PARTY, None, None),
-        ('FAIL_NO_STREET', 'mailing', 'street', ComplianceWarningReferers.BUSINESS_PARTY,
+        ('SUCCESS', 'mailing', None, BusinessWarningReferers.BUSINESS_PARTY, None, None),
+        ('FAIL_NO_STREET', 'mailing', 'street', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_STREET', 'Street is required for business party mailing address.'),
-        ('FAIL_NO_CITY', 'mailing', 'city', ComplianceWarningReferers.BUSINESS_PARTY,
+        ('FAIL_NO_CITY', 'mailing', 'city', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_CITY', 'City is required for business party mailing address.'),
-        ('FAIL_NO_COUNTRY', 'mailing', 'country', ComplianceWarningReferers.BUSINESS_PARTY,
+        ('FAIL_NO_COUNTRY', 'mailing', 'country', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY', 'Country is required for business party mailing address.'),
-        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', ComplianceWarningReferers.BUSINESS_PARTY,
+        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for business party mailing address.'),
-        ('FAIL_NO_REGION', 'mailing', 'region', ComplianceWarningReferers.BUSINESS_PARTY,
+        ('FAIL_NO_REGION', 'mailing', 'region', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_REGION', 'Region is required for business party mailing address.'),
 
         # completing party mailing address checks
-        ('SUCCESS', 'mailing', None, ComplianceWarningReferers.COMPLETING_PARTY, None, None),
-        ('FAIL_NO_STREET', 'mailing', 'street', ComplianceWarningReferers.COMPLETING_PARTY,
+        ('SUCCESS', 'mailing', None, BusinessWarningReferers.COMPLETING_PARTY, None, None),
+        ('FAIL_NO_STREET', 'mailing', 'street', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_STREET', 'Street is required for completing party mailing address.'),
-        ('FAIL_NO_CITY', 'mailing', 'city', ComplianceWarningReferers.COMPLETING_PARTY,
+        ('FAIL_NO_CITY', 'mailing', 'city', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_CITY', 'City is required for completing party mailing address.'),
-        ('FAIL_NO_COUNTRY', 'mailing', 'country', ComplianceWarningReferers.COMPLETING_PARTY,
+        ('FAIL_NO_COUNTRY', 'mailing', 'country', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY', 'Country is required for completing party mailing address.'),
-        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', ComplianceWarningReferers.COMPLETING_PARTY,
+        ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for completing party mailing address.'),
-        ('FAIL_NO_REGION', 'mailing', 'region', ComplianceWarningReferers.COMPLETING_PARTY,
+        ('FAIL_NO_REGION', 'mailing', 'region', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION', 'Region is required for completing party mailing address.'),
     ])
 def test_check_address(session, test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg):
-    """Assert that compliance address checks functions properly."""
+    """Assert that business address checks functions properly."""
 
     fail_testcase_names = ['FAIL_NO_STREET', 'FAIL_NO_CITY', 'FAIL_NO_COUNTRY', 'FAIL_NO_POSTAL_CODE', 'FAIL_NO_REGION']
 
@@ -96,9 +95,9 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -121,7 +120,7 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
         ('SUCCESS_NO_ORG_IDENTIFIER', 'GP', 'partner', 'organization', None, None),
     ])
 def test_check_firm_party(session, test_name, legal_type, role, party_type, expected_code, expected_msg):
-    """Assert that compliance firm party checks functions properly."""
+    """Assert that business firm party checks functions properly."""
 
     if party_type == 'person':
         party_role = factory_party_role_person(role)
@@ -141,9 +140,9 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -166,7 +165,7 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
     ])
 def test_check_firm_parties(session, test_name, legal_type, role, num_persons_roles:int, num_org_roles:int,
                             expected_code, expected_msg):
-    """Assert that compliance firm parties check functions properly."""
+    """Assert that business firm parties check functions properly."""
 
     party_roles = factory_party_roles(role, num_persons_roles, num_org_roles)
 
@@ -175,9 +174,9 @@ def test_check_firm_parties(session, test_name, legal_type, role, num_persons_ro
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -192,7 +191,7 @@ def test_check_firm_parties(session, test_name, legal_type, role, num_persons_ro
         ('FAIL_NO_ORG_IDENTIFIER', 'completing_party', 'organization', 'NO_COMPLETING_PARTY_ORG_IDENTIFIER', 'Completing Party organization identifier is required.'),
     ])
 def test_check_completing_party(session, test_name, role, party_type, expected_code, expected_msg):
-    """Assert that compliance firm party checks functions properly."""
+    """Assert that business firm party checks functions properly."""
 
     if party_type == 'person':
         party_role = factory_party_role_person(role)
@@ -212,9 +211,9 @@ def test_check_completing_party(session, test_name, role, party_type, expected_c
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -228,7 +227,7 @@ def test_check_completing_party(session, test_name, role, party_type, expected_c
         ('FAIL_NO_COMPLETING_PARTY', 'conversion', 'NO_COMPLETING_PARTY', 'A completing party is required.'),
     ])
 def test_check_completing_party_for_filing(session, test_name, filing_type, expected_code, expected_msg):
-    """Assert that compliance firm parties check functions properly."""
+    """Assert that business firm parties check functions properly."""
 
     filing = None
     if test_name == 'SUCCESS':
@@ -241,9 +240,9 @@ def test_check_completing_party_for_filing(session, test_name, filing_type, expe
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -277,7 +276,7 @@ def test_check_completing_party_for_filing(session, test_name, filing_type, expe
 def test_check_parties(session, test_name, legal_type, identifier, num_persons_roles:int, num_org_roles:int,
                        filing_types: list, filing_has_completing_party: list,
                        expected_code, expected_msg):
-    """Assert that compliance firm parties check functions properly."""
+    """Assert that business firm parties check functions properly."""
 
     business = None
 
@@ -299,9 +298,9 @@ def test_check_parties(session, test_name, legal_type, identifier, num_persons_r
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -332,9 +331,9 @@ def test_check_parties(session, test_name, legal_type, identifier, num_persons_r
         ('FAIL_NO_COMPLETING_PARTY', 'GP', 'FM0000001', True, 2, 0, ['registration'], [False], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
 
     ])
-def test_check_compliance(session, test_name, legal_type, identifier, has_office, num_persons_roles:int, num_org_roles:int,
+def test_check_business(session, test_name, legal_type, identifier, has_office, num_persons_roles:int, num_org_roles:int,
                        filing_types: list, filing_has_completing_party: list, expected_code, expected_msg):
-    """Assert that compliance firm parties check functions properly."""
+    """Assert that business firm parties check functions properly."""
 
     business = None
 
@@ -354,13 +353,13 @@ def test_check_compliance(session, test_name, legal_type, identifier, has_office
     assert business.identifier == identifier
 
     with patch.object(firms, 'check_address', return_value=[]):
-        result = check_compliance(business)
+        result = check_business(business)
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
 
@@ -381,7 +380,7 @@ def test_check_compliance(session, test_name, legal_type, identifier, has_office
         ('FAIL_NO_DELIVERY_ADDR', 'GP', 'FM0000001', 'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS', 'Business office delivery address is required.'),
     ])
 def test_check_office(session, test_name, legal_type, identifier, expected_code, expected_msg):
-    """Assert that compliance firm parties check functions properly."""
+    """Assert that business firm parties check functions properly."""
 
     business = None
     if test_name == 'SUCCESS':
@@ -416,8 +415,8 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
 
     if expected_code:
         assert len(result) == 1
-        compliance_warning = result[0]
-        assert compliance_warning['code'] == expected_code
-        assert compliance_warning['message'] == expected_msg
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0

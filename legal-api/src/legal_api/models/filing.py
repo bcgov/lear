@@ -464,6 +464,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @comments_count.expression
     def comments_count(self):
+        """Return comments count expression for this filing."""
         return (select([func.count(Comment.business_id)]).
                 where(Comment.business_id == self.id).
                 label('comments_count')

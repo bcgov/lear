@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Compliance checks for firms."""
-
-
+"""Business checks for firms."""
 from legal_api.models import Address, Business, Filing, Office, Party, PartyRole
 
-from . import (ComplianceWarnings,   # noqa: I001
-               ComplianceWarningCodes,   # noqa: I001
-               ComplianceWarningReferers,   # noqa: I001
-               get_address_compliance_warning)   # noqa: I001
+from . import (get_address_business_warning,  # noqa: I001
+               BusinessWarnings,              # noqa: I001
+               BusinessWarningCodes,          # noqa: I001
+               BusinessWarningReferers,       # noqa: I001
+               )                              # noqa: I001
+from . import WARNING_MESSAGE_BASE
 
 
-def check_compliance(business: Business) -> list:
-    """Check for non-compliant business data."""
+def check_business(business: Business) -> list:
+    """Check for missing business data."""
     result = []
 
     legal_type = business.legal_type
@@ -36,7 +36,7 @@ def check_compliance(business: Business) -> list:
 
 
 def check_office(business: Business) -> list:
-    """Check for non-compliant office data."""
+    """Check for missing office data."""
     result = []
 
     business_office = business.offices \
@@ -45,7 +45,8 @@ def check_office(business: Business) -> list:
 
     if not business_office:
         result.append({
-            'code': ComplianceWarningCodes.NO_BUSINESS_OFFICE,
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_BUSINESS_OFFICE,
             'message': 'A business office is required.',
         })
         return result
@@ -53,18 +54,18 @@ def check_office(business: Business) -> list:
     mailing_address = business_office.addresses \
         .filter(Address.address_type == 'mailing') \
         .one_or_none()
-    result.extend(check_address(mailing_address, Address.MAILING, ComplianceWarningReferers.BUSINESS_OFFICE))
+    result.extend(check_address(mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_OFFICE))
 
     delivery_address = business_office.addresses \
         .filter(Address.address_type == 'delivery') \
         .one_or_none()
-    result.extend(check_address(delivery_address, Address.DELIVERY, ComplianceWarningReferers.BUSINESS_OFFICE))
+    result.extend(check_address(delivery_address, Address.DELIVERY, BusinessWarningReferers.BUSINESS_OFFICE))
 
     return result
 
 
 def check_parties(legal_type: str, business: Business) -> list:
-    """Check for non-compliant parties data."""
+    """Check for missing parties data."""
     result = []
 
     firm_party_roles = business.party_roles.all()
@@ -82,7 +83,7 @@ def check_parties(legal_type: str, business: Business) -> list:
 
 
 def check_firm_parties(legal_type: str, party_roles: list) -> list:
-    """Check for non-compliant firm parties data."""
+    """Check for missing firm parties data."""
     result = []
 
     proprietor_parties = []
@@ -98,12 +99,14 @@ def check_firm_parties(legal_type: str, party_roles: list) -> list:
 
     if legal_type == Business.LegalTypes.SOLE_PROP.value and not proprietor_parties:
         result.append({
-            'code': ComplianceWarningCodes.NO_PROPRIETOR,
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_PROPRIETOR,
             'message': 'A proprietor is required.',
         })
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value and len(partner_parties) < 2:
         result.append({
-            'code': ComplianceWarningCodes.NO_PARTNER,
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_PARTNER,
             'message': '2 partners are required.',
         })
 
@@ -111,12 +114,13 @@ def check_firm_parties(legal_type: str, party_roles: list) -> list:
 
 
 def check_completing_party_for_filing(filing: Filing) -> list:
-    """Check for non-compliant completing party data for conversion or registration filing."""
+    """Check for missing completing party data for conversion or registration filing."""
     result = []
 
     if not filing:
         result.append({
-            'code': ComplianceWarningCodes.NO_COMPLETING_PARTY,
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_COMPLETING_PARTY,
             'message': 'A completing party is required.',
         })
         return result
@@ -127,7 +131,8 @@ def check_completing_party_for_filing(filing: Filing) -> list:
 
     if not completing_party_role:
         result.append({
-            'code': ComplianceWarningCodes.NO_COMPLETING_PARTY,
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_COMPLETING_PARTY,
             'message': 'A completing party is required.',
         })
         return result
@@ -138,7 +143,7 @@ def check_completing_party_for_filing(filing: Filing) -> list:
 
 # pylint: disable=too-many-branches;
 def check_firm_party(legal_type: str, party_role: PartyRole):
-    """Check for non-compliant firm party data."""
+    """Check for missing firm party data."""
     result = []
 
     party = party_role.party
@@ -150,39 +155,44 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
     if party.party_type == Party.PartyTypes.PERSON.value:
         if not party.first_name and not party.last_name:
             no_person_name_check_warning = True
-        result.extend(check_address(party.mailing_address, Address.MAILING, ComplianceWarningReferers.BUSINESS_PARTY))
+        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY))
     elif party.party_type == Party.PartyTypes.ORGANIZATION.value:
         if not party.organization_name:
             no_org_name_warning = True
         if legal_type == Business.LegalTypes.SOLE_PROP.value and not party.identifier:
             no_org_identifier_warning = True
-        result.extend(check_address(party.mailing_address, Address.MAILING, ComplianceWarningReferers.BUSINESS_PARTY))
+        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY))
 
     if legal_type == Business.LegalTypes.SOLE_PROP.value:
         if no_person_name_check_warning:
             result.append({
-                'code': ComplianceWarningCodes.NO_PROPRIETOR_PERSON_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_PROPRIETOR_PERSON_NAME,
                 'message': f'{role} name is required.',
             })
         if no_org_name_warning:
             result.append({
-                'code': ComplianceWarningCodes.NO_PROPRIETOR_ORG_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_PROPRIETOR_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
         if no_org_identifier_warning:
             result.append({
-                'code': ComplianceWarningCodes.NO_PROPRIETOR_ORG_IDENTIFIER,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_PROPRIETOR_ORG_IDENTIFIER,
                 'message': f'{role} organization identifier is required.',
             })
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if no_person_name_check_warning:
             result.append({
-                'code': ComplianceWarningCodes.NO_PARTNER_PERSON_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_PARTNER_PERSON_NAME,
                 'message': f'{role} name is required.',
             })
         if no_org_name_warning:
             result.append({
-                'code': ComplianceWarningCodes.NO_PARTNER_ORG_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_PARTNER_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
 
@@ -190,7 +200,7 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
 
 
 def check_completing_party(party_role: PartyRole):
-    """Check for non-compliant completing party data."""
+    """Check for missing completing party data."""
     result = []
 
     party = party_role.party
@@ -199,58 +209,61 @@ def check_completing_party(party_role: PartyRole):
     if party.party_type == Party.PartyTypes.PERSON.value:
         if not party.first_name and not party.last_name:
             result.append({
-                'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_PERSON_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_PERSON_NAME,
                 'message': f'{role} name is required.',
             })
-        result.extend(check_address(party.mailing_address, Address.MAILING, ComplianceWarningReferers.COMPLETING_PARTY))
+        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.COMPLETING_PARTY))
     elif party.party_type == Party.PartyTypes.ORGANIZATION.value:
         if not party.organization_name:
             result.append({
-                'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_ORG_NAME,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
         if not party.identifier:
             result.append({
-                'code': ComplianceWarningCodes.NO_COMPLETING_PARTY_ORG_IDENTIFIER,
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_IDENTIFIER,
                 'message': f'{role} organization identifier is required.',
             })
 
-        result.extend(check_address(party.mailing_address, Address.MAILING, ComplianceWarningReferers.COMPLETING_PARTY))
+        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.COMPLETING_PARTY))
 
     return result
 
 
 def check_address(address: Address,
                   address_type: str,
-                  referer: ComplianceWarningReferers) -> list:
-    """Check for non-compliant address data."""
+                  referer: BusinessWarningReferers) -> list:
+    """Check for missing address data."""
     result = []
 
     if not address:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS))
         return result
 
     if not address.street:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS_STREET))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_STREET))
     if not address.city:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS_CITY))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_CITY))
     if not address.country:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS_COUNTRY))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_COUNTRY))
     if not address.postal_code:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS_POSTAL_CODE))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_POSTAL_CODE))
     if not address.region:
-        result.append(get_address_compliance_warning(referer,
-                                                     address_type,
-                                                     ComplianceWarnings.NO_ADDRESS_REGION))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_REGION))
 
     return result
