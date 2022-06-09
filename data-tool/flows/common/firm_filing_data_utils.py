@@ -44,3 +44,11 @@ def get_party_type(filing_party_data: dict):
         return 'organization'
 
     return 'person'
+
+
+def get_is_paper_only(filing_data: dict):
+    if (ods_type_cd := filing_data['f_ods_type']) and \
+            ods_type_cd == 'P':
+        return True
+
+    return False

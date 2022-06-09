@@ -11,6 +11,8 @@ def get_unprocessed_firms_query(data_load_env: str):
                            left outer join filing f on e.event_id = f.event_id
                   where 1 = 1
 --                     and e.corp_num = 'FM0632494'
+--                     and e.corp_num = 'FM0274108'
+--                     -- firms with missing req'd business info 
 --                     and e.corp_num in ('FM0614946', 'FM0614924', 'FM0613627', 'FM0613561', 'FM0272480', 'FM0272488')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
@@ -38,10 +40,18 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like '%FILE_NAMSP%'
 --                 and tbl_fe.event_file_types like '%FILE_NATGP%'
 --                 and tbl_fe.event_file_types like '%FILE_NATSP%'
-
+--                 and tbl_fe.event_file_types like '%CONVFMDISS_FRDIS%'
+--                 and tbl_fe.event_file_types like '%FILE_DISGP%'
+--                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISGP'
+--                 and tbl_fe.event_file_types like '%FILE_DISSP%'
+--                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISSP'
+--                 and tbl_fe.event_file_types like '%FILE_FRDIS%'
+--                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_FRDIS'
+--                 TODO: need to test FILE_LLREG as it is not available in current dataset yet
+--                 and tbl_fe.event_file_types like '%FILE_LLREG%'
               and (cp.processed_status is null or cp.processed_status <> 'COMPLETED')
             order by tbl_fe.first_event_id
-            limit 1
+            limit 10
             ;
         """
     return query
@@ -50,6 +60,12 @@ def get_unprocessed_firms_query(data_load_env: str):
 def get_firm_event_filing_data_query(corp_num: str, event_id: int):
     query = f"""
         select
+            -- current corp_name at point in time
+            (select corp_name as curr_corp_name
+             from corp_name
+             where corp_num = '{corp_num}'
+               and start_event_id <= {event_id}
+               and end_event_id is null),        
             -- event
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
@@ -169,8 +185,15 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                     else cp.prev_party_id 
                end cp_prev_party_id,
                case
-                    when cp.start_event_id = {event_id} 
-                         and (cp.party_typ_cd = 'FCP' or cp.prev_party_id is null) 
+                    when cp.appointment_dt is not null 
+                         and cp.start_event_id = {event_id} 
+                         and cp.party_typ_cd != 'FCP' 
+                         and cp.prev_party_id is null
+                         THEN to_char(cp.appointment_dt, 'YYYY-MM-DD')
+                    when cp.appointment_dt is null 
+                         and cp.start_event_id = {event_id} 
+                         and cp.party_typ_cd != 'FCP' 
+                         and cp.prev_party_id is null
                          THEN '{appoint_dt_str}' 
                     else NULL
                end cp_appointment_dt,

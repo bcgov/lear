@@ -40,7 +40,8 @@ class ProcessingStatusService:
                     :create_date,
                     :last_modified)
             ON CONFLICT (corp_num, flow_name, environment)
-                DO UPDATE SET processed_status = :processed_status,
+                DO UPDATE SET corp_name = :corp_name,
+                              processed_status = :processed_status,
                               environment = :environment,
                               last_error = :last_error,
                               last_processed_event_id = :last_processed_event_id,
