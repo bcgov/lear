@@ -36,7 +36,7 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration, change_of_registration
+from .filing_processors import registration, change_of_registration, dissolution
 
 
 def get_filing_types(legal_filings: dict):
@@ -97,9 +97,12 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
                                                                                 filing_submission,
                                                                                 filing_meta,
                                                                                 filing_event_data)
+
             elif filing.get('changeOfRegistration'):
                 change_of_registration.process(business, filing_submission, filing, filing_meta)
 
+            elif filing.get('dissolution'):
+                dissolution.process(business, filing, filing_submission, filing_meta)
 
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
@@ -115,7 +118,6 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
         db.session.add(filing_submission)
         db.session.commit()
 
-
         if any('changeOfRegistration' in x for x in legal_filings):
             AccountService.update_entity(
                 business_registration=business.identifier,
@@ -123,9 +125,17 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
                 corp_type_code=business.legal_type
             )
 
-
         if any('registration' in x for x in legal_filings):
             filing_submission.business_id = business.id
             db.session.add(filing_submission)
             db.session.commit()
             registration.update_affiliation(business, filing_submission)
+
+        # post filing changes to other services
+        if any('dissolution' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type,
+                state=Business.State.HISTORICAL.name
+            )

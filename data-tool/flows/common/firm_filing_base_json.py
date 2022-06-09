@@ -15,6 +15,17 @@ def get_base_change_registration_filing_json(num_parties: int):
     return change_registration_json
 
 
+def get_base_dissolution_filing_json(dissolution_type: str):
+    if dissolution_type != 'voluntary':
+        return None
+
+    dissolution_json = get_base_dissolution_json(dissolution_type)
+    parties = dissolution_json['filing']['dissolution']['parties']
+    # add a base party for completing party
+    parties.append(get_base_party_json())
+    return dissolution_json
+
+
 def get_base_registration_json():
     registration_json = {
         'filing': {
@@ -137,6 +148,32 @@ def get_base_change_registration_json():
         }
     }
     return change_registration_json
+
+
+def get_base_dissolution_json(dissolution_type: str):
+    dissolution_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'dissolution',
+                'certifiedBy': None,
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalName': None,
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            'dissolution': {
+                'parties': [],
+                'custodialOffice': None,
+                'dissolutionDate': None,
+                'dissolutionType': dissolution_type
+            }
+        }
+    }
+    return dissolution_json
 
 
 def get_base_party_json():

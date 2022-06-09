@@ -44,9 +44,26 @@ class CHANGE_REGISTRATION_EVENT_FILINGS(str, Enum):
     FILE_NATGP = 'FILE_NATGP'
     FILE_NATSP = 'FILE_NATSP'
 
+    # TODO remove:
+    # temporarily mapping this to change registration filing as unable to test certain change registration
+    # event/filing types without being processing ADMIN_ADMCF
+    # ADMIN_ADMCF = 'ADMIN_ADMCF'
+
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
+
+class DISSOLUTION_EVENT_FILINGS(str, Enum):
+    CONVFMDISS_FRDIS = 'CONVFMDISS_FRDIS'
+    FILE_DISGP = 'FILE_DISGP'
+    FILE_DISSP = 'FILE_DISSP'
+    FILE_FRDIS = 'FILE_FRDIS'
+    FILE_LLREG = 'FILE_LLREG'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
@@ -79,7 +96,18 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NAMGP: 'changeOfRegistration',
     CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NAMSP: 'changeOfRegistration',
     CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NATGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NATSP: 'changeOfRegistration'
+    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NATSP: 'changeOfRegistration',
+
+    # TODO remove:
+    #  temporarily mapping this to change registration filing as unable to test certain change registration
+    # event/filing types without being processing ADMIN_ADMCF
+    # CHANGE_REGISTRATION_EVENT_FILINGS.ADMIN_ADMCF: 'changeOfRegistration'
+
+    DISSOLUTION_EVENT_FILINGS.CONVFMDISS_FRDIS: 'dissolution',
+    DISSOLUTION_EVENT_FILINGS.FILE_DISGP: 'dissolution',
+    DISSOLUTION_EVENT_FILINGS.FILE_DISSP: 'dissolution',
+    DISSOLUTION_EVENT_FILINGS.FILE_FRDIS: 'dissolution',
+    DISSOLUTION_EVENT_FILINGS.FILE_LLREG: 'dissolution'
 }
 
 
@@ -137,8 +165,7 @@ class EventFilingService:
                               event_file_type: str,
                               prev_event_filing_data: dict,
                               prev_event_ids: list):
-        if REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
-                CHANGE_REGISTRATION_EVENT_FILINGS.has_value(event_file_type):
+        if self.get_event_filing_is_supported(event_file_type):
             return self.get_filing_data(corp_num,
                                         event_id,
                                         event_file_type,
@@ -150,7 +177,8 @@ class EventFilingService:
 
     def get_event_filing_is_supported(self, event_file_type: str):
         if REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
-                CHANGE_REGISTRATION_EVENT_FILINGS.has_value(event_file_type):
+                CHANGE_REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
+                DISSOLUTION_EVENT_FILINGS.has_value(event_file_type):
             return True
 
         return False

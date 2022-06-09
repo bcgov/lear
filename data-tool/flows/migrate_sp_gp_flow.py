@@ -16,6 +16,7 @@ from custom_filer.filer import process_filing
 from common.custom_exceptions import CustomException
 from common.lear_data_utils import populate_filing_json_from_lear
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
+from common.firm_filing_data_utils import get_is_paper_only
 from tasks.task_utils import ColinInitTask, LearInitTask
 from sqlalchemy import engine, text
 
@@ -80,18 +81,18 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             })
             prev_event_filing_data = event_filing_data_dict
         else:
-            event_filing_data_arr.append({
-                'processed': False,
-                'data': None
-            })
-            # error_msg = f'not processing this firm as there is an unsupported event/filing type: {event_file_type}'
-            # status_service.update_flow_status(flow_name='sp-gp-flow',
-            #                                   corp_num=corp_num,
-            #                                   corp_name=corp_name,
-            #                                   processed_status='FAILED',
-            #                                   failed_event_id=event_id,
-            #                                   last_error=error_msg)
-            # raise CustomException(f'not processing this firm as there is an unsupported event/filing type: {event_file_type}')
+            # event_filing_data_arr.append({
+            #     'processed': False,
+            #     'data': None
+            # })
+            error_msg = f'not processing this firm as there is an unsupported event/filing type: {event_file_type}'
+            status_service.update_flow_status(flow_name='sp-gp-flow',
+                                              corp_num=corp_num,
+                                              corp_name=corp_name,
+                                              processed_status='FAILED',
+                                              failed_event_id=event_id,
+                                              last_error=error_msg)
+            raise CustomException(f'not processing this firm as there is an unsupported event/filing type: {event_file_type}')
 
     unprocessed_firm_dict['event_filing_data'] = event_filing_data_arr
     return unprocessed_firm_dict
@@ -113,7 +114,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
                 filing_data = event_filing_data['data']
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
-                corp_name = filing_data['cn_corp_name']
+                corp_name = filing_data['curr_corp_name']
                 clean_naics_data(filing_data)
                 clean_corp_party_data(filing_data)
                 clean_offices_data(filing_data)
@@ -150,7 +151,7 @@ def transform_event_filing_data(config, app: any, colin_db_engine: engine, db_le
                     filing_data = event_filing_data['data']
                     event_filing_type = filing_data['event_file_type']
                     event_id=filing_data['e_event_id']
-                    corp_name = filing_data['cn_corp_name']
+                    corp_name = filing_data['curr_corp_name']
                     firm_filing_json_factory_service = FirmFilingJsonFactoryService(event_filing_data)
                     filing_json = firm_filing_json_factory_service.get_filing_json()
                     event_filing_data['filing_json'] = filing_json
@@ -193,7 +194,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     filing_json = event_filing_data['filing_json']
                     populate_filing_json_from_lear(db_lear, event_filing_data, business)
                     effective_date = filing_data['f_effective_dts']
-                    corp_name = filing_data['cn_corp_name']
+                    corp_name = filing_data['curr_corp_name']
 
                     # save filing to filing table
                     filing = Filing()
@@ -203,6 +204,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     filing.filing_date = effective_date
                     filing.business_id = business.id if business else None
                     filing.source = Filing.Source.COLIN.value
+                    filing.paper_only = get_is_paper_only(filing_data)
                     db_lear.session.add(filing)
                     db_lear.session.commit()
 
