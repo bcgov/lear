@@ -37,6 +37,7 @@ from .registrars_order import validate as registrars_order_validate
 from .registration import validate as registration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
+from .put_back_on import validate as put_back_on_Validate
 
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches,too-many-statements
@@ -130,6 +131,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
                     err = change_of_registration_validate(filing_json)
+
+                elif k == Filing.FILINGS['putBackOn'].get('name'):
+                    err = put_back_on_Validate(filing_json)    
 
                 if err:
                     return err
