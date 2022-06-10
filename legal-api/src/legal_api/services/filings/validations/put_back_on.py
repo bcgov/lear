@@ -14,14 +14,17 @@
 """Validation for the Put Back On filing."""
 from http import HTTPStatus
 from typing import Dict, Optional
+from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
+from .common_validations import validate_court_order
 
 from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
+
 
 
 def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
@@ -33,10 +36,17 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
     if not get_str(put_back_on, '/filing/putBackOn/details'):
         msg.append({'error': babel('Put Back On details are required.'), 'path': '/filing/putBackOn/details'})
 
-    effect_of_order = get_str(court_order, '/filing/courtOrder/effectOfOrder')
-    if effect_of_order and effect_of_order != 'planOfArrangement':
-        msg.append({'error': babel('Invalid effectOfOrder.'), 'path': '/filing/courtOrder/effectOfOrder'})
+    msg.extend(_validate_court_order(put_back_on))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+def _validate_court_order(filing):
+    """Validate court order."""
+    if court_order := filing.get('filing', {}).get('dissolution', {}).get('courtOrder', None):
+        court_order_path: Final = '/filing/putBackOn/courtOrder'
+        err = validate_court_order(court_order_path, court_order)
+        if err:
+            return err
+    return []
