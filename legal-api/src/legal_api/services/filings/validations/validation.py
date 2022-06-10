@@ -133,7 +133,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                     err = change_of_registration_validate(filing_json)
 
                 elif k == Filing.FILINGS['putBackOn'].get('name'):
-                    err = put_back_on_Validate(business, filing_json)    
+                    err = put_back_on_Validate(business, filing_json)
 
                 if err:
                     return err

@@ -13,7 +13,6 @@
 # limitations under the License.
 """Validation for the Put Back On filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
