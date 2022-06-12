@@ -22,6 +22,7 @@ from flask import current_app, jsonify
 from legal_api.models import Alias, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
+from legal_api.resources.v2.business.business_parties import get_parties
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -79,6 +80,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'business-summary/nameChanges',
             'business-summary/stateTransition',
             'business-summary/recordKeeper',
+            'business-summary/parties',
             'common/addresses',
             'common/businessDetails',
             'common/nameTranslation',
@@ -102,6 +104,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_business_details(business_json)
             self._set_directors(business_json)
+            self._set_parties(business_json)
             self._set_addresses(business_json)
             self._set_dates(business_json)
             self._set_description(business_json)
@@ -153,14 +156,22 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['entityShortDescription'] = description.get(legal_type, 'Corporation')
 
     def _set_dates(self, business: dict):
+        if self._business.legal_type in ['SP', 'GP']:
+           registration_filing = Filing.get_filings_by_types(self._business.id, ['registration'])
+           if registration_filing:
+            registration_datetime = LegislationDatetime.as_legislation_timezone(registration_filing[0].effective_date)
+            business['formatted_registration_date'] = LegislationDatetime.format_as_report_string(registration_datetime)
         founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
         business['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        if self._business.dissolution_date:
+            dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._business.dissolution_date)
+            business['formatted_dissolution_date'] = dissolution_datetime.strftime('%B %-d, %Y')
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
 
     def _set_addresses(self, business: dict):
         address_json = get_addresses(self._business.identifier).json
-        for office_type in ['registeredOffice', 'recordsOffice']:
+        for office_type in ['registeredOffice', 'recordsOffice', 'businessOffice']:
             if office_type in address_json:
                 for key, value in address_json[office_type].items():
                     address_json[office_type][key] = BusinessDocument._format_address(value)
@@ -175,6 +186,15 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                 director['deliveryAddress'] = BusinessDocument._format_address(director['deliveryAddress'])
         business['parties'] = directors_json
 
+    def _set_parties(self, business: dict):
+        party_json = get_parties(self._business.identifier).json['parties']
+        for party in party_json:
+            if party.get('mailingAddress'):
+                party['mailingAddress'] = BusinessDocument._format_address(party['mailingAddress'])
+            if party.get('deliveryAddress'):
+                party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
+        business['currentParties'] = party_json
+
     def _set_name_translations(self, business: dict):
         aliases = Alias.find_by_type(self._business.id, 'TRANSLATION')
         business['listOfTranslations'] = [alias.json for alias in aliases]
@@ -187,7 +207,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
                                                                       'voluntaryLiquidation']):
-            state_filings.append(BusinessDocument._format_state_filing(filing))
+            state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
     def _set_record_keepers(self, business: dict):
@@ -248,9 +268,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 
-    @staticmethod
-    def _format_state_filing(filing: Filing) -> dict:
+
+    def _format_state_filing(self, filing: Filing) -> dict:
         filing_info = {}
+
         filing_datetime = LegislationDatetime.as_legislation_timezone(filing.filing_date)
         filing_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
         effective_datetime = LegislationDatetime.as_legislation_timezone(filing.effective_date)
@@ -258,7 +279,9 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         filing_meta = filing.meta_data
         if filing.filing_type == 'dissolution':
             filing_info['filing_name'] = BusinessDocument.\
-                _get_summary_display_name(filing.filing_type, filing_meta['dissolution']['dissolutionType'])
+                _get_summary_display_name(filing.filing_type,
+                                          filing_meta['dissolution']['dissolutionType'],
+                                          self._business.legal_type)
         else:
             filing_info['filing_name'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None)
@@ -317,9 +340,9 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         return ''
 
     @staticmethod
-    def _get_summary_display_name(filing_type: str, filing_sub_type: str) -> str:
-        if filing_sub_type:
-            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
+    def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
+        if filing_type == 'dissolution':
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
@@ -329,7 +352,15 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
-            'voluntary': 'Voluntary Dissolution'
+            'voluntary': {
+                'CP': 'Voluntary Dissolution',
+                'BEN': 'Voluntary Dissolution',
+                'ULC': 'Voluntary Dissolution',
+                'CC': 'Voluntary Dissolution',
+                'LLC': 'Voluntary Dissolution',
+                'SP': 'Dissolution Application',
+                'GP': 'Dissolution Application'
+            }
         },
         'restorationApplication': 'Restoration Application',
         'restoration': 'Restoration Application',

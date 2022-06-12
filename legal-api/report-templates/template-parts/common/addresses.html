@@ -115,3 +115,57 @@
    </div>
 </div>
 {% endif %}
+
+{% if offices.businessOffice is defined %}
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Business Addresses</div>
+   <div class="section-data mt-4">
+      <table class="section-data-table" role="presentation">
+         <tr>
+            <td class="col-33">
+               <div>
+                  <span class="section-sub-title">Mailing Address</span>
+                  {% if offices.businessOffice.mailingAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ offices.businessOffice.mailingAddress.streetAddress }}</div>
+               <div>{{ offices.businessOffice.mailingAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ offices.businessOffice.mailingAddress.addressCity }}
+                  {{ offices.businessOffice.mailingAddress.addressRegion }}
+                  &nbsp;{{ offices.businessOffice.mailingAddress.postalCode }}
+               </div>
+               {% if offices.businessOffice.mailingAddress.addressCountryDescription %}
+                  <div>{{ offices.businessOffice.mailingAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ offices.businessOffice.mailingAddress.addressCountry }}</div>
+               {% endif %}
+            </td>
+            <td class="col-33">
+               <div>
+                  <span class="section-sub-title">Delivery Address</span>
+                  {% if offices.businessOffice.deliveryAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ offices.businessOffice.deliveryAddress.streetAddress }}</div>
+               <div>{{ offices.businessOffice.deliveryAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ offices.businessOffice.deliveryAddress.addressCity }}
+                  {{ offices.businessOffice.deliveryAddress.addressRegion }}
+                  &nbsp;{{ offices.businessOffice.deliveryAddress.postalCode }}
+               </div>
+               {% if offices.businessOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ offices.businessOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ offices.businessOffice.deliveryAddress.addressCountry }}</div>
+               {% endif %}
+            </td>
+            <td class="col-33"></td>
+         </tr>
+      </table>
+   </div>
+</div>
+{% endif %}
