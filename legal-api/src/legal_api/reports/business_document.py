@@ -157,10 +157,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     def _set_dates(self, business: dict):
         if self._business.legal_type in ['SP', 'GP']:
-           registration_filing = Filing.get_filings_by_types(self._business.id, ['registration'])
-           if registration_filing:
-            registration_datetime = LegislationDatetime.as_legislation_timezone(registration_filing[0].effective_date)
-            business['formatted_registration_date'] = LegislationDatetime.format_as_report_string(registration_datetime)
+            registration_filing = Filing.get_filings_by_types(self._business.id, ['registration'])
+            if registration_filing:
+                registration_datetime = LegislationDatetime.\
+                    as_legislation_timezone(registration_filing[0].effective_date)
+                business['formatted_registration_date'] = LegislationDatetime.\
+                    format_as_report_string(registration_datetime)
         founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
         business['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
@@ -268,7 +270,6 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 
-
     def _format_state_filing(self, filing: Filing) -> dict:
         filing_info = {}
 
@@ -284,7 +285,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
                                           self._business.legal_type)
         else:
             filing_info['filing_name'] = BusinessDocument.\
-                _get_summary_display_name(filing.filing_type, None)
+                _get_summary_display_name(filing.filing_type, None, None)
         return filing_info
 
     def _set_amalgamation_details(self, business: dict):
