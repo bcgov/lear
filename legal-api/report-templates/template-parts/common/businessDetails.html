@@ -3,9 +3,17 @@
       <tr>
          {% if reportType == 'summary' %}
              <td class="col-33">
-                 <div class="bold">Incorporation Number:</div>
+                {% if business.legalType in ['GP', 'SP'] %}
+                 <div class="bold">Registration Number:</div>
+                {% else %}
+                <div class="bold">Incorporation Number:</div>
+                {% endif %}
                  <div class="bold pt-2">Business Number:</div>
-                 <div class="bold pt-2">Recognition Date and Time:</div>
+                {% if business.legalType in ['GP', 'SP'] %}
+                 <div class="bold pt-2">Registration Date and Time:</div>
+                {% else %}
+                 <div class="bold pt-2">Incorporation Date and Time:</div>
+                {% endif %}
                  <div class="bold pt-2">Summary Date and Time:</div>
                  <div class="bold pt-2">Company Status:</div>
               </td>
@@ -18,7 +26,12 @@
                       <span>Not Available</span>
                    {% endif %}
                  </div>
-                 <div class="pt-2">{{formatted_founding_date_time}}
+                 <div class="pt-2">
+                    {% if business.legalType in ['GP', 'SP'] %}
+                        <span>{{formatted_registration_date}}</span>
+                    {% else %}
+                        <span>{{formatted_founding_date_time}}</span>
+                    {% endif %}
                     {% if business.amalgamatedEntity %}
                         <span>(as a result of an Amalgamation)</span>
                     {% endif %}
@@ -260,7 +273,11 @@
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
     {% if reportType == 'summary' %}
-          <span>Incorporation #{{business.identifier}}</span>
+         {% if business.legalType in ['SP', 'GP'] %}
+            <span>Registration #{{business.identifier}}</span>
+         {% else %}
+            <span>Incorporation #{{business.identifier}}</span>
+         {% endif %}
     {% else %}
          Filing #{{header.filingId}}
         {% if business.legalType in ['SP', 'GP'] %}
