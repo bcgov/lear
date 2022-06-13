@@ -42,11 +42,12 @@ def test_worker_put_back_on(app, session):
     filing = create_filing('123', filing_json)
 
     # Test
-    put_back_on.process(business, filing_json, filing, filing_meta)
+    put_back_on.process(business, filing_json['filing'], filing, filing_meta)
+    business.save()
 
     # Check outcome
     final_filing = Filing.find_by_id(filing.id)
 
-    #assert business.state == Business.State.ACTIVE
-    #assert business.state_filing_id == None
-    #assert filing['filing']['putBackOn']['details'] == final_filing.order_details
+    assert business.state == Business.State.ACTIVE
+    assert business.state_filing_id == None
+    assert filing['filing']['putBackOn']['details'] == final_filing.order_details
