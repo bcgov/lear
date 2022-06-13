@@ -13,16 +13,13 @@
 # limitations under the License.
 """File processing rules and actions for the put back on filing."""
 
+from contextlib import suppress
+from typing import Dict
+
 import dpath
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Document, Filing
-from contextlib import suppress
-from datetime import datetime
-from typing import Dict
+from legal_api.models import Business, Filing
 from entity_filer.filing_processors.filing_components import filings
-
-from legal_api.models import Filing
-
 from entity_filer.filing_meta import FilingMeta
 
 def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
@@ -45,4 +42,4 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
         filings.update_filing_court_order(filing_rec, court_order_json)
 
     business.state = Business.State.ACTIVE
-    business.state_filing_id = filing_rec.id    
+    business.state_filing_id = filing_rec.id
