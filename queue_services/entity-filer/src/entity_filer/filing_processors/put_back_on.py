@@ -37,5 +37,7 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
         court_order_json = dpath.util.get(put_back_on_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
+    filing_rec.order_details = put_back_on_filing.get('details')
+
     business.state = Business.State.ACTIVE
     business.state_filing_id = filing_rec.id
