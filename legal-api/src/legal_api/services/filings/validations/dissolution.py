@@ -57,7 +57,7 @@ class DissolutionStatementTypes(str, Enum):
 DISSOLUTION_MAPPING = {
     'COOP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION],
     'CORP': [DissolutionTypes.VOLUNTARY],
-    'FIRMS': [DissolutionTypes.VOLUNTARY]
+    'FIRMS': [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE]
 }
 
 
