@@ -18,25 +18,31 @@ import random
 from legal_api.models import Business, Filing
 from registry_schemas.example_data import PUT_BACK_ON, FILING_HEADER
 
+from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors import put_back_on
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
-async def test_worker_put_back_on(app, session):
+def test_worker_put_back_on(app, session):
     """Assert that the put back on object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['putBackOn'] = PUT_BACK_ON
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['putBackOn'] = copy.deepcopy(PUT_BACK_ON)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = (create_filing(payment_id, filing_json, business_id=business.id))
 
     filing_msg = {'filing': {'id': filing.id}}
 
+    filing_meta = FilingMeta()
+    filing = create_filing('123', filing_json)
+
     # Test
-    await process_filing(filing_msg, app)
+    put_back_on.process(business, filing_json, filing, filing_meta)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing.id)
