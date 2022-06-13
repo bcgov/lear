@@ -68,6 +68,8 @@ from entity_filer.filing_processors import (
 from entity_filer.filing_processors.filing_components import name_request
 
 
+
+
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
@@ -219,7 +221,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('putBackOn'):
-                    put_back_on.process(business, filing_submission, filing, filing_meta)
+                    put_back_on.process(business, filing, filing_submission,filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
@@ -348,3 +350,4 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+
