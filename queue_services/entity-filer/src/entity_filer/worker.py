@@ -68,8 +68,6 @@ from entity_filer.filing_processors import (
 from entity_filer.filing_processors.filing_components import name_request
 
 
-
-
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
