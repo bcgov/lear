@@ -44,7 +44,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'endDate': '2022-05-31T23:59:59'
         },
         {
-            'name': 'KAINE SPARKS',
+            'name': 'T.K. SPARKS',
             'title': 'Registrar of Companies',
             'signatureImage': 'registrar_signature_4.png',
             'signatureImageAndText': 'registrar_signature_and_text_4.png',
