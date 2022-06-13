@@ -63,6 +63,7 @@ from entity_filer.filing_processors import (
     registration,
     special_resolution,
     transition,
+    put_back_on
 )
 from entity_filer.filing_processors.filing_components import name_request
 
@@ -217,8 +218,11 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('changeOfRegistration'):
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
+                elif filing.get('putBackOn'):
+                    put_back_on.process(business, filing_submission, filing, filing_meta)
+
                 if filing.get('specialResolution'):
-                    special_resolution.process(business, filing, filing_submission)
+                    special_resolution.process(business, filing, filing_submission, filing_meta)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
@@ -238,6 +242,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         corp_type_code=business.legal_type,
                         state=Business.State.HISTORICAL.name
                     )
+
+            if any('putBackOn' in x for x in legal_filings):
+                AccountService.update_entity(
+                        business_registration=business.identifier,
+                        business_name=business.legal_name,
+                        corp_type_code=business.legal_type,
+                        state=Business.State.ACTIVE.name
+                    )       
 
             if any('alteration' in x for x in legal_filings):
                 alteration.post_process(business, filing_submission, is_correction)
