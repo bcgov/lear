@@ -50,4 +50,4 @@ def test_worker_put_back_on(app, session):
 
     assert business.state == Business.State.ACTIVE
     assert business.state_filing_id == None
-    assert filing['filing']['putBackOn']['details'] == final_filing.order_details
+    assert filing_json['filing']['putBackOn']['details'] == final_filing.order_details
