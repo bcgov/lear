@@ -636,7 +636,7 @@ class ListFilingResource():
                 'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
             })
-        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder']):
+        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,
