@@ -222,7 +222,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     put_back_on.process(business, filing_submission, filing, filing_meta)
 
                 if filing.get('specialResolution'):
-                    special_resolution.process(business, filing, filing_submission, filing_meta)
+                    special_resolution.process(business, filing, filing_submission)
 
             filing_submission.transaction_id = transaction.id
             filing_submission.set_processed()
