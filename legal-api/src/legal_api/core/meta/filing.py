@@ -259,6 +259,12 @@ FILINGS: Final = {
         'additional': [
             {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
         ]
+    },
+    'putBackOn': {
+        'name': 'putBackOn',
+        'title': 'Put Back On',
+        'displayName':  'Correction - Put Back On',
+        'code': 'NOFEE'
     }
 }
 
