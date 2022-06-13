@@ -110,14 +110,12 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
         ('SUCCESS', 'SP', 'proprietor', 'organization', None, None),
         ('FAIL_NO_PERSON_NAME', 'SP', 'proprietor', 'person', 'NO_PROPRIETOR_PERSON_NAME', 'Proprietor name is required.'),
         ('FAIL_NO_ORG_NAME', 'SP', 'proprietor', 'organization', 'NO_PROPRIETOR_ORG_NAME', 'Proprietor organization name is required.'),
-        ('FAIL_NO_ORG_IDENTIFIER', 'SP', 'proprietor', 'organization', 'NO_PROPRIETOR_ORG_IDENTIFIER', 'Proprietor organization identifier is required.'),
 
         # GP tests
         ('SUCCESS', 'GP', 'partner', 'person', None, None),
         ('SUCCESS', 'GP', 'partner', 'organization', None, None),
         ('FAIL_NO_PERSON_NAME', 'GP', 'partner', 'person', 'NO_PARTNER_PERSON_NAME', 'Partner name is required.'),
         ('FAIL_NO_ORG_NAME', 'GP', 'partner', 'organization', 'NO_PARTNER_ORG_NAME', 'Partner organization name is required.'),
-        ('SUCCESS_NO_ORG_IDENTIFIER', 'GP', 'partner', 'organization', None, None),
     ])
 def test_check_firm_party(session, test_name, legal_type, role, party_type, expected_code, expected_msg):
     """Assert that business firm party checks functions properly."""
@@ -132,8 +130,6 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
         party_role.party.last_name = None
     elif test_name == 'FAIL_NO_ORG_NAME':
         party_role.party.organization_name = None
-    elif test_name in ('FAIL_NO_ORG_IDENTIFIER', 'SUCCESS_NO_ORG_IDENTIFIER'):
-        party_role.party.identifier = None
 
     with patch.object(firms, 'check_address', return_value=[]):
         result = check_firm_party(legal_type, party_role)
@@ -188,7 +184,6 @@ def test_check_firm_parties(session, test_name, legal_type, role, num_persons_ro
         ('SUCCESS', 'completing_party', 'organization', None, None),
         ('FAIL_NO_PERSON_NAME', 'completing_party', 'person', 'NO_COMPLETING_PARTY_PERSON_NAME', 'Completing Party name is required.'),
         ('FAIL_NO_ORG_NAME', 'completing_party', 'organization', 'NO_COMPLETING_PARTY_ORG_NAME', 'Completing Party organization name is required.'),
-        ('FAIL_NO_ORG_IDENTIFIER', 'completing_party', 'organization', 'NO_COMPLETING_PARTY_ORG_IDENTIFIER', 'Completing Party organization identifier is required.'),
     ])
 def test_check_completing_party(session, test_name, role, party_type, expected_code, expected_msg):
     """Assert that business firm party checks functions properly."""
@@ -203,8 +198,6 @@ def test_check_completing_party(session, test_name, role, party_type, expected_c
         party_role.party.last_name = None
     elif test_name == 'FAIL_NO_ORG_NAME':
         party_role.party.organization_name = None
-    elif test_name in ('FAIL_NO_ORG_IDENTIFIER', 'SUCCESS_NO_ORG_IDENTIFIER'):
-        party_role.party.identifier = None
 
     with patch.object(firms, 'check_address', return_value=[]):
         result = check_completing_party(party_role)

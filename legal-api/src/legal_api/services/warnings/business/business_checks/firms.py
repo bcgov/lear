@@ -150,7 +150,6 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
     role = party_role.role.replace('_', ' ').title()
     no_person_name_check_warning = False
     no_org_name_warning = False
-    no_org_identifier_warning = False
 
     if party.party_type == Party.PartyTypes.PERSON.value:
         if not party.first_name and not party.last_name:
@@ -159,8 +158,6 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
     elif party.party_type == Party.PartyTypes.ORGANIZATION.value:
         if not party.organization_name:
             no_org_name_warning = True
-        if legal_type == Business.LegalTypes.SOLE_PROP.value and not party.identifier:
-            no_org_identifier_warning = True
         result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY))
 
     if legal_type == Business.LegalTypes.SOLE_PROP.value:
@@ -175,12 +172,6 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
                 **WARNING_MESSAGE_BASE,
                 'code': BusinessWarningCodes.NO_PROPRIETOR_ORG_NAME,
                 'message': f'{role} organization name is required.',
-            })
-        if no_org_identifier_warning:
-            result.append({
-                **WARNING_MESSAGE_BASE,
-                'code': BusinessWarningCodes.NO_PROPRIETOR_ORG_IDENTIFIER,
-                'message': f'{role} organization identifier is required.',
             })
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if no_person_name_check_warning:
@@ -221,13 +212,6 @@ def check_completing_party(party_role: PartyRole):
                 'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
-        if not party.identifier:
-            result.append({
-                **WARNING_MESSAGE_BASE,
-                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_IDENTIFIER,
-                'message': f'{role} organization identifier is required.',
-            })
-
         result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.COMPLETING_PARTY))
 
     return result
