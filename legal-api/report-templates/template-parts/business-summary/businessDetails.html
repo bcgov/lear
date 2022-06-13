@@ -43,7 +43,10 @@
         </div>
         <div>
             <span class="section-sub-title">Nature of Business: </span>
-            <span class="section-data">{{business.naicsCode}} - {{business.naicsDescription}}</span>
+            {% if business.naicsCode %}
+                <span class="section-data">{{business.naicsCode}} - </span>
+            {% endif %}
+            <span class="section-data">{{business.naicsDescription}}</span
         </div>
         <div>
             <span class="section-sub-title">Business Start Date: </span>
