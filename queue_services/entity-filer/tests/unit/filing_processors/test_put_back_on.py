@@ -42,4 +42,5 @@ async def test_worker_registrars_notation(app, session):
     final_filing = Filing.find_by_id(filing.id)
 
     assert business.state == Business.State.ACTIVE
-    assert business.state_filing_id == filing.id
+    assert business.state_filing_id == None
+    assert filing['filing']['putBackOn']['details'] == final_filing.order_details
