@@ -219,7 +219,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('putBackOn'):
-                    put_back_on.process(business, filing, filing_submission,filing_meta)
+                    put_back_on.process(business, filing, filing_submission, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
