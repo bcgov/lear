@@ -30,12 +30,6 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
 
     logger.debug('processing putBackOn: %s', filing)
 
-    filing_meta.dissolution = {}
-    with suppress(IndexError, KeyError, TypeError):
-        put_back_on_details = dpath.util.get(filing, '/putBackOn/details')
-        filing_meta.put_back_on = {**filing_meta.put_back_on,
-                                   **{'details': put_back_on_details}}
-
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(put_back_on_filing, '/courtOrder')
