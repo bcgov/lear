@@ -266,7 +266,7 @@ FILINGS: Final = {
         'displayName': {
             'SP': 'Correction - Put Back On',
             'GP': 'Correction - Put Back On'
-        }
+        },
         'code': 'NOFEE'
     }
 }
