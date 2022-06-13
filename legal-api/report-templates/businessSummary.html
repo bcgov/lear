@@ -35,7 +35,11 @@
       [[business-summary/recordKeeper.html]]
       [[business-summary/amalgamations.html]]
       [[common/addresses.html]]
-      [[notice-of-articles/directors.html]]
+      {% if business.legalType in ['GP', 'SP'] %}
+         [[business-summary/parties.html]]
+      {% else %}
+         [[notice-of-articles/directors.html]]
+      {% endif %}
       <div class="container"></div>
    </body>
 </html>

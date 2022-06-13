@@ -35,29 +35,54 @@
   </div>
 {% endif %}
 <div class="mt-2">
-    {% if business.legalType == 'CP' %}
-        <div class="mt-2">
-            <span class="section-sub-title">Cooperative Type: </span>
-            <span class="section-data">{{business.coopType}}</span>
+     {% if business.legalType in ['SP', 'GP'] %}
+         <div class="mt-2 section-title">Business Information</div>
+        <div class="mt-4">
+            <span class="section-sub-title">Business Name: </span>
+            <span class="section-data">{{business.legalName}}</span>
         </div>
-    {% endif %}
-
-    <div class="mt-2">
-        <span class="section-sub-title">Last Annual Report: </span>
-        <span class="section-data">{{business.last_ar_date}}</span>
-    </div>
-    {% if business.legalType == 'CP' %}
         <div>
-            <span class="section-sub-title">Last Annual General Meeting: </span>
-            <span class="section-data">{{business.last_agm_date}}</span>
+            <span class="section-sub-title">Nature of Business: </span>
+            {% if business.naicsCode %}
+                <span class="section-data">{{business.naicsCode}} - </span>
+            {% endif %}
+            <span class="section-data">{{business.naicsDescription}}</span
         </div>
-    {% endif %}
-    <div class = "mt-2">
-        <span class="section-sub-title">In Liquidation: </span>
-        {% if business.state == 'LIQUIDATION' %}
-            <span class="section-data">Yes</span>
-        {% else %}
-            <span class="section-data">No</span>
+        <div>
+            <span class="section-sub-title">Business Start Date: </span>
+            <span class="section-data">{{formatted_founding_date}}</span>
+        </div>
+        {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
+            <div>
+                <span class="section-sub-title">Business End Date: </span>
+                <span class="section-data">{{formatted_dissolution_date}}</span>
+            </div>
         {% endif %}
-    </div>
+     {% else %}
+            {% if business.legalType == 'CP' %}
+                <div class="mt-2">
+                    <span class="section-sub-title">Cooperative Type: </span>
+                    <span class="section-data">{{business.coopType}}</span>
+                </div>
+            {% endif %}
+
+            <div class="mt-2">
+                <span class="section-sub-title">Last Annual Report: </span>
+                <span class="section-data">{{business.last_ar_date}}</span>
+            </div>
+            {% if business.legalType == 'CP' %}
+                <div>
+                    <span class="section-sub-title">Last Annual General Meeting: </span>
+                    <span class="section-data">{{business.last_agm_date}}</span>
+                </div>
+            {% endif %}
+            <div class = "mt-2">
+                <span class="section-sub-title">In Liquidation: </span>
+                {% if business.state == 'LIQUIDATION' %}
+                    <span class="section-data">Yes</span>
+                {% else %}
+                    <span class="section-data">No</span>
+                {% endif %}
+            </div>
+    {% endif %}
 </div>

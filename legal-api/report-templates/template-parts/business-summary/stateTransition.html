@@ -1,7 +1,13 @@
 {% if stateFilings|length > 0 %}
 <div class="no-page-break">
   <div class="separator mt-4"></div>
-  <div class="section-title mt-4">Dissolution/Restoration Information</div>
+  <div class="section-title mt-4">
+       {% if business.legalType in ['SP', 'GP'] %}
+        <span>Business Status Information</span>
+      {% else %}
+        <span>Dissolution/Restoration Information</span>
+      {% endif %}
+  </div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
   {% for filing in stateFilings %}
