@@ -262,7 +262,8 @@ FILINGS: Final = {
     },
     'putBackOn': {
         'name': 'putBackOn',
-        'title': 'Correction - Put Back On',
+        'title': 'Put Back On',
+        'displayName':  'Correction - Put Back On',
         'code': 'NOFEE'
     }
 }
