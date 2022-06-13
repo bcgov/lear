@@ -147,7 +147,9 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         corp_type = CorpType.find_by_id(legal_type)
         business['entityDescription'] = corp_type.full_desc
         act = {
-            Business.LegalTypes.COOP.value: 'Cooperative Association Act'
+            Business.LegalTypes.COOP.value: 'Cooperative Association Act',
+            Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
+            Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
         business['entityAct'] = act.get(legal_type, 'Business Corporations Act')
         description = {

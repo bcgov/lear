@@ -40,7 +40,13 @@
                  <div class="pt-2">
                    <span class="capitalize-text">{{business.displayState}}</span>
                    {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
-                     <span> - {{stateFilings[0].filing_name}} - Effective {{stateFilings[0].effective_date_time}}</span>
+                    <span> - </span>
+                    {% if business.legalType in ['GP', 'SP'] and business.state == 'HISTORICAL' %}
+                        <span>Dissolved</span>
+                    {% else %}
+                        <span>{{stateFilings[0].filing_name}}</span>
+                    {% endif %}
+                    <span> - Effective {{stateFilings[0].effective_date_time}}</span>
                    {% endif %}
                  </div>
               </td>
