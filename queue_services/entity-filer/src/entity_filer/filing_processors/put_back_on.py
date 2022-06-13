@@ -15,6 +15,7 @@
 
 import dpath
 from entity_queue_common.service_utils import QueueException, logger
+from legal_api.models import Business, Document, Filing
 from contextlib import suppress
 from datetime import datetime
 from typing import Dict
@@ -24,7 +25,7 @@ from legal_api.models import Filing
 
 from entity_filer.filing_meta import FilingMeta
 
-def process(put_back_on_filing: Filing,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
     if not (put_back_on_filing := filing.get('putBackOn')):
         logger.error('Could not find putBackOn in: %s', filing)
@@ -42,3 +43,6 @@ def process(put_back_on_filing: Filing,  filing: Dict, filing_rec: Filing, filin
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(put_back_on_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
+
+    business.state = Business.State.ACTIVE
+    business.state_filing_id = filing_rec.id    
