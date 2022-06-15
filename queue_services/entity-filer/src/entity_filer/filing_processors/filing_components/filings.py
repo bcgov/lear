@@ -30,5 +30,6 @@ def update_filing_court_order(filing_submission: Filing, court_order_json: Dict)
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
         filing_submission.court_order_date = datetime.fromisoformat(court_order_json.get('orderDate'))
+        filing_submission.order_details = court_order_json.get('orderDetails')
 
     return None

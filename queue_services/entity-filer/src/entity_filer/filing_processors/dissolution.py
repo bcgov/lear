@@ -71,12 +71,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    # update court order, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        # Order details need to be saved when sent, specially in case of administrative dissolution
-        if court_order_json.get('orderDetails'):
-            filing_rec.order_details = court_order_json.get('orderDetails')
-
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec)
 
