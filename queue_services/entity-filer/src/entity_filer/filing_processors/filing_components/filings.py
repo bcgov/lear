@@ -27,6 +27,7 @@ def update_filing_court_order(filing_submission: Filing, court_order_json: Dict)
 
     filing_submission.court_order_file_number = court_order_json.get('fileNumber')
     filing_submission.court_order_effect_of_order = court_order_json.get('effectOfOrder')
+    filing_submission.order_details = court_order_json.get('orderDetails')
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
         filing_submission.court_order_date = datetime.fromisoformat(court_order_json.get('orderDate'))

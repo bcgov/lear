@@ -299,6 +299,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             with suppress(Exception):
                 name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
+        elif filing.filing_type in ('dissolution') and filing.meta_data:
+            if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
+                name = 'Administrative Dissolution'
+
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
         return name
