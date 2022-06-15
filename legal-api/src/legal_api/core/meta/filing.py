@@ -300,9 +300,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
-            with suppress(Exception):
-                if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
-                    name = 'Administrative Dissolution'
+            if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
+                name = 'Administrative Dissolution'
 
         if full_name and filing.parent_filing_id and filing.status == FilingStorage.Status.CORRECTED:
             name = f'{name} - Corrected'
