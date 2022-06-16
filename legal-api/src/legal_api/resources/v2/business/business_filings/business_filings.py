@@ -611,7 +611,7 @@ class ListFilingResource():
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def get_filing_types(business: Business, filing_json: dict): # pylint: disable=too-many-branches
+    def get_filing_types(business: Business, filing_json: dict):  # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -647,8 +647,8 @@ class ListFilingResource():
                 filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
                 priority = priority_flag
 
-                #ToDo: bcgov/entity 12684, update the dissolution related code to support sub types.
-                #check if it is administrative dissolution, then pass NOFEE code
+                # ToDo: bcgov/entity 12684, update the dissolution related code to support sub types.
+                # Check if it is administrative dissolution, then pass NOFEE code
                 if k == 'dissolution':
                     dissolution_type = filing_json['filing'][k].get('dissolutionType')
                     if dissolution_type == 'administrative':
