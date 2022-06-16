@@ -646,11 +646,11 @@ class ListFilingResource():
             for k in filing_json['filing'].keys():
                 filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
                 priority = priority_flag
-                
+
                 #check if it is administrative dissolution, then pass NOFEE code
                 if k == 'dissolution':
-                    dissolutionType = filing_json['filing'][k].get('dissolutionType')
-                    if dissolutionType == 'administrative':
+                    dissolution_type = filing_json['filing'][k].get('dissolutionType')
+                    if dissolution_type == 'administrative':
                         filing_type_code = 'NOFEE'
 
                 # check if changeOfDirectors is a free filing
