@@ -611,7 +611,7 @@ class ListFilingResource():
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def get_filing_types(business: Business, filing_json: dict):
+    def get_filing_types(business: Business, filing_json: dict): # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
         Returns: {
