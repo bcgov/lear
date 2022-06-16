@@ -647,6 +647,7 @@ class ListFilingResource():
                 filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
                 priority = priority_flag
 
+                #ToDo: bcgov/entity#12684, update the dissolution related code to support sub types.
                 #check if it is administrative dissolution, then pass NOFEE code
                 if k == 'dissolution':
                     dissolution_type = filing_json['filing'][k].get('dissolutionType')
