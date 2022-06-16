@@ -14,6 +14,7 @@
 """File processing rules and actions for the registration of a business."""
 import copy
 from contextlib import suppress
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict
 
@@ -97,7 +98,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate'))
+    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
     if (naics := registration_filing.get('business', {}).get('naics')) and naics.get('naicsCode'):
         business_info.update_naics_info(business, naics)
     business.state = Business.State.ACTIVE
