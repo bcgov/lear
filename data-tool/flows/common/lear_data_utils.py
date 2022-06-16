@@ -1,4 +1,6 @@
 from legal_api.models import Party, PartyRole, Business, Office, Address
+from legal_api.models.colin_event_id import ColinEventId
+
 from .event_filing_service import REGISTRATION_EVENT_FILINGS
 
 
@@ -73,6 +75,11 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
         if delivery_address:
             business_office_json['deliveryAddress']['id'] = delivery_address.id
 
+
+def get_colin_event(db: any, event_id: int):
+    colin_event_id_obj = \
+        db.session.query(ColinEventId).filter(ColinEventId.colin_event_id == event_id).one_or_none()
+    return colin_event_id_obj
 
 
 

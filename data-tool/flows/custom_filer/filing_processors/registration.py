@@ -28,39 +28,39 @@ from .filing_components.offices import update_offices
 from .filing_components.parties import update_parties
 from flask import current_app
 
-def update_affiliation(business: Business, filing: Filing):
+def update_affiliation(config, business: Business, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
 
         # TODO affiliation to an account does not need to happen.  only entity creation in auth is req'd.
         #  used for testing purposes to see how things look in entity dashboard - remove when done testing
-        # rv = AccountService.create_affiliation(
-        #     # account=bootstrap.account,
-        #     account=2596, # DEV account
-        #     # account=1009, # TEST account
-        #     business_registration=business.identifier,
-        #     business_name=business.legal_name,
-        #     corp_type_code=business.legal_type
-        # )
+        if config.AFFILIATE_ENTITY:
+            account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
+            AccountService.create_affiliation(
+                account=account_id,
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type
+            )
+        elif config.UPDATE_ENTITY:
+            account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
+            token = AccountService.get_bearer_token()
 
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
-        token = AccountService.get_bearer_token()
+            if not token:
+                return HTTPStatus.UNAUTHORIZED
 
-        if not token:
-            return HTTPStatus.UNAUTHORIZED
-
-        # Create an entity record
-        entity_data = json.dumps({'businessIdentifier': business.identifier,
-                                  'corpTypeCode': business.legal_type,
-                                  'name': business.legal_name
-                                  })
-        entity_record = requests.post(
-            url=account_svc_entity_url,
-            headers={**AccountService.CONTENT_TYPE_JSON,
-                     'Authorization': AccountService.BEARER + token},
-            data=entity_data,
-            timeout=AccountService.timeout
-        )
+            # Create an entity record
+            entity_data = json.dumps({'businessIdentifier': business.identifier,
+                                      'corpTypeCode': business.legal_type,
+                                      'name': business.legal_name
+                                      })
+            entity_record = requests.post(
+                url=account_svc_entity_url,
+                headers={**AccountService.CONTENT_TYPE_JSON,
+                         'Authorization': AccountService.BEARER + token},
+                data=entity_data,
+                timeout=AccountService.timeout
+            )
 
 
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call

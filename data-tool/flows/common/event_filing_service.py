@@ -1,3 +1,4 @@
+from contextlib import suppress
 from enum import Enum
 
 import pandas as pd
@@ -114,8 +115,9 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 class EventFilingService:
 
 
-    def __init__(self, db_engine: engine):
+    def __init__(self, db_engine: engine, config):
         self.db_engine = db_engine
+        self.config= config
 
 
     def get_filing_data(self,
@@ -131,12 +133,12 @@ class EventFilingService:
             event_filing_data_dict = convert_result_set_to_dict(rs)
             event_filing_data_dict = event_filing_data_dict[0]
             event_filing_data_dict['event_file_type'] = event_file_type
-            event_filing_data_dict['target_lear_filing_type'] = EVENT_FILING_LEAR_TARGET_MAPPING[event_file_type]
-            # todo remove next 3 lines - for testing purposes only
+            with suppress(IndexError, KeyError, TypeError):
+                event_filing_data_dict['target_lear_filing_type'] = EVENT_FILING_LEAR_TARGET_MAPPING[event_file_type]
+
             corp_name = event_filing_data_dict['cn_corp_name']
-            # corp_name = f'{corp_name} - MISSING_INFO_IMPORT_TEST'
-            corp_name = f'{corp_name} - IMPORT_TEST'
-            # corp_name = f'{corp_name} - IMPORT_DEMO_TEST'
+            if (corp_name_prefix := self.config.CORP_NAME_PREFIX):
+                corp_name = f'{corp_name}{corp_name_prefix}'
             event_filing_data_dict['cn_corp_name'] = corp_name
 
             # get corp party data
@@ -165,14 +167,11 @@ class EventFilingService:
                               event_file_type: str,
                               prev_event_filing_data: dict,
                               prev_event_ids: list):
-        if self.get_event_filing_is_supported(event_file_type):
-            return self.get_filing_data(corp_num,
-                                        event_id,
-                                        event_file_type,
-                                        prev_event_filing_data,
-                                        prev_event_ids)
-
-        return None
+        return self.get_filing_data(corp_num,
+                                    event_id,
+                                    event_file_type,
+                                    prev_event_filing_data,
+                                    prev_event_ids)
 
 
     def get_event_filing_is_supported(self, event_file_type: str):
@@ -180,5 +179,3 @@ class EventFilingService:
                 CHANGE_REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
                 DISSOLUTION_EVENT_FILINGS.has_value(event_file_type):
             return True
-
-        return False

@@ -52,6 +52,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     """
 
     DATA_LOAD_ENV = os.getenv('DATA_LOAD_ENV', '')
+    CORP_NAME_PREFIX = os.getenv('CORP_NAME_PREFIX', '')
+    UPDATE_ENTITY = os.getenv('UPDATE_ENTITY', 'False') == 'True'
+    AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'
+    AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID')
+    if AFFILIATE_ENTITY_ACCOUNT_ID.isnumeric():
+        AFFILIATE_ENTITY_ACCOUNT_ID = int(AFFILIATE_ENTITY_ACCOUNT_ID)
+    else:
+        AFFILIATE_ENTITY_ACCOUNT_ID = None
 
     # POSTGRESQL COLIN MIGRATION DB
     DB_USER_COLIN_MIGR = os.getenv('DATABASE_USERNAME_COLIN_MIGR', '')
