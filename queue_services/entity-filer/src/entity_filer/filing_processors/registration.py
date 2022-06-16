@@ -14,17 +14,16 @@
 """File processing rules and actions for the registration of a business."""
 import copy
 from contextlib import suppress
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict
 
 import dpath
 import sentry_sdk
-from datetime import timedelta
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
-
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile, filings
