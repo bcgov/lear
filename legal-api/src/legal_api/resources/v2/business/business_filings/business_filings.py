@@ -674,7 +674,6 @@ class ListFilingResource():
                         'filingTypeCode': filing_type_code,
                         'futureEffective': ListFilingResource.is_future_effective_filing(filing_json)
                     })
-
                 elif filing_type_code:
                     filing_types.append({
                         'filingTypeCode': filing_type_code,
