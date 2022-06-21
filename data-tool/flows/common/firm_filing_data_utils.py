@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 def get_certified_by(filing_data: dict):
     user_id = filing_data.get('u_user_id')
@@ -51,4 +51,53 @@ def get_is_paper_only(filing_data: dict):
             ods_type_cd == 'P':
         return True
 
+    return False
+
+
+def get_event_info_to_retrieve(unprocessed_firm_dict: dict):
+    event_ids = unprocessed_firm_dict.get('event_ids')
+    event_file_types = unprocessed_firm_dict.get('event_file_types')
+    event_file_types = event_file_types.split(',')
+    last_event_id = unprocessed_firm_dict.get('last_event_id')
+    last_processed_event_id = unprocessed_firm_dict.get('last_processed_event_id')
+
+    if not last_processed_event_id or pd.isna(last_processed_event_id):
+        return event_ids, event_file_types
+
+    if last_processed_event_id != last_event_id:
+        next_event_index = event_ids.index(last_processed_event_id)
+        events_ids_to_retrieve = event_ids[next_event_index:]
+        event_file_types_to_retrieve = event_file_types[next_event_index:]
+        return events_ids_to_retrieve, event_file_types_to_retrieve
+
+    # shouldn't get here
+    return [], []
+
+
+def get_processed_event_ids(unprocessed_firm_dict: dict):
+    event_ids = unprocessed_firm_dict.get('event_ids')
+    last_event_id = unprocessed_firm_dict.get('last_event_id')
+    last_processed_event_id = unprocessed_firm_dict.get('last_processed_event_id')
+
+    if not last_processed_event_id or pd.isna(last_processed_event_id):
+        return []
+
+    if last_processed_event_id != last_event_id:
+        last_processed_event_id_index = event_ids.index(last_processed_event_id) + 1
+        processed_events_ids = event_ids[:last_processed_event_id_index]
+        return processed_events_ids
+
+    # shouldn't get here
+    return []
+
+
+def get_previous_event_ids(event_ids: list, current_event_id: int):
+    index = event_ids.index(current_event_id)
+    previous_event_ids = event_ids[:index]
+    return previous_event_ids
+
+
+def is_in_lear(processed_events_ids: list, event_id: int):
+    if event_id in processed_events_ids:
+        return True
     return False

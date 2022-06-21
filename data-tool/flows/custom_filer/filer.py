@@ -53,7 +53,7 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-def process_filing(filing_id: int, filing_event_data: Dict, db: any):
+def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -106,6 +106,19 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
 
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
+
+        event_type_cd = filing_event_data['e_event_type_cd']
+        filing_type_cd = filing_event_data['f_filing_type_cd']
+        payment_type_cd = filing_event_data.get('payment_typ_cd')
+        fee_cd = filing_event_data.get('fee_cd')
+
+        filing_meta.legacy_info = {
+            'source': 'COLIN',
+            'eventType': event_type_cd,
+            'filingType': filing_type_cd,
+            'paymentType': payment_type_cd,
+            'feeCode': fee_cd
+        }
         filing_submission._meta_data = json.loads(  # pylint: disable=W0212
             json.dumps(filing_meta.asjson, default=json_serial)
         )
@@ -118,24 +131,27 @@ def process_filing(filing_id: int, filing_event_data: Dict, db: any):
         db.session.add(filing_submission)
         db.session.commit()
 
-        if any('changeOfRegistration' in x for x in legal_filings):
-            AccountService.update_entity(
-                business_registration=business.identifier,
-                business_name=business.legal_name,
-                corp_type_code=business.legal_type
-            )
+        if config.UPDATE_ENTITY:
+            if any('registration' in x for x in legal_filings):
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                registration.update_affiliation(config, business, filing_submission)
 
-        if any('registration' in x for x in legal_filings):
-            filing_submission.business_id = business.id
-            db.session.add(filing_submission)
-            db.session.commit()
-            registration.update_affiliation(business, filing_submission)
+            if any('changeOfRegistration' in x for x in legal_filings):
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type
+                )
 
-        # post filing changes to other services
-        if any('dissolution' in x for x in legal_filings):
-            AccountService.update_entity(
-                business_registration=business.identifier,
-                business_name=business.legal_name,
-                corp_type_code=business.legal_type,
-                state=Business.State.HISTORICAL.name
-            )
+            # post filing changes to other services
+            if any('dissolution' in x for x in legal_filings):
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type,
+                    state=Business.State.HISTORICAL.name
+                )
+
+        return business

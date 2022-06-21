@@ -46,12 +46,11 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
     # Update Nature of Business
     if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')) and \
             (naics_code := naics.get('naicsCode')):
-        if business.naics_code != naics_code:
-            filing_meta.change_of_registration = {**filing_meta.change_of_registration,
-                                                  **{'fromNaicsCode': business.naics_code,
-                                                     'toNaicsCode': naics_code,
-                                                     'naicsDescription': naics.get('naicsDescription')}}
-            business_info.update_naics_info(business, naics)
+        filing_meta.change_of_registration = {**filing_meta.change_of_registration,
+                                              **{'fromNaicsCode': business.naics_code,
+                                                 'toNaicsCode': naics_code,
+                                                 'naicsDescription': naics.get('naicsDescription')}}
+        business_info.update_naics_info(business, naics)
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):

@@ -1,17 +1,20 @@
 def get_unprocessed_firms_query(data_load_env: str):
     query = f"""
-            select tbl_fe.*, cp.flow_name, cp.processed_status
+            select tbl_fe.*, cp.flow_name, cp.processed_status, cp.last_processed_event_id
             from (select e.corp_num,
                          count(e.corp_num)                         as cnt,
                          string_agg(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ','
                                     order by e.event_id)           as event_file_types,
                          array_agg(e.event_id order by e.event_id) as event_ids,
-                         min(e.event_id)                           as first_event_id
+                         min(e.event_id)                           as first_event_id,
+                         max(e.event_id)                           as last_event_id
                   from event e
                            left outer join filing f on e.event_id = f.event_id
                   where 1 = 1
---                     and e.corp_num = 'FM0632494'
---                     and e.corp_num = 'FM0274108'
+--                     and e.corp_num = 'FM0632494' -- complex change registration example
+--                     and e.corp_num = 'FM0399872' -- can be used to test incremental processing
+--                     and e.corp_num = 'FM0554955' -- can be used to test incremental processing
+--                     and e.corp_num = 'FM0272694'
 --                     -- firms with missing req'd business info 
 --                     and e.corp_num in ('FM0614946', 'FM0614924', 'FM0613627', 'FM0613561', 'FM0272480', 'FM0272488')
                   group by e.corp_num) as tbl_fe
@@ -24,6 +27,7 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like 'FILE_FRREG%'
 --                 and tbl_fe.event_file_types like '%FILE_FRREG,%FRCHG%'
 --                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
+--                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG'
 --                 and tbl_fe.event_file_types like '%CONVFMACP_FRMEM%'
 --                 and tbl_fe.event_file_types like '%CONVFMMISS_FRCHG%'
 --                 and tbl_fe.event_file_types like '%CONVFMNC_FRCHG%'
@@ -47,11 +51,10 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISSP'
 --                 and tbl_fe.event_file_types like '%FILE_FRDIS%'
 --                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_FRDIS'
---                 TODO: need to test FILE_LLREG as it is not available in current dataset yet
---                 and tbl_fe.event_file_types like '%FILE_LLREG%'
-              and (cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+                   and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+                   or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
-            limit 10
+            limit 50
             ;
         """
     return query
@@ -134,7 +137,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
                  left outer join corp_state cs on cs.start_event_id = e.event_id
                  left outer join business_description bd on bd.start_event_id = e.event_id
                  left outer join ledger_text lt on lt.event_id = e.event_id
-                 left outer join payment p on p.event_id = e.event_id
+                 left outer join unused_payment p on p.event_id = e.event_id
                  left outer join filing_user u on u.event_id = e.event_id
         where 1 = 1
           and e.corp_num = '{corp_num}'
