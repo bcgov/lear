@@ -1,7 +1,7 @@
 from .firm_filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
     get_base_dissolution_filing_json
-from .firm_filing_data_utils import get_certified_by, get_street_additional, get_party_role_type, get_party_type
-
+from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
+    get_street_address, get_street_additional, AddressFormatType
 
 
 class FirmFilingJsonFactoryService:
@@ -85,8 +85,7 @@ class FirmFilingJsonFactoryService:
 
     def populate_header(self, filing_root_dict: dict):
         header = filing_root_dict['filing']['header']
-        effective_dts = self._filing_data['f_effective_dts']
-        effective_dt_str = effective_dts.strftime('%Y-%m-%d')
+        effective_dt_str= self._filing_data['f_effective_dt_str']
         header['date'] = effective_dt_str
 
         certified_by = get_certified_by(self._filing_data)
@@ -98,14 +97,14 @@ class FirmFilingJsonFactoryService:
         business_dict = filing_root_dict['filing']['business']
         business_dict['legalType'] = self._filing_data['c_corp_type_cd']
         business_dict['identifier'] = self._filing_data['c_corp_num']
-        business_dict['foundingDate'] = str(self._filing_data['bd_business_start_date'])
+        business_dict['foundingDate'] = str(self._filing_data['c_recognition_dts_utc'])
 
 
     def populate_registration(self, filing_root_dict: dict):
         registration_dict = filing_root_dict['filing']['registration']
 
         registration_dict['businessType'] = self._filing_data['c_corp_type_cd']
-        registration_dict['startDate'] = str(self._filing_data['c_recognition_dts'])
+        registration_dict['startDate'] = str(self._filing_data['c_recognition_dts_utc'])
 
         self.populate_filing_business(registration_dict)
         self.populate_offices(registration_dict)
@@ -224,31 +223,43 @@ class FirmFilingJsonFactoryService:
         prev_party_id = filing_party_data['cp_prev_party_id']
 
         if prev_party_id:
-            prev_parties = self._filing_data['prev_event_filing_data']['corp_parties']
-            prev_party_match = next(prev_party
-                                    for prev_party in prev_parties
-                                    if prev_party['cp_corp_party_id'] == prev_party_id)
-            prev_party_type = get_party_type(prev_party_match)
-            prev_officer = {}
-            prev_officer['email'] = prev_party_match.get('cp_email_address', '').upper()
-            prev_officer['lastName'] = prev_party_match.get('cp_last_name', '').upper()
-            prev_officer['firstName'] = prev_party_match.get('cp_first_name', '').upper()
-            prev_officer['middleName'] = prev_party_match.get('cp_middle_name', '').upper()
-            prev_officer['partyType'] = prev_party_type
-            prev_officer['organizationName'] = prev_party_match.get('cp_business_name', '').upper()
-            prev_officer['identifier'] = prev_party_match['cp_bus_company_num']
-            officer['prev_colin_party'] = prev_officer
+            if self.can_populate_prev_officer_with_current_officer(filing_party_data):
+                self.populate_previous_party_officer(officer, filing_party_data)
+            else:
+                prev_parties = self._filing_data['prev_event_filing_data']['corp_parties']
+                prev_party_match = next(prev_party
+                                        for prev_party in prev_parties
+                                        if prev_party['cp_corp_party_id'] == prev_party_id)
+                self.populate_previous_party_officer(officer, prev_party_match)
         else:
-            prev_officer = {}
-            party_type = get_party_type(filing_party_data)
-            prev_officer['email'] = filing_party_data.get('cp_email_address', '').upper()
-            prev_officer['lastName'] = filing_party_data.get('cp_last_name', '').upper()
-            prev_officer['firstName'] = filing_party_data.get('cp_first_name', '').upper()
-            prev_officer['middleName'] = filing_party_data.get('cp_middle_name', '').upper()
-            prev_officer['partyType'] = party_type
-            prev_officer['organizationName'] = filing_party_data.get('cp_business_name', '').upper()
-            prev_officer['identifier'] = filing_party_data['cp_bus_company_num']
-            officer['prev_colin_party'] = prev_officer
+            self.populate_previous_party_officer(officer, filing_party_data)
+
+
+    def can_populate_prev_officer_with_current_officer(self, filing_party_data: dict):
+        if not filing_party_data.get('cp_prev_party_id'):
+            return False
+
+        cp_start_event_id = filing_party_data['cp_start_event_id']
+        cp_end_event_id = filing_party_data['cp_end_event_id']
+
+        if self._event_id != cp_start_event_id and \
+            (not cp_end_event_id or cp_end_event_id > self._event_id):
+            return True
+
+        return False
+
+
+    def populate_previous_party_officer(self, officer: dict, prev_filing_party_data: dict):
+        prev_officer = {}
+        prev_party_type = get_party_type(prev_filing_party_data)
+        prev_officer['email'] = prev_filing_party_data.get('cp_email_address', '').upper()
+        prev_officer['lastName'] = prev_filing_party_data.get('cp_last_name', '').upper()
+        prev_officer['firstName'] = prev_filing_party_data.get('cp_first_name', '').upper()
+        prev_officer['middleName'] = prev_filing_party_data.get('cp_middle_name', '').upper()
+        prev_officer['partyType'] = prev_party_type
+        prev_officer['organizationName'] = prev_filing_party_data.get('cp_business_name', '').upper()
+        prev_officer['identifier'] = prev_filing_party_data['cp_bus_company_num']
+        officer['prev_colin_party'] = prev_officer
 
 
     def populate_party_officer(self, party_officer: dict, filing_party_data: dict):
@@ -262,37 +273,50 @@ class FirmFilingJsonFactoryService:
         address_format_type_key = f'{address_key_prefix}address_format_type'
         address_format_type = address_data_dict[address_format_type_key]
 
-        if address_format_type == 'BAS':
-            # todo sort out how basic should work
-            # populate_basic_address(address_dict, filing_data, address_key_prefix)
+        if address_format_type == AddressFormatType.BASIC:
+            self.populate_basic_address(address_dict, address_data_dict, address_key_prefix)
+        elif address_format_type == AddressFormatType.FOREIGN:
             self.populate_foreign_address(address_dict, address_data_dict, address_key_prefix)
-        elif address_format_type == 'FOR':
-            self.populate_foreign_address(address_dict, address_data_dict, address_key_prefix)
-        elif address_format_type == 'ADV':
-            # todo sort out how advanced should work
-            # populate_advanced_address(address_dict, filing_data, address_key_prefix)
-            self.populate_foreign_address(address_dict, address_data_dict, address_key_prefix)
+        elif address_format_type == AddressFormatType.ADVANCED:
+            self.populate_advanced_address(address_dict, address_data_dict, address_key_prefix)
         else:
             raise Exception('unknown address format type: ' + address_format_type)
 
 
     def populate_basic_address(self, address_dict: dict, address_data_dict: dict, address_key_prefix: str):
-
-        unit_type_key = f'{address_key_prefix}unit_type'
-        unit_no_key = f'{address_key_prefix}unit_no'
-        civic_no_key = f'{address_key_prefix}civic_no'
-        civic_no_suffix_key = f'{address_key_prefix}civic_no_suffix'
-        street_name_key = f'{address_key_prefix}street_name'
-        street_type_key = f'{address_key_prefix}street_type'
-        street_direction_key = f'{address_key_prefix}street_direction'
-
         postal_code_key = f'{address_key_prefix}postal_cd'
         city_key = f'{address_key_prefix}city'
         province_key = f'{address_key_prefix}province'
+        country_key = f'{address_key_prefix}country_typ_cd'
+        delivery_instructions_key = f'{address_key_prefix}delivery_instructions'
+        street_address = get_street_address(AddressFormatType.BASIC, address_data_dict, address_key_prefix)
+        street_additional = get_street_additional(AddressFormatType.BASIC, address_data_dict, address_key_prefix)
+
+        address_dict['postalCode'] = address_data_dict[postal_code_key]
+        address_dict['addressCity'] = address_data_dict[city_key]
+        address_dict['addressRegion'] = address_data_dict[province_key]
+        address_dict['addressCountry'] = address_data_dict[country_key]
+        address_dict['streetAddress'] = street_address
+        address_dict['streetAddressAdditional'] = street_additional
+        address_dict['deliveryInstructions'] = address_data_dict[delivery_instructions_key]
 
 
     def populate_advanced_address(self, address_dict: dict, address_data_dict: dict, address_key_prefix: str):
-        raise Exception('still need to implement')
+        postal_code_key = f'{address_key_prefix}postal_cd'
+        city_key = f'{address_key_prefix}city'
+        province_key = f'{address_key_prefix}province'
+        country_key = f'{address_key_prefix}country_typ_cd'
+        delivery_instructions_key = f'{address_key_prefix}delivery_instructions'
+        street_address = get_street_address(AddressFormatType.ADVANCED, address_data_dict, address_key_prefix)
+        street_additional = get_street_additional(AddressFormatType.ADVANCED, address_data_dict, address_key_prefix)
+
+        address_dict['postalCode'] = address_data_dict[postal_code_key]
+        address_dict['addressCity'] = address_data_dict[city_key]
+        address_dict['addressRegion'] = address_data_dict[province_key]
+        address_dict['addressCountry'] = address_data_dict[country_key]
+        address_dict['streetAddress'] = street_address
+        address_dict['streetAddressAdditional'] = street_additional
+        address_dict['deliveryInstructions'] = address_data_dict[delivery_instructions_key]
 
 
     def populate_foreign_address(self, address_dict: dict, address_data_dict: dict, address_key_prefix: str):
@@ -301,18 +325,14 @@ class FirmFilingJsonFactoryService:
         province_key = f'{address_key_prefix}province'
         country_key = f'{address_key_prefix}country_typ_cd'
         delivery_instructions_key = f'{address_key_prefix}delivery_instructions'
-        addr_line_1_key = f'{address_key_prefix}addr_line_1'
-        addr_line_2_key = f'{address_key_prefix}addr_line_2'
-        addr_line_3_key = f'{address_key_prefix}addr_line_3'
-        addr_line_2 = address_data_dict[addr_line_2_key]
-        addr_line_3 = address_data_dict[addr_line_3_key]
-        street_additional = get_street_additional(addr_line_2, addr_line_3)
+        street_address = get_street_address(AddressFormatType.FOREIGN, address_data_dict, address_key_prefix)
+        street_additional = get_street_additional(AddressFormatType.FOREIGN, address_data_dict, address_key_prefix)
 
         address_dict['postalCode'] = address_data_dict[postal_code_key]
         address_dict['addressCity'] = address_data_dict[city_key]
         address_dict['addressRegion'] = address_data_dict[province_key]
         address_dict['addressCountry'] = address_data_dict[country_key]
-        address_dict['streetAddress'] = address_data_dict[addr_line_1_key]
+        address_dict['streetAddress'] = street_address
         address_dict['streetAddressAdditional'] = street_additional
         address_dict['deliveryInstructions'] = address_data_dict[delivery_instructions_key]
 
@@ -338,9 +358,7 @@ class FirmFilingJsonFactoryService:
 
     def populate_dissolution(self, filing_dict: dict):
         dissolution_dict = filing_dict['filing']['dissolution']
-
-        effective_dts = self._filing_data['f_effective_dts']
-        effective_dt_str = effective_dts.strftime('%Y-%m-%d')
+        effective_dt_str = self._filing_data['f_effective_dt_str']
         dissolution_dict['dissolutionDate'] = effective_dt_str
 
         if len(self._filing_data['corp_parties']) > 0:

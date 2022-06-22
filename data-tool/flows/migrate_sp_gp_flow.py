@@ -12,7 +12,8 @@ from prefect.schedules import IntervalSchedule
 from config import get_named_config
 from common.firm_queries import get_unprocessed_firms_query
 from common.event_filing_service import EventFilingService, REGISTRATION_EVENT_FILINGS
-from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data
+from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data, \
+    clean_corp_data
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
@@ -47,23 +48,6 @@ def get_unprocessed_firms(config, db_engine: engine):
         raw_data_dict = df.to_dict('records')
         corp_nums = [x.get('corp_num') for x in raw_data_dict]
         logger.info(f'{len(raw_data_dict)} corp_nums to process from colin data: {corp_nums}')
-
-    # following code can be used to test incremental update scenarios
-    # i.e. testing of a business that has processed all filings but new filings come in at a later date
-    # raw_dict_entry = raw_data_dict[0]
-    # event_file_types = raw_dict_entry['event_file_types'].split(',')
-    # event_file_types.pop()
-    # event_file_types.pop()
-    # event_file_types = ",".join(x for x in event_file_types)
-    # raw_dict_entry['event_file_types'] = event_file_types
-    #
-    # event_ids = raw_dict_entry['event_ids']
-    # event_ids.pop()
-    # event_ids.pop()
-    # raw_dict_entry['event_ids'] = event_ids
-    # event_ids_len = len(event_ids)
-    #
-    # raw_dict_entry['last_event_id'] = event_ids[event_ids_len - 1]
 
     return raw_data_dict
 
@@ -137,10 +121,11 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
     try:
         event_filing_data_arr = event_filing_data_dict['event_filing_data']
         for event_filing_data in event_filing_data_arr:
-            if not event_filing_data['is_in_lear'] and event_filing_data['is_supported_type']:
+            if event_filing_data['is_supported_type']:
                 filing_data = event_filing_data['data']
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
+                clean_corp_data(config, filing_data)
                 corp_name = filing_data['curr_corp_name']
                 clean_naics_data(filing_data)
                 clean_corp_party_data(filing_data)
@@ -235,7 +220,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                         target_lear_filing_type = filing_data['target_lear_filing_type']
                         filing_json = event_filing_data['filing_json']
                         populate_filing_json_from_lear(db_lear, event_filing_data, business)
-                        effective_date = filing_data['f_effective_dts']
+                        effective_date = filing_data['f_effective_dts_utc']
                         corp_name = filing_data['curr_corp_name']
 
                         # save filing to filing table

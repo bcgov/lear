@@ -99,7 +99,11 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
                                                                                 filing_event_data)
 
             elif filing.get('changeOfRegistration'):
-                change_of_registration.process(business, filing_submission, filing, filing_meta)
+                change_of_registration.process(business,
+                                               filing_submission,
+                                               filing,
+                                               filing_meta,
+                                               filing_event_data)
 
             elif filing.get('dissolution'):
                 dissolution.process(business, filing, filing_submission, filing_meta)

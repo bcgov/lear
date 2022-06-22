@@ -25,12 +25,17 @@ from .filing_components import (
     create_party,
     create_role,
     filings,
-    update_address,
+    update_address, create_address,
 )
+from .filing_components.offices import update_offices
 from flask import current_app
 
 
-def process(business: Business, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
+def process(business: Business,
+            change_filing_rec: Filing,
+            change_filing: Dict,
+            filing_meta: FilingMeta,
+            filing_event_data: Dict):
     """Render the change of registration filing onto the business model objects."""
     filing_meta.change_of_registration = {}
     # Update business legalName if present
@@ -52,14 +57,19 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                                                  'naicsDescription': naics.get('naicsDescription')}}
         business_info.update_naics_info(business, naics)
 
-    # Update business office if present
+    prev_offices = filing_event_data.get('prev_event_filing_data', {}).get('offices', [])
+    # Update business office if was previously present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(change_filing, '/changeOfRegistration/offices/businessOffice')
-        for updated_address in business_office_json.values():
-            if updated_address.get('id', None):
-                address = Address.find_by_id(updated_address.get('id'))
-                if address:
-                    update_address(address, updated_address)
+        if prev_offices:
+                business_office_json = dpath.util.get(change_filing, '/changeOfRegistration/offices/businessOffice')
+                for updated_address in business_office_json.values():
+                    if updated_address.get('id', None):
+                        address = Address.find_by_id(updated_address.get('id'))
+                        if address:
+                            update_address(address, updated_address)
+        # Create business office if it didn't previously exist and it's present in filing json
+        elif not prev_offices and (offices := dpath.util.get(change_filing, '/changeOfRegistration/offices')):
+            update_offices(business, offices)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
@@ -107,12 +117,24 @@ def _update_party(party_info):
         party.email = party_info['officer'].get('email', '').lower()
         identifier = party_info['officer'].get('identifier', '')
         party.identifier = identifier.upper() if identifier else identifier
-        party.tax_id = party_info['officer'].get('taxId', '').upper()
-        # add addresses to party
+        if (tax_id := party_info['officer'].get('taxId')):
+            party.tax_id = tax_id.upper()
+        else:
+            party.tax_id = None
+
+        # add or update addresses for party
         if party_info.get('deliveryAddress', None):
-            update_address(party.delivery_address, party_info.get('deliveryAddress'))
+            if party.delivery_address:
+                update_address(party.delivery_address, party_info.get('deliveryAddress'))
+            else:
+                address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
+                party.delivery_address = address
         if party_info.get('mailingAddress', None):
-            update_address(party.mailing_address, party_info.get('mailingAddress'))
+            if party.mailing_address:
+                update_address(party.mailing_address, party_info.get('mailingAddress'))
+            else:
+                mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
+                party.mailing_address = mailing_address
 
 
 def _create_party_info(business, change_filing_rec, party_info):

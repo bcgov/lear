@@ -60,12 +60,7 @@ def update_business_info(corp_num: str, tax_id: str, business: Business, busines
 def update_naics_info(business: Business, naics: Dict):
     """Update naics info."""
     business.naics_code = naics.get('naicsCode')
-    # TODO resolve 150 length issue
-    # business.naics_description = naics.get('naicsDescription')
-    naics_desc = naics.get('naicsDescription')
-    if naics_desc:
-        naics_desc = naics_desc[0:150]
-        business.naics_description = naics_desc
+    business.naics_description = naics.get('naicsDescription')
 
 
 def get_next_corp_num(legal_type: str):

@@ -63,17 +63,18 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
             .filter(Office.office_type == 'businessOffice') \
             .one_or_none()
 
-        mailing_address = business_office.addresses \
-            .filter(Address.address_type == 'mailing') \
-            .one_or_none()
-        if mailing_address:
-            business_office_json['mailingAddress']['id'] = mailing_address.id
+        if business_office:
+            mailing_address = business_office.addresses \
+                .filter(Address.address_type == 'mailing') \
+                .one_or_none()
+            if mailing_address:
+                business_office_json['mailingAddress']['id'] = mailing_address.id
 
-        delivery_address = business_office.addresses \
-            .filter(Address.address_type == 'delivery') \
-            .one_or_none()
-        if delivery_address:
-            business_office_json['deliveryAddress']['id'] = delivery_address.id
+            delivery_address = business_office.addresses \
+                .filter(Address.address_type == 'delivery') \
+                .one_or_none()
+            if delivery_address:
+                business_office_json['deliveryAddress']['id'] = delivery_address.id
 
 
 def get_colin_event(db: any, event_id: int):

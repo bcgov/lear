@@ -99,7 +99,6 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
     business.founding_date = datetime.fromisoformat(registration_filing.get('startDate'))
     if (naics := registration_filing.get('business', {}).get('naics')):
-        # TODO resolve 150 length issue
         business_info.update_naics_info(business, naics)
 
     business.state = Business.State.ACTIVE

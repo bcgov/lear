@@ -1,4 +1,17 @@
+from enum import Enum
+
 import pandas as pd
+
+
+class AddressFormatType(str, Enum):
+    BASIC = 'BAS'
+    ADVANCED = 'ADV'
+    FOREIGN = 'FOR'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 def get_certified_by(filing_data: dict):
     user_id = filing_data.get('u_user_id')
@@ -15,11 +28,62 @@ def get_certified_by(filing_data: dict):
     return ''
 
 
-def get_street_additional(addr_line_2: str, addr_line_3: str):
-    addr_line_2 = addr_line_2 if addr_line_2 else ''
-    addr_line_2 = addr_line_2.strip()
-    addr_line_3 = addr_line_3 if addr_line_3 else ''
-    result = f'{addr_line_2} {addr_line_3}'
+def get_street_additional(address_format_type: str, address_data_dict: dict, address_key_prefix: str):
+    result = ''
+
+    if address_format_type == AddressFormatType.FOREIGN:
+        addr_line_2_key = f'{address_key_prefix}addr_line_2'
+        addr_line_3_key = f'{address_key_prefix}addr_line_3'
+        addr_line_2 = address_data_dict[addr_line_2_key]
+        addr_line_3 = address_data_dict[addr_line_3_key]
+        addr_line_2 = addr_line_2 if addr_line_2 else ''
+        addr_line_2 = addr_line_2.strip()
+        addr_line_3 = addr_line_3 if addr_line_3 else ''
+        result = f'{addr_line_2} {addr_line_3}'
+    elif address_format_type == AddressFormatType.ADVANCED:
+        route_service_type_key = f'{address_key_prefix}route_service_type'
+        lock_box_no_key = f'{address_key_prefix}lock_box_no'
+        route_service_no_key = f'{address_key_prefix}route_service_no'
+        installation_type_key = f'{address_key_prefix}installation_type'
+        installation_name_key = f'{address_key_prefix}installation_name'
+        street_additional_elements = [address_data_dict[route_service_type_key],
+                                   address_data_dict[lock_box_no_key],
+                                   address_data_dict[route_service_no_key],
+                                   address_data_dict[installation_type_key],
+                                   address_data_dict[installation_name_key]]
+        for element in street_additional_elements:
+            if element:
+                result += f' {element}'
+
+    result = result.strip()
+    return result
+
+
+def get_street_address(address_format_type: str, address_data_dict: dict, address_key_prefix: str):
+    result = ''
+
+    if address_format_type == AddressFormatType.FOREIGN:
+        addr_line_1_key = f'{address_key_prefix}addr_line_1'
+        result = address_data_dict[addr_line_1_key]
+    elif address_format_type in (AddressFormatType.BASIC, AddressFormatType.ADVANCED):
+        unit_type_key = f'{address_key_prefix}unit_type'
+        unit_no_key = f'{address_key_prefix}unit_no'
+        civic_no_key = f'{address_key_prefix}civic_no'
+        civic_no_suffix_key = f'{address_key_prefix}civic_no_suffix'
+        street_name_key = f'{address_key_prefix}street_name'
+        street_type_key = f'{address_key_prefix}street_type'
+        street_direction_key = f'{address_key_prefix}street_direction'
+        street_address_elements = [address_data_dict[unit_type_key],
+                                   address_data_dict[unit_no_key],
+                                   address_data_dict[civic_no_key],
+                                   address_data_dict[civic_no_suffix_key],
+                                   address_data_dict[street_name_key],
+                                   address_data_dict[street_type_key],
+                                   address_data_dict[street_direction_key]]
+        for element in street_address_elements:
+            if element:
+                result += f' {element}'
+
     result = result.strip()
     return result
 

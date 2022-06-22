@@ -35,9 +35,9 @@ def validate_business(row_dict: dict):
         logger.error(f'naics code but no naics desc: {row_dict}')
         raise CustomException('naics code but no naics desc', row_dict)
 
-    if naics_desc and len(naics_desc) > 150:
-        logger.error(f'naics desc greater than length 150: {row_dict}')
-        raise CustomException('naics desc greater than length 150', row_dict)
+    if naics_desc and len(naics_desc) > 300:
+        logger.error(f'naics desc greater than length 300: {row_dict}')
+        raise CustomException('naics desc greater than length 300', row_dict)
 
     naics_desc_pattern = r'\[NAICS-\d{6}\]'
     matches = re.search(naics_desc_pattern, naics_desc, flags=re.IGNORECASE)
