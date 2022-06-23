@@ -399,6 +399,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'LLC': 'Limited Liability Company'
     }
 
+
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
 
