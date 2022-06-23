@@ -56,12 +56,14 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
     def _get_report_filename(self):
         report_date = str(self._report_date_time)[:19]
-        return '{}_{}_{}.pdf'.format(self._business.identifier, report_date, 'Summary').replace(' ', '_')
+        return '{}_{}_{}.pdf'.format(self._business.identifier, report_date,
+                                     ReportMeta.reports[self._document_key]['reportName']).replace(' ', '_')
 
     def _get_template(self):
         try:
             template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-            template_code = Path(f'{template_path}/businessSummary.html').read_text()
+            template_file_name = ReportMeta.reports[self._document_key]['templateName']
+            template_code = Path(f'{template_path}/{template_file_name}.html').read_text()
             # substitute template parts
             template_code = self._substitute_template_parts(template_code)
         except Exception as err:
@@ -85,6 +87,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'common/businessDetails',
             'common/nameTranslation',
             'common/style',
+            'common/certificateLogo',
+            'common/certificateRegistrarSignature',
+            'common/certificateSeal',
+            'common/certificateStyle',
             'footer',
             'logo',
             'macros',
@@ -102,19 +108,23 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             business_json['reportType'] = self._document_key
             business_json['business'] = self._business.json()
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
+
             self._set_business_details(business_json)
-            self._set_directors(business_json)
-            self._set_parties(business_json)
-            self._set_addresses(business_json)
+
+            if self._document_key == 'summary':
+                self._set_directors(business_json)
+                self._set_parties(business_json)
+                self._set_addresses(business_json)
+                self._set_name_translations(business_json)
+                self._set_business_state_changes(business_json)
+                self._set_record_keepers(business_json)
+                self._set_business_changes(business_json)
+                self._set_amalgamation_details(business_json)
+                self._set_liquidation_details(business_json)
+
             self._set_dates(business_json)
             self._set_description(business_json)
             self._set_meta_info(business_json)
-            self._set_name_translations(business_json)
-            self._set_business_state_changes(business_json)
-            self._set_record_keepers(business_json)
-            self._set_business_changes(business_json)
-            self._set_amalgamation_details(business_json)
-            self._set_liquidation_details(business_json)
         except Exception as e:
             current_app.logger.error(e)
             raise e
@@ -172,6 +182,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._business.dissolution_date)
             business['formatted_dissolution_date'] = dissolution_datetime.strftime('%B %-d, %Y')
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
+        business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
 
     def _set_addresses(self, business: dict):
         address_json = get_addresses(self._business.identifier).json
@@ -386,4 +397,18 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         'BC': 'BC Limited Company',
         'CC': 'BC Community Contribution Company',
         'LLC': 'Limited Liability Company'
+    }
+
+class ReportMeta:  # pylint: disable=too-few-public-methods
+    """Helper class to maintain the report meta information."""
+
+    reports = {
+        'summary': {
+            'reportName': 'summary',
+            'templateName': 'businessSummary'
+        },
+        'cogs': {
+            'reportName': 'Certificate_of_Good_Standing',
+            'templateName': 'certificateOfGoodStanding'
+        }
     }

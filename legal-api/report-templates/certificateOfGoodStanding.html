@@ -1,0 +1,72 @@
+[[macros.html]]
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Certificate of Good Standing</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/certificateStyle.html]]
+  </head>
+
+  <body>
+    <div class="outer-container">
+      <div class="outer-container-header">
+        <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+      </div>      
+
+      <div class="certificate-statements">
+          [[common/certificateLogo.html]]
+
+          <div class="cert-title-container">
+            <div class="sub-header-1">Certificate  of</div>
+            <div class="incorporation-header">GOOD STANDING</div>
+            <div class="sub-header-2">{{ entityAct }}</div>
+          </div>
+
+          <div class="certify-clause-container">
+            <div class="cert-statement-no-spacing">I hereby certify that</div>
+            <div class="company-name-header-cogs">
+              <div>{{ business.legalName }}</div>
+            </div>
+            <div class="cert-statement-cogs">
+              was incorporated as a {{entityDescription}} under the laws of the
+              Province of British Columbia on {{formatted_founding_date}} and is, according to the records
+              of this office, a valid and existing {{entityDescription}}, and is, with respect to the filing of
+              annual reports, in good standing.
+            </div>
+          </div>
+
+          <p>______</p>
+
+          <div class="issue-details">
+            <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
+            <div class="cert-statement">on {{ report_date }}</div>
+          </div>
+      </div>
+
+      <br/>
+      <div>
+        <table class="footer-table" role="presentation">
+          <tr>
+            <td class="seal-container">[[common/certificateSeal.html]]</td>
+            <td class="registrar-info-container">
+              <div class="registrar-info">
+                <div>[[common/certificateRegistrarSignature.html]]</div>
+                <div>
+                  <div class="registrar-name">{{ registrarInfo.name }}</div>
+                  <div class="registrar-title">{{ registrarInfo.title }}</div>
+                </div>
+                <div class="province-country-info">
+                  <div>PROVINCE OF BRITISH COLUMBIA</div>
+                  <div class="country">CANADA</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+  <footer class="footer-style">ELECTRONIC CERTIFICATE</footer>
+</html>
