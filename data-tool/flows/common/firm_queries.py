@@ -11,12 +11,29 @@ def get_unprocessed_firms_query(data_load_env: str):
                   from event e
                            left outer join filing f on e.event_id = f.event_id
                   where 1 = 1
---                     and e.corp_num = 'FM0632494' -- complex change registration example
+                        -- complex change registration examples
+--                         and e.corp_num in ('FM0632494', 'FM0554197', 'FM0429973', 'FM0433647', 'FM0433664', 'FM0434289', 
+--                                            'FM0436872') 
 --                     and e.corp_num = 'FM0399872' -- can be used to test incremental processing
 --                     and e.corp_num = 'FM0554955' -- can be used to test incremental processing
---                     and e.corp_num = 'FM0272694'
+                       -- incremental load testing 
+--                        and e.corp_num in 'FM0775109', 'FM0558927', 'FM0706557', 'FM0799312','FM0675146', 'FM0772925'
+                        -- firms that need backslash added to corp name
+--                        and e.corp_num in ('FM0151616', 'FM0236781', 'FM0185321', 'FM0259938', 'FM0249302', 'FM0446106',
+--                                           'FM0270319', 'FM0344562', 'FM0344563', 'FM0285081', 'FM0303834', 'FM0789778', 
+--                                           'FM0535825', 'FM0749012')
 --                     -- firms with missing req'd business info 
 --                     and e.corp_num in ('FM0614946', 'FM0614924', 'FM0613627', 'FM0613561', 'FM0272480', 'FM0272488')
+                       -- naics length greater than 150
+--                        and e.corp_num in ('FM0779644', 'FM0779657', 'FM0779771', 'FM0780109', 'FM0780298', 'FM0780352')
+                       -- firms that had address issues
+--                     and e.corp_num in ('FM0281021', 'FM0472059', 'FM0279239')
+                       -- firms with basic address format
+--                        and e.corp_num = 'FM0585484'  
+                       -- firms with advanced address format
+--                        and e.corp_num = 'FM0367712'
+                        -- utc testing
+--                         and e.corp_num = 'FM0554193'
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -73,13 +90,14 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
-            e.event_timerstamp     as e_event_dt,
+            to_char(e.event_timerstamp, 'YYYY-MM-DD') as e_event_dt_str,
+            to_char(e.event_timerstamp, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as e_event_dts_utc,
             e.trigger_dts          as e_trigger_dts,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
-            f.effective_dt         as f_effective_dt,
-            TO_TIMESTAMP(to_char(f.effective_dt, 'YYYY-MM-DD'), 'YYYY-MM-DD') as f_effective_dts,
+            to_char(f.effective_dt, 'YYYY-MM-DD') as f_effective_dt_str,
+            to_char(f.effective_dt, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as f_effective_dts_utc,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             f.ods_type_cd          as f_ods_type,
             f.nr_num               as f_nr_num,
@@ -87,7 +105,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             c.corp_num             as c_corp_num,
             c.corp_frozen_type_cd  as c_corp_frozen_type_cd,
             c.corp_type_cd         as c_corp_type_cd,
-            TO_TIMESTAMP(to_char(c.recognition_dts, 'YYYY-MM-DD'), 'YYYY-MM-DD') as c_recognition_dts,
+            to_char(c.recognition_dts, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as c_recognition_dts_utc,
             c.bn_9                 as c_bn_9,
             c.bn_15                as c_bn_15,
             c.admin_email          as c_admin_email,
@@ -106,7 +124,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             bd.corp_num            as bd_corp_num,
             bd.start_event_id      as bd_start_event_id,
             bd.end_event_id        as bd_end_event_id,
-            TO_TIMESTAMP(to_char(bd.business_start_date, 'YYYY-MM-DD'), 'YYYY-MM-DD') as bd_business_start_date,
+            to_char(bd.business_start_date, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as bd_business_start_date_dts_utc,
             bd.naics_code          as bd_naics_code,
             bd.description         as bd_description,
             -- ledger_text
@@ -152,10 +170,9 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                                                 event_id: int,
                                                 prev_event_ids: list,
                                                 event_filing_data_dict: dict):
-    effective_dt = event_filing_data_dict['f_effective_dt']
-    event_dt = event_filing_data_dict['e_event_dt']
-    appointment_dt = effective_dt if effective_dt else event_dt
-    appoint_dt_str = appointment_dt.strftime('%Y-%m-%d')
+    f_effective_dt_str = event_filing_data_dict['f_effective_dt_str']
+    event_dt_str = event_filing_data_dict['e_event_dt_str']
+    appoint_dt_str = f_effective_dt_str if f_effective_dt_str else event_dt_str
 
     sub_condition = ''
 
@@ -230,7 +247,7 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                ma.installation_name      as ma_installation_name,
                ma.installation_qualifier as ma_installation_qualifier,
                ma.route_service_type     as ma_route_service_type,
-               ma.route_service_no       as ma_route_service_no,
+               ma.route_service_no       as ma_route_service_no,           
                -- delivery address
                da.addr_id                as da_addr_id,
                da.province               as da_province,
