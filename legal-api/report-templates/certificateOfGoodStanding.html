@@ -12,7 +12,14 @@
   <body>
     <div class="outer-container">
       <div class="outer-container-header">
-        <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+        <div class="business-number">
+          {% if business.legalType in ['GP', 'SP'] %}
+            <span>Registration Number: </span>
+          {% else %}
+            <span>Incorporation Number: </span>
+          {% endif %}
+          <span>{{ business.identifier }}</span>
+        </div>
       </div>      
 
       <div class="certificate-statements">
