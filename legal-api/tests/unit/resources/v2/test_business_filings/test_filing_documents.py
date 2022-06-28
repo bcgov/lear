@@ -226,8 +226,7 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      ),
     ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
-     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
+     {'documents': {'legalFilings': [
                         {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
                     ]
@@ -238,7 +237,6 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
     ('ben_correction_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'correction', CORRECTION, 'incorporationApplication', CORRECTED_INCORPORATION, Filing.Status.COMPLETED,
      {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
