@@ -66,12 +66,12 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
                 f'Queue Error: Could not create custodial office for Dissolution filing:{filing.id}',
                 level='error')
 
+    filing_rec.order_details = dissolution_filing.get('details')
+
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
-
-    filing_rec.order_details = dissolution_filing.get('details')
 
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec)
