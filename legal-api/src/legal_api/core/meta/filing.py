@@ -153,7 +153,7 @@ FILINGS: Final = {
             'CP': 'CRCTN'
         },
         'additional': [
-            {'types': 'CP,BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'courtOrder': {
