@@ -278,6 +278,15 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
       },
      HTTPStatus.OK, None
      ),
+    ('cp_correction_ar', 'CP7654321', Business.LegalTypes.COOP.value,
+     'correction', CORRECTION_AR, None, None , Filing.Status.COMPLETED,
+     {'documents': {'legalFilings': [
+                        {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
+                    ]
+                    }
+     },
+     HTTPStatus.OK, None
+     ),
     ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {
