@@ -73,6 +73,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
+    err = validate_dissolution_details(dissolution)
+    if err:
+        msg.extend(err)
+
     err = validate_dissolution_statement_type(dissolution, legal_type)
     if err:
         msg.extend(err)
@@ -89,6 +93,20 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+    return None
+
+
+def validate_dissolution_details(filing_json) -> Optional[list]:
+    """Validate details for administrative dissolution."""
+    msg = []
+    dissolution_type_path = '/filing/dissolution/dissolutionType'
+    dissolution_type = get_str(filing_json, dissolution_type_path)
+    dissolution_details_path = '/filing/dissolution/details'
+    dissolution_details = get_str(filing_json, dissolution_details_path)
+    if dissolution_type and dissolution_type == DissolutionTypes.ADMINISTRATIVE.value and not dissolution_details:
+        msg.append({'error': _('Administrative dissolution must have details'), 'path': dissolution_details_path})
+        return msg
+
     return None
 
 
