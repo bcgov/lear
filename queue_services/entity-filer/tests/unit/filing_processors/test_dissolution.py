@@ -22,7 +22,7 @@ import pytest
 from legal_api.models import Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from registry_schemas.example_data import DISSOLUTION, FILING_HEADER, COURT_ORDER
+from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
 from tests.utils import upload_file, assert_pdf_contains_text
 
