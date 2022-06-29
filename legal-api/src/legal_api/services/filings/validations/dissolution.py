@@ -121,7 +121,6 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
                     DISSOLUTION_MAPPING['FIRMS']):
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
-
     else:
         msg.append({'error': _('Dissolution type must be provided.'),
                     'path': dissolution_type_path})
