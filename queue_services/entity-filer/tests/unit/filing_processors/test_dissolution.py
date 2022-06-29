@@ -137,7 +137,6 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
     filing_json['filing']['dissolution']['hasLiabilities'] = has_liabilities
     filing_json['filing']['dissolution']['details'] = 'Some Details here'
-    filing_json['filing']['dissolution']['courtOrder'] = COURT_ORDER
 
     if legal_type == Business.LegalTypes.COOP.value:
         affidavit_uploaded_by_user_file_key = upload_file('affidavit.pdf')
