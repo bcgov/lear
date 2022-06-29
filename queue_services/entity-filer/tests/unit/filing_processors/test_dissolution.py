@@ -202,4 +202,4 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
 
     final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['dissolution']['details'] == final_filing.order_details
+    assert filing_json['filing']['dissolution']['details'] == final_filing.order_details
