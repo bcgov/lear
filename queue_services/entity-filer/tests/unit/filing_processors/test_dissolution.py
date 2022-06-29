@@ -115,3 +115,87 @@ def test_voluntary_dissolution(app, session, minio_server, legal_type, identifie
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
+
+
+@pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
+    ('SP', 'FM1234567', 'administrative'),
+    ('GP', 'FM1234567', 'administrative'),
+])
+def test_administrative_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
+    """Assert that the dissolution is processed."""
+    # setup
+    filing_json = copy.deepcopy(FILING_HEADER)
+    dissolution_date = '2018-04-08'
+    has_liabilities = False
+    filing_json['filing']['header']['name'] = 'dissolution'
+
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = legal_type
+
+    filing_json['filing']['dissolution'] = DISSOLUTION
+    filing_json['filing']['dissolution']['dissolutionDate'] = dissolution_date
+    filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
+    filing_json['filing']['dissolution']['hasLiabilities'] = has_liabilities
+    filing_json['filing']['dissolution']['details'] = 'Some Details'
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        affidavit_uploaded_by_user_file_key = upload_file('affidavit.pdf')
+        filing_json['filing']['dissolution']['affidavitFileKey'] = affidavit_uploaded_by_user_file_key
+        filing_json['filing']['dissolution']['affidavitFileName'] = 'affidavit.pdf'
+
+    business = create_business(identifier, legal_type=legal_type)
+    member = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role.save()
+    curr_roles = len(business.party_roles.all())
+
+    business.dissolution_date = None
+    business_id = business.id
+
+    filing_meta = FilingMeta()
+    filing = create_filing('123', filing_json)
+
+    # test
+    dissolution.process(business, filing_json['filing'], filing, filing_meta)
+    business.save()
+
+    # validate
+    assert business.dissolution_date == filing.effective_date
+    assert business.state == Business.State.HISTORICAL
+    assert business.state_filing_id == filing.id
+    assert len(business.party_roles.all()) == 2
+    assert len(filing.filing_party_roles.all()) == 1
+
+    custodial_office = session.query(Business, Office). \
+            filter(Business.id == Office.business_id). \
+            filter(Business.id == business_id). \
+            filter(Office.office_type == OfficeType.CUSTODIAL). \
+            one_or_none()
+    assert custodial_office
+
+    if filing_json['filing']['business']['legalType'] == Business.LegalTypes.COOP.value:
+        documents = business.documents.all()
+        assert len(documents) == 1
+        assert documents[0].type == DocumentType.AFFIDAVIT.value
+        affidavit_key = filing_json['filing']['dissolution']['affidavitFileKey']
+        assert documents[0].file_key == affidavit_key
+        assert MinioService.get_file(documents[0].file_key)
+        affidavit_obj = MinioService.get_file(affidavit_key)
+        assert affidavit_obj
+        assert_pdf_contains_text('Filed on ', affidavit_obj.read())
+
+    assert filing_meta.dissolution['dissolutionType'] == dissolution_type
