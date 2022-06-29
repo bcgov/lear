@@ -9,7 +9,7 @@ from .firm_queries import get_firm_event_filing_data_query, \
 from .query_utils import convert_result_set_to_dict
 
 
-class REGISTRATION_EVENT_FILINGS(str, Enum):
+class RegistrationEventFilings(str, Enum):
     FILE_FRREG = 'FILE_FRREG'
     CONVFMREGI_FRREG = 'CONVFMREGI_FRREG'
 
@@ -17,7 +17,7 @@ class REGISTRATION_EVENT_FILINGS(str, Enum):
     def has_value(cls, value):
         return value in cls._value2member_map_
 
-class CHANGE_REGISTRATION_EVENT_FILINGS(str, Enum):
+class ChangeRegistrationEventFilings(str, Enum):
     CONVFMACP_FRMEM = 'CONVFMACP_FRMEM'
     #TODO currently has no event data.  need to determine what to do with these event/filing types
     # CONVFMMISS_FRADD = 'CONVFMMISS_FRADD'
@@ -45,16 +45,11 @@ class CHANGE_REGISTRATION_EVENT_FILINGS(str, Enum):
     FILE_NATGP = 'FILE_NATGP'
     FILE_NATSP = 'FILE_NATSP'
 
-    # TODO remove:
-    # temporarily mapping this to change registration filing as unable to test certain change registration
-    # event/filing types without being processing ADMIN_ADMCF
-    # ADMIN_ADMCF = 'ADMIN_ADMCF'
-
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
 
-class DISSOLUTION_EVENT_FILINGS(str, Enum):
+class DissolutionEventFilings(str, Enum):
     CONVFMDISS_FRDIS = 'CONVFMDISS_FRDIS'
     FILE_DISGP = 'FILE_DISGP'
     FILE_DISSP = 'FILE_DISSP'
@@ -65,50 +60,53 @@ class DISSOLUTION_EVENT_FILINGS(str, Enum):
     def has_value(cls, value):
         return value in cls._value2member_map_
 
+class OtherEventFilings(str, Enum):
+    ADMIN_ADMCF = 'ADMIN_ADMCF'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
 
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
-    REGISTRATION_EVENT_FILINGS.FILE_FRREG: 'registration',
-    REGISTRATION_EVENT_FILINGS.CONVFMREGI_FRREG: 'registration',
+    RegistrationEventFilings.FILE_FRREG: 'registration',
+    RegistrationEventFilings.CONVFMREGI_FRREG: 'registration',
 
-    CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMACP_FRMEM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.CONVFMACP_FRMEM: 'changeOfRegistration',
     #TODO currently has no event data.  need to determine what to do with these event/filing types
-    # CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMMISS_FRADD: 'changeOfRegistration',
-    # CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMMISS_FRCHG: 'changeOfRegistration',
-    # CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMMISS_FRMEM: 'changeOfRegistration',
-    # CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMMISS_FRNAT: 'changeOfRegistration',
-    # CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMRCP_FRMEM: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMNC_FRCHG: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMREGI_FRCHG: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.CONVFMREGI_FRMEM: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRADD: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMRCP_FRMEM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.CONVFMNC_FRCHG: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.CONVFMREGI_FRCHG: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.CONVFMREGI_FRMEM: 'changeOfRegistration',
 
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_ADDGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_ADDSP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_CHGGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_CHGSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_ADDGP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_ADDSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_CHGGP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_CHGSP: 'changeOfRegistration',
 
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_FRADD: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_FRCHG: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_FRMEM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRADD: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRCHG: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRMEM: 'changeOfRegistration',
 
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_FRNAM: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_FRNAT: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_MEMGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NAMGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NAMSP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NATGP: 'changeOfRegistration',
-    CHANGE_REGISTRATION_EVENT_FILINGS.FILE_NATSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRNAM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRNAT: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_MEMGP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_NAMGP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_NAMSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_NATGP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_NATSP: 'changeOfRegistration',
 
-    # TODO remove:
-    #  temporarily mapping this to change registration filing as unable to test certain change registration
-    # event/filing types without being processing ADMIN_ADMCF
-    # CHANGE_REGISTRATION_EVENT_FILINGS.ADMIN_ADMCF: 'changeOfRegistration'
+    DissolutionEventFilings.CONVFMDISS_FRDIS: 'dissolution',
+    DissolutionEventFilings.FILE_DISGP: 'dissolution',
+    DissolutionEventFilings.FILE_DISSP: 'dissolution',
+    DissolutionEventFilings.FILE_FRDIS: 'dissolution',
+    DissolutionEventFilings.FILE_LLREG: 'dissolution',
 
-    DISSOLUTION_EVENT_FILINGS.CONVFMDISS_FRDIS: 'dissolution',
-    DISSOLUTION_EVENT_FILINGS.FILE_DISGP: 'dissolution',
-    DISSOLUTION_EVENT_FILINGS.FILE_DISSP: 'dissolution',
-    DISSOLUTION_EVENT_FILINGS.FILE_FRDIS: 'dissolution',
-    DISSOLUTION_EVENT_FILINGS.FILE_LLREG: 'dissolution'
+    OtherEventFilings.ADMIN_ADMCF: 'conversion'
 }
 
 
@@ -175,7 +173,8 @@ class EventFilingService:
 
 
     def get_event_filing_is_supported(self, event_file_type: str):
-        if REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
-                CHANGE_REGISTRATION_EVENT_FILINGS.has_value(event_file_type) or \
-                DISSOLUTION_EVENT_FILINGS.has_value(event_file_type):
+        if RegistrationEventFilings.has_value(event_file_type) or \
+                ChangeRegistrationEventFilings.has_value(event_file_type) or \
+                DissolutionEventFilings.has_value(event_file_type) or \
+                OtherEventFilings.has_value(event_file_type):
             return True

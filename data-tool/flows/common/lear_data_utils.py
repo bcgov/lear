@@ -1,7 +1,7 @@
 from legal_api.models import Party, PartyRole, Business, Office, Address
 from legal_api.models.colin_event_id import ColinEventId
 
-from .event_filing_service import REGISTRATION_EVENT_FILINGS
+from .event_filing_service import RegistrationEventFilings
 
 
 def get_party_match(db: any, party_dict: dict, corp_num: str):
@@ -27,7 +27,7 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
     event_filing_type = event_filing_data['data']['event_file_type']
     filing_json = event_filing_data['filing_json']
 
-    if REGISTRATION_EVENT_FILINGS.has_value(event_filing_type):
+    if RegistrationEventFilings.has_value(event_filing_type):
         return
 
     parties_json = filing_json['filing'][filing_type].get('parties', [])

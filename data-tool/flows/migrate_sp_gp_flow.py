@@ -11,7 +11,7 @@ from prefect.schedules import IntervalSchedule
 
 from config import get_named_config
 from common.firm_queries import get_unprocessed_firms_query
-from common.event_filing_service import EventFilingService, REGISTRATION_EVENT_FILINGS
+from common.event_filing_service import EventFilingService, RegistrationEventFilings
 from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data, \
     clean_corp_data
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
@@ -215,7 +215,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                             raise CustomException(f'{error_msg}', filing_data)
 
                         business = None
-                        if not REGISTRATION_EVENT_FILINGS.has_value(event_filing_type):
+                        if not RegistrationEventFilings.has_value(event_filing_type):
                             business = Business.find_by_identifier(corp_num)
                         target_lear_filing_type = filing_data['target_lear_filing_type']
                         filing_json = event_filing_data['filing_json']
@@ -236,7 +236,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
                         # process filing with custom filer function
                         business = process_filing(config, filing.id, filing_data, db_lear)
-                        if REGISTRATION_EVENT_FILINGS.has_value(event_filing_type):
+                        if RegistrationEventFilings.has_value(event_filing_type):
                             filing.business_id = business.id
                             filing.save()
 
