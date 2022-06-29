@@ -109,7 +109,7 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
 
-        if dissolution_type and dissolution_type == 'administrative' and not dissolution_details:
+        if dissolution_type and dissolution_type ==  DissolutionTypes.ADMINISTRATIVE.value and not dissolution_details:
             msg.append({'error': _('Administrative dissolution must have details'), 'path': dissolution_details_path})
             return msg
 
