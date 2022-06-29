@@ -22,7 +22,7 @@ import pytest
 from legal_api.models import Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
+from registry_schemas.example_data import DISSOLUTION, FILING_HEADER, COURT_ORDER
 from entity_filer.filing_meta import FilingMeta
 from tests.utils import upload_file, assert_pdf_contains_text
 
@@ -137,6 +137,7 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
     filing_json['filing']['dissolution']['hasLiabilities'] = has_liabilities
     filing_json['filing']['dissolution']['details'] = 'Some Details here'
+    filing_json['filing']['dissolution']['courtOrder'] = COURT_ORDER
 
     if legal_type == Business.LegalTypes.COOP.value:
         affidavit_uploaded_by_user_file_key = upload_file('affidavit.pdf')
