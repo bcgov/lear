@@ -72,6 +72,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     err = validate_dissolution_type(dissolution, legal_type)
     if err:
         msg.extend(err)
+        
+    err = validate_dissolution_details(dissolution)
+    if err:
+        msg.extend(err)
 
     err = validate_dissolution_statement_type(dissolution, legal_type)
     if err:
@@ -91,14 +95,23 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
+def validate_dissolution_details(filing_json) -> Optional[list]:
+    """Validate details for administrative dissolution"""
+    msg = []
+    dissolution_type_path = '/filing/dissolution/dissolutionType'
+    dissolution_type = get_str(filing_json, dissolution_type_path)
+    dissolution_details_path = '/filing/dissolution/details'
+    dissolution_details = get_str(filing_json, dissolution_details_path)
+    if dissolution_type and dissolution_type ==  DissolutionTypes.ADMINISTRATIVE.value and not dissolution_details:
+         msg.append({'error': _('Administrative dissolution must have details'), 'path': dissolution_details_path})
+         return msg
+
 
 def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     """Validate dissolution type of the filing."""
     msg = []
     dissolution_type_path = '/filing/dissolution/dissolutionType'
-    dissolution_details_path = '/filing/dissolution/details'
     dissolution_type = get_str(filing_json, dissolution_type_path)
-    dissolution_details = get_str(filing_json, dissolution_details_path)
     if dissolution_type:
         # pylint: disable=too-many-boolean-expressions
         if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
@@ -107,10 +120,6 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
                 Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value) and dissolution_type not in
                     DISSOLUTION_MAPPING['FIRMS']):
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
-            return msg
-
-        if dissolution_type and dissolution_type ==  DissolutionTypes.ADMINISTRATIVE.value and not dissolution_details:
-            msg.append({'error': _('Administrative dissolution must have details'), 'path': dissolution_details_path})
             return msg
 
     else:
