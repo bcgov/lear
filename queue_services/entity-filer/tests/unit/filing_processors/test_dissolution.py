@@ -19,7 +19,7 @@ import pytz
 
 import pytest
 
-from legal_api.models import Business, Office, OfficeType, Party, PartyRole
+from legal_api.models import Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
@@ -168,6 +168,7 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
 
     filing_meta = FilingMeta()
     filing = create_filing('123', filing_json)
+    filing_id = filing.id
 
     # test
     dissolution.process(business, filing_json['filing'], filing, filing_meta)
@@ -199,3 +200,6 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
+
+    final_filing = Filing.find_by_id(filing_id)
+    assert filing['filing']['dissolution']['details'] == final_filing.order_details
