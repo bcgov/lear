@@ -91,6 +91,7 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
 
         - Corporations must file one AR per year, on or after the anniversary of the founding date
     """
+    entity_types_no_ar = ['SP', 'GP']
     tasks = []
     order = 1
 
@@ -136,27 +137,28 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
         tasks.append(task)
         order += 1
 
-    # If this is the first calendar year since incorporation, there is no previous ar year.
-    next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+    if business.legal_type not in entity_types_no_ar:
+        # If this is the first calendar year since incorporation, there is no previous ar year.
+        next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
-    # Checking for pending ar
-    annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
-    if annual_report_filings:
-        # Consider each filing as each year and add to find next ar year
-        next_ar_year += len(annual_report_filings)
+        # Checking for pending ar
+        annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
+        if annual_report_filings:
+            # Consider each filing as each year and add to find next ar year
+            next_ar_year += len(annual_report_filings)
 
-    ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
-
-    start_year = next_ar_year
-    while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
-        # while next_ar_year <= datetime.utcnow().date():
-        enabled = not pending_filings and ar_min_date.year == start_year
-        tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
-
-        # Include all ar's to todo from last ar filing
-        next_ar_year += 1
         ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
-        order += 1
+
+        start_year = next_ar_year
+        while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
+            # while next_ar_year <= datetime.utcnow().date():
+            enabled = not pending_filings and ar_min_date.year == start_year
+            tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
+
+            # Include all ar's to todo from last ar filing
+            next_ar_year += 1
+            ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
+            order += 1
     return tasks
 
 

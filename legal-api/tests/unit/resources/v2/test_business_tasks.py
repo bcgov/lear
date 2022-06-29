@@ -19,6 +19,7 @@ Test-Suite to ensure that the /tasks endpoint is working as expected.
 import copy
 from datetime import datetime
 from http import HTTPStatus
+from unittest.mock import patch
 
 import datedelta
 import pytest
@@ -261,19 +262,23 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),
     ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
     ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),
+    ('SP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.SOLE_PROP.value, 0),
+    ('GP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.PARTNERSHIP.value, 0)
 ])
-def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length):
+def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type,
+                             tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
-    from legal_api.resources.v1.business import TaskListResource
-    previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
-    business = factory_business(
-        identifier, founding_date, previous_ar_datetime, legal_type)
-    tasks = TaskListResource.construct_task_list(business)
-    assert len(tasks) == tasks_length
+    from legal_api.resources.v2.business.business_tasks import construct_task_list
+    with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):
+        previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
+        business = factory_business(
+            identifier, founding_date, previous_ar_datetime, legal_type)
+        tasks = construct_task_list(business)
+        assert len(tasks) == tasks_length
 
-    # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late
-    if tasks_length:
-        assert tasks[0]['task']['todo']['business']['nextAnnualReport'][-14:] != '00:00:00+00:00'
+        # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late
+        if tasks_length:
+            assert tasks[0]['task']['todo']['business']['nextAnnualReport'][-14:] != '00:00:00+00:00'
 
 
 @pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, conversion_task_expected', [
@@ -317,5 +322,3 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                                and x['task']['todo']['header']['status'] == 'NEW'
                                for x in rv_json['tasks'])
         assert not conversion_to_do
-
-
