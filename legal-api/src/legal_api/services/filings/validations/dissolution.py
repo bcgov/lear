@@ -96,7 +96,9 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     """Validate dissolution type of the filing."""
     msg = []
     dissolution_type_path = '/filing/dissolution/dissolutionType'
+    dissolution_details_path = '/filing/dissolution/details'
     dissolution_type = get_str(filing_json, dissolution_type_path)
+    dissolution_details = get_str(filing_json, dissolution_details_path)
     if dissolution_type:
         # pylint: disable=too-many-boolean-expressions
         if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
@@ -106,6 +108,11 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
                     DISSOLUTION_MAPPING['FIRMS']):
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
+
+        if dissolution_type and dissolution_type == 'administrative' and not dissolution_details:
+            msg.append({'error': _('Administrative dissolution must have details'), 'path': dissolution_details_path})
+            return msg
+
     else:
         msg.append({'error': _('Dissolution type must be provided.'),
                     'path': dissolution_type_path})

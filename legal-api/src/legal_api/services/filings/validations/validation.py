@@ -71,7 +71,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
             return err
     elif 'dissolution' in filing_json['filing'].keys() \
             and (dissolution_type := filing_json['filing']['dissolution'].get('dissolutionType', None)) \
-            and dissolution_type == 'voluntary':
+            and (dissolution_type == 'voluntary' or dissolution_type == 'administrative'):
         err = dissolution_validate(business, filing_json)
         if err:
             return err
