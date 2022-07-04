@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import auto
+from typing import List
 
 from legal_api.utils.base import BaseEnum
 
@@ -52,10 +53,23 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     service_name = db.Column('service_name', db.Enum(ServiceName), nullable=False)
     creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    is_admin = db.Column('is_admin', db.Boolean, default=False)
+    message_id = db.Column('message_id', db.String(60))
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+
+    @property
+    def json(self) -> dict:
+        """Return the request tracker as a json object."""
+        return {
+            'id': self.id,
+            'requestType': self.request_type,
+            'isProcessed': self.is_processed,
+            'serviceName': self.service_name,
+            'isAdmin': self.is_admin
+        }
 
     def save(self):
         """Save the object to the database immediately."""
@@ -75,7 +89,9 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
                 business_id: int,
                 service_name: ServiceName,
                 request_type: RequestType = None,
-                filing_id: int = None):
+                filing_id: int = None,
+                is_admin: bool = None,
+                message_id: str = None) -> List[RequestTracker]:
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
             filter(RequestTracker.business_id == business_id). \
@@ -86,6 +102,12 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
 
         if filing_id:
             query = query.filter(RequestTracker.filing_id == filing_id)
+
+        if is_admin:
+            query = query.filter(RequestTracker.is_admin == is_admin)
+
+        if message_id:
+            query = query.filter(RequestTracker.message_id == message_id)
 
         request_trackers = query.all()
         return request_trackers

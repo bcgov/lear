@@ -160,7 +160,8 @@ FILINGS: Final = {
         'name': 'courtOrder',
         'title': 'Court Order',
         'displayName': 'Court Order',
-        'code': 'NOFEE'},
+        'code': 'NOFEE'
+    },
     'dissolution': {
         'name': 'dissolution',
         'title': 'Voluntary Dissolution',
@@ -209,12 +210,14 @@ FILINGS: Final = {
         'name': 'registrarsNotation',
         'title': 'Registrars Notation',
         'displayName': "Registrar's Notation",
-        'code': 'NOFEE'},
+        'code': 'NOFEE'
+    },
     'registrarsOrder': {
         'name': 'registrarsOrder',
         'title': 'Registrars Order',
         'displayName': "Registrar's Order",
-        'code': 'NOFEE'},
+        'code': 'NOFEE'
+    },
     'registration': {
         'name': 'registration',
         'title': 'Registration',
@@ -222,7 +225,7 @@ FILINGS: Final = {
             'SP': 'BC Sole Proprietorship Registration',
             'GP': 'BC General Partnership Registration'
         },
-        'code': {
+        'codes': {
             'SP': 'FRREG',
             'GP': 'FRREG'
         },
@@ -232,7 +235,9 @@ FILINGS: Final = {
         'title': 'Special Resolution',
         'displayName': 'Special Resolution',
         'codes': {
-            'CP': 'SPRLN'}},
+            'CP': 'SPRLN'
+        }
+    },
     'transition': {
         'name': 'transition',
         'title': 'Transition',
@@ -252,7 +257,7 @@ FILINGS: Final = {
             'SP': 'Change of Proprietor Registration',
             'GP': 'Change of Partnership Registration'
         },
-        'code': {
+        'codes': {
             'SP': 'FMCHANGE',
             'GP': 'FMCHANGE'
         },
@@ -263,7 +268,7 @@ FILINGS: Final = {
     'putBackOn': {
         'name': 'putBackOn',
         'title': 'Put Back On',
-        'displayName':  'Correction - Put Back On',
+        'displayName': 'Correction - Put Back On',
         'code': 'NOFEE'
     }
 }
