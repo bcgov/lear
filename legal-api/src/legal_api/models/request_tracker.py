@@ -91,7 +91,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
                 request_type: RequestType = None,
                 filing_id: int = None,
                 is_admin: bool = None,
-                message_id: str = None) -> List[RequestTracker]:
+                message_id: str = None) -> List[RequestTracker]:  # pylint: disable=too-many-arguments
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
             filter(RequestTracker.business_id == business_id). \
