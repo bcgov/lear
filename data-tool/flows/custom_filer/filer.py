@@ -36,7 +36,7 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration, change_of_registration, dissolution, conversion
+from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on
 
 
 def get_filing_types(legal_filings: dict):
@@ -114,6 +114,10 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
             elif filing.get('dissolution'):
                 dissolution.process(business, filing, filing_submission, filing_meta)
 
+            elif filing.get('putBackOn'):
+                put_back_on.process(business, filing, filing_submission)
+
+
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
 
@@ -122,8 +126,7 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
         payment_type_cd = filing_event_data.get('payment_typ_cd')
         fee_cd = filing_event_data.get('fee_cd')
 
-        filing_meta.legacy_info = {
-            'source': 'COLIN',
+        filing_meta.colin_filing_info = {
             'eventType': event_type_cd,
             'filingType': filing_type_cd,
             'paymentType': payment_type_cd,
@@ -153,22 +156,28 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
             db.session.add(filing_submission)
             db.session.commit()
 
-        if any('changeOfRegistration' in x for x in legal_filings):
-            if config.UPDATE_ENTITY:
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type
-                )
+        if config.UPDATE_ENTITY and any('changeOfRegistration' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type
+            )
 
         # post filing changes to other services
-        if any('dissolution' in x for x in legal_filings):
-            if config.UPDATE_ENTITY:
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type,
-                    state=Business.State.HISTORICAL.name
-                )
+        if config.UPDATE_ENTITY and any('dissolution' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type,
+                state=Business.State.HISTORICAL.name
+            )
+
+        if config.UPDATE_ENTITY and any('putBackOn' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type,
+                state=Business.State.ACTIVE.name
+            )
 
         return business

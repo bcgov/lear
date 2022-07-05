@@ -251,6 +251,34 @@ def get_base_conversion_json():
     return conversion_json
 
 
+def get_base_put_back_on_filing_json():
+    put_back_on_json = get_base_put_back_on_json()
+    return put_back_on_json
+
+
+def get_base_put_back_on_json():
+    put_back_on_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'putBackOn',
+                'certifiedBy': None,
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalName': None,
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            "putBackOn": {
+                "details": None
+            }
+        }
+    }
+    return put_back_on_json
+
+
 def get_base_party_json():
     party_json = {
             'roles': [
