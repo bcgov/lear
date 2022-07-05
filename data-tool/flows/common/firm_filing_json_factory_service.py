@@ -1,5 +1,5 @@
 from .firm_filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
-    get_base_dissolution_filing_json
+    get_base_dissolution_filing_json, get_base_conversion_filing_json
 from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType
 
@@ -35,6 +35,8 @@ class FirmFilingJsonFactoryService:
             filing_json = self.get_change_registration_filing_json()
         elif self._target_lear_filing_type == 'dissolution':
             filing_json = self.get_voluntary_dissolution_filing_json()
+        elif self._target_lear_filing_type == 'conversion':
+            filing_json = self.get_conversion_filing_json()
 
         return filing_json
 
@@ -80,6 +82,20 @@ class FirmFilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_dissolution(filing_root_dict)
+        return filing_root_dict
+
+    def get_conversion_filing_json(self):
+        result = self.build_conversion_filing()
+        return result
+
+
+    def build_conversion_filing(self):
+        num_parties = len(self._filing_data['corp_parties'])
+        filing_root_dict = get_base_conversion_filing_json(num_parties)
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_conversion(filing_root_dict)
         return filing_root_dict
 
 
@@ -134,6 +150,35 @@ class FirmFilingJsonFactoryService:
             self.populate_nr(change_registration_dict)
         else:
             del change_registration_dict['nameRequest']
+
+
+    def populate_conversion(self, filing_dict: dict):
+        conversion_dict = filing_dict['filing']['conversion']
+
+        if self._filing_data.get('bd_start_event_id', None):
+            self.populate_filing_business(conversion_dict)
+        else:
+            del conversion_dict['business']
+
+        if len(self._filing_data['offices']) > 0:
+            self.populate_offices(conversion_dict)
+        else:
+            del conversion_dict['offices']
+
+        if len(self._filing_data['corp_parties']) > 0:
+            self.populate_parties(conversion_dict)
+        else:
+            del conversion_dict['parties']
+
+        if self._filing_data.get('cn_start_event_id') and self._filing_data.get('cn_corp_name'):
+            self.populate_nr(conversion_dict)
+        else:
+            del conversion_dict['nameRequest']
+
+        if self._filing_data.get('lt_event_id') and self._filing_data.get('lt_notation'):
+            self.populate_court_order(conversion_dict)
+        else:
+            del conversion_dict['courtOrder']
 
 
     def populate_offices(self, registration_dict: dict):
@@ -356,6 +401,11 @@ class FirmFilingJsonFactoryService:
         nr_dict['legalType'] = self._corp_type_cd
 
 
+    def populate_court_order(self, filing_dict: dict):
+        court_order_dict = filing_dict['courtOrder']
+        court_order_dict['orderDetails'] = self._filing_data['lt_notation']
+
+
     def populate_dissolution(self, filing_dict: dict):
         dissolution_dict = filing_dict['filing']['dissolution']
         effective_dt_str = self._filing_data['f_effective_dt_str']
@@ -365,5 +415,3 @@ class FirmFilingJsonFactoryService:
             self.populate_parties(dissolution_dict)
         else:
             dissolution_dict['parties'] = []
-
-

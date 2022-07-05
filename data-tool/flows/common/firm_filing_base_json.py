@@ -26,6 +26,14 @@ def get_base_dissolution_filing_json(dissolution_type: str):
     return dissolution_json
 
 
+def get_base_conversion_filing_json(num_parties: int):
+    conversion_json = get_base_conversion_json()
+    parties = conversion_json['filing']['conversion']['parties']
+    for idx in range(num_parties):
+        parties.append(get_base_party_json())
+    return conversion_json
+
+
 def get_base_registration_json():
     registration_json = {
         'filing': {
@@ -174,6 +182,73 @@ def get_base_dissolution_json(dissolution_type: str):
         }
     }
     return dissolution_json
+
+
+def get_base_conversion_json():
+    conversion_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'conversion',
+                'certifiedBy': None,
+                'folioNumber': '',
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            'conversion': {
+                'offices': {
+                    'businessOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    }
+                },
+                'parties': [],
+                'business': {
+                    'naics': {
+                        'naicsDescription': None
+                    },
+                    'identifier': None,
+                    "natureOfBusiness": ""
+                },
+                'nameRequest': {
+                    'nrNumber': None,
+                    'legalName': None,
+                    'legalType': None
+                },
+                'courtOrder': {
+                    'fileNumber': None,
+                    'orderDate': None,
+                    'effectOfOrder': None,
+                    'orderDetails': None
+                },
+                'contactPoint': {
+                    'email': None,
+                    'phone': None
+                }
+            }
+        }
+    }
+    return conversion_json
 
 
 def get_base_party_json():

@@ -33,7 +33,10 @@ def get_unprocessed_firms_query(data_load_env: str):
                        -- firms with advanced address format
 --                        and e.corp_num = 'FM0367712'
                         -- utc testing
---                         and e.corp_num = 'FM0554193'
+--                         and e.corp_num in ('FM0554193', 'FM0554211', 'FM0554212')
+                       -- firms that had address issues 
+                       -- firms with conversion filings
+--                         and e.corp_num in ('FM0272508', 'FM0272576', 'FM0308447') 
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -68,6 +71,7 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISSP'
 --                 and tbl_fe.event_file_types like '%FILE_FRDIS%'
 --                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_FRDIS'
+--                 and tbl_fe.event_file_types like '%ADMIN_ADMCF%'
                    and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id

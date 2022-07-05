@@ -36,7 +36,7 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration, change_of_registration, dissolution
+from .filing_processors import registration, change_of_registration, dissolution, conversion
 
 
 def get_filing_types(legal_filings: dict):
@@ -98,6 +98,12 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
                                                                                 filing_meta,
                                                                                 filing_event_data)
 
+            elif filing.get('conversion'):
+                business, filing_submission = conversion.process(business,
+                                                                 filing_core_submission.json,
+                                                                 filing_submission,
+                                                                 filing_meta)
+
             elif filing.get('changeOfRegistration'):
                 change_of_registration.process(business,
                                                filing_submission,
@@ -135,22 +141,29 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
         db.session.add(filing_submission)
         db.session.commit()
 
-        if config.UPDATE_ENTITY:
-            if any('registration' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
+        if any('registration' in x for x in legal_filings):
+            filing_submission.business_id = business.id
+            db.session.add(filing_submission)
+            db.session.commit()
+            if config.UPDATE_ENTITY:
                 registration.update_affiliation(config, business, filing_submission)
 
-            if any('changeOfRegistration' in x for x in legal_filings):
+        if any('conversion' in x for x in legal_filings):
+            filing_submission.business_id = business.id
+            db.session.add(filing_submission)
+            db.session.commit()
+
+        if any('changeOfRegistration' in x for x in legal_filings):
+            if config.UPDATE_ENTITY:
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,
                     corp_type_code=business.legal_type
                 )
 
-            # post filing changes to other services
-            if any('dissolution' in x for x in legal_filings):
+        # post filing changes to other services
+        if any('dissolution' in x for x in legal_filings):
+            if config.UPDATE_ENTITY:
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,
