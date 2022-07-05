@@ -117,10 +117,11 @@ class QueueService():
             await self.stan.close()
             await self.nats.close()
 
-    def publish_json(self, payload=None):
+    def publish_json(self, payload=None, subject=None):
         """Publish the json payload to the Queue Service."""
         try:
-            self.loop.run_until_complete(self.async_publish_json(payload, self.subject))
+            subject = subject or self.subject
+            self.loop.run_until_complete(self.async_publish_json(payload, subject))
         except Exception as err:
             self.logger.error('Error: %s', err)
             raise err
