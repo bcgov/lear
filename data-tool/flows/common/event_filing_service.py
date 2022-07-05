@@ -62,6 +62,7 @@ class DissolutionEventFilings(str, Enum):
 
 class OtherEventFilings(str, Enum):
     ADMIN_ADMCF = 'ADMIN_ADMCF'
+    FILE_FRPBO = 'FILE_FRPBO'
 
     @classmethod
     def has_value(cls, value):
@@ -106,7 +107,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     DissolutionEventFilings.FILE_FRDIS: 'dissolution',
     DissolutionEventFilings.FILE_LLREG: 'dissolution',
 
-    OtherEventFilings.ADMIN_ADMCF: 'conversion'
+    OtherEventFilings.ADMIN_ADMCF: 'conversion',
+    OtherEventFilings.FILE_FRPBO: 'putBackOn'
 }
 
 

@@ -1,5 +1,5 @@
 from .firm_filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
-    get_base_dissolution_filing_json, get_base_conversion_filing_json
+    get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json
 from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType
 
@@ -37,6 +37,8 @@ class FirmFilingJsonFactoryService:
             filing_json = self.get_voluntary_dissolution_filing_json()
         elif self._target_lear_filing_type == 'conversion':
             filing_json = self.get_conversion_filing_json()
+        elif self._target_lear_filing_type == 'putBackOn':
+            filing_json = self.get_put_back_on_filing_json()
 
         return filing_json
 
@@ -96,6 +98,20 @@ class FirmFilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_conversion(filing_root_dict)
+        return filing_root_dict
+
+
+    def get_put_back_on_filing_json(self):
+        result = self.build_put_back_on_filing()
+        return result
+
+
+    def build_put_back_on_filing(self):
+        filing_root_dict = get_base_put_back_on_filing_json()
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_put_back_on(filing_root_dict)
         return filing_root_dict
 
 
@@ -415,3 +431,8 @@ class FirmFilingJsonFactoryService:
             self.populate_parties(dissolution_dict)
         else:
             dissolution_dict['parties'] = []
+
+
+    def populate_put_back_on(self, filing_dict: dict):
+        pbo_dict = filing_dict['filing']['putBackOn']
+        pbo_dict['details'] = self._filing_data['lt_notation']
