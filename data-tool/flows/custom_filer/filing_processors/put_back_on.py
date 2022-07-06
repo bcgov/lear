@@ -39,3 +39,4 @@ def process(business: Business,  filing: Dict, filing_rec: Filing):
 
     business.state = Business.State.ACTIVE
     business.state_filing_id = None
+    business.dissolution_date = None
