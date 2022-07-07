@@ -8,7 +8,7 @@
     <partnerNote>{{business.identifier}}-{{filingId}}-{{documentSubType}}-{{retryNumber}}</partnerNote>
     <CCRAHeader>
       <userApplication>BI</userApplication>
-      <userRole>01</userRole>
+      <userRole>02</userRole>
       <userCredentials>
         <businessRegistrationNumber>{{businessRegistrationNumber}}</businessRegistrationNumber>
       </userCredentials>

@@ -34,12 +34,25 @@ from entity_bn.bn_processors import (
 from entity_bn.exceptions import BNException
 
 
-def process(business: Business):  # pylint: disable=too-many-branches
+def process(business: Business,
+            is_admin: bool = False,
+            msg: dict = {},
+            skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
     """Process the incoming registration request."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
+
+    message_id, business_number = None, None
+    if is_admin:
+        message_id = msg.get('id')
+        business_number = msg.get('data', {}).get('header', {}).get('businessNumber')
+
+    if not business_number and business.tax_id and len(business.tax_id) == 9:
+        business_number = business.tax_id
+
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
-                                              RequestTracker.RequestType.INFORM_CRA)
+                                              RequestTracker.RequestType.INFORM_CRA,
+                                              message_id=message_id)
     if not request_trackers:
         inform_cra_tracker = RequestTracker()
         inform_cra_tracker.business_id = business.id
@@ -47,11 +60,13 @@ def process(business: Business):  # pylint: disable=too-many-branches
         inform_cra_tracker.service_name = RequestTracker.ServiceName.BN_HUB
         inform_cra_tracker.retry_number = 0
         inform_cra_tracker.is_processed = False
+        inform_cra_tracker.is_admin = is_admin
+        inform_cra_tracker.message_id = message_id
     elif (inform_cra_tracker := request_trackers.pop()) and not inform_cra_tracker.is_processed:
         inform_cra_tracker.last_modified = datetime.utcnow()
         inform_cra_tracker.retry_number += 1
 
-    _inform_cra(business, inform_cra_tracker)
+    _inform_cra(business, inform_cra_tracker, business_number, skip_build)
 
     if not inform_cra_tracker.is_processed:
         if inform_cra_tracker.retry_number < max_retry:
@@ -66,7 +81,8 @@ def process(business: Business):  # pylint: disable=too-many-branches
 
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
-                                              RequestTracker.RequestType.GET_BN)
+                                              RequestTracker.RequestType.GET_BN,
+                                              message_id=message_id)
 
     if not request_trackers:
         get_bn_tracker = RequestTracker()
@@ -75,6 +91,8 @@ def process(business: Business):  # pylint: disable=too-many-branches
         get_bn_tracker.service_name = RequestTracker.ServiceName.BN_HUB
         get_bn_tracker.retry_number = 0
         get_bn_tracker.is_processed = False
+        get_bn_tracker.is_admin = is_admin
+        get_bn_tracker.message_id = message_id
     elif (get_bn_tracker := request_trackers.pop()) and not get_bn_tracker.is_processed:
         get_bn_tracker.last_modified = datetime.utcnow()
         get_bn_tracker.retry_number += 1
@@ -90,29 +108,43 @@ def process(business: Business):  # pylint: disable=too-many-branches
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
 
 
-def _inform_cra(business: Business, request_tracker: RequestTracker):
+def _inform_cra(business: Business,
+                request_tracker: RequestTracker,
+                business_number: str,
+                skip_build: bool):
     """Inform CRA about new registration."""
     if request_tracker.is_processed:
         return
 
-    founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).strftime('%Y-%m-%d')
-    parties = [party_role.party for party_role in business.party_roles.all()
-               if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value)]
+    if skip_build:
+        input_xml = request_tracker.request_object
+    else:
+        founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).strftime('%Y-%m-%d')
+        parties = [party_role.party for party_role in business.party_roles.all()
+                   if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value,
+                                                  PartyRole.RoleTypes.PROPRIETOR.value)]
 
-    input_xml = build_input_xml('create_program_account_request', {
-        'business': business.json(),
-        'retry_number': str(request_tracker.retry_number),
-        'program_type_code': program_type_code[business.legal_type],
-        'business_type_code': business_type_code[business.legal_type],
-        'business_sub_type_code': business_sub_type_code[business.legal_type],
-        'founding_date': founding_date,
-        'legal_names': ','.join(party.name for party in parties),
-        'parties': [party.json for party in parties],
-        'delivery_address': business.delivery_address.one_or_none().json,
-        'mailing_address': business.mailing_address.one_or_none().json
-    })
+        retry_number = str(request_tracker.retry_number)
+        if request_tracker.message_id:
+            retry_number = request_tracker.message_id + '-' + retry_number
 
-    request_tracker.request_object = input_xml
+        input_xml = build_input_xml('create_program_account_request', {
+            'business': business.json(),
+            'businessNumber': business_number,
+            'userRole': '01' if request_tracker.is_admin else '02',
+            'retryNumber': retry_number,
+            'programTypeCode': program_type_code[business.legal_type],
+            'businessTypeCode': business_type_code[business.legal_type],
+            'businessSubTypeCode': business_sub_type_code[business.legal_type],
+            'foundingDate': founding_date,
+            'legalNames': ','.join(party.name for party in parties),
+            'parties': [party.json for party in parties],
+            'deliveryAddress': business.delivery_address.one_or_none().json,
+            'mailingAddress': business.mailing_address.one_or_none().json
+        })
+
+        request_tracker.request_object = input_xml
+
     status_code, response = request_bn_hub(input_xml)
     if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):
@@ -145,7 +177,7 @@ def _get_bn(business: Business, request_tracker: RequestTracker, transaction_id:
 def _get_program_account(identifier, transaction_id):
     """Get program_account from colin-api BNI link."""
     try:
-        # Note: Dev don’t have BN environment. So this will never work in Dev environment.
+        # Note: Dev environment don’t have BNI link. So this will never work in Dev environment.
         # Use Test environment for testing.
         url = f'{current_app.config["COLIN_API"]}/programAccount/{identifier}/{transaction_id}'
         response = requests.get(url)

@@ -40,7 +40,7 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_bn import config
-from entity_bn.bn_processors import change_of_registration, dissolution, registration
+from entity_bn.bn_processors import admin, change_of_registration, dissolution, registration
 from entity_bn.exceptions import BNException
 
 
@@ -51,15 +51,13 @@ FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 
 
-async def process_event(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
-    """Render the filings contained in the submission.
-
-    Start the migration to using core/Filing
-    """
-    if not filing_msg or filing_msg.get('type') not in [
+async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
+    """Process CRA request."""
+    if not msg or msg.get('type') not in [
         'bc.registry.business.registration',
         'bc.registry.business.changeOfRegistration',
-        'bc.registry.business.dissolution'
+        'bc.registry.business.dissolution',
+        'bc.registry.admin.bn'
     ]:
         return None
 
@@ -67,8 +65,11 @@ async def process_event(filing_msg: Dict, flask_app: Flask):  # pylint: disable=
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        filing_core_submission = FilingCore.find_by_id(filing_msg['data']['filing']['header']['filingId'])
+        if msg['type'] == 'bc.registry.admin.bn':
+            admin.process(msg)
+            return
 
+        filing_core_submission = FilingCore.find_by_id(msg['data']['filing']['header']['filingId'])
         if not filing_core_submission:
             raise QueueException
 
