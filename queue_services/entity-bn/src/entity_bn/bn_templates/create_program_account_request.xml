@@ -5,57 +5,60 @@
     <documentSubType>000</documentSubType>
     <senderID>CPPR</senderID>
     <receiverID>BCSBNHUB</receiverID>
-    <partnerNote>{{business.identifier}}-{{retry_number}}</partnerNote>
+    <partnerNote>{{business.identifier}}-{{retryNumber}}</partnerNote>
     <CCRAHeader>
       <userApplication>BI</userApplication>
-      <userRole>01</userRole>
+      <userRole>{{userRole}}</userRole>
     </CCRAHeader>
   </header>
   <body>
+    {% if businessNumber is not none %}
+    <businessRegistrationNumber>{{businessNumber}}</businessRegistrationNumber>
+    {% endif %}
     <businessProgramIdentifier>BC</businessProgramIdentifier>
-    <SBNProgramTypeCode>{{program_type_code}}</SBNProgramTypeCode>
+    <SBNProgramTypeCode>{{programTypeCode}}</SBNProgramTypeCode>
     <businessCore>
       <programAccountTypeCode>01</programAccountTypeCode>
       <crossReferenceProgramNumber>{{business.identifier}}</crossReferenceProgramNumber>
-      <businessTypeCode>{{business_type_code}}</businessTypeCode>
-      <businessSubTypeCode>{{business_sub_type_code}}</businessSubTypeCode>
+      <businessTypeCode>{{businessTypeCode}}</businessTypeCode>
+      <businessSubTypeCode>{{businessSubTypeCode}}</businessSubTypeCode>
     </businessCore>
     <programAccountStatus>
       <programAccountStatusCode>01</programAccountStatusCode>
-      <effectiveDate>{{founding_date}}</effectiveDate>
+      <effectiveDate>{{foundingDate}}</effectiveDate>
     </programAccountStatus>
-    <legalName>{{legal_names}}</legalName>
+    <legalName>{{legalNames}}</legalName>
     <operatingName>
       <operatingName>{{business.legalName}}</operatingName>
       <operatingNamesequenceNumber>1</operatingNamesequenceNumber>
     </operatingName>
     <businessAddress>
       <foreignLegacy>
-        <addressDetailLine1>{{delivery_address.streetAddress[0:30]}}</addressDetailLine1>
-        {% if delivery_address.streetAddressAdditional is not none %}
-        <addressDetailLine2>{{delivery_address.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        <addressDetailLine1>{{deliveryAddress.streetAddress[0:30]}}</addressDetailLine1>
+        {% if deliveryAddress.streetAddressAdditional is not none %}
+        <addressDetailLine2>{{deliveryAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
         {% endif %}
       </foreignLegacy>
-      <municipality>{{delivery_address.addressCity[0:30]}}</municipality>
-      {% if delivery_address.addressRegion|length %}
-      <provinceStateCode>{{delivery_address.addressRegion}}</provinceStateCode>
+      <municipality>{{deliveryAddress.addressCity[0:30]}}</municipality>
+      {% if deliveryAddress.addressRegion|length %}
+      <provinceStateCode>{{deliveryAddress.addressRegion}}</provinceStateCode>
       {% endif %}
-      <postalCode>{{delivery_address.postalCode | replace(' ', '')}}</postalCode>
-      <countryCode>{{delivery_address.addressCountry}}</countryCode>
+      <postalCode>{{deliveryAddress.postalCode | replace(' ', '')}}</postalCode>
+      <countryCode>{{deliveryAddress.addressCountry}}</countryCode>
     </businessAddress>
     <mailingAddress>
       <foreignLegacy>
-        <addressDetailLine1>{{mailing_address.streetAddress[0:30]}}</addressDetailLine1>
-        {% if mailing_address.streetAddressAdditional is not none %}
-        <addressDetailLine2>{{mailing_address.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        <addressDetailLine1>{{mailingAddress.streetAddress[0:30]}}</addressDetailLine1>
+        {% if mailingAddress.streetAddressAdditional is not none %}
+        <addressDetailLine2>{{mailingAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
         {% endif %}
       </foreignLegacy>
-      <municipality>{{mailing_address.addressCity[0:30]}}</municipality>
-      {% if mailing_address.addressRegion|length %}
-      <provinceStateCode>{{mailing_address.addressRegion}}</provinceStateCode>
+      <municipality>{{mailingAddress.addressCity[0:30]}}</municipality>
+      {% if mailingAddress.addressRegion|length %}
+      <provinceStateCode>{{mailingAddress.addressRegion}}</provinceStateCode>
       {% endif %}
-      <postalCode>{{mailing_address.postalCode | replace(' ', '')}}</postalCode>
-      <countryCode>{{mailing_address.addressCountry}}</countryCode>
+      <postalCode>{{mailingAddress.postalCode | replace(' ', '')}}</postalCode>
+      <countryCode>{{mailingAddress.addressCountry}}</countryCode>
     </mailingAddress>
     {% for party in parties %}
     <owner>
