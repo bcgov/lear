@@ -36,13 +36,16 @@ from entity_bn.exceptions import BNException
 
 def process(business: Business,
             is_admin: bool = False,
-            msg: dict = {},
+            msg: dict = None,
             skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
     """Process the incoming registration request."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 
     message_id, business_number = None, None
     if is_admin:
+        if not msg:
+            raise QueueException('code issue: msg is required for admin request')
+
         message_id = msg.get('id')
         business_number = msg.get('data', {}).get('header', {}).get('businessNumber')
 
