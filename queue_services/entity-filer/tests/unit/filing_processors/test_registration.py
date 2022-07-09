@@ -85,12 +85,13 @@ def test_registration_process(app, session, legal_type, filing):
 
     # Assertions
     assert business.identifier.startswith('FM')
-    assert business.founding_date == datetime.fromisoformat(now) + timedelta(hours = 8)
+    assert business.founding_date == datetime.fromisoformat(now) + timedelta(hours=8)
     assert business.legal_type == filing['filing']['registration']['nameRequest']['legalType']
     assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
     assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
     assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
     assert business.naics_key == naics_response['naicsKey']
+    assert business.tax_id == REGISTRATION['business']['taxId']
     assert business.state == Business.State.ACTIVE
     if legal_type == 'SP':
         assert len(filing_rec.filing_party_roles.all()) == 1

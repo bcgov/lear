@@ -105,14 +105,14 @@ async def test_admin_bn15(app, session, mocker, request_type):
     assert business.tax_id == f'{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}'
 
 
-@pytest.mark.parametrize('request_type', [
-    (RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS),
-    (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS),
-    (RequestTracker.RequestType.CHANGE_NAME),
-    (RequestTracker.RequestType.CHANGE_PARTY),
-    (RequestTracker.RequestType.CHANGE_STATUS),
+@pytest.mark.parametrize('request_type, request_xml', [
+    (RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS, '<SBNChangeAddress></SBNChangeAddress>'),
+    (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, '<SBNChangeAddress></SBNChangeAddress>'),
+    (RequestTracker.RequestType.CHANGE_NAME, '<SBNChangeName></SBNChangeName>'),
+    (RequestTracker.RequestType.CHANGE_PARTY, '<SBNChangeName></SBNChangeName>'),
+    (RequestTracker.RequestType.CHANGE_STATUS, '<SBNChangeStatus></SBNChangeStatus>'),
 ])
-async def test_admin_resubmit(app, session, mocker, request_type):
+async def test_admin_resubmit(app, session, mocker, request_type, request_xml):
     """Test resubmit CRA request."""
     message_id = str(uuid.uuid4())
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
@@ -123,7 +123,7 @@ async def test_admin_resubmit(app, session, mocker, request_type):
         business_id=business_id,
         is_admin=True,
         message_id=message_id,
-        request_object=''
+        request_object=request_xml
     )
     request_tracker.save()
 
@@ -154,3 +154,4 @@ async def test_admin_resubmit(app, session, mocker, request_type):
     assert request_trackers[0].is_processed
     assert request_trackers[0].retry_number == 0
     assert request_trackers[0].is_admin
+    assert request_trackers[0].request_object == request_xml

@@ -29,6 +29,7 @@ from .db import db
 class UserRoles(str, Enum):
     """Enum of the roles used across the domain."""
 
+    ADMIN_EDIT = 'admin_edit'
     SYSTEM = 'system'
     STAFF = 'staff'
     BASIC_USER = 'basic'
