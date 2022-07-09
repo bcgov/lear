@@ -17,12 +17,12 @@ from http import HTTPStatus
 
 from flask import Blueprint, current_app
 from flask_cors import cross_origin
+from sentry_sdk import capture_message
 
 from legal_api.models import Business, UserRoles
 from legal_api.services import queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
-from sentry_sdk import capture_message
 
 
 bp = Blueprint('ADMINISTRATIVE', __name__, url_prefix='/api/v2/admin')
@@ -44,7 +44,7 @@ def create_bn_request(identifier: str, business_number: str = None):
 
 def publish_entity_event(business: Business,
                          request_name: str = None,
-                         id: str = None,
+                         message_id: str = None,
                          business_number: str = None):
     """Publish the admin message on to the NATS events subject."""
     try:
@@ -52,7 +52,7 @@ def publish_entity_event(business: Business,
             'specversion': '1.x-wip',
             'type': 'bc.registry.admin.bn',
             'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
-            'id': id or str(uuid.uuid4()),
+            'id': message_id or str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
             'identifier': business.identifier,

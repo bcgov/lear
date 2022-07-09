@@ -73,7 +73,7 @@ def resubmit_bn_request(identifier: str):
     publish_entity_event(
         business,
         request_name=f'RESUBMIT_{request_type.name}',
-        id=message_id
+        message_id=message_id
     )
     return {'message': 'BN request queued.'}, HTTPStatus.OK
 
