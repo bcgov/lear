@@ -27,7 +27,9 @@ from sqlalchemy import desc
 
 from legal_api.core.meta import FilingMeta
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business, Filing as FilingStorage, UserRoles  # noqa: I001
+from legal_api.models import Business
+from legal_api.models import Filing as FilingStorage  # noqa: I001
+from legal_api.models import UserRoles
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -333,11 +335,12 @@ class Filing:
         return False
 
     @staticmethod
-    def ledger(business_id: int,
+    def ledger(business_id: int,  # pylint: disable=too-many-arguments
                jwt: JwtManager = None,
                statuses: List(str) = None,
                start: int = None,
                size: int = None,
+               effective_date=None,
                **kwargs) \
             -> list:
         """Return the ledger list by directly querying the storage objects.
@@ -349,6 +352,9 @@ class Filing:
         business = Business.find_by_internal_id(business_id)
 
         query = FilingStorage.query.filter(FilingStorage.business_id == business_id)
+
+        if effective_date:
+            query = query.filter(FilingStorage.effective_date <= effective_date)
         if statuses and isinstance(statuses, List):
             query = query.filter(FilingStorage._status.in_(statuses))  # pylint: disable=protected-access;required by SA
 
