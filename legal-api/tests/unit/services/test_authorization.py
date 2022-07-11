@@ -264,9 +264,9 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'dissolution', 'registration']),
+         ['changeOfRegistration', 'conversion', 'correction', 'dissolution', 'registration']),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'dissolution', 'registration']),
+         ['changeOfRegistration', 'conversion', 'correction', 'dissolution', 'registration']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -344,7 +344,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'correction', None,
-         ['CP', 'BEN'], 'staff', [STAFF_ROLE], True),
+         ['CP', 'BEN', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'correction', None,
          ['BC', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 

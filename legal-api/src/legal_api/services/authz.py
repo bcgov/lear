@@ -101,7 +101,7 @@ ALLOWABLE_FILINGS: Final = {
             'changeOfDirectors': ['CP', 'BEN'],
             'changeOfRegistration': ['SP', 'GP'],
             'conversion': ['SP', 'GP', 'BEN'],
-            'correction': ['CP', 'BEN'],
+            'correction': ['CP', 'BEN', 'SP', 'GP'],
             'courtOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
             'incorporationApplication': ['CP', 'BC', 'BEN'],
