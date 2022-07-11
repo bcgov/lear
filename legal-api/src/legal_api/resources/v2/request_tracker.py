@@ -19,7 +19,7 @@ from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, RequestTracker, UserRoles
-from legal_api.resources.v2.admin import publish_entity_event
+from legal_api.resources.v2.administrative_bn import publish_entity_event
 from legal_api.utils.auth import jwt
 
 
@@ -28,7 +28,7 @@ bp = Blueprint('REQUEST_TRACKER', __name__, url_prefix='/api/v2/requestTracker')
 
 @bp.route('bn/<string:identifier>', methods=['GET'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.ADMIN_EDIT.value])
+@jwt.has_one_of_roles([UserRoles.admin_edit])
 def get_bn_request_trackers(identifier: str):
     """Return a list of request trackers."""
     business = Business.find_by_identifier(identifier)
@@ -47,7 +47,7 @@ def get_bn_request_trackers(identifier: str):
 
 @bp.route('bn/<string:identifier>', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.ADMIN_EDIT.value])
+@jwt.has_one_of_roles([UserRoles.admin_edit])
 def resubmit_bn_request(identifier: str):
     """Resubmit BN request."""
     business = Business.find_by_identifier(identifier)

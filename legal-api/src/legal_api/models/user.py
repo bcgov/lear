@@ -17,24 +17,32 @@ Actual user data is kept in the OIDC and IDP services, this data is
 here as a convenience for audit and db reporting.
 """
 from datetime import datetime
-from enum import Enum
+from enum import auto
 
 from flask import current_app
 
 from legal_api.exceptions import BusinessException
+from legal_api.utils.base import BaseEnum
 
 from .db import db
 
 
-class UserRoles(str, Enum):
+class UserRoles(BaseEnum):
     """Enum of the roles used across the domain."""
 
-    ADMIN_EDIT = 'admin_edit'
-    SYSTEM = 'system'
-    STAFF = 'staff'
-    BASIC_USER = 'basic'
-    COLIN_SVC = 'colin'
-    PUBLIC_USER = 'public_user'
+    #pragma warning disable S5720; # noqa: E265
+    # disable sonar cloud complaining about this signature
+    def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
+        """Return the name of the key."""
+        return name
+    #pragma warning enable S5720; # noqa: E265
+
+    admin_edit = auto()
+    system = auto()
+    staff = auto()
+    basic = auto()
+    colin = auto()
+    public_user = auto()
 
 
 class User(db.Model):

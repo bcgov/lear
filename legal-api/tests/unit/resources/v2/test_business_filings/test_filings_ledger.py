@@ -57,6 +57,7 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.utils import create_header
 
+
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
@@ -111,7 +112,7 @@ def test_ledger_search(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     ledger = rv.json
 
@@ -119,7 +120,7 @@ def test_ledger_search(session, client, jwt):
     assert len(ledger['filings']) == num_of_files
 
     # Fully examine 1 filing - alteration
-    alteration = next((f for f in ledger['filings'] if f.get('name')=='alteration'), None)
+    alteration = next((f for f in ledger['filings'] if f.get('name') == 'alteration'), None)
 
     assert alteration
     assert 15 == len(alteration.keys())
@@ -146,6 +147,7 @@ def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling'
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
 
+
 def ledger_element_setup_filing(business, filing_name, filing_date):
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = filing_name
@@ -167,12 +169,13 @@ def test_ledger_comment_count(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings'][0]['commentsCount'] == number_of_comments
 
-@pytest.mark.parametrize('test_name, file_number, order_date, effect_of_order, order_details, expected',[
+
+@pytest.mark.parametrize('test_name, file_number, order_date, effect_of_order, order_details, expected', [
     ('all_elements', 'ABC123', datetime.utcnow(), 'effect', 'details',
         ['effectOfOrder', 'fileNumber', 'orderDate', 'orderDetails']),
     ('no_elements', None, None, None, None,
@@ -202,7 +205,7 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings'][0]
@@ -219,7 +222,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     today = date.today().isoformat()
-    annual_report_meta = {'annualReport':{
+    annual_report_meta = {'annualReport': {
         'annualReportDate': today,
         'annualGeneralMeetingDate': today,
         'annualReportFilingYear': date.fromisoformat(today).year
@@ -232,7 +235,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings'][0]
@@ -253,7 +256,7 @@ def test_ledger_display_unknown_name(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings'][0]
@@ -267,7 +270,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     today = date.today().isoformat()
-    alteration_meta = {'alteration':{
+    alteration_meta = {'alteration': {
         'fromLegalType': 'BC',
         'toLegalType': 'BEN'
     }}
@@ -279,7 +282,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings'][0]
@@ -312,15 +315,15 @@ def test_ledger_display_incorporation(session, client, jwt):
 
     f = factory_completed_filing(business, filing, filing_date=filing_date)
     today = filing_date.isoformat()
-    ia_meta = {'legalFilings':[filing_name,],
+    ia_meta = {'legalFilings': [filing_name, ],
                filing_name: {'nrNumber': nr_number,
                              'legalName': business_name}
-    }
+               }
     f._meta_data = {**{'applicationDate': today}, **ia_meta}
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings']
@@ -338,7 +341,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings']
@@ -350,6 +353,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
         else:
             assert False
 
+
 def test_ledger_display_corrected_annual_report(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
     # setup
@@ -360,13 +364,13 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     original.save()
 
     today = date.today().isoformat()
-    correction_meta = {'legalFilings':['annualReport','correction']}
+    correction_meta = {'legalFilings': ['annualReport', 'correction']}
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                headers=create_header(jwt, [UserRoles.SYSTEM.value], identifier))
+                    headers=create_header(jwt, [UserRoles.system], identifier))
 
     # validate
     assert rv.json['filings']
@@ -379,19 +383,18 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             assert False
 
 
-
 @pytest.mark.parametrize(
     'test_name, submitter_role, jwt_role, username, firstname, lastname, expected',
     [
-        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'firstname', 'lastname', 'firstname lastname'),
-        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'firstname', 'lastname', 'firstname lastname'),
-        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
-        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'firstname', 'lastname', 'Registry Staff'),
-        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'firstname', 'lastname', 'Registry Staff'),
-        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
-        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
-        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
-        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', '', '', 'some-user'),
+        ('staff-staff', UserRoles.staff, UserRoles.staff, 'idir/staff-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('system-staff', UserRoles.system, UserRoles.staff, 'system', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-staff', None, UserRoles.staff, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('system-public', UserRoles.system, UserRoles.public_user, 'system', 'firstname', 'lastname', 'Registry Staff'),
+        ('staff-public', UserRoles.staff, UserRoles.public_user, 'idir/staff-user', 'firstname', 'lastname', 'Registry Staff'),
+        ('public-staff', UserRoles.public_user, UserRoles.staff, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
+        ('public-public', UserRoles.public_user, UserRoles.public_user, 'bcsc/public_user', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-public', None, UserRoles.public_user, 'some-user', 'firstname', 'lastname', 'firstname lastname'),
+        ('unknown-public', None, UserRoles.public_user, 'some-user', '', '', 'some-user'),
     ]
 )
 def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, firstname, lastname, expected):

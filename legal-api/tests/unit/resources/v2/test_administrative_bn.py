@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the admin end-point.
+"""Tests to assure the Administrative BN end-point.
 
-Test-Suite to ensure that the /admin endpoint is working as expected.
+Test-Suite to ensure that the /admin/bn endpoint is working as expected.
 """
 
 from http import HTTPStatus
 from unittest.mock import patch
 
 from legal_api.models import Business, UserRoles
-from legal_api.resources.v2 import admin
+from legal_api.resources.v2 import administrative_bn
 
 from tests.unit.models import factory_business
 from tests.unit.services.utils import create_header
@@ -32,8 +32,8 @@ def test_create_bn_request(session, client, jwt):
     identifier = 'FM0000001'
     factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
 
-    with patch.object(admin, 'publish_entity_event'):
+    with patch.object(administrative_bn, 'publish_entity_event'):
         rv = client.post(f'/api/v2/admin/bn/{identifier}',
-                         headers=create_header(jwt, [UserRoles.ADMIN_EDIT.value], identifier))
+                         headers=create_header(jwt, [UserRoles.admin_edit], identifier))
 
         assert rv.status_code == HTTPStatus.CREATED

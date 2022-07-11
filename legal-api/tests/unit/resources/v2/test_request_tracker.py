@@ -42,7 +42,7 @@ def test_get_bn_request_trackers(session, client, jwt):
     request_tracker.save()
 
     rv = client.get(f'/api/v2/requestTracker/bn/{identifier}',
-                    headers=create_header(jwt, [UserRoles.ADMIN_EDIT.value], identifier))
+                    headers=create_header(jwt, [UserRoles.admin_edit], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['requestTrackers'][0]['id'] == request_tracker.id
@@ -68,7 +68,7 @@ def test_get_request_tracker(session, client, jwt):
     request_tracker.save()
 
     rv = client.get(f'/api/v2/requestTracker/{request_tracker.id}',
-                    headers=create_header(jwt, [UserRoles.ADMIN_EDIT.value], identifier))
+                    headers=create_header(jwt, [UserRoles.admin_edit], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['id'] == request_tracker.id
@@ -98,7 +98,7 @@ def test_resubmit_bn_request(session, client, jwt, request_type, request_xml):
     }
     with patch.object(request_tracker, 'publish_entity_event'):
         rv = client.post(f'/api/v2/requestTracker/bn/{identifier}',
-                         headers=create_header(jwt, [UserRoles.ADMIN_EDIT.value], identifier),
+                         headers=create_header(jwt, [UserRoles.admin_edit], identifier),
                          json=json_data)
 
         assert rv.status_code == HTTPStatus.OK

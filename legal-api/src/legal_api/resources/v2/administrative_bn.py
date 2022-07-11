@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""API endpoints for managing an Administrative resource."""
+"""API endpoints for managing an Administrative BN resource."""
 import uuid
 from http import HTTPStatus
 
@@ -25,13 +25,13 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 
 
-bp = Blueprint('ADMINISTRATIVE', __name__, url_prefix='/api/v2/admin')
+bp = Blueprint('ADMINISTRATIVE_BN', __name__, url_prefix='/api/v2/admin/bn')
 
 
-@bp.route('bn/<string:identifier>', methods=['POST'])
-@bp.route('bn/<string:identifier>/<string:business_number>', methods=['POST'])
+@bp.route('<string:identifier>', methods=['POST'])
+@bp.route('<string:identifier>/<string:business_number>', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.ADMIN_EDIT.value])
+@jwt.has_one_of_roles([UserRoles.admin_edit])
 def create_bn_request(identifier: str, business_number: str = None):
     """Create a bn request."""
     business = Business.find_by_identifier(identifier)

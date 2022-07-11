@@ -16,7 +16,7 @@ from typing import Optional
 
 from flask import Flask
 
-from .admin import bp as admin_bp
+from .administrative_bn import bp as administrative_bn_bp
 from .business import bp as businesses_bp
 from .document_signature import bp as document_signature_bp
 from .meta import bp as meta_bp
@@ -40,7 +40,7 @@ class V2Endpoint:
         self.app = app
 
         self.app.register_blueprint(meta_bp)
-        self.app.register_blueprint(admin_bp)
+        self.app.register_blueprint(administrative_bn_bp)
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(document_signature_bp)
         self.app.register_blueprint(namerequest_bp)
