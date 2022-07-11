@@ -19,11 +19,14 @@ from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
 
+import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
+from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
+from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
 
@@ -52,11 +55,6 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ..bp import bp
-
-
-import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
-from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
-from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 
 
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
