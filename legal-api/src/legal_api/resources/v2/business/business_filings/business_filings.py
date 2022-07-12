@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
 
@@ -54,8 +55,9 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ..bp import bp
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
+
+# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 class QueryModel(BaseModel):
     """Query string model."""
@@ -313,6 +315,15 @@ class ListFilingResource():
 
         ledger_start = request.args.get('start', default=None, type=int)
         ledger_size = request.args.get('size', default=None, type=int)
+        datetime_str = request.args.get('effective_date', default=None)
+
+        effective_date = None
+        if datetime_str:
+            if not ListFilingResource._is_valid_date(datetime_str):
+                return ({'message': 'Invalid Date format.'}, HTTPStatus.BAD_REQUEST)
+            else:
+                effective_date = _datetime.fromisoformat(datetime_str)
+
         business = Business.find_by_identifier(identifier)
 
         if not business:
@@ -322,9 +333,18 @@ class ListFilingResource():
                                     jwt=user_jwt,
                                     statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
                                     start=ledger_start,
-                                    size=ledger_size)
+                                    size=ledger_size,
+                                    effective_date=effective_date)
 
         return jsonify(filings=filings)
+
+    @staticmethod
+    def _is_valid_date(datetime_str):
+        try:
+            _datetime.fromisoformat(datetime_str)
+        except ValueError:
+            return False
+        return True
 
     @staticmethod
     def create_deletion_locked_response(identifier, filing):
