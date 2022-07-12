@@ -35,12 +35,14 @@ def update_affiliation(business: Business, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+        pass_code = business_info.get_firm_affiliation_passcode(business.id)
 
         rv = AccountService.create_affiliation(
             account=bootstrap.account,
             business_registration=business.identifier,
             business_name=business.legal_name,
-            corp_type_code=business.legal_type
+            corp_type_code=business.legal_type,
+            pass_code=pass_code
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
