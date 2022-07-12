@@ -101,8 +101,11 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
-    if (naics := registration_filing.get('business', {}).get('naics')) and naics.get('naicsCode'):
+
+    business_obj = registration_filing.get('business', {})
+    if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
         business_info.update_naics_info(business, naics)
+    business.tax_id = business_obj.get('taxId', None)
     business.state = Business.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):

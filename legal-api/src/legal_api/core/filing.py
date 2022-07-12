@@ -328,9 +328,9 @@ class Filing:
             return None
 
         with suppress(KeyError, TypeError):
-            if (UserRoles.STAFF.value in submitter_roles
-                or UserRoles.SYSTEM.value in submitter_roles) \
-                    and not has_roles(jwt, [UserRoles.STAFF.value, ]):
+            if (UserRoles.staff in submitter_roles
+                or UserRoles.system in submitter_roles) \
+                    and not has_roles(jwt, [UserRoles.staff, ]):
                 return True
         return False
 

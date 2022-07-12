@@ -737,9 +737,9 @@ class ListFilingResource(Resource):
             payload['filingInfo']['folioNumber'] = folio_number
 
         if user_jwt.validate_roles([STAFF_ROLE]):
-            special_role = UserRoles.STAFF.value
+            special_role = UserRoles.staff
         elif user_jwt.validate_roles([SYSTEM_ROLE]):
-            special_role = UserRoles.SYSTEM.value
+            special_role = UserRoles.system
         else:
             special_role = None
 

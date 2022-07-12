@@ -65,9 +65,9 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the request tracker as a json object."""
         return {
             'id': self.id,
-            'requestType': self.request_type,
+            'requestType': self.request_type.name,
             'isProcessed': self.is_processed,
-            'serviceName': self.service_name,
+            'serviceName': self.service_name.name,
             'isAdmin': self.is_admin
         }
 

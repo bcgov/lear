@@ -41,7 +41,7 @@ def process(msg: dict):
         request_type = msg['data']['header']['request'].replace('RESUBMIT_', '')
         request_trackers = RequestTracker.find_by(business.id,
                                                   RequestTracker.ServiceName.BN_HUB,
-                                                  RequestTracker.RequestType.get_enum_by_value(request_type),
+                                                  request_type=RequestTracker.RequestType[request_type],
                                                   message_id=message_id)
 
         request_tracker = request_trackers.pop()

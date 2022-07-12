@@ -1121,14 +1121,14 @@ def test_coa_future_effective(session, client, jwt):
 @pytest.mark.parametrize(
     'test_name, submitter_role, jwt_role, username, expected',
     [
-        ('staff-staff', UserRoles.STAFF.value, UserRoles.STAFF.value, 'idir/staff-user', 'idir/staff-user'),
-        ('system-staff', UserRoles.SYSTEM.value, UserRoles.STAFF.value, 'system', 'system'),
-        ('unknown-staff', None, UserRoles.STAFF.value, 'some-user', 'some-user'),
-        ('system-public', UserRoles.SYSTEM.value, UserRoles.PUBLIC_USER.value, 'system', 'Registry Staff'),
-        ('staff-public', UserRoles.STAFF.value, UserRoles.PUBLIC_USER.value, 'idir/staff-user', 'Registry Staff'),
-        ('public-staff', UserRoles.PUBLIC_USER.value, UserRoles.STAFF.value, 'bcsc/public_user', 'bcsc/public_user'),
-        ('public-public', UserRoles.PUBLIC_USER.value, UserRoles.PUBLIC_USER.value, 'bcsc/public_user', 'bcsc/public_user'),
-        ('unknown-public', None, UserRoles.PUBLIC_USER.value, 'some-user', 'some-user'),
+        ('staff-staff', UserRoles.staff, UserRoles.staff, 'idir/staff-user', 'idir/staff-user'),
+        ('system-staff', UserRoles.system, UserRoles.staff, 'system', 'system'),
+        ('unknown-staff', None, UserRoles.staff, 'some-user', 'some-user'),
+        ('system-public', UserRoles.system, UserRoles.public_user, 'system', 'Registry Staff'),
+        ('staff-public', UserRoles.staff, UserRoles.public_user, 'idir/staff-user', 'Registry Staff'),
+        ('public-staff', UserRoles.public_user, UserRoles.staff, 'bcsc/public_user', 'bcsc/public_user'),
+        ('public-public', UserRoles.public_user, UserRoles.public_user, 'bcsc/public_user', 'bcsc/public_user'),
+        ('unknown-public', None, UserRoles.public_user, 'some-user', 'some-user'),
     ]
 )
 def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
