@@ -37,6 +37,7 @@ class UserRoles(BaseEnum):
         return name
     #pragma warning enable S5720; # noqa: E265
 
+    # pylint: disable=invalid-name
     admin_edit = auto()
     system = auto()
     staff = auto()
