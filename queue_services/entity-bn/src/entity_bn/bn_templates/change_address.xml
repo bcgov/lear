@@ -16,7 +16,7 @@
     <address>
       <foreignLegacy>
         <addressDetailLine1>{{address.streetAddress[0:30]}}</addressDetailLine1>
-        {% if address.streetAddressAdditional is not none %}
+        {% if address.streetAddressAdditional is not none and address.streetAddressAdditional|length %}
         <addressDetailLine2>{{address.streetAddressAdditional[0:30]}}</addressDetailLine2>
         {% endif %}
       </foreignLegacy>

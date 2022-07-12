@@ -59,11 +59,11 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
     effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime('%Y-%m-%d')
 
     program_account_status_code = {
-        'putbackon': '01',  # Will be useful while implementing restore a SP/GP. Keeping it here for now as unsued.
+        'putBackOn': '01',  # Will be useful while implementing restore a SP/GP. Keeping it here for now as unsued.
         'dissolution': '02'
     }
     program_account_reason_code = {
-        'putbackon': None,
+        'putBackOn': None,
         'dissolution': '105'
     }
 
