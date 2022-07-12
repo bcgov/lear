@@ -125,10 +125,12 @@ class AccountService:
             return None
 
     @classmethod
+    # pylint: disable=too-many-arguments;
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
-                           corp_type_code: str = 'TMP'):
+                           corp_type_code: str = 'TMP',
+                           pass_code: str = ''):
         """Affiliate a business to an account."""
         account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
         template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
@@ -155,7 +157,7 @@ class AccountService:
         # Create an account:business affiliation
         affiliate_data = json.dumps({
             'businessIdentifier': business_registration,
-            'passCode': ''
+            'passCode': pass_code
         })
         affiliate = requests.post(
             url=account_svc_affiliate_url,
