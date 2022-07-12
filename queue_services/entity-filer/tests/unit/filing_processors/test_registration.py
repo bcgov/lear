@@ -15,11 +15,13 @@
 
 import copy
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from http import HTTPStatus
+from unittest.mock import patch, call
 
 import pytest
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services import NaicsService
+from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import (
     FILING_HEADER,
     REGISTRATION
@@ -100,3 +102,61 @@ def test_registration_process(app, session, legal_type, filing):
         assert len(business.party_roles.all()) == 2
     assert len(business.offices.all()) == 1
     assert business.offices.first().office_type == 'businessOffice'
+
+
+@pytest.mark.parametrize('legal_type, filing, party_type, organization_name, first_name, last_name, middle_name, expected_pass_code',
+ [
+     ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
+     ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
+     ('SP', copy.deepcopy(SP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME'),
+     ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
+     ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
+     ('GP', copy.deepcopy(GP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME')
+ ])
+def test_registration_affiliation(app, session, legal_type, filing, party_type, organization_name, first_name,
+                                  last_name, middle_name, expected_pass_code):
+    """Assert affiliation of a firm calls expected auth api endpoints and with expected parameter values."""
+
+    # setup
+    bootstrap = RegistrationBootstrap(account=1111111)
+    identifier = 'NR 1234567'
+    filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
+    filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
+    filing['filing']['registration']['parties'][0]['officer']['partyType'] = party_type
+    filing['filing']['registration']['parties'][0]['officer']['organizationName'] = organization_name
+    filing['filing']['registration']['parties'][0]['officer']['firstName'] = first_name
+    filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
+    filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
+
+    create_filing('123', filing)
+
+    effective_date = datetime.utcnow()
+    filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+    filing_meta = FilingMeta(application_date=effective_date)
+
+    naics_response = {
+        'code': REGISTRATION['business']['naics']['naicsCode'],
+        'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+    }
+
+    # create business and filing records
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+        business.save()
+        filing_rec.save()
+
+    # test
+    with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
+        with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
+            with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
+                registration.update_affiliation(business, filing_rec)
+                assert AccountService.create_affiliation.call_count == 2
+                assert AccountService.delete_affiliation.call_count == 1
+                first_affiliation_call_args = AccountService.create_affiliation.call_args_list[0]
+                expected_call_args = call(account=1111111,
+                                          business_registration=business.identifier,
+                                          business_name='Test',
+                                          corp_type_code=legal_type,
+                                          pass_code=expected_pass_code)
+                assert first_affiliation_call_args == expected_call_args
+
