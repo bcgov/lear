@@ -35,7 +35,7 @@
     <businessAddress>
       <foreignLegacy>
         <addressDetailLine1>{{deliveryAddress.streetAddress[0:30]}}</addressDetailLine1>
-        {% if deliveryAddress.streetAddressAdditional is not none %}
+        {% if deliveryAddress.streetAddressAdditional is not none and deliveryAddress.streetAddressAdditional|length %}
         <addressDetailLine2>{{deliveryAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
         {% endif %}
       </foreignLegacy>
@@ -49,7 +49,7 @@
     <mailingAddress>
       <foreignLegacy>
         <addressDetailLine1>{{mailingAddress.streetAddress[0:30]}}</addressDetailLine1>
-        {% if mailingAddress.streetAddressAdditional is not none %}
+        {% if mailingAddress.streetAddressAdditional is not none and mailingAddress.streetAddressAdditional|length %}
         <addressDetailLine2>{{mailingAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
         {% endif %}
       </foreignLegacy>
