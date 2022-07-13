@@ -47,7 +47,7 @@ logging.basicConfig(
 )
 logging.getLogger('asyncio').setLevel(logging.DEBUG)
 
-if os.getenv('DISABLE_HTTP_ACCESS_LOGGING', 'False').lower() == 'true':
+if os.getenv('DISABLE_HTTP_ACCESS_LOGS', 'False').lower() == 'true':
     # This disables the healthz / readyz / meta logging messsages.
     logging.getLogger('aiohttp.access').setLevel(logging.ERROR)
 
