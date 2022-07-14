@@ -41,6 +41,7 @@ class Report:  # pylint: disable=too-few-public-methods
         self._filing = filing
         self._business = None
         self._report_key = None
+        self._report_date_time = LegislationDatetime.now()
 
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
@@ -309,6 +310,7 @@ class Report:  # pylint: disable=too-few-public-methods
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
             filing['original_filing_date_time'] = LegislationDatetime.format_as_report_string(original_filing_datetime)
+        filing['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
 
     def _set_directors(self, filing):
         if filing.get('changeOfDirectors'):
