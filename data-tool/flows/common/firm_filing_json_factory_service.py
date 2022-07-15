@@ -167,6 +167,12 @@ class FirmFilingJsonFactoryService:
         else:
             del change_registration_dict['nameRequest']
 
+        if self._filing_data.get('lt_event_id') and self._filing_data.get('lt_notation'):
+            self.populate_court_order(change_registration_dict)
+        else:
+            del change_registration_dict['courtOrder']
+
+
 
     def populate_conversion(self, filing_dict: dict):
         conversion_dict = filing_dict['filing']['conversion']
