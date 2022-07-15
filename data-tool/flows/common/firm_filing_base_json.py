@@ -148,6 +148,12 @@ def get_base_change_registration_json():
                     'legalName': None,
                     'legalType': None
                 },
+                'courtOrder': {
+                    'fileNumber': None,
+                    'orderDate': None,
+                    'effectOfOrder': None,
+                    'orderDetails': None
+                },
                 'contactPoint': {
                     'email': None,
                     'phone': None

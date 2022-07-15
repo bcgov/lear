@@ -39,6 +39,14 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                         and e.corp_num in ('FM0272508', 'FM0272576', 'FM0308447')
                        -- firms with put back on filings
 --                         and e.corp_num in ('FM0278254', 'FM0349992', 'FM0418992') 
+                       -- firms with amendments
+--                           and e.corp_num in ('FM0433512', 'FM0529248')
+--                           and e.corp_num in ('FM0517864', 'FM0068468')
+--                           and e.corp_num = 'FM0481290'
+--                           and e.corp_num in ('FM0728666', 'FM0870505')
+--                           and e.corp_num in ('FM0485573', 'FM0844569')
+--                           and e.corp_num in ('FM0486528', 'FM0035099')
+--                           and e.corp_num in ('FM0463071', 'FM0554195')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -75,6 +83,14 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_FRDIS'
 --                 and tbl_fe.event_file_types like '%ADMIN_ADMCF%'
 --                 and tbl_fe.event_file_types like '%FILE_FRPBO%'
+--                 and tbl_fe.event_file_types like '%CONVFMACP_FRARG%'
+--                 and tbl_fe.event_file_types like '%CONVFMNC_FRARG%'
+--                 and tbl_fe.event_file_types like '%CONVFMRCP_FRARG%'
+--                 and tbl_fe.event_file_types like '%FILE_AMDGP%'
+--                 and tbl_fe.event_file_types like '%FILE_AMDSP%'
+--                 and tbl_fe.event_file_types like '%FILE_FRACH%'
+--                 and tbl_fe.event_file_types like '%FILE_FRARG%'
+
                    and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id

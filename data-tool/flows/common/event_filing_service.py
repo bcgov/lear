@@ -1,7 +1,7 @@
 from contextlib import suppress
 from enum import Enum
 
-import pandas as pd
+from legal_api.core import Filing as FilingCore
 from sqlalchemy import engine, text
 from .firm_queries import get_firm_event_filing_data_query, \
                           get_firm_event_filing_corp_party_data_query, \
@@ -45,6 +45,14 @@ class ChangeRegistrationEventFilings(str, Enum):
     FILE_NATGP = 'FILE_NATGP'
     FILE_NATSP = 'FILE_NATSP'
 
+    CONVFMACP_FRARG = 'CONVFMACP_FRARG'
+    CONVFMNC_FRARG = 'CONVFMNC_FRARG'
+    CONVFMRCP_FRARG = 'CONVFMRCP_FRARG'
+    FILE_AMDGP = 'FILE_AMDGP'
+    FILE_AMDSP = 'FILE_AMDSP'
+    FILE_FRACH = 'FILE_FRACH'
+    FILE_FRARG = 'FILE_FRARG'
+
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
@@ -70,44 +78,52 @@ class OtherEventFilings(str, Enum):
 
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
-    RegistrationEventFilings.FILE_FRREG: 'registration',
-    RegistrationEventFilings.CONVFMREGI_FRREG: 'registration',
+    RegistrationEventFilings.FILE_FRREG: FilingCore.FilingTypes.REGISTRATION.value,
+    RegistrationEventFilings.CONVFMREGI_FRREG: FilingCore.FilingTypes.REGISTRATION.value,
 
-    ChangeRegistrationEventFilings.CONVFMACP_FRMEM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.CONVFMACP_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     #TODO currently has no event data.  need to determine what to do with these event/filing types
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRADD: 'changeOfRegistration',
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: 'changeOfRegistration',
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: 'changeOfRegistration',
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: 'changeOfRegistration',
-    # ChangeRegistrationEventFilings.CONVFMRCP_FRMEM: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.CONVFMNC_FRCHG: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.CONVFMREGI_FRCHG: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.CONVFMREGI_FRMEM: 'changeOfRegistration',
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRADD: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    # ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    # ChangeRegistrationEventFilings.CONVFMRCP_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMNC_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMREGI_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMREGI_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
-    ChangeRegistrationEventFilings.FILE_ADDGP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_ADDSP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_CHGGP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_CHGSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_ADDGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_ADDSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_CHGGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_CHGSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
-    ChangeRegistrationEventFilings.FILE_FRADD: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_FRCHG: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_FRMEM: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRADD: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
-    ChangeRegistrationEventFilings.FILE_FRNAM: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_FRNAT: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_MEMGP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_NAMGP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_NAMSP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_NATGP: 'changeOfRegistration',
-    ChangeRegistrationEventFilings.FILE_NATSP: 'changeOfRegistration',
+    ChangeRegistrationEventFilings.FILE_FRNAM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_FRNAT: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_MEMGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_NAMGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_NAMSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_NATGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_NATSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
-    DissolutionEventFilings.CONVFMDISS_FRDIS: 'dissolution',
-    DissolutionEventFilings.FILE_DISGP: 'dissolution',
-    DissolutionEventFilings.FILE_DISSP: 'dissolution',
-    DissolutionEventFilings.FILE_FRDIS: 'dissolution',
-    DissolutionEventFilings.FILE_LLREG: 'dissolution',
+    ChangeRegistrationEventFilings.CONVFMACP_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMNC_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMRCP_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_AMDGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_AMDSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_FRACH: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.FILE_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
-    OtherEventFilings.ADMIN_ADMCF: 'conversion',
+    DissolutionEventFilings.CONVFMDISS_FRDIS: FilingCore.FilingTypes.DISSOLUTION.value,
+    DissolutionEventFilings.FILE_DISGP: FilingCore.FilingTypes.DISSOLUTION.value,
+    DissolutionEventFilings.FILE_DISSP: FilingCore.FilingTypes.DISSOLUTION.value,
+    DissolutionEventFilings.FILE_FRDIS: FilingCore.FilingTypes.DISSOLUTION.value,
+    DissolutionEventFilings.FILE_LLREG: FilingCore.FilingTypes.DISSOLUTION.value,
+
+    OtherEventFilings.ADMIN_ADMCF: FilingCore.FilingTypes.CONVERSION.value,
     OtherEventFilings.FILE_FRPBO: 'putBackOn'
 }
 
