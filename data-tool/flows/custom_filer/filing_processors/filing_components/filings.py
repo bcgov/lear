@@ -33,3 +33,9 @@ def update_filing_court_order(filing_submission: Filing, court_order_json: Dict)
         filing_submission.court_order_date = datetime.fromisoformat(court_order_json.get('orderDate'))
 
     return None
+
+
+def update_filing_order_details(filing_submission: Filing, filing_event_data: Dict):
+    """Update filing order details with notation from ledger text."""
+
+    filing_submission.order_details = filing_event_data.get('lt_notation')

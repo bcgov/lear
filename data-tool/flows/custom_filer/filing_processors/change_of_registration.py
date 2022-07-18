@@ -81,6 +81,8 @@ def process(business: Business,
         court_order_json = dpath.util.get(change_filing, '/changeOfRegistration/courtOrder')
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
+    filings.update_filing_order_details(change_filing_rec, filing_event_data)
+
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
