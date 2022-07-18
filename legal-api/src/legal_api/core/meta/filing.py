@@ -254,8 +254,8 @@ FILINGS: Final = {
         'name': 'changeOfRegistration',
         'title': 'Change of Registration',
         'displayName': {
-            'SP': 'Change of Proprietor Registration',
-            'GP': 'Change of Partnership Registration'
+            'SP': 'Change of Registration Application',
+            'GP': 'Change of Registration Application'
         },
         'codes': {
             'SP': 'FMCHANGE',
