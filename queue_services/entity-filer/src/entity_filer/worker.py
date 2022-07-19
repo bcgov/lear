@@ -348,11 +348,3 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
-
-import asyncio
-event_loop = asyncio.get_event_loop()
-event_loop.run_until_complete(process_filing({
-    'filing': {
-        'id': 126144
-    }
-}, FLASK_APP))
