@@ -63,7 +63,7 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    if legal_type != Business.LegalTypes.COOP.value and dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    if legal_type != Business.LegalTypes.COOP.value or dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
