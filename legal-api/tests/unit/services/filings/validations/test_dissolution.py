@@ -25,6 +25,7 @@ from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
+from src.legal_api.services.filings.validations.dissolution import DissolutionTypes
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -37,6 +38,10 @@ from tests.unit.services.filings.validations import lists_are_equal
         ('SUCCESS', 'BC', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'SP', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'GP', 'voluntary', 'BC1234567', None, None),
+        ('SUCCESS', 'BC', 'administrative', 'BC1234567', None, None),
+        ('SUCCESS', 'SP', 'administrative', 'BC1234567', None, None),
+        ('SUCCESS', 'GP', 'administrative', 'BC1234567', None, None),
+        ('SUCCESS', 'CP', 'administrative', 'CP1234567', None, None),
         ('FAIL', 'CP', 'involuntary', 'CP1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BC', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BEN', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
@@ -58,8 +63,11 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    if legal_type != Business.LegalTypes.COOP.value:
+    if legal_type != Business.LegalTypes.COOP.value and dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         del filing['filing']['dissolution']['dissolutionStatementType']
+
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        del filing['filing']['dissolution']['parties']   
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)
