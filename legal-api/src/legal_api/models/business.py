@@ -360,6 +360,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+
+        d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
+                                  x.status == 'COMPLETED')
         return d
 
     @property

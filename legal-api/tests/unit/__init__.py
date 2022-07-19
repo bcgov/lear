@@ -12,3 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Centralized setup of logging for the service."""
+
+class MockResponse:
+    """Mock http response."""
+
+    def __init__(self, json_data):
+        """Initialize mock http response."""
+        self.json_data = json_data
+
+    def json(self):
+        """Return mock json data."""
+        return self.json_data
