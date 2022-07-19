@@ -67,7 +67,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     legal_type = get_str(dissolution, '/filing/business/legalType')
-    dissolution_type =  get_str(dissolution, '/filing/dissolution/dissolutionType')
+    dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
     msg = []
 
     err = validate_dissolution_type(dissolution, legal_type)
