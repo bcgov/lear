@@ -29,7 +29,8 @@ from .change_of_name import validate as con_validate
 from .change_of_registration import validate as change_of_registration_validate
 from .correction import validate as correction_validate
 from .court_order import validate as court_order_validate
-from .dissolution import DissolutionTypes, validate as dissolution_validate
+from .dissolution import DissolutionTypes
+from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .incorporation_application import validate_correction_ia
 from .put_back_on import validate as put_back_on_validate
