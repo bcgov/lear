@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for namex-api calls."""
+import urllib.parse
 from datetime import datetime
 from enum import Enum
 from typing import List
@@ -98,7 +99,7 @@ class NameXService():
 
         token = dict(auth.json())['access_token']
 
-        query_string = '&'.join([f'nrNumbers={nr}' for nr in identifiers])
+        query_string = urllib.parse.urlencode({'nrNumbers': identifiers}, True)
         # Perform proxy call using the inputted identifiers (e.g. NR 1234567, NR 7654321)
         nr_response = requests.get(f'{namex_url}requests?{query_string}',
                                    headers=NameXService.json_bearer_auth(token))
