@@ -149,7 +149,6 @@ def test_name_requests_list_success(client):
     assert len(rv.json) == 3
 
 
-
 @integration_namerequests
 def test_name_requests_success(client):
     """Assert that a name request can be received."""
