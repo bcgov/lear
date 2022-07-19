@@ -51,7 +51,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 )
 def test_dissolution_type(session, test_status, legal_type, dissolution_type,
                           identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
-    """Assert that a VD can be validated."""
+    """Assert that a VD and AD can be validated."""
     # setup
     business = Business(identifier=identifier)
 
