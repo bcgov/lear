@@ -135,7 +135,7 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
 
 def validate_dissolution_statement_type(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate dissolution statement type of the filing.
-    
+
     This needs not to be validated for administrative dissolution
     """
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
@@ -235,7 +235,7 @@ def _validate_address_location(parties):
 
 def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate affidavit document of the filing.
-    
+
     This needs not to be validated for administrative dissolution
     """
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
