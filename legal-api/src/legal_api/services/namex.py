@@ -53,7 +53,7 @@ class NameXService():
 
     @staticmethod
     def auth():
-        """Posts to OIDC auth endpoint."""
+        """Request OIDC auth endpoint."""
         return requests.post(NameXService.AUTH_URL,
                              auth=(NameXService.USERNAME, NameXService.SECRET),
                              headers={'Content-Type': 'application/x-www-form-urlencoded'},
