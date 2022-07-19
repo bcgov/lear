@@ -24,7 +24,6 @@ class ChangeRegistrationEventFilings(str, Enum):
     # CONVFMMISS_FRCHG = 'CONVFMMISS_FRCHG'
     # CONVFMMISS_FRMEM = 'CONVFMMISS_FRMEM'
     # CONVFMMISS_FRNAT = 'CONVFMMISS_FRNAT'
-    # CONVFMRCP_FRMEM = 'CONVFMRCP_FRMEM'
     CONVFMNC_FRCHG = 'CONVFMNC_FRCHG'
     CONVFMREGI_FRCHG = 'CONVFMREGI_FRCHG'
     CONVFMREGI_FRMEM = 'CONVFMREGI_FRMEM'
@@ -48,6 +47,8 @@ class ChangeRegistrationEventFilings(str, Enum):
     CONVFMACP_FRARG = 'CONVFMACP_FRARG'
     CONVFMNC_FRARG = 'CONVFMNC_FRARG'
     CONVFMRCP_FRARG = 'CONVFMRCP_FRARG'
+    CONVFMRCP_FRMEM = 'CONVFMRCP_FRMEM'
+    CONVFMRCP_NULL = 'CONVFMRCP_NULL'
     FILE_AMDGP = 'FILE_AMDGP'
     FILE_AMDSP = 'FILE_AMDSP'
     FILE_FRACH = 'FILE_FRACH'
@@ -87,7 +88,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     # ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     # ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     # ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
-    # ChangeRegistrationEventFilings.CONVFMRCP_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMNC_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMREGI_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMREGI_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
@@ -112,6 +112,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     ChangeRegistrationEventFilings.CONVFMACP_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMNC_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMRCP_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMRCP_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMRCP_NULL: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.FILE_AMDGP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.FILE_AMDSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.FILE_FRACH: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
@@ -124,7 +126,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     DissolutionEventFilings.FILE_LLREG: FilingCore.FilingTypes.DISSOLUTION.value,
 
     OtherEventFilings.ADMIN_ADMCF: FilingCore.FilingTypes.CONVERSION.value,
-    OtherEventFilings.FILE_FRPBO: 'putBackOn'
+    OtherEventFilings.FILE_FRPBO: FilingCore.FilingTypes.PUTBACKON.value
 }
 
 

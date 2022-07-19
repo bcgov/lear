@@ -22,7 +22,7 @@ class FirmFilingJsonFactoryService:
                 self._filing_data['corp_parties'] = []
 
         self._event_id = self._filing_data['f_event_id']
-        self._prev_event_id = self._filing_data.get('prev_event_filing_data', {}).get('f_event_id', None)
+        self._prev_event_id = self._filing_data.get('prev_event_filing_data', {}).get('e_event_id', None)
         self._corp_type_cd = self._filing_data['c_corp_type_cd']
 
 
@@ -166,12 +166,6 @@ class FirmFilingJsonFactoryService:
             self.populate_nr(change_registration_dict)
         else:
             del change_registration_dict['nameRequest']
-
-        if self._filing_data.get('lt_event_id') and self._filing_data.get('lt_notation'):
-            self.populate_court_order(change_registration_dict)
-        else:
-            del change_registration_dict['courtOrder']
-
 
 
     def populate_conversion(self, filing_dict: dict):
