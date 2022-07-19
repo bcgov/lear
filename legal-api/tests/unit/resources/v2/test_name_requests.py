@@ -138,6 +138,19 @@ nr_consumable_conditional = {
 
 
 @integration_namerequests
+def test_name_requests_list_success(client):
+    """Assert that a name request can be received."""
+    identifiers = ['NR 3252362', 'NR 3252363', 'NR 3252364']
+    qs = '&'.join([f'nrNumbers={nr}' for nr in identifiers])
+    rv = client.get('/api/v2/nameRequests?'+qs)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json
+    assert len(rv.json) == 3
+
+
+
+@integration_namerequests
 def test_name_requests_success(client):
     """Assert that a name request can be received."""
     rv = client.get('/api/v2/nameRequests/NR 3252362')
