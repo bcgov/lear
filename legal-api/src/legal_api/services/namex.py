@@ -30,6 +30,10 @@ class NameXService():
     """Provides services to use the namex-api."""
 
     DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
+    AUTH_URL = current_app.config.get('NAMEX_AUTH_SVC_URL')
+    USERNAME = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
+    SECRET = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
+    NAMEX_URL = current_app.config.get('NAMEX_SVC_URL')
 
     class State(Enum):
         """Name request states."""
@@ -48,16 +52,26 @@ class NameXService():
         NRO_UPDATING = 'NRO_UPDATING'
 
     @staticmethod
+    def auth():
+        """Posts to OIDC auth endpoint."""
+        return requests.post(NameXService.AUTH_URL,
+                             auth=(NameXService.USERNAME, NameXService.SECRET),
+                             headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                             data={'grant_type': 'client_credentials'})
+
+    @staticmethod
+    def json_bearer_auth(token):
+        """Headers for JSON / bearer token."""
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+
+    @staticmethod
     def query_nr_number(identifier: str):
         """Return a JSON object with name request information."""
-        auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
-        username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
-        secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
-        namex_url = current_app.config.get('NAMEX_SVC_URL')
-
         # Get access token for namex-api in a different keycloak realm
-        auth = requests.post(auth_url, auth=(username, secret), headers={
-            'Content-Type': 'application/x-www-form-urlencoded'}, data={'grant_type': 'client_credentials'})
+        auth = NameXService.auth()
 
         # Return the auth response if an error occurs
         if auth.status_code != 200:
@@ -66,24 +80,16 @@ class NameXService():
         token = dict(auth.json())['access_token']
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
-        nr_response = requests.get(namex_url + 'requests/' + identifier, headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        })
+        nr_response = requests.get(f'{NameXService.NAMEX_URL}requests/{identifier}',
+                                   headers=NameXService.json_bearer_auth(token))
 
         return nr_response
 
     @staticmethod
     def query_nr_numbers(identifiers: List[str]):
         """Return a JSON object with name request information."""
-        auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
-        username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
-        secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
-        namex_url = current_app.config.get('NAMEX_SVC_URL')
-
         # Get access token for namex-api in a different keycloak realm
-        auth = requests.post(auth_url, auth=(username, secret), headers={
-            'Content-Type': 'application/x-www-form-urlencoded'}, data={'grant_type': 'client_credentials'})
+        auth = NameXService.auth()
 
         # Return the auth response if an error occurs
         if auth.status_code != 200:
@@ -93,24 +99,16 @@ class NameXService():
 
         query_string = '&'.join([f'nrNumbers={nr}' for nr in identifiers])
         # Perform proxy call using the inputted identifiers (e.g. NR 1234567, NR 7654321)
-        nr_response = requests.get(f'{namex_url}requests?{query_string}', headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        })
+        nr_response = requests.get(f'{NameXService.NAMEX_URL}requests?{query_string}',
+                                   headers=NameXService.json_bearer_auth(token))
 
         return nr_response
 
     @staticmethod
     def update_nr(nr_json):
         """Update name request with nr_json."""
-        auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
-        username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
-        secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
-        namex_url = current_app.config.get('NAMEX_SVC_URL')
-
         # Get access token for namex-api in a different keycloak realm
-        auth = requests.post(auth_url, auth=(username, secret), headers={
-            'Content-Type': 'application/x-www-form-urlencoded'}, data={'grant_type': 'client_credentials'})
+        auth = NameXService.auth()
 
         # Return the auth response if an error occurs
         if auth.status_code != 200:
@@ -119,10 +117,8 @@ class NameXService():
         token = dict(auth.json())['access_token']
 
         # Perform update proxy call using nr number (e.g. NR 1234567)
-        nr_response = requests.put(namex_url + 'requests/' + nr_json['nrNum'], headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        }, json=nr_json)
+        nr_response = requests.put(f"{NameXService.NAMEX_URL}requests/{nr_json['nrNum']}",
+                                   headers=NameXService.json_bearer_auth(token), json=nr_json)
 
         return nr_response
 
