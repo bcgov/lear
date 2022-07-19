@@ -36,7 +36,7 @@ def get_list():
         # Errors in general will just pass though,
         # 404 is overriden as it is giving namex-api specific messaging
         if nr_response.status_code == HTTPStatus.NOT_FOUND.value:
-            return jsonify(message=f'{identifiers} not found.'), HTTPStatus.NOT_FOUND
+            return jsonify(message='Identifiers not found.'), HTTPStatus.NOT_FOUND
 
         return jsonify(nr_response.json())
     except Exception as err:
