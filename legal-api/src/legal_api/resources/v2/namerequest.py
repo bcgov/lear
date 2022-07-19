@@ -16,6 +16,7 @@
 Provides a proxy endpoint to retrieve name request data.
 """
 from http import HTTPStatus
+
 from flask import Blueprint, abort, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
@@ -24,6 +25,7 @@ from legal_api.services import namex
 
 bp = Blueprint('NAMEREQUEST2', __name__, url_prefix='/api/v2/nameRequests')
 
+
 # For sbc-auth - My Business Registry page.
 @bp.route('', methods=['GET'])
 @cross_origin(origin='*')
@@ -31,7 +33,7 @@ def get_list():
     """Return a JSON object with name request information."""
     try:
         if not (identifiers := request.args.getlist('nrNumbers', None)) or len(identifiers) == 0:
-            return jsonify({'message': 'Identifiers cannot be empty.'}), HTTPStatus.BAD_REQUEST
+            return jsonify(message='Identifiers cannot be empty.'), HTTPStatus.BAD_REQUEST
         nr_response = namex.query_nr_numbers(identifiers)
         # Errors in general will just pass though,
         # 404 is overriden as it is giving namex-api specific messaging
