@@ -55,8 +55,8 @@ class DissolutionStatementTypes(str, Enum):
 
 
 DISSOLUTION_MAPPING = {
-    'COOP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION],
-    'CORP': [DissolutionTypes.VOLUNTARY],
+    'COOP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION, DissolutionTypes.ADMINISTRATIVE],
+    'CORP': [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE],
     'FIRMS': [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE]
 }
 
@@ -67,6 +67,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     legal_type = get_str(dissolution, '/filing/business/legalType')
+    dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
     msg = []
 
     err = validate_dissolution_type(dissolution, legal_type)
@@ -81,7 +82,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_parties_address(dissolution, legal_type)
+    err = validate_parties_address(dissolution, legal_type, dissolution_type)
     if err:
         msg.extend(err)
 
@@ -151,13 +152,17 @@ def validate_dissolution_statement_type(filing_json, legal_type) -> Optional[lis
     return None
 
 
-def validate_parties_address(filing_json, legal_type) -> Optional[list]:
+def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.
 
     Address must be in Canada for COOP and BC for CORP.
     Both mailing and delivery address are mandatory.
     This needs not to be validated for SP and GP
+    This needs not to be validated for administrative dissolution
     """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return None
+
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
 
