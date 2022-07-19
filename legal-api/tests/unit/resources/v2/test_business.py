@@ -21,7 +21,7 @@ from http import HTTPStatus
 import pytest
 
 import registry_schemas
-from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, FILING_TEMPLATE, INCORPORATION
 
 from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
@@ -30,6 +30,7 @@ from tests import integration_affiliation
 from tests.unit.models import factory_business
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
+from tests.unit.models import factory_completed_filing
 
 
 def factory_business_model(legal_name,
@@ -167,10 +168,38 @@ def test_get_business_info(session, client, jwt):
     print('business json', rv.json)
 
     assert rv.json['business']['identifier'] == identifier
+    assert rv.json['business']['hasCorrections'] == False
 
     print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
     assert registry_schemas.validate(rv.json, 'business')
+
+
+def test_get_business_with_correction_filings(session, client, jwt):
+    """Assert that the business info sets hasCorrections property."""
+    identifier = 'CP7654321'
+    legal_name = identifier + ' legal name'
+    business = factory_business_model(legal_name=legal_name,
+                           identifier=identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None)
+
+    corrected_filing = factory_completed_filing(business, ANNUAL_REPORT)
+
+    f = copy.deepcopy(CORRECTION_AR)
+    f['filing']['header']['identifier'] = business.identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    factory_completed_filing(business, f)
+
+    rv = client.get('/api/v2/businesses/' + business.identifier,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.json['business']['identifier'] == identifier
+    assert rv.json['business']['hasCorrections'] == True
 
 
 def test_get_business_info_dissolution(session, client, jwt):

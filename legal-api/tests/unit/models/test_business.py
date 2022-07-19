@@ -267,7 +267,8 @@ def test_business_json(session):
         'adminFreeze': False,
         'state': 'ACTIVE',
         'complianceWarnings': [],
-        'warnings': []
+        'warnings': [],
+        'hasCorrections': False
     }
 
     assert business.json() == d

@@ -19,6 +19,12 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services.filings.validations.registration import (
+    validate_naics,
+    validate_name_request,
+    validate_offices,
+    validate_party,
+)
 
 from .common_validations import has_at_least_one_share_class
 
@@ -43,7 +49,23 @@ def validate(business: Business, filing: Dict) -> Error:
     if err := has_at_least_one_share_class(filing, 'incorporationApplication'):
         msg.append({'error': _(err), 'path': '/filing/incorporationApplication/shareStructure'})
 
+    # validations for firms
+    legal_type = filing.get('filing', {}).get('business', {}).get('legalType')
+    if legal_type and legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        _validate_firms_correction(filing, legal_type, msg)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
+
+
+def _validate_firms_correction(filing, legal_type, msg):
+    filing_type = 'correction'
+    if filing.get('filing', {}).get('correction', {}).get('nameRequest', None):
+        msg.extend(validate_name_request(filing, filing_type))
+    if filing.get('filing', {}).get('correction', {}).get('parties', None):
+        msg.extend(validate_party(filing, legal_type, filing_type))
+    if filing.get('filing', {}).get('correction', {}).get('offices', None):
+        msg.extend(validate_offices(filing, filing_type))
+    msg.extend(validate_naics(filing, filing_type))
