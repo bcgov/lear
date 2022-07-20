@@ -59,8 +59,13 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    if legal_type != Business.LegalTypes.COOP.value:
+    if legal_type != Business.LegalTypes.COOP.value or dissolution_type == 'administrative':
         del filing['filing']['dissolution']['dissolutionStatementType']
+
+    if dissolution_type == 'administrative':
+        filing['filing']['dissolution']['details'] = "Some Details"
+        del filing['filing']['dissolution']['affidavitFileKey']
+        del filing['filing']['dissolution']['affidavitFileName']
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)
