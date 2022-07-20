@@ -37,6 +37,7 @@ from tests.unit.services.filings.validations import lists_are_equal
         ('SUCCESS', 'BC', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'SP', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'GP', 'voluntary', 'BC1234567', None, None),
+        ('SUCCESS', 'GP', 'administrative', 'FM1234567', None, None),
         ('FAIL', 'CP', 'involuntary', 'CP1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BC', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BEN', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
