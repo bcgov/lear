@@ -29,6 +29,7 @@ from .change_of_name import validate as con_validate
 from .change_of_registration import validate as change_of_registration_validate
 from .correction import validate as correction_validate
 from .court_order import validate as court_order_validate
+from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .incorporation_application import validate_correction_ia
@@ -77,7 +78,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
             return err
 
         legal_type = get_str(filing_json, '/filing/business/legalType')
-        if legal_type == Business.LegalTypes.COOP.value:
+        dissolution_type = get_str(filing_json, '/filing/dissolution/dissolutionType')
+
+        if legal_type == Business.LegalTypes.COOP.value and dissolution_type != DissolutionTypes.ADMINISTRATIVE:
             if 'specialResolution' in filing_json['filing'].keys():
                 err = special_resolution_validate(business, filing_json)
             else:
