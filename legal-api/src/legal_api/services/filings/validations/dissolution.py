@@ -234,7 +234,13 @@ def _validate_address_location(parties):
 
 
 def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
-    """Validate affidavit document of the filing."""
+    """Validate affidavit document of the filing.
+
+    This needs not to be validated for administrative dissolution
+    """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return None
+
     msg = []
 
     if legal_type == Business.LegalTypes.COOP.value:
