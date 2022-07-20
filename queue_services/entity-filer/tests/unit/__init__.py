@@ -12,9 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests and the helper routines."""
+import base64
+import uuid
 
-from tests import EPOCH_DATETIME
-
+from freezegun import freeze_time
+from sqlalchemy_continuum import versioning_manager
+from legal_api.utils.datetime import datetime, timezone
+from tests import EPOCH_DATETIME, FROZEN_DATETIME
+from legal_api.models import db, Filing
+from legal_api.models.colin_event_id import ColinEventId
 
 AR_FILING = {
     'filing': {
@@ -535,5 +541,34 @@ def create_party_role(business, party, roles, appointment_date):
         business.party_roles.append(party_role)
 
     return business
+
+
+def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
+    """Create a completed filing."""
+    if not payment_token:
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
+
+    with freeze_time(filing_date):
+
+        filing = Filing()
+        filing.business_id = business.id
+        filing.filing_date = filing_date
+        filing.filing_json = data_dict
+        filing.save()
+
+        uow = versioning_manager.unit_of_work(db.session)
+        transaction = uow.create_transaction(db.session)
+        filing.transaction_id = transaction.id
+        filing.payment_token = payment_token
+        filing.effective_date = filing_date
+        filing.payment_completion_date = filing_date
+        if colin_id:
+            colin_event = ColinEventId()
+            colin_event.colin_event_id = colin_id
+            colin_event.filing_id = filing.id
+            colin_event.save()
+        filing.save()
+    return filing
+
 
 

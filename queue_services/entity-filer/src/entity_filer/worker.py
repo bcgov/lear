@@ -210,7 +210,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     registrars_order.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('correction'):
-                    filing_submission = correction.process(filing_submission, filing, filing_meta)
+                    filing_submission = correction.process(filing_submission, filing, filing_meta, business)
 
                 elif filing.get('transition'):
                     filing_submission = transition.process(business, filing_submission, filing, filing_meta)
@@ -261,6 +261,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             if any('changeOfRegistration' in x for x in legal_filings):
                 change_of_registration.post_process(business, filing_submission)
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type
+                )
+
+            if business.legal_type in ['SP', 'GP'] and any('correction' in x for x in legal_filings):
+                correction.post_process(business, filing_submission)
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,
