@@ -78,7 +78,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_dissolution_statement_type(dissolution, legal_type)
+    err = validate_dissolution_statement_type(dissolution, legal_type, dissolution_type)
     if err:
         msg.extend(err)
 
@@ -86,7 +86,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_affidavit(dissolution, legal_type)
+    err = validate_affidavit(dissolution, legal_type, dissolution_type)
     if err:
         msg.extend(err)
 
@@ -133,7 +133,7 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     return None
 
 
-def validate_dissolution_statement_type(filing_json, legal_type) -> Optional[list]:
+def validate_dissolution_statement_type(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate dissolution statement type of the filing."""
     msg = []
     dissolution_stmt_type_path = '/filing/dissolution/dissolutionStatementType'
@@ -227,7 +227,7 @@ def _validate_address_location(parties):
     return None, address_in_bc, address_in_ca
 
 
-def validate_affidavit(filing_json, legal_type) -> Optional[list]:
+def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate affidavit document of the filing."""
     msg = []
 
