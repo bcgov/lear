@@ -134,7 +134,13 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
 
 
 def validate_dissolution_statement_type(filing_json, legal_type, dissolution_type) -> Optional[list]:
-    """Validate dissolution statement type of the filing."""
+    """Validate dissolution statement type of the filing.
+
+    This needs not to be validated for administrative dissolution
+    """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return None
+
     msg = []
     dissolution_stmt_type_path = '/filing/dissolution/dissolutionStatementType'
     dissolution_stmt_type = get_str(filing_json, dissolution_stmt_type_path)
