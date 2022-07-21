@@ -21,8 +21,13 @@
             "legal-api",
             "nats-filer",
             "entity-service-account",
-            "launchdarkly",
-            "sentry"
+            "launchdarkly"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

@@ -11,8 +11,13 @@
             "postgres-legal",
             "entity-emailer",
             "nats-emailer",
-            "entity-service-account",
-            "sentry"
+            "entity-service-account"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

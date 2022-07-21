@@ -62,6 +62,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
 
+    SENTRY_ENABLE = os.getenv('SENTRY_ENABLE', 'False')
+
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

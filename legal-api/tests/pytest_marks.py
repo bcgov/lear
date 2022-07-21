@@ -49,6 +49,9 @@ integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) 
 integration_reports = pytest.mark.skipif((os.getenv('RUN_REPORT_TESTS', False) is False),
                                          reason='Report tests are only run when requested.')
 
+integration_sentry_enable = pytest.mark.skipif((os.getenv('SENTRY_ENABLE', False) is False),
+                                        reason='SENTRY tests run when SENTRY_ENABLE is set.')
+
 integration_sentry = pytest.mark.skipif((os.getenv('SENTRY_DSN', False) is False),
                                         reason='SENTRY tests run when SENTRY_DSN is set.')
 

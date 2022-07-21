@@ -47,11 +47,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     db.init_app(app)
 
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
+    if str(app.config.get('SENTRY_ENABLE')).lower() == 'true':
+        if app.config.get('SENTRY_DSN', None):
+            sentry_sdk.init(
+                dsn=app.config.get('SENTRY_DSN'),
+                integrations=[SENTRY_LOGGING]
+            )
 
     register_shellcontext(app)
 

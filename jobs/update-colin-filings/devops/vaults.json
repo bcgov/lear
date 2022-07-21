@@ -3,8 +3,13 @@
         "vault": "entity",
         "application": [
             "filings-jobs",
-            "entity-service-account",
-            "sentry"
+            "entity-service-account"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

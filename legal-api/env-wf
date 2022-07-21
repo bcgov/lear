@@ -1,3 +1,4 @@
+SENTRY_ENABLE=false
 SENTRY_DSN=
 PAYMENT_SVC_URL=https://mock-server/api/v1/payments
 

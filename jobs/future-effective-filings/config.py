@@ -83,6 +83,7 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     AUTH_URL = os.getenv('AUTH_URL', '')
     USERNAME = os.getenv('AUTH_USERNAME', '')
     PASSWORD = os.getenv('AUTH_PASSWORD', '')
+    SENTRY_ENABLE = os.getenv('SENTRY_ENABLE', 'False')
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     SECRET_KEY = 'a secret'
@@ -130,6 +131,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     AUTH_URL = os.getenv('AUTH_URL_TEST', '')
     USERNAME = os.getenv('AUTH_USERNAME_TEST', '')
     PASSWORD = os.getenv('AUTH_PASSWORD_TEST', '')
+    SENTRY_ENABLE = os.getenv('SENTRY_ENABLE_TEST', 'False')
     SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
 
 
