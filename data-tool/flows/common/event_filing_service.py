@@ -19,14 +19,18 @@ class RegistrationEventFilings(str, Enum):
 
 class ChangeRegistrationEventFilings(str, Enum):
     CONVFMACP_FRMEM = 'CONVFMACP_FRMEM'
-    #TODO currently has no event data.  need to determine what to do with these event/filing types
-    # CONVFMMISS_FRADD = 'CONVFMMISS_FRADD'
-    # CONVFMMISS_FRCHG = 'CONVFMMISS_FRCHG'
-    # CONVFMMISS_FRMEM = 'CONVFMMISS_FRMEM'
-    # CONVFMMISS_FRNAT = 'CONVFMMISS_FRNAT'
+
+    CONVFMMISS_FRACH = 'CONVFMMISS_FRACH'
+    CONVFMMISS_FRADD = 'CONVFMMISS_FRADD'
+    CONVFMMISS_FRARG = 'CONVFMMISS_FRARG'
+    CONVFMMISS_FRCHG = 'CONVFMMISS_FRCHG'
+    CONVFMMISS_FRMEM = 'CONVFMMISS_FRMEM'
+    CONVFMMISS_FRNAT = 'CONVFMMISS_FRNAT'
+
     CONVFMNC_FRCHG = 'CONVFMNC_FRCHG'
     CONVFMREGI_FRCHG = 'CONVFMREGI_FRCHG'
     CONVFMREGI_FRMEM = 'CONVFMREGI_FRMEM'
+
     FILE_ADDGP = 'FILE_ADDGP'
     FILE_ADDSP = 'FILE_ADDSP'
     FILE_CHGGP = 'FILE_CHGGP'
@@ -83,11 +87,14 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     RegistrationEventFilings.CONVFMREGI_FRREG: FilingCore.FilingTypes.REGISTRATION.value,
 
     ChangeRegistrationEventFilings.CONVFMACP_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
-    #TODO currently has no event data.  need to determine what to do with these event/filing types
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRADD: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
-    # ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+
+    ChangeRegistrationEventFilings.CONVFMMISS_FRACH: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMMISS_FRADD: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMMISS_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMMISS_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMMISS_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+    ChangeRegistrationEventFilings.CONVFMMISS_FRNAT: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+
     ChangeRegistrationEventFilings.CONVFMNC_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMREGI_FRCHG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.CONVFMREGI_FRMEM: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
