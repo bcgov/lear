@@ -45,9 +45,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
                 dsn=app.config.get('SENTRY_DSN'),
                 integrations=[FlaskIntegration()]
             )
-        app.register_blueprint(API_BLUEPRINT)
-        app.register_blueprint(OPS_BLUEPRINT)
-        # setup_jwt_manager(app, jwt)
+    app.register_blueprint(API_BLUEPRINT)
+    app.register_blueprint(OPS_BLUEPRINT)
+    # setup_jwt_manager(app, jwt)
 
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable
