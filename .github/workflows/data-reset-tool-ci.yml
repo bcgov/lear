@@ -64,14 +64,6 @@ jobs:
   #       id: test
   #       run: |
   #         make test
-  
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./data-reset-tool/coverage.xml
-          flags: datareset
-          name: codecov-data-reset-tool
-          fail_ci_if_error: true
 
   build-check:
     needs: setup-job
