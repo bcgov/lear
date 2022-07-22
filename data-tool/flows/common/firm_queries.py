@@ -34,7 +34,6 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                        and e.corp_num = 'FM0367712'
                         -- utc testing
 --                         and e.corp_num in ('FM0554193', 'FM0554211', 'FM0554212')
-                       -- firms that had address issues 
                        -- firms with conversion filings
 --                         and e.corp_num in ('FM0272508', 'FM0272576', 'FM0308447')
                        -- firms with put back on filings
@@ -50,7 +49,16 @@ def get_unprocessed_firms_query(data_load_env: str):
                        -- firms with CONVFMRCP event type
 --                        and e.corp_num = 'FM0481290'
 --                        and e.corp_num = 'FM0498493'
---                        and e.corp_num = 'FM0343769'                     
+--                        and e.corp_num = 'FM0343769'
+                       -- firms with CONVFMMISS event type
+--                           and e.corp_num = 'FM0165240' -- CONVFMMISS_FRACH
+--                           and e.corp_num = 'FM0351799' -- CONVFMMISS_FRADD
+--                           and e.corp_num in ('FM0526040', 'FM0151771') -- CONVFMMISS_FRARG
+--                           and e.corp_num in ('FM0273864', 'FM0457533') -- CONVFMMISS_FRCHG
+--                           and e.corp_num in ('FM0417074', 'FM0296158') -- CONVFMMISS_FRMEM
+--                           and e.corp_num = 'FM0299481' -- CONVFMMISS_FRNAT
+--                              and e.corp_num in ('FM0165240', 'FM0351799', 'FM0526040', 'FM0151771', 'FM0273864', 
+--                                                 'FM0457533', 'FM0417074', 'FM0296158', 'FM0299481')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -63,7 +71,12 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
 --                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG'
 --                 and tbl_fe.event_file_types like '%CONVFMACP_FRMEM%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRACH%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRADD%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRARG%'
 --                 and tbl_fe.event_file_types like '%CONVFMMISS_FRCHG%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRMEM%'
+--                 and tbl_fe.event_file_types like '%CONVFMMISS_FRNAT%'
 --                 and tbl_fe.event_file_types like '%CONVFMNC_FRCHG%'
 --                 and tbl_fe.event_file_types like '%CONVFMREGI_FRCHG%'
 --                 and tbl_fe.event_file_types like '%FILE_ADDGP%'

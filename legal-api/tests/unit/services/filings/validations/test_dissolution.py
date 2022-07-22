@@ -37,6 +37,10 @@ from tests.unit.services.filings.validations import lists_are_equal
         ('SUCCESS', 'BC', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'SP', 'voluntary', 'BC1234567', None, None),
         ('SUCCESS', 'GP', 'voluntary', 'BC1234567', None, None),
+        ('SUCCESS', 'GP', 'administrative', 'FM1234567', None, None),
+        ('SUCCESS', 'SP', 'administrative', 'FM1234567', None, None),
+        ('SUCCESS', 'CP', 'administrative', 'CP1234567', None, None),
+        ('SUCCESS', 'BC', 'administrative', 'BC1234567', None, None), 
         ('FAIL', 'CP', 'involuntary', 'CP1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BC', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BEN', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
@@ -58,8 +62,13 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    if legal_type != Business.LegalTypes.COOP.value:
+    if legal_type != Business.LegalTypes.COOP.value or dissolution_type == 'administrative':
         del filing['filing']['dissolution']['dissolutionStatementType']
+
+    if dissolution_type == 'administrative':
+        filing['filing']['dissolution']['details'] = "Some Details"
+        del filing['filing']['dissolution']['affidavitFileKey']
+        del filing['filing']['dissolution']['affidavitFileName']
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)

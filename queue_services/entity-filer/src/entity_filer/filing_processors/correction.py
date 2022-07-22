@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the correction filing."""
+from contextlib import suppress
 from typing import Dict
 
 import pytz
-from legal_api.models import Comment, Filing
+import sentry_sdk
+from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.filing_components import business_profile, name_request
+from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
-def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):
     """Render the correction filing onto the business model objects."""
     local_timezone = pytz.timezone('US/Pacific')
 
@@ -44,11 +48,31 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta):
             staff_id=correction_filing.submitter_id
         )
     )
-    if not any('incorporationApplication' in x for x in correction_filing.legal_filings()):
-        # set correction filing to PENDING_CORRECTION, for manual intervention
-        # - include flag so that listener in Filing model does not change state automatically to COMPLETE
-        correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
-        setattr(correction_filing, 'skip_status_listener', True)
+    if business.legal_type in ['SP', 'GP']:
+        correct_business_data(business, correction_filing, filing, filing_meta)
+    else:
+        if not any('incorporationApplication' in x for x in correction_filing.legal_filings()):
+            # set correction filing to PENDING_CORRECTION, for manual intervention
+            # - include flag so that listener in Filing model does not change state automatically to COMPLETE
+            correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
+            setattr(correction_filing, 'skip_status_listener', True)
 
     original_filing.save_to_session()
     return correction_filing
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for correction.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    name_request.consume_nr(business, filing, 'correction')
+
+    with suppress(IndexError, KeyError, TypeError):
+        if err := business_profile.update_business_profile(
+            business,
+            filing.json['filing']['correction']['contactPoint']
+        ):
+            sentry_sdk.capture_message(
+                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
+                level='error')
