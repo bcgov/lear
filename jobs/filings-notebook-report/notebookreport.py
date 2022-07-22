@@ -108,39 +108,40 @@ def send_email(note_book, emailtype, errormessage):
     server.quit()
     os.remove(os.getenv('DATA_DIR', '')+filename)
 
+
 def processnotebooks(notebookdirectory):
     """Process Notebook."""
     status = False
     now = datetime.now()
-    
+
     try:
         retry_times = int(os.getenv('RETRY_TIMES', '1'))
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
         if notebookdirectory == 'monthly':
             days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
-    except Exception:
+    except Exception:  # noqa: B902
         logging.exception('Error processing notebook for %s', notebookdirectory)
         send_email(notebookdirectory, 'ERROR', traceback.format_exc())
         return status
-    
+
     # For monthly tasks, we only run on the specified days
-    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):        
+    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
         logging.info('Processing: %s', notebookdirectory)
-        
+
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
-        
+
         for file in findfiles(notebookdirectory, '*.ipynb'):
             file_processed += 1
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
-                try:                    
+                try:
                     pm.execute_notebook(file, os.getenv('DATA_DIR', '')+'temp.ipynb', parameters=None)
                     send_email(note_book, '', '')
-                    os.remove(os.getenv('DATA_DIR', '')+'temp.ipynb')                    
-                    status = True                    
+                    os.remove(os.getenv('DATA_DIR', '')+'temp.ipynb')
+                    status = True
                     break
-                except Exception:
+                except Exception:  # noqa: B902
                     if attempt + 1 == retry_times:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception(
@@ -157,6 +158,7 @@ def processnotebooks(notebookdirectory):
             if not status and num_files == file_processed:
                 break
     return status
+
 
 if __name__ == '__main__':
     start_time = datetime.utcnow()
