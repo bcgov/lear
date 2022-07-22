@@ -177,7 +177,7 @@ async def send_outstanding_bcomps_ar_reminder(app: Flask, qsm: QueueService):  #
 
 
 if __name__ == '__main__':
-    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None
+    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None  # pylint: disable=C0103
     application = create_app()
     with application.app_context():
         event_loop = asyncio.get_event_loop()

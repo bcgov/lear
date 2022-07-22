@@ -107,7 +107,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                     else:
                         colin_events = event_info
 
-            except Exception as err:
+            except Exception as err:  # noqa: B902
                 application.logger.error('Error getting event_ids from colin')
                 raise err
 
@@ -157,8 +157,9 @@ def get_filing(event_info: dict = None, application: Flask = None):  # pylint: d
         next((x for x in filing_types if filing_typ_cd in Filing.FILING_TYPES.get(x).get('type_code_list')), None)
 
     if not filing_type:
-        application.logger.error('Error unknown filing type: {} for event id: {}'.format(
-            event_info['filing_type'], event_info['event_id']))
+        eft = event_info['filing_type']
+        eid = event_info['event_id']
+        application.logger.error(f'Error unknown filing type: {eft} for event id: {eid}')
 
     identifier = event_info['corp_num']
     event_id = event_info['event_id']
@@ -229,7 +230,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
             max_event_id = first_failed_id - 1
         if max_event_id > 0:
             # update max_event_id in legal_db
-            application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
+            application.logger.debug(f'setting last_event_id in legal_db to {max_event_id}')
             response = requests.post(
                 f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
@@ -247,7 +248,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
         else:
             application.logger.debug('colin_last_update not updated in legal db.')
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         application.logger.error(err)
 
 
@@ -316,7 +317,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         else:
             application.logger.debug('No businesses in lear with outstanding tax ids.')
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         application.logger.error(err)
 
 

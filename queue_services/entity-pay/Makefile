@@ -64,6 +64,8 @@ ci: pylint flake8 test ## CI flow
 pylint: ## Linting with pylint
 	. venv/bin/activate && pylint --rcfile=setup.cfg src/$(PROJECT_NAME)
 
+lint: pylint flake8
+
 flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
 
