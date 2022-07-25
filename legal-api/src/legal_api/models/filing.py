@@ -109,7 +109,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Correction',
             'codes': {
                 'BEN': 'CRCTN',
-                'CP': 'CRCTN'
+                'CP': 'CRCTN',
+                'SP': 'FMCORR',
+                'GP': 'FMCORR'
             }
         },
         'dissolution': {

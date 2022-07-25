@@ -150,7 +150,9 @@ FILINGS: Final = {
         'displayName': 'Correction',
         'codes': {
             'BEN': 'CRCTN',
-            'CP': 'CRCTN'
+            'CP': 'CRCTN',
+            'SP': 'FMCORR',
+            'GP': 'FMCORR'
         },
         'additional': [
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
