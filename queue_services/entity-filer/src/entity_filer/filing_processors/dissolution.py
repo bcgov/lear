@@ -20,6 +20,7 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
+from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
@@ -37,8 +38,9 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     logger.debug('processing dissolution: %s', filing)
 
     filing_meta.dissolution = {}
+    dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
+
     with suppress(IndexError, KeyError, TypeError):
-        dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type}}
 
@@ -74,11 +76,17 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         filings.update_filing_court_order(filing_rec, court_order_json)
 
     if business.legal_type == Business.LegalTypes.COOP:
-        _update_cooperative(dissolution_filing, business, filing_rec)
+        _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
 
 
-def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing):
-    """Update COOP data."""
+def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):
+    """Update COOP data.
+
+    This should not be updated for administrative dissolution
+    """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return
+
     # create certified copy for affidavit document
     affidavit_file_key = dissolution_filing.get('affidavitFileKey')
     affidavit_file = MinioService.get_file(affidavit_file_key)
