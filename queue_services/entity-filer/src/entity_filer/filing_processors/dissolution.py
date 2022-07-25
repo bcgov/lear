@@ -39,7 +39,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
 
-    with suppress(IndexError, KeyError, TypeError):        
+    with suppress(IndexError, KeyError, TypeError):
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type}}
 
@@ -80,9 +80,9 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):
     """Update COOP data.
-       This show not be done for administrative dissolution
-    """
 
+    This should not be updated for administrative dissolution
+    """
     if dissolution_type == 'administrative':
         return
 
