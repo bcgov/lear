@@ -40,7 +40,7 @@ from tests.unit import create_business, create_filing
     ('BC', 'BC1234567', 'administrative'),
     ('SP', 'FM1234567', 'administrative'),
 ])
-def test_voluntary_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
+def test_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
     """Assert that the dissolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)
