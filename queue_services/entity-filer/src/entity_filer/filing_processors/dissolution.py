@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
+from enum import Enum
 from typing import Dict
 
 import dpath
@@ -26,6 +27,16 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
+
+
+class DissolutionTypes(str, Enum):
+    """Dissolution types."""
+
+    ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
+    INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
@@ -83,7 +94,7 @@ def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Fi
 
     This should not be updated for administrative dissolution
     """
-    if dissolution_type == 'administrative':
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         return
 
     # create certified copy for affidavit document
