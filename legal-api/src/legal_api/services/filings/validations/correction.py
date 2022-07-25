@@ -62,7 +62,7 @@ def validate(business: Business, filing: Dict) -> Error:
 
 def _validate_firms_correction(filing, legal_type, msg):
     filing_type = 'correction'
-    if filing.get('filing', {}).get('correction', {}).get('nameRequest', None):
+    if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing, filing_type))
     if filing.get('filing', {}).get('correction', {}).get('parties', None):
         msg.extend(validate_party(filing, legal_type, filing_type))
