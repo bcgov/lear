@@ -13,7 +13,6 @@
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
-from enum import Enum
 from typing import Dict
 
 import dpath
