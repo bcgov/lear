@@ -21,22 +21,13 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
+from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
-
-
-class DissolutionTypes(str, Enum):
-    """Dissolution types."""
-
-    ADMINISTRATIVE = 'administrative'
-    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
-    INVOLUNTARY = 'involuntary'
-    VOLUNTARY = 'voluntary'
-    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
