@@ -37,6 +37,8 @@ from tests.unit import create_business, create_filing
     ('ULC', 'BC1234567', 'voluntary'),
     ('LLC', 'BC1234567', 'voluntary'),
     ('CP', 'CP1234567', 'voluntary'),
+    ('BC', 'BC1234567', 'administrative'),
+    ('SP', 'FM1234567', 'administrative'),
 ])
 def test_voluntary_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
     """Assert that the dissolution is processed."""
