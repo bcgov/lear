@@ -17,7 +17,7 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                     and e.corp_num = 'FM0399872' -- can be used to test incremental processing
 --                     and e.corp_num = 'FM0554955' -- can be used to test incremental processing
                        -- incremental load testing 
---                        and e.corp_num in 'FM0775109', 'FM0558927', 'FM0706557', 'FM0799312','FM0675146', 'FM0772925'
+--                        and e.corp_num in ('FM0775109', 'FM0558927', 'FM0706557', 'FM0799312','FM0675146', 'FM0772925')
                         -- firms that need backslash added to corp name
 --                        and e.corp_num in ('FM0151616', 'FM0236781', 'FM0185321', 'FM0259938', 'FM0249302', 'FM0446106',
 --                                           'FM0270319', 'FM0344562', 'FM0344563', 'FM0285081', 'FM0303834', 'FM0789778', 
@@ -59,6 +59,14 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                           and e.corp_num = 'FM0299481' -- CONVFMMISS_FRNAT
 --                              and e.corp_num in ('FM0165240', 'FM0351799', 'FM0526040', 'FM0151771', 'FM0273864', 
 --                                                 'FM0457533', 'FM0417074', 'FM0296158', 'FM0299481')
+                       -- firms with firm comments 
+--                        and e.corp_num in ('FM0814468', 'FM0385546')
+                       -- firms with missing business names
+--                           and e.corp_num in ('FM0641636', 'FM0314690')
+                       -- firms that are frozen
+--                           and e.corp_num in ('FM0713982', 'FM0805895')
+                       -- firms with ledger text 
+--                        and e.corp_num in ('FM0000226', 'FM0695709')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -132,13 +140,14 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
             to_char(e.event_timerstamp, 'YYYY-MM-DD') as e_event_dt_str,
-            to_char(e.event_timerstamp, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as e_event_dts_utc,
-            e.trigger_dts          as e_trigger_dts,
+            to_char(e.event_timerstamp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as e_event_dts_pacific,
+            to_char(e.trigger_dts, 'YYYY-MM-DD') as e_trigger_dt_str,
+            to_char(e.trigger_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as e_trigger_dts_pacific,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
             to_char(f.effective_dt, 'YYYY-MM-DD') as f_effective_dt_str,
-            to_char(f.effective_dt, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as f_effective_dts_utc,
+            to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as f_effective_dts_pacific,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             f.ods_type_cd          as f_ods_type,
             f.nr_num               as f_nr_num,
@@ -146,7 +155,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             c.corp_num             as c_corp_num,
             c.corp_frozen_type_cd  as c_corp_frozen_type_cd,
             c.corp_type_cd         as c_corp_type_cd,
-            to_char(c.recognition_dts, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as c_recognition_dts_utc,
+            to_char(c.recognition_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as c_recognition_dts_pacific,
             c.bn_9                 as c_bn_9,
             c.bn_15                as c_bn_15,
             c.admin_email          as c_admin_email,
@@ -165,7 +174,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             bd.corp_num            as bd_corp_num,
             bd.start_event_id      as bd_start_event_id,
             bd.end_event_id        as bd_end_event_id,
-            to_char(bd.business_start_date, 'YYYY-MM-DD HH:MI:SS')::timestamp AT time zone 'pdt' as bd_business_start_date_dts_utc,
+            to_char(bd.business_start_date, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as bd_business_start_date_dts_pacific,
             bd.naics_code          as bd_naics_code,
             bd.description         as bd_description,
             -- ledger_text
@@ -262,7 +271,10 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                cp.middle_name            as cp_middle_name,
                cp.first_name             as cp_first_name,
                cp.business_name          as cp_business_name,
-               NULLIF(cp.bus_company_num, '')                                       as cp_bus_company_num,
+               case 
+                    when cp.bus_company_num = '' then NULL
+                    when cp.bus_company_num ~ '^[0-9]*$' then concat('BC', cp.bus_company_num)
+               end cp_bus_company_num,
                cp.email_address          as cp_email_address,
                cp.phone                  as cp_phone,
                -- mailing address
@@ -389,6 +401,19 @@ def get_firm_event_filing_office_data_query(corp_num: str, event_id: int):
         where 1 = 1
           and e.corp_num = '{corp_num}'
           and e.event_id = {event_id}
+        ;
+        """
+    return query
+
+
+def get_firm_comments_data_query(corp_num: str):
+    query = f"""
+        select to_char(cc.comment_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as cc_comment_dts_pacific,
+               cc.corp_num as cc_corp_num,
+               cc.comments as cc_comments
+        from corp_comments cc
+        where cc.corp_num = '{corp_num}'
+        order by cc.comment_dts
         ;
         """
     return query

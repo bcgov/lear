@@ -23,9 +23,14 @@ from legal_api.services.minio import MinioService
 
 from ..filing_meta import FilingMeta
 from .filing_components.parties import update_parties
+from .filing_components import filings
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business,
+            filing: Dict,
+            filing_rec: Filing,
+            filing_meta: FilingMeta,
+            filing_event_data: Dict):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
         print(f'legal_filing:Dissolution missing from {filing}')
@@ -33,8 +38,9 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     print('processing dissolution: %s', filing)
 
     filing_meta.dissolution = {}
+    dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
+
     with suppress(IndexError, KeyError, TypeError):
-        dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type}}
 
@@ -44,7 +50,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     # should we save dissolution_statement_type in businesses table?
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
-    business.dissolution_date = filing_rec.effective_date
+    dissolution_date = filing_event_data['e_trigger_dts_pacific']
+    business.dissolution_date = dissolution_date if dissolution_date else filing_rec.effective_date
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
 
@@ -52,7 +59,9 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     if parties := dissolution_filing.get('parties'):
         update_parties(business, parties, filing_rec, False)
 
-    # Note: custodial office, court order and coop specific code has been removed as not req'd
+    filings.update_filing_order_details(filing_rec, filing_event_data)
+
+    # Note: custodial office, court order and coop specific code and admin dissolution details has been removed as not req'd
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):  # pylint: disable=W0613

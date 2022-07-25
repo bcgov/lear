@@ -1,6 +1,8 @@
 import re
 
 from .data.firms_data import get_custom_corp_names
+from .firm_filing_data_utils import get_is_frozen
+
 
 def clean_naics_data(filing_data: dict):
 
@@ -61,9 +63,6 @@ def clean_corp_party_data(filing_data: dict):
                 corp_party['cp_last_name'] = ''
                 corp_party['cp_middle_name'] = ''
         elif corp_party_type == 'FBO':
-            if not(corp_party['cp_business_name']):
-                raise Exception(f'no cp_business_name provided for {corp_party_type}')
-
             corp_party['cp_first_name'] = ''
             corp_party['cp_last_name'] = ''
             corp_party['cp_middle_name'] = ''
@@ -139,3 +138,6 @@ def clean_corp_data(config, filing_data: dict):
         corp_name = f'{corp_name}{corp_name_prefix}'
         filing_data['curr_corp_name'] = corp_name
         filing_data['cn_corp_name'] = corp_name
+
+    is_frozen = get_is_frozen(filing_data)
+    filing_data['c_is_frozen'] = is_frozen

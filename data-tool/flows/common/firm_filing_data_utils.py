@@ -165,3 +165,9 @@ def is_in_lear(processed_events_ids: list, event_id: int):
     if event_id in processed_events_ids:
         return True
     return False
+
+
+def get_is_frozen(filing_data: dict):
+    if (corp_frozen_type_cd := filing_data.get('c_corp_frozen_type_cd', '')) and corp_frozen_type_cd == 'C':
+        return True
+    return False

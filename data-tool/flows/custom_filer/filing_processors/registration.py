@@ -14,6 +14,7 @@
 """File processing rules and actions for the registration of a business."""
 import copy, json, requests
 from contextlib import suppress
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict
 
@@ -36,11 +37,13 @@ def update_affiliation(config, business: Business, filing: Filing):
         #  used for testing purposes to see how things look in entity dashboard - remove when done testing
         if config.AFFILIATE_ENTITY:
             account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
+            pass_code = business_info.get_firm_affiliation_passcode(business.id)
             AccountService.create_affiliation(
                 account=account_id,
                 business_registration=business.identifier,
                 business_name=business.legal_name,
-                corp_type_code=business.legal_type
+                corp_type_code=business.legal_type,
+                pass_code=pass_code
             )
         elif config.UPDATE_ENTITY:
             account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
@@ -97,10 +100,13 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate'))
-    if (naics := registration_filing.get('business', {}).get('naics')):
-        business_info.update_naics_info(business, naics)
+    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business.admin_freeze = filing_event_data['c_is_frozen']
 
+    business_obj = registration_filing.get('business', {})
+    if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
+        business_info.update_naics_info(business, naics)
+    business.tax_id = business_obj.get('taxId', None)
     business.state = Business.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):
@@ -122,6 +128,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(filing, '/registration/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
+
+    filings.update_filing_order_details(filing_rec, filing_event_data)
 
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)
