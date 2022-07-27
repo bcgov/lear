@@ -37,6 +37,7 @@ from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
 from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on
+from .filing_processors.filing_components import create_comments
 
 
 def get_filing_types(legal_filings: dict):
@@ -53,7 +54,7 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
+def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_event_data: Dict, db: any):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -112,7 +113,11 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
                                                filing_event_data)
 
             elif filing.get('dissolution'):
-                dissolution.process(business, filing, filing_submission, filing_meta)
+                dissolution.process(business,
+                                    filing,
+                                    filing_submission,
+                                    filing_meta,
+                                    filing_event_data)
 
             elif filing.get('putBackOn'):
                 put_back_on.process(business, filing, filing_submission)
@@ -147,6 +152,9 @@ def process_filing(config, filing_id: int, filing_event_data: Dict, db: any):
         if any('registration' in x for x in legal_filings):
             filing_submission.business_id = business.id
             db.session.add(filing_submission)
+            comments = create_comments(business, event_filing_data_dict)
+            for comment in comments:
+                comment.save_to_session()
             db.session.commit()
             if config.UPDATE_ENTITY:
                 registration.update_affiliation(config, business, filing_submission)

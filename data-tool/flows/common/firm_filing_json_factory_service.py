@@ -129,14 +129,14 @@ class FirmFilingJsonFactoryService:
         business_dict = filing_root_dict['filing']['business']
         business_dict['legalType'] = self._filing_data['c_corp_type_cd']
         business_dict['identifier'] = self._filing_data['c_corp_num']
-        business_dict['foundingDate'] = str(self._filing_data['c_recognition_dts_utc'])
+        business_dict['foundingDate'] = str(self._filing_data['c_recognition_dts_pacific'])
 
 
     def populate_registration(self, filing_root_dict: dict):
         registration_dict = filing_root_dict['filing']['registration']
 
         registration_dict['businessType'] = self._filing_data['c_corp_type_cd']
-        registration_dict['startDate'] = str(self._filing_data['c_recognition_dts_utc'])
+        registration_dict['startDate'] = str(self._filing_data['c_recognition_dts_pacific'])
 
         self.populate_filing_business(registration_dict)
         self.populate_offices(registration_dict)
@@ -424,8 +424,8 @@ class FirmFilingJsonFactoryService:
 
     def populate_dissolution(self, filing_dict: dict):
         dissolution_dict = filing_dict['filing']['dissolution']
-        effective_dt_str = self._filing_data['f_effective_dt_str']
-        dissolution_dict['dissolutionDate'] = effective_dt_str
+        trigger_dt_str = self._filing_data['e_trigger_dt_str']
+        dissolution_dict['dissolutionDate'] = trigger_dt_str
 
         if len(self._filing_data['corp_parties']) > 0:
             self.populate_parties(dissolution_dict)

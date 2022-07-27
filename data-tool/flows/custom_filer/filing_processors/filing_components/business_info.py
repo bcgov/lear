@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manages the type of Business."""
+from datetime import datetime
 from typing import Dict
 
 import requests
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.core import BusinessIdentifier, BusinessType
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import NaicsService
 
 
@@ -89,3 +90,24 @@ def get_next_corp_num(legal_type: str):
             # TODO: Fix endpoint
             return f'{business_type}{new_corpnum:07d}'
     return None
+
+
+def get_firm_affiliation_passcode(business_id: int):
+    """Return a firm passcode for a given business identifier."""
+    pass_code = None
+    end_date = datetime.utcnow().date()
+    party_roles = PartyRole.get_party_roles(business_id, end_date)
+
+    if len(party_roles) == 0:
+        return pass_code
+
+    party = party_roles[0].party
+
+    if party.party_type == 'organization':
+        pass_code = party.organization_name
+    else:
+        pass_code = party.last_name + ', ' + party.first_name
+        if hasattr(party, 'middle_initial') and party.middle_initial:
+            pass_code = pass_code + ' ' + party.middle_initial
+
+    return pass_code

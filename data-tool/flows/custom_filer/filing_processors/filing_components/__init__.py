@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
+from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries, Comment
 
 JSON_ROLE_CONVERTER = {
     'custodian': PartyRole.RoleTypes.CUSTODIAN.value,
@@ -109,6 +109,7 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
     if party_info.get('mailingAddress', None):
         mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
         party.mailing_address = mailing_address
+    party.skip_party_listener = True
     return party
 
 
@@ -172,3 +173,16 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         share_class.series.append(share_series)
 
     return share_class
+
+
+def create_comments(business: Business, filing_event_data: Dict):
+    firm_comments = filing_event_data['firm_comments']
+    comments = []
+    if len(firm_comments) > 0:
+        for comment in firm_comments:
+            firm_comment = Comment(business_id=business.id,
+                                   comment=comment['cc_comments'],
+                                   timestamp=comment['cc_comment_dts_pacific'])
+            comments.append(firm_comment)
+
+    return comments

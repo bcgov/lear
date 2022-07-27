@@ -147,6 +147,11 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Run checks/updates before adding/changing the party model data."""
     party = target
 
+    # skip this party updater if the flag is set
+    # Scenario: data loading party data that is missing required party information
+    if hasattr(party, 'skip_party_listener') and party.skip_party_listener:
+        return
+
     if not party.valid_party_type_data:
         raise BusinessException(
             error=f'Attempt to change/add {party.party_type} had invalid data.',

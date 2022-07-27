@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import prefect
-from legal_api.models import Filing, Business
+from legal_api.models import Filing, Business, Comment
 from prefect import task, Flow, unmapped
 from prefect.client import Client
 from prefect.engine.state import Skipped
@@ -72,6 +72,9 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
         status_service.update_flow_status(flow_name='sp-gp-flow',
                                           corp_num=corp_num,
                                           processed_status=ProcessingStatuses.PROCESSING)
+
+        firm_comments = event_filing_service.get_firm_comments_data(corp_num)
+        unprocessed_firm_dict['firm_comments'] = firm_comments
 
         prev_event_filing_data = None
         for idx, event_id in enumerate(events_ids_to_process):
@@ -220,7 +223,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                         target_lear_filing_type = filing_data['target_lear_filing_type']
                         filing_json = event_filing_data['filing_json']
                         populate_filing_json_from_lear(db_lear, event_filing_data, business)
-                        effective_date = filing_data['f_effective_dts_utc']
+                        effective_date = filing_data['f_effective_dts_pacific']
                         corp_name = filing_data['curr_corp_name']
 
                         # save filing to filing table
@@ -235,10 +238,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                         filing.save()
 
                         # process filing with custom filer function
-                        business = process_filing(config, filing.id, filing_data, db_lear)
-                        if RegistrationEventFilings.has_value(event_filing_type):
-                            filing.business_id = business.id
-                            filing.save()
+                        business = process_filing(config, filing.id, event_filing_data_dict, filing_data, db_lear)
 
                         event_cnt = event_filing_data_dict['retrieved_events_cnt']
                         if event_cnt == (idx + 1):
