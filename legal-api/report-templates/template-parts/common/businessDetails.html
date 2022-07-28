@@ -114,7 +114,7 @@
                </div>
                <div class="pt-2">{{report_date_time}}</div>
             </td>
-         {% elif header.reportType == 'amendedRegistrationStatement' %}
+         {% elif header.reportType in ['amendedRegistrationStatement', 'correctedRegistrationStatement'] %}
             <td class="col-22">
                <div class="bold">Registration Number:</div>
                <div class="bold pt-2">Registration Date:</div>
@@ -124,7 +124,7 @@
             </td>
             <td>
                <div>{{business.identifier}}</div>
-               <div class="pt-2">{{effective_date}}</div>
+               <div class="pt-2">{{recognition_date_utc}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
                   {% if taxId is defined %}
