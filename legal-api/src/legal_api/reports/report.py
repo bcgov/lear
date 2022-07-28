@@ -192,7 +192,7 @@ class Report:  # pylint: disable=too-few-public-methods
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):  # pylint: disable=too-many-branches
-        if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement']:
+        if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
         else:
@@ -841,6 +841,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         'amendedRegistrationStatement': {
             'filingDescription': 'Amended Registration Statement',
+            'fileName': 'amendedRegistrationStatement'
+        },
+        'correctedRegistrationStatement': {
+            'filingDescription': 'Corrected Registration Statement',
             'fileName': 'amendedRegistrationStatement'
         },
         'changeOfRegistration': {

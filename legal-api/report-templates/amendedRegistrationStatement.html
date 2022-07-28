@@ -2,7 +2,11 @@
 <!DOCTYPE html>
 <html lang="en">
    <head>
-      <title>Amended Registration Statement</title>
+      {% if header.reportType == 'correctedRegistrationStatement' %}
+         <title>Corrected Registration Statement</title>
+      {% else %}
+         <title>Amended Registration Statement</title>
+      {% endif %}
       <meta charset="UTF-8">
       <meta name="author" content="BC Registries and Online Services">
       [[common/style.html]]
@@ -16,7 +20,11 @@
                </td>
                <td>
                   <div class="report-type">
-                     AMENDED - STATEMENT OF REGISTRATION
+                     {% if header.reportType == 'correctedRegistrationStatement' %}
+                        <span>CORRECTED - STATEMENT OF REGISTRATION</span>
+                     {% else %}
+                        <span>AMENDED - STATEMENT OF REGISTRATION</span>
+                     {% endif %}
                   </div>
                   <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
                </td>

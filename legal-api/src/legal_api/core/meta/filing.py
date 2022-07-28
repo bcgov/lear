@@ -44,6 +44,7 @@ class ReportTitles(str, Enum):
     CERTIFIED_RULES = 'Certified Rules'
     NOTICE_OF_ARTICLES = 'Notice of Articles'
     AMENDED_REGISTRATION_STATEMENT = 'Amended Registration Statement'
+    CORRECTED_REGISTRATION_STATEMENT = 'Corrected Registration Statement'
 
 
 class ReportNames(AutoName):
@@ -156,6 +157,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]},
         ]
     },
     'courtOrder': {
