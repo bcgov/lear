@@ -411,5 +411,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'cogs': {
             'reportName': 'Certificate_of_Good_Standing',
             'templateName': 'certificateOfGoodStanding'
+        },
+        'cstat': {
+            'reportName': 'Certificate_of_Status',
+            'templateName': 'certificateOfStatus'
         }
     }
