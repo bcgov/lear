@@ -341,6 +341,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
+            'associationType': self.association_type
         }
 
         if self.last_coa_date:
