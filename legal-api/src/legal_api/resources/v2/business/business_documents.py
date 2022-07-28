@@ -21,6 +21,7 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business
 from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized
+from legal_api.services.business import validate_document_request
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -47,6 +48,11 @@ def get_business_documents(identifier: str, document_name: str = None):
 
     if not document_name:
         return _get_document_list(business)
+
+    err = validate_document_request(document_name, business)
+    if err:
+        response_message = {'errors': err.msg}
+        return jsonify(response_message), err.code
 
     if document_name and ('application/pdf' in request.accept_mimetypes):
         return BusinessDocument(business, document_name).get_pdf()
