@@ -520,10 +520,10 @@ class Report:  # pylint: disable=too-few-public-methods
                         party['nameChanged'] = True
                         party['previousName'] = self._get_party_name(prev_party_json)
                         filing['partyChange'] = True
-                    if self._compare_address(party.get('mailingAddress'), prev_party_json['mailingAddress']):
+                    if self._compare_address(party.get('mailingAddress'), prev_party_json.get('mailingAddress')):
                         party['mailingAddress']['changed'] = True
                         filing['partyChange'] = True
-                    if self._compare_address(party.get('deliveryAddress'), prev_party_json['deliveryAddress']):
+                    if self._compare_address(party.get('deliveryAddress'), prev_party_json.get('deliveryAddress')):
                         party['deliveryAddress']['changed'] = True
                         filing['partyChange'] = True
                 else:
@@ -564,6 +564,11 @@ class Report:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _compare_address(new_address, existing_address):
+        if not new_address and not existing_address:
+            return False
+        if new_address and not existing_address:
+            return True
+
         changed = False
         excluded_keys = ['addressCountryDescription', 'addressType', 'addressCountry']
         for key in existing_address:
