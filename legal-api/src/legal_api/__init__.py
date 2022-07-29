@@ -55,7 +55,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     db.init_app(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
-    queue.init_app(app)
+    # queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
 

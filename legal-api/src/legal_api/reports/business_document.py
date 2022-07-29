@@ -85,8 +85,10 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
             'business-summary/parties',
             'common/addresses',
             'common/businessDetails',
+            'common/footerMOCS',
             'common/nameTranslation',
             'common/style',
+            'common/styleLetterOverride',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
@@ -111,10 +113,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
             self._set_business_details(business_json)
 
+            if self._document_key in ['lseal', 'summary']:
+                self._set_addresses(business_json)
+
             if self._document_key == 'summary':
                 self._set_directors(business_json)
                 self._set_parties(business_json)
-                self._set_addresses(business_json)
                 self._set_name_translations(business_json)
                 self._set_business_state_changes(business_json)
                 self._set_record_keepers(business_json)
@@ -415,5 +419,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'cstat': {
             'reportName': 'Certificate_of_Status',
             'templateName': 'certificateOfStatus'
+        },
+        'lseal': {
+            'reportName': 'Letter_Under_Seal',
+            'templateName': 'letterUnderSeal'
         }
     }
