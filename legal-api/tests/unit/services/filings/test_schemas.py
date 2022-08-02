@@ -14,7 +14,6 @@
 """Test suite to ensure the json data is validated correctly against the published JSONSchemas."""
 import copy
 from http import HTTPStatus
-import logging
 
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_REGISTRATION
 
