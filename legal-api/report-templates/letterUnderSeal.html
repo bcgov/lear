@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Letter Under Seal</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/style.html]]
+    [[common/styleLetterOverride.html]]
+  </head>
+  <body>
+    <div class="header-logo">
+      [[logo.html]]
+    </div>
+    <div class="letter-copy">
+      <div>{{ report_date }}</div>
+      <div class="mt-12">{{ business.legalName }}</div>
+      {% set office = offices.businessOffice if offices.businessOffice else offices.registeredOffice %}
+      <div>{{ office.mailingAddress.streetAddress }}</div>
+      <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+      <div>
+        {{ office.mailingAddress.addressCity }}
+        {{ office.mailingAddress.addressRegion }}
+        &nbsp;{{ office.mailingAddress.postalCode }}
+      </div>
+      <div class="mt-7">To Whom It May Concern:</div>
+      <div class="mt-5">
+        <span>I hereby certify that by according to the records of this office, the {{ entityDescription }}</span>
+        <span class="bold">{{ business.legalName }}</span>
+        <span>
+          was duly registered under the laws of the Province
+          of British Columbia on {{ formatted_founding_date }} under
+        </span>
+        {% if business.legalType in ['GP', 'SP'] %}
+          <span>Registration Number</span>
+        {% else %}
+          <span>Incorporation Number</span>
+        {% endif %}
+        <span>
+          {{ business.identifier }}, and, as of this date, the said
+          {{ entityDescription }} remains on the register.
+        </span>
+      </div>
+      <p class="mt-5">Yours truly,</p>
+      <div class="registrar-info">
+        <div>[[common/certificateRegistrarSignature.html]]</div>
+        <div>
+          <div class="registrar-name">{{ registrarInfo.name }}</div>
+          <div class="registrar-title">{{ registrarInfo.title }}</div>
+        </div>
+      </div>
+    </div>
+    [[common/footerMOCS.html]]
+  </body>
+</html>
