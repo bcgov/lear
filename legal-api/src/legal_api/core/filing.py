@@ -467,7 +467,7 @@ class Filing:
 
         if filing.status in (
             Filing.Status.PAID,
-        ) and not(filing.filing_type in (Filing.FilingTypes.REGISTRATION.value) or
+        ) and not (filing.filing_type in (Filing.FilingTypes.REGISTRATION.value) or
                   (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and business.legal_type in
                    [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value])):
             documents['documents']['legalFilings'] = \
