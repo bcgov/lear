@@ -1,13 +1,26 @@
-{% set businessOffice = changeOfRegistration.offices.businessOffice if changeOfRegistration.offices else None %}
+{% set businessOffice = offices.businessOffice if offices else None %}
 {% if businessOffice and businessOffice.changed %}
-  <div class="section-title mt-4">Change of Business Addresses</div>
+  <div class="section-title mt-4">
+    {% if header.name == 'correction' %}
+        Business Addresses
+    {% else %}
+        Change of Business Addresses
+    {% endif %}
+  </div>
   <div class="section-data mt-4">
     <table class="section-data-table">
       <tr class="no-page-break">
         {% if businessOffice.mailingAddress is defined %}
         <td class="col-33">
           <div class="section-sub-title">Mailing Address
-            <span>{% if businessOffice.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+            <span>
+              {% if businessOffice.mailingAddress.changed %}
+                {% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}
+              {% endif %}</span>
           </div>
           <div class=" pt-2">{{ businessOffice.mailingAddress.streetAddress }}</div>
           <div>{{ businessOffice.mailingAddress.streetAddressAdditional }}</div>
@@ -21,7 +34,13 @@
         {% if businessOffice.deliveryAddress is defined %}
         <td class="col-33">
           <div class="section-sub-title">Delivery Address
-            <span>{% if businessOffice.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+            <span>{% if businessOffice.deliveryAddress.changed %}
+              {% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}
+              {% endif %}</span>
           </div>
           <div class=" pt-2">{{ businessOffice.deliveryAddress.streetAddress }}</div>
           <div>{{ businessOffice.deliveryAddress.streetAddressAdditional }}</div>

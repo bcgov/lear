@@ -25,7 +25,7 @@ from datetime import datetime
     [
         ('FAIL', 'cstat', 'SP', 'FM1234567', 'Specified document type is not valid for the entity.'),
         ('FAIL', 'cstat', 'GP', 'FM1234567', 'Specified document type is not valid for the entity.'),
-        ('FAIL', 'cstat', 'BEN', 'BC1234567', 'Specified document type is not valid for the entity.'),
+        ('SUCCESS', 'cstat', 'BEN', 'BC1234567', None),
         ('HISTORICAL', 'cstat', 'BC', 'BC1234567',
          'Specified document type is not valid for the current entity status.'),
         ('SUCCESS', 'cstat', 'CP', 'CP1234567', None),

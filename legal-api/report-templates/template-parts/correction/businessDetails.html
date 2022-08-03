@@ -1,0 +1,52 @@
+<div class="business-details-container">
+    <table class="business-details-table" role="presentation">
+        <tr>
+            {% if business.legalType in ['SP', 'GP'] %}
+            <td>
+                <div class="bold">Registration Number:</div>
+                <div class="bold pt-2">Recognition Date and Time:</div>
+                <div class="bold pt-2">Correction Date and Time:</div>
+                <div class="bold pt-2">Retrieved Date and Time:</div>
+            </td>
+            <td>
+                <div>{{business.identifier}}</div>
+                <div class="pt-2">{{recognition_date_time}}</div>
+                <div class="pt-2">{{effective_date_time}}</div>
+                <div class="pt-2">{{report_date_time}}</div>
+            </td>
+            <td class="business-details-registar-td">
+                <div class="registar-certify-section">
+                    <div class="certified-copy-text">CERTIFIED COPY</div>
+                    <div class="doc-description">of a document filed with the</div>
+                    <div class="doc-description">Province of British Columbia</div>
+                    <div class="registrar-title">Registrar of Companies</div>
+                    <div class="registrar-signature">
+                        <img alt="signature" src={{registrarInfo.signature}}>
+                    </div>
+                    <div class="registrar-name">{{ registrarInfo.name }}</div>
+                </div>
+            </td>
+            {% endif %}
+        </tr>
+    </table>
+</div>
+<!-- this block is hidden but is needed for the footer: -->
+<div class="filing-identifier">
+    {% if reportType == 'summary' %}
+    {% if business.legalType in ['SP', 'GP'] %}
+    <span>Registration #{{business.identifier}}</span>
+    {% else %}
+    <span>Incorporation #{{business.identifier}}</span>
+    {% endif %}
+    {% else %}
+    Filing #{{header.filingId}}
+    {% if business.legalType in ['SP', 'GP'] %}
+    <span> | Registration #{{business.identifier}}</span>
+    {% else %}
+    {% if header.name != 'incorporationApplication' %}
+    <!-- not required for incorporationApplication -->
+    <span> | Incorporation #{{business.identifier}}</span>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+</div>

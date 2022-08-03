@@ -148,7 +148,12 @@ FILINGS: Final = {
     'correction': {
         'name': 'correction',
         'title': 'Correction',
-        'displayName': 'Correction',
+        'displayName': {
+            'BEN': 'Correction',
+            'CP': 'Correction',
+            'SP': 'Register Correction Application',
+            'GP': 'Register Correction Application',
+        },
         'codes': {
             'BEN': 'CRCTN',
             'CP': 'CRCTN',
@@ -306,7 +311,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
+                if business_revision.legal_type not in ['SP', 'GP']:
+                    name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':

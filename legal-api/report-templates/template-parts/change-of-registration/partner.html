@@ -1,4 +1,5 @@
-{% if changeOfRegistration.parties %}
+{% if parties and partyChange%}
+{% if header.reportType == 'changeOfRegistration' %}
 <div class="no-page-break">
     <div class="section-title mt-4">
       New Partner(s) Added
@@ -32,7 +33,12 @@
               {% if party.mailingAddress is defined %}
               <td>
                 <div class="section-sub-title">Mailing Address
-                     <span>{% if party.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>{% if party.mailingAddress.changed %}{% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}
+                         {% endif %}</span>
                 </div>
                 <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
                 <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
@@ -48,7 +54,15 @@
               {% if party.deliveryAddress is defined %}
               <td>
                  <div class="section-sub-title">Delivery Address
-                     <span>{% if party.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>
+                         {% if party.deliveryAddress.changed %}
+                         {% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}
+                         {% endif %}
+                     </span>
                  </div>
                  <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
                  <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
@@ -69,6 +83,7 @@
     {% endif %}
     <div class="separator mt-4"></div>
 </div>
+
 
 <div class="no-page-break">
     <div class="section-title mt-4">
@@ -103,7 +118,11 @@
               {% if party.mailingAddress is defined %}
               <td>
                 <div class="section-sub-title">Mailing Address
-                     <span>{% if party.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>{% if party.mailingAddress.changed %}{% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}{% endif %}</span>
                 </div>
                 <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
                 <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
@@ -119,7 +138,11 @@
               {% if party.deliveryAddress is defined %}
               <td>
                  <div class="section-sub-title">Delivery Address
-                     <span>{% if party.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>{% if party.deliveryAddress.changed %}{% if header.name == 'correction' %}
+                  {{ labelCorrected() }}
+                {% else %}
+                  {{ labelChanged() }}
+                {% endif %}{% endif %}</span>
                  </div>
                  <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
                  <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
@@ -140,13 +163,14 @@
     {% endif %}
     <div class="separator mt-4"></div>
 </div>
+{% endif %}
 
 <div class="no-page-break">
     <div class="section-title mt-4">
       <span>All Partners as of {{effective_date}}</span>
     </div>
     <table class="section-data section-data-table mt-4" role="presentation">
-      {% for party in (changeOfRegistration.parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + changeOfRegistration.parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
+      {% for party in (parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
         {% for party_role in party.roles %}
           {% if party_role.roleType in ['Partner'] %}
             <tr class="no-page-break">
@@ -163,11 +187,15 @@
                   {% endif %}
                 </div>
                   {% if not party.officer.id %}
-                  <div class="mt-2 section-sub-title">{{ labelAdded() }}</div>
+                    <div class="mt-2 section-sub-title">{{ labelAdded() }}</div>
                   {% endif %}
                   {% if party.nameChanged %}
-                  <div class="mt-2 capitalize-text "><span class="director-former-name">(Formerly {{ party.previousName }})</span></div>
-                  <div class="mt-2 section-sub-title">{{ labelNameChanged() }}</div>
+                    {% if header.name == 'correction' %}
+                      <span class="section-sub-title">{{ labelCorrected() }}</span>
+                    {% else %}
+                      <div class="mt-2 capitalize-text "><span class="director-former-name">(Formerly {{ party.previousName }})</span></div>
+                      <div class="mt-2 section-sub-title">{{ labelNameChanged() }}</div>
+                   {% endif %}
                   {% endif %}
                 {% if party.officer.identifier %}
                   <div class="pt-2">Incorporation Number:</div>
@@ -181,7 +209,15 @@
               {% if party.mailingAddress is defined %}
               <td>
                 <div class="section-sub-title">Mailing Address
-                     <span>{% if party.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>
+                         {% if party.mailingAddress.changed %}
+                             {% if header.name == 'correction' %}
+                                {{ labelCorrected() }}
+                             {% else %}
+                                {{ labelChanged() }}
+                             {% endif %}
+                         {% endif %}
+                     </span>
                 </div>
                 <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
                 <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
@@ -197,7 +233,15 @@
               {% if party.deliveryAddress is defined %}
               <td>
                  <div class="section-sub-title">Delivery Address
-                     <span>{% if party.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</span>
+                     <span>
+                         {% if party.deliveryAddress.changed %}
+                            {% if header.name == 'correction' %}
+                                {{ labelCorrected() }}
+                            {% else %}
+                                {{ labelChanged() }}
+                            {% endif %}
+                         {% endif %}
+                     </span>
                  </div>
                  <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
                  <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
