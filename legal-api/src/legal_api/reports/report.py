@@ -581,7 +581,7 @@ class Report:  # pylint: disable=too-few-public-methods
         excluded_keys = ['addressCountryDescription', 'addressType', 'addressCountry']
         for key in existing_address:
             if key not in excluded_keys:
-                if new_address.get(key, '') != (existing_address.get(key) or ''):
+                if (new_address.get(key, '') or '') != (existing_address.get(key) or ''):
                     changed = True
         return changed
 
