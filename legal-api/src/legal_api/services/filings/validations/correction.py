@@ -18,13 +18,8 @@ from typing import Dict
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
-from legal_api.services.filings.validations.registration import (
-    validate_naics,
-    validate_name_request,
-    validate_offices,
-    validate_party,
-)
+from legal_api.models import Business, Filing, PartyRole
+from legal_api.services.filings.validations.registration import validate_naics, validate_name_request, validate_offices
 
 from .common_validations import has_at_least_one_share_class
 
@@ -65,7 +60,41 @@ def _validate_firms_correction(filing, legal_type, msg):
     if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing, filing_type))
     if filing.get('filing', {}).get('correction', {}).get('parties', None):
-        msg.extend(validate_party(filing, legal_type, filing_type))
+        msg.extend(validate_party(filing, legal_type))
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
     msg.extend(validate_naics(filing, filing_type))
+
+
+def validate_party(filing: Dict, legal_type: str) -> list:
+    """Validate party."""
+    msg = []
+    completing_parties = 0
+    proprietor_parties = 0
+    partner_parties = 0
+    parties = filing['filing']['correction']['parties']
+    for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
+        for role in party.get('roles', []):
+            role_type = role.get('roleType').lower().replace(' ', '_')
+            if role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
+                completing_parties += 1
+            elif role_type == PartyRole.RoleTypes.PROPRIETOR.value:
+                proprietor_parties += 1
+            elif role_type == PartyRole.RoleTypes.PARTNER.value:
+                partner_parties += 1
+
+    correction_type = filing.get('filing').get('correction').get('type', 'STAFF')
+    party_path = '/filing/correction/parties'
+
+    if correction_type == 'STAFF':
+        if legal_type == Business.LegalTypes.SOLE_PROP.value and proprietor_parties < 1:
+            msg.append({'error': '1 Proprietor is required.', 'path': party_path})
+        elif legal_type == Business.LegalTypes.PARTNERSHIP.value and partner_parties < 2:
+            msg.append({'error': '2 Partners are required.', 'path': party_path})
+    else:
+        if legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+            msg.append({'error': '1 Proprietor and a Completing Party is required.', 'path': party_path})
+        elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
+            msg.append({'error': '2 Partners and a Completing Party is required.', 'path': party_path})
+
+    return msg
