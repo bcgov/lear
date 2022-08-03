@@ -311,7 +311,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                if business_revision.legal_type not in ['SP', ' GP']:
+                if business_revision.legal_type not in ['SP', 'GP']:
                     name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
