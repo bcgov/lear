@@ -22,7 +22,7 @@ from legal_api.models import Business
 
 document_rule_set = {
     'cstat': {
-        'legal_types': ['CP', 'BC'],
+        'legal_types': ['CP', 'BC', 'BEN'],
         'status': Business.State.ACTIVE
     },
     'cogs': {
