@@ -47,14 +47,15 @@ def correct_business_data(business: Business, correction_filing_rec: Filing, cor
                                           **{'fromLegalName': from_legal_name,
                                              'toLegalName': business.legal_name}}
     # Update Nature of Business
-    if (naics := correction_filing.get('correction', {}).get('business', {}).get('naics')) and \
-            (naics_code := naics.get('naicsCode')):
-        if business.naics_code != naics_code:
+    if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
+        to_naics_code = naics.get('naicsCode')
+        to_naics_description = naics.get('naicsDescription')
+        if business.naics_description != to_naics_description:
             filing_meta.correction = {
                 **filing_meta.correction,
                 **{'fromNaicsCode': business.naics_code,
-                   'toNaicsCode': naics_code,
-                   'naicsDescription': naics.get('naicsDescription')}}
+                   'toNaicsCode': to_naics_code,
+                   'naicsDescription': to_naics_description}}
             business_info.update_naics_info(business, naics)
 
     # Update business office if present

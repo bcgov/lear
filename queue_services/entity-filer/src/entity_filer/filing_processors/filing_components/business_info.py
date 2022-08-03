@@ -63,6 +63,9 @@ def update_naics_info(business: Business, naics: Dict):
     if business.naics_code:
         naics_structure = NaicsService.find_by_code(business.naics_code)
         business.naics_key = naics_structure['naicsKey']
+    else:
+        business.naics_code = None
+        business.naics_key = None
     business.naics_description = naics.get('naicsDescription')
 
 
