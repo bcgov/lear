@@ -60,7 +60,7 @@ def _validate_firms_correction(filing, legal_type, msg):
     if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing, filing_type))
     if filing.get('filing', {}).get('correction', {}).get('parties', None):
-        msg.extend(validate_party(filing, legal_type, filing_type))
+        msg.extend(validate_party(filing, legal_type))
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
     msg.extend(validate_naics(filing, filing_type))
