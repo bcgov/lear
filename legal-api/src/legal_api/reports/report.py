@@ -485,12 +485,12 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['newLegalName'] = to_legal_name
 
         # Change of Nature of Business
-        prev_naics_code = versioned_business.naics_code
+        prev_naics_description = versioned_business.naics_description
         naics_json = filing.get(filing_type).get('business', {}).get('naics', {})
         if naics_json:
-            to_naics_code = naics_json.get('naicsCode')
-            if prev_naics_code and to_naics_code and prev_naics_code != to_naics_code:
-                filing['newNaicsDescription'] = naics_json.get('naicsDescription')
+            to_naics_description = naics_json.get('naicsDescription')
+            if prev_naics_description and to_naics_description and prev_naics_description != to_naics_description:
+                filing['newNaicsDescription'] = to_naics_description
 
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
@@ -557,12 +557,13 @@ class Report:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _has_party_name_change(prev_party_json, current_party_json):
         changed = False
+        middle_name = current_party_json['officer'].get('middleName', current_party_json['officer'].
+                                                        get('middleInitial', ''))
         if current_party_json.get('officer').get('partyType') == 'person':
             if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
                     upper() or prev_party_json['officer'].get('middleName', '').upper() != \
-                    current_party_json['officer'].get('middleName', '').upper() or \
-                    prev_party_json['officer'].get('lastName').upper() != current_party_json['officer'].\
-                    get('lastName').upper():
+                    middle_name.upper() or prev_party_json['officer'].get('lastName').upper() != \
+                    current_party_json['officer'].get('lastName').upper():
                 changed = True
         elif current_party_json.get('officer').get('partyType') == 'organization':
             if prev_party_json['officer'].get('organizationName').upper() != \
