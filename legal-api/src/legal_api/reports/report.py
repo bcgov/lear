@@ -486,7 +486,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         # Change of Nature of Business
         prev_naics_description = versioned_business.naics_description
-        naics_json = filing.get(filing_type).get('business', {}).get('naics', {})
+        naics_json = filing.get(filing_type).get('business', {}).get('naics')
         if naics_json:
             to_naics_description = naics_json.get('naicsDescription')
             if prev_naics_description and to_naics_description and prev_naics_description != to_naics_description:
