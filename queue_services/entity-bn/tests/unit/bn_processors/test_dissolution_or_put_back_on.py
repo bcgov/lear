@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Test Suites to ensure that the dissolution is operating correctly."""
+"""The Test Suites to ensure that the dissolution/putBackOn is operating correctly."""
 import xml.etree.ElementTree as Et
 
 import pytest
@@ -23,24 +23,26 @@ from entity_bn.worker import process_event
 from tests.unit import create_filing, create_registration_data
 
 
-@pytest.mark.parametrize('legal_type', [
-    ('SP'),
-    ('GP'),
+@pytest.mark.parametrize('legal_type, filing_type', [
+    ('SP', 'dissolution'),
+    ('GP', 'dissolution'),
+    ('SP', 'putBackOn'),
+    ('GP', 'putBackOn'),
 ])
-async def test_dissolution(app, session, mocker, legal_type):
-    """Test inform cra about dissolution of SP/GP."""
+async def test_change_of_status(app, session, mocker, legal_type, filing_type):
+    """Test inform cra about change of status of SP/GP."""
     filing_id, business_id = create_registration_data(legal_type, tax_id='993775204BC0001')
     json_filing = {
         'filing': {
             'header': {
-                'name': 'dissolution'
+                'name': filing_type
             },
-            'dissolution': {
+            filing_type: {
             }
         }
     }
     filing = create_filing(json_filing=json_filing, business_id=business_id)
-    filing._filing_type = 'dissolution'
+    filing._filing_type = filing_type
     filing.save()
     filing_id = filing.id
 
@@ -55,10 +57,10 @@ async def test_dissolution(app, session, mocker, legal_type):
         if root.tag == 'SBNChangeStatus':
             return 200, acknowledgement_response
 
-    mocker.patch('entity_bn.bn_processors.dissolution.request_bn_hub', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.dissolution_or_put_back_on.request_bn_hub', side_effect=side_effect)
 
     await process_event({
-        'type': 'bc.registry.business.dissolution',
+        'type': f'bc.registry.business.{filing_type}',
         'data': {
             'filing': {
                 'header': {'filingId': filing_id}
@@ -76,8 +78,8 @@ async def test_dissolution(app, session, mocker, legal_type):
     assert request_trackers[0].retry_number == 0
 
 
-async def test_retry_dissolution(app, session, mocker):
-    """Test retry change of SP/GP dissolution."""
+async def test_retry_change_of_status(app, session, mocker):
+    """Test retry change of status of SP/GP."""
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
     json_filing = {
         'filing': {
@@ -92,7 +94,7 @@ async def test_retry_dissolution(app, session, mocker):
     filing.save()
     filing_id = filing.id
 
-    mocker.patch('entity_bn.bn_processors.dissolution.request_bn_hub', return_value=(500, ''))
+    mocker.patch('entity_bn.bn_processors.dissolution_or_put_back_on.request_bn_hub', return_value=(500, ''))
 
     for _ in range(10):
         try:

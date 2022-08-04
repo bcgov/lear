@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""File processing rules and actions for the dissolution of a business (SP/GP)."""
+"""File processing rules and actions for the dissolution/putBackOn of a business (SP/GP)."""
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
@@ -27,7 +27,7 @@ from entity_bn.exceptions import BNException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
-    """Process the incoming dissolution request (SP/GP)."""
+    """Process the incoming dissolution/putBackOn request (SP/GP)."""
     if not business.tax_id or len(business.tax_id) != 15:
         raise BNException(f'Business {business.identifier}, ' +
                           'Cannot inform CRA about change of status before receiving Business Number (BN15).')
@@ -59,7 +59,7 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
     effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime('%Y-%m-%d')
 
     program_account_status_code = {
-        'putBackOn': '01',  # Will be useful while implementing restore a SP/GP. Keeping it here for now as unsued.
+        'putBackOn': '01',
         'dissolution': '02'
     }
     program_account_reason_code = {
