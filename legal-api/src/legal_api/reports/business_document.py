@@ -115,12 +115,12 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
 
             if self._document_key in ['lseal', 'summary']:
                 self._set_addresses(business_json)
+                self._set_business_state_changes(business_json)
 
             if self._document_key == 'summary':
                 self._set_directors(business_json)
                 self._set_parties(business_json)
                 self._set_name_translations(business_json)
-                self._set_business_state_changes(business_json)
                 self._set_record_keepers(business_json)
                 self._set_business_changes(business_json)
                 self._set_amalgamation_details(business_json)
@@ -167,9 +167,13 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         }  # This could be the legislation column from CorpType. Yet to discuss.
         business['entityAct'] = act.get(legal_type, 'Business Corporations Act')
         description = {
-            Business.LegalTypes.COOP.value: 'Cooperative Association'
+            Business.LegalTypes.COOP.value: 'Cooperative Association',
+            Business.LegalTypes.BCOMP.value: 'Benefit Company',
+            Business.LegalTypes.PARTNERSHIP.value: 'General Partnership',
+            Business.LegalTypes.SOLE_PROP.value: 'Sole Proprietorship',
         }
         business['entityShortDescription'] = description.get(legal_type, 'Corporation')
+        business['entityInformalDescription'] = business['entityShortDescription'].lower()
 
     def _set_dates(self, business: dict):
         if self._business.legal_type in ['SP', 'GP']:
@@ -294,6 +298,7 @@ class BusinessDocument:  # pylint: disable=too-few-public-methods
         filing_info['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
         effective_datetime = LegislationDatetime.as_legislation_timezone(filing.effective_date)
         filing_info['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_datetime)
+        filing_info['effective_date'] = effective_datetime.strftime('%B %-d, %Y')
         filing_meta = filing.meta_data
         if filing.filing_type == 'dissolution':
             filing_info['filing_name'] = BusinessDocument.\

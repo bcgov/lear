@@ -24,21 +24,27 @@
       </div>
       <div class="mt-7">To Whom It May Concern:</div>
       <div class="mt-5">
-        <span>I hereby certify that by according to the records of this office, the {{ entityDescription }}</span>
+        <span>I hereby certify that the {{ entityInformalDescription }}</span>
         <span class="bold">{{ business.legalName }}</span>
+        {% if business.legalType in ['GP', 'SP'] %}
+          <span>was registered</span>
+        {% else %}
+          <span>was incorporated</span>
+        {% endif %}
         <span>
-          was duly registered under the laws of the Province
-          of British Columbia on {{ formatted_founding_date }} under
+          under the laws of the Province of British Columbia on {{ formatted_founding_date }} under
         </span>
         {% if business.legalType in ['GP', 'SP'] %}
           <span>Registration Number</span>
         {% else %}
-          <span>Incorporation Number</span>
+          <span>Certificate Number</span>
         {% endif %}
-        <span>
-          {{ business.identifier }}, and, as of this date, the said
-          {{ entityDescription }} remains on the register.
-        </span>
+        <span>{{ business.identifier }},</span>
+        {% if business.state != 'HISTORICAL' %}
+          <span>and, as of this date, remains on the register.</span>
+        {% else %}
+          <span>and was dissolved on {{ stateFilings[0].effective_date }}.</span>
+        {% endif %}
       </div>
       <p class="mt-5">Yours truly,</p>
       <div class="registrar-info">
