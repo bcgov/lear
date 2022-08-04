@@ -47,31 +47,23 @@ jobs:
         run: |
           make flake8
 
-  testing:
-    needs: setup-job
 
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          make setup
-      - name: Test with pytest
-        id: test
-        run: |
-          make test
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./data-reset-tool/coverage.xml
-          flags: datareset
-          name: codecov-data-reset-tool
-          fail_ci_if_error: true
+  # testing:
+  #   needs: setup-job
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         make setup
+  #     - name: Test with pytest
+  #       id: test
+  #       run: |
+  #         make test
 
   build-check:
     needs: setup-job

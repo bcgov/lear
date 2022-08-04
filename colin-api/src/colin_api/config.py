@@ -62,6 +62,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SENTRY_ENABLE = os.getenv('SENTRY_ENABLE', 'False')
+
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     # ORACLE - CDEV/CTST/CPRD

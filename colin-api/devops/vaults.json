@@ -3,8 +3,13 @@
         "vault": "entity",
         "application": [
             "colin-api",
-            "test-oracle",
-            "sentry"
+            "test-oracle"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

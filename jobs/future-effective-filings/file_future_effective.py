@@ -39,16 +39,16 @@ from utils.logging import setup_logging  # pylint: disable=import-error
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
 default_nats_options = {
-            'name': 'default_future_filing_job',
-            'servers':  os.getenv('NATS_SERVERS', '').split(','),
-            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
-                                         DEFAULT_CONNECT_TIMEOUT)
-        }
+    'name': 'default_future_filing_job',
+    'servers': os.getenv('NATS_SERVERS', '').split(','),
+    'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
+                                 DEFAULT_CONNECT_TIMEOUT)
+}
 
 default_stan_options = {
-            'cluster_id': os.getenv('NATS_CLUSTER_ID'),
-            'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
-        }
+    'cluster_id': os.getenv('NATS_CLUSTER_ID'),
+    'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
+}
 
 subject = os.getenv('NATS_FILER_SUBJECT', '')
 
@@ -65,11 +65,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
+    if str(app.config.get('SENTRY_ENABLE')).lower() == 'true':
+        if app.config.get('SENTRY_DSN', None):
+            sentry_sdk.init(
+                dsn=app.config.get('SENTRY_DSN'),
+                integrations=[SENTRY_LOGGING]
+            )
 
     return app
 
@@ -113,14 +114,14 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
                     msg = {'filing': {'id': filing_id}}
                     await queue_service.publish(subject, msg)
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
-        except Exception as err:  # pylint: disable=broad-except
-            application.logger.error(err)
+        except Exception as error:  # noqa: B902 # pylint: disable=broad-except;
+            application.logger.error(error)
 
 if __name__ == '__main__':
     application = create_app()
     try:
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(run(event_loop, application))
-    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
+    except Exception as err:  # noqa: B902 # pylint: disable=broad-except; Catching all errors from the frameworks; B902
         application.logger.error(err)  # pylint: disable=no-member
         raise err

@@ -47,11 +47,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     db.init_app(app)
 
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
+    if str(app.config.get('SENTRY_ENABLE')).lower() == 'true':
+        if app.config.get('SENTRY_DSN', None):
+            sentry_sdk.init(
+                dsn=app.config.get('SENTRY_DSN'),
+                integrations=[SENTRY_LOGGING]
+            )
 
     register_shellcontext(app)
 
@@ -176,7 +177,7 @@ async def send_outstanding_bcomps_ar_reminder(app: Flask, qsm: QueueService):  #
 
 
 if __name__ == '__main__':
-    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None
+    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None  # pylint: disable=C0103
     application = create_app()
     with application.app_context():
         event_loop = asyncio.get_event_loop()

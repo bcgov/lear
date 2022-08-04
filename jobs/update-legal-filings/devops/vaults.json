@@ -10,8 +10,13 @@
         "application": [
             "filings-jobs",
             "nats-emailer",
-            "entity-service-account",
-            "sentry"
+            "entity-service-account"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

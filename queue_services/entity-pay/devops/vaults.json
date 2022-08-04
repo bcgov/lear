@@ -10,8 +10,13 @@
         "application": [
             "postgres-legal",
             "entity-pay",
-            "nats-pay",
-            "sentry"
+            "nats-pay"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
         ]
     }
 ]

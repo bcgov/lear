@@ -107,7 +107,7 @@ def post(legal_type, table=None):
                         current_app.logger.error('Delete command did not run.')
                         raise Exception
 
-                except Exception as err:
+                except Exception as err:  # noqa: B902
                     current_app.logger.error(f'Failed to delete existing entries: {err}')
 
                 # set reader back to beginning of file and import csv into table
@@ -117,7 +117,7 @@ def post(legal_type, table=None):
         con.commit()
         return jsonify({'message': 'Success!'}), HTTPStatus.CREATED
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         current_app.logger.error(f'Failed to import: {err}')
         con.rollback()
         return jsonify({'message': 'Failed to import data.'}), HTTPStatus.INTERNAL_SERVER_ERROR
@@ -164,7 +164,7 @@ def get(business_identifier, table=None):
             data, attachment_filename=f'{export_name}.zip', as_attachment=True, mimetype='application/zip'
         ), HTTPStatus.OK
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         current_app.logger.error(f'Failed to export: {err}')
         con.reset()
         return jsonify({'message': 'Failed to export data.'}), HTTPStatus.INTERNAL_SERVER_ERROR
@@ -269,7 +269,7 @@ def delete(business_identifier):
             {'message': f'Successfully deleted all data for {business_identifier}'}
         ), HTTPStatus.OK
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         current_app.logger.error(f'Failed when trying to delete: {err}')
         con.rollback()
         return jsonify({'message': f'Failed to delete {business_identifier}.'}), HTTPStatus.INTERNAL_SERVER_ERROR

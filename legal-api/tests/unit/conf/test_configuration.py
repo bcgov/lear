@@ -81,6 +81,7 @@ def test_config_dsn_key():
 
     # Assert that the SENTRY_DSN is set to the assigned environment value
     dsn = 'http://secret_key@localhost:9000/project_id'
+    config._Config.SENTRY_ENABLE = True
     config._Config.SENTRY_DSN = dsn
     reload(config)
     app = create_app()

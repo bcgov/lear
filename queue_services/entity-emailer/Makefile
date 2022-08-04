@@ -67,6 +67,8 @@ pylint: ## Linting with pylint
 flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
 
+lint: pylint flake8 ## run all lint type scripts
+
 test: ## Unit testing
 	. venv/bin/activate && pytest
 

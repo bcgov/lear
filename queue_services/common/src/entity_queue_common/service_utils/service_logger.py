@@ -29,16 +29,17 @@ def before_breadcrumb(crumb, hint):  # pylint: disable=unused-argument; callback
 
 # Configure Sentry
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
-if SENTRY_DSN:
+if str(os.getenv('SENTRY_ENABLE', 'False')).lower() == 'true':
+    if SENTRY_DSN:
 
-    SENTRY_LOGGING = LoggingIntegration(
-        event_level=logging.ERROR  # Send errors as events
-    )
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[SENTRY_LOGGING],
-        before_breadcrumb=before_breadcrumb
-    )
+        SENTRY_LOGGING = LoggingIntegration(
+            event_level=logging.ERROR  # Send errors as events
+        )
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[SENTRY_LOGGING],
+            before_breadcrumb=before_breadcrumb
+        )
 
 logging.basicConfig(
     level=logging.INFO,

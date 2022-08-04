@@ -61,11 +61,16 @@ install-dev: ## Install local application
 #################################################################################
 ci: lint flake8 test ## CI flow
 
-lint: ## Linting with pylint
+pylint: ## Linting with pylint
 	. venv/bin/activate && pylint --rcfile=setup.cfg  src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
+
+lint: pylint flake8	
+
+test: ## Unit testing
+	. venv/bin/activate && pytest
 
 #################################################################################
 # COMMANDS - CD

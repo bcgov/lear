@@ -2,9 +2,9 @@
 
 # Testing
 freezegun
-pytest
+pytest==7.1.2
 pytest-aiohttp
-pytest-asyncio
+pytest-asyncio==0.18.3
 pytest-mock
 requests
 pyhamcrest
