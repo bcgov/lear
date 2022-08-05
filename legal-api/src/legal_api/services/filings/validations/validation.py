@@ -18,7 +18,7 @@ from typing import Dict
 from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing, filing
+from legal_api.models import Business, Filing
 from legal_api.services.utils import get_str
 
 from .alteration import validate as alteration_validate
