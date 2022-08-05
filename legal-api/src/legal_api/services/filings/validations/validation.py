@@ -18,7 +18,7 @@ from typing import Dict
 from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, filing
 from legal_api.services.utils import get_str
 
 from .alteration import validate as alteration_validate
@@ -86,6 +86,22 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
             else:
                 err = Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is required.'),
                                                       'path': '/filing/specialResolution'}])
+        if err:
+            return err
+    elif 'specialResolution' in filing_json['filing'].keys():
+        err = special_resolution_validate(business, filing_json)
+        if err:
+            return err
+
+        legal_type = get_str(filing_json, '/filing/business/legalType')
+        if legal_type not in [Business.LegalTypes.COOP.value]:
+            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is only allowed for CP.')}])
+
+        if 'changeOfName' in filing_json['filing'].keys():
+            err = con_validate(business, filing_json)
+        if 'alteration' in filing_json['filing'].keys():
+            err = alteration_validate(business, filing_json)
+
         if err:
             return err
     else:
