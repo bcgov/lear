@@ -623,7 +623,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .business import Business  # noqa: F401
+        from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
         filings = db.session.query(Filing).join(Business). \
             filter(
                 ~Business.legal_type.in_([
