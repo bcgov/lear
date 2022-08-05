@@ -49,6 +49,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
     err = None
 
+    legal_type = get_str(filing_json, '/filing/business/legalType')
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if 'correction' in filing_json['filing'].keys():
@@ -88,14 +89,10 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                                                       'path': '/filing/specialResolution'}])
         if err:
             return err
-    elif 'specialResolution' in filing_json['filing'].keys():
+    elif 'specialResolution' in filing_json['filing'].keys() and legal_type in [Business.LegalTypes.COOP.value]:
         err = special_resolution_validate(business, filing_json)
         if err:
             return err
-
-        legal_type = get_str(filing_json, '/filing/business/legalType')
-        if legal_type not in [Business.LegalTypes.COOP.value]:
-            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is only allowed for CP.')}])
 
         if 'changeOfName' in filing_json['filing'].keys():
             err = con_validate(business, filing_json)
