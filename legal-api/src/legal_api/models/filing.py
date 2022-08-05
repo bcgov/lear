@@ -623,8 +623,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        filings = db.session.query(Filing). \
+        from .business import Business  # noqa: F401
+        filings = db.session.query(Filing).join(Business). \
             filter(
+                ~Business.legal_type.in_([
+                    Business.LegalTypes.SOLE_PROP.value,
+                    Business.LegalTypes.PARTNERSHIP.value]),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
