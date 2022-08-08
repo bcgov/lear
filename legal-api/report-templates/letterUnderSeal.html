@@ -43,7 +43,7 @@
         {% if business.state != 'HISTORICAL' %}
           <span>and, as of this date, remains on the register.</span>
         {% else %}
-          <span>and was dissolved on {{ stateFilings[0].effective_date }}.</span>
+          <span>and was dissolved on {{ stateFilings[0].effectiveDate }}.</span>
         {% endif %}
       </div>
       <p class="mt-5">Yours truly,</p>

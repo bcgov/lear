@@ -54,8 +54,11 @@ def get_business_documents(identifier: str, document_name: str = None):
         response_message = {'errors': err.msg}
         return jsonify(response_message), err.code
 
-    if document_name and ('application/pdf' in request.accept_mimetypes):
-        return BusinessDocument(business, document_name).get_pdf()
+    if document_name:
+        if 'application/pdf' in request.accept_mimetypes:
+            return BusinessDocument(business, document_name).get_pdf()
+        elif 'application/json' in request.accept_mimetypes:
+            return BusinessDocument(business, document_name).get_json()
     return {}, HTTPStatus.NOT_FOUND
 
 

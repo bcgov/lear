@@ -28,6 +28,10 @@ document_rule_set = {
     'cogs': {
         'legal_types': ['CP', 'BC', 'BEN'],
         'goodStanding': True
+    },
+    'lseal': {
+        # NB: will be available for all business types once the outputs have been updated for them
+        'legal_types': ['CP', 'BEN', 'SP', 'GP']
     }
 }
 
