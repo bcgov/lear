@@ -12,12 +12,12 @@
 import base64
 import json
 import os
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
 import pycountry
 import requests
-from datetime import datetime
 from flask import current_app, jsonify
 
 from legal_api.models import Alias, Business, CorpType, Filing
@@ -56,7 +56,7 @@ class BusinessDocument:
 
     def get_json(self):
         """Render the business document json response."""
-        return self._get_template_data(json=True), HTTPStatus.OK
+        return self._get_template_data(get_json=True), HTTPStatus.OK
 
     def _get_report_filename(self):
         report_date = str(self._report_date_time)[:19]
@@ -108,7 +108,7 @@ class BusinessDocument:
             template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
         return template_code
 
-    def _get_template_data(self, json=False):
+    def _get_template_data(self, get_json=False):
         """Return the json for the report template."""
         business_json = {}
         try:
@@ -118,26 +118,28 @@ class BusinessDocument:
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
-            
+
             if self._document_key in ['lseal', 'summary']:
                 self._set_addresses(business_json)
                 self._set_business_state_changes(business_json)
-            
+
             if self._document_key == 'summary':
                 self._set_parties(business_json)
                 self._set_name_translations(business_json)
                 self._set_business_changes(business_json)
                 self._set_amalgamation_details(business_json)
                 self._set_liquidation_details(business_json)
-            
+
             if self._business.legal_type in ['SP', 'GP']:
                 registration_filing = Filing.get_filings_by_types(self._business.id, ['registration'])
                 if registration_filing:
-                    business_json['business']['registrationDateTime'] = registration_filing[0].effective_date.isoformat()
+                    business_json['business']['registrationDateTime'] = \
+                        registration_filing[0].effective_date.isoformat()
 
-            if json:
+            if get_json:
                 # set report date
-                business_json['reportDateTime'] = LegislationDatetime.as_utc_timezone(self._report_date_time).isoformat()
+                business_json['reportDateTime'] = \
+                    LegislationDatetime.as_utc_timezone(self._report_date_time).isoformat()
                 # remove signature etc. from registrar info
                 pruned_registrar_info = {}
                 for key in business_json['registrarInfo']:
@@ -180,7 +182,7 @@ class BusinessDocument:
             Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
         business['entityAct'] = act.get(legal_type, 'Business Corporations Act')
-        
+
         business['business']['coopType'] = BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]\
             if self._business.association_type else 'Not Available'
 
@@ -215,7 +217,8 @@ class BusinessDocument:
         for filing in business.get('stateFilings', []):
             filing_datetime = datetime.fromisoformat(filing['filingDateTime'])
             filing['filingDateTime'] = LegislationDatetime.format_as_report_string(filing_datetime)
-            effective_datetime = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(filing['effectiveDateTime']))
+            effective_datetime = LegislationDatetime\
+                .as_legislation_timezone(datetime.fromisoformat(filing['effectiveDateTime']))
             filing['effectiveDateTime'] = LegislationDatetime.format_as_report_string(effective_datetime)
             filing['effectiveDate'] = effective_datetime.strftime('%B %-d, %Y')
         # name change dates
@@ -229,7 +232,7 @@ class BusinessDocument:
         # liquidation date
         if liquidation_date := business.get('liquidation', {}).get('filingDateTime'):
             filing_datetime = datetime.fromisoformat(liquidation_date)
-            business['liquidation']['filingDateTime'] = LegislationDatetime.format_as_report_string(filing_datetime) 
+            business['liquidation']['filingDateTime'] = LegislationDatetime.format_as_report_string(filing_datetime)
         # registration dates
         if registration_datetime_str := business['business'].get('registrationDateTime'):
             business['formatted_registration_date'] = LegislationDatetime.\
