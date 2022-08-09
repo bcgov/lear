@@ -57,6 +57,8 @@ class LegislationDatetime():
     @staticmethod
     def format_as_report_string(date_time: datetime) -> str:
         """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        # ensure is set to correct timezone
+        date_time = LegislationDatetime.as_legislation_timezone(date_time)
         hour = date_time.strftime('%I').lstrip('0')
         # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
         am_pm = date_time.strftime('%p').lower()

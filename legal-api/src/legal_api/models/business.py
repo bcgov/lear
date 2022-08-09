@@ -290,8 +290,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return true if in good standing, otherwise false."""
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
-        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day
-        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
+        is_active = self.state.name == Business.State.ACTIVE.name
+        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
+        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow() and is_active
 
     def save(self):
         """Render a Business to the local cache."""
