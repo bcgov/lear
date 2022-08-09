@@ -40,7 +40,13 @@ from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_bn import config
-from entity_bn.bn_processors import admin, change_of_registration, dissolution_or_put_back_on, registration
+from entity_bn.bn_processors import (  # noqa: I001
+    admin,
+    change_of_registration,
+    correction,
+    dissolution_or_put_back_on,
+    registration,
+)
 from entity_bn.exceptions import BNException
 
 
@@ -56,6 +62,7 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
     if not msg or msg.get('type') not in [
         'bc.registry.business.registration',
         'bc.registry.business.changeOfRegistration',
+        'bc.registry.business.correction',
         'bc.registry.business.dissolution',
         'bc.registry.business.putBackOn',
         'bc.registry.admin.bn'
@@ -83,6 +90,10 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
             registration.process(business)
         elif filing_submission.filing_type == filing_core_submission.FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing_core_submission.storage)
+        elif filing_submission.filing_type == filing_core_submission.FilingTypes.CORRECTION.value and \
+                business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                        Business.LegalTypes.PARTNERSHIP.value):
+            correction.process(business, filing_core_submission.storage)
         elif filing_submission.filing_type in (filing_core_submission.FilingTypes.DISSOLUTION.value,
                                                filing_core_submission.FilingTypes.PUTBACKON.value) and \
                 business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
