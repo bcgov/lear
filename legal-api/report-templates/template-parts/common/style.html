@@ -63,7 +63,7 @@
 	.header-logo {
 		position: fixed;
 		top: -150px;
-		left: 43%;
+		left: 42%;
 	}
 
 	.header-table {
@@ -120,9 +120,9 @@
 	.letter-copy {
 		color: #313132;
 		font-family: 'BCSans-Regular', sans-serif !important;
-		font-size: 11px;
-		line-height: 15px;
-		margin-top: 130px;
+		font-size: 14.66px; /*approx 11px after render*/
+		line-height: 20px; /*approx 15px after render*/
+		margin-top: 60px;
 		text-align: left;
 	}
 
@@ -524,14 +524,28 @@
 		bottom: 0;
 		color: #234075;
 		font-family: 'BCSans-Regular', sans-serif !important;
-		font-size: 9px;
-		line-height: 12px;
-		padding-top: 12px;
+		font-size: 12px; /*approx 9px after render*/
+		line-height: 14px;
+		padding-top: 16px;
 		position: absolute;
-		width: 100%
+		width: 100%;
 	}
 	.footer-mocs-table {
-		width: 100%
+		width: 100%;
+	}
+	.footer-mocs-table tr,
+	.footer-mocs-table td {
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	.footer-mocs-table-1st-col {
+		margin-left: -3px;
+	}
+	.footer-mocs-table-last-col {
+		white-space: nowrap;
+		margin-left: 3px;
+		margin-right: -8px !important;
+		overflow: visible;
 	}
 	.width-50 {
 		width: 50%;
