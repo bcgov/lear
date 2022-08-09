@@ -244,7 +244,9 @@ def test_business_json(session):
                         last_ar_date=EPOCH_DATETIME,
                         last_agm_date=EPOCH_DATETIME,
                         restriction_ind=True,
-                        association_type='CP'
+                        association_type='CP',
+                        # NB: default not intitialized since bus not committed before check
+                        state=Business.State.ACTIVE
                         )
     # basic json
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
