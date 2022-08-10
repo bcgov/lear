@@ -94,13 +94,21 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
         if err:
             return err
 
+        either_con_or_alteration_flag = False
+
         if 'changeOfName' in filing_json['filing'].keys():
+            either_con_or_alteration_flag = True
             err = con_validate(business, filing_json)
         if 'alteration' in filing_json['filing'].keys():
+            either_con_or_alteration_flag = True
             err = alteration_validate(business, filing_json)
 
         if err:
             return err
+
+        if not either_con_or_alteration_flag:
+            err = Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Either Change of Name or Alteration is required.'),
+                                                  'path': '/filing'}])
     else:
         for k in filing_json['filing'].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary
