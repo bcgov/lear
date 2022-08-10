@@ -123,24 +123,30 @@ def type_change_validation(filing):
         return msg
     return []
 
+
 def rules_change_validation(filing):
+    """Validate rules change."""
     msg = []
     rules_file_key: Final = get_str('/filing/alteration/rulesFileKey')
     rules_file_name: Final = get_str('/filing/alteration/rulesFileName')
 
     if rules_file_key or rules_file_name:
         if not (rules_file_key and rules_file_name):
-            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be privided')})
+            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be privided'),
+                        'path': '/filing/alteration/rulesFileKey and /filing/alteration/rulesFileName'})
             return msg
-    return []        
+    return []
+
 
 def memorandum_change_validation(filing):
+    """Validate memorandum change."""
     msg = []
     memorandum_file_key: Final = get_str('/filing/alteration/memorandumFileKey')
     memorandum_file_name: Final = get_str('/filing/alteration/memorandumFileName')
 
     if memorandum_file_key or memorandum_file_name:
         if not (memorandum_file_key and memorandum_file_name):
-            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be privided')})
+            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be privided'),
+                        'path': '/filing/alteration/memorandumFileKey and /filing/alteration/memorandumFileName'})
             return msg
     return []
