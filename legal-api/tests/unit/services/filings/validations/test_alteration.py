@@ -149,3 +149,35 @@ def test_alteration_share_classes_optional(session):
 
     err = validate(business, f)
     assert None is err
+
+
+@pytest.mark.parametrize(
+    'test_name, should_pass, rulesFileKey, rulesFileName', [
+        ('SUCCESS_has_rights_or_restrictions', True, "rulesFileKey", "rulesFileName")
+    ])
+def test_rules_change(session, test_name, should_pass, rulesFileKey, rulesFileName):
+    """Assert riles is optional in alteration."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+
+    if rulesFileKey:
+        f['filing']['alteration']['rulesFileKey'] = rulesFileKey
+    if rulesFileName:
+        f['filing']['alteration']['rulesFileName'] = rulesFileKey
+
+    err = validate(business, f)
+    
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+
