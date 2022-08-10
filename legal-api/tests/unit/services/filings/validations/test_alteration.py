@@ -184,3 +184,35 @@ def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFile
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
 
+@pytest.mark.parametrize(
+    'test_status, should_pass, memorandumFileKey, memorandumFileName', [
+        ('SUCCESS', True, "memorandumFileKey", "memorandumFileName"),
+        ('FAILURE', False, None, "memorandumFileName"),
+        ('FAILURE', False, "memorandumFileKey", None),
+    ])
+def test_memorandum_change(session, test_status, should_pass, memorandumFileKey, memorandumFileName):
+    """Assert riles is optional in alteration."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
+
+    if memorandumFileKey:
+        f['filing']['alteration']['rulesFileKey'] = memorandumFileKey
+    if memorandumFileName:
+        f['filing']['alteration']['rulesFileName'] = memorandumFileName
+
+    err = validate(business, f)
+    
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
