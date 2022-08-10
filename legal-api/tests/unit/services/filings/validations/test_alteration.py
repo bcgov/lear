@@ -169,7 +169,7 @@ def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFile
     if rulesFileKey:
         f['filing']['alteration']['rulesFileKey'] = rulesFileKey
     if rulesFileName:
-        f['filing']['alteration']['rulesFileName'] = rulesFileKey
+        f['filing']['alteration']['rulesFileName'] = rulesFileName
 
     err = validate(business, f)
     
