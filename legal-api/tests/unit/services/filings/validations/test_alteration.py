@@ -152,16 +152,19 @@ def test_alteration_share_classes_optional(session):
 
 
 @pytest.mark.parametrize(
-    'test_name, should_pass, rulesFileKey, rulesFileName', [
-        ('SUCCESS_has_rights_or_restrictions', True, "rulesFileKey", "rulesFileName")
+    'test_status, should_pass, rulesFileKey, rulesFileName', [
+        ('SUCCESS', True, "rulesFileKey", "rulesFileName"),
+        ('FAILURE', False, None, "rulesFileName"),
+        ('FAILURE', False, "rulesFileKey", None),
     ])
-def test_rules_change(session, test_name, should_pass, rulesFileKey, rulesFileName):
+def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFileName):
     """Assert riles is optional in alteration."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
 
     if rulesFileKey:
         f['filing']['alteration']['rulesFileKey'] = rulesFileKey
