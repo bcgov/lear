@@ -40,6 +40,8 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     msg.extend(share_structure_validation(filing))
     msg.extend(court_order_validation(filing))
     msg.extend(type_change_validation(filing))
+    msg.extend(rules_change_validation(filing))
+    msg.extend(memorandum_change_validation(filing))
 
     if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
         msg.append(err)
@@ -119,4 +121,26 @@ def type_change_validation(filing):
         msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'),
                     'path': legal_type_path})
         return msg
+    return []
+
+def rules_change_validation(filing):
+    msg = []
+    rules_file_key: Final = get_str('/filing/alteration/rulesFileKey')
+    rules_file_name: Final = get_str('/filing/alteration/rulesFileName')
+
+    if rules_file_key or rules_file_name:
+        if not rules_file_key and rules_file_name:
+            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be privided')})
+            return msg
+    return []        
+
+def memorandum_change_validation(filing):
+    msg = []
+    memorandum_file_key: Final = get_str('/filing/alteration/memorandumFileKey')
+    memorandum_file_name: Final = get_str('/filing/alteration/memorandumFileName')
+
+    if memorandum_file_key or memorandum_file_name:
+        if not memorandum_file_key and memorandum_file_name:
+            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be privided')})
+            return msg
     return []
