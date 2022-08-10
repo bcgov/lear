@@ -132,7 +132,7 @@ def rules_change_validation(filing):
 
     if rules_file_key or rules_file_name:
         if not (rules_file_key and rules_file_name):
-            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be privided'),
+            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be provided'),
                         'path': '/filing/alteration/rulesFileKey and /filing/alteration/rulesFileName'})
             return msg
     return []
@@ -146,7 +146,7 @@ def memorandum_change_validation(filing):
 
     if memorandum_file_key or memorandum_file_name:
         if not (memorandum_file_key and memorandum_file_name):
-            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be privided'),
+            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be provided'),
                         'path': '/filing/alteration/memorandumFileKey and /filing/alteration/memorandumFileName'})
             return msg
     return []
