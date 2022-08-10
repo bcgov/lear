@@ -127,8 +127,8 @@ def type_change_validation(filing):
 def rules_change_validation(filing):
     """Validate rules change."""
     msg = []
-    rules_file_key: Final = get_str('/filing/alteration/rulesFileKey')
-    rules_file_name: Final = get_str('/filing/alteration/rulesFileName')
+    rules_file_key: Final = get_str(filing, '/filing/alteration/rulesFileKey')
+    rules_file_name: Final = get_str(filing, '/filing/alteration/rulesFileName')
 
     if rules_file_key or rules_file_name:
         if not (rules_file_key and rules_file_name):
@@ -141,8 +141,8 @@ def rules_change_validation(filing):
 def memorandum_change_validation(filing):
     """Validate memorandum change."""
     msg = []
-    memorandum_file_key: Final = get_str('/filing/alteration/memorandumFileKey')
-    memorandum_file_name: Final = get_str('/filing/alteration/memorandumFileName')
+    memorandum_file_key: Final = get_str(filing, '/filing/alteration/memorandumFileKey')
+    memorandum_file_name: Final = get_str(filing, '/filing/alteration/memorandumFileName')
 
     if memorandum_file_key or memorandum_file_name:
         if not (memorandum_file_key and memorandum_file_name):
