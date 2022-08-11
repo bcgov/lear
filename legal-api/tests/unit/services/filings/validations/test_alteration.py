@@ -152,7 +152,7 @@ def test_alteration_share_classes_optional(session):
 
 
 @pytest.mark.parametrize(
-    'test_status, should_pass, rulesFileKey, rulesFileName', [
+    'test_status, should_pass, rules_file_key, rules_file_name', [
         ('SUCCESS', True, "rulesFileKey", "rulesFileName"),
         ('FAILURE', False, None, "rulesFileName"),
         ('FAILURE', False, "rulesFileKey", None),
@@ -185,7 +185,7 @@ def test_rules_change(session, test_status, should_pass, rules_file_key, rules_f
         assert HTTPStatus.BAD_REQUEST == err.code
 
 @pytest.mark.parametrize(
-    'test_status, should_pass, memorandumFileKey, memorandumFileName', [
+    'test_status, should_pass, memorandum_file_key, memorandum_file_name', [
         ('SUCCESS', True, "memorandumFileKey", "memorandumFileName"),
         ('FAILURE', False, None, "memorandumFileName"),
         ('FAILURE', False, "memorandumFileKey", None),
