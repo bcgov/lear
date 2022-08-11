@@ -157,7 +157,7 @@ def test_alteration_share_classes_optional(session):
         ('FAILURE', False, None, "rulesFileName"),
         ('FAILURE', False, "rulesFileKey", None),
     ])
-def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFileName):
+def test_rules_change(session, test_status, should_pass, rules_file_key, rules_file_name):
     """Assert riles is optional in alteration."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
@@ -166,10 +166,10 @@ def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFile
     f['filing']['header']['identifier'] = identifier
     del f['filing']['alteration']['nameRequest']
 
-    if rulesFileKey:
-        f['filing']['alteration']['rulesFileKey'] = rulesFileKey
-    if rulesFileName:
-        f['filing']['alteration']['rulesFileName'] = rulesFileName
+    if rules_file_key:
+        f['filing']['alteration']['rulesFileKey'] = rules_file_key
+    if rules_file_name:
+        f['filing']['alteration']['rulesFileName'] = rules_file_name
 
     err = validate(business, f)
     
@@ -190,7 +190,7 @@ def test_rules_change(session, test_status, should_pass, rulesFileKey, rulesFile
         ('FAILURE', False, None, "memorandumFileName"),
         ('FAILURE', False, "memorandumFileKey", None),
     ])
-def test_memorandum_change(session, test_status, should_pass, memorandumFileKey, memorandumFileName):
+def test_memorandum_change(session, test_status, should_pass, memorandum_file_key, memorandum_file_name):
     """Assert riles is optional in alteration."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
@@ -199,10 +199,10 @@ def test_memorandum_change(session, test_status, should_pass, memorandumFileKey,
     f['filing']['header']['identifier'] = identifier
     del f['filing']['alteration']['nameRequest']
 
-    if memorandumFileKey:
-        f['filing']['alteration']['memorandumFileKey'] = memorandumFileKey
-    if memorandumFileName:
-        f['filing']['alteration']['memorandumFileName'] = memorandumFileName
+    if memorandum_file_key:
+        f['filing']['alteration']['memorandumFileKey'] = memorandum_file_key
+    if memorandum_file_name:
+        f['filing']['alteration']['memorandumFileName'] = memorandum_file_name
 
     err = validate(business, f)
     
