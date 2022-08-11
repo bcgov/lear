@@ -40,6 +40,8 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     msg.extend(share_structure_validation(filing))
     msg.extend(court_order_validation(filing))
     msg.extend(type_change_validation(filing))
+    msg.extend(rules_change_validation(filing))
+    msg.extend(memorandum_change_validation(filing))
 
     if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
         msg.append(err)
@@ -118,5 +120,33 @@ def type_change_validation(filing):
     if get_str(filing, legal_type_path) != Business.LegalTypes.BCOMP.value:
         msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'),
                     'path': legal_type_path})
+        return msg
+    return []
+
+
+def rules_change_validation(filing):
+    """Validate rules change."""
+    msg = []
+    rules_file_key: Final = get_str(filing, '/filing/alteration/rulesFileKey')
+    rules_file_name: Final = get_str(filing, '/filing/alteration/rulesFileName')
+
+    if (rules_file_key and not rules_file_name) or (not rules_file_key and rules_file_name):
+        missing_path = 'rulesFileKey' if not rules_file_key else 'rulesFileName'
+        msg.append({'error': babel(missing_path + 'should be provided'),
+                    'path': '/filing/alteration/' + missing_path})
+        return msg
+    return []
+
+
+def memorandum_change_validation(filing):
+    """Validate memorandum change."""
+    msg = []
+    memorandum_file_key: Final = get_str(filing, '/filing/alteration/memorandumFileKey')
+    memorandum_file_name: Final = get_str(filing, '/filing/alteration/memorandumFileName')
+
+    if (memorandum_file_key and not memorandum_file_name) or (not memorandum_file_key and memorandum_file_name):
+        missing_path = 'memorandumFileKey' if not memorandum_file_key else 'memorandumFileName'
+        msg.append({'error': babel(missing_path + 'should be provided'),
+                    'path': '/filing/alteration/' + missing_path})
         return msg
     return []

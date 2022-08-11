@@ -49,6 +49,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
     err = None
 
+    legal_type = get_str(filing_json, '/filing/business/legalType')
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if 'correction' in filing_json['filing'].keys():
@@ -88,6 +89,26 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                                                       'path': '/filing/specialResolution'}])
         if err:
             return err
+    elif 'specialResolution' in filing_json['filing'].keys() and legal_type in [Business.LegalTypes.COOP.value]:
+        err = special_resolution_validate(business, filing_json)
+        if err:
+            return err
+
+        either_con_or_alteration_flag = False
+
+        if 'changeOfName' in filing_json['filing'].keys():
+            either_con_or_alteration_flag = True
+            err = con_validate(business, filing_json)
+        if 'alteration' in filing_json['filing'].keys():
+            either_con_or_alteration_flag = True
+            err = alteration_validate(business, filing_json)
+
+        if err:
+            return err
+
+        if not either_con_or_alteration_flag:
+            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Either Change of Name or Alteration is required.'),
+                                                  'path': '/filing'}])
     else:
         for k in filing_json['filing'].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary
