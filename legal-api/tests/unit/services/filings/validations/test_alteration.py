@@ -200,9 +200,9 @@ def test_memorandum_change(session, test_status, should_pass, memorandumFileKey,
     del f['filing']['alteration']['nameRequest']
 
     if memorandumFileKey:
-        f['filing']['alteration']['rulesFileKey'] = memorandumFileKey
+        f['filing']['alteration']['memorandumFileKey'] = memorandumFileKey
     if memorandumFileName:
-        f['filing']['alteration']['rulesFileName'] = memorandumFileName
+        f['filing']['alteration']['memorandumFileName'] = memorandumFileName
 
     err = validate(business, f)
     

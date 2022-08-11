@@ -130,11 +130,11 @@ def rules_change_validation(filing):
     rules_file_key: Final = get_str(filing, '/filing/alteration/rulesFileKey')
     rules_file_name: Final = get_str(filing, '/filing/alteration/rulesFileName')
 
-    if rules_file_key or rules_file_name:
-        if not (rules_file_key and rules_file_name):
-            msg.append({'error': babel('Both rulesFileKey and rulesFileName should be provided'),
-                        'path': '/filing/alteration/rulesFileKey and /filing/alteration/rulesFileName'})
-            return msg
+    if (rules_file_key and not rules_file_name) or (not rules_file_key and rules_file_name):
+        missing_path = 'rulesFileKey' if not rules_file_key else 'rulesFileName'
+        msg.append({'error': babel(missing_path + 'should be provided'),
+                    'path': '/filing/alteration/' + missing_path})
+        return msg
     return []
 
 
@@ -144,9 +144,9 @@ def memorandum_change_validation(filing):
     memorandum_file_key: Final = get_str(filing, '/filing/alteration/memorandumFileKey')
     memorandum_file_name: Final = get_str(filing, '/filing/alteration/memorandumFileName')
 
-    if memorandum_file_key or memorandum_file_name:
-        if not (memorandum_file_key and memorandum_file_name):
-            msg.append({'error': babel('Both memorandumFileKey and memorandumFileName should be provided'),
-                        'path': '/filing/alteration/memorandumFileKey and /filing/alteration/memorandumFileName'})
-            return msg
+    if (memorandum_file_key and not memorandum_file_name) or (not memorandum_file_key and memorandum_file_name):
+        missing_path = 'memorandumFileKey' if not memorandum_file_key else 'memorandumFileName'
+        msg.append({'error': babel(missing_path + 'should be provided'),
+                    'path': '/filing/alteration/' + missing_path})
+        return msg
     return []
