@@ -46,6 +46,7 @@ async def test_registration(app, session, mocker, legal_type):
             return 200, acknowledgement_response
 
     mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
+    mocker.patch('entity_bn.bn_processors.registration.send_email')
 
     business_number = '993775204'
     business_program_id = 'BC'
@@ -104,6 +105,7 @@ async def test_retry_registration(app, session, mocker, request_type):
     mocker.patch('entity_bn.bn_processors.registration._get_program_account', return_value=(500, {
         'message': 'Error when trying to retrieve program account from COLIN'})
     )
+    mocker.patch('entity_bn.bn_processors.registration.send_email')
 
     for _ in range(10):
         try:

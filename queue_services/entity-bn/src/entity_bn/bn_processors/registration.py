@@ -30,14 +30,15 @@ from entity_bn.bn_processors import (
     business_type_code,
     program_type_code,
     request_bn_hub,
+    send_email,
 )
 from entity_bn.exceptions import BNException
 
 
-def process(business: Business,
-            is_admin: bool = False,
-            msg: dict = None,
-            skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
+async def process(business: Business,
+                  is_admin: bool = False,
+                  msg: dict = None,
+                  skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
     """Process the incoming registration request."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 
@@ -109,6 +110,19 @@ def process(business: Business,
 
         raise QueueException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
+
+    try:
+        # Once BN15 received send an email to user
+        await send_email({
+            'email': {
+                'type': 'businessNumber',
+                'option': 'bn',
+                'identifier': business.identifier
+            }
+        })
+    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+        logger.error('Failed to publish BN email message onto the NATS emailer subject', exc_info=True)
+        raise err
 
 
 def _inform_cra(business: Business,
