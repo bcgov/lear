@@ -38,7 +38,7 @@ from entity_bn.exceptions import BNException
 async def process(business: Business,
                   is_admin: bool = False,
                   msg: dict = None,
-                  skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
+                  skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
     """Process the incoming registration request."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 
