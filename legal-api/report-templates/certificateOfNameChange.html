@@ -7,7 +7,6 @@
     <meta charset="UTF-8">
     <meta name="author" content="BC Registries and Online Services">
     [[common/certificateStyle.html]]
-    [[certificate-of-name-change/style.html]]
   </head>
 
   <body>
@@ -26,43 +25,19 @@
           </div>
 
           <div class="certify-clause-container">
-            <span class="cert-statement">I hereby certify that</span>
+            <span>I hereby certify that</span>
             <span class="company-name-header">{{ fromLegalName }}</span>
-            <span class="cert-statement">changed its name to</span>
+            <span>changed its name to</span>
             <span class="company-name-header">{{ toLegalName }}</span>
-            <span class="cert-statement">on {{ effective_date_time }}</span>
+            <span>on {{ effective_date_time }}</span>
+            <div class="cert-separator"></div>
+            <div class="cert-issued-by">
+              <div>Issued under my hand at Victoria, British Columbia</div>
+              <div>on {{ effective_date }}</div>
+            </div>
           </div>
-
-          <p>______</p>
-
-          <div class="issue-details">
-            <div class="cert-statement">Issued under my hand at Victoria, British Columbia</div>
-            <div class="cert-statement">on {{ effective_date }}</div>
-          </div>
-      </div>
-
-      <br/>
-      <div>
-        <table class="footer-table" role="none">
-          <tr>
-            <td class="seal-container">[[common/certificateSeal.html]]</td>
-            <td class="registrar-info-container">
-              <div class="registrar-info">
-                <div>[[common/certificateRegistrarSignature.html]]</div>
-                <div>
-                  <div class="registrar-name">{{ registrarInfo.name }}</div>
-                  <div class="registrar-title">{{ registrarInfo.title }}</div>
-                </div>
-                <div class="province-country-info">
-                  <div>PROVINCE OF BRITISH COLUMBIA</div>
-                  <div class="country">CANADA</div>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </table>
       </div>
     </div>
   </body>
-  <footer class="footer-style">ELECTRONIC CERTIFICATE</footer>
+  [[common/certificateFooter.html]]
 </html>

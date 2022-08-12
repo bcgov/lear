@@ -93,6 +93,7 @@ class BusinessDocument:
             'common/nameTranslation',
             'common/style',
             'common/styleLetterOverride',
+            'common/certificateFooter',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
