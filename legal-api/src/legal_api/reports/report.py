@@ -116,7 +116,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
-            'certificate-of-name-change/style',
+            'common/certificateFooter',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
