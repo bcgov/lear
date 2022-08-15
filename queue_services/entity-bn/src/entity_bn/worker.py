@@ -30,7 +30,6 @@ import os
 from typing import Dict
 
 import nats
-from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
 from legal_api import db
@@ -50,7 +49,6 @@ from entity_bn.bn_processors import (  # noqa: I001
 from entity_bn.exceptions import BNException
 
 
-qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
@@ -74,7 +72,7 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
 
     with flask_app.app_context():
         if msg['type'] == 'bc.registry.admin.bn':
-            admin.process(msg)
+            await admin.process(msg)
             return
 
         filing_core_submission = FilingCore.find_by_id(msg['data']['filing']['header']['filingId'])
@@ -87,7 +85,7 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
             raise QueueException
 
         if filing_submission.filing_type == filing_core_submission.FilingTypes.REGISTRATION.value:
-            registration.process(business)
+            await registration.process(business)
         elif filing_submission.filing_type == filing_core_submission.FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing_core_submission.storage)
         elif filing_submission.filing_type == filing_core_submission.FilingTypes.CORRECTION.value and \

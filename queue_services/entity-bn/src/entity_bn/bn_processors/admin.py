@@ -22,14 +22,14 @@ from legal_api.utils.datetime import datetime
 from entity_bn.bn_processors import registration, request_bn_hub
 
 
-def process(msg: dict):
+async def process(msg: dict):
     """Process admin actions."""
     business = Business.find_by_identifier(msg['data']['business']['identifier'])
     if msg['data']['header']['request'] == 'BN15':
-        registration.process(business, is_admin=True, msg=msg)
+        await registration.process(business, is_admin=True, msg=msg)
     elif msg['data']['header']['request'] == 'RESUBMIT_INFORM_CRA':
         # Keeping it separate due to the colin-api call to get BN15
-        registration.process(business, is_admin=True, msg=msg, skip_build=True)
+        await registration.process(business, is_admin=True, msg=msg, skip_build=True)
     elif msg['data']['header']['request'] in [
             'RESUBMIT_CHANGE_DELIVERY_ADDRESS',
             'RESUBMIT_CHANGE_MAILING_ADDRESS',
