@@ -30,7 +30,7 @@ TEST_DATA = [
     (False, '', 'BEN', '', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', False, 1),
-    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 2),
+    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
 ]
 
