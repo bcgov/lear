@@ -118,7 +118,6 @@ def type_change_validation(filing):
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
     # you must alter to a bc benefit company or a COOP
-    test = get_str(filing, legal_type_path)
     if get_str(filing, legal_type_path) not in (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value):
         msg.append({'error': babel('Your business type has not been updated to a BC Benefit Company.'),
                     'path': legal_type_path})
