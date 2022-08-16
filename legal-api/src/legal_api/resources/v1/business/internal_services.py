@@ -17,7 +17,7 @@ TODO: Move in internal filings calls.
 """
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.models import Business
@@ -65,7 +65,10 @@ class InternalBusinessResource(Resource):
         for identifier in json_input.keys():
             # json input is a dict -> identifier: tax id
             business = Business.find_by_identifier(identifier)
-            business.tax_id = json_input[identifier]
-            business.save()
-
+            if business:
+                business.tax_id = json_input[identifier]
+                business.save()
+            else:
+                current_app.logger.error('Unable to update tax_id for business (%s), which is missing in lear',
+                                         identifier)
         return jsonify({'message': 'Successfully updated tax ids.'}), HTTPStatus.CREATED
