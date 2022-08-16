@@ -13,6 +13,7 @@
 # limitations under the License.
 """Manages the type of Business."""
 from datetime import datetime
+from tokenize import String
 from typing import Dict
 
 import requests
@@ -37,6 +38,19 @@ def set_corp_type(business: Business, business_info: Dict) -> Dict:
 
     return None
 
+def set_association_type(business: Business, association_type: String) -> Dict:
+    """Set the association type of business."""   
+    if not business:
+        return {'error': babel('Business required before type can be set.')}
+    
+    try:
+        cooperative_association_type = association_type
+        if cooperative_association_type:
+            business.association_type = cooperative_association_type
+    except (IndexError, KeyError, TypeError):
+        return {'error': babel('A valid association type must be provided.')}
+    
+    return None
 
 def set_legal_name(corp_num: str, business: Business, business_info: Dict):
     """Set the legal_name in the business object."""
