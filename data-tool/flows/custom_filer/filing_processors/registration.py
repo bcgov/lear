@@ -104,7 +104,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business.admin_freeze = filing_event_data['c_is_frozen']
 
     business_obj = registration_filing.get('business', {})
-    if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
+    if (naics := registration_filing.get('business', {}).get('naics')):
         business_info.update_naics_info(business, naics)
     business.tax_id = business_obj.get('taxId', None)
     business.state = Business.State.ACTIVE
