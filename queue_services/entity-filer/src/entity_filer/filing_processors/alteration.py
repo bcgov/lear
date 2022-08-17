@@ -47,7 +47,7 @@ def process(
             filing_meta.alteration = {**filing_meta.alteration,
                                     **{'fromCooperativeAssociationType': business.association_type,
                                         'toCooperativeAssociationType': coop_association_type}}
-            business_info.set_association_type(business, coop_association_type)                            
+            business_info.set_association_type(business, coop_association_type)
         else:
             business_json = dpath.util.get(filing, '/alteration/business')
             filing_meta.alteration = {**filing_meta.alteration,
