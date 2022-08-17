@@ -38,6 +38,7 @@ def set_corp_type(business: Business, business_info: Dict) -> Dict:
 
     return None
 
+
 def set_association_type(business: Business, association_type: String) -> Dict:
     """Set the association type of business."""
     if not business:
@@ -51,6 +52,7 @@ def set_association_type(business: Business, association_type: String) -> Dict:
         return {'error': babel('A valid association type must be provided.')}
 
     return None
+
 
 def set_legal_name(corp_num: str, business: Business, business_info: Dict):
     """Set the legal_name in the business object."""

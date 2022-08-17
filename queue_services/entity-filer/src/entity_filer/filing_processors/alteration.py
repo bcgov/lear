@@ -45,14 +45,14 @@ def process(
             alteration_json = dpath.util.get(filing, '/alteration')
             coop_association_type = alteration_json.get('cooperativeAssociationType')
             filing_meta.alteration = {**filing_meta.alteration,
-                                    **{'fromCooperativeAssociationType': business.association_type,
-                                        'toCooperativeAssociationType': coop_association_type}}
+                                      **{'fromCooperativeAssociationType': business.association_type,
+                                         'toCooperativeAssociationType': coop_association_type}}
             business_info.set_association_type(business, coop_association_type)
         else:
             business_json = dpath.util.get(filing, '/alteration/business')
             filing_meta.alteration = {**filing_meta.alteration,
-                                    **{'fromLegalType': business.legal_type,
-                                        'toLegalType': business_json.get('legalType')}}
+                                      **{'fromLegalType': business.legal_type,
+                                         'toLegalType': business_json.get('legalType')}}
             business_info.set_corp_type(business, business_json)
 
     # Alter the business name, if any
