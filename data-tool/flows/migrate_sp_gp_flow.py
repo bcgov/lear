@@ -63,6 +63,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
 
     try:
         event_ids = unprocessed_firm_dict.get('event_ids')
+        correction_event_ids = unprocessed_firm_dict.get('correction_event_ids')
         events_ids_to_process, event_filing_types_to_process = get_event_info_to_retrieve(unprocessed_firm_dict)
         processed_events_ids = get_processed_event_ids(unprocessed_firm_dict)
         unprocessed_firm_dict['retrieved_events_cnt'] = len(events_ids_to_process)
@@ -75,6 +76,8 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
 
         firm_comments = event_filing_service.get_firm_comments_data(corp_num)
         unprocessed_firm_dict['firm_comments'] = firm_comments
+        unprocessed_firm_dict['correctionEventFilingMappings'] = {}
+        correction_event_filing_mappings = unprocessed_firm_dict['correctionEventFilingMappings']
 
         prev_event_filing_data = None
         for idx, event_id in enumerate(events_ids_to_process):
@@ -82,12 +85,20 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             is_supported_event_filing = event_filing_service.get_event_filing_is_supported(event_file_type)
             print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
             prev_event_ids = get_previous_event_ids(event_ids, event_id)
-            event_filing_data_dict = \
+            event_filing_data_dict, is_corrected_event_filing, correction_event_id = \
                 event_filing_service.get_event_filing_data(corp_num,
                                                            event_id,
                                                            event_file_type,
                                                            prev_event_filing_data,
-                                                           prev_event_ids)
+                                                           prev_event_ids,
+                                                           correction_event_ids,
+                                                           correction_event_filing_mappings)
+            if is_corrected_event_filing:
+                correction_event_filing_mappings[correction_event_id] = {
+                    'correctedEventId': event_id,
+                    'learFilingType': event_filing_data_dict['target_lear_filing_type']
+                }
+
             event_filing_data_arr.append({
                 'is_in_lear': is_in_lear(processed_events_ids, event_id),
                 'is_supported_type': is_supported_event_filing,
@@ -309,7 +320,7 @@ def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unuse
         active_flow_runs = response["data"]["flow_run"]
         if active_flow_runs:
             logger = prefect.context.get("logger")
-            message = "Skipping this flow run since there are already a flow run in progress"
+            message = "Skipping this flow run since there is already a flow run in progress"
             logger.info(message)
             print(f'{message}')
             return Skipped(message)

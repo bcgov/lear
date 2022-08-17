@@ -1,7 +1,7 @@
-from legal_api.models import Party, PartyRole, Business, Office, Address
+from legal_api.models import Party, PartyRole, Business, Office, Address, Filing
 from legal_api.models.colin_event_id import ColinEventId
 
-from .event_filing_service import RegistrationEventFilings
+from .event_filing_service import RegistrationEventFilings, CorrectionEventFilings
 
 
 def get_party_match(db: any, party_dict: dict, corp_num: str):
@@ -30,6 +30,17 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
     if RegistrationEventFilings.has_value(event_filing_type):
         return
 
+    if CorrectionEventFilings.has_value(event_filing_type):
+        correction_json = filing_json['filing']['correction']
+        colin_event_id = correction_json['corrected_filing_event_id']
+        colin_event = get_colin_event(db, colin_event_id)
+        filing_id = colin_event.filing_id
+        correction_json['correctedFilingId'] = filing_id
+        query =  db.session.query(Filing).filter(Filing.id == filing_id)
+        corrected_filing = query.one_or_none()
+        correction_json['correctedFilingDate'] = corrected_filing.filing_date.strftime('%Y-%m-%d')
+        del correction_json['corrected_filing_event_id']
+
     parties_json = filing_json['filing'][filing_type].get('parties', [])
     business_office_json = filing_json['filing'][filing_type].get('offices', {}).get('businessOffice', None)
 
@@ -57,7 +68,6 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
             del officer['prev_colin_party']
 
     if business_office_json:
-
         business = Business.find_by_identifier(corp_num)
         business_office = business.offices \
             .filter(Office.office_type == 'businessOffice') \

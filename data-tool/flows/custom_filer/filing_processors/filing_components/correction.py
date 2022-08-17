@@ -11,85 +11,86 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""File processing rules and actions for the change of registration filing."""
+"""File processing rules and actions for the correction filing."""
 import datetime
 from contextlib import suppress
+from datetime import timedelta
 from typing import Dict
 
 import dpath
 from legal_api.models import Address, Business, Filing, Party, PartyRole
 
-from ..filing_meta import FilingMeta
-from .filing_components import (
+from ...filing_meta import FilingMeta
+from ..filing_components import (
     business_info,
     create_party,
     create_role,
     filings,
-    update_address, create_address,
+    update_address,
+    create_address,
 )
-from .filing_components.offices import update_offices
-from flask import current_app
 
+def correct_business_data(business: Business, correction_filing_rec: Filing,  # pylint: disable=too-many-locals
+                          correction_filing: Dict,
+                          filing_meta: FilingMeta):
+    """Render the correction filing onto the business model objects."""
+    filing_meta.correction = {}
 
-def process(business: Business,
-            change_filing_rec: Filing,
-            change_filing: Dict,
-            filing_meta: FilingMeta,
-            filing_event_data: Dict):
-    """Render the change of registration filing onto the business model objects."""
-    filing_meta.change_of_registration = {}
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(change_filing, '/changeOfRegistration/nameRequest')
+        name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
         if name_request_json.get('legalName'):
             from_legal_name = business.legal_name
-            business_info.set_legal_name(business.identifier, business, name_request_json)
-            if from_legal_name != business.legal_name:
-                filing_meta.change_of_registration = {**filing_meta.change_of_registration,
-                                                      **{'fromLegalName': from_legal_name,
-                                                         'toLegalName': business.legal_name}}
+            to_legal_name = name_request_json.get('legalName', None)
+            if to_legal_name and from_legal_name != to_legal_name:
+                business.legal_name = to_legal_name
+                filing_meta.correction = {**filing_meta.correction,
+                                          **{'fromLegalName': from_legal_name,
+                                             'toLegalName': business.legal_name}}
     # Update Nature of Business
-    if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')):
-        naics_code = naics.get('naicsCode')
-        filing_meta.change_of_registration = {**filing_meta.change_of_registration,
-                                              **{'fromNaicsCode': business.naics_code,
-                                                 'toNaicsCode': naics_code,
-                                                 'naicsDescription': naics.get('naicsDescription')}}
-        business_info.update_naics_info(business, naics)
+    if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
+        to_naics_code = naics.get('naicsCode')
+        to_naics_description = naics.get('naicsDescription')
+        if business.naics_description != to_naics_description:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                **{'fromNaicsCode': business.naics_code,
+                   'toNaicsCode': to_naics_code,
+                   'naicsDescription': to_naics_description}}
+            business_info.update_naics_info(business, naics)
 
-    prev_offices = filing_event_data.get('prev_event_filing_data', {}).get('offices', [])
-    # Update business office if was previously present
+    # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        if prev_offices:
-                business_office_json = dpath.util.get(change_filing, '/changeOfRegistration/offices/businessOffice')
-                for updated_address in business_office_json.values():
-                    if updated_address.get('id', None):
-                        address = Address.find_by_id(updated_address.get('id'))
-                        if address:
-                            update_address(address, updated_address)
-        # Create business office if it didn't previously exist and it's present in filing json
-        elif not prev_offices and (offices := dpath.util.get(change_filing, '/changeOfRegistration/offices')):
-            update_offices(business, offices)
+        business_office_json = dpath.util.get(correction_filing, '/correction/offices/businessOffice')
+        for address_type, updated_address in business_office_json.items():
+            if updated_address.get('id', None):
+                address = Address.find_by_id(updated_address.get('id'))
+                if address:
+                    update_address(address, updated_address)
+            else:
+                create_address(updated_address, address_type)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(change_filing, '/changeOfRegistration/parties')
-        update_parties(business, party_json, change_filing_rec)
+        party_json = dpath.util.get(correction_filing, '/correction/parties')
+        update_parties(business, party_json, correction_filing_rec)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(change_filing, '/changeOfRegistration/courtOrder')
-        filings.update_filing_court_order(change_filing_rec, court_order_json)
+        court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
+        filings.update_filing_court_order(correction_filing_rec, court_order_json)
 
-    filings.update_filing_order_details(change_filing_rec, filing_event_data)
+        # update business start date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
+        if business_start_date:
+            business.founding_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
 
 
-def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
+def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    end_date_time = change_filing_rec.effective_date \
-        if change_filing_rec.effective_date \
-        else change_filing_rec.filing_date
+    end_date_time = datetime.datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
@@ -104,7 +105,7 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
         # The backend will have an id of type int
         if not party_info.get('officer').get('id') or \
                 (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
-            _create_party_info(business, change_filing_rec, party_info)
+            _create_party_info(business, correction_filing_rec, party_info)
         else:
             # Update if id is present
             _update_party(party_info)
@@ -122,27 +123,20 @@ def _update_party(party_info):
         party.email = party_info['officer'].get('email', '').lower()
         identifier = party_info['officer'].get('identifier', '')
         party.identifier = identifier.upper() if identifier else identifier
-        if (tax_id := party_info['officer'].get('taxId')):
-            party.tax_id = tax_id.upper()
-        else:
-            party.tax_id = None
-
-        # add or update addresses for party
+        # add addresses to party
         if party_info.get('deliveryAddress', None):
-            if party.delivery_address:
+            if party_info.get('deliveryAddress').get('id', None):
                 update_address(party.delivery_address, party_info.get('deliveryAddress'))
             else:
-                address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
-                party.delivery_address = address
+                create_address(party.delivery_address, Address.DELIVERY)
         if party_info.get('mailingAddress', None):
-            if party.mailing_address:
+            if party_info.get('mailingAddress').get('id', None):
                 update_address(party.mailing_address, party_info.get('mailingAddress'))
             else:
-                mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
-                party.mailing_address = mailing_address
+                create_address(party.mailing_address, Address.MAILING)
 
 
-def _create_party_info(business, change_filing_rec, party_info):
+def _create_party_info(business, correction_filing_rec, party_info):
     party = create_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
@@ -153,6 +147,6 @@ def _create_party_info(business, change_filing_rec, party_info):
         }
         party_role = create_role(party=party, role_info=role)
         if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value]:
-            change_filing_rec.filing_party_roles.append(party_role)
+            correction_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
