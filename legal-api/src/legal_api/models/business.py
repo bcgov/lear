@@ -167,7 +167,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'tax_id',
             'naics_key',
             'naics_code',
-            'naics_description'
+            'naics_description',
+            'start_date'
         ]
     }
 
