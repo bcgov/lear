@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import prefect
-from legal_api.models import Filing, Business, Comment
+from legal_api.models import Business, Comment
 from prefect import task, Flow, unmapped
 from prefect.client import Client
 from prefect.engine.state import Skipped
@@ -17,7 +17,7 @@ from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
-from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event
+from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing, populate_user
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
 from common.firm_filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
@@ -231,21 +231,12 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                         business = None
                         if not RegistrationEventFilings.has_value(event_filing_type):
                             business = Business.find_by_identifier(corp_num)
-                        target_lear_filing_type = filing_data['target_lear_filing_type']
-                        filing_json = event_filing_data['filing_json']
                         populate_filing_json_from_lear(db_lear, event_filing_data, business)
-                        effective_date = filing_data['f_effective_dts_pacific']
                         corp_name = filing_data['curr_corp_name']
 
                         # save filing to filing table
-                        filing = Filing()
-                        filing.effective_date = effective_date
-                        filing._filing_json = filing_json
-                        filing._filing_type = target_lear_filing_type
-                        filing.filing_date = effective_date
-                        filing.business_id = business.id if business else None
-                        filing.source = Filing.Source.COLIN.value
-                        filing.paper_only = get_is_paper_only(filing_data)
+                        filing = populate_filing(business, event_filing_data, filing_data)
+                        populate_user(filing, filing_data)
                         filing.save()
 
                         # process filing with custom filer function

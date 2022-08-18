@@ -152,9 +152,11 @@ TEST_USER_DISPLAY_NAME = [
     ('username - idir with slash', 'idir\\joefresh', '', '', '', 'joefresh'),
     ('username - idir with @', 'joefresh@idir', '', '', '', 'joefresh'),
     ('username - services card', 'bcsc/abc123', '', '', '', None),
-    ('simple name', 'anything', 'First', 'Last', 'Middle', 'First Last'),
-    ('name - first name only', 'anything', 'First', '', 'Middle', 'First'),
-    ('name - last name only', 'anything', '', 'Last', 'Middle', 'Last'),
+    ('simple name', 'anything', 'First', 'Last', '', 'First Last'),
+    ('name - first name only', 'anything', 'First', '', '', 'First'),
+    ('name - last name only', 'anything', '', 'Last', '', 'Last'),
+    ('name - middle name only', 'anything', '', '', 'Middle', 'Middle'),
+    ('name - full name', 'anything', 'First', 'Last', 'Middle', 'First Middle Last')
 ]
 
 
