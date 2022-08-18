@@ -100,7 +100,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business.start_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business.founding_date = filing_rec.effective_date
 
     business_obj = registration_filing.get('business', {})
     if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
