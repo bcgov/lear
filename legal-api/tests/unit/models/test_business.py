@@ -238,6 +238,7 @@ def test_business_json(session):
     business = Business(legal_name='legal_name',
                         legal_type='CP',
                         founding_date=EPOCH_DATETIME,
+                        start_date=datetime(2021, 8, 5, 8, 7, 58, 272362),
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME,
@@ -274,7 +275,8 @@ def test_business_json(session):
         'complianceWarnings': [],
         'warnings': [],
         'hasCorrections': False,
-        'associationType': 'CP'
+        'associationType': 'CP',
+        'startDate': '2021-08-05'
     }
 
     assert business.json() == d
