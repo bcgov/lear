@@ -183,6 +183,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    start_date = db.Column('start_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -362,6 +363,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['taxId'] = self.tax_id
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+
+        if self.start_date:
+            d['startDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.start_date)
+            ).isoformat()
 
         d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
                                   x.status == 'COMPLETED')
