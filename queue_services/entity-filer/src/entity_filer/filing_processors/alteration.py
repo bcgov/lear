@@ -26,8 +26,8 @@ from entity_filer.filing_processors.filing_components import (
     business_profile,
     filings,
     name_request,
-    shares,
-    rules_and_memorandums
+    rules_and_memorandum,
+    shares
 )
 
 
@@ -88,13 +88,13 @@ def process(
         rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
         rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
 
-        rules_and_memorandums.update_rules(business, filing_submission, rules_file_key, rules_file_name)
+        rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
         memorandum_file_name = dpath.util.get(filing, '/alteration/memorandumFileName')
 
-        rules_and_memorandums.update_memorandum(business, memorandum_file_key, memorandum_file_name)
+        rules_and_memorandum.update_memorandum(business, memorandum_file_key, memorandum_file_name)
 
 def post_process(business: Business, filing: Filing, correction: bool = False):
     """Post processing activities for incorporations.
