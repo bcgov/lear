@@ -33,7 +33,6 @@ def update_rules(business: Business, filing: Filing, rules_file_key: String, rul
         # if nothing is passed in, we don't care and it's not an error
         return None
 
-    err = []
     rules_file = MinioService.get_file(rules_file_key)
     replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
 
@@ -46,7 +45,7 @@ def update_rules(business: Business, filing: Filing, rules_file_key: String, rul
     document.filing_id = filing.id
     business.documents.append(document)
 
-    return err
+    return None
 
 
 def update_memorandum(business: Business, filing: Filing, memorandum_file_key: String, memorandum_file_name: String) -> Optional[List]:
@@ -57,7 +56,6 @@ def update_memorandum(business: Business, filing: Filing, memorandum_file_key: S
         # if nothing is passed in, we don't care and it's not an error
         return None
 
-    err = []    
     # create certified copy for memorandum document
     memorandum_file = MinioService.get_file(memorandum_file_key)
     replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
@@ -71,4 +69,4 @@ def update_memorandum(business: Business, filing: Filing, memorandum_file_key: S
     document.filing_id = filing.id
     business.documents.append(document)
 
-    return err
+    return None
