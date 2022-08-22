@@ -15,7 +15,7 @@ import json
 import os
 import re
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 
@@ -299,7 +299,7 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
-            filing['recognition_date_utc'] = self._business.founding_date.strftime('%B %-d, %Y')
+            filing['recognition_date_utc'] = recognition_datetime.strftime('%B %-d, %Y')
             if self._business.start_date:
                 filing['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
         # For Annual Report - Set AGM date as the effective date
@@ -499,7 +499,7 @@ class Report:  # pylint: disable=too-few-public-methods
             prev_start_date = versioned_business.start_date
             new_start_date_str =filing.get(filing_type).get('startDate')
             if new_start_date_str:
-                new_start_date = datetime.datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
+                new_start_date = datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
                 if prev_start_date != new_start_date:
                         filing['newStartDate'] = new_start_date_str
 
@@ -519,6 +519,10 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['offices']['businessOffice']['changed'] = \
                 filing['offices']['businessOffice']['mailingAddress']['changed']\
                 or filing['offices']['businessOffice']['deliveryAddress']['changed']
+            with suppress(KeyError):
+                self._format_address(filing[filing_type]['offices']['businessOffice']['deliveryAddress'])
+            with suppress(KeyError):
+                self._format_address(filing[filing_type]['offices']['businessOffice']['mailingAddress'])
 
         # Change of party
         if filing.get(filing_type).get('parties'):
