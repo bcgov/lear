@@ -300,6 +300,8 @@ class Report:  # pylint: disable=too-few-public-methods
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
             filing['recognition_date_utc'] = self._business.founding_date.strftime('%B %-d, %Y')
+            if self._business.start_date:
+                filing['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -491,6 +493,15 @@ class Report:  # pylint: disable=too-few-public-methods
             to_naics_description = naics_json.get('naicsDescription')
             if prev_naics_description and to_naics_description and prev_naics_description != to_naics_description:
                 filing['newNaicsDescription'] = to_naics_description
+
+        # Change of start date
+        if filing_type == 'correction':
+            prev_start_date = versioned_business.start_date
+            new_start_date_str =filing.get(filing_type).get('startDate')
+            if new_start_date_str:
+                new_start_date = datetime.datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
+                if prev_start_date != new_start_date:
+                        filing['newStartDate'] = new_start_date_str
 
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
