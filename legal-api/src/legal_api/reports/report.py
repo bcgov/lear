@@ -471,7 +471,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
 
-    def _format_change_of_registration_data(self, filing, filing_type):  # pylint: disable=too-many-locals
+    def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
             get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
@@ -497,11 +497,11 @@ class Report:  # pylint: disable=too-few-public-methods
         # Change of start date
         if filing_type == 'correction':
             prev_start_date = versioned_business.start_date
-            new_start_date_str =filing.get(filing_type).get('startDate')
+            new_start_date_str = filing.get(filing_type).get('startDate')
             if new_start_date_str:
                 new_start_date = datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
                 if prev_start_date != new_start_date:
-                        filing['newStartDate'] = new_start_date_str
+                    filing['newStartDate'] = new_start_date_str
 
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
