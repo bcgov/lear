@@ -87,7 +87,8 @@ def test_registration_process(app, session, legal_type, filing):
 
     # Assertions
     assert business.identifier.startswith('FM')
-    assert business.founding_date == datetime.fromisoformat(now) + timedelta(hours=8)
+    assert business.founding_date == effective_date
+    assert business.start_date == datetime.fromisoformat(now) + timedelta(hours=8)
     assert business.legal_type == filing['filing']['registration']['nameRequest']['legalType']
     assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
     assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']

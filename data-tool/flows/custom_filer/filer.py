@@ -36,7 +36,7 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on
+from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on, correction
 from .filing_processors.filing_components import create_comments
 
 
@@ -122,6 +122,9 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             elif filing.get('putBackOn'):
                 put_back_on.process(business, filing, filing_submission)
 
+            elif filing.get('correction'):
+                filing_submission = correction.process(filing_submission, filing, filing_meta, business)
+
 
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
@@ -165,6 +168,13 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             db.session.commit()
 
         if config.UPDATE_ENTITY and any('changeOfRegistration' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type
+            )
+
+        if config.UPDATE_ENTITY and business.legal_type in ['SP', 'GP'] and any('correction' in x for x in legal_filings):
             AccountService.update_entity(
                 business_registration=business.identifier,
                 business_name=business.legal_name,

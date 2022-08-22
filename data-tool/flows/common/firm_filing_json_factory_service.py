@@ -1,5 +1,6 @@
 from .firm_filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
-    get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json
+    get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json, \
+    get_base_correction_filing_json
 from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType
 
@@ -33,6 +34,8 @@ class FirmFilingJsonFactoryService:
             filing_json = self.get_registration_filing_json()
         elif self._target_lear_filing_type == 'changeOfRegistration':
             filing_json = self.get_change_registration_filing_json()
+        elif self._target_lear_filing_type == 'correction':
+            filing_json = self.get_correction_filing_json()
         elif self._target_lear_filing_type == 'dissolution':
             filing_json = self.get_voluntary_dissolution_filing_json()
         elif self._target_lear_filing_type == 'conversion':
@@ -63,6 +66,11 @@ class FirmFilingJsonFactoryService:
         return result
 
 
+    def get_correction_filing_json(self):
+        result = self.build_correction_filing()
+        return result
+
+
     def build_change_registration_filing(self):
         num_parties = len(self._filing_data['corp_parties'])
         filing_root_dict = get_base_change_registration_filing_json(num_parties)
@@ -70,6 +78,16 @@ class FirmFilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_change_registration(filing_root_dict)
+        return filing_root_dict
+
+
+    def build_correction_filing(self):
+        num_parties = len(self._filing_data['corp_parties'])
+        filing_root_dict = get_base_correction_filing_json(num_parties)
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_correction(filing_root_dict)
         return filing_root_dict
 
 
@@ -166,6 +184,36 @@ class FirmFilingJsonFactoryService:
             self.populate_nr(change_registration_dict)
         else:
             del change_registration_dict['nameRequest']
+
+
+    def populate_correction(self, filing_dict: dict):
+        correction_dict = filing_dict['filing']['correction']
+        correction_dict['type'] = 'STAFF'
+        correction_dict['startDate'] = self._filing_data.get('bd_business_start_date_dt_str', None)
+        correction_dict['comment'] = self._filing_data.get('lt_notation', None)
+        corrected_event_filing_info = self._filing_data['corrected_event_filing_info']
+        correction_dict['corrected_filing_event_id'] = str(corrected_event_filing_info['correctedEventId'])
+        correction_dict['correctedFilingType'] = corrected_event_filing_info['learFilingType']
+
+        if self._filing_data.get('bd_start_event_id', None):
+            self.populate_filing_business(correction_dict)
+        else:
+            del correction_dict['business']
+
+        if len(self._filing_data['offices']) > 0:
+            self.populate_offices(correction_dict)
+        else:
+            del correction_dict['offices']
+
+        if len(self._filing_data['corp_parties']) > 0:
+            self.populate_parties(correction_dict)
+        else:
+            del correction_dict['parties']
+
+        if self._filing_data.get('cn_start_event_id') and self._filing_data.get('cn_corp_name'):
+            self.populate_nr(correction_dict)
+        else:
+            del correction_dict['nameRequest']
 
 
     def populate_conversion(self, filing_dict: dict):

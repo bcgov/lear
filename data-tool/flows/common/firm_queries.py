@@ -6,6 +6,7 @@ def get_unprocessed_firms_query(data_load_env: str):
                          string_agg(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ','
                                     order by e.event_id)           as event_file_types,
                          array_agg(e.event_id order by e.event_id) as event_ids,
+                         array_agg(e.event_id order by e.event_id) FILTER (WHERE e.event_type_cd = 'FILE' and f.filing_type_cd in ('CORGP', 'CORSP', 'FRCCH', 'FRCRG') ) as correction_event_ids,
                          min(e.event_id)                           as first_event_id,
                          max(e.event_id)                           as last_event_id
                   from event e
@@ -67,6 +68,13 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                           and e.corp_num in ('FM0713982', 'FM0805895')
                        -- firms with ledger text 
 --                        and e.corp_num in ('FM0000226', 'FM0695709')
+                       -- firms with corrections
+--                           and e.corp_num in ('FM0278687', 'FM0540659') -- FILE_CORGP
+--                           and e.corp_num in ('FM0446660', 'FM0610227') -- FILE_CORSP
+--                           and e.corp_num in ('FM0277872', 'FM0391750') -- FILE_FRCCH
+--                           and e.corp_num in ('FM0285571', 'FM0391762') -- FILE_FRCRG
+                       -- firms for filing user tests
+--                           and e.corp_num in ('FM0292609', 'FM0554196', 'FM0608573')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -116,7 +124,11 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like '%FILE_FRARG%'
 --                 and tbl_fe.event_file_types like '%CONVFMRCP_FRARG%'
 --                 and tbl_fe.event_file_types like '%CONVFMRCP_FRMEM%'
---                    and tbl_fe.event_file_types like '%CONVFMRCP_NULL%'
+--                 and tbl_fe.event_file_types like '%CONVFMRCP_NULL%'
+--                 and tbl_fe.event_file_types like '%FILE_CORGP%'
+--                 and tbl_fe.event_file_types like '%FILE_CORSP%'
+--                 and tbl_fe.event_file_types like '%FILE_FRCCH%'
+--                 and tbl_fe.event_file_types like '%FILE_FRCRG%'                   
                    and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
@@ -174,6 +186,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             bd.corp_num            as bd_corp_num,
             bd.start_event_id      as bd_start_event_id,
             bd.end_event_id        as bd_end_event_id,
+            to_char(bd.business_start_date, 'YYYY-MM-DD') as bd_business_start_date_dt_str,
             to_char(bd.business_start_date, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as bd_business_start_date_dts_pacific,
             bd.naics_code          as bd_naics_code,
             bd.description         as bd_description,
@@ -197,7 +210,8 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             u.last_name            as u_last_name,
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
-            u.email_addr           as u_email_addr
+            u.email_addr           as u_email_addr,
+            to_char(u.event_timestmp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as u_event_timestmp_dts_pacific            
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join corporation c on c.corp_num = e.corp_num
@@ -274,6 +288,7 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                case 
                     when cp.bus_company_num = '' then NULL
                     when cp.bus_company_num ~ '^[0-9]*$' then concat('BC', cp.bus_company_num)
+                    else cp.bus_company_num
                end cp_bus_company_num,
                cp.email_address          as cp_email_address,
                cp.phone                  as cp_phone,

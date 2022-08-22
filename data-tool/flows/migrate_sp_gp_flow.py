@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import prefect
-from legal_api.models import Filing, Business, Comment
+from legal_api.models import Business, Comment
 from prefect import task, Flow, unmapped
 from prefect.client import Client
 from prefect.engine.state import Skipped
@@ -17,7 +17,7 @@ from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
-from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event
+from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing, populate_user
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
 from common.firm_filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
@@ -63,6 +63,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
 
     try:
         event_ids = unprocessed_firm_dict.get('event_ids')
+        correction_event_ids = unprocessed_firm_dict.get('correction_event_ids')
         events_ids_to_process, event_filing_types_to_process = get_event_info_to_retrieve(unprocessed_firm_dict)
         processed_events_ids = get_processed_event_ids(unprocessed_firm_dict)
         unprocessed_firm_dict['retrieved_events_cnt'] = len(events_ids_to_process)
@@ -75,6 +76,8 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
 
         firm_comments = event_filing_service.get_firm_comments_data(corp_num)
         unprocessed_firm_dict['firm_comments'] = firm_comments
+        unprocessed_firm_dict['correctionEventFilingMappings'] = {}
+        correction_event_filing_mappings = unprocessed_firm_dict['correctionEventFilingMappings']
 
         prev_event_filing_data = None
         for idx, event_id in enumerate(events_ids_to_process):
@@ -82,12 +85,20 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             is_supported_event_filing = event_filing_service.get_event_filing_is_supported(event_file_type)
             print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
             prev_event_ids = get_previous_event_ids(event_ids, event_id)
-            event_filing_data_dict = \
+            event_filing_data_dict, is_corrected_event_filing, correction_event_id = \
                 event_filing_service.get_event_filing_data(corp_num,
                                                            event_id,
                                                            event_file_type,
                                                            prev_event_filing_data,
-                                                           prev_event_ids)
+                                                           prev_event_ids,
+                                                           correction_event_ids,
+                                                           correction_event_filing_mappings)
+            if is_corrected_event_filing:
+                correction_event_filing_mappings[correction_event_id] = {
+                    'correctedEventId': event_id,
+                    'learFilingType': event_filing_data_dict['target_lear_filing_type']
+                }
+
             event_filing_data_arr.append({
                 'is_in_lear': is_in_lear(processed_events_ids, event_id),
                 'is_supported_type': is_supported_event_filing,
@@ -220,21 +231,12 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                         business = None
                         if not RegistrationEventFilings.has_value(event_filing_type):
                             business = Business.find_by_identifier(corp_num)
-                        target_lear_filing_type = filing_data['target_lear_filing_type']
-                        filing_json = event_filing_data['filing_json']
                         populate_filing_json_from_lear(db_lear, event_filing_data, business)
-                        effective_date = filing_data['f_effective_dts_pacific']
                         corp_name = filing_data['curr_corp_name']
 
                         # save filing to filing table
-                        filing = Filing()
-                        filing.effective_date = effective_date
-                        filing._filing_json = filing_json
-                        filing._filing_type = target_lear_filing_type
-                        filing.filing_date = effective_date
-                        filing.business_id = business.id if business else None
-                        filing.source = Filing.Source.COLIN.value
-                        filing.paper_only = get_is_paper_only(filing_data)
+                        filing = populate_filing(business, event_filing_data, filing_data)
+                        populate_user(filing, filing_data)
                         filing.save()
 
                         # process filing with custom filer function
@@ -309,7 +311,7 @@ def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unuse
         active_flow_runs = response["data"]["flow_run"]
         if active_flow_runs:
             logger = prefect.context.get("logger")
-            message = "Skipping this flow run since there are already a flow run in progress"
+            message = "Skipping this flow run since there is already a flow run in progress"
             logger.info(message)
             print(f'{message}')
             return Skipped(message)

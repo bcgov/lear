@@ -20,15 +20,15 @@ from typing import Dict
 import dpath
 from legal_api.models import Address, Business, Filing, Party, PartyRole
 
-from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
+from ...filing_meta import FilingMeta
+from ..filing_components import (
     business_info,
     create_party,
     create_role,
     filings,
     update_address,
+    create_address,
 )
-
 
 def correct_business_data(business: Business, correction_filing_rec: Filing,  # pylint: disable=too-many-locals
                           correction_filing: Dict,
@@ -62,11 +62,13 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
         business_office_json = dpath.util.get(correction_filing, '/correction/offices/businessOffice')
-        for updated_address in business_office_json.values():
+        for address_type, updated_address in business_office_json.items():
             if updated_address.get('id', None):
                 address = Address.find_by_id(updated_address.get('id'))
                 if address:
                     update_address(address, updated_address)
+            else:
+                create_address(updated_address, address_type)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
@@ -82,7 +84,7 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     with suppress(IndexError, KeyError, TypeError):
         business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
         if business_start_date:
-            business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
+            business.founding_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):
@@ -119,12 +121,19 @@ def _update_party(party_info):
         party.organization_name = party_info['officer'].get('organizationName', '').upper()
         party.party_type = party_info['officer'].get('partyType')
         party.email = party_info['officer'].get('email', '').lower()
-        party.identifier = party_info['officer'].get('identifier', '').upper()
+        identifier = party_info['officer'].get('identifier', '')
+        party.identifier = identifier.upper() if identifier else identifier
         # add addresses to party
         if party_info.get('deliveryAddress', None):
-            update_address(party.delivery_address, party_info.get('deliveryAddress'))
+            if party_info.get('deliveryAddress').get('id', None):
+                update_address(party.delivery_address, party_info.get('deliveryAddress'))
+            else:
+                create_address(party.delivery_address, Address.DELIVERY)
         if party_info.get('mailingAddress', None):
-            update_address(party.mailing_address, party_info.get('mailingAddress'))
+            if party_info.get('mailingAddress').get('id', None):
+                update_address(party.mailing_address, party_info.get('mailingAddress'))
+            else:
+                create_address(party.mailing_address, Address.MAILING)
 
 
 def _create_party_info(business, correction_filing_rec, party_info):

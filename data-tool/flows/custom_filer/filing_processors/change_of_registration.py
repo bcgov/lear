@@ -49,8 +49,8 @@ def process(business: Business,
                                                       **{'fromLegalName': from_legal_name,
                                                          'toLegalName': business.legal_name}}
     # Update Nature of Business
-    if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')) and \
-            (naics_code := naics.get('naicsCode')):
+    if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')):
+        naics_code = naics.get('naicsCode')
         filing_meta.change_of_registration = {**filing_meta.change_of_registration,
                                               **{'fromNaicsCode': business.naics_code,
                                                  'toNaicsCode': naics_code,
