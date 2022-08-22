@@ -433,10 +433,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def get_all_by_no_tax_id(cls):
         """Return all businesses with no tax_id."""
-        no_tax_id_types = Business.LegalTypes.COOP.value
-        tax_id_types = [x.value for x in Business.LegalTypes]
-        tax_id_types.remove(no_tax_id_types)
-        businesses = cls.query.filter(Business.legal_type.in_(tax_id_types)).filter_by(tax_id=None).all()
+        no_tax_id_types = [
+            Business.LegalTypes.COOP.value,
+            Business.LegalTypes.SOLE_PROP.value,
+            Business.LegalTypes.PARTNERSHIP.value,
+        ]
+        businesses = cls.query.filter(~Business.legal_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return businesses
 
     @classmethod
