@@ -88,7 +88,7 @@ def process(
         rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
         rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
 
-        rules_and_memorandums.update_rules(business, rules_file_key, rules_file_name)
+        rules_and_memorandums.update_rules(business, filing_submission, rules_file_key, rules_file_name)
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
