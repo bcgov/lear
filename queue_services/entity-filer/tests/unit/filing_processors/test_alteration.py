@@ -199,3 +199,34 @@ async def test_worker_alteration_court_order(app, session, mocker):
     assert file_number == final_filing.court_order_file_number
     assert datetime.fromisoformat(order_date) == final_filing.court_order_date
     assert effect_of_order == final_filing.court_order_effect_of_order
+
+@pytest.mark.parametrize(
+    'orig_association_type, new_association_type',
+    [
+        (Business.AssociationTypes.CP_COOPERATIVE.value, Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value)
+    ]
+)
+def test_alteration_coop_association_type(app, session, orig_association_type, new_association_type):
+    """Assert that the coop association type is altered."""
+    # setup
+    identifier = 'CP1234567'
+    business = create_business(identifier)
+    business.legal_type = Business.LegalTypes.COOP.value
+
+    alteration_filing = copy.deepcopy(FILING_HEADER)
+    alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    alteration_filing['filing']['alteration']['cooperativeAssociationType'] = new_association_type
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # test
+    alteration.process(business=business,
+                       filing_submission=filing_submission,
+                       filing=alteration_filing['filing'],
+                       filing_meta=filing_meta)
+
+    # validate
+    assert business.association_type == new_association_type
