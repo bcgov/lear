@@ -15,6 +15,7 @@
 from http import HTTPStatus
 from typing import Final, List
 
+import requests
 from flask import current_app
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
@@ -173,3 +174,20 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
             })
 
     return allowable_filing_types
+
+
+def get_account_by_affiliated_identifier(token, identifier: str):
+    """Return the account affiliated to the business."""
+    auth_url = current_app.config.get('AUTH_URL')
+    url = f'{auth_url}/orgs?affiliation={identifier}'
+
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+
+    res = requests.get(url, headers=headers)
+    try:
+        return res.json()
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get response')
+        return None

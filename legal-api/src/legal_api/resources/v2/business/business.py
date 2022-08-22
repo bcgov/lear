@@ -25,7 +25,13 @@ from flask_cors import cross_origin
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
-from legal_api.services import RegistrationBootstrapService, check_warnings
+from legal_api.services import (
+    SYSTEM_ROLE,
+    RegistrationBootstrapService,
+    check_warnings,
+    get_account_by_affiliated_identifier,
+    has_roles,
+)
 from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
 
@@ -64,6 +70,13 @@ def get_businesses(identifier: str):
     allowed_filings = str(request.args.get('allowed_filings', None)).lower() == 'true'
     if allowed_filings:
         business_json['allowedFilings'] = get_allowed(business.state, business.legal_type, jwt)
+
+    q_account = request.args.get('account')
+    if q_account and has_roles(jwt, [SYSTEM_ROLE]):
+        account_response = get_account_by_affiliated_identifier(jwt.get_token_auth_header(), identifier)
+        if orgs := account_response.get('orgs'):
+            if str(orgs[0].get('id')) == q_account:
+                business_json['account'] = orgs[0]
 
     return jsonify(business=business_json)
 
