@@ -27,6 +27,7 @@ from entity_filer.filing_processors.filing_components import (
     filings,
     name_request,
     shares,
+    rules_and_memorandums
 )
 
 
@@ -81,6 +82,15 @@ def process(
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.util.get(filing, '/alteration/shareStructure')
         shares.update_share_structure(business, share_structure)
+    
+    #update rules and memorandums, if any
+    with suppress(IndexError, KeyError, TypeError):
+        rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
+        rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
+        memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
+        memorandum_file_name = dpath.util.get(filing, '/alteration/memorandumFileName')
+
+        rules_and_memorandums.update_rules_and_memorandums(business, rules_file_key, rules_file_name, memorandum_file_key, memorandum_file_name)
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):
