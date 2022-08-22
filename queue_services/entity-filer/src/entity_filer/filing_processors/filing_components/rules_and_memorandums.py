@@ -20,16 +20,13 @@ from dateutil.parser import parse
 from legal_api.models import Business, Resolution, ShareClass, ShareSeries
 
 
-def update_rules(business: Business, share_structure: Dict) -> Optional[List]:
+def update_rules(business: Business, rules_file_key: String, rules_file_name: String) -> Optional[List]:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
 
     Other errors are recorded and will be managed out of band.
     """
-    if not business or not share_structure:
-        # if nothing is passed in, we don't care and it's not an error
-        return None
 
     err = []
     rules_file_key = cooperative_obj.get('rulesFileKey')
