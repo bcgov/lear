@@ -13,20 +13,25 @@
 # limitations under the License.
 """Manages the share structure for a business."""
 from __future__ import annotations
+
 from tokenize import String
+from typing import List, Optional
 
-from typing import Dict, List, Optional
-
-from dateutil.parser import parse
-from legal_api.models import Business
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
+
 from entity_filer.utils import replace_file_with_certified_copy
 
 
-def update_rules(business: Business, filing: Filing, rules_file_key: String, rules_file_name: String) -> Optional[List]:
-    """Updtes rules if any
+def update_rules(
+    business: Business,
+    filing: Filing,
+    rules_file_key: String,
+    rules_file_name: String
+) -> Optional[List]:
+    """Updtes rules if any.
+
     Assumption: rules file key and name have already been validated
     """
     if not business or not rules_file_key or not rules_file_name:
@@ -48,8 +53,14 @@ def update_rules(business: Business, filing: Filing, rules_file_key: String, rul
     return None
 
 
-def update_memorandum(business: Business, filing: Filing, memorandum_file_key: String, memorandum_file_name: String) -> Optional[List]:
-    """Updtes memorandum if any
+def update_memorandum(
+    business: Business,
+    filing: Filing,
+    memorandum_file_key: String,
+    memorandum_file_name: String
+) -> Optional[List]:
+    """Updtes memorandum if any.
+
     Assumption: memorandum file key and name have already been validated
     """
     if not business or not memorandum_file_key or not memorandum_file_name:
