@@ -37,7 +37,7 @@ def process(
     filing: Dict,
     filing_meta: FilingMeta,
     correction: bool = False
-):  # pylint: disable=W0613
+):  # pylint: disable=W0613, R0914
     """Render the Alteration onto the model objects."""
     filing_meta.alteration = {}
     # Alter the corp type, if any
