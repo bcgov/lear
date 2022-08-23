@@ -53,7 +53,7 @@ def authorized(  # pylint: disable=too-many-return-statements
             return False
 
         template_url = current_app.config.get('AUTH_SVC_URL')
-        auth_url = template_url.format(**vars())
+        auth_url = f'{template_url}/entities/{identifier}/authorizations'
 
         token = jwt.get_token_auth_header()
         headers = {'Authorization': 'Bearer ' + token}
@@ -178,7 +178,7 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
 
 def get_account_by_affiliated_identifier(token, identifier: str):
     """Return the account affiliated to the business."""
-    auth_url = current_app.config.get('AUTH_URL')
+    auth_url = current_app.config.get('AUTH_SVC_URL')
     url = f'{auth_url}/orgs?affiliation={identifier}'
 
     headers = {

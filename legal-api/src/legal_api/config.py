@@ -63,7 +63,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://PAYMENT_BASE/api/v1/payment-request')
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
-    AUTH_URL = os.getenv('AUTH_URL', 'http://')
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
     REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
     FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
