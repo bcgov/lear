@@ -31,6 +31,7 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
+from tests.utils import upload_file, assert_pdf_contains_text
 
 
 CONTACT_POINT = {
@@ -227,6 +228,45 @@ def test_alteration_coop_association_type(app, session, orig_association_type, n
                        filing_submission=filing_submission,
                        filing=alteration_filing['filing'],
                        filing_meta=filing_meta)
+
+    # validate
+    assert business.association_type == new_association_type
+
+
+def test_alteration_coop_rules_and_memorandum(app, session, orig_association_type, new_association_type):
+    """Assert that the coop association type is altered."""
+    # setup
+    identifier = 'CP1234567'
+    business = create_business(identifier)
+    business.legal_type = Business.LegalTypes.COOP.value
+
+    alteration_filing = copy.deepcopy(FILING_HEADER)
+    alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    
+    rules_file_key_uploaded_by_user = upload_file('rules.pdf')
+    memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
+    alteration_filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
+        rules_file_key_uploaded_by_user
+    alteration_filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
+    alteration_filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = \
+        memorandum_file_key_uploaded_by_user
+    alteration_filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
+    
+    
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # test
+    alteration.process(business=business,
+                       filing_submission=filing_submission,
+                       filing=alteration_filing['filing'],
+                       filing_meta=filing_meta)
+
+    business.save()
 
     # validate
     assert business.association_type == new_association_type
