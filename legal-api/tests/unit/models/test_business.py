@@ -216,7 +216,7 @@ TEST_GOOD_STANDING_DATA = [
 ]
 
 
-@pytest.mark.parametrize('last_ar_date, state, expected', TEST_GOOD_STANDING_DATA)
+@pytest.mark.parametrize('last_ar_date, legal_type, state, expected', TEST_GOOD_STANDING_DATA)
 def test_good_standing(session, last_ar_date, legal_type, state, expected):
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
