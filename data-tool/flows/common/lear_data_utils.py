@@ -1,7 +1,8 @@
-from legal_api.models import Party, PartyRole, Business, Office, Address, Filing
+from legal_api.models import Party, PartyRole, Business, Office, Address, Filing, User
 from legal_api.models.colin_event_id import ColinEventId
 
 from .event_filing_service import RegistrationEventFilings, CorrectionEventFilings
+from .firm_filing_data_utils import get_is_paper_only
 
 
 def get_party_match(db: any, party_dict: dict, corp_num: str):
@@ -93,7 +94,42 @@ def get_colin_event(db: any, event_id: int):
     return colin_event_id_obj
 
 
+def populate_filing(business: Business, event_filing_data: dict, filing_data: dict):
+    target_lear_filing_type = filing_data['target_lear_filing_type']
+    filing_json = event_filing_data['filing_json']
+    effective_date = filing_data['f_effective_dts_pacific']
+
+    filing = Filing()
+    filing.effective_date = effective_date
+    filing._filing_json = filing_json
+    filing._filing_type = target_lear_filing_type
+    filing.filing_date = effective_date
+    filing.business_id = business.id if business else None
+    filing.source = Filing.Source.COLIN.value
+    filing.paper_only = get_is_paper_only(filing_data)
+
+    return filing
 
 
+def populate_user(filing: Filing, filing_data: dict):
+    if not (filing_user_id := filing_data.get('u_user_id', None)):
+        return
 
+    user = User.find_by_username(filing_user_id)
 
+    if user:
+        filing.submitter_id = user.id
+    else:
+        first_name = filing_data.get('u_first_name', None)
+        last_name = filing_data.get('u_last_name', None)
+        middle_name = filing_data.get('u_middle_name', None)
+        email = filing_data.get('u_email_addr', None)
+        creation_date = filing_data.get('u_event_timestmp_dts_pacific', None)
+        filing_user = User(username=filing_user_id,
+                           firstname=first_name,
+                           lastname=last_name,
+                           middlename=middle_name,
+                           email=email,
+                           creation_date=creation_date
+                           )
+        filing.filing_submitter = filing_user

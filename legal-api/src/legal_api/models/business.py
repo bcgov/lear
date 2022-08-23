@@ -167,7 +167,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'tax_id',
             'naics_key',
             'naics_code',
-            'naics_description'
+            'naics_description',
+            'start_date'
         ]
     }
 
@@ -183,6 +184,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    start_date = db.Column('start_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -369,6 +371,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
+        if self.start_date:
+            d['startDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.start_date)
+            ).isoformat()
+
         d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
                                   x.status == 'COMPLETED')
         return d
@@ -432,10 +439,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def get_all_by_no_tax_id(cls):
         """Return all businesses with no tax_id."""
-        no_tax_id_types = Business.LegalTypes.COOP.value
-        tax_id_types = [x.value for x in Business.LegalTypes]
-        tax_id_types.remove(no_tax_id_types)
-        businesses = cls.query.filter(Business.legal_type.in_(tax_id_types)).filter_by(tax_id=None).all()
+        no_tax_id_types = [
+            Business.LegalTypes.COOP.value,
+            Business.LegalTypes.SOLE_PROP.value,
+            Business.LegalTypes.PARTNERSHIP.value,
+        ]
+        businesses = cls.query.filter(~Business.legal_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return businesses
 
     @classmethod

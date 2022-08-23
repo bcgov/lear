@@ -73,6 +73,8 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                           and e.corp_num in ('FM0446660', 'FM0610227') -- FILE_CORSP
 --                           and e.corp_num in ('FM0277872', 'FM0391750') -- FILE_FRCCH
 --                           and e.corp_num in ('FM0285571', 'FM0391762') -- FILE_FRCRG
+                       -- firms for filing user tests
+--                           and e.corp_num in ('FM0292609', 'FM0554196', 'FM0608573')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -208,7 +210,8 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             u.last_name            as u_last_name,
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
-            u.email_addr           as u_email_addr
+            u.email_addr           as u_email_addr,
+            to_char(u.event_timestmp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as u_event_timestmp_dts_pacific            
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join corporation c on c.corp_num = e.corp_num
