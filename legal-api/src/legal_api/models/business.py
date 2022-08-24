@@ -290,8 +290,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def is_firm(self):
         """Return if is firm, otherwise false."""
-        return self.legal_type in (self.LegalTypes.SOLE_PROP,
-                                   self.legal_type == self.LegalTypes.PARTNERSHIP)
+        return self.legal_type in (self.LegalTypes.SOLE_PROP, self.LegalTypes.PARTNERSHIP)
 
     @property
     def good_standing(self):
