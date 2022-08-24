@@ -296,6 +296,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
+        # A firm is always in good standing
+        if self.is_firm:
+            return True
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
         is_active = self.state.name == Business.State.ACTIVE.name
@@ -331,7 +334,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'adminFreeze': self.admin_freeze or False,
             'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
-            'goodStanding': True if self.is_firm else self.good_standing,
+            'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
             'identifier': self.identifier,
             'complianceWarnings': self.compliance_warnings,
