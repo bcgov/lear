@@ -206,8 +206,7 @@ async def test_worker_alteration_court_order(app, session, mocker):
 @pytest.mark.parametrize( 'new_association_type',
     [
         (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value),
-        (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value),
-        (Business.AssociationTypes.CP_COOPERATIVE)
+        (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value)
     ]
 )
 def test_alteration_coop_association_type(app, session, new_association_type):
