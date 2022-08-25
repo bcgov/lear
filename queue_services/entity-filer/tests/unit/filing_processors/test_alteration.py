@@ -248,12 +248,12 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     
     rules_file_key_uploaded_by_user = upload_file('rules.pdf')
     memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
-    alteration_filing['filing']['alteration']['cooperative']['rulesFileKey'] = \
+    alteration_filing['filing']['alteration']['rulesFileKey'] = \
         rules_file_key_uploaded_by_user
-    alteration_filing['filing']['alteration']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
-    alteration_filing['filing']['alteration']['cooperative']['memorandumFileKey'] = \
+    alteration_filing['filing']['alteration']['rulesFileName'] = 'Rules_File.pdf'
+    alteration_filing['filing']['alteration']['memorandumFileKey'] = \
         memorandum_file_key_uploaded_by_user
-    alteration_filing['filing']['alteration']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
+    alteration_filing['filing']['alteration']['memorandumFileName'] = 'Memorandum_File.pdf'
     
     
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -275,11 +275,11 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     for document in documents:
         if document.filing_id == filing_submission.id:
             if document.type == DocumentType.COOP_RULES.value:
-                original_rules_key = alteration_filing['filing']['alteration']['cooperative']['rulesFileKey']
+                original_rules_key = alteration_filing['filing']['alteration']['rulesFileKey']
                 assert document.file_key == original_rules_key
                 assert MinioService.get_file(document.file_key)
             elif document.type == DocumentType.COOP_MEMORANDUM.value:
                 original_memorandum_key = \
-                    alteration_filing['filing']['alteration']['cooperative']['memorandumFileKey']
+                    alteration_filing['filing']['alteration']['memorandumFileKey']
                 assert document.file_key == original_memorandum_key
                 assert MinioService.get_file(document.file_key)
