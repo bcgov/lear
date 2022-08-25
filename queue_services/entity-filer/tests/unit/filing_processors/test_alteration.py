@@ -208,7 +208,7 @@ async def test_worker_alteration_court_order(app, session, mocker):
         (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value)
     ]
 )
-def test_alteration_coop_association_type(app, session, orig_association_type, new_association_type):
+def test_alteration_coop_association_type(app, session, new_association_type):
     """Assert that the coop association type is altered."""
     # setup
     identifier = 'CP1234567'
@@ -234,7 +234,7 @@ def test_alteration_coop_association_type(app, session, orig_association_type, n
     assert business.association_type == new_association_type
 
 
-def test_alteration_coop_rules_and_memorandum(app, session, orig_association_type, new_association_type):
+def test_alteration_coop_rules_and_memorandum(app, session):
     """Assert that the coop association type is altered."""
     # setup
     identifier = 'CP1234567'
