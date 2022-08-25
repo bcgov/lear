@@ -39,7 +39,8 @@ class InternalBusinessResource(Resource):
     def get():
         """Return all identifiers with no tax_id set that are supposed to have a tax_id.
 
-        Excludes COOPS because they do not ge a tax id/business number.
+        Excludes COOPS because they do not get a tax id/business number.
+        Excludes SP/GP we don't sync firm to colin and we use entity-bn to get tax id/business number.
         """
         if not jwt.validate_roles([COLIN_SVC_ROLE]):
             return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
