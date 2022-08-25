@@ -205,7 +205,9 @@ async def test_worker_alteration_court_order(app, session, mocker):
 
 @pytest.mark.parametrize( 'new_association_type',
     [
-        (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value)
+        (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value),
+        (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value),
+        (Business.AssociationTypes.CP_COOPERATIVE)
     ]
 )
 def test_alteration_coop_association_type(app, session, new_association_type):
@@ -234,7 +236,7 @@ def test_alteration_coop_association_type(app, session, new_association_type):
     assert business.association_type == new_association_type
 
 
-def test_alteration_coop_rules_and_memorandum(app, session, mino_server):
+def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     """Assert that the coop association type is altered."""
     # setup
     identifier = 'CP1234567'
