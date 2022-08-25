@@ -269,9 +269,6 @@ def test_alteration_coop_rules_and_memorandum(app, session, mino_server):
 
     business.save()
 
-    # validate
-    assert business.association_type == new_association_type
-
     documents = business.documents.all()
 
     for document in documents:
