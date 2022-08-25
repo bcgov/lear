@@ -203,10 +203,9 @@ async def test_worker_alteration_court_order(app, session, mocker):
     assert datetime.fromisoformat(order_date) == final_filing.court_order_date
     assert effect_of_order == final_filing.court_order_effect_of_order
 
-@pytest.mark.parametrize(
-    'orig_association_type, new_association_type',
+@pytest.mark.parametrize( 'new_association_type',
     [
-        (Business.AssociationTypes.CP_COOPERATIVE.value, Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value)
+        (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value)
     ]
 )
 def test_alteration_coop_association_type(app, session, orig_association_type, new_association_type):
