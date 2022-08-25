@@ -17,7 +17,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Address, Business, Filing, Party, PartyRole
+from legal_api.models import Address, Business, Filing, Party, PartyRole, Comment
 
 from ..filing_meta import FilingMeta
 from .filing_components import (
@@ -73,7 +73,7 @@ def process(business: Business,
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(change_filing, '/changeOfRegistration/parties')
+        party_json = change_filing.get('changeOfRegistration').get('parties', [])
         update_parties(business, party_json, change_filing_rec)
 
     # update court order, if any is present
@@ -81,7 +81,13 @@ def process(business: Business,
         court_order_json = dpath.util.get(change_filing, '/changeOfRegistration/courtOrder')
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
-    filings.update_filing_order_details(change_filing_rec, filing_event_data)
+    if lt_notation := filing_event_data.get('lt_notation'):
+        change_filing_rec.comments.append(
+            Comment(
+                comment=lt_notation,
+                staff_id=change_filing_rec.submitter_id
+            )
+        )
 
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
@@ -113,6 +119,7 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
 def _update_party(party_info):
     party = Party.find_by_id(party_id=party_info.get('officer').get('id'))
     if party:
+        party.skip_party_listener = True
         party.first_name = party_info['officer'].get('firstName', '').upper()
         party.last_name = party_info['officer'].get('lastName', '').upper()
         party.middle_initial = party_info['officer'].get('middleName', '').upper()
@@ -144,6 +151,8 @@ def _update_party(party_info):
 
 def _create_party_info(business, change_filing_rec, party_info):
     party = create_party(business_id=business.id, party_info=party_info, create=False)
+    party.skip_party_listener = True
+
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
         role = {

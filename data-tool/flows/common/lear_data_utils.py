@@ -11,6 +11,7 @@ def get_party_match(db: any, party_dict: dict, corp_num: str):
             .join(Business) \
             .filter(Business.identifier == corp_num) \
             .filter(PartyRole.business_id == Business.id) \
+            .filter(PartyRole.cessation_date == None) \
             .filter(Party.party_type == party_dict['partyType']) \
             .filter(Party.email == party_dict['email']) \
             .filter(Party.first_name == party_dict['firstName']) \
@@ -23,7 +24,6 @@ def get_party_match(db: any, party_dict: dict, corp_num: str):
 
 
 def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: Business):
-
     filing_type = event_filing_data['data']['target_lear_filing_type']
     event_filing_type = event_filing_data['data']['event_file_type']
     filing_json = event_filing_data['filing_json']
@@ -109,27 +109,3 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     filing.paper_only = get_is_paper_only(filing_data)
 
     return filing
-
-
-def populate_user(filing: Filing, filing_data: dict):
-    if not (filing_user_id := filing_data.get('u_user_id', None)):
-        return
-
-    user = User.find_by_username(filing_user_id)
-
-    if user:
-        filing.submitter_id = user.id
-    else:
-        first_name = filing_data.get('u_first_name', None)
-        last_name = filing_data.get('u_last_name', None)
-        middle_name = filing_data.get('u_middle_name', None)
-        email = filing_data.get('u_email_addr', None)
-        creation_date = filing_data.get('u_event_timestmp_dts_pacific', None)
-        filing_user = User(username=filing_user_id,
-                           firstname=first_name,
-                           lastname=last_name,
-                           middlename=middle_name,
-                           email=email,
-                           creation_date=creation_date
-                           )
-        filing.filing_submitter = filing_user
