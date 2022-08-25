@@ -19,6 +19,8 @@ from typing import Final
 
 import pytest
 from legal_api.models import Business, Filing
+from legal_api.models.document import DocumentType
+from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
@@ -270,3 +272,17 @@ def test_alteration_coop_rules_and_memorandum(app, session, orig_association_typ
 
     # validate
     assert business.association_type == new_association_type
+
+    documents = business.documents.all()
+
+    for document in documents:
+        if document.filing_id == filing_submission.id:
+            if document.type == DocumentType.COOP_RULES.value:
+                original_rules_key = alteration_filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                assert document.file_key == original_rules_key
+                assert MinioService.get_file(document.file_key)
+            elif document.type == DocumentType.COOP_MEMORANDUM.value:
+                original_memorandum_key = \
+                    alteration_filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                assert document.file_key == original_memorandum_key
+                assert MinioService.get_file(document.file_key)
