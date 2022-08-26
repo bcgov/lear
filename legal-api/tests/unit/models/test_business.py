@@ -24,6 +24,7 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 
 
@@ -354,3 +355,31 @@ def test_get_next_value_from_sequence(session, business_type, expected):
 
     else:
         assert not Business.get_next_value_from_sequence(business_type)
+
+
+def test_continued_in_business(session):
+    """Assert that the continued corp is saved successfully."""
+    business = Business(
+                    legal_name='Test - Legal Name',
+                    legal_type='BC',
+                    founding_date=datetime.utcfromtimestamp(0),
+                    last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                    dissolution_date=None,
+                    identifier='BC1234567',
+                    state=Business.State.ACTIVE,
+                    jurisdiction='CA',
+                    foreign_identifier='C1234567',
+                    foreign_legal_name='Prev Legal Name',
+                    foreign_legal_type='BEN',
+                    foreign_incorporation_date=datetime.utcfromtimestamp(0),
+                    )
+    business.save()
+    business_json = business.json()
+    assert business_json['jurisdiction'] == business.jurisdiction
+    assert business_json['foreignIdentifier'] == business.foreign_identifier
+    assert business_json['foreignLegalName'] == business.foreign_legal_name
+    assert business_json['foreignLegalType'] == business.foreign_legal_type
+    assert business_json['foreignIncorporationDate'] == datetime.date(
+                LegislationDatetime.as_legislation_timezone(business.foreign_incorporation_date)
+            ).isoformat()
+

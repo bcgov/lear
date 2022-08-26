@@ -168,7 +168,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'naics_key',
             'naics_code',
             'naics_description',
-            'start_date'
+            'start_date',
+            'jurisdiction',
+            'foreignIdentifier',
+            'foreignLegalName',
+            'foreignLegalType',
+            'foreignIncorporationDate'
         ]
     }
 
@@ -201,6 +206,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
+
+    jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
+    foreign_identifier = db.Column(db.String(15))
+    foreign_legal_name = db.Column(db.String(1000))
+    foreign_legal_type = db.Column(db.String(10))
+    foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -376,6 +387,15 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.start_date:
             d['startDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.start_date)
+            ).isoformat()
+
+        if self.jurisdiction:
+            d['jurisdiction'] = self.jurisdiction
+            d['foreignIdentifier'] = self.foreign_identifier
+            d['foreignLegalName'] = self.foreign_legal_name
+            d['foreignLegalType'] = self.foreign_legal_type
+            d['foreignIncorporationDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
             ).isoformat()
 
         d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
