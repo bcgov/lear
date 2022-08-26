@@ -277,9 +277,8 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
         filter(Document.type == DocumentType.COOP_RULES.value). \
         one_or_none()
 
-    assert len(rules_documents) == 1
-    assert rules_documents[0].file_key == alteration_filing['filing']['alteration']['rulesFileKey']
-    assert MinioService.get_file(rules_documents[0].file_key)
+    assert rules_documents.file_key == alteration_filing['filing']['alteration']['rulesFileKey']
+    assert MinioService.get_file(rules_documents.file_key)
     rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
     assert rules_files_obj
     assert_pdf_contains_text('Filed on ', rules_files_obj.read())
