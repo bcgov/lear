@@ -207,7 +207,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
 
-    jurisdiction = db.Column(db.String(10))
+    jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_identifier = db.Column(db.String(15))
     foreign_legal_name = db.Column(db.String(1000))
     foreign_legal_type = db.Column(db.String(10))
