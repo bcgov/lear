@@ -283,3 +283,10 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
                     alteration_filing['filing']['alteration']['memorandumFileKey']
                 assert document.file_key == original_memorandum_key
                 assert MinioService.get_file(document.file_key)
+            
+            rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+            assert rules_files_obj
+            assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+            memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+            assert memorandum_file_obj
+            assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
