@@ -283,7 +283,7 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
 
     memorandum_document = session.query(Document). \
         filter(Document.filing_id == filing_submission.id). \
-        filter(Document.type == DocumentType.COOP_RULES.value). \
+        filter(Document.type == DocumentType.COOP_MEMORANDUM.value). \
         one_or_none()
 
     assert memorandum_document.file_key == alteration_filing['filing']['alteration']['memorandumFileKey']
