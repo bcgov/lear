@@ -13,10 +13,13 @@
 # limitations under the License.
 """Provides the WSGI entry point for running the application
 """
+import os
+
 from legal_api import create_app
 
 # Openshift s2i expects a lower case name of application
 application = create_app() # pylint: disable=invalid-name
 
 if __name__ == "__main__":
-    application.run()
+    server_port = os.environ.get('PORT', '8080')
+    application.run(debug=False, port=server_port, host='0.0.0.0')
