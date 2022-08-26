@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Final
 
 import pytest
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, Document
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
@@ -270,9 +270,13 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
 
     business.save()
 
-    documents = business.documents.all()
+    #documents = business.documents.all()
 
-    rules_documents = business.documents.filter_by(filing_id=filing_submission.id, type=DocumentType.COOP_RULES.value)
+    rules_documents = session.query(Document). \
+        filter(Document.filing_id == filing_submission.id). \
+        filter(Document.type == DocumentType.COOP_RULES.value). \
+        one_or_none()
+
     assert len(rules_documents) == 1
     assert rules_documents[0].file_key == alteration_filing['filing']['alteration']['rulesFileKey']
     assert MinioService.get_file(rules_documents[0].file_key)
