@@ -272,21 +272,28 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
 
     documents = business.documents.all()
 
-    for document in documents:
-        if document.filing_id == filing_submission.id:
-            if document.type == DocumentType.COOP_RULES.value:
-                original_rules_key = alteration_filing['filing']['alteration']['rulesFileKey']
-                assert document.file_key == original_rules_key
-                assert MinioService.get_file(document.file_key)
-            elif document.type == DocumentType.COOP_MEMORANDUM.value:
-                original_memorandum_key = \
-                    alteration_filing['filing']['alteration']['memorandumFileKey']
-                assert document.file_key == original_memorandum_key
-                assert MinioService.get_file(document.file_key)
+    rules_documents = business.documents.filter_by(filing_id=filing_submission.id, type= DocumentType.COOP_RULES.value)
+    assert rules_documents.file_key == alteration_filing['filing']['alteration']['rulesFileKey']
+    assert MinioService.get_file(rules_documents.file_key)
+    rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+    assert rules_files_obj
+    assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+    
+    # for document in documents:
+    #     if document.filing_id == filing_submission.id:
+    #         if document.type == DocumentType.COOP_RULES.value:
+    #             original_rules_key = alteration_filing['filing']['alteration']['rulesFileKey']
+    #             assert document.file_key == original_rules_key
+    #             assert MinioService.get_file(document.file_key)
+    #         elif document.type == DocumentType.COOP_MEMORANDUM.value:
+    #             original_memorandum_key = \
+    #                 alteration_filing['filing']['alteration']['memorandumFileKey']
+    #             assert document.file_key == original_memorandum_key
+    #             assert MinioService.get_file(document.file_key)
             
-            rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
-            assert rules_files_obj
-            assert_pdf_contains_text('Filed on ', rules_files_obj.read())
-            memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
-            assert memorandum_file_obj
-            assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
+    #         rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+    #         assert rules_files_obj
+    #         assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+    #         memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+    #         assert memorandum_file_obj
+    #         assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
