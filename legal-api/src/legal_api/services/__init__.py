@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
-from .authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, SYSTEM_ROLE, authorized
+from .authz import (
+    BASIC_USER,
+    COLIN_SVC_ROLE,
+    STAFF_ROLE,
+    SYSTEM_ROLE,
+    authorized,
+    get_account_by_affiliated_identifier,
+    has_roles,
+)
 from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .document_meta import DocumentMetaService
