@@ -284,13 +284,13 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn'
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn',
          {'restoration': ['fullRestoration']}]),
         ('staff_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn'
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn'
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
         ('staff_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'registrarsNotation', 'registrarsOrder',
