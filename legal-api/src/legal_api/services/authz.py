@@ -120,7 +120,7 @@ ALLOWABLE_FILINGS: Final = {
                 'fullRestoration': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
                 'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
-            'putBackOn': ['SP', 'GP']
+            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC']
         }
     },
     'user': {
