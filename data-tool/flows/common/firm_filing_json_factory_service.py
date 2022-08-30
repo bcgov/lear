@@ -152,9 +152,9 @@ class FirmFilingJsonFactoryService:
 
     def populate_registration(self, filing_root_dict: dict):
         registration_dict = filing_root_dict['filing']['registration']
-
         registration_dict['businessType'] = self._filing_data['c_corp_type_cd']
-        registration_dict['startDate'] = str(self._filing_data['c_recognition_dts_pacific'])
+        if start_date := self._filing_data['bd_business_start_date_dts_pacific']:
+            registration_dict['startDate'] = str(start_date)
 
         self.populate_filing_business(registration_dict)
         self.populate_offices(registration_dict)
@@ -218,6 +218,7 @@ class FirmFilingJsonFactoryService:
 
     def populate_conversion(self, filing_dict: dict):
         conversion_dict = filing_dict['filing']['conversion']
+        conversion_dict['startDate'] = self._filing_data.get('bd_business_start_date_dt_str', None)
 
         if self._filing_data.get('bd_start_event_id', None):
             self.populate_filing_business(conversion_dict)
@@ -238,11 +239,6 @@ class FirmFilingJsonFactoryService:
             self.populate_nr(conversion_dict)
         else:
             del conversion_dict['nameRequest']
-
-        if self._filing_data.get('lt_event_id') and self._filing_data.get('lt_notation'):
-            self.populate_court_order(conversion_dict)
-        else:
-            del conversion_dict['courtOrder']
 
 
     def populate_offices(self, registration_dict: dict):

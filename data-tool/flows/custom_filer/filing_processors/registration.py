@@ -19,7 +19,7 @@ from http import HTTPStatus
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Business, Filing, RegistrationBootstrap, Comment
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 
@@ -100,7 +100,9 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    if start_date := registration_filing.get('startDate'):
+        business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
+    business.founding_date = filing_rec.effective_date
     business.admin_freeze = filing_event_data['c_is_frozen']
 
     business_obj = registration_filing.get('business', {})
@@ -129,7 +131,13 @@ def process(business: Business,  # pylint: disable=too-many-branches
         court_order_json = dpath.util.get(filing, '/registration/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    filings.update_filing_order_details(filing_rec, filing_event_data)
+    if lt_notation := filing_event_data.get('lt_notation'):
+        filing_rec.comments.append(
+            Comment(
+                comment=lt_notation,
+                staff_id=filing_rec.submitter_id
+            )
+        )
 
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)

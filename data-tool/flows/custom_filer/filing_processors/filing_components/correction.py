@@ -80,11 +80,11 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
         filings.update_filing_court_order(correction_filing_rec, court_order_json)
 
-        # update business start date, if any is present
+    # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
         business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
         if business_start_date:
-            business.founding_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
+            business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

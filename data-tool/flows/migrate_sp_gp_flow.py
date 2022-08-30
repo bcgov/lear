@@ -13,11 +13,11 @@ from config import get_named_config
 from common.firm_queries import get_unprocessed_firms_query
 from common.event_filing_service import EventFilingService, RegistrationEventFilings
 from common.firm_filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data, \
-    clean_corp_data
+    clean_corp_data, clean_event_data
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
-from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing, populate_user
+from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
 from common.firm_filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
@@ -139,6 +139,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
                 filing_data = event_filing_data['data']
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
+                clean_event_data(filing_data)
                 clean_corp_data(config, filing_data)
                 corp_name = filing_data['curr_corp_name']
                 clean_naics_data(filing_data)
@@ -208,53 +209,51 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
     with app.app_context():
         try:
+            event_filing_data_arr = event_filing_data_dict['event_filing_data']
+            for idx, event_filing_data in enumerate(event_filing_data_arr):
+                filing_data = event_filing_data['data']
+                event_id=filing_data['e_event_id']
+                event_filing_type = filing_data['event_file_type']
 
-                event_filing_data_arr = event_filing_data_dict['event_filing_data']
-                for idx, event_filing_data in enumerate(event_filing_data_arr):
-                    filing_data = event_filing_data['data']
-                    event_id=filing_data['e_event_id']
-                    event_filing_type = filing_data['event_file_type']
+                if not event_filing_data['is_supported_type']:
+                    error_msg = f'could not finish processing this firm as there is an unsupported event/filing type: {event_filing_type}'
+                    raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
 
-                    if not event_filing_data['is_supported_type']:
-                        error_msg = f'could not finish processing this firm as there is an unsupported event/filing type: {event_filing_type}'
-                        raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
+                if not event_filing_data['is_in_lear']:
+                    # the corp_processing table should already track whether an event/filing has been processed and
+                    # saved to lear but just to be safe a final check against lear is made to ensure the event/filing
+                    # is not already in lear
+                    colin_event = get_colin_event(db_lear, event_id)
+                    if colin_event:
+                        error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
+                        raise CustomException(f'{error_msg}', filing_data)
 
-                    if not event_filing_data['is_in_lear']:
-                        # the corp_processing table should already track whether an event/filing has been processed and
-                        # saved to lear but just to be safe a final check against lear is made to ensure the event/filing
-                        # is not already in lear
-                        colin_event = get_colin_event(db_lear, event_id)
-                        if colin_event:
-                            error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
-                            raise CustomException(f'{error_msg}', filing_data)
+                    business = None
+                    if not RegistrationEventFilings.has_value(event_filing_type):
+                        business = Business.find_by_identifier(corp_num)
+                    populate_filing_json_from_lear(db_lear, event_filing_data, business)
+                    corp_name = filing_data['curr_corp_name']
 
-                        business = None
-                        if not RegistrationEventFilings.has_value(event_filing_type):
-                            business = Business.find_by_identifier(corp_num)
-                        populate_filing_json_from_lear(db_lear, event_filing_data, business)
-                        corp_name = filing_data['curr_corp_name']
+                    # save filing to filing table
+                    filing = populate_filing(business, event_filing_data, filing_data)
+                    filing.save()
 
-                        # save filing to filing table
-                        filing = populate_filing(business, event_filing_data, filing_data)
-                        populate_user(filing, filing_data)
-                        filing.save()
+                    # process filing with custom filer function
+                    business = process_filing(config, filing.id, event_filing_data_dict, filing_data, db_lear)
 
-                        # process filing with custom filer function
-                        business = process_filing(config, filing.id, event_filing_data_dict, filing_data, db_lear)
-
-                        event_cnt = event_filing_data_dict['retrieved_events_cnt']
-                        if event_cnt == (idx + 1):
-                            status_service.update_flow_status(flow_name='sp-gp-flow',
-                                                              corp_num=corp_num,
-                                                              corp_name=corp_name,
-                                                              processed_status=ProcessingStatuses.COMPLETED,
-                                                              last_processed_event_id=event_id)
-                        else:
-                            status_service.update_flow_status(flow_name='sp-gp-flow',
-                                                              corp_num=corp_num,
-                                                              corp_name=corp_name,
-                                                              processed_status=ProcessingStatuses.PROCESSING,
-                                                              last_processed_event_id=event_id)
+                    event_cnt = event_filing_data_dict['retrieved_events_cnt']
+                    if event_cnt == (idx + 1):
+                        status_service.update_flow_status(flow_name='sp-gp-flow',
+                                                          corp_num=corp_num,
+                                                          corp_name=corp_name,
+                                                          processed_status=ProcessingStatuses.COMPLETED,
+                                                          last_processed_event_id=event_id)
+                    else:
+                        status_service.update_flow_status(flow_name='sp-gp-flow',
+                                                          corp_num=corp_num,
+                                                          corp_name=corp_name,
+                                                          processed_status=ProcessingStatuses.PROCESSING,
+                                                          last_processed_event_id=event_id)
         except CustomUnsupportedTypeException as err:
             error_msg = f'Partial loading of business {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)

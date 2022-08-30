@@ -309,12 +309,7 @@ def get_base_conversion_json():
                     'legalName': None,
                     'legalType': None
                 },
-                'courtOrder': {
-                    'fileNumber': None,
-                    'orderDate': None,
-                    'effectOfOrder': None,
-                    'orderDetails': None
-                },
+                'startDate': None,
                 'contactPoint': {
                     'email': None,
                     'phone': None
