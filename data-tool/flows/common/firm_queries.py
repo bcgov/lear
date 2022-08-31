@@ -75,13 +75,18 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                           and e.corp_num in ('FM0285571', 'FM0391762') -- FILE_FRCRG
                        -- firms for filing user tests
 --                           and e.corp_num in ('FM0292609', 'FM0554196', 'FM0608573')
+                       -- firms that have paper only flag set for registration related filings but need to be 
+                       -- available as electronic outputs 
+--                         and e.corp_num in ('FM0367712', 'FM0474350', 'FM0554151')
+                       -- firms with only one filing and with no known effective date
+--                         and e.corp_num in ('FM0346815', 'FM0346781', 'FM0346897')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
                         and cp.flow_name = 'sp-gp-flow'
                         and cp.environment = '{data_load_env}'
             where 1 = 1
-                   and tbl_fe.event_file_types = 'FILE_FRREG'
+--                   and tbl_fe.event_file_types = 'FILE_FRREG'
 --                 and tbl_fe.event_file_types like 'FILE_FRREG%'
 --                 and tbl_fe.event_file_types like '%FILE_FRREG,%FRCHG%'
 --                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
@@ -161,7 +166,14 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             to_char(f.effective_dt, 'YYYY-MM-DD') as f_effective_dt_str,
             to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as f_effective_dts_pacific,
             f.withdrawn_event_id   as f_withdrawn_event_id,
-            f.ods_type_cd          as f_ods_type,
+            case
+               -- registration related filings marked as paper only but should be available as electronic filings
+                when (f.effective_dt >= '2004-03-15' and f.effective_dt <= '2011-04-08')
+                      and f.filing_type_cd in ('FRREG', 'FRARG', 'FRCRG')
+                      and not (f.filing_type_cd = 'FRARG' and e.event_type_cd ~ '^CONV.*$')
+                    THEN 'F'
+                else f.ods_type_cd
+            end f_ods_type,            
             f.nr_num               as f_nr_num,
             -- corporation
             c.corp_num             as c_corp_num,

@@ -90,6 +90,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     )
 
     # service accounts
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
     ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL')
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv('ACCOUNT_SVC_AFFILIATE_URL')
