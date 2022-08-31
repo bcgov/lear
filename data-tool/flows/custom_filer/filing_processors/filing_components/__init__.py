@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries, Comment
+from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries, Comment, User, Filing
 
 JSON_ROLE_CONVERTER = {
     'custodian': PartyRole.RoleTypes.CUSTODIAN.value,
@@ -186,3 +186,27 @@ def create_comments(business: Business, filing_event_data: Dict):
             comments.append(firm_comment)
 
     return comments
+
+
+def update_filing_user(filing_submission: Filing, filing_data: Dict):
+    if not (filing_user_id := filing_data.get('u_user_id', None)):
+        return
+
+    user = User.find_by_username(filing_user_id)
+
+    if user:
+        filing_submission.submitter_id = user.id
+    else:
+        first_name = filing_data.get('u_first_name', None)
+        last_name = filing_data.get('u_last_name', None)
+        middle_name = filing_data.get('u_middle_name', None)
+        email = filing_data.get('u_email_addr', None)
+        creation_date = filing_data.get('u_event_timestmp_dts_pacific', None)
+        filing_user = User(username=filing_user_id,
+                           firstname=first_name,
+                           lastname=last_name,
+                           middlename=middle_name,
+                           email=email,
+                           creation_date=creation_date
+                           )
+        filing_submission.filing_submitter = filing_user

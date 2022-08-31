@@ -26,6 +26,7 @@ from entity_filer.filing_processors.filing_components import (
     business_profile,
     filings,
     name_request,
+    rules_and_memorandum,
     shares,
 )
 
@@ -36,7 +37,7 @@ def process(
     filing: Dict,
     filing_meta: FilingMeta,
     correction: bool = False
-):  # pylint: disable=W0613
+):  # pylint: disable=W0613, R0914
     """Render the Alteration onto the model objects."""
     filing_meta.alteration = {}
     # Alter the corp type, if any
@@ -81,6 +82,19 @@ def process(
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.util.get(filing, '/alteration/shareStructure')
         shares.update_share_structure(business, share_structure)
+
+    # update rules, if any
+    with suppress(IndexError, KeyError, TypeError):
+        rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
+        rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
+
+        rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
+
+    with suppress(IndexError, KeyError, TypeError):
+        memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
+        memorandum_file_name = dpath.util.get(filing, '/alteration/memorandumFileName')
+
+        rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key, memorandum_file_name)
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):

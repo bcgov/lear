@@ -37,7 +37,7 @@ from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
 from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on, correction
-from .filing_processors.filing_components import create_comments
+from .filing_processors.filing_components import create_comments, update_filing_user
 
 
 def get_filing_types(legal_filings: dict):
@@ -54,7 +54,7 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_event_data: Dict, db: any):
+def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_data: Dict, db: any):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -97,27 +97,28 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
                                                                                 filing_core_submission.json,
                                                                                 filing_submission,
                                                                                 filing_meta,
-                                                                                filing_event_data)
+                                                                                filing_data)
 
             elif filing.get('conversion'):
                 business, filing_submission = conversion.process(business,
                                                                  filing_core_submission.json,
                                                                  filing_submission,
-                                                                 filing_meta)
+                                                                 filing_meta,
+                                                                 filing_data)
 
             elif filing.get('changeOfRegistration'):
                 change_of_registration.process(business,
                                                filing_submission,
                                                filing,
                                                filing_meta,
-                                               filing_event_data)
+                                               filing_data)
 
             elif filing.get('dissolution'):
                 dissolution.process(business,
                                     filing,
                                     filing_submission,
                                     filing_meta,
-                                    filing_event_data)
+                                    filing_data)
 
             elif filing.get('putBackOn'):
                 put_back_on.process(business, filing, filing_submission)
@@ -125,14 +126,15 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             elif filing.get('correction'):
                 filing_submission = correction.process(filing_submission, filing, filing_meta, business)
 
+        update_filing_user(filing_submission, filing_data)
 
         filing_submission.transaction_id = transaction.id
         filing_submission.set_processed()
 
-        event_type_cd = filing_event_data['e_event_type_cd']
-        filing_type_cd = filing_event_data['f_filing_type_cd']
-        payment_type_cd = filing_event_data.get('payment_typ_cd')
-        fee_cd = filing_event_data.get('fee_cd')
+        event_type_cd = filing_data['e_event_type_cd']
+        filing_type_cd = filing_data['f_filing_type_cd']
+        payment_type_cd = filing_data.get('payment_typ_cd')
+        fee_cd = filing_data.get('fee_cd')
 
         filing_meta.colin_filing_info = {
             'eventType': event_type_cd,
@@ -145,7 +147,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
         )
 
         colin_event_id = ColinEventId()
-        colin_event_id.colin_event_id = int(filing_event_data['e_event_id'])
+        colin_event_id.colin_event_id = int(filing_data['e_event_id'])
         filing_submission.colin_event_ids.append(colin_event_id)
 
         db.session.add(business)

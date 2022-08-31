@@ -132,9 +132,9 @@ class AccountService:
                            corp_type_code: str = 'TMP',
                            pass_code: str = ''):
         """Affiliate a business to an account."""
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
-        template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
-        account_svc_affiliate_url = template_url.format(account_id=account)
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
         token = cls.get_bearer_token()
 
@@ -179,7 +179,8 @@ class AccountService:
                       corp_type_code: str,
                       state: str = None):
         """Update an entity."""
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
 
         token = cls.get_bearer_token()
 
@@ -213,9 +214,9 @@ class AccountService:
 
         @TODO Update this when account affiliation is changed next sprint.
         """
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
-        template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
-        account_svc_affiliate_url = template_url.format(account_id=account)
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
         token = cls.get_bearer_token()
 
