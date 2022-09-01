@@ -16,9 +16,11 @@ import json
 import os
 from typing import Callable
 
+import pytest_asyncio
 import stan
 
 
+@pytest_asyncio.fixture(scope="session")
 async def subscribe_to_queue(stan_client: stan.aio.client.Client,
                              call_back: Callable[[stan.aio.client.Msg], None]) \
         -> str:
