@@ -1,8 +1,9 @@
+{% set directors = parties if reportType != 'summary' else directors %}
 <div class="separator mt-4"></div>
 <div class="no-page-break">
   <div class="section-title mt-4">Director Information</div>
   <table class="section-data section-data-table mt-4" role="presentation">
-    {% for party in parties | selectattr("role", "equalto", "director") | sort(attribute='officer.lastName') %}
+    {% for party in directors | selectattr("role", "equalto", "director") | sort(attribute='officer.lastName') %}
       <tr class="no-page-break">
         <td class="col-33">
           <div class="section-sub-title">
