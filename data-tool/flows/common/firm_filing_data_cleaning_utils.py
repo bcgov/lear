@@ -149,7 +149,7 @@ def clean_event_data(filing_data: dict):
     e_event_dts = filing_data['e_event_dts_pacific']
     # for events where date created is not known, use previous event/filing data.
     # LEAR has issues re-creating versioning history for outputs if we don't do this
-    if e_event_dts.year == 1:
+    if e_event_dts.year == 1 and len(filing_data.get('prev_event_filing_data')) > 0:
         prev_f_effective_dt_str = filing_data['prev_event_filing_data']['f_effective_dt_str']
         prev_f_effective_dts_pacific = filing_data['prev_event_filing_data']['f_effective_dts_pacific']
         new_f_effective_dts_pacific = prev_f_effective_dts_pacific + datetime.timedelta(seconds=1)
