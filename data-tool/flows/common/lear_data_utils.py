@@ -19,6 +19,10 @@ def get_party_match(db: any, party_dict: dict, corp_num: str):
             .filter(Party.middle_initial == party_dict['middleName']) \
             .filter(Party.organization_name == party_dict['organizationName']) \
             .filter(Party.identifier == party_dict['identifier'])
+
+    if appointment_date := party_dict['appointmentDate']:
+        query = query.filter(PartyRole.appointment_date == appointment_date)
+
     result = query.one_or_none()
     return result
 
@@ -104,6 +108,7 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     filing._filing_json = filing_json
     filing._filing_type = target_lear_filing_type
     filing.filing_date = effective_date
+    filing._completion_date = effective_date
     filing.business_id = business.id if business else None
     filing.source = Filing.Source.COLIN.value
     filing.paper_only = get_is_paper_only(filing_data)
