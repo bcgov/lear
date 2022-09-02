@@ -364,6 +364,7 @@ class FirmFilingJsonFactoryService:
         prev_officer['partyType'] = prev_party_type
         prev_officer['organizationName'] = prev_filing_party_data.get('cp_business_name', '').upper()
         prev_officer['identifier'] = prev_filing_party_data['cp_bus_company_num']
+        prev_officer['appointmentDate'] = prev_filing_party_data['cp_appointment_dt']
         officer['prev_colin_party'] = prev_officer
 
 

@@ -74,6 +74,7 @@ class _Config():  # pylint: disable=too-few-public-methods
         port=int(DB_PORT_COLIN_MIGR),
         name=DB_NAME_COLIN_MIGR,
     )
+    SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
     # POSTGRESQL LEAR DB
     DB_USER = os.getenv('DATABASE_USERNAME', '')
