@@ -72,4 +72,5 @@ def validate_for_sr(business: Business, con: Dict) -> Error:
     
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
-    return None        
+    return None 
+      
