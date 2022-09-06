@@ -24,7 +24,6 @@ from .db import db
 class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials schema and credential definition."""
 
-    __versioned__ = {}
     __tablename__ = 'dc_definitions'
 
     class CredentialType(BaseEnum):

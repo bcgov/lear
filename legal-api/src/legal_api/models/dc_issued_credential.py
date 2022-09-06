@@ -22,7 +22,6 @@ from .db import db
 class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the issued credential."""
 
-    __versioned__ = {}
     __tablename__ = 'dc_issued_credentials'
 
     id = db.Column(db.Integer, primary_key=True)

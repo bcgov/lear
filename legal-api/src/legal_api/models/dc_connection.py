@@ -22,7 +22,6 @@ from .db import db
 class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials connection."""
 
-    __versioned__ = {}
     __tablename__ = 'dc_connections'
 
     id = db.Column(db.Integer, primary_key=True)
