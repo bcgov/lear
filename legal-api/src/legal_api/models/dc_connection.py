@@ -66,7 +66,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter_by(id=connection_id).one_or_none()
+            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
         return dc_connection
 
     @classmethod

@@ -40,7 +40,7 @@ def test_find_by_id(session):
 def test_find_by_credential_exchange_id(session):
     """Assert that the method returns correct value."""
     issued_credential = create_dc_issued_credential()
-    res = DCIssuedCredential.find_by_id(issued_credential.credential_exchange_id)
+    res = DCIssuedCredential.find_by_credential_exchange_id(issued_credential.credential_exchange_id)
 
     assert res
     assert res.id == issued_credential.id

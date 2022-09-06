@@ -68,8 +68,8 @@ def test_find_by(session):
                                'business_schema',
                                schema_version='1.0.0'
                                )
-    assert len(res) == 1
-    assert res[0].id == definition.id
+    assert res
+    assert res.id == definition.id
 
 
 def create_dc_definition():
