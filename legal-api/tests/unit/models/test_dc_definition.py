@@ -18,7 +18,6 @@ Test-Suite to ensure that the DCDefinition Model is working as expected.
 """
 
 from legal_api.models import DCDefinition
-from legal_api.services import digital_credentials
 
 
 def test_valid_dc_definition_save(session):
@@ -66,8 +65,8 @@ def test_find_by(session):
     definition = create_dc_definition()
 
     res = DCDefinition.find_by(DCDefinition.CredentialType.business,
-                               digital_credentials.business_schema['schema_name'],
-                               schema_version=digital_credentials.business_schema['schema_version']
+                               'business_schema',
+                               schema_version='1.0.0'
                                )
     assert len(res) == 1
     assert res[0].id == definition.id
@@ -77,8 +76,8 @@ def create_dc_definition():
     """Create new dc_definition object."""
     definition = DCDefinition(
         credential_type=DCDefinition.CredentialType.business,
-        schema_name=digital_credentials.business_schema['schema_name'],
-        schema_version=digital_credentials.business_schema['schema_version'],
+        schema_name='business_schema',
+        schema_version='1.0.0',
         schema_id='3ENKbWGgUBXXzDHnG11phS:2:business_schema:1.0.0',
         credential_definition_id='3ENKbWGgUBXXzDHnG11phS:3:CL:146949:business_schema'
     )

@@ -61,7 +61,7 @@ def test_find_active_by(session):
     connection = create_dc_connection(business)
 
     connection.is_active = True
-    connection.connection_state == 'active'
+    connection.connection_state = 'active'
     connection.save()
 
     res = DCConnection.find_active_by(business.id)

@@ -70,9 +70,11 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the active digital credential connection matching the business_id."""
         dc_connection = None
         if business_id:
-            dc_connection = cls.query. \
-                filter(DCConnection.business_id == business_id). \
-                filter(DCConnection.is_active == True).one_or_none()  # noqa: E712
+            dc_connection = (
+              cls.query
+                 .filter(DCConnection.business_id == business_id)
+                 .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
+                 .one_or_none())
         return dc_connection
 
     @classmethod

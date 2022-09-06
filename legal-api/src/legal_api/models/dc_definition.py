@@ -30,6 +30,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     class CredentialType(BaseEnum):
         """Render an Enum of the Credential Type."""
 
+        # pylint: disable=invalid-name
         business = auto()
         business_relationship = auto()
 
@@ -68,9 +69,11 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential definition matching the credential_type."""
         dc_definition = None
         if credential_type:
-            dc_definition = cls.query. \
-                filter(DCDefinition.is_deleted == False). \
-                filter(DCDefinition.credential_type == credential_type).one_or_none()  # noqa: E712
+            dc_definition = (
+                cls.query
+                   .filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
+                   .filter(DCDefinition.credential_type == credential_type)
+                   .one_or_none())
         return dc_definition
 
     @classmethod
