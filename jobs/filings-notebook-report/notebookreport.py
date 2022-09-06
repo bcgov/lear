@@ -107,9 +107,9 @@ def send_email(note_book, emailtype, errormessage):
     message['Subject'] = subject
     server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
     email_list = recipients.strip('][').split(', ')
-    logging.info(f'Email recipients list is: {email_list}')
+    logging.info('Email recipients list is: %s', email_list)
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
-    logging.info(f'Email with subject \'{subject}\' has been sent successfully!')
+    logging.info('Email with subject \'%s\' has been sent successfully!', subject)
     server.quit()
     if filename != '':
         os.remove(os.getenv('DATA_DIR', '')+filename)
@@ -126,13 +126,13 @@ def processnotebooks(notebookdirectory):
         if notebookdirectory == 'monthly':
             days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
     except Exception:
-        logging.exception(f'Error processing notebook for {notebookdirectory}')
+        logging.exception('Error processing notebook for %s', notebookdirectory)
         send_email(notebookdirectory, 'ERROR', traceback.format_exc())
         return status
 
     # For monthly tasks, we only run on the specified days
     if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
-        logging.info(f'Processing: {notebookdirectory}')
+        logging.info('Processing: %s', notebookdirectory)
 
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
@@ -151,12 +151,14 @@ def processnotebooks(notebookdirectory):
                     if attempt + 1 == retry_times:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception(
-                            f'Error processing notebook {notebookdirectory} at {attempt + 1}/{retry_times} try.')
+                            'Error processing notebook %s at %s/%s try.', notebookdirectory, attempt + 1,
+                            retry_times)
                         send_email(notebookdirectory, 'ERROR', traceback.format_exc())
                     else:
                         # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception(f"Error processing notebook {notebookdirectory} at {attempt + 1}/{retry_times} try. "
-                                          f"Sleeping for {retry_interval} secs before next try")
+                        logging.exception('Error processing notebook %s at %s/%s try. '
+                                          'Sleeping for %s secs before next try', notebookdirectory, attempt + 1,
+                                          retry_times, retry_interval)
                         time.sleep(retry_interval)
                         continue
             if not status and num_files == file_processed:
@@ -175,5 +177,5 @@ if __name__ == '__main__':
         processnotebooks(subdir)
 
     end_time = datetime.utcnow()
-    logging.info(f'job - jupyter notebook report completed in: {end_time - start_time}')
+    logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
     sys.exit()
