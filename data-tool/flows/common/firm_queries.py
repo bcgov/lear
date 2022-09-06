@@ -80,6 +80,8 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                         and e.corp_num in ('FM0367712', 'FM0474350', 'FM0554151')
                        -- firms with only one filing and with no known effective date
 --                         and e.corp_num in ('FM0346815', 'FM0346781', 'FM0346897')
+                       -- firms with dissolutions
+--                         and e.corp_num in ('FM0439147', 'FM0272498', 'FM0354293', 'FM0274699', 'FM0272756')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 

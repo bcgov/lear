@@ -11,16 +11,16 @@ class FirmFilingJsonFactoryService:
         self._event_filing_data = event_filing_data
         self._filing_data = event_filing_data['data']
         self._target_lear_filing_type = self._filing_data['target_lear_filing_type']
-        # dissolution filing only needs FCP as party.  remove existing parties which is required for other files
+
+        # dissolution filing only needs FCP as party.  remove existing parties when constructing filing json
         if self._target_lear_filing_type == 'dissolution':
             filing_data_parties = self._filing_data['corp_parties']
             filing_data_completing_party = next((filing_data_party
                                     for filing_data_party in filing_data_parties
                                     if filing_data_party and filing_data_party['cp_party_typ_cd'] == 'FCP'), None)
+            self._completing_party = None
             if filing_data_completing_party:
-                self._filing_data['corp_parties'] = [filing_data_completing_party]
-            else:
-                self._filing_data['corp_parties'] = []
+                self._completing_party = filing_data_completing_party
 
         self._event_id = self._filing_data['f_event_id']
         self._prev_event_id = self._filing_data.get('prev_event_filing_data', {}).get('e_event_id', None)
@@ -260,22 +260,43 @@ class FirmFilingJsonFactoryService:
         parties = filings_dict['parties']
 
         for idx, party in enumerate(parties):
-                filing_data_party = self._filing_data['corp_parties'][idx]
-                self.populate_party(party, filing_data_party)
+            filing_data_party = self._filing_data['corp_parties'][idx]
+            self.populate_party(party, filing_data_party)
 
-                mailing_addr_id = filing_data_party['ma_addr_id']
-                if mailing_addr_id:
-                    mailing_addr = party['mailingAddress']
-                    self.populate_address(mailing_addr, filing_data_party, 'ma_')
-                else:
-                    del party['mailingAddress']
+            mailing_addr_id = filing_data_party['ma_addr_id']
+            if mailing_addr_id:
+                mailing_addr = party['mailingAddress']
+                self.populate_address(mailing_addr, filing_data_party, 'ma_')
+            else:
+                del party['mailingAddress']
 
-                delivery_addr_id = filing_data_party['da_addr_id']
-                if delivery_addr_id:
-                    delivery_addr = party['deliveryAddress']
-                    self.populate_address(delivery_addr, filing_data_party, 'da_')
-                else:
-                    del party['deliveryAddress']
+            delivery_addr_id = filing_data_party['da_addr_id']
+            if delivery_addr_id:
+                delivery_addr = party['deliveryAddress']
+                self.populate_address(delivery_addr, filing_data_party, 'da_')
+            else:
+                del party['deliveryAddress']
+
+
+    def populate_completing_party(self, filings_dict: dict):
+        party = filings_dict['parties'][0]
+
+        filing_data_party = self._completing_party
+        self.populate_party(party, filing_data_party)
+
+        mailing_addr_id = filing_data_party['ma_addr_id']
+        if mailing_addr_id:
+            mailing_addr = party['mailingAddress']
+            self.populate_address(mailing_addr, filing_data_party, 'ma_')
+        else:
+            del party['mailingAddress']
+
+        delivery_addr_id = filing_data_party['da_addr_id']
+        if delivery_addr_id:
+            delivery_addr = party['deliveryAddress']
+            self.populate_address(delivery_addr, filing_data_party, 'da_')
+        else:
+            del party['deliveryAddress']
 
 
     def populate_party(self, party_dict: dict, filing_party_data: dict):
@@ -472,8 +493,8 @@ class FirmFilingJsonFactoryService:
         trigger_dt_str = self._filing_data['e_trigger_dt_str']
         dissolution_dict['dissolutionDate'] = trigger_dt_str
 
-        if len(self._filing_data['corp_parties']) > 0:
-            self.populate_parties(dissolution_dict)
+        if self._completing_party:
+            self.populate_completing_party(dissolution_dict)
         else:
             dissolution_dict['parties'] = []
 
