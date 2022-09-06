@@ -52,6 +52,11 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         }
         return dc_issued_credential
 
+    def save(self):
+        """Save the object to the database immediately."""
+        db.session.add(self)
+        db.session.commit()
+
     @classmethod
     def find_by_id(cls, dc_issued_credential_id: str) -> DCIssuedCredential:
         """Return the issued credential matching the id."""

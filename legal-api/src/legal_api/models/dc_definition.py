@@ -56,6 +56,11 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         }
         return dc_definition
 
+    def save(self):
+        """Save the object to the database immediately."""
+        db.session.add(self)
+        db.session.commit()
+
     @classmethod
     def find_by_id(cls, dc_definition_id: str) -> DCDefinition:
         """Return the digital credential definition matching the id."""
