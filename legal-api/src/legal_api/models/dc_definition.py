@@ -96,4 +96,4 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def deactivate(cls, credential_type: CredentialType):
         """Deactivate all definition for the specific credential type."""
-        db.session.execute(f'UPDATE dc_definitions SET is_deleted=1 WHERE credential_type={credential_type.name}')
+        db.session.execute(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
