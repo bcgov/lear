@@ -109,7 +109,7 @@ def send_email(note_book, emailtype, errormessage):
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
-    logging.info('Email with subject \'%s\' has been sent successfully!', subject)
+    logging.info('Email with subject %s has been sent successfully!', subject)
     server.quit()
     if filename != '':
         os.remove(os.getenv('DATA_DIR', '')+filename)
@@ -125,7 +125,7 @@ def processnotebooks(notebookdirectory):
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
         if notebookdirectory == 'monthly':
             days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
-    except Exception:
+    except Exception:  # noqa: B902
         logging.exception('Error processing notebook for %s', notebookdirectory)
         send_email(notebookdirectory, 'ERROR', traceback.format_exc())
         return status
@@ -147,7 +147,7 @@ def processnotebooks(notebookdirectory):
                     os.remove(os.getenv('DATA_DIR', '')+'temp.ipynb')
                     status = True
                     break
-                except Exception:
+                except Exception:  # noqa: B902
                     if attempt + 1 == retry_times:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception(
