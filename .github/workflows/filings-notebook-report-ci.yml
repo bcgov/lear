@@ -56,14 +56,20 @@ jobs:
       PG_HOST: localhost
       PG_PORT: 5432
       APP_FILE: notebookreport.py
-      INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
-      COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
-      COOPERATIVE_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
-      BC_STATS_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
+      INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS:
+      - steven.chen@gov.bc.ca
+      COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS:
+      - steven.chen@gov.bc.ca
+      COOPERATIVE_MONTHLY_REPORT_RECIPIENTS:
+      - steven.chen@gov.bc.ca
+      BC_STATS_MONTHLY_REPORT_RECIPIENTS:
+      - steven.chen@gov.bc.ca
       EMAIL_SMTP: apps.smtp.gov.bc.ca
       ENVIRONMENT: devl
-      ERROR_EMAIL_RECIPIENTS: [steven.chen@gov.bc.ca]
-      MONTH_REPORT_DATES: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+      ERROR_EMAIL_RECIPIENTS:
+      - steven.chen@gov.bc.ca
+      MONTH_REPORT_DATES:
+      - 9
       RETRY_INTERVAL: 30
       RETRY_TIMES: 3
       SENDER_EMAIL: lear@noreply.github.com
