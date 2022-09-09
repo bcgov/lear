@@ -171,7 +171,7 @@ def test_set_effective(session):
 
         filing.storage._payment_token = '12345'
         filing.storage._filing_type = filing_type
-        filing.storage.effective_date = now
+        filing.storage.effective_date = None
         filing._storage.skip_status_listener = True
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()

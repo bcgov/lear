@@ -313,7 +313,7 @@ class Report:  # pylint: disable=too-few-public-methods
             else:
                 filing['agm_date'] = 'No AGM'
                 # When AR indicates NO AGM the effective date of the filing is Dec 31st of the AR year
-                ar_year_str = filing['annualReport']['annualReportDate'][0:4]
+                ar_year_str = filing.get('annualReport', {}).get('annualReportDate')[0:4]
                 filing['effective_date'] = 'December 31, ' + ar_year_str
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
