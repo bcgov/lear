@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
+from datetime import datetime
 
 import pytest
 
@@ -22,7 +23,8 @@ from tests.unit.services.warnings import factory_party_role_person, factory_part
 from legal_api.models import Address, Business, Office, PartyRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
-    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business
+    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business,\
+    check_start_date
 
 
 
@@ -405,6 +407,44 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
     assert business.identifier == identifier
 
     result = check_office(business)
+
+    if expected_code:
+        assert len(result) == 1
+        business_warning = result[0]
+        assert business_warning['code'] == expected_code
+        assert business_warning['message'] == expected_msg
+    else:
+        assert len(result) == 0
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier, expected_code, expected_msg',
+    [
+        # SP tests
+        ('SUCCESS', 'SP', 'FM0000001', None, None),
+        ('FAIL_NO_START_DATE', 'SP', 'FM0000001', 'NO_START_DATE', 'A start date is required.'),
+        # GP tests
+        ('SUCCESS', 'GP', 'FM0000001', None, None),
+        ('FAIL_NO_START_DATE', 'GP', 'FM0000001', 'NO_START_DATE', 'A start date is required.'),
+    ]
+)
+def test_check_start_date(session, test_name, legal_type, identifier, expected_code, expected_msg):
+    """Assert that business start date check works properly."""
+
+    business = None
+
+    business = create_business(legal_type=legal_type,
+                    identifier=identifier)
+    if test_name == 'SUCCESS':
+        business.start_date = datetime.utcnow()
+        business.save()
+
+    business = Business.find_by_identifier(identifier)
+    assert business
+    assert business.legal_type == legal_type
+    assert business.identifier == identifier
+
+    result = check_start_date(business)
 
     if expected_code:
         assert len(result) == 1

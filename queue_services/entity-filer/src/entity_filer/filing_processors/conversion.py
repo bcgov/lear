@@ -22,7 +22,9 @@ altered.
 There are no corrections for a conversion filing.
 """
 # pylint: disable=superfluous-parens; as pylance requires it
+import datetime
 from contextlib import suppress
+from datetime import timedelta
 from typing import Dict
 
 import dpath
@@ -105,6 +107,12 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(conversion_filing, '/filing/conversion/parties')
         upsert_parties(business, party_json, filing_rec)
+
+    # update business start date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        business_start_date = dpath.util.get(conversion_filing, '/filing/conversion/startDate')
+        if business_start_date:
+            business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
 
 
 def post_process(business: Business, filing: Filing):
