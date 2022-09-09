@@ -1,9 +1,11 @@
 from datetime import datetime
 import os
+import shutil
 import psycopg2
 import pytest
 import ast
 from notebookreport import processnotebooks
+
 
 def test_connection_failed():
     status = False
@@ -39,14 +41,17 @@ def test_connection_succeed():
 
 
 test_filings_monthly_data = [
-    ("monthly"),
+    ("daily"), ("monthly"),
 ]
 
 
 @pytest.mark.parametrize("report_type", test_filings_monthly_data)
 def test_filings_monthly_notebook_report(report_type):
-    status = processnotebooks(report_type)
+    data_dir = os.path.join(os.getcwd(), r'data/')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    status = processnotebooks(report_type, data_dir)
+    shutil.rmtree(data_dir)
 
     assert status == True
-
-

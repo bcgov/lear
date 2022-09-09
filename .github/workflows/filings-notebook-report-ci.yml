@@ -49,6 +49,24 @@ jobs:
 
   testing:
     needs: setup-job
+    env:
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_DB_NAME: lear
+      PG_HOST: localhost
+      PG_PORT: 5432
+      APP_FILE: notebookreport.py
+      INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
+      COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
+      COOPERATIVE_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
+      BC_STATS_MONTHLY_REPORT_RECIPIENTS: [steven.chen@gov.bc.ca]
+      EMAIL_SMTP: apps.smtp.gov.bc.ca
+      ENVIRONMENT: devl
+      ERROR_EMAIL_RECIPIENTS: [steven.chen@gov.bc.ca]
+      MONTH_REPORT_DATES: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+      RETRY_INTERVAL: 30
+      RETRY_TIMES: 3
+      SENDER_EMAIL: lear@noreply.github.com
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -62,14 +80,14 @@ jobs:
       - name: Test with pytest
         id: test
         run: |
-          # make test
-      #- name: Upload coverage to Codecov
-      #  uses: codecov/codecov-action@v1
-      #  with:
-      #    file: ./queue_services/entity-pay/coverage.xml
-      #    flags: entitypay
-      #    name: codecov-entity-pay
-      #    fail_ci_if_error: true
+           make test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./queue_services/entity-pay/coverage.xml
+          flags: entitypay
+          name: codecov-entity-pay
+          fail_ci_if_error: true
 
   build-check:
     needs: setup-job
