@@ -268,9 +268,9 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
     """Assert that SP/GPs with missing business info is populating warnings list."""
 
     if has_missing_business_info:
-        factory_business(entity_type=legal_type, identifier=identifier)
+        business = factory_business(entity_type=legal_type, identifier=identifier)
     else:
-        create_business(legal_type=legal_type,
+        business = create_business(legal_type=legal_type,
                         identifier=identifier,
                         create_office=True,
                         create_office_mailing_address=True,
@@ -279,8 +279,10 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
                         create_firm_party_address=True,
                         filing_types=['registration'],
                         filing_has_completing_party=[True],
-                        create_completing_party_address=[True])
-
+                        create_completing_party_address=[True]
+                        )
+    business.start_date = datetime.utcnow().date()
+    business.save()
     session.commit()
     rv = client.get(f'/api/v2/businesses/{identifier}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
