@@ -340,7 +340,8 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                     firm_num_persons_roles=num_persons_roles,
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party)
+                    filing_has_completing_party=filing_has_completing_party,
+                    start_date=datetime.utcnow())
 
     business = Business.find_by_identifier(identifier)
     assert business

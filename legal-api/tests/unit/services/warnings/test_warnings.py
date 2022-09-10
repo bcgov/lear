@@ -58,7 +58,7 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
 
     business = None
 
-    business = create_business(legal_type=legal_type,
+    create_business(legal_type=legal_type,
                     identifier=identifier,
                     create_office=has_office,
                     create_office_mailing_address=has_office,
@@ -66,8 +66,8 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
                     firm_num_persons_roles=num_persons_roles,
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party)
-    business.start_date = datetime.utcnow().date()
+                    filing_has_completing_party=filing_has_completing_party,
+                    start_date=datetime.utcnow())
 
     business = Business.find_by_identifier(identifier)
     assert business
