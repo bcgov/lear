@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
+from datetime import datetime
 
 import pytest
 
@@ -57,7 +58,7 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
 
     business = None
 
-    create_business(legal_type=legal_type,
+    business = create_business(legal_type=legal_type,
                     identifier=identifier,
                     create_office=has_office,
                     create_office_mailing_address=has_office,
@@ -66,6 +67,7 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
                     filing_has_completing_party=filing_has_completing_party)
+    business.start_date = datetime.utcnow().date()
 
     business = Business.find_by_identifier(identifier)
     assert business
