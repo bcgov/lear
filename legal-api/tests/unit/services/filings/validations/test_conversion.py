@@ -32,9 +32,11 @@ GP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 GP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
 GP_CONVERSION['filing']['business']['legalType'] = 'GP'
 GP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'GP'
+GP_CONVERSION['filing']['conversion']['startDate'] = '2019-01-01'
 
 SP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 SP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
+SP_CONVERSION['filing']['conversion']['startDate'] = '2019-01-01'
 SP_CONVERSION['filing']['business']['legalType'] = 'SP'
 SP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'SP'
 del SP_CONVERSION['filing']['conversion']['parties'][1]
@@ -75,21 +77,33 @@ class MockResponse:
 
 def test_gp_conversion(session):
     """Assert that the general partnership conversion is valid."""
+    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
+    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
+                                entity_type='GP',
+                                state=Business.State.ACTIVE)
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(GP_CONVERSION)
+            err = validate(business, GP_CONVERSION)
     assert not err
 
 
 def test_sp_conversion(session):
     """Assert that the sole proprietor conversion is valid."""
+    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
+    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
+                                entity_type='SP',
+                                state=Business.State.ACTIVE)
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(SP_CONVERSION)
+            err = validate(business, SP_CONVERSION)
 
     assert not err
 
 
 def test_invalid_nr_conversion(session):
     """Assert that nr is invalid."""
+    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
+    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
+                                entity_type='SP',
+                                state=Business.State.ACTIVE)
     filing = copy.deepcopy(SP_CONVERSION)
     invalid_nr_response = {
         'state': 'INPROGRESS',
@@ -101,45 +115,53 @@ def test_invalid_nr_conversion(session):
         }]
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-            err = validate(filing)
+            err = validate(business, filing)
 
     assert err
 
 
 @pytest.mark.parametrize(
-    'test_name, filing, expected_msg',
+    'test_name, legal_type, filing, expected_msg',
     [
-        ('sp_invalid_party', copy.deepcopy(SP_CONVERSION),
+        ('sp_invalid_party', 'SP', copy.deepcopy(SP_CONVERSION),
          '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', copy.deepcopy(GP_CONVERSION),
+        ('gp_invalid_party', 'GP', copy.deepcopy(GP_CONVERSION),
          '2 Partners and a Completing Party is required.'),
     ]
 )
-def test_invalid_party(session, test_name, filing, expected_msg):
+def test_invalid_party(session, test_name, legal_type, filing, expected_msg):
     """Assert that party is invalid."""
+    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
+    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
+                                entity_type=legal_type,
+                                state=Business.State.ACTIVE)
     filing['filing']['conversion']['parties'][0]['roles'] = []
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(filing)
+            err = validate(business, filing)
 
     assert err
     assert err.msg[0]['error'] == expected_msg
 
 
 @pytest.mark.parametrize(
-    'test_name, filing',
+    'test_name, legal_type, filing',
     [
-        ('sp_invalid_business_address', copy.deepcopy(SP_CONVERSION)),
-        ('gp_invalid_business_address', copy.deepcopy(GP_CONVERSION)),
+        ('sp_invalid_business_address', 'SP', copy.deepcopy(SP_CONVERSION)),
+        ('gp_invalid_business_address', 'GP', copy.deepcopy(GP_CONVERSION)),
     ]
 )
-def test_invalid_business_address(session, test_name, filing):
+def test_invalid_business_address(session, test_name, legal_type, filing):
     """Assert that delivery business address is invalid."""
+    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
+    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
+                                entity_type=legal_type,
+                                state=Business.State.ACTIVE)
     filing['filing']['conversion']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = \
         'invalid'
     filing['filing']['conversion']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = \
         'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(filing)
+            err = validate(business, filing)
 
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
@@ -150,11 +172,10 @@ def test_invalid_business_address(session, test_name, filing):
     'test_name, legal_type, start_date, filing, expected_msg',
     [
         ('sp_invalid_start_date', 'SP', '2016-01-01', copy.deepcopy(SP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and \
-          less than or equal to 90 days in the future from the registration date.'),
+         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the '+
+         'future from the registration date.'),
         ('gp_invalid_start_date', 'GP', '2016-01-01', copy.deepcopy(GP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and \
-          less than or equal to 90 days in the future from the registration date.'),
+         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the future from the registration date.'),
         ('sp_valid_start_date', 'SP', '2019-01-01', copy.deepcopy(SP_CONVERSION), None),
         ('gp_valid_start_date', 'GP', '2019-01-01', copy.deepcopy(GP_CONVERSION), None),
     ]
