@@ -400,6 +400,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
                                   x.status == 'COMPLETED')
+
+        d['hasCourtOrders'] = any(x for x in self.filings.all() if x.filing_type == 'courtOrder' and
+                                  x.status == 'COMPLETED')
         return d
 
     @property
