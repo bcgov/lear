@@ -171,11 +171,18 @@ def test_invalid_business_address(session, test_name, legal_type, filing):
 @pytest.mark.parametrize(
     'test_name, legal_type, start_date, filing, expected_msg',
     [
-        ('sp_invalid_start_date', 'SP', '2016-01-01', copy.deepcopy(SP_CONVERSION),
+        ('sp_invalid_start_date_past', 'SP', '2016-01-01', copy.deepcopy(SP_CONVERSION),
          'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the '+
          'future from the registration date.'),
-        ('gp_invalid_start_date', 'GP', '2016-01-01', copy.deepcopy(GP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the future from the registration date.'),
+        ('gp_invalid_start_date_past', 'GP', '2016-01-01', copy.deepcopy(GP_CONVERSION),
+         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
+         'future from the registration date.'),
+        ('sp_invalid_start_date_future', 'SP', '2020-12-01', copy.deepcopy(SP_CONVERSION),
+         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
+         'future from the registration date.'),
+        ('gp_invalid_start_date_future', 'GP', '2020-12-01', copy.deepcopy(GP_CONVERSION),
+         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
+         'future from the registration date.'),
         ('sp_valid_start_date', 'SP', '2019-01-01', copy.deepcopy(SP_CONVERSION), None),
         ('gp_valid_start_date', 'GP', '2019-01-01', copy.deepcopy(GP_CONVERSION), None),
     ]
