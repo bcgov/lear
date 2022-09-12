@@ -21,7 +21,8 @@ from http import HTTPStatus
 import pytest
 
 import registry_schemas
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, FILING_TEMPLATE, INCORPORATION
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_ORDER_FILING_TEMPLATE,  FILING_TEMPLATE,\
+    INCORPORATION
 
 from legal_api.models import Business, Filing
 from legal_api.services.authz import STAFF_ROLE
@@ -300,3 +301,26 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
         # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
         assert len(rv_json['business']['complianceWarnings']) == 0
         assert len(rv_json['business']['warnings']) == 0
+
+
+def test_get_business_with_court_orders(session, client, jwt):
+    """Assert that the business info sets hasCourtOrders property."""
+    identifier = 'CP7654321'
+    legal_name = identifier + ' legal name'
+    business = factory_business_model(legal_name=legal_name,
+                           identifier=identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None)
+
+    factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+
+    rv = client.get('/api/v2/businesses/' + business.identifier,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.json['business']['identifier'] == identifier
+    assert rv.json['business']['hasCourtOrders'] == True
+
