@@ -46,27 +46,8 @@ jobs:
         id: flake8
         run: |
           make flake8
-
   testing:
     needs: setup-job
-    env:
-      PG_USER: postgres
-      PG_PASSWORD: postgres
-      PG_DB_NAME: lear
-      PG_HOST: localhost
-      PG_PORT: 5432
-      APP_FILE: notebookreport.py
-      INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS: steven.chen@gov.bc.ca
-      COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS: steven.chen@gov.bc.ca
-      COOPERATIVE_MONTHLY_REPORT_RECIPIENTS: steven.chen@gov.bc.ca
-      BC_STATS_MONTHLY_REPORT_RECIPIENTS: steven.chen@gov.bc.ca
-      EMAIL_SMTP: apps.smtp.gov.bc.ca
-      ENVIRONMENT: devl
-      ERROR_EMAIL_RECIPIENTS: steven.chen@gov.bc.ca
-      MONTH_REPORT_DATES: 9
-      RETRY_INTERVAL: 30
-      RETRY_TIMES: 3
-      SENDER_EMAIL: lear@noreply.github.com
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -80,14 +61,14 @@ jobs:
       - name: Test with pytest
         id: test
         run: |
-           make test
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./queue_services/entity-pay/coverage.xml
-          flags: entitypay
-          name: codecov-entity-pay
-          fail_ci_if_error: true
+      #    make test
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v1
+      #  with:
+      #    file: ./queue_services/entity-pay/coverage.xml
+      #    flags: entitypay
+      #    name: codecov-entity-pay
+      #    fail_ci_if_error: true
 
   build-check:
     needs: setup-job
