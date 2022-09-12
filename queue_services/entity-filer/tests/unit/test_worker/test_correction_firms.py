@@ -393,7 +393,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         assert deleted_role.cessation_date is not None
 
     if test_name == 'gp_add_partner':
-        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 3
-        assert len(business.party_roles.all()) == 3
+        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 4
+        assert len(business.party_roles.all()) == 4
         for party_role in business.party_roles.all():
             assert party_role.cessation_date is None
