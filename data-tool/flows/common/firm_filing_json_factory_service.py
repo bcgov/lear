@@ -160,6 +160,7 @@ class FirmFilingJsonFactoryService:
         self.populate_offices(registration_dict)
         self.populate_parties(registration_dict)
         self.populate_nr(registration_dict)
+        self.populate_contact_point(registration_dict)
 
 
     def populate_change_registration(self, filing_dict: dict):
@@ -184,6 +185,8 @@ class FirmFilingJsonFactoryService:
             self.populate_nr(change_registration_dict)
         else:
             del change_registration_dict['nameRequest']
+
+        self.populate_contact_point(change_registration_dict)
 
 
     def populate_correction(self, filing_dict: dict):
@@ -215,6 +218,8 @@ class FirmFilingJsonFactoryService:
         else:
             del correction_dict['nameRequest']
 
+        self.populate_contact_point(correction_dict)
+
 
     def populate_conversion(self, filing_dict: dict):
         conversion_dict = filing_dict['filing']['conversion']
@@ -240,6 +245,8 @@ class FirmFilingJsonFactoryService:
         else:
             del conversion_dict['nameRequest']
 
+        self.populate_contact_point(conversion_dict)
+
 
     def populate_offices(self, registration_dict: dict):
         office = registration_dict['offices']['businessOffice']
@@ -249,11 +256,19 @@ class FirmFilingJsonFactoryService:
         if len(self._filing_data['offices']) > 0:
             filing_data_office = self._filing_data['offices'][0]
 
-            mailing_addr = office['mailingAddress']
-            self.populate_address(mailing_addr, filing_data_office, 'ma_')
+            mailing_addr_id = filing_data_office['ma_addr_id']
+            if mailing_addr_id:
+                mailing_addr = office['mailingAddress']
+                self.populate_address(mailing_addr, filing_data_office, 'ma_')
+            else:
+                del office['mailingAddress']
 
-            delivery_addr = office['deliveryAddress']
-            self.populate_address(delivery_addr, filing_data_office, 'da_')
+            delivery_addr_id = filing_data_office['da_addr_id']
+            if delivery_addr_id:
+                delivery_addr = office['deliveryAddress']
+                self.populate_address(delivery_addr, filing_data_office, 'da_')
+            else:
+                del office['deliveryAddress']
 
 
     def populate_parties(self, filings_dict: dict):
@@ -384,7 +399,10 @@ class FirmFilingJsonFactoryService:
         prev_officer['middleName'] = prev_filing_party_data.get('cp_middle_name', '').upper()
         prev_officer['partyType'] = prev_party_type
         prev_officer['organizationName'] = prev_filing_party_data.get('cp_business_name', '').upper()
-        prev_officer['identifier'] = prev_filing_party_data['cp_bus_company_num']
+        if cp_bus_company_num := prev_filing_party_data.get('cp_bus_company_num'):
+            prev_officer['identifier'] = cp_bus_company_num.upper()
+        else:
+            prev_officer['identifier'] = cp_bus_company_num
         prev_officer['appointmentDate'] = prev_filing_party_data['cp_appointment_dt']
         officer['prev_colin_party'] = prev_officer
 
@@ -502,3 +520,9 @@ class FirmFilingJsonFactoryService:
     def populate_put_back_on(self, filing_dict: dict):
         pbo_dict = filing_dict['filing']['putBackOn']
         pbo_dict['details'] = self._filing_data['lt_notation']
+
+
+    def populate_contact_point(self, filing_dict: dict):
+        contact_point_dict = filing_dict['contactPoint']
+        if email := self._filing_data['c_admin_email']:
+            contact_point_dict['email'] = email

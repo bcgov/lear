@@ -96,8 +96,7 @@ def get_base_registration_json():
                 },
                 'businessType': None,
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
@@ -157,8 +156,7 @@ def get_base_change_registration_json():
                     'legalType': None
                 },
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
@@ -223,8 +221,7 @@ def get_base_correction_json():
                     'legalType': None
                 },
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
@@ -311,8 +308,7 @@ def get_base_conversion_json():
                 },
                 'startDate': None,
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
