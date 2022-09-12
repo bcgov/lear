@@ -119,6 +119,18 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             raise err
 
+    def create_invitation(self) -> Optional[dict]:
+        """Create a new connection invitation."""
+        try:
+            response = requests.post(self.api_url + '/connections/create-invitation',
+                                     headers=self._get_headers(),
+                                     data={})
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
