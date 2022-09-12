@@ -116,9 +116,12 @@ def create_business(legal_type: str,
                     create_firm_party_address=False,
                     filing_types=[],
                     filing_has_completing_party=[],
-                    create_completing_party_address=[]):
+                    create_completing_party_address=[],
+                    start_date=None):
     business = factory_business(identifier=identifier,
                                 legal_type=legal_type)
+    if start_date:
+        business.start_date = start_date
 
     if create_office:
         business_office = factory_office('businessOffice')
