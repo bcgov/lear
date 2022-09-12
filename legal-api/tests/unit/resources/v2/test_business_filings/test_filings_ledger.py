@@ -288,7 +288,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
     assert rv.json['filings'][0]
     filing_json = rv.json['filings'][0]
     assert filing_json['data'] == meta_data
-    assert filing_json['displayName'] == f'Alteration'
+    assert filing_json['displayName'] == 'Alteration'
 
 
 def test_ledger_display_incorporation(session, client, jwt):
@@ -327,7 +327,7 @@ def test_ledger_display_incorporation(session, client, jwt):
 
     # validate
     assert rv.json['filings']
-    assert rv.json['filings'][0]['displayName'] == f'BC Benefit Company Incorporation Application'
+    assert rv.json['filings'][0]['displayName'] == 'BC Benefit Company Incorporation Application'
 
 
 def test_ledger_display_corrected_incorporation(session, client, jwt):
@@ -347,9 +347,9 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
         if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == f'Correction'
+            assert filing_json['displayName'] == 'Correction'
         elif filing_json['name'] == 'incorporationApplication':
-            assert filing_json['displayName'] == f'BC Benefit Company Incorporation Application - Corrected'
+            assert filing_json['displayName'] == 'BC Benefit Company Incorporation Application'
         else:
             assert False
 
@@ -376,9 +376,9 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
         if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == f'Correction - Annual Report'
+            assert filing_json['displayName'] == 'Correction - Annual Report'
         elif filing_json['name'] == 'annualReport':
-            assert filing_json['displayName'] == f'Annual Report - Corrected'
+            assert filing_json['displayName'] == 'Annual Report'
         else:
             assert False
 

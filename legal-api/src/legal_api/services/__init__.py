@@ -23,6 +23,7 @@ from .authz import (
 )
 from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
+from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
 from .flags import Flags
 from .minio import MinioService
@@ -41,3 +42,5 @@ queue = QueueService()  # pylint: disable=invalid-name; shared variables are low
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 
 #  document_meta = DocumentMetaService()  # pylint: disable=invalid-name;
+
+digital_credentials = DigitalCredentialsService()
