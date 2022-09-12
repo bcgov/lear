@@ -31,7 +31,20 @@ def check_business(business: Business) -> list:
 
     result.extend(check_office(business))
     result.extend(check_parties(legal_type, business))
+    result.extend(check_start_date(business))
 
+    return result
+
+
+def check_start_date(business: Business) -> list:
+    """Check for business start date."""
+    result = []
+    if not business.start_date:
+        result.append({
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_START_DATE,
+            'message': 'A start date is required.',
+        })
     return result
 
 

@@ -143,6 +143,10 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
 
+    ACA_PY_ADMIN_API_URL = os.getenv('ACA_PY_ADMIN_API_URL')
+    ACA_PY_ADMIN_API_KEY = os.getenv('ACA_PY_ADMIN_API_KEY')
+    ACA_PY_ENTITY_DID = os.getenv('ACA_PY_ENTITY_DID')
+
     TESTING = False
     DEBUG = False
 

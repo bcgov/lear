@@ -305,7 +305,8 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                         create_firm_party_address=True,
                         filing_types=['registration'],
                         filing_has_completing_party=[True],
-                        create_completing_party_address=[True])
+                        create_completing_party_address=[True],
+                        start_date=datetime.utcnow())
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
