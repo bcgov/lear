@@ -28,7 +28,7 @@ from .bp import bp
 bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
 
 
-@bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST', 'OPTIONS'], strict_slashes=False)
+@bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
 def create_invitation(identifier):
@@ -78,7 +78,7 @@ def get_active_connection(identifier):
     return jsonify(connection.json), HTTPStatus.OK
 
 
-@bp_dc.route('/topic/<string:topic_name>', methods=['POST', 'OPTIONS'], strict_slashes=False)
+@bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""

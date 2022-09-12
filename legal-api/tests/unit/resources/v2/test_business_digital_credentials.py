@@ -28,6 +28,9 @@ from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.services.utils import create_header
 
 
+content_type = 'application/json'
+
+
 def test_create_invitation(client, jwt, session):  # pylint:disable=unused-argument
     """Assert create invitation endpoint returns invitation_url."""
     headers = create_header(jwt, [BASIC_USER])
@@ -43,7 +46,7 @@ iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE
     with patch.object(DigitalCredentialsService, 'create_invitation', return_value={
             'connection_id': connection_id, 'invitation_url': invitation_url}):
         rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/invitation',
-                         headers=headers, content_type='application/json')
+                         headers=headers, content_type=content_type)
         assert rv.status_code == HTTPStatus.OK
         assert rv.json.get('invitationUrl') == invitation_url
 
@@ -56,7 +59,7 @@ def test_get_connection_not_found(client, jwt, session):  # pylint:disable=unuse
     create_dc_connection(business)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connection',
-                    headers=headers, content_type='application/json')
+                    headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json.get('message') == 'No active connection found.'
 
@@ -72,7 +75,7 @@ def test_get_connection(client, jwt, session):  # pylint:disable=unused-argument
     connection.connection_state = 'active'
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connection',
-                    headers=headers, content_type='application/json')
+                    headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('invitationUrl') == connection.invitation_url
     assert rv.json.get('connectionId') == connection.connection_id
@@ -94,11 +97,11 @@ def test_webhook_connection_notification(client, jwt, session):  # pylint:disabl
     }
     rv = client.post('/api/v2/digitalCredentials/topic/connections',
                      json=json_data,
-                     headers=headers, content_type='application/json')
+                     headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connection',
-                    headers=headers, content_type='application/json')
+                    headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('isActive') == connection.is_active
     assert rv.json.get('connectionState') == connection.connection_state
