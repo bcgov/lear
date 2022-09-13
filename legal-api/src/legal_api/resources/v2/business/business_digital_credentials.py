@@ -80,6 +80,7 @@ def get_active_connection(identifier):
 
 @bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
+@jwt.requires_auth
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()
