@@ -34,7 +34,7 @@ flask-restx==0.3.0
 gunicorn==20.1.0
 idna==2.10
 itsdangerous==1.1.0
-jsonschema==3.2.0
+jsonschema==4.16.0
 launchdarkly-server-sdk==7.1.0
 protobuf==3.15.8
 psycopg2-binary==2.8.6
@@ -58,5 +58,5 @@ urllib3==1.26.4
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.1
-git+https://github.com/bcgov/business-schemas.git@2.15.29#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.15.34#egg=registry_schemas
 
