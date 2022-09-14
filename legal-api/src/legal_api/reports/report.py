@@ -312,9 +312,6 @@ class Report:  # pylint: disable=too-few-public-methods
                 filing['effective_date'] = agm_date.strftime('%B %-d, %Y')
             else:
                 filing['agm_date'] = 'No AGM'
-                # When AR indicates NO AGM the effective date of the filing is Dec 31st of the AR year
-                ar_year_str = str(filing.get('annualReport', {}).get('annualReportDate', datetime).year)
-                filing['effective_date'] = 'December 31, ' + ar_year_str
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
