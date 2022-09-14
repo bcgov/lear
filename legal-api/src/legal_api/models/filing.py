@@ -427,7 +427,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
         # In the case of an annual report or change of director filings on a COOP or BEN then the effective date can be before the payment date
-        if((self.filing_type == Filing.FILINGS['annualReport'] or self.filing_type == Filing.FILINGS['changeOfDirectors']) and (business_type in {'CP', 'BEN'})):
+        if(self.filing_type in {Filing.FILINGS['annualReport'], Filing.FILINGS['changeOfDirectors']} and business_type in {'CP', 'BEN'}):
             pass
         elif (self.effective_date is None or (self.payment_completion_date and self.effective_date < self.payment_completion_date)):  # pylint: disable=W0143; hybrid property
             self.effective_date = self.payment_completion_date

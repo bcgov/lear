@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests to assure the Filing Domain is working as expected."""
+from lib2to3.pygram import pattern_symbols
 import datedelta
 import pytest
 from freezegun import freeze_time
@@ -198,7 +199,7 @@ def test_set_effective(session):
         assert filing.is_future_effective
 
         past_date = now - datedelta.DAY
-        filing.storage.effective_date = now
+        filing.storage.effective_date = past_date
         filing._storage.skip_status_listener = True
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
