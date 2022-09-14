@@ -49,7 +49,7 @@ def _get_pdfs(
         # add filing pdf
         filing_pdf = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            f'?type=changeOfRegistration',
+            f'?type=correction',
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
@@ -59,7 +59,7 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    'fileName': 'Change of Registration.pdf',
+                    'fileName': 'Register Correction Application.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -95,21 +95,21 @@ def _get_pdfs(
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        # add amended registration statement
+        # add corrected registration statement
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=amendedRegistrationStatement',
+            '?type=correctedRegistrationStatement',
             headers=headers
         )
         if certificate.status_code != HTTPStatus.OK:
-            logger.error('Failed to get amended registration statement pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=amendedRegistrationStatement generation',
+            logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
+            capture_message(f'Email Queue: filing id={filing.id}, error=correctedRegistrationStatement generation',
                             level='error')
         else:
             certificate_encoded = base64.b64encode(certificate.content)
             pdfs.append(
                 {
-                    'fileName': 'CorrectedRegistrationStatement.pdf',
+                    'fileName': 'Corrected - Registration Statement.pdf',
                     'fileBytes': certificate_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -129,7 +129,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
     template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html'
+        f'{current_app.config.get("TEMPLATE_PATH")}/FIRM-CRCTN-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
