@@ -426,11 +426,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-        # In the case of an annual report or change of director filings on a COOP or BEN then the effective date can be before the payment date
-        if(self.filing_type in (Filing.FILINGS['annualReport'], Filing.FILINGS['changeOfDirectors']) and business_type in {'CP', 'BEN'}):
-            pass
-        elif (self.effective_date is None or (self.payment_completion_date and self.effective_date < self.payment_completion_date)):  # pylint: disable=W0143; hybrid property
+        if self.effective_date_can_be_before_payment_completion_date(business_type):
+            pass  # prevents the effective date from being set to payment completion date for AR COD for CP and BEN
+        elif (self.effective_date is None or (
+                self.payment_completion_date
+                and self.effective_date < self.payment_completion_date
+                )):  # pylint: disable=W0143; hybrid property
             self.effective_date = self.payment_completion_date
+
+    def effective_date_can_be_before_payment_completion_date(self, business_type):
+        """For AR or COD filings on CP or BEN then the effective date can be before the payment date."""
+        return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
+                                    Filing.FILINGS['changeOfDirecotrs'].get('name')) and business_type in {'CP', 'BEN'}
 
     @staticmethod
     def _raise_default_lock_exception():
