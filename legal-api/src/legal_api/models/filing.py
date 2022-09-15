@@ -426,9 +426,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-        if self.effective_date_can_be_before_payment_completion_date(business_type):
-            pass  # prevents the effective date from being set to payment completion date for AR COD for CP and BEN
-        elif (self.effective_date is None or (
+        if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
+            self.effective_date is None or (
                 self.payment_completion_date
                 and self.effective_date < self.payment_completion_date
                 )):  # pylint: disable=W0143; hybrid property
