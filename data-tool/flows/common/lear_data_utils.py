@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from legal_api.models import Party, PartyRole, Business, Office, Address, Filing, User
 from legal_api.models.colin_event_id import ColinEventId
 
@@ -114,3 +116,24 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     filing.paper_only = get_is_paper_only(filing_data)
 
     return filing
+
+
+def get_firm_affiliation_passcode(business: Business):
+    """Return a firm passcode for a given business identifier."""
+    pass_code = None
+    end_date = datetime.utcnow().date()
+    party_roles = PartyRole.get_party_roles(business.id, end_date)
+
+    if len(party_roles) == 0:
+        return pass_code
+
+    party = party_roles[0].party
+
+    if party.party_type == 'organization':
+        pass_code = party.organization_name
+    else:
+        pass_code = party.last_name + ', ' + party.first_name
+        if hasattr(party, 'middle_initial') and party.middle_initial:
+            pass_code = pass_code + ' ' + party.middle_initial
+
+    return pass_code
