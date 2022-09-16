@@ -28,6 +28,7 @@ from legal_api.services import NameXService
 from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
+from entity_emailer.email_processors.correction_notification import process as process_correction
 
 
 FILING_TYPE_CONVERTER = {
@@ -253,6 +254,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     if filing_type == 'correction':
+        if business.get('legalType') in ['SP', 'GP']:
+            return process_correction(email_info, token)
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type != 'incorporationApplication':
             return None
