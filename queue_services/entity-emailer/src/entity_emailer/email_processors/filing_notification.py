@@ -256,13 +256,12 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if filing_type == 'correction':
         if business.get('legalType') in ['SP', 'GP']:
             return process_correction(email_info, token)
-        else:
-            original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
-            if original_filing_type != 'incorporationApplication':
-                return None
-            original_filing_name = original_filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*',
-                                                                                         original_filing_type[1:]))
-            filing_name = f'Correction of {original_filing_name}'
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type != 'incorporationApplication':
+            return None
+        original_filing_name = original_filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*',
+                                                                                     original_filing_type[1:]))
+        filing_name = f'Correction of {original_filing_name}'
     else:
         filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
