@@ -18,7 +18,7 @@ Provides all the search and retrieval from the business entity datastore.
 from contextlib import suppress
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
 
@@ -26,6 +26,7 @@ from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services import (
+    AccountService,
     SYSTEM_ROLE,
     RegistrationBootstrapService,
     check_warnings,
@@ -72,11 +73,18 @@ def get_businesses(identifier: str):
         business_json['allowedFilings'] = get_allowed(business.state, business.legal_type, jwt)
 
     q_account = request.args.get('account')
-    if q_account and has_roles(jwt, [SYSTEM_ROLE]):
-        account_response = get_account_by_affiliated_identifier(jwt.get_token_auth_header(), identifier)
+    current_app.logger.info('account info request, for account: %s', q_account)
+    if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, 'account_identity']):
+        token = jwt.get_token_auth_header()
+        account_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        current_app.logger.info('VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s',
+                                q_account,
+                                g.jwt_oidc_token_info.get('preferred_username'),
+                                g.jwt_oidc_token_info,
+                                account_response)
         if orgs := account_response.get('orgs'):
             if str(orgs[0].get('id')) == q_account:
-                business_json['account'] = orgs[0]
+                business_json['accountId'] = orgs[0].get('id')
 
     return jsonify(business=business_json)
 
