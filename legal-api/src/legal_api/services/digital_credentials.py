@@ -36,7 +36,7 @@ class DigitalCredentialsService:
             'legalType',
             'identifier'
         ],
-        'schema_name': 'business_schema',  # do not change schema name. this is the name registered in agent
+        'schema_name': 'business_schema',  # do not change schema name. this is the name registered in aca-py agent
         'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
     }
 
@@ -133,12 +133,9 @@ class DigitalCredentialsService:
 
     def issue_credential(self,
                          connection_id: str,
-                         schema_id: str,
-                         schema_name: str,
-                         schema_version: str,
-                         credential_definition_id: str,
+                         definition: DCDefinition,
                          data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
-                         comment: str = ''):
+                         comment: str = '') -> Optional[dict]:
         """Send holder a credential, automating entire flow."""
         try:
             response = requests.post(self.api_url + '/issue-credential/send',
@@ -147,16 +144,16 @@ class DigitalCredentialsService:
                                          'auto_remove': True,
                                          'comment': comment,
                                          'connection_id': connection_id,
-                                         'cred_def_id': credential_definition_id,
+                                         'cred_def_id': definition.credential_definition_id,
                                          'credential_proposal': {
                                              '@type': 'issue-credential/1.0/credential-preview',
                                              'attributes': data
                                          },
                                          'issuer_did': self.entity_did,
-                                         'schema_id': schema_id,
+                                         'schema_id': definition.schema_id,
                                          'schema_issuer_did': self.entity_did,
-                                         'schema_name': schema_name,
-                                         'schema_version': schema_version,
+                                         'schema_name': definition.schema_name,
+                                         'schema_version': definition.schema_version,
                                          'trace': True
                                      }))
             response.raise_for_status()

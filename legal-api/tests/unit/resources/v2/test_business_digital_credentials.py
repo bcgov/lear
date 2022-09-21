@@ -166,6 +166,6 @@ def test_webhook_issue_credential_notification(session, client, jwt):  # pylint:
                     headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('issuedCredentials')) == 1
-    assert not rv.json.get('issuedCredentials')[0].get('isIssued')
+    assert rv.json.get('issuedCredentials')[0].get('isIssued')
     assert rv.json.get('issuedCredentials')[0].get('dateOfIssue')
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')

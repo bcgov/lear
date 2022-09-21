@@ -129,10 +129,7 @@ def send_credential(identifier, credential_type):
 
     response = digital_credentials.issue_credential(
         connection_id=connection.connection_id,
-        schema_id=definition.schema_id,
-        schema_name=definition.schema_name,
-        schema_version=definition.schema_version,
-        credential_definition_id=definition.credential_definition_id,
+        definition=definition,
         data=_get_data_for_credential(definition.credential_type, business)
     )
     if not response:
@@ -176,6 +173,8 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
                 'value': business.identifier
             }
         ]
+
+    return None
 
 
 @bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
