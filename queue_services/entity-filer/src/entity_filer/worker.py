@@ -225,7 +225,10 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     special_resolution.process(business, filing, filing_submission)
 
             filing_submission.transaction_id = transaction.id
-            filing_submission.set_processed()
+
+            business_type = business.legal_type if business else filing_submission['business']['legal_type']
+            filing_submission.set_processed(business_type)
+
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
                 json.dumps(filing_meta.asjson, default=json_serial)
             )
