@@ -131,6 +131,40 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    def issue_credential(self,
+                         connection_id: str,
+                         schema_id: str,
+                         schema_name: str,
+                         schema_version: str,
+                         credential_definition_id: str,
+                         data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
+                         comment: str = ''):
+        """Send holder a credential, automating entire flow."""
+        try:
+            response = requests.post(self.api_url + '/issue-credential/send',
+                                     headers=self._get_headers(),
+                                     data=json.dumps({
+                                         'auto_remove': True,
+                                         'comment': comment,
+                                         'connection_id': connection_id,
+                                         'cred_def_id': credential_definition_id,
+                                         'credential_proposal': {
+                                             '@type': 'issue-credential/1.0/credential-preview',
+                                             'attributes': data
+                                         },
+                                         'issuer_did': self.entity_did,
+                                         'schema_id': schema_id,
+                                         'schema_issuer_did': self.entity_did,
+                                         'schema_name': schema_name,
+                                         'schema_version': schema_version,
+                                         'trace': True
+                                     }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',

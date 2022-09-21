@@ -58,11 +58,7 @@ def test_find_active_by(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
     business = factory_business(identifier)
-    connection = create_dc_connection(business)
-
-    connection.is_active = True
-    connection.connection_state = 'active'
-    connection.save()
+    create_dc_connection(business, is_active=True)
 
     res = DCConnection.find_active_by(business.id)
 
@@ -82,7 +78,7 @@ def test_find_by(session):
     assert res[0].id == connection.id
 
 
-def create_dc_connection(business):
+def create_dc_connection(business, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
         connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
@@ -90,8 +86,8 @@ def create_dc_connection(business):
 25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY
 iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
-        is_active=False,
-        connection_state='invitation',
+        is_active=is_active,
+        connection_state='active' if is_active else 'invitation',
         business_id=business.id
     )
     connection.save()

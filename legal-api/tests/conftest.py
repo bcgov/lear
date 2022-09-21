@@ -132,6 +132,14 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
                 print('DROP SEQUENCE public.%s ' % seq)
         sess.commit()
 
+        # drop enums
+        enum_type_sql = "SELECT typname FROM pg_type WHERE typcategory = 'E'"
+        for enum_name in [name for (name,) in sess.execute(text(enum_type_sql))]:
+            with suppress(Exception):
+                sess.execute(text('DROP TYPE %s ;' % enum_name))
+                print('DROP TYPE %s ' % enum_name)
+        sess.commit()
+
         # ############################################
         # There are 2 approaches, an empty database, or the same one that the app will use
         #     create the tables

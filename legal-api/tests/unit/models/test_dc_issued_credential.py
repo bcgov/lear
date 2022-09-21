@@ -56,12 +56,13 @@ def test_find_by(session):
     assert res[0].id == issued_credential.id
 
 
-def create_dc_issued_credential():
+def create_dc_issued_credential(business=None):
     """Create new dc_issued_credential object."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
+    if not business:
+        identifier = 'FM1234567'
+        business = factory_business(identifier)
     definition = create_dc_definition()
-    connection = create_dc_connection(business)
+    connection = create_dc_connection(business, is_active=True)
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,
