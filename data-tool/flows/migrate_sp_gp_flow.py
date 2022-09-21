@@ -47,7 +47,7 @@ def get_unprocessed_firms(config, db_engine: engine):
         df = pd.DataFrame(rs, columns=rs.keys())
         raw_data_dict = df.to_dict('records')
         corp_nums = [x.get('corp_num') for x in raw_data_dict]
-        logger.info(f'{len(raw_data_dict)} corp_nums to process from colin data: {corp_nums}')
+        # logger.info(f'{len(raw_data_dict)} corp_nums to process from colin data: {corp_nums}')
 
     return raw_data_dict
 
@@ -59,7 +59,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
     event_filing_service = EventFilingService(colin_db_engine, config)
     corp_num = unprocessed_firm_dict.get('corp_num')
     corp_name = ''
-    print(f'get event filing data for {corp_num}')
+    # print(f'get event filing data for {corp_num}')
 
     try:
         event_ids = unprocessed_firm_dict.get('event_ids')
@@ -83,7 +83,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
         for idx, event_id in enumerate(events_ids_to_process):
             event_file_type = event_filing_types_to_process[idx]
             is_supported_event_filing = event_filing_service.get_event_filing_is_supported(event_file_type)
-            print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
+            # print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
             prev_event_ids = get_previous_event_ids(event_ids, event_id)
             event_filing_data_dict, is_corrected_event_filing, correction_event_id = \
                 event_filing_service.get_event_filing_data(corp_num,
@@ -223,10 +223,10 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     # the corp_processing table should already track whether an event/filing has been processed and
                     # saved to lear but just to be safe a final check against lear is made to ensure the event/filing
                     # is not already in lear
-                    colin_event = get_colin_event(db_lear, event_id)
-                    if colin_event:
-                        error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
-                        raise CustomException(f'{error_msg}', filing_data)
+                    # colin_event = get_colin_event(db_lear, event_id)
+                    # if colin_event:
+                    #     error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
+                    #     raise CustomException(f'{error_msg}', filing_data)
 
                     business = None
                     if not RegistrationEventFilings.has_value(event_filing_type):
@@ -277,10 +277,6 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               last_error=error_msg)
             db_lear.session.rollback()
 
-            if filing:
-                logger.info(f'delete filing id: {filing.id}')
-                filing.delete()
-
             raise err
 
 
@@ -322,9 +318,17 @@ def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unuse
 #
 # with Flow(name="SP-GP-Migrate-ETL",
 #           schedule=schedule,
-#           executor=LocalDaskExecutor(scheduler="threads"),
-#            state_handlers=[skip_if_running_handler]) as f:
-#           # state_handlers=[]) as f:
+#           executor=LocalDaskExecutor(scheduler="threads"), # default value, specify num_workers for finer grained control
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=4),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=5),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=6),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=10),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=12),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=14),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=16),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=24),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=32),
+#           state_handlers=[skip_if_running_handler]) as f:
 
 with Flow("SP-GP-Migrate-ETL", executor=LocalDaskExecutor(scheduler="threads") ) as f:
 
