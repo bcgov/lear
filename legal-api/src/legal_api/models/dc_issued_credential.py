@@ -80,9 +80,9 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         query = db.session.query(DCIssuedCredential)
 
         if dc_definition_id:
-            query.filter(DCIssuedCredential.dc_definition_id == dc_definition_id)
+            query = query.filter(DCIssuedCredential.dc_definition_id == dc_definition_id)
 
         if dc_connection_id:
-            query.filter(DCIssuedCredential.dc_connection_id == dc_connection_id)
+            query = query.filter(DCIssuedCredential.dc_connection_id == dc_connection_id)
 
         return query.all()

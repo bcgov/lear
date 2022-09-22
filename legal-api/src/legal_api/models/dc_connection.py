@@ -89,9 +89,9 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         query = db.session.query(DCConnection)
 
         if business_id:
-            query.filter(DCConnection.business_id == business_id)
+            query = query.filter(DCConnection.business_id == business_id)
 
         if connection_state:
-            query.filter(DCConnection.connection_state == connection_state)
+            query = query.filter(DCConnection.connection_state == connection_state)
 
         return query.all()
