@@ -249,6 +249,8 @@ class BusinessDocument:
         # report dates
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
         business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
+        if self._business.start_date:
+            business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
 
     def _set_addresses(self, business: dict):
         """Set business addresses."""
