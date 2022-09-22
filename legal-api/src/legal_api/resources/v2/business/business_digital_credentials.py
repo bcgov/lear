@@ -102,7 +102,6 @@ def get_issued_credentials(identifier):
         response.append({
             'legalName': business.legal_name,
             'credentialType': definition.credential_type.name,
-            'credentialId': issued_credential.credential_id,
             'isIssued': issued_credential.is_issued,
             'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
             'isRevoked': issued_credential.is_revoked
