@@ -4,10 +4,12 @@ import ast
 import fnmatch
 import logging
 import os
+import shutil
 import smtplib
 import sys
 import time
 import traceback
+import warnings
 from datetime import datetime, timedelta
 from email import encoders
 from email.mime.base import MIMEBase
@@ -47,12 +49,13 @@ def findfiles(directory, pattern):
             yield os.path.join(directory, filename)
 
 
-def send_email(note_book, emailtype, errormessage):
+def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: disable-msg=too-many-locals
     """Send email for results."""
     message = MIMEMultipart()
     date = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
     last_month = datetime.now() - relativedelta(months=1)
     ext = ''
+    filename = ''
     if not os.getenv('ENVIRONMENT', '') == 'prod':
         ext = ' on ' + os.getenv('ENVIRONMENT', '')
 
@@ -76,12 +79,16 @@ def send_email(note_book, emailtype, errormessage):
             subject = 'Cooperative Monthly Stats for ' + format(last_month, '%B %Y') + ext
             filename = 'cooperative_monthly_stats_for_' + format(last_month, '%B_%Y') + '.csv'
             recipients = os.getenv('COOPERATIVE_MONTHLY_REPORT_RECIPIENTS', '')
+        elif file_processing == 'firm-registration-filings':
+            subject = 'BC STATS FIRMS for ' + format(last_month, '%B %Y') + ext
+            filename = 'bc_stats_firms_for_' + format(last_month, '%B_%Y') + '.csv'
+            recipients = os.getenv('BC_STATS_MONTHLY_REPORT_RECIPIENTS', '')
 
         # Add body to email
         message.attach(MIMEText('Please see attached.', 'plain'))
 
         # Open file in binary mode
-        with open(os.getenv('DATA_DIR', '')+filename, 'rb') as attachment:
+        with open(data_directory+filename, 'rb') as attachment:
             # Add file as application/octet-stream
             # Email client can usually download this automatically as attachment
             part = MIMEBase('application', 'octet-stream')
@@ -104,49 +111,52 @@ def send_email(note_book, emailtype, errormessage):
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
-    logging.info("Email with subject \'%s\' has been sent successfully!", subject)
+    logging.info('Email with subject %s has been sent successfully!', subject)
     server.quit()
-    os.remove(os.getenv('DATA_DIR', '')+filename)
+    if filename != '':
+        os.remove(os.path.join(os.getcwd(), r'data/')+filename)
 
-def processnotebooks(notebookdirectory):
+
+def processnotebooks(notebookdirectory, data_directory):
     """Process Notebook."""
     status = False
     now = datetime.now()
-    
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
+
     try:
         retry_times = int(os.getenv('RETRY_TIMES', '1'))
         retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
         if notebookdirectory == 'monthly':
             days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
-    except Exception:
+    except Exception:  # noqa: B902
         logging.exception('Error processing notebook for %s', notebookdirectory)
-        send_email(notebookdirectory, 'ERROR', traceback.format_exc())
+        send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
         return status
-    
+
     # For monthly tasks, we only run on the specified days
-    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):        
+    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
         logging.info('Processing: %s', notebookdirectory)
-        
+
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
-        
+
         for file in findfiles(notebookdirectory, '*.ipynb'):
             file_processed += 1
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
-                try:                    
-                    pm.execute_notebook(file, os.getenv('DATA_DIR', '')+'temp.ipynb', parameters=None)
-                    send_email(note_book, '', '')
-                    os.remove(os.getenv('DATA_DIR', '')+'temp.ipynb')                    
-                    status = True                    
+                try:
+                    pm.execute_notebook(file, data_directory+'temp.ipynb', parameters=None)
+                    send_email(note_book, data_directory, '', '')
+                    os.remove(data_directory+'temp.ipynb')
+                    status = True
                     break
-                except Exception:
+                except Exception:  # noqa: B902
                     if attempt + 1 == retry_times:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception(
                             'Error processing notebook %s at %s/%s try.', notebookdirectory, attempt + 1,
                             retry_times)
-                        send_email(notebookdirectory, 'ERROR', traceback.format_exc())
+                        send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
                     else:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception('Error processing notebook %s at %s/%s try. '
@@ -158,16 +168,22 @@ def processnotebooks(notebookdirectory):
                 break
     return status
 
+
 if __name__ == '__main__':
     start_time = datetime.utcnow()
+
+    data_dir = os.path.join(os.getcwd(), r'data/')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
     # Check if the subfolders for notebooks exist, and create them if they don't
     for subdir in ['daily', 'monthly']:
         if not os.path.isdir(subdir):
             os.mkdir(subdir)
 
-        processnotebooks(subdir)
+        processnotebooks(subdir, data_dir)
 
+    shutil.rmtree(data_dir)
     end_time = datetime.utcnow()
     logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
     sys.exit()

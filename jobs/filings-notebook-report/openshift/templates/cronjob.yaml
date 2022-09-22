@@ -97,6 +97,11 @@ objects:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
                         key: COOPERATIVE_MONTHLY_REPORT_RECIPIENTS
+                  - name: BC_STATS_MONTHLY_REPORT_RECIPIENTS
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: BC_STATS_MONTHLY_REPORT_RECIPIENTS      
                   - name: MONTH_REPORT_DATES
                     valueFrom:
                       secretKeyRef:
@@ -121,12 +126,7 @@ objects:
                     valueFrom:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
-                        key: ENVIRONMENT
-                  - name: DATA_DIR
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: DATA_DIR                      
+                        key: ENVIRONMENT                   
             restartPolicy: "Never"
             terminationGracePeriodSeconds: 30
             activeDeadlineSeconds: 1600
