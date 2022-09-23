@@ -36,7 +36,7 @@ idna==2.10
 itsdangerous==1.1.0
 jsonschema==4.16.0
 launchdarkly-server-sdk==7.1.0
-protobuf==3.15.8
+protobuf==3.18.3
 psycopg2-binary==2.8.6
 pyRFC3339==1.1
 pyasn1==0.4.8
