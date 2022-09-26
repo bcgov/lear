@@ -64,14 +64,12 @@ def check_office(business: Business) -> list:
         })
         return result
 
-    mailing_address = business_office.addresses \
-        .filter(Address.address_type == 'mailing') \
-        .one_or_none()
+    addresses = business_office.addresses.all()
+
+    mailing_address = next((x for x in addresses if x.address_type == 'mailing'), None)
     result.extend(check_address(mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_OFFICE))
 
-    delivery_address = business_office.addresses \
-        .filter(Address.address_type == 'delivery') \
-        .one_or_none()
+    delivery_address = next((x for x in addresses if x.address_type == 'delivery'), None)
     result.extend(check_address(delivery_address, Address.DELIVERY, BusinessWarningReferers.BUSINESS_OFFICE))
 
     return result

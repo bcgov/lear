@@ -398,10 +398,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
             ).isoformat()
 
-        d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
+        filings = self.filings.all()
+
+        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
                                   x.status == 'COMPLETED')
 
-        d['hasCourtOrders'] = any(x for x in self.filings.all() if x.filing_type == 'courtOrder' and
+        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
         return d
 
