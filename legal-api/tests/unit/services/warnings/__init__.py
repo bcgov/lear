@@ -21,31 +21,32 @@ def factory_party_organization(organization_name: str,
     return party
 
 
-def factory_party_role_person(role:str):
-    party_role = PartyRole(role=role)
+def factory_party_role_person(role:str, cessation_date: datetime = None):
+    party_role = PartyRole(role=role, cessation_date=cessation_date)
     party_role.party = factory_party_person('jane', 'doe')
     return party_role
 
 
-def factory_party_role_organization(role:str):
-    party_role = PartyRole(role=role)
+def factory_party_role_organization(role:str, cessation_date: datetime = None):
+    party_role = PartyRole(role=role, cessation_date=cessation_date)
     party_role.party = factory_party_organization('test business name', 'FM1112222')
     return party_role
 
 
 def factory_party_roles(role: str,
                         num_persons_roles: int,
-                        num_org_roles: int):
+                        num_org_roles: int,
+                        cessation_date: datetime = None):
     party_roles = []
 
     # _ is used to avoid triggering sonarcloud
     for _ in range(num_persons_roles):
-        person_role = factory_party_role_person(role)
+        person_role = factory_party_role_person(role, cessation_date)
         party_roles.append(person_role)
 
     # _ is used to avoid triggering sonarcloud
     for _ in range(num_org_roles):
-        org_role = factory_party_role_organization(role)
+        org_role = factory_party_role_organization(role, cessation_date)
         party_roles.append(org_role)
 
     return party_roles
@@ -117,7 +118,8 @@ def create_business(legal_type: str,
                     filing_types=[],
                     filing_has_completing_party=[],
                     create_completing_party_address=[],
-                    start_date=None):
+                    start_date=None,
+                    cessation_date=None):
     business = factory_business(identifier=identifier,
                                 legal_type=legal_type)
     if start_date:
@@ -138,7 +140,8 @@ def create_business(legal_type: str,
 
     if firm_num_persons_roles > 0 or firm_num_org_roles > 0:
         firm_party_role = get_firm_party_role(legal_type)
-        firm_party_roles = factory_party_roles(firm_party_role, firm_num_persons_roles, firm_num_org_roles)
+        firm_party_roles = factory_party_roles(firm_party_role, firm_num_persons_roles, firm_num_org_roles,
+                                               cessation_date)
         if create_firm_party_address:
             for party_role in firm_party_roles:
                 mailing_addr = factory_address('mailing')
