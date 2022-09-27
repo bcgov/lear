@@ -1,0 +1,11 @@
+{
+  "name": "load-testing",
+  "version": "1.0.0a1.dev1",
+  "private": true,
+  "scripts": {
+    "convert:postman": "postman-to-k6 postman/load_business_flow_test.postman_collection.json -e postman/load_business_flow_test.postman_environment.json test.js"
+  },
+  "dependencies": {
+    "@apideck/postman-to-k6": "^1.8.5"
+  }
+}
