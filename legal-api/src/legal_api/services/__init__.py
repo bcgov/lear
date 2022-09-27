@@ -21,7 +21,7 @@ from .authz import (
     get_account_by_affiliated_identifier,
     has_roles,
 )
-from .bootstrap import RegistrationBootstrapService
+from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService

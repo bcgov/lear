@@ -239,3 +239,19 @@ class AccountService:
                 or entity_record.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
+
+    @classmethod
+    def get_account_by_affiliated_identifier(cls, identifier: str):
+        """Return the account affiliated to the business."""
+        token = cls.get_bearer_token()
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        url = f'{auth_url}/orgs?affiliation={identifier}'
+
+        res = requests.get(url,
+                           headers={**cls.CONTENT_TYPE_JSON,
+                                    'Authorization': cls.BEARER + token})
+        try:
+            return res.json()
+        except Exception:  # noqa B902; pylint: disable=W0703;
+            current_app.logger.error('Failed to get response')
+            return None
