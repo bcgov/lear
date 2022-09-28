@@ -140,7 +140,6 @@ class FirmFilingJsonFactoryService:
 
         certified_by = get_certified_by(self._filing_data)
         header['certifiedBy'] = certified_by
-        header['folioNumber'] = self._filing_data['p_folio_num']
 
 
     def populate_business(self, filing_root_dict: dict):

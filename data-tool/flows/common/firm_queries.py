@@ -82,6 +82,8 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                         and e.corp_num in ('FM0346815', 'FM0346781', 'FM0346897')
                        -- firms with dissolutions
 --                         and e.corp_num in ('FM0439147', 'FM0272498', 'FM0354293', 'FM0274699', 'FM0272756')
+                       -- firms that test corp party business company number scenarios
+--                         and e.corp_num in ('FM0554987', 'FM0557171', 'FM0563506', 'FM0566805')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -169,7 +171,8 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as f_effective_dts_pacific,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             case
-               -- registration related filings marked as paper only but should be available as electronic filings
+                when e.event_type_cd = 'CONVFMRCP' and f.ods_type_cd is null THEN 'P'
+                -- registration related filings marked as paper only but should be available as electronic filings
                 when (f.effective_dt >= '2004-03-15' and f.effective_dt <= '2011-04-08')
                       and f.filing_type_cd in ('FRREG', 'FRARG', 'FRCRG')
                       and not (f.filing_type_cd = 'FRARG' and e.event_type_cd ~ '^CONV.*$')
@@ -207,17 +210,6 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             -- ledger_text
             lt.event_id            as lt_event_id,
             lt.notation            as lt_notation,
-            -- payment
-            p.event_id             as p_event_id,
-            p.payment_typ_cd       as payment_typ_cd,
-            p.fee_cd               as p_fee_cd,
-            p.gst_num              as p_gst_num,
-            p.bcol_account_num     as p_bcol_account_num,
-            p.payment_total        as p_payment_total,
-            p.folio_num            as p_folio_num,
-            p.dat_num              as p_dat_num,
-            p.routing_slip         as p_routing_slip,
-            p.fas_balance          as p_fas_balance,
             -- filing user
             u.event_id             as u_event_id,
             u.user_id              as u_user_id,
@@ -233,7 +225,6 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
                  left outer join corp_state cs on cs.start_event_id = e.event_id
                  left outer join business_description bd on bd.start_event_id = e.event_id
                  left outer join ledger_text lt on lt.event_id = e.event_id
-                 left outer join unused_payment p on p.event_id = e.event_id
                  left outer join filing_user u on u.event_id = e.event_id
         where 1 = 1
           and e.corp_num = '{corp_num}'
@@ -301,7 +292,8 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                cp.business_name          as cp_business_name,
                case 
                     when cp.bus_company_num = '' then NULL
-                    when cp.bus_company_num ~ '^[0-9]*$' then concat('BC', cp.bus_company_num)
+                    when cp.bus_company_num ~ '^[0-9]+$' and length(cp.bus_company_num) <= 7  
+                        then concat('BC', cp.bus_company_num)
                     else cp.bus_company_num
                end cp_bus_company_num,
                cp.email_address          as cp_email_address,
