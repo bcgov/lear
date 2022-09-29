@@ -457,6 +457,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if party_revision.title:
                 member['title'] = party_revision.title
             if party_revision.middle_initial:
+                member['officer']['middleInitial'] = party_revision.middle_initial
                 member['officer']['middleName' if is_ia_or_after else 'middleInitial'] = party_revision.middle_initial
         else:
             member = {
@@ -596,6 +597,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             business_json['taxId'] = business_revision.tax_id
         business_json['legalName'] = business_revision.legal_name
         business_json['legalType'] = business_revision.legal_type
+        business_json['naicsDescription'] = business_revision.naics_description
         return business_json
 
     @staticmethod
