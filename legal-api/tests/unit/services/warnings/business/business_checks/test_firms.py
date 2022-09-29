@@ -467,3 +467,5 @@ def test_check_parties_cessation_date(session, test_name, legal_type, identifier
 
     if expected_code:
         assert len(result) == 1
+    else:
+        assert len(result) == 0

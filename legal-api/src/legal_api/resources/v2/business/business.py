@@ -73,7 +73,6 @@ def get_businesses(identifier: str):
     q_account = request.args.get('account')
     current_app.logger.info('account info request, for account: %s', q_account)
     if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, 'account_identity']):
-        # token = jwt.get_token_auth_header()
         account_response = AccountService.get_account_by_affiliated_identifier(identifier)
         current_app.logger.info('VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s',
                                 q_account,
