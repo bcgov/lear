@@ -27,33 +27,43 @@ from legal_api.models import Address, Business, Office, PartyRole
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier, has_office, num_persons_roles, num_org_roles, filing_types, filing_has_completing_party, expected_code, expected_msg',
+    'test_name, legal_type, identifier, has_office, num_persons_roles, num_org_roles, filing_types, filing_has_completing_party, person_cessation_dates, org_cessation_dates, expected_code, expected_msg',
     [
         # SP tests
-        ('SUCCESS', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], None, None),
-        ('SUCCESS', 'SP', 'FM0000001', True, 0, 1, ['registration'], [True], None, None),
-        ('SUCCESS', 'SP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [False, True], None, None),
-        ('SUCCESS', 'SP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], None, None),
-        ('FAIL_NO_PROPRIETOR', 'SP', 'FM0000001', True, 0, 0, ['registration'], [True], 'NO_PROPRIETOR', 'A proprietor is required.'),
-        ('FAIL_NO_OFFICE', 'SP', 'FM0000001', False, 1, 0, ['registration'], [True], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
-        ('FAIL_NO_COMPLETING_PARTY', 'SP', 'FM0000001', True, 1, 0, ['registration'], [False], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
-
+        ('SUCCESS', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [None], None, None),
+        ('SUCCESS', 'SP', 'FM0000001', True, 0, 1, ['registration'], [True], [None], [None], None, None),
+        ('SUCCESS', 'SP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [False, True], [None, None], [None, None], None, None),
+        ('SUCCESS', 'SP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [None, None], [None, None], None, None),
+        ('FAIL_NO_PROPRIETOR', 'SP', 'FM0000001', True, 0, 0, ['registration'], [True], [None], [None], 'NO_PROPRIETOR', 'A proprietor is required.'),
+        ('FAIL_NO_OFFICE', 'SP', 'FM0000001', False, 1, 0, ['registration'], [True], [None], [None], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
+        ('FAIL_NO_COMPLETING_PARTY', 'SP', 'FM0000001', True, 1, 0, ['registration'], [False], [None], [None], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
+        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], [datetime.utcnow()], [None], 'NO_PROPRIETOR', 'A proprietor is required.'),
+        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [False, True], [datetime.utcnow(), datetime.utcnow()], [None, None], 'NO_PROPRIETOR', 'A proprietor is required.'),
+        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration'], [True], [datetime.utcnow()], [None], None, None),
+        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [datetime.utcnow(), datetime.utcnow()], [None, None], None, None),
         # GP tests
-        ('SUCCESS', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], None, None),
-        ('SUCCESS', 'GP', 'FM0000001', True, 0, 2, ['registration'], [True], None, None),
-        ('SUCCESS', 'GP', 'FM0000001', True, 1, 1, ['registration'], [True], None, None),
-        ('SUCCESS', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [False, True], None, None),
-        ('SUCCESS', 'GP', 'FM0000001', True, 0, 2, ['registration', 'conversion'], [False, True], None, None),
-        ('SUCCESS', 'GP', 'FM0000001', True, 1, 1, ['registration', 'conversion'], [False, True], None, None),
-        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 0, 0, ['registration'], [True], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration'], [True], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration'], [True], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_NO_OFFICE', 'GP', 'FM0000001', False, 2, 0, ['registration'], [True], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
-        ('FAIL_NO_COMPLETING_PARTY', 'GP', 'FM0000001', True, 2, 0, ['registration'], [False], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
-
+        ('SUCCESS', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [None, None], None, None),
+        ('SUCCESS', 'GP', 'FM0000001', True, 0, 2, ['registration'], [True], [None, None], [None, None], None, None),
+        ('SUCCESS', 'GP', 'FM0000001', True, 1, 1, ['registration'], [True], [None], [None], None, None),
+        ('SUCCESS', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [False, True], [None, None], [None, None], None, None),
+        ('SUCCESS', 'GP', 'FM0000001', True, 0, 2, ['registration', 'conversion'], [False, True], [None, None], [None, None], None, None),
+        ('SUCCESS', 'GP', 'FM0000001', True, 1, 1, ['registration', 'conversion'], [False, True], [None], [None], None, None),
+        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 0, 0, ['registration'], [True], [None, None], [None, None], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [None], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration'], [True], [None], [None], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_NO_OFFICE', 'GP', 'FM0000001', False, 2, 0, ['registration'], [True], [None, None], [None, None], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
+        ('FAIL_NO_COMPLETING_PARTY', 'GP', 'FM0000001', True, 2, 0, ['registration'], [False], [None, None], [None, None], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 1, ['registration'], [True], [datetime.utcnow()], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [True, True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 2, ['registration', 'conversion'], [False, True], [None, None], [datetime.utcnow(), datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
+        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
+        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [True, True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
     ])
-def test_check_warnings(session, test_name, legal_type, identifier, has_office, num_persons_roles:int, num_org_roles:int,
-                        filing_types: list, filing_has_completing_party: list, expected_code, expected_msg):
+def test_check_warnings(session, test_name, legal_type, identifier, has_office, num_persons_roles:int,
+                        num_org_roles:int, filing_types: list, filing_has_completing_party: list,
+                        person_cessation_dates: list, org_cessation_dates:list, expected_code, expected_msg):
     """Assert that warnings check functions properly."""
 
     business = None
@@ -67,7 +77,9 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
                     filing_has_completing_party=filing_has_completing_party,
-                    start_date=datetime.utcnow())
+                    start_date=datetime.utcnow(),
+                    person_cessation_dates=person_cessation_dates,
+                    org_cessation_dates=org_cessation_dates)
 
     business = Business.find_by_identifier(identifier)
     assert business

@@ -79,7 +79,7 @@ def check_parties(legal_type: str, business: Business) -> list:
     """Check for missing parties data."""
     result = []
 
-    firm_party_roles = business.party_roles.all()
+    firm_party_roles = business.party_roles.filter(PartyRole.cessation_date.is_(None))
     result.extend(check_firm_parties(legal_type, firm_party_roles))
 
     completing_party_filing = Filing \
