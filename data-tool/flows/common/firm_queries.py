@@ -84,6 +84,9 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                         and e.corp_num in ('FM0439147', 'FM0272498', 'FM0354293', 'FM0274699', 'FM0272756')
                        -- firms that test corp party business company number scenarios
 --                         and e.corp_num in ('FM0554987', 'FM0557171', 'FM0563506', 'FM0566805')
+                       -- contact info test
+--                         and e.corp_num in ('FM0558990') -- has contact email
+--                         and e.corp_num in ('FM0887464') -- has no contact email
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
