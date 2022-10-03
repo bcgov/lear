@@ -149,3 +149,16 @@ def process(business: Business,  # pylint: disable=too-many-branches
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for registration.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        if err := business_profile.update_business_profile(
+                business,
+                filing.json['filing']['registration']['contactPoint']
+        ):
+            print(f'Queue Error: Update Business for filing:{filing.id}, error:{err}')

@@ -106,7 +106,9 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     effective_date = filing_data['f_effective_dts_pacific']
 
     filing = Filing()
+    filing.skip_status_listener = True
     filing.effective_date = effective_date
+    filing._status = Filing.Status.PENDING.value
     filing._filing_json = filing_json
     filing._filing_type = target_lear_filing_type
     filing.filing_date = effective_date

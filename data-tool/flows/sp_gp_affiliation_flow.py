@@ -52,9 +52,8 @@ def get_unaffiliated_firms(config, db_engine: engine):
 @task(name='clean_unaffiliated_firm_data')
 def clean_unaffiliated_firm_data(unaffiliated_firm: dict):
     email = None
-    if unaffiliated_firm.get('admin_email'):
-        email = unaffiliated_firm.get('admin_email')
-    elif unaffiliated_firm.get('contact_email'):
+    # assume that if admin_email exists, that the SP/GP pipeline has already pushed contact information to auth
+    if not unaffiliated_firm.get('admin_email') and unaffiliated_firm.get('contact_email'):
         email = unaffiliated_firm.get('contact_email')
     unaffiliated_firm['email'] = email
 

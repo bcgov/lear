@@ -129,6 +129,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
         update_filing_user(filing_submission, filing_data)
 
         filing_submission.transaction_id = transaction.id
+        filing_submission._status = Filing.Status.COMPLETED.value
         business_type = business.legal_type if business else filing_submission['business']['legal_type']
         filing_submission.set_processed(business_type)
 
@@ -160,6 +161,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             db.session.commit()
             if config.UPDATE_ENTITY:
                 registration.update_affiliation(config, business, filing_submission)
+                registration.post_process(business, filing_submission)
 
         if any('conversion' in x for x in legal_filings):
             filing_submission.business_id = business.id

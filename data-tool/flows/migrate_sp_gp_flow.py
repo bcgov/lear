@@ -21,6 +21,7 @@ from common.lear_data_utils import populate_filing_json_from_lear, get_colin_eve
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
 from common.firm_filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
+from sqlalchemy.exc import InvalidRequestError
 from tasks.task_utils import ColinInitTask, LearInitTask
 from sqlalchemy import engine, text
 
@@ -206,6 +207,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
     event_id = None
     event_filing_type = None
     filing = None
+    filing_processed = False
 
     with app.app_context():
         try:
@@ -240,6 +242,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
                     # process filing with custom filer function
                     business = process_filing(config, filing.id, event_filing_data_dict, filing_data, db_lear)
+                    filing_processed = True
 
                     event_cnt = event_filing_data_dict['retrieved_events_cnt']
                     if event_cnt == (idx + 1):
@@ -265,6 +268,21 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               failed_event_file_type=event_filing_type,
                                               last_error=error_msg)
             raise err
+        except InvalidRequestError as err:
+            error_msg = f'error loading business InvalidRequestError: {corp_num}, {corp_name}, {err}'
+            logger.error(error_msg)
+            status_service.update_flow_status(flow_name='sp-gp-flow',
+                                              corp_num=corp_num,
+                                              corp_name=corp_name,
+                                              processed_status=ProcessingStatuses.FAILED,
+                                              failed_event_id=event_id,
+                                              failed_event_file_type=event_filing_type,
+                                              last_error=error_msg)
+            logger.info(f'filing processed: {filing_processed}')
+            logger.info('lear db rollback')
+            db_lear.session.rollback()
+
+            raise err
         except Exception as err:
             error_msg = f'error loading business {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)
@@ -275,6 +293,8 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               failed_event_id=event_id,
                                               failed_event_file_type=event_filing_type,
                                               last_error=error_msg)
+            logger.info(f'filing processed: {filing_processed}')
+            logger.info('lear db rollback')
             db_lear.session.rollback()
 
             raise err
@@ -326,6 +346,8 @@ def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unuse
 #           # executor=LocalDaskExecutor(scheduler="threads", num_workers=12),
 #           # executor=LocalDaskExecutor(scheduler="threads", num_workers=14),
 #           # executor=LocalDaskExecutor(scheduler="threads", num_workers=16),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=18),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=20),
 #           # executor=LocalDaskExecutor(scheduler="threads", num_workers=24),
 #           # executor=LocalDaskExecutor(scheduler="threads", num_workers=32),
 #           state_handlers=[skip_if_running_handler]) as f:

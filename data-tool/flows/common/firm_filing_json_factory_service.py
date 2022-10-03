@@ -159,7 +159,10 @@ class FirmFilingJsonFactoryService:
         self.populate_offices(registration_dict)
         self.populate_parties(registration_dict)
         self.populate_nr(registration_dict)
-        self.populate_contact_point(registration_dict)
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(registration_dict)
+        else:
+            del registration_dict['contactPoint']
 
 
     def populate_change_registration(self, filing_dict: dict):
@@ -185,7 +188,10 @@ class FirmFilingJsonFactoryService:
         else:
             del change_registration_dict['nameRequest']
 
-        self.populate_contact_point(change_registration_dict)
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(change_registration_dict)
+        else:
+            del change_registration_dict['contactPoint']
 
 
     def populate_correction(self, filing_dict: dict):
@@ -217,7 +223,11 @@ class FirmFilingJsonFactoryService:
         else:
             del correction_dict['nameRequest']
 
-        self.populate_contact_point(correction_dict)
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(correction_dict)
+        else:
+            del correction_dict['contactPoint']
+
 
 
     def populate_conversion(self, filing_dict: dict):
@@ -244,7 +254,11 @@ class FirmFilingJsonFactoryService:
         else:
             del conversion_dict['nameRequest']
 
-        self.populate_contact_point(conversion_dict)
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(conversion_dict)
+        else:
+            del conversion_dict['contactPoint']
+
 
 
     def populate_offices(self, registration_dict: dict):
@@ -523,5 +537,4 @@ class FirmFilingJsonFactoryService:
 
     def populate_contact_point(self, filing_dict: dict):
         contact_point_dict = filing_dict['contactPoint']
-        if email := self._filing_data['c_admin_email']:
-            contact_point_dict['email'] = email
+        contact_point_dict['email'] = self._filing_data['c_admin_email']
