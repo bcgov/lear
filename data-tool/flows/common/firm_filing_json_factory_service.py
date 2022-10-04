@@ -499,6 +499,7 @@ class FirmFilingJsonFactoryService:
         business_dict = filing_dict['business']
         naics_dict = business_dict['naics']
         business_dict['identifier'] = self._filing_data['c_corp_num']
+        business_dict['taxId'] = self._filing_data['c_bn']
         self.populate_naics(naics_dict)
 
 

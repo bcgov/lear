@@ -86,7 +86,8 @@ def get_base_registration_json():
                         'naicsCode': None,
                         'naicsDescription': None
                     },
-                    'identifier': None
+                    'identifier': None,
+                    "taxId": None,
                 },
                 'startDate': None,
                 'nameRequest': {
