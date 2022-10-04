@@ -17,7 +17,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from legal_api.models import Business, Document, Filing
+from legal_api.models import Business, Document, Filing, Comment
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 
@@ -59,7 +59,16 @@ def process(business: Business,
     if parties := dissolution_filing.get('parties'):
         update_parties(business, parties, filing_rec, False)
 
-    filings.update_filing_order_details(filing_rec, filing_event_data)
+    # only dealing with voluntary dissolutions for now so commenting this out
+    # filings.update_filing_order_details(filing_rec, filing_event_data)
+
+    if lt_notation := filing_event_data.get('lt_notation'):
+        filing_rec.comments.append(
+            Comment(
+                comment=lt_notation,
+                staff_id=filing_rec.submitter_id
+            )
+        )
 
     # Note: custodial office, court order and coop specific code and admin dissolution details has been removed as not req'd
 
