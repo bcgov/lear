@@ -85,7 +85,6 @@ def process(business: Business,  # pylint: disable=too-many-branches
     registration_filing = filing.get('filing', {}).get('registration')
     filing_meta.registration = {}
     corp_num = registration_filing['business']['identifier']
-    tax_id = filing_event_data['c_bn_15']
 
     if not registration_filing:
         # raise QueueException(f'Registration legal_filing:registration missing from {filing_rec.id}')
@@ -99,7 +98,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     # Initial insert of the business record
     business = Business()
-    business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
+    business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     if start_date := registration_filing.get('startDate'):
         business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
     business.founding_date = filing_rec.effective_date

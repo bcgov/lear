@@ -87,6 +87,9 @@ def get_unprocessed_firms_query(data_load_env: str):
                        -- contact info test
 --                         and e.corp_num in ('FM0558990') -- has contact email
 --                         and e.corp_num in ('FM0887464') -- has no contact email
+                       -- bn num tests
+--                         and e.corp_num in ('FM0476538') -- has bn 15
+--                         and e.corp_num in ('FM0046262') -- has bn 9
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -190,6 +193,11 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             to_char(c.recognition_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as c_recognition_dts_pacific,
             c.bn_9                 as c_bn_9,
             c.bn_15                as c_bn_15,
+            case 
+                when (c.bn_15 is null or c.bn_15 = '')
+                    THEN c.bn_9
+                else c.bn_15
+            end c_bn,
             c.admin_email          as c_admin_email,
             -- corp_name
             cn.corp_num            as cn_corp_num,
