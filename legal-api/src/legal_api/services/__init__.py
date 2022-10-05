@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
+import uuid
+
+from flask import current_app
+from legal_api.models import Business
+from legal_api.utils.datetime import datetime
+from sentry_sdk import capture_message
+
 from .authz import (
     BASIC_USER,
     COLIN_SVC_ROLE,
@@ -36,11 +43,26 @@ from .warnings.warning import check_warnings
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-
 queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-
-#  document_meta = DocumentMetaService()  # pylint: disable=invalid-name;
-
 digital_credentials = DigitalCredentialsService()
+
+
+def send_email(business: Business, email_type: str, data: dict, message_id: str = None):
+    """Publish the email message onto the NATS emailer subject."""
+    try:
+        payload = {
+            'specversion': '1.x-wip',
+            'type': email_type,
+            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
+            'id': message_id or str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': data
+        }
+        subject = current_app.config.get('NATS_EMAILER_SUBJECT')
+        queue.publish_json(payload, subject)
+    except Exception as err:  # pylint: disable=broad-except; # noqa: B902
+        capture_message('Queue Publish Email Error: business.id=' + str(business.id) + str(err), level='error')
+        current_app.logger.error('Queue Publish Email Error: business.id=%s', business.id, exc_info=True)
