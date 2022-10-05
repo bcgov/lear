@@ -13,6 +13,7 @@
 # limitations under the License.
 """The Unit Tests for business number email processor."""
 from unittest.mock import patch
+
 from legal_api.models import Business
 
 from entity_emailer.email_processors import bn_notification
