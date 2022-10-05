@@ -103,7 +103,7 @@ def send_email(email: dict, token: str):
         raise EmailException('Unsuccessful response when sending email.')
 
 
-def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-many-branches
+def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-many-branches, too-many-statements
     """Process the email contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')

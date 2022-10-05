@@ -15,9 +15,10 @@
 import uuid
 
 from flask import current_app
+from sentry_sdk import capture_message
+
 from legal_api.models import Business
 from legal_api.utils.datetime import datetime
-from sentry_sdk import capture_message
 
 from .authz import (
     BASIC_USER,
