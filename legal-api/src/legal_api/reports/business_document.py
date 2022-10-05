@@ -369,6 +369,11 @@ class BusinessDocument:
                 _get_summary_display_name(filing.filing_type,
                                           filing_meta['dissolution']['dissolutionType'],
                                           self._business.legal_type)
+            if self._business.legal_type in ['SP', 'GP'] and filing_meta['dissolution']['dissolutionType'] == \
+                    'voluntary':
+                filing_info['dissolution_date_str'] = \
+                    datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
+                                               '%Y-%m-%d').date().strftime('%B %-d, %Y')
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
