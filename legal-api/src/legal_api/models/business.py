@@ -464,6 +464,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         return business
 
     @classmethod
+    def find_by_tax_id(cls, tax_id: str):
+        """Return a Business by the tax_id."""
+        business = None
+        if tax_id:
+            business = cls.query.filter_by(tax_id=tax_id).one_or_none()
+        return business
+
+    @classmethod
     def get_all_by_no_tax_id(cls):
         """Return all businesses with no tax_id."""
         no_tax_id_types = [
