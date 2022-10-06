@@ -101,10 +101,6 @@ class _Config():  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
     }
 
-    ENTITY_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events'),
-    }
-
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
