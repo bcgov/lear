@@ -127,7 +127,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             publish_event(payload, subject)
         except Exception as err:  # pylint: disable=broad-except; # noqa: B902
             capture_message('Entity-bn queue publish identifier error: ' + identifier, level='error')
-            logger.error('Queue Publish queue publish identifier error: %s', identifier, exc_info=True)
+            logger.error('Queue Publish queue publish identifier error: %s %s', identifier, err, exc_info=True)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(event_message), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue

@@ -64,5 +64,6 @@ def publish_event(business: Business, event_type: str, data: dict, subject: str,
         }
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        capture_message(f'Legal-api queue publish {subject} error: business.id=' + str(business.id) + str(err), level='error')
+        capture_message(f'Legal-api queue publish {subject} error: business.id=' + str(business.id) + str(err),
+                        level='error')
         current_app.logger.error('Queue Publish %s Error: business.id=%s', subject, business.id, exc_info=True)

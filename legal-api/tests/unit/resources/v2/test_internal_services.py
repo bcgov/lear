@@ -31,7 +31,7 @@ def test_update_bn_move(session, client, jwt):
     business.save()
 
     new_bn = '993777399BC0001'
-    with patch.object(internal_services, 'send_email'):
+    with patch.object(internal_services, 'publish_event'):
         rv = client.post('/api/v2/internal/bnmove',
                          headers=create_header(jwt, [UserRoles.system], identifier),
                          json={
