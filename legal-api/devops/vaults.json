@@ -26,7 +26,6 @@
             "postgres-legal",
             "legal-api",
             "nats-filer",
-            "nats-emailer",
             "entity-service-account",
             "launchdarkly",
             "sentry"
