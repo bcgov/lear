@@ -204,6 +204,7 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
     if len(share_class.series) > 0:
         share_class_series_ids = [series.id for series in share_class.series]
 
+    inclusion_series = []
     # update existing series in db and create new series if not exist
     for series_info in share_class_info.get('series'):
         series_id = series_info.get('id')
@@ -211,8 +212,11 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
             series_index = share_class_series_ids.index(series_id)
             series = share_class.series[series_index]
             update_share_series(series_info, series)
+            inclusion_series.append(series)
         else:
-            create_share_series(share_class, series_info)
+            new_share_series = create_share_series(share_class, series_info)
+            inclusion_series.append(new_share_series)
+    share_class.series = inclusion_series
 
 
 def update_share_series(series_info: dict, series: ShareSeries):
@@ -233,4 +237,4 @@ def create_share_series(share_class: ShareClass, series_info: dict):
         max_shares=series_info.get('maxNumberOfShares', None),
         special_rights_flag=series_info.get('hasRightsOrRestrictions')
     )
-    share_class.series.append(new_share_series)
+    return new_share_series

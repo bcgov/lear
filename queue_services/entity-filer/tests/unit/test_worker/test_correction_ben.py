@@ -404,68 +404,15 @@ async def test_worker_correction_court_order(app, session, mocker, test_name, le
 
 
 @pytest.mark.asyncio
-async def test_worker_proprietor_name_and_address_change(app, session, mocker):
-    """Assert the worker process process the court order correctly."""
-    identifier = 'BC1234567'
-    business = create_entity(identifier, 'BEN', 'Test Entity')
-    business_id = business.id
-
-    party = create_party(BEN_CORRECTION['filing']['correction']['parties'][0])
-    party_id = party.id
-
-    create_party_role(business, party, ['proprietor'], datetime.utcnow())
-
-    filing = copy.deepcopy(BEN_CORRECTION)
-
-    corrected_filing = factory_completed_filing(business, BEN_CORRECTION_APPLICATION)
-    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
-
-    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
-    filing['filing']['correction']['parties'][0]['officer']['id'] = party_id
-    filing['filing']['correction']['parties'][0]['officer']['firstName'] = 'New Name'
-    filing['filing']['correction']['parties'][0]['officer']['middleInitial'] = 'New Name'
-    filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
-    filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
-
-    del filing['filing']['correction']['nameRequest']
-
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
-
-    filing_msg = {'filing': {'id': filing_id}}
-
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
-
-    # Test
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        await process_filing(filing_msg, app)
-
-    # Check outcome
-    business = Business.find_by_internal_id(business_id)
-    party = business.party_roles.all()[0].party
-    assert party.first_name == filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
-    assert party.delivery_address.street == \
-           filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
-    assert party.mailing_address.street == \
-           filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'test_name',
     [
-        'ben_add_partner',
-        'ben_edit_partner_name_and_address',
-        'ben_delete_partner',
+        'ben_add_director',
+        'ben_edit_director_name_and_address',
+        'ben_delete_director',
     ]
 )
-async def test_worker_partner_name_and_address_change(app, session, mocker, test_name):
+async def test_worker_director_name_and_address_change(app, session, mocker, test_name):
     """Assert the worker processes the court order correctly."""
     identifier = 'BC1234567'
     business = create_entity(identifier, 'BEN', 'Test Entity')
@@ -476,8 +423,8 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
     party2 = create_party(BEN_CORRECTION['filing']['correction']['parties'][1])
     party_id_2 = party2.id
 
-    create_party_role(business, party1, ['partner'], datetime.utcnow())
-    create_party_role(business, party2, ['partner'], datetime.utcnow())
+    create_party_role(business, party1, ['director'], datetime.utcnow())
+    create_party_role(business, party2, ['director'], datetime.utcnow())
 
     filing = copy.deepcopy(BEN_CORRECTION)
 
@@ -486,7 +433,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
 
     filing['filing']['correction']['contactPoint'] = CONTACT_POINT
 
-    if test_name == 'ben_add_partner':
+    if test_name == 'ben_add_director':
         filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
         filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
         new_party_json = BEN_CORRECTION['filing']['correction']['parties'][1]
@@ -494,7 +441,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         new_party_json['officer']['firstName'] = 'New Name'
         filing['filing']['correction']['parties'].append(new_party_json)
 
-    if test_name == 'ben_edit_partner_name_and_address':
+    if test_name == 'ben_edit_director_name_and_address':
         filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
         filing['filing']['correction']['parties'][0]['officer']['firstName'] = 'New Name a'
         filing['filing']['correction']['parties'][0]['officer']['middleInitial'] = 'New Name a'
@@ -502,7 +449,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
         filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
 
-    if test_name == 'ben_delete_partner':
+    if test_name == 'ben_delete_director':
         del filing['filing']['correction']['parties'][1]
 
     del filing['filing']['correction']['nameRequest']
@@ -527,7 +474,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
     # Check outcome
     business = Business.find_by_internal_id(business_id)
 
-    if test_name == 'ben_edit_partner_name_and_address':
+    if test_name == 'ben_edit_director_name_and_address':
         party = business.party_roles.all()[0].party
         assert party.first_name == \
                filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
@@ -538,12 +485,12 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         assert business.party_roles.all()[0].cessation_date is None
         assert business.party_roles.all()[1].cessation_date is None
 
-    if test_name == 'ben_delete_partner':
+    if test_name == 'ben_delete_director':
         deleted_role = PartyRole.get_party_roles_by_party_id(business_id, party_id_2)[0]
         assert deleted_role.cessation_date is not None
 
-    if test_name == 'ben_add_partner':
-        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 2
+    if test_name == 'ben_add_director':
+        assert len(PartyRole.get_parties_by_role(business_id, 'director')) == 2
         assert len(business.party_roles.all()) == 2
         for party_role in business.party_roles.all():
             assert party_role.cessation_date is None
@@ -666,7 +613,7 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
 
     if test_name == 'ben_add_share_class':
         new_share_class_json = BEN_CORRECTION['filing']['correction']['shareStructure']['shareClasses'][1]
-        new_share_class_json['id'] = 3
+        del new_share_class_json['id']
         new_share_class_json['name'] = 'New Share Class'
         filing['filing']['correction']['shareStructure']['shareClasses'].append(new_share_class_json)
 
