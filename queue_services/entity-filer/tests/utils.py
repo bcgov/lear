@@ -13,6 +13,8 @@
 # limitations under the License.
 """Util functions for testing."""
 import io
+from datetime import datetime
+
 import requests
 import PyPDF2
 from legal_api.services.minio import MinioService
@@ -54,3 +56,11 @@ def assert_pdf_contains_text(search_text, pdf_raw_bytes: bytes):
     pdf_page = pdf_obj.getPage(0)
     text = pdf_page.extractText()
     assert search_text in text
+
+def has_expected_date_str_format(date_str: str, format: str) -> bool:
+    "Determine if date string confirms to expected format"
+    try:
+        datetime.strptime(date_str, format)
+    except ValueError:
+        return False
+    return True

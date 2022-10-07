@@ -26,6 +26,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models import Business
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
+from tests.unit import has_expected_date_str_format
 
 
 def factory_business(designation: str = '001'):
@@ -290,8 +291,13 @@ def test_business_json(session):
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = business.dissolution_date.isoformat()
-    assert business.json() == d
+    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    business_json = business.json()
+    assert business_json == d
+    dissolution_date_str = business_json['dissolutionDate']
+    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+    assert dissolution_date_format_correct
+
     business.dissolution_date = None
     d.pop('dissolutionDate')
 
