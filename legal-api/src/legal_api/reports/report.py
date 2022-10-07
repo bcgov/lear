@@ -564,7 +564,8 @@ class Report:  # pylint: disable=too-few-public-methods
         if party_json.get('officer').get('partyType') == 'person':
             last_name = party_json['officer'].get('lastName')
             first_name = party_json['officer'].get('firstName')
-            middle_initial = party_json['officer'].get('middleInitial') if party_json['officer'].get('middleInitial') else ''
+            middle_initial = party_json['officer'].get('middleInitial')\
+                if party_json['officer'].get('middleInitial') else ''
             party_name = f'{last_name}, {first_name} {middle_initial}'
         elif party_json.get('officer').get('partyType') == 'organization':
             party_name = party_json['officer'].get('organizationName')
