@@ -376,7 +376,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).isoformat()
 
         if self.dissolution_date:
-            d['dissolutionDate'] = self.dissolution_date.isoformat()
+            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:

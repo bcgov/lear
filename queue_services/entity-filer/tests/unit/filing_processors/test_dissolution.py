@@ -24,7 +24,7 @@ from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
-from tests.utils import upload_file, assert_pdf_contains_text
+from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
 
 from entity_filer.filing_processors import dissolution
 from tests.unit import create_business, create_filing
@@ -39,6 +39,7 @@ from tests.unit import create_business, create_filing
     ('CP', 'CP1234567', 'voluntary'),
     ('BC', 'BC1234567', 'administrative'),
     ('SP', 'FM1234567', 'administrative'),
+    ('GP', 'FM1234567', 'administrative'),
 ])
 def test_dissolution(app, session, minio_server, legal_type, identifier, dissolution_type):
     """Assert that the dissolution is processed."""
@@ -117,6 +118,11 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
+
+    dissolution_date_str = datetime.date(filing.effective_date).isoformat()
+    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+    assert dissolution_date_format_correct
+    assert filing_meta.dissolution['dissolutionDate'] == dissolution_date_str
 
 
 @pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
@@ -202,6 +208,11 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
+
+    dissolution_date_str = datetime.date(filing.effective_date).isoformat()
+    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+    assert dissolution_date_format_correct
+    assert filing_meta.dissolution['dissolutionDate'] == dissolution_date_str
 
     final_filing = Filing.find_by_id(filing_id)
     assert filing_json['filing']['dissolution']['details'] == final_filing.order_details

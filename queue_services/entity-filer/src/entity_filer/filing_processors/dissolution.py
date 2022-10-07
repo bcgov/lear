@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
+from datetime import datetime
 from typing import Dict
 
 import dpath
@@ -39,10 +40,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
-
-    with suppress(IndexError, KeyError, TypeError):
-        filing_meta.dissolution = {**filing_meta.dissolution,
-                                   **{'dissolutionType': dissolution_type}}
 
     # hasLiabilities can be derived from dissolutionStatementType
     # FUTURE: remove hasLiabilities from schema
@@ -77,6 +74,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
+
+    with suppress(IndexError, KeyError, TypeError):
+        filing_meta.dissolution = {**filing_meta.dissolution,
+                                   **{'dissolutionType': dissolution_type},
+                                   **{'dissolutionDate': datetime.date(filing_rec.effective_date).isoformat()}}
 
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):

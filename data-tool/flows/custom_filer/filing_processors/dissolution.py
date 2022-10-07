@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
+from datetime import datetime
 from contextlib import suppress
 from typing import Dict
 
@@ -40,10 +41,6 @@ def process(business: Business,
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
 
-    with suppress(IndexError, KeyError, TypeError):
-        filing_meta.dissolution = {**filing_meta.dissolution,
-                                   **{'dissolutionType': dissolution_type}}
-
     # hasLiabilities can be derived from dissolutionStatementType
     # FUTURE: remove hasLiabilities from schema
     # has_liabilities = filing['dissolution'].get('hasLiabilities')
@@ -61,6 +58,11 @@ def process(business: Business,
 
     # only dealing with voluntary dissolutions for now so commenting this out
     # filings.update_filing_order_details(filing_rec, filing_event_data)
+
+    with suppress(IndexError, KeyError, TypeError):
+        filing_meta.dissolution = {**filing_meta.dissolution,
+                                   **{'dissolutionType': dissolution_type},
+                                   **{'dissolutionDate': datetime.date(business.dissolution_date).isoformat()}}
 
     if lt_notation := filing_event_data.get('lt_notation'):
         filing_rec.comments.append(
