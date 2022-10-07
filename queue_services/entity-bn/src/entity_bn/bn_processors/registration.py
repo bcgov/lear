@@ -29,8 +29,8 @@ from entity_bn.bn_processors import (
     business_sub_type_code,
     business_type_code,
     program_type_code,
+    publish_event,
     request_bn_hub,
-    send_email,
 )
 from entity_bn.exceptions import BNException
 
@@ -113,13 +113,14 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
 
     try:
         # Once BN15 received send an email to user
-        await send_email({
+        subject = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
+        await publish_event({
             'email': {
                 'type': 'businessNumber',
                 'option': 'bn',
                 'identifier': business.identifier
-            }
-        })
+            }},
+            subject)
     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         logger.error('Failed to publish BN email message onto the NATS emailer subject', exc_info=True)
         raise err

@@ -49,6 +49,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
             dsn=dsn,
             integrations=[FlaskIntegration()],
+            release=f'legal-api@{get_run_version()}',
             send_default_pii=False
         )
 

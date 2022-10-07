@@ -57,7 +57,7 @@ async def test_admin_bn15(app, session, mocker, request_type):
             return 200, acknowledgement_response
 
     mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
-    mocker.patch('entity_bn.bn_processors.registration.send_email')
+    mocker.patch('entity_bn.bn_processors.registration.publish_event')
 
     business_number = '993775204' if request_type == 'BN15' else None
     business_program_id = 'BC'

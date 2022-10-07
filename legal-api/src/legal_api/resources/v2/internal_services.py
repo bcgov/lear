@@ -18,7 +18,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, UserRoles
-from legal_api.services import send_email
+from legal_api.services import publish_event
 from legal_api.utils.auth import jwt
 
 
@@ -39,10 +39,14 @@ def update_bn_move():
     if business:
         business.tax_id = new_bn
         business.save()
-        send_email(business, 'bc.registry.bnmove', {
-            'oldBn': old_bn,
-            'newBn': new_bn
-        })
+        publish_event(business,
+                      'bc.registry.bnmove',
+                      {'oldBn': old_bn, 'newBn': new_bn},
+                      current_app.config.get('NATS_EMAILER_SUBJECT'))
+        publish_event(business,
+                      'bc.registry.business.bn',
+                      {},
+                      current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'))
     else:
         current_app.logger.error('Unable to update tax_id for (%s), which is missing in lear', old_bn)
     return jsonify({'message': 'Successfully updated tax id.'}), HTTPStatus.OK

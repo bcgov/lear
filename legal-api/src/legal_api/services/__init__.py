@@ -49,12 +49,12 @@ namex = NameXService()  # pylint: disable=invalid-name; shared variables are low
 digital_credentials = DigitalCredentialsService()
 
 
-def send_email(business: Business, email_type: str, data: dict, message_id: str = None):
-    """Publish the email message onto the NATS emailer subject."""
+def publish_event(business: Business, event_type: str, data: dict, subject: str, message_id: str = None):
+    """Publish the event message onto the given NATS subject."""
     try:
         payload = {
             'specversion': '1.x-wip',
-            'type': email_type,
+            'type': event_type,
             'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
             'id': message_id or str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
@@ -62,8 +62,8 @@ def send_email(business: Business, email_type: str, data: dict, message_id: str 
             'identifier': business.identifier,
             'data': data
         }
-        subject = current_app.config.get('NATS_EMAILER_SUBJECT')
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        capture_message('Queue Publish Email Error: business.id=' + str(business.id) + str(err), level='error')
-        current_app.logger.error('Queue Publish Email Error: business.id=%s', business.id, exc_info=True)
+        capture_message(f'Legal-api queue publish {subject} error: business.id=' + str(business.id) + str(err),
+                        level='error')
+        current_app.logger.error('Queue Publish %s Error: business.id=%s', subject, business.id, exc_info=True)
