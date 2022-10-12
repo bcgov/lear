@@ -100,6 +100,7 @@ def send_email(email: dict, token: str):
     )
     if resp.status_code != HTTPStatus.OK:
         # this should log the error and put the email msg back on the queue
+        logger.debug('Send email failed %s', resp.json())
         raise EmailException('Unsuccessful response when sending email.')
 
 
