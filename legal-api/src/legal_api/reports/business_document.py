@@ -314,7 +314,7 @@ class BusinessDocument:
         alterations = []
         # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName',
-                                                                      'specialResolution']):
+                                                                      'changeOfRegistration', 'specialResolution']):
             filing_meta = filing.meta_data
             filing_json = filing.filing_json
             if filing_meta:
