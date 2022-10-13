@@ -13,8 +13,9 @@
 # limitations under the License.
 """Test suite to ensure Change of Registration is validated correctly."""
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
+from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
 import pytest
@@ -22,14 +23,19 @@ from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGIS
 
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings.validations.change_of_registration import validate
+from tests import FROZEN_DATETIME
+
+from tests.unit.models import factory_business
 
 
 now = datetime.now().strftime('%Y-%m-%d')
 
 GP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
+del GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['startDate']
 GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'].append(REGISTRATION['parties'][1])
 
 SP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
+del SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['startDate']
 SP_CHANGE_OF_REGISTRATION['filing']['business']['legalType'] = 'SP'
 SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['nameRequest']['legalType'] = 'SP'
 SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['roles'] = [
@@ -47,6 +53,7 @@ SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['roles
 
 
 DBA_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
+del DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['startDate']
 DBA_CHANGE_OF_REGISTRATION['filing']['business']['legalType'] = 'SP'
 DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['nameRequest']['legalType'] = 'SP'
 DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['businessType'] = 'DBA'
@@ -93,7 +100,7 @@ def test_gp_change_of_registration(session):
     """Assert that the general partnership change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(GP_CHANGE_OF_REGISTRATION)
+            err = validate(None, GP_CHANGE_OF_REGISTRATION)
     assert not err
 
 
@@ -101,7 +108,7 @@ def test_sp_change_of_registration(session):
     """Assert that the sole proprietor change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(SP_CHANGE_OF_REGISTRATION)
+            err = validate(None, SP_CHANGE_OF_REGISTRATION)
 
     assert not err
 
@@ -110,9 +117,37 @@ def test_dba_change_of_registration(session):
     """Assert that the dba change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(DBA_CHANGE_OF_REGISTRATION)
+            err = validate(None, DBA_CHANGE_OF_REGISTRATION)
 
     assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, delta_date, is_valid',
+    [
+        ('greater', timedelta(days=90), True),
+        ('invalid_greater', timedelta(days=91), False),
+        ('lesser', relativedelta(years=-2), True),
+        ('invalid_lesser', relativedelta(years=-2, days=-1), False)
+    ]
+)
+def test_sp_start_date_change_of_registration(session, test_name, delta_date, is_valid):
+    """Assert that start date is validated."""
+    start_date = FROZEN_DATETIME + delta_date
+
+    identifier = 'FM1234567'
+    business = factory_business(identifier, founding_date=FROZEN_DATETIME)
+
+    filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
+    filing['filing']['changeOfRegistration']['startDate'] = start_date.strftime('%Y-%m-%d')
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(business, filing)
+
+    if is_valid:
+        assert not err
+    else:
+        assert err
 
 
 def test_invalid_nr_change_of_registration(session):
@@ -129,7 +164,7 @@ def test_invalid_nr_change_of_registration(session):
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(filing)
+            err = validate(None, filing)
 
     assert err
 
@@ -150,7 +185,7 @@ def test_invalid_party(session, test_name, filing, expected_msg):
     filing['filing']['changeOfRegistration']['parties'][0]['roles'] = []
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(filing)
+            err = validate(None, filing)
 
     assert err
     assert err.msg[0]['error'] == expected_msg
@@ -172,7 +207,7 @@ def test_invalid_business_address(session, test_name, filing):
         'invalid'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(filing)
+            err = validate(None, filing)
 
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
@@ -199,7 +234,7 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(filing)
+            err = validate(None, filing)
 
     # validate outcomes
     if test_status == 'FAIL':

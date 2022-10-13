@@ -155,7 +155,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                     err = registration_validate(filing_json)
 
                 elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
-                    err = change_of_registration_validate(filing_json)
+                    err = change_of_registration_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['putBackOn'].get('name'):
                     err = put_back_on_validate(business, filing_json)

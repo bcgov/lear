@@ -45,6 +45,10 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                 filing_meta.change_of_registration = {**filing_meta.change_of_registration,
                                                       **{'fromLegalName': from_legal_name,
                                                          'toLegalName': business.legal_name}}
+
+    if start_date := change_filing.get('changeOfRegistration', {}).get('startDate'):
+        business.start_date = datetime.fromisoformat(start_date) + datetime.timedelta(hours=8)
+
     # Update Nature of Business
     if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')) and \
             (naics_code := naics.get('naicsCode')):
