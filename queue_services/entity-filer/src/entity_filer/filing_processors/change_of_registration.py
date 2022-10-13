@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of registration filing."""
-import datetime
 from contextlib import suppress
 from typing import Dict
 
 import dpath
 import sentry_sdk
 from legal_api.models import Address, Business, Filing, Party, PartyRole
+from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -82,7 +82,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    end_date_time = datetime.datetime.utcnow()
+    end_date_time = datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
