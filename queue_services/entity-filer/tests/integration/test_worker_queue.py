@@ -13,15 +13,21 @@
 # limitations under the License.
 """Test Suite to ensure the worker routines are working as expected."""
 import asyncio
-import copy
 
 import pytest
 
-from .utils import helper_add_filing_to_queue, subscribe_to_queue
+from .utils import helper_add_filing_to_queue
 
 
 @pytest.mark.asyncio
-async def test_cb_subscription_handler(app, session, stan_server, event_loop, client_id, entity_stan, future):
+async def test_cb_subscription_handler(app,
+                                       session,
+                                       stan_server,
+                                       event_loop,
+                                       client_id,
+                                       entity_stan,
+                                       future,
+                                       subscribe_to_queue):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     from entity_filer.worker import cb_subscription_handler

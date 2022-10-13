@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of registration filing."""
-from datetime import timedelta
 from contextlib import suppress
+from datetime import timedelta
 from typing import Dict
 
 import dpath
