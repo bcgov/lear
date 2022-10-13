@@ -294,7 +294,7 @@ class BusinessDocument:
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
-                                                                      'voluntaryLiquidation']):
+                                                                      'voluntaryLiquidation', 'putBackOn']):
             state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -452,6 +452,15 @@ class BusinessDocument:
                 'LLC': 'Voluntary Dissolution',
                 'SP': 'Dissolution Application',
                 'GP': 'Dissolution Application'
+            },
+            'administrative': {
+                'CP': 'Administrative Dissolution',
+                'BEN': 'Administrative Dissolution',
+                'ULC': 'Administrative Dissolution',
+                'CC': 'Administrative Dissolution',
+                'LLC': 'Administrative Dissolution',
+                'SP': 'Administrative Dissolution',
+                'GP': 'Administrative Dissolution'
             }
         },
         'restorationApplication': 'Restoration Application',
@@ -459,7 +468,8 @@ class BusinessDocument:
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
         'Involuntary Dissolution': 'Involuntary Dissolution',
-        'voluntaryLiquidation': 'Voluntary Liquidation'
+        'voluntaryLiquidation': 'Voluntary Liquidation',
+        'putBackOn': 'Correction - Put Back On'
     }
 
     CP_TYPE_DESCRIPTION = {
