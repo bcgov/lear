@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of registration filing."""
+from datetime import timedelta
 from contextlib import suppress
 from typing import Dict
 
@@ -47,7 +48,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                                                          'toLegalName': business.legal_name}}
 
     if start_date := change_filing.get('changeOfRegistration', {}).get('startDate'):
-        business.start_date = datetime.fromisoformat(start_date) + datetime.timedelta(hours=8)
+        business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
 
     # Update Nature of Business
     if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')) and \
