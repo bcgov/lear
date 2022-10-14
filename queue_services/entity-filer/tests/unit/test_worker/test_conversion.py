@@ -16,6 +16,9 @@ import copy
 import random
 
 import pytest
+from datetime import datetime
+from unittest.mock import patch
+from legal_api.services import NaicsService
 from legal_api.models import Address, Business, Filing, PartyRole
 from registry_schemas.example_data import (
     CONVERSION_FILING_TEMPLATE,
@@ -25,12 +28,17 @@ from registry_schemas.example_data import (
 )
 
 from entity_filer.worker import process_filing
-from tests.unit import create_entity, create_filing
+from tests.unit import create_entity, create_filing, create_party, create_party_role
 
 
 CONTACT_POINT = {
     'email': 'no_one@never.get',
     'phone': '123-456-7890'
+}
+
+naics_response = {
+    'code': REGISTRATION['business']['naics']['naicsCode'],
+    'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
 }
 
 GP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
@@ -113,4 +121,55 @@ async def test_conversion(app, session, mocker, test_name, legal_name, new_legal
 
     assert business.naics_description == \
            filing_template['filing']['conversion']['business']['naics']['naicsDescription']
+
+
+async def test_worker_proprietor_new_address(app, session, mocker):
+    """Assert the worker process the party new address correctly."""
+    identifier = 'FM1234567'
+    business = create_entity(identifier, 'SP', 'Test Entity')
+    business_id = business.id
+
+    party = create_party(SP_CONVERSION['filing']['conversion']['parties'][0])
+    party_id = party.id
+    party.delivery_address = None
+    party.mailing_address = None
+    party.save()
+    assert party.delivery_address_id is None
+    assert party.mailing_address_id is None
+
+    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+
+    filing = copy.deepcopy(SP_CONVERSION)
+    filing['filing']['conversion']['contactPoint'] = CONTACT_POINT
+    filing['filing']['conversion']['parties'][0]['officer']['id'] = party_id
+    filing['filing']['conversion']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
+    filing['filing']['conversion']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
+
+    del filing['filing']['conversion']['nameRequest']
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        await process_filing(filing_msg, app)
+
+    # Check outcome
+    business = Business.find_by_internal_id(business_id)
+    party = business.party_roles.all()[0].party
+    assert party.delivery_address.street ==\
+        filing['filing']['conversion']['parties'][0]['deliveryAddress']['streetAddress']
+    assert party.mailing_address.street == \
+        filing['filing']['conversion']['parties'][0]['mailingAddress']['streetAddress']
+
 
