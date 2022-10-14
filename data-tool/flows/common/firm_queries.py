@@ -144,7 +144,8 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like '%FILE_CORSP%'
 --                 and tbl_fe.event_file_types like '%FILE_FRCCH%'
 --                 and tbl_fe.event_file_types like '%FILE_FRCRG%'                   
-                   and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+--                 and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+                   and ((cp.processed_status is null or cp.processed_status not in ('COMPLETED', 'FAILED', 'PARTIAL'))
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
             limit 50

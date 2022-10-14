@@ -103,6 +103,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             event_filing_data_arr.append({
                 'is_in_lear': is_in_lear(processed_events_ids, event_id),
                 'is_supported_type': is_supported_event_filing,
+                'skip_filing': event_filing_data_dict['skip_filing'],
                 'data': event_filing_data_dict
             })
             prev_event_filing_data = event_filing_data_dict
@@ -136,7 +137,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
     try:
         event_filing_data_arr = event_filing_data_dict['event_filing_data']
         for event_filing_data in event_filing_data_arr:
-            if event_filing_data['is_supported_type']:
+            if event_filing_data['is_supported_type'] and not event_filing_data['skip_filing']:
                 filing_data = event_filing_data['data']
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
@@ -174,7 +175,8 @@ def transform_event_filing_data(config, app: any, colin_db_engine: engine, db_le
         with app.app_context():
             event_filing_data_arr = event_filing_data_dict['event_filing_data']
             for event_filing_data in event_filing_data_arr:
-                if not event_filing_data['is_in_lear'] and event_filing_data['is_supported_type']:
+                if not event_filing_data['is_in_lear'] and event_filing_data['is_supported_type']  \
+                        and not event_filing_data['skip_filing']:
                     # process and create LEAR json filing dict
                     filing_data = event_filing_data['data']
                     event_filing_type = filing_data['event_file_type']
@@ -221,7 +223,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     error_msg = f'could not finish processing this firm as there is an unsupported event/filing type: {event_filing_type}'
                     raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
 
-                if not event_filing_data['is_in_lear']:
+                if not event_filing_data['is_in_lear'] and not event_filing_data['skip_filing']:
                     # the corp_processing table should already track whether an event/filing has been processed and
                     # saved to lear but just to be safe a final check against lear is made to ensure the event/filing
                     # is not already in lear

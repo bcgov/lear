@@ -72,6 +72,7 @@ def update_affiliation(config, business: Business, filing: Filing):
         #     level='error'
         # )
         print(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
+        raise Exception(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
 
 
 

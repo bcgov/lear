@@ -177,6 +177,7 @@ class EventFilingService:
             rs = conn.execute(sql_text)
             event_filing_data_dict = convert_result_set_to_dict(rs)
             event_filing_data_dict = event_filing_data_dict[0]
+            event_filing_data_dict['skip_filing'] = False
             event_filing_data_dict['event_file_type'] = event_file_type
             event_filing_data_dict['is_corrected_event_filing'] = False
             if event_file_type in EVENT_FILING_LEAR_TARGET_MAPPING:
@@ -214,7 +215,10 @@ class EventFilingService:
                 event_filing_data_dict['prev_event_filing_data'] = {}
 
             if CorrectionEventFilings.has_value(event_file_type):
-               event_filing_data_dict['corrected_event_filing_info'] = correction_event_filing_mappings[event_id]
+                if event_id in correction_event_filing_mappings:
+                    event_filing_data_dict['corrected_event_filing_info'] = correction_event_filing_mappings[event_id]
+                else:
+                    event_filing_data_dict['skip_filing'] = True
 
             # check if corrected event/filing
             if correction_event_ids and len(correction_event_ids) > 0:
