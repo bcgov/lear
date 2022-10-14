@@ -36,8 +36,6 @@ def process(business: Business,
     if not (dissolution_filing := filing.get('dissolution')):
         print(f'legal_filing:Dissolution missing from {filing}')
 
-    print('processing dissolution: %s', filing)
-
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
 

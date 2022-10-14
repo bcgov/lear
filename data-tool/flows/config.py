@@ -90,6 +90,16 @@ class _Config():  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    DATABASE_POOL_PRE_PING = os.getenv('DATABASE_POOL_PRE_PING', 'True') == 'True'
+    DATABASE_POOL_SIZE = os.getenv('DATABASE_POOL_SIZE', '5')
+    DATABASE_MAX_OVERFLOW = os.getenv('DATABASE_MAX_OVERFLOW', '10')
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": DATABASE_POOL_PRE_PING,
+        "pool_size": int(DATABASE_POOL_SIZE),
+        "max_overflow": int(DATABASE_MAX_OVERFLOW)
+    }
+
     # service accounts
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
