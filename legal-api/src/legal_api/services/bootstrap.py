@@ -131,7 +131,7 @@ class AccountService:
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
                            pass_code: str = '',
-                           details:dict = None):
+                           details: dict = None):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
