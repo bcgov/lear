@@ -100,10 +100,13 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
         # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
         business.compliance_warnings = warnings
         business.warnings = warnings
-        tasks.append(create_conversion_filing_todo(business, order, True))
-        order += 1
 
-# Retrieve filings that are either incomplete, or drafts
+        # Checking for draft or pending conversion
+        if not Filing.get_filings_by_type(business.id, 'conversion'):
+            tasks.append(create_conversion_filing_todo(business, order, True))
+            order += 1
+
+    # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
                                                                  Filing.Status.PENDING.value,
                                                                  Filing.Status.PENDING_CORRECTION.value,
