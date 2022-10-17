@@ -14,7 +14,7 @@
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 import pytest
@@ -37,6 +37,8 @@ from tests.unit import create_business, create_filing
     ('ULC', 'BC1234567', 'voluntary'),
     ('LLC', 'BC1234567', 'voluntary'),
     ('CP', 'CP1234567', 'voluntary'),
+    ('SP', 'FM1234567', 'voluntary'),
+    ('GP', 'FM1234567', 'voluntary'),
     ('BC', 'BC1234567', 'administrative'),
     ('SP', 'FM1234567', 'administrative'),
     ('GP', 'FM1234567', 'administrative'),
@@ -93,7 +95,6 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     business.save()
 
     # validate
-    assert business.dissolution_date == filing.effective_date
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == 2
@@ -119,10 +120,16 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
 
-    dissolution_date_str = datetime.date(filing.effective_date).isoformat()
-    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+    expected_dissolution_date = filing.effective_date
+    expected_dissolution_date_str = datetime.date(filing.effective_date).isoformat()
+    if dissolution_type == 'voluntary':
+        expected_dissolution_date = \
+            datetime.fromisoformat(dissolution_date).replace(tzinfo=pytz.UTC) + timedelta(hours=8)
+        expected_dissolution_date_str = dissolution_date
+    assert business.dissolution_date == expected_dissolution_date
+    dissolution_date_format_correct = has_expected_date_str_format(expected_dissolution_date_str, '%Y-%m-%d')
     assert dissolution_date_format_correct
-    assert filing_meta.dissolution['dissolutionDate'] == dissolution_date_str
+    assert filing_meta.dissolution['dissolutionDate'] == expected_dissolution_date_str
 
 
 @pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
