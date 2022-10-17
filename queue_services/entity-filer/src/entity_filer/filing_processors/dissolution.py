@@ -13,7 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict
 
 import dpath
@@ -47,7 +47,12 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     # should we save dissolution_statement_type in businesses table?
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
-    business.dissolution_date = filing_rec.effective_date
+    dissolution_date = filing_rec.effective_date
+    if dissolution_type == DissolutionTypes.VOLUNTARY:
+        dissolution_date_str = dissolution_filing.get('dissolutionDate')
+        dissolution_date = datetime.fromisoformat(dissolution_date_str) + timedelta(hours=8)
+    business.dissolution_date = dissolution_date
+
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
 
@@ -78,7 +83,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     with suppress(IndexError, KeyError, TypeError):
         filing_meta.dissolution = {**filing_meta.dissolution,
                                    **{'dissolutionType': dissolution_type},
-                                   **{'dissolutionDate': datetime.date(filing_rec.effective_date).isoformat()}}
+                                   **{'dissolutionDate': datetime.date(business.dissolution_date).isoformat()}}
 
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):
