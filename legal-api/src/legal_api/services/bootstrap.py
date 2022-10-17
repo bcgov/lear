@@ -130,7 +130,8 @@ class AccountService:
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
-                           pass_code: str = ''):
+                           pass_code: str = '',
+                           details: dict = None):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
@@ -146,6 +147,8 @@ class AccountService:
                                   'corpTypeCode': corp_type_code,
                                   'name': business_name or business_registration
                                   })
+        if details:
+            entity_data['details'] = details
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
