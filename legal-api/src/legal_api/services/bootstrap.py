@@ -148,27 +148,26 @@ class AccountService:
             'corpTypeCode': corp_type_code,
             'name': business_name or business_registration
         }
-        if details:
-            entity_data['details'] = details
-        payload = json.dumps(entity_data)
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=payload,
+            data=json.dumps(entity_data),
             timeout=cls.timeout
         )
 
         # Create an account:business affiliation
-        affiliate_data = json.dumps({
+        affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
-        })
+        }
+        if details:
+            affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=affiliate_data,
+            data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
 
