@@ -126,7 +126,7 @@ class AccountService:
 
     @classmethod
     # pylint: disable=too-many-arguments;
-    def create_affiliation(cls, account: int,
+    def create_affiliation(cls, account: int,  # pylint: disable=invalid-name
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
@@ -151,7 +151,6 @@ class AccountService:
         if details:
             entity_data['details'] = details
         payload = json.dumps(entity_data)
-        
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
