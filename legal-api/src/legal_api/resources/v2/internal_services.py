@@ -14,12 +14,15 @@
 """Calls used by internal services."""
 from http import HTTPStatus
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import Business, Filing, User, UserRoles
 from legal_api.services import publish_event
 from legal_api.utils.auth import jwt
+from legal_api.utils.datetime import date, datetime
+
+from src.legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 
 
 bp = Blueprint('INTERNAL_SERVICE', __name__, url_prefix='/api/v2/internal')
@@ -30,6 +33,7 @@ bp = Blueprint('INTERNAL_SERVICE', __name__, url_prefix='/api/v2/internal')
 @jwt.has_one_of_roles([UserRoles.system])
 def update_bn_move():
     """Update the new tax id for a business for given old tax id."""
+    user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     json_input = request.get_json()
     if not json_input or \
             not (old_bn := json_input.get('oldBn')) or not (new_bn := json_input.get('newBn')):
@@ -39,6 +43,12 @@ def update_bn_move():
     if business:
         business.tax_id = new_bn
         business.save()
+
+        response, response_code = create_registrars_notation_filing(business, user, old_bn)
+        if response and (response_code != HTTPStatus.CREATED):
+            current_app.logger.error('Unable to complete payment for registrars notation (bn move)')
+            current_app.logger.error('%s, %s', response, response_code)
+
         publish_event(business,
                       'bc.registry.bnmove',
                       {'oldBn': old_bn, 'newBn': new_bn},
@@ -50,3 +60,33 @@ def update_bn_move():
     else:
         current_app.logger.error('Unable to update tax_id for (%s), which is missing in lear', old_bn)
     return jsonify({'message': 'Successfully updated tax id.'}), HTTPStatus.OK
+
+
+def create_registrars_notation_filing(business: Business, user: User, old_bn: str):
+    """Create registrars notation filing while updating tax_id (BN Move)."""
+    filing = Filing()
+    filing.business_id = business.id
+    filing.submitter_id = user.id
+    filing.filing_json = {
+        'filing': {
+            'header': {
+                'name': 'registrarsNotation',
+                'date': date.today().isoformat(),
+                'certifiedBy': 'system'
+            },
+            'business': {
+                'identifier': business.identifier,
+                'legalType': business.legal_type
+            },
+            'registrarsNotation': {
+                'orderDetails': f'Business Number changed from {old_bn} to {business.tax_id}' +
+                                ' based on a request from the CRA.'
+            }
+        }
+    }
+    filing.source = Filing.Source.LEAR.value
+    filing.filing_date = datetime.utcnow()
+    filing.effective_date = datetime.utcnow()
+    filing.save()
+
+    return ListFilingResource.complete_filing(business, filing, False, None)
