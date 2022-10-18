@@ -20,7 +20,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException
+from entity_queue_common.service_utils import logger, QueueException
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
@@ -33,54 +33,49 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 
 def update_affiliation(business: Business, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
-    try:
-        bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-        pass_code = business_info.get_firm_affiliation_passcode(business.id)
+    bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+    pass_code = business_info.get_firm_affiliation_passcode(business.id)
 
-        nr_number = filing.filing_json.get('filing').get('registration', {}).get('nameRequest', {}).get('nrNumber')
-        details = {
-            'bootstrapIdentifier': bootstrap.identifier,
-            'identifier': business.identifier,
-            'nrNumber': nr_number
-        }
+    nr_number = filing.filing_json.get('filing').get('registration', {}).get('nameRequest', {}).get('nrNumber')
+    details = {
+        'bootstrapIdentifier': bootstrap.identifier,
+        'identifier': business.identifier,
+        'nrNumber': nr_number
+    }
 
-        rv = AccountService.create_affiliation(
-            account=bootstrap.account,
-            business_registration=business.identifier,
-            business_name=business.legal_name,
-            corp_type_code=business.legal_type,
-            pass_code=pass_code,
-            details = details
-        )
+    rv = AccountService.create_affiliation(
+        account=bootstrap.account,
+        business_registration=business.identifier,
+        business_name=business.legal_name,
+        corp_type_code=business.legal_type,
+        pass_code=pass_code,
+        details = details
+    )
 
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
-            deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
-            sentry_sdk.capture_message(
-                f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
-                level='error'
-            )
-        else:
-            # flip the registration
-            # recreate the bootstrap, but point to the new business in the name
-            old_bs_affiliation = AccountService.delete_affiliation(bootstrap.account, bootstrap.identifier)
-            new_bs_affiliation = AccountService.create_affiliation(
-                account=bootstrap.account,
-                business_registration=bootstrap.identifier,
-                business_name=business.identifier,
-                corp_type_code='RTMP'
-            )
-            reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
-                               and old_bs_affiliation == HTTPStatus.OK)
-
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
-                or ('reaffiliate' in locals() and not reaffiliate):
-            raise QueueException
-    except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+    if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
+        deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
         sentry_sdk.capture_message(
-            f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
+            f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
             level='error'
         )
+    else:
+        # flip the registration
+        # recreate the bootstrap, but point to the new business in the name
+        old_bs_affiliation = AccountService.delete_affiliation(bootstrap.account, bootstrap.identifier)
+        new_bs_affiliation = AccountService.create_affiliation(
+            account=bootstrap.account,
+            business_registration=bootstrap.identifier,
+            business_name=business.identifier,
+            corp_type_code='RTMP'
+        )
+        reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
+                            and old_bs_affiliation == HTTPStatus.OK)
+
+    if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
+            or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
+            or ('reaffiliate' in locals() and not reaffiliate):
+        raise QueueException
+
 
 
 def process(business: Business,  # pylint: disable=too-many-branches
