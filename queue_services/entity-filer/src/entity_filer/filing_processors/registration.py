@@ -50,7 +50,7 @@ def update_affiliation(business: Business, filing: Filing):
             business_name=business.legal_name,
             corp_type_code=business.legal_type,
             pass_code=pass_code,
-            details = details
+            details=details
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
