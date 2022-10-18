@@ -148,12 +148,11 @@ class AccountService:
             'corpTypeCode': corp_type_code,
             'name': business_name or business_registration
         }
-        payload = json.dumps(entity_data)
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=payload,
+            data=json.dumps(entity_data),
             timeout=cls.timeout
         )
 
