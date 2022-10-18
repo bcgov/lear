@@ -132,10 +132,6 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
     filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
 
-    if party_type == 'organization':
-        filing['filing']['registration']['parties'][0]['officer']['taxId'] = org_party_tax_id
-        filing['filing']['registration']['parties'][0]['officer']['identifier'] = org_party_identifier
-
     create_filing('123', filing)
 
     effective_date = datetime.utcnow()
@@ -154,11 +150,6 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
         filing_rec.save()
 
     # test
-    if party_type == 'organization':
-        party_roles = business.party_roles.all()
-        assert party_roles[0].party.tax_id == org_party_tax_id
-        assert party_roles[0].party.identifier == org_party_identifier
-
     details = {
         'bootstrapIdentifier': bootstrap.identifier,
         'identifier': business.identifier,
