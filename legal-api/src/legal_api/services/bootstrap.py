@@ -125,8 +125,8 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments;
-    def create_affiliation(cls, account: int,  # pylint: disable=invalid-name
+    # pylint: disable=too-many-arguments, disable=invalid-name;
+    def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',

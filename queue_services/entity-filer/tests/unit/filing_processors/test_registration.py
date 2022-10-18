@@ -122,6 +122,8 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     # setup
     bootstrap = RegistrationBootstrap(account=1111111)
     identifier = 'NR 1234567'
+    org_party_tax_id = '123456789'
+    org_party_identifier = 'BC1011333'
     filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
     filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
     filing['filing']['registration']['parties'][0]['officer']['partyType'] = party_type
@@ -129,6 +131,10 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     filing['filing']['registration']['parties'][0]['officer']['firstName'] = first_name
     filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
     filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
+
+    if party_type == 'organization':
+        filing['filing']['registration']['parties'][0]['officer']['taxId'] = org_party_tax_id
+        filing['filing']['registration']['parties'][0]['officer']['identifier'] = org_party_identifier
 
     create_filing('123', filing)
 
@@ -148,6 +154,17 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
         filing_rec.save()
 
     # test
+    if party_type == 'organization':
+        party_roles = business.party_roles.all()
+        assert party_roles[0].party.tax_id == org_party_tax_id
+        assert party_roles[0].party.identifier == org_party_identifier
+
+    details = {
+        'bootstrapIdentifier': bootstrap.identifier,
+        'identifier': business.identifier,
+        'nrNumber': identifier
+    }
+
     with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
         with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
             with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
@@ -159,6 +176,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
                                           business_registration=business.identifier,
                                           business_name='Test',
                                           corp_type_code=legal_type,
-                                          pass_code=expected_pass_code)
+                                          pass_code=expected_pass_code,
+                                          details=details)
                 assert first_affiliation_call_args == expected_call_args
 
