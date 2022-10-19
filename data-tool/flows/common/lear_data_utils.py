@@ -4,7 +4,7 @@ from legal_api.models import Party, PartyRole, Business, Office, Address, Filing
 from legal_api.models.colin_event_id import ColinEventId
 
 from .event_filing_service import RegistrationEventFilings, CorrectionEventFilings
-from .firm_filing_data_utils import get_is_paper_only
+from .firm_filing_data_utils import get_is_paper_only, get_effective_date
 
 
 def get_party_match(db: any, party_dict: dict, corp_num: str):
@@ -103,7 +103,7 @@ def get_colin_event(db: any, event_id: int):
 def populate_filing(business: Business, event_filing_data: dict, filing_data: dict):
     target_lear_filing_type = filing_data['target_lear_filing_type']
     filing_json = event_filing_data['filing_json']
-    effective_date = filing_data['f_effective_dts_pacific']
+    effective_date = get_effective_date(filing_data)
 
     filing = Filing()
     filing.skip_status_listener = True

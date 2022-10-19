@@ -2,6 +2,8 @@ from enum import Enum
 
 import pandas as pd
 
+from flows.common.event_filing_service import ChangeRegistrationEventFilings
+
 
 class AddressFormatType(str, Enum):
     BASIC = 'BAS'
@@ -111,11 +113,31 @@ def get_party_type(filing_party_data: dict):
 
 
 def get_is_paper_only(filing_data: dict):
+    if (event_filing_type := filing_data['event_file_type']) and \
+            event_filing_type == ChangeRegistrationEventFilings.ADFIRM_NULL:
+        return True
+
     if (ods_type_cd := filing_data['f_ods_type']) and \
             ods_type_cd == 'P':
         return True
 
     return False
+
+
+def get_effective_date(filing_data: dict):
+    if (event_filing_type := filing_data['event_file_type']) and \
+            event_filing_type == ChangeRegistrationEventFilings.ADFIRM_NULL:
+        return filing_data['e_event_dts_pacific']
+
+    return filing_data['f_effective_dts_pacific']
+
+
+def get_effective_date_str(filing_data: dict):
+    if (event_filing_type := filing_data['event_file_type']) and \
+            event_filing_type == ChangeRegistrationEventFilings.ADFIRM_NULL:
+        return filing_data['e_event_dt_str']
+
+    return filing_data['f_effective_dt_str']
 
 
 def get_event_info_to_retrieve(unprocessed_firm_dict: dict):
