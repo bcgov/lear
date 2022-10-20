@@ -422,14 +422,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         return False
 
-    def set_processed(self):
+    def set_processed(self, business_type):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-        if (self.effective_date is None or
-            (self.payment_completion_date
-             and self.effective_date < self.payment_completion_date)):  # pylint: disable=W0143; hybrid property
+        if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
+            self.effective_date is None or (
+                self.payment_completion_date
+                and self.effective_date < self.payment_completion_date
+                )):  # pylint: disable=W0143; hybrid property
             self.effective_date = self.payment_completion_date
+
+    def effective_date_can_be_before_payment_completion_date(self, business_type):
+        """For AR or COD filings on CP or BEN then the effective date can be before the payment date."""
+        return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
+                                    Filing.FILINGS['changeOfDirectors'].get('name')) and business_type in {'CP', 'BEN'}
 
     @staticmethod
     def _raise_default_lock_exception():

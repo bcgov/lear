@@ -177,10 +177,13 @@ class EventFilingService:
             rs = conn.execute(sql_text)
             event_filing_data_dict = convert_result_set_to_dict(rs)
             event_filing_data_dict = event_filing_data_dict[0]
+            event_filing_data_dict['skip_filing'] = False
             event_filing_data_dict['event_file_type'] = event_file_type
             event_filing_data_dict['is_corrected_event_filing'] = False
-            with suppress(IndexError, KeyError, TypeError):
+            if event_file_type in EVENT_FILING_LEAR_TARGET_MAPPING:
                 event_filing_data_dict['target_lear_filing_type'] = EVENT_FILING_LEAR_TARGET_MAPPING[event_file_type]
+            else:
+                event_filing_data_dict['target_lear_filing_type'] = None
 
             corp_name = event_filing_data_dict['cn_corp_name']
             if (corp_name_prefix := self.config.CORP_NAME_PREFIX):
@@ -191,6 +194,13 @@ class EventFilingService:
             sql_text = get_firm_event_filing_corp_party_data_query(corp_num, event_id, prev_event_ids, event_filing_data_dict)
             rs = conn.execute(sql_text)
             event_filing_corp_party_data_dict = convert_result_set_to_dict(rs)
+            if prev_event_filing_data:
+                prev_corp_parties = prev_event_filing_data.get('corp_parties')
+                for corp_party_dict in event_filing_corp_party_data_dict:
+                    prev_corp_party_dict = self.find_prev_corp_party(prev_corp_parties, corp_party_dict)
+                    if prev_corp_party_dict:
+                        corp_party_dict['cp_appointment_dt'] = prev_corp_party_dict['cp_appointment_dt']
+
             event_filing_data_dict['corp_parties'] = event_filing_corp_party_data_dict
 
             # get office data
@@ -205,7 +215,10 @@ class EventFilingService:
                 event_filing_data_dict['prev_event_filing_data'] = {}
 
             if CorrectionEventFilings.has_value(event_file_type):
-               event_filing_data_dict['corrected_event_filing_info'] = correction_event_filing_mappings[event_id]
+                if event_id in correction_event_filing_mappings:
+                    event_filing_data_dict['corrected_event_filing_info'] = correction_event_filing_mappings[event_id]
+                else:
+                    event_filing_data_dict['skip_filing'] = True
 
             # check if corrected event/filing
             if correction_event_ids and len(correction_event_ids) > 0:
@@ -217,6 +230,17 @@ class EventFilingService:
                     return event_filing_data_dict, is_corrected_event_filing, correction_event_id
 
             return event_filing_data_dict, False, None
+
+
+    def find_prev_corp_party(self, prev_corp_parties: list, corp_party_to_find_dict: dict):
+        if (prev_corp_party_dict := next((x for x in prev_corp_parties \
+                                         if x['cp_corp_party_id'] == corp_party_to_find_dict['cp_prev_party_id'] \
+                                            and x['cp_party_typ_cd'] != 'FCP'), None)) or \
+                (prev_corp_party_dict := next((x for x in prev_corp_parties \
+                                           if x['cp_corp_party_id'] == corp_party_to_find_dict['cp_corp_party_id'] \
+                                              and x['cp_party_typ_cd'] != 'FCP'), None)):
+            return prev_corp_party_dict
+        return None
 
 
     def is_corrected_event_filing(self, event_filing_data_dict, correction_event_ids: list):
@@ -279,3 +303,5 @@ class EventFilingService:
                 CorrectionEventFilings.has_value(event_file_type) or \
                 OtherEventFilings.has_value(event_file_type):
             return True
+
+        return False

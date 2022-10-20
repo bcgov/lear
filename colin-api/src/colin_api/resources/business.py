@@ -39,16 +39,13 @@ class BusinessInfo(Resource):
     @cors.crossdomain(origin='*')
     def get(legal_type: str, identifier: str):
         """Return the complete business info."""
-        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
-            return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
-
         try:
             # convert identifier if BC legal_type
             if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
                 identifier = identifier[-7:]
 
             # get business
-            corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
+            corp_types = Business.CORP_TYPE_CONVERSION.get(legal_type, [legal_type])
             business = Business.find_by_identifier(identifier, corp_types)
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND

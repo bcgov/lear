@@ -264,9 +264,11 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['courtOrder', 'dissolution',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'correction', 'dissolution', 'registration']),
+         ['changeOfRegistration', 'conversion', 'correction', 'courtOrder',
+         'dissolution', 'registration', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'correction', 'dissolution', 'registration']),
+         ['changeOfRegistration', 'conversion', 'correction', 'courtOrder',
+         'dissolution', 'registration', 'registrarsNotation', 'registrarsOrder']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -301,6 +303,10 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_historical_llc', Business.State.HISTORICAL, 'LLC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
+        ('staff_historical_sp', Business.State.HISTORICAL, 'SP', 'staff', [STAFF_ROLE],
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder', {'restoration': []}, 'putBackOn']),
+        ('staff_historical_gp', Business.State.HISTORICAL, 'GP', 'staff', [STAFF_ROLE],
+         ['courtOrder', 'registrarsNotation', 'registrarsOrder', {'restoration': []}, 'putBackOn']),
 
         ('user_historical_llc', Business.State.HISTORICAL, 'LLC', 'user', [BASIC_USER], []),
     ]

@@ -21,6 +21,7 @@ from common.lear_data_utils import populate_filing_json_from_lear, get_colin_eve
 from common.firm_filing_json_factory_service import FirmFilingJsonFactoryService
 from common.firm_filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
+from sqlalchemy.exc import InvalidRequestError
 from tasks.task_utils import ColinInitTask, LearInitTask
 from sqlalchemy import engine, text
 
@@ -47,7 +48,7 @@ def get_unprocessed_firms(config, db_engine: engine):
         df = pd.DataFrame(rs, columns=rs.keys())
         raw_data_dict = df.to_dict('records')
         corp_nums = [x.get('corp_num') for x in raw_data_dict]
-        logger.info(f'{len(raw_data_dict)} corp_nums to process from colin data: {corp_nums}')
+        # logger.info(f'{len(raw_data_dict)} corp_nums to process from colin data: {corp_nums}')
 
     return raw_data_dict
 
@@ -59,7 +60,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
     event_filing_service = EventFilingService(colin_db_engine, config)
     corp_num = unprocessed_firm_dict.get('corp_num')
     corp_name = ''
-    print(f'get event filing data for {corp_num}')
+    # print(f'get event filing data for {corp_num}')
 
     try:
         event_ids = unprocessed_firm_dict.get('event_ids')
@@ -83,7 +84,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
         for idx, event_id in enumerate(events_ids_to_process):
             event_file_type = event_filing_types_to_process[idx]
             is_supported_event_filing = event_filing_service.get_event_filing_is_supported(event_file_type)
-            print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
+            # print(f'event_id: {event_id}, event_file_type: {event_file_type}, is_supported_event_filing: {is_supported_event_filing}')
             prev_event_ids = get_previous_event_ids(event_ids, event_id)
             event_filing_data_dict, is_corrected_event_filing, correction_event_id = \
                 event_filing_service.get_event_filing_data(corp_num,
@@ -102,6 +103,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             event_filing_data_arr.append({
                 'is_in_lear': is_in_lear(processed_events_ids, event_id),
                 'is_supported_type': is_supported_event_filing,
+                'skip_filing': event_filing_data_dict['skip_filing'],
                 'data': event_filing_data_dict
             })
             prev_event_filing_data = event_filing_data_dict
@@ -135,7 +137,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
     try:
         event_filing_data_arr = event_filing_data_dict['event_filing_data']
         for event_filing_data in event_filing_data_arr:
-            if event_filing_data['is_supported_type']:
+            if event_filing_data['is_supported_type'] and not event_filing_data['skip_filing']:
                 filing_data = event_filing_data['data']
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
@@ -173,7 +175,8 @@ def transform_event_filing_data(config, app: any, colin_db_engine: engine, db_le
         with app.app_context():
             event_filing_data_arr = event_filing_data_dict['event_filing_data']
             for event_filing_data in event_filing_data_arr:
-                if not event_filing_data['is_in_lear'] and event_filing_data['is_supported_type']:
+                if not event_filing_data['is_in_lear'] and event_filing_data['is_supported_type']  \
+                        and not event_filing_data['skip_filing']:
                     # process and create LEAR json filing dict
                     filing_data = event_filing_data['data']
                     event_filing_type = filing_data['event_file_type']
@@ -206,6 +209,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
     event_id = None
     event_filing_type = None
     filing = None
+    filing_processed = False
 
     with app.app_context():
         try:
@@ -219,14 +223,14 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     error_msg = f'could not finish processing this firm as there is an unsupported event/filing type: {event_filing_type}'
                     raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
 
-                if not event_filing_data['is_in_lear']:
+                if not event_filing_data['is_in_lear'] and not event_filing_data['skip_filing']:
                     # the corp_processing table should already track whether an event/filing has been processed and
                     # saved to lear but just to be safe a final check against lear is made to ensure the event/filing
                     # is not already in lear
-                    colin_event = get_colin_event(db_lear, event_id)
-                    if colin_event:
-                        error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
-                        raise CustomException(f'{error_msg}', filing_data)
+                    # colin_event = get_colin_event(db_lear, event_id)
+                    # if colin_event:
+                    #     error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
+                    #     raise CustomException(f'{error_msg}', filing_data)
 
                     business = None
                     if not RegistrationEventFilings.has_value(event_filing_type):
@@ -240,6 +244,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
                     # process filing with custom filer function
                     business = process_filing(config, filing.id, event_filing_data_dict, filing_data, db_lear)
+                    filing_processed = True
 
                     event_cnt = event_filing_data_dict['retrieved_events_cnt']
                     if event_cnt == (idx + 1):
@@ -265,6 +270,21 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               failed_event_file_type=event_filing_type,
                                               last_error=error_msg)
             raise err
+        except InvalidRequestError as err:
+            error_msg = f'error loading business InvalidRequestError: {corp_num}, {corp_name}, {err}'
+            logger.error(error_msg)
+            status_service.update_flow_status(flow_name='sp-gp-flow',
+                                              corp_num=corp_num,
+                                              corp_name=corp_name,
+                                              processed_status=ProcessingStatuses.FAILED,
+                                              failed_event_id=event_id,
+                                              failed_event_file_type=event_filing_type,
+                                              last_error=error_msg)
+            logger.info(f'filing processed: {filing_processed}')
+            logger.info('lear db rollback')
+            db_lear.session.rollback()
+
+            raise err
         except Exception as err:
             error_msg = f'error loading business {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)
@@ -275,11 +295,9 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               failed_event_id=event_id,
                                               failed_event_file_type=event_filing_type,
                                               last_error=error_msg)
+            logger.info(f'filing processed: {filing_processed}')
+            logger.info('lear db rollback')
             db_lear.session.rollback()
-
-            if filing:
-                logger.info(f'delete filing id: {filing.id}')
-                filing.delete()
 
             raise err
 
@@ -322,9 +340,19 @@ def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unuse
 #
 # with Flow(name="SP-GP-Migrate-ETL",
 #           schedule=schedule,
-#           executor=LocalDaskExecutor(scheduler="threads"),
-#            state_handlers=[skip_if_running_handler]) as f:
-#           # state_handlers=[]) as f:
+#           executor=LocalDaskExecutor(scheduler="threads"), # default value, specify num_workers for finer grained control
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=4),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=5),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=6),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=10),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=12),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=14),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=16),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=18),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=20),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=24),
+#           # executor=LocalDaskExecutor(scheduler="threads", num_workers=32),
+#           state_handlers=[skip_if_running_handler]) as f:
 
 with Flow("SP-GP-Migrate-ETL", executor=LocalDaskExecutor(scheduler="threads") ) as f:
 

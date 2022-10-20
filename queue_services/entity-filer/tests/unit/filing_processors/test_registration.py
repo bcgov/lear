@@ -122,6 +122,8 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     # setup
     bootstrap = RegistrationBootstrap(account=1111111)
     identifier = 'NR 1234567'
+    org_party_tax_id = '123456789'
+    org_party_identifier = 'BC1011333'
     filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
     filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
     filing['filing']['registration']['parties'][0]['officer']['partyType'] = party_type
@@ -148,6 +150,12 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
         filing_rec.save()
 
     # test
+    details = {
+        'bootstrapIdentifier': bootstrap.identifier,
+        'identifier': business.identifier,
+        'nrNumber': identifier
+    }
+
     with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
         with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
             with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
@@ -159,6 +167,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
                                           business_registration=business.identifier,
                                           business_name='Test',
                                           corp_type_code=legal_type,
-                                          pass_code=expected_pass_code)
+                                          pass_code=expected_pass_code,
+                                          details=details)
                 assert first_affiliation_call_args == expected_call_args
 

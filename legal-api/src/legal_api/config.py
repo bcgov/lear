@@ -112,6 +112,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
     NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
     NATS_ENTITY_EVENT_SUBJECT = os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events')
+    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
     # NAMEX PROXY Settings
@@ -142,6 +143,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     NAICS_VERSION = int(os.getenv('NAICS_VERSION', '1'))
 
     NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
+
+    ACA_PY_ADMIN_API_URL = os.getenv('ACA_PY_ADMIN_API_URL')
+    ACA_PY_ADMIN_API_KEY = os.getenv('ACA_PY_ADMIN_API_KEY')
+    ACA_PY_ENTITY_DID = os.getenv('ACA_PY_ENTITY_DID')
 
     TESTING = False
     DEBUG = False

@@ -9,10 +9,14 @@
                <tr>
                   <td class="col-33">
                      <div class="section-sub-title">
-                        <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                        <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                        {% if party.officer.middleName %}
-                           <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                        {% if party.officer.partyType == 'organization' %}
+                           <span class="capitalize-text">{{ party.officer.organizationName }}</span>
+                        {% else %}
+                           <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                           <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                           {% if party.officer.middleName %}
+                              <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                           {% endif %}
                         {% endif %}
                      </div>
                   </td>
@@ -56,11 +60,16 @@
    <div class="separator mt-4"></div>
    <div class="section-title mt-4">Completing Party Statement</div>
    <div class="section-data mt-4">
-      <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
-      {% if ns.cp.officer.middleName %}
-         <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
+      {% if ns.cp.officer.partyType == 'organization' %}
+         <span class="capitalize-text">{{ ns.cp.officer.organizationName }}</span>
+      {% else %}
+         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.middleName %}
+            <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
+         {% endif %}
+         <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span>
       {% endif %}
-      <span class="capitalize-text">{{ ns.cp.officer.lastName }}</span> certifies that they have relevant knowledge
+       certifies that they have relevant knowledge
       of the {{ entityDescription }} and is authorized to make this filing.
    </div>
 </div>

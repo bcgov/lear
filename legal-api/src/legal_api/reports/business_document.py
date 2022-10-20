@@ -249,6 +249,8 @@ class BusinessDocument:
         # report dates
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
         business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
+        if self._business.start_date:
+            business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
 
     def _set_addresses(self, business: dict):
         """Set business addresses."""
@@ -292,7 +294,7 @@ class BusinessDocument:
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
-                                                                      'voluntaryLiquidation']):
+                                                                      'voluntaryLiquidation', 'putBackOn']):
             state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -312,7 +314,7 @@ class BusinessDocument:
         alterations = []
         # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(self._business.id, ['alteration', 'correction', 'changeOfName',
-                                                                      'specialResolution']):
+                                                                      'changeOfRegistration', 'specialResolution']):
             filing_meta = filing.meta_data
             filing_json = filing.filing_json
             if filing_meta:
@@ -367,6 +369,11 @@ class BusinessDocument:
                 _get_summary_display_name(filing.filing_type,
                                           filing_meta['dissolution']['dissolutionType'],
                                           self._business.legal_type)
+            if self._business.legal_type in ['SP', 'GP'] and filing_meta['dissolution']['dissolutionType'] == \
+                    'voluntary':
+                filing_info['dissolution_date_str'] = \
+                    datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
+                                               '%Y-%m-%d').date().strftime('%B %-d, %Y')
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -445,6 +452,15 @@ class BusinessDocument:
                 'LLC': 'Voluntary Dissolution',
                 'SP': 'Dissolution Application',
                 'GP': 'Dissolution Application'
+            },
+            'administrative': {
+                'CP': 'Administrative Dissolution',
+                'BEN': 'Administrative Dissolution',
+                'ULC': 'Administrative Dissolution',
+                'CC': 'Administrative Dissolution',
+                'LLC': 'Administrative Dissolution',
+                'SP': 'Administrative Dissolution',
+                'GP': 'Administrative Dissolution'
             }
         },
         'restorationApplication': 'Restoration Application',
@@ -452,7 +468,8 @@ class BusinessDocument:
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
         'Involuntary Dissolution': 'Involuntary Dissolution',
-        'voluntaryLiquidation': 'Voluntary Liquidation'
+        'voluntaryLiquidation': 'Voluntary Liquidation',
+        'putBackOn': 'Correction - Put Back On'
     }
 
     CP_TYPE_DESCRIPTION = {

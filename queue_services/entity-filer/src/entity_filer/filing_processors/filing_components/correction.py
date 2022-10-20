@@ -26,6 +26,7 @@ from entity_filer.filing_processors.filing_components import (
     create_party,
     create_role,
     filings,
+    shares,
     update_address,
 )
 
@@ -78,11 +79,22 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
         filings.update_filing_court_order(correction_filing_rec, court_order_json)
 
-        # update business start date, if any is present
+    # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
         business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
         if business_start_date:
             business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
+
+    # update share structure and resolutions, if any
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
+        shares.update_share_structure_correction(business, share_structure)
+
+    # update provisionsRemoved, if any
+    with suppress(IndexError, KeyError, TypeError):
+        provisions_removed = dpath.util.get(correction_filing, '/correction/provisionsRemoved')
+        if provisions_removed is not None:
+            business.restriction_ind = not provisions_removed
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

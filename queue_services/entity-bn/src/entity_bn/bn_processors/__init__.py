@@ -72,7 +72,6 @@ def request_bn_hub(input_xml):
         return None, str(err)
 
 
-async def send_email(payload: dict):  # pylint: disable=redefined-outer-name
-    """Publish the email message onto the NATS emailer subject."""
-    subject = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
+async def publish_event(payload: dict, subject: str):  # pylint: disable=redefined-outer-name
+    """Publish the message onto the NATS subject."""
     await qsm.service.publish(subject, payload)

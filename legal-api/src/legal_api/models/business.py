@@ -376,7 +376,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).isoformat()
 
         if self.dissolution_date:
-            d['dissolutionDate'] = self.dissolution_date.isoformat()
+            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
@@ -398,7 +398,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
             ).isoformat()
 
-        d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
+        filings = self.filings.all()
+
+        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
+                                  x.status == 'COMPLETED')
+
+        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
         return d
 
@@ -456,6 +461,14 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         business = None
         if internal_id:
             business = cls.query.filter_by(id=internal_id).one_or_none()
+        return business
+
+    @classmethod
+    def find_by_tax_id(cls, tax_id: str):
+        """Return a Business by the tax_id."""
+        business = None
+        if tax_id:
+            business = cls.query.filter_by(tax_id=tax_id).one_or_none()
         return business
 
     @classmethod

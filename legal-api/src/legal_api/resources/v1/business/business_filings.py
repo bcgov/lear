@@ -450,7 +450,7 @@ class ListFilingResource(Resource):
                 ) and \
                     ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
-                filing.set_processed()
+                filing.set_processed(business.legal_type)
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}

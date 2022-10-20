@@ -40,4 +40,5 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
     filing_rec.order_details = put_back_on_filing.get('details')
 
     business.state = Business.State.ACTIVE
+    business.dissolution_date = None
     business.state_filing_id = None

@@ -14,6 +14,12 @@
         ]
     },
     {
+        "vault": "bbdc",
+        "application": [
+            "aca-py"
+        ]
+    },
+    {
         "vault": "entity",
         "application": [
             "jwt",

@@ -14,10 +14,11 @@
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
-                  {% if offices.businessOffice.mailingAddress.hasCorrected %}
+                  {% if offices.businessOffice and offices.businessOffice.mailingAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
+                {% if offices.businessOffice %}
                <div class="pt-2">{{ offices.businessOffice.mailingAddress.streetAddress }}</div>
                {% if offices.businessOffice.mailingAddress.streetAddressAdditional is defined %}
                     <div>{{ offices.businessOffice.mailingAddress.streetAddressAdditional }}</div>
@@ -35,14 +36,20 @@
                <div class="delivery-instructions pt-1">
                   {{ offices.businessOffice.mailingAddress.deliveryInstructions }}
                </div>
+               {% else %}
+                   <div class="pt-2">
+                      Not Available
+                   </div>
+                {% endif %}
             </td>
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.businessOffice.deliveryAddress.hasCorrected %}
+                  {% if offices.businessOffice and offices.businessOffice.deliveryAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
+                {% if offices.businessOffice %}
                <div class="pt-2">{{ offices.businessOffice.deliveryAddress.streetAddress }}</div>
                {% if offices.businessOffice.deliveryAddress.streetAddressAdditional is defined %}
                     <div>{{ offices.businessOffice.deliveryAddress.streetAddressAdditional }}</div>
@@ -60,6 +67,11 @@
                <div class="delivery-instructions pt-1">
                   {{ offices.businessOffice.deliveryAddress.deliveryInstructions }}
                </div>
+                {% else %}
+                   <div class="pt-2">
+                      Not Available
+                   </div>
+                {% endif %}
             </td>
             <td class="col-33"></td>
          </tr>

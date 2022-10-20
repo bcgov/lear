@@ -107,6 +107,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     COLIN_API = os.getenv('COLIN_API', '')
 
     # service accounts
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')

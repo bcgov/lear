@@ -129,18 +129,16 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
         update_filing_user(filing_submission, filing_data)
 
         filing_submission.transaction_id = transaction.id
-        filing_submission.set_processed()
+        filing_submission._status = Filing.Status.COMPLETED.value
+        business_type = business.legal_type if business else filing_submission['business']['legal_type']
+        filing_submission.set_processed(business_type)
 
         event_type_cd = filing_data['e_event_type_cd']
         filing_type_cd = filing_data['f_filing_type_cd']
-        payment_type_cd = filing_data.get('payment_typ_cd')
-        fee_cd = filing_data.get('fee_cd')
 
         filing_meta.colin_filing_info = {
             'eventType': event_type_cd,
-            'filingType': filing_type_cd,
-            'paymentType': payment_type_cd,
-            'feeCode': fee_cd
+            'filingType': filing_type_cd
         }
         filing_submission._meta_data = json.loads(  # pylint: disable=W0212
             json.dumps(filing_meta.asjson, default=json_serial)
@@ -163,6 +161,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             db.session.commit()
             if config.UPDATE_ENTITY:
                 registration.update_affiliation(config, business, filing_submission)
+                registration.post_process(business, filing_submission)
 
         if any('conversion' in x for x in legal_filings):
             filing_submission.business_id = business.id

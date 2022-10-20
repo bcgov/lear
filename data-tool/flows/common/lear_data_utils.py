@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from legal_api.models import Party, PartyRole, Business, Office, Address, Filing, User
 from legal_api.models.colin_event_id import ColinEventId
 
@@ -19,6 +21,10 @@ def get_party_match(db: any, party_dict: dict, corp_num: str):
             .filter(Party.middle_initial == party_dict['middleName']) \
             .filter(Party.organization_name == party_dict['organizationName']) \
             .filter(Party.identifier == party_dict['identifier'])
+
+    if appointment_date := party_dict['appointmentDate']:
+        query = query.filter(PartyRole.appointment_date == appointment_date)
+
     result = query.one_or_none()
     return result
 
@@ -100,12 +106,36 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     effective_date = filing_data['f_effective_dts_pacific']
 
     filing = Filing()
+    filing.skip_status_listener = True
     filing.effective_date = effective_date
+    filing._status = Filing.Status.PENDING.value
     filing._filing_json = filing_json
     filing._filing_type = target_lear_filing_type
     filing.filing_date = effective_date
+    filing._completion_date = effective_date
     filing.business_id = business.id if business else None
     filing.source = Filing.Source.COLIN.value
     filing.paper_only = get_is_paper_only(filing_data)
 
     return filing
+
+
+def get_firm_affiliation_passcode(business: Business):
+    """Return a firm passcode for a given business identifier."""
+    pass_code = None
+    end_date = datetime.utcnow().date()
+    party_roles = PartyRole.get_party_roles(business.id, end_date)
+
+    if len(party_roles) == 0:
+        return pass_code
+
+    party = party_roles[0].party
+
+    if party.party_type == 'organization':
+        pass_code = party.organization_name
+    else:
+        pass_code = party.last_name + ', ' + party.first_name
+        if hasattr(party, 'middle_initial') and party.middle_initial:
+            pass_code = pass_code + ' ' + party.middle_initial
+
+    return pass_code

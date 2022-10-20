@@ -72,6 +72,7 @@ def update_affiliation(config, business: Business, filing: Filing):
         #     level='error'
         # )
         print(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
+        raise Exception(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
 
 
 
@@ -85,7 +86,6 @@ def process(business: Business,  # pylint: disable=too-many-branches
     registration_filing = filing.get('filing', {}).get('registration')
     filing_meta.registration = {}
     corp_num = registration_filing['business']['identifier']
-    tax_id = filing_event_data['c_bn_15']
 
     if not registration_filing:
         # raise QueueException(f'Registration legal_filing:registration missing from {filing_rec.id}')
@@ -99,7 +99,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     # Initial insert of the business record
     business = Business()
-    business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
+    business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     if start_date := registration_filing.get('startDate'):
         business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
     business.founding_date = filing_rec.effective_date
@@ -149,3 +149,16 @@ def process(business: Business,  # pylint: disable=too-many-branches
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for registration.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        if err := business_profile.update_business_profile(
+                business,
+                filing.json['filing']['registration']['contactPoint']
+        ):
+            print(f'Queue Error: Update Business for filing:{filing.id}, error:{err}')

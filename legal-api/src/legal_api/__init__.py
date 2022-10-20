@@ -27,7 +27,7 @@ from legal_api import config, models
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import flags, queue
+from legal_api.services import digital_credentials, flags, queue
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
@@ -49,6 +49,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
             dsn=dsn,
             integrations=[FlaskIntegration()],
+            release=f'legal-api@{get_run_version()}',
             send_default_pii=False
         )
 
@@ -58,6 +59,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
+
+    with app.app_context():  # db require app context
+        digital_credentials.init_app(app)
 
     setup_jwt_manager(app, jwt)
 
