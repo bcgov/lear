@@ -6,8 +6,8 @@
 MKFILE_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
 
-PROJECT_NAME:=sftp-icbc
-DOCKER_NAME:=sftp-icbc
+PROJECT_NAME:=sftp-icbc-report
+DOCKER_NAME:=sftp-icbc-report
 
 #################################################################################
 # COMMANDS -- license                                                           #
