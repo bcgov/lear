@@ -14,10 +14,12 @@
 """Test Suite to ensure the worker routines are working as expected."""
 import asyncio
 import copy
-
+import os
 import pytest
+import stan
 
-from .utils import helper_add_filing_to_queue, subscribe_to_queue
+from .utils import helper_add_filing_to_queue
+from typing import Callable
 
 
 @pytest.mark.asyncio
@@ -57,3 +59,26 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     # check it out
     assert filing.transaction_id
     assert filing.business_id == business_id
+
+
+async def subscribe_to_queue(stan_client: stan.aio.client.Client,
+                             call_back: Callable[[stan.aio.client.Msg], None]) \
+        -> str:
+    """Subscribe to the Queue using the environment setup.
+
+    Args:
+        stan_client: the stan connection
+        call_back: a callback function that accepts 1 parameter, a Msg
+    Returns:
+       str: the name of the queue
+    """
+    entity_subject = os.getenv('NATS_FILER_SUBJECT', 'LEGAL_FILING_STAN_SUBJECT')
+    entity_queue = os.getenv('NATS_QUEUE', 'LEGAL_FILING_STAN_QUEUE')
+    entity_durable_name = os.getenv('NATS_QUEUE', 'LEGAL_FILING_STAN_DURABLE_NAME')
+
+    await stan_client.subscribe(subject=entity_subject,
+                                queue=entity_queue,
+                                durable_name=entity_durable_name,
+                                cb=call_back)
+    return entity_subject
+

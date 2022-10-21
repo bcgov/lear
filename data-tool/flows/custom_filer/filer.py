@@ -36,8 +36,8 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on
-from .filing_processors.filing_components import create_comments
+from .filing_processors import registration, change_of_registration, dissolution, conversion, put_back_on, correction
+from .filing_processors.filing_components import create_comments, update_filing_user
 
 
 def get_filing_types(legal_filings: dict):
@@ -54,7 +54,7 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_event_data: Dict, db: any):
+def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_data: Dict, db: any):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -97,52 +97,55 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
                                                                                 filing_core_submission.json,
                                                                                 filing_submission,
                                                                                 filing_meta,
-                                                                                filing_event_data)
+                                                                                filing_data)
 
             elif filing.get('conversion'):
                 business, filing_submission = conversion.process(business,
                                                                  filing_core_submission.json,
                                                                  filing_submission,
-                                                                 filing_meta)
+                                                                 filing_meta,
+                                                                 filing_data)
 
             elif filing.get('changeOfRegistration'):
                 change_of_registration.process(business,
                                                filing_submission,
                                                filing,
                                                filing_meta,
-                                               filing_event_data)
+                                               filing_data)
 
             elif filing.get('dissolution'):
                 dissolution.process(business,
                                     filing,
                                     filing_submission,
                                     filing_meta,
-                                    filing_event_data)
+                                    filing_data)
 
             elif filing.get('putBackOn'):
                 put_back_on.process(business, filing, filing_submission)
 
+            elif filing.get('correction'):
+                filing_submission = correction.process(filing_submission, filing, filing_meta, business)
+
+        update_filing_user(filing_submission, filing_data)
 
         filing_submission.transaction_id = transaction.id
-        filing_submission.set_processed()
+        filing_submission._status = Filing.Status.COMPLETED.value
+        business_type = business.legal_type if business else filing_submission['business']['legal_type']
+        filing_submission.set_processed(business_type)
 
-        event_type_cd = filing_event_data['e_event_type_cd']
-        filing_type_cd = filing_event_data['f_filing_type_cd']
-        payment_type_cd = filing_event_data.get('payment_typ_cd')
-        fee_cd = filing_event_data.get('fee_cd')
+        event_type_cd = filing_data['e_event_type_cd']
+        filing_type_cd = filing_data['f_filing_type_cd']
 
         filing_meta.colin_filing_info = {
             'eventType': event_type_cd,
-            'filingType': filing_type_cd,
-            'paymentType': payment_type_cd,
-            'feeCode': fee_cd
+            'filingType': filing_type_cd
         }
         filing_submission._meta_data = json.loads(  # pylint: disable=W0212
             json.dumps(filing_meta.asjson, default=json_serial)
         )
 
         colin_event_id = ColinEventId()
-        colin_event_id.colin_event_id = int(filing_event_data['e_event_id'])
+        colin_event_id.colin_event_id = int(filing_data['e_event_id'])
         filing_submission.colin_event_ids.append(colin_event_id)
 
         db.session.add(business)
@@ -158,6 +161,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             db.session.commit()
             if config.UPDATE_ENTITY:
                 registration.update_affiliation(config, business, filing_submission)
+                registration.post_process(business, filing_submission)
 
         if any('conversion' in x for x in legal_filings):
             filing_submission.business_id = business.id
@@ -165,6 +169,13 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
             db.session.commit()
 
         if config.UPDATE_ENTITY and any('changeOfRegistration' in x for x in legal_filings):
+            AccountService.update_entity(
+                business_registration=business.identifier,
+                business_name=business.legal_name,
+                corp_type_code=business.legal_type
+            )
+
+        if config.UPDATE_ENTITY and business.legal_type in ['SP', 'GP'] and any('correction' in x for x in legal_filings):
             AccountService.update_entity(
                 business_registration=business.identifier,
                 business_name=business.legal_name,

@@ -16,8 +16,10 @@ import asyncio
 import json
 
 import pytest
+import pytest_asyncio
 
 
+@pytest_asyncio.fixture(scope='session')
 @pytest.mark.asyncio
 async def test_publish_event(app, session, stan_server, event_loop, client_id, entity_stan, future):
     """Assert that email event is placed on the queue."""
@@ -54,7 +56,7 @@ async def test_publish_event(app, session, stan_server, event_loop, client_id, e
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err: # noqa B902
+    except Exception as err:  # noqa B902
         print(err)
 
     # check it out

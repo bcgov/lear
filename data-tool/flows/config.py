@@ -74,6 +74,7 @@ class _Config():  # pylint: disable=too-few-public-methods
         port=int(DB_PORT_COLIN_MIGR),
         name=DB_NAME_COLIN_MIGR,
     )
+    SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
     # POSTGRESQL LEAR DB
     DB_USER = os.getenv('DATABASE_USERNAME', '')
@@ -89,7 +90,18 @@ class _Config():  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    DATABASE_POOL_PRE_PING = os.getenv('DATABASE_POOL_PRE_PING', 'True') == 'True'
+    DATABASE_POOL_SIZE = os.getenv('DATABASE_POOL_SIZE', '5')
+    DATABASE_MAX_OVERFLOW = os.getenv('DATABASE_MAX_OVERFLOW', '10')
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": DATABASE_POOL_PRE_PING,
+        "pool_size": int(DATABASE_POOL_SIZE),
+        "max_overflow": int(DATABASE_MAX_OVERFLOW)
+    }
+
     # service accounts
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
     ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL')
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv('ACCOUNT_SVC_AFFILIATE_URL')

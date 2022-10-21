@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_REGISTRATION,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_INCORPORATION,
+    CORRECTION_REGISTRATION,
     DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
@@ -307,6 +308,55 @@ def prep_incorporation_correction_filing(session, business, original_filing_id, 
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
         filing.save()
+    return filing
+
+
+def prep_firm_correction_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a firm correction filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+
+    gp_correction = copy.deepcopy(CORRECTION_REGISTRATION)
+    gp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    sp_correction = copy.deepcopy(CORRECTION_REGISTRATION)
+    sp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
+    sp_correction['filing']['correction']['parties'][0]['roles'] = [
+        {
+            'roleType': 'Completing Party',
+            'appointmentDate': '2022-01-01'
+
+        },
+        {
+            'roleType': 'Proprietor',
+            'appointmentDate': '2022-01-01'
+
+        }
+    ]
+    sp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
+
+    if legal_type == Business.LegalTypes.SOLE_PROP.value:
+        filing_template = sp_correction
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        filing_template = gp_correction
+
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
     return filing
 
 

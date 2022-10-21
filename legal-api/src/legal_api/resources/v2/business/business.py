@@ -18,14 +18,19 @@ Provides all the search and retrieval from the business entity datastore.
 from contextlib import suppress
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
-from legal_api.services import RegistrationBootstrapService, check_warnings
+from legal_api.services import (  # noqa: I001;
+    SYSTEM_ROLE,
+    AccountService,
+    RegistrationBootstrapService,
+    check_warnings,
+)  # noqa: I001;
 from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
 
@@ -64,6 +69,19 @@ def get_businesses(identifier: str):
     allowed_filings = str(request.args.get('allowed_filings', None)).lower() == 'true'
     if allowed_filings:
         business_json['allowedFilings'] = get_allowed(business.state, business.legal_type, jwt)
+
+    q_account = request.args.get('account')
+    current_app.logger.info('account info request, for account: %s', q_account)
+    if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, 'account_identity']):
+        account_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        current_app.logger.info('VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s',
+                                q_account,
+                                g.jwt_oidc_token_info.get('preferred_username'),
+                                g.jwt_oidc_token_info,
+                                account_response)
+        if orgs := account_response.get('orgs'):
+            if str(orgs[0].get('id')) == q_account:
+                business_json['accountId'] = orgs[0].get('id')
 
     return jsonify(business=business_json)
 

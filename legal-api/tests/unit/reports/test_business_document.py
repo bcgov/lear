@@ -14,6 +14,7 @@
 
 """Test-Suite to ensure that the Business Report class is working as expected."""
 import pytest
+from http import HTTPStatus
 
 from legal_api.reports.business_document import BusinessDocument  # noqa:I001
 from legal_api.services.authz import STAFF_ROLE
@@ -26,11 +27,63 @@ from tests.unit.models import factory_business, factory_business_mailing_address
     'identifier, entity_type, document_name',
     [
         ('CP1234567', 'CP', 'summary'),
+        ('BC7654321', 'BEN', 'summary'),
+        ('FM0000123', 'SP', 'summary'),
+        ('FM1100012', 'GP', 'summary'),
+        ('CP1234567', 'CP', 'cogs'),
+        ('BC7654321', 'BEN', 'cogs'),
+        ('CP1234567', 'CP', 'cstat'),
+        ('BC7654321', 'BEN', 'cstat'),
+        ('FM0000123', 'SP', 'cstat'),
+        ('FM1100012', 'GP', 'cstat'),
+        ('CP1234567', 'CP', 'lseal'),
+        ('BC7654321', 'BEN', 'lseal'),
+        ('FM0000123', 'SP', 'lseal'),
+        ('FM1100012', 'GP', 'lseal'),
+    ]
+)
+def test_get_json(session, app, jwt, identifier, entity_type, document_name):
+    """Assert business document can be returned as JSON."""
+    request_ctx = app.test_request_context(
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+    with request_ctx:
+        business = factory_business(identifier=identifier, entity_type=entity_type)
+        factory_business_mailing_address(business)
+        report = BusinessDocument(business, document_name)
+        json_resp = report.get_json()
+        assert json_resp
+        assert json_resp[1] == HTTPStatus.OK
+        json = json_resp[0]
+        assert json['business']
+        assert json['reportType'] == document_name
+        assert json['reportDateTime']
+        assert json['registrarInfo']
+        assert json['entityDescription']
+        assert json['entityAct']
+
+
+@pytest.mark.parametrize(
+    'identifier, entity_type, document_name',
+    [
+        ('CP1234567', 'CP', 'summary'),
         ('BC1234567', 'BC', 'summary'),
         ('BC7654321', 'BEN', 'summary'),
         ('BC1234567', 'CC', 'summary'),
         ('BC7654321', 'ULC', 'summary'),
         ('BC1234567', 'LLC', 'summary'),
+        ('FM0000123', 'SP', 'summary'),
+        ('FM1100012', 'GP', 'summary'),
+        ('CP1234567', 'CP', 'cogs'),
+        ('BC7654321', 'BEN', 'cogs'),
+        ('CP1234567', 'CP', 'cstat'),
+        ('BC7654321', 'BEN', 'cstat'),
+        ('FM0000123', 'SP', 'cstat'),
+        ('FM1100012', 'GP', 'cstat'),
+        ('CP1234567', 'CP', 'lseal'),
+        ('BC7654321', 'BEN', 'lseal'),
+        ('FM0000123', 'SP', 'lseal'),
+        ('FM1100012', 'GP', 'lseal'),
     ]
 )
 def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
@@ -39,7 +92,7 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
     with request_ctx:
-        business = factory_business(identifier='CP7654321', entity_type='CP')
+        business = factory_business(identifier=identifier, entity_type=entity_type)
         factory_business_mailing_address(business)
         report = BusinessDocument(business, document_name)
         filename = report._get_report_filename()
@@ -54,5 +107,3 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         assert template_data['registrarInfo']
         assert template_data['entityDescription']
         assert template_data['entityAct']
-
-

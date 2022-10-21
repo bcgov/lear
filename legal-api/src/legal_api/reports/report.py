@@ -15,7 +15,7 @@ import json
 import os
 import re
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 
@@ -116,7 +116,7 @@ class Report:  # pylint: disable=too-few-public-methods
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
-            'certificate-of-name-change/style',
+            'common/certificateFooter',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
@@ -299,7 +299,9 @@ class Report:  # pylint: disable=too-few-public-methods
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
-            filing['recognition_date_utc'] = self._business.founding_date.strftime('%B %-d, %Y')
+            filing['recognition_date_utc'] = recognition_datetime.strftime('%B %-d, %Y')
+            if self._business.start_date:
+                filing['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
@@ -469,7 +471,7 @@ class Report:  # pylint: disable=too-few-public-methods
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
 
-    def _format_change_of_registration_data(self, filing, filing_type):  # pylint: disable=too-many-locals
+    def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
             get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
@@ -492,6 +494,15 @@ class Report:  # pylint: disable=too-few-public-methods
             if prev_naics_description and to_naics_description and prev_naics_description != to_naics_description:
                 filing['newNaicsDescription'] = to_naics_description
 
+        # Change of start date
+        if filing_type == 'correction':
+            prev_start_date = versioned_business.start_date
+            new_start_date_str = filing.get(filing_type).get('startDate')
+            if new_start_date_str:
+                new_start_date = datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
+                if prev_start_date != new_start_date:
+                    filing['newStartDate'] = new_start_date_str
+
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
             filing['offices'] = {}
@@ -508,6 +519,10 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['offices']['businessOffice']['changed'] = \
                 filing['offices']['businessOffice']['mailingAddress']['changed']\
                 or filing['offices']['businessOffice']['deliveryAddress']['changed']
+            with suppress(KeyError):
+                self._format_address(filing[filing_type]['offices']['businessOffice']['deliveryAddress'])
+            with suppress(KeyError):
+                self._format_address(filing[filing_type]['offices']['businessOffice']['mailingAddress'])
 
         # Change of party
         if filing.get(filing_type).get('parties'):
@@ -549,7 +564,9 @@ class Report:  # pylint: disable=too-few-public-methods
         if party_json.get('officer').get('partyType') == 'person':
             last_name = party_json['officer'].get('lastName')
             first_name = party_json['officer'].get('firstName')
-            party_name = f'{last_name}, {first_name}'
+            middle_initial = party_json['officer'].get('middleInitial')\
+                if party_json['officer'].get('middleInitial') else ''
+            party_name = f'{last_name}, {first_name} {middle_initial}'
         elif party_json.get('officer').get('partyType') == 'organization':
             party_name = party_json['officer'].get('organizationName')
         return party_name

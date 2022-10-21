@@ -24,7 +24,9 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
+from tests.unit import has_expected_date_str_format
 
 
 def factory_business(designation: str = '001'):
@@ -209,13 +211,18 @@ def test_business_find_by_identifier_no_identifier(session):
 
 
 TEST_GOOD_STANDING_DATA = [
-    (datetime.now() - datedelta.datedelta(months=6), True),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), False)
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, True),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, True)
 ]
 
 
-@pytest.mark.parametrize('last_ar_date, expected', TEST_GOOD_STANDING_DATA)
-def test_good_standing(session, last_ar_date, expected):
+@pytest.mark.parametrize('last_ar_date, legal_type, state, expected', TEST_GOOD_STANDING_DATA)
+def test_good_standing(session, last_ar_date, legal_type, state, expected):
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
@@ -223,6 +230,8 @@ def test_good_standing(session, last_ar_date, expected):
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
+                        legal_type=legal_type,
+                        state=state,
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
                         last_ar_date=last_ar_date)
@@ -236,13 +245,16 @@ def test_business_json(session):
     business = Business(legal_name='legal_name',
                         legal_type='CP',
                         founding_date=EPOCH_DATETIME,
+                        start_date=datetime(2021, 8, 5, 8, 7, 58, 272362),
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
                         last_modified=EPOCH_DATETIME,
                         last_ar_date=EPOCH_DATETIME,
                         last_agm_date=EPOCH_DATETIME,
                         restriction_ind=True,
-                        association_type='CP'
+                        association_type='CP',
+                        # NB: default not intitialized since bus not committed before check
+                        state=Business.State.ACTIVE
                         )
     # basic json
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
@@ -270,15 +282,22 @@ def test_business_json(session):
         'complianceWarnings': [],
         'warnings': [],
         'hasCorrections': False,
-        'associationType': 'CP'
+        'associationType': 'CP',
+        'startDate': '2021-08-05',
+        'hasCourtOrders': False
     }
 
     assert business.json() == d
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = business.dissolution_date.isoformat()
-    assert business.json() == d
+    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    business_json = business.json()
+    assert business_json == d
+    dissolution_date_str = business_json['dissolutionDate']
+    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+    assert dissolution_date_format_correct
+
     business.dissolution_date = None
     d.pop('dissolutionDate')
 
@@ -343,3 +362,31 @@ def test_get_next_value_from_sequence(session, business_type, expected):
 
     else:
         assert not Business.get_next_value_from_sequence(business_type)
+
+
+def test_continued_in_business(session):
+    """Assert that the continued corp is saved successfully."""
+    business = Business(
+                    legal_name='Test - Legal Name',
+                    legal_type='BC',
+                    founding_date=datetime.utcfromtimestamp(0),
+                    last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                    dissolution_date=None,
+                    identifier='BC1234567',
+                    state=Business.State.ACTIVE,
+                    jurisdiction='CA',
+                    foreign_identifier='C1234567',
+                    foreign_legal_name='Prev Legal Name',
+                    foreign_legal_type='BEN',
+                    foreign_incorporation_date=datetime.utcfromtimestamp(0),
+                    )
+    business.save()
+    business_json = business.json()
+    assert business_json['jurisdiction'] == business.jurisdiction
+    assert business_json['foreignIdentifier'] == business.foreign_identifier
+    assert business_json['foreignLegalName'] == business.foreign_legal_name
+    assert business_json['foreignLegalType'] == business.foreign_legal_type
+    assert business_json['foreignIncorporationDate'] == datetime.date(
+                LegislationDatetime.as_legislation_timezone(business.foreign_incorporation_date)
+            ).isoformat()
+

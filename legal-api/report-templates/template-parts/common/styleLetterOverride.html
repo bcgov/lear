@@ -1,5 +1,9 @@
 <style>
     @page {
+        margin-bottom: 0.45in;
+        margin-left: .7in;
+        margin-right: .7in;
+
         @bottom-right {
             content: ''
         }
@@ -8,6 +12,16 @@
             content: ''
         }
     }
+    @media print {
+		body {
+            background-position: 50% 30%;
+            background-size: 350px 350px;
+        }
+    }
+    body {
+        margin: 0;
+        padding: 0;
+    }
     .bold {
         color: inherit;
     }
@@ -15,12 +29,14 @@
         display: block;
     }
     .registrar-signature img {
-        margin-left: -10px;
+        width: 130px;
+        height: 50px;
+        margin-left: -15px;
     }
-    .registrar-name {
-		text-align: start
-	}
+    .registrar-name,
     .registrar-title {
+		font-size: 14.66px; /*approx 11px after render*/
+		line-height: 20px; /*approx 15px after render*/
 		text-align: start;
 	}
 </style>

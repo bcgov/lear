@@ -125,16 +125,17 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments;
+    # pylint: disable=too-many-arguments, disable=invalid-name;
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
-                           pass_code: str = ''):
+                           pass_code: str = '',
+                           details: dict = None):
         """Affiliate a business to an account."""
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
-        template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
-        account_svc_affiliate_url = template_url.format(account_id=account)
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
         token = cls.get_bearer_token()
 
@@ -142,28 +143,31 @@ class AccountService:
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
-        entity_data = json.dumps({'businessIdentifier': business_registration,
-                                  'corpTypeCode': corp_type_code,
-                                  'name': business_name or business_registration
-                                  })
+        entity_data = {
+            'businessIdentifier': business_registration,
+            'corpTypeCode': corp_type_code,
+            'name': business_name or business_registration
+        }
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=entity_data,
+            data=json.dumps(entity_data),
             timeout=cls.timeout
         )
 
         # Create an account:business affiliation
-        affiliate_data = json.dumps({
+        affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
-        })
+        }
+        if details:
+            affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
             headers={**cls.CONTENT_TYPE_JSON,
                      'Authorization': cls.BEARER + token},
-            data=affiliate_data,
+            data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
 
@@ -179,7 +183,8 @@ class AccountService:
                       corp_type_code: str,
                       state: str = None):
         """Update an entity."""
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
 
         token = cls.get_bearer_token()
 
@@ -213,9 +218,9 @@ class AccountService:
 
         @TODO Update this when account affiliation is changed next sprint.
         """
-        account_svc_entity_url = current_app.config.get('ACCOUNT_SVC_ENTITY_URL')
-        template_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
-        account_svc_affiliate_url = template_url.format(account_id=account)
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_entity_url = f'{auth_url}/entities'
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
         token = cls.get_bearer_token()
 
@@ -238,3 +243,19 @@ class AccountService:
                 or entity_record.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
+
+    @classmethod
+    def get_account_by_affiliated_identifier(cls, identifier: str):
+        """Return the account affiliated to the business."""
+        token = cls.get_bearer_token()
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        url = f'{auth_url}/orgs?affiliation={identifier}'
+
+        res = requests.get(url,
+                           headers={**cls.CONTENT_TYPE_JSON,
+                                    'Authorization': cls.BEARER + token})
+        try:
+            return res.json()
+        except Exception:  # noqa B902; pylint: disable=W0703;
+            current_app.logger.error('Failed to get response')
+            return None

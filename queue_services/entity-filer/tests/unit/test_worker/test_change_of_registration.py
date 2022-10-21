@@ -185,7 +185,7 @@ async def test_change_of_registration_business_address(app, session, mocker, tes
     ]
 )
 async def test_worker_change_of_registration_court_order(app, session, mocker, test_name, legal_type, filing_template):
-    """Assert the worker process process the court order correctly."""
+    """Assert the worker process the court order correctly."""
     identifier = 'FM1234567'
     business = create_entity(identifier, legal_type, 'Test Entity')
 
@@ -227,7 +227,7 @@ async def test_worker_change_of_registration_court_order(app, session, mocker, t
 
 
 async def test_worker_proprietor_name_and_address_change(app, session, mocker):
-    """Assert the worker process process the court order correctly."""
+    """Assert the worker process the name and address change correctly."""
     identifier = 'FM1234567'
     business = create_entity(identifier, 'SP', 'Test Entity')
     business_id = business.id
@@ -283,7 +283,7 @@ async def test_worker_proprietor_name_and_address_change(app, session, mocker):
     ]
 )
 async def test_worker_partner_name_and_address_change(app, session, mocker, test_name):
-    """Assert the worker process process the court order correctly."""
+    """Assert the worker process the partner name and address change correctly."""
     identifier = 'FM1234567'
     business = create_entity(identifier, 'GP', 'Test Entity')
     business_id = business.id

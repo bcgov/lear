@@ -31,7 +31,20 @@ def check_business(business: Business) -> list:
 
     result.extend(check_office(business))
     result.extend(check_parties(legal_type, business))
+    result.extend(check_start_date(business))
 
+    return result
+
+
+def check_start_date(business: Business) -> list:
+    """Check for business start date."""
+    result = []
+    if not business.start_date:
+        result.append({
+            **WARNING_MESSAGE_BASE,
+            'code': BusinessWarningCodes.NO_START_DATE,
+            'message': 'A start date is required.',
+        })
     return result
 
 
@@ -51,14 +64,12 @@ def check_office(business: Business) -> list:
         })
         return result
 
-    mailing_address = business_office.addresses \
-        .filter(Address.address_type == 'mailing') \
-        .one_or_none()
+    addresses = business_office.addresses.all()
+
+    mailing_address = next((x for x in addresses if x.address_type == 'mailing'), None)
     result.extend(check_address(mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_OFFICE))
 
-    delivery_address = business_office.addresses \
-        .filter(Address.address_type == 'delivery') \
-        .one_or_none()
+    delivery_address = next((x for x in addresses if x.address_type == 'delivery'), None)
     result.extend(check_address(delivery_address, Address.DELIVERY, BusinessWarningReferers.BUSINESS_OFFICE))
 
     return result
@@ -68,7 +79,7 @@ def check_parties(legal_type: str, business: Business) -> list:
     """Check for missing parties data."""
     result = []
 
-    firm_party_roles = business.party_roles.all()
+    firm_party_roles = business.party_roles.filter(PartyRole.cessation_date.is_(None))
     result.extend(check_firm_parties(legal_type, firm_party_roles))
 
     completing_party_filing = Filing \

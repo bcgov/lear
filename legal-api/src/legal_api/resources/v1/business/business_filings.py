@@ -450,7 +450,7 @@ class ListFilingResource(Resource):
                 ) and \
                     ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
-                filing.set_processed()
+                filing.set_processed(business.legal_type)
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
@@ -841,8 +841,9 @@ class InternalFilings(Resource):
                         (filing.filing_type != 'correction' or business.legal_type != business.LegalTypes.COOP.value):
                     filing_json['filingId'] = filing.id
                     filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
-                    if not filing_json['filing']['business'].get('legalName'):
-                        business = Business.find_by_internal_id(filing.business_id)
+                    if not filing_json['filing'].get('business'):
+                        filing_json['filing']['business'] = business.json()
+                    elif not filing_json['filing']['business'].get('legalName'):
                         filing_json['filing']['business']['legalName'] = business.legal_name
                     if filing.filing_type == 'correction':
                         colin_ids = \

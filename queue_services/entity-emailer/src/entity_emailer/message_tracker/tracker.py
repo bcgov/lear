@@ -44,6 +44,13 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             identifier = email_msg.get('identifier', None)
             return create_message_context_properties(etype, message_id, source, identifier, True)
 
+        if etype == 'bc.registry.bnmove' \
+            and (new_bn := email_msg.get('data', {})
+                 .get('newBn', None)):
+            identifier = email_msg.get('identifier', None)
+            message_id = f'{etype}_{new_bn}'
+            return create_message_context_properties(etype, message_id, None, identifier, False)
+
         if etype == 'bc.registry.affiliation' \
             and (filing_id := email_msg.get('data', {})
                  .get('filing', {})

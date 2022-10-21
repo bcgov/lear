@@ -19,7 +19,7 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_restx import Resource, cors
-from registry_schemas import validate
+# from registry_schemas import validate
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Business
@@ -97,12 +97,12 @@ class FilingInfo(Resource):
                 return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
 
             # validate schema
-            is_valid, errors = validate(json_data, 'filing', validate_schema=True)
-            if not is_valid:
-                for err in errors:
-                    print(err.message)
-                return jsonify(
-                    {'message': 'Error: Invalid Filing schema'}), HTTPStatus.BAD_REQUEST
+            # is_valid, errors = validate(json_data, 'filing', validate_schema=True)
+            # if not is_valid:
+            #     for err in errors:
+            #         print(err.message)
+            #     return jsonify(
+            #         {'message': 'Error: Invalid Filing schema'}), HTTPStatus.BAD_REQUEST
 
             json_data = json_data.get('filing', None)
 

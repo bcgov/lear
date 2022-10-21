@@ -36,26 +36,26 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
                           'Cannot inform CRA about change of registration before receiving Business Number (BN15).')
 
     if filing.meta_data and filing.meta_data.get('changeOfRegistration', {}).get('toLegalName'):
-        _change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
+        change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
 
     with suppress(KeyError, ValueError):
         if dpath.util.get(filing.filing_json, 'filing/changeOfRegistration/parties') and \
                 has_party_name_changed(business, filing):
-            _change_name(business, filing, RequestTracker.RequestType.CHANGE_PARTY)
+            change_name(business, filing, RequestTracker.RequestType.CHANGE_PARTY)
 
     with suppress(KeyError, ValueError):
         if dpath.util.get(filing.filing_json, 'filing/changeOfRegistration/offices/businessOffice'):
             if has_previous_address(filing.transaction_id,
                                     business.delivery_address.one_or_none().office_id, 'delivery'):
-                _change_address(business, filing, RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS)
+                change_address(business, filing, RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS)
 
             if has_previous_address(filing.transaction_id,
                                     business.mailing_address.one_or_none().office_id, 'mailing'):
-                _change_address(business, filing, RequestTracker.RequestType.CHANGE_MAILING_ADDRESS)
+                change_address(business, filing, RequestTracker.RequestType.CHANGE_MAILING_ADDRESS)
 
 
-def _change_name(business: Business, filing: Filing,  # pylint: disable=too-many-locals
-                 name_type: RequestTracker.RequestType):
+def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-locals
+                name_type: RequestTracker.RequestType):
     """Inform CRA about change of name."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
     request_trackers = RequestTracker.find_by(business.id,
@@ -132,8 +132,8 @@ def _change_name(business: Business, filing: Filing,  # pylint: disable=too-many
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 
-def _change_address(business: Business, filing: Filing,  # pylint: disable=too-many-locals
-                    address_type: RequestTracker.RequestType):
+def change_address(business: Business, filing: Filing,  # pylint: disable=too-many-locals
+                   address_type: RequestTracker.RequestType):
     """Inform CRA about change of address."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 

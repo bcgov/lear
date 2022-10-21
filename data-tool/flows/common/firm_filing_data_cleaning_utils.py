@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from .data.firms_data import get_custom_corp_names
 from .firm_filing_data_utils import get_is_frozen
@@ -49,7 +50,7 @@ def clean_corp_party_data(filing_data: dict):
                 raise Exception(f'no first, last or middle name provided for {corp_party_type}')
 
             corp_party['cp_business_name'] = ''
-            corp_party['cp_bus_company_num'] = ''
+            corp_party['cp_bus_company_num'] = None
         elif corp_party_type == 'FCP':
             if not(corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']
                    or corp_party['cp_business_name']):
@@ -57,7 +58,7 @@ def clean_corp_party_data(filing_data: dict):
 
             if corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']:
                 corp_party['cp_business_name'] = ''
-                corp_party['cp_bus_company_num'] = ''
+                corp_party['cp_bus_company_num'] = None
             else:
                 corp_party['cp_first_name'] = ''
                 corp_party['cp_last_name'] = ''
@@ -128,6 +129,7 @@ def clean_address_data(address_data: dict, address_prefix: str):
     if address_format_type not in ('BAS', 'FOR', 'ADV'):
         raise Exception('unknown address format type: ' + address_format_type)
 
+
 def clean_corp_data(config, filing_data: dict):
     corp_num = filing_data['c_corp_num']
 
@@ -141,3 +143,18 @@ def clean_corp_data(config, filing_data: dict):
 
     is_frozen = get_is_frozen(filing_data)
     filing_data['c_is_frozen'] = is_frozen
+
+
+def clean_event_data(filing_data: dict):
+    e_event_dts = filing_data['e_event_dts_pacific']
+    # for events where date created is not known, use previous event/filing data.
+    # LEAR has issues re-creating versioning history for outputs if we don't do this
+    if e_event_dts.year == 1 and len(filing_data.get('prev_event_filing_data')) > 0:
+        prev_f_effective_dt_str = filing_data['prev_event_filing_data']['f_effective_dt_str']
+        prev_f_effective_dts_pacific = filing_data['prev_event_filing_data']['f_effective_dts_pacific']
+        new_f_effective_dts_pacific = prev_f_effective_dts_pacific + datetime.timedelta(seconds=1)
+
+        filing_data['e_event_dt_str'] = prev_f_effective_dt_str
+        filing_data['e_event_dts_pacific'] = new_f_effective_dts_pacific
+        filing_data['f_effective_dt_str'] = prev_f_effective_dt_str
+        filing_data['f_effective_dts_pacific'] = new_f_effective_dts_pacific

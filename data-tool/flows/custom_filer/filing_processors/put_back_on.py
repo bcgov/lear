@@ -28,8 +28,6 @@ def process(business: Business,  filing: Dict, filing_rec: Filing):
     if not (put_back_on_filing := filing.get('putBackOn')):
         print(f'legal_filing:putBackOn missing from {filing}')
 
-    print('processing putBackOn: %s', filing)
-
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(put_back_on_filing, '/courtOrder')

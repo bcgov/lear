@@ -29,15 +29,16 @@ from entity_bn.bn_processors import (
     business_sub_type_code,
     business_type_code,
     program_type_code,
+    publish_event,
     request_bn_hub,
 )
 from entity_bn.exceptions import BNException
 
 
-def process(business: Business,
-            is_admin: bool = False,
-            msg: dict = None,
-            skip_build=False):  # pylint: disable=too-many-branches, too-many-arguments
+async def process(business: Business,  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
+                  is_admin: bool = False,
+                  msg: dict = None,
+                  skip_build=False):
     """Process the incoming registration request."""
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
 
@@ -72,6 +73,9 @@ def process(business: Business,
     _inform_cra(business, inform_cra_tracker, business_number, skip_build)
 
     if not inform_cra_tracker.is_processed:
+        if skip_build:
+            return  # No retry for resubmit admin request
+
         if inform_cra_tracker.retry_number < max_retry:
             raise BNException(f'Retry number: {inform_cra_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
@@ -109,6 +113,20 @@ def process(business: Business,
 
         raise QueueException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
+
+    try:
+        # Once BN15 received send an email to user
+        subject = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
+        await publish_event({
+            'email': {
+                'type': 'businessNumber',
+                'option': 'bn',
+                'identifier': business.identifier
+            }},
+            subject)
+    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+        logger.error('Failed to publish BN email message onto the NATS emailer subject', exc_info=True)
+        raise err
 
 
 def _inform_cra(business: Business,

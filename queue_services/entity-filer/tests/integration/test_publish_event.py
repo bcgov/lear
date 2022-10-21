@@ -17,9 +17,11 @@ import json
 from datetime import datetime, timezone
 
 import pytest
+import pytest_asyncio
 from registry_schemas.example_data import ANNUAL_REPORT
 
 
+@pytest_asyncio.fixture(scope="session")
 @pytest.mark.asyncio
 async def test_publish_event(app, session, stan_server, event_loop, client_id, entity_stan, future):
     """Assert that filing event is placed on the queue."""

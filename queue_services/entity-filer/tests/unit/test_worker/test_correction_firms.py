@@ -131,7 +131,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
     assert len(corrected_filing.comments.all()) == 1
-    assert business.founding_date.isoformat() == '2022-01-01T08:00:00+00:00'
+    assert business.start_date.isoformat() == '2022-01-01T08:00:00+00:00'
 
 
 @pytest.mark.asyncio
@@ -176,7 +176,6 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
     filing_msg = {'filing': {'id': filing_id}}
 
     ret_filing = Filing.find_by_id(filing_id)
-    print(ret_filing.json)
 
     # mock out the email sender and event publishing
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -394,7 +393,7 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
         assert deleted_role.cessation_date is not None
 
     if test_name == 'gp_add_partner':
-        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 3
-        assert len(business.party_roles.all()) == 3
+        assert len(PartyRole.get_parties_by_role(business_id, 'partner')) == 4
+        assert len(business.party_roles.all()) == 4
         for party_role in business.party_roles.all():
             assert party_role.cessation_date is None

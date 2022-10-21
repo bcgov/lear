@@ -44,7 +44,7 @@ def set_legal_name(corp_num: str, business: Business, business_info: Dict):
     business.legal_name = legal_name if legal_name else corp_num[2:] + ' B.C. LTD.'
 
 
-def update_business_info(corp_num: str, tax_id: str, business: Business, business_info: Dict, filing: Filing):
+def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):
     """Format and update the business entity from incorporation filing."""
     if corp_num and business and business_info and filing:
         set_legal_name(corp_num, business, business_info)
@@ -53,7 +53,6 @@ def update_business_info(corp_num: str, tax_id: str, business: Business, busines
         business.founding_date = filing.effective_date
         business.last_coa_date = filing.effective_date
         business.last_cod_date = filing.effective_date
-        business.tax_id = tax_id
         return business
     return None
 

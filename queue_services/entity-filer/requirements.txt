@@ -11,7 +11,7 @@ certifi==2020.12.5
 click==7.1.2
 dpath==2.0.1
 itsdangerous==1.1.0
-jsonschema==3.2.0
+jsonschema==4.16.0
 protobuf==3.15.8
 pycountry==20.7.3
 pyrsistent==0.17.3
@@ -23,6 +23,6 @@ urllib3==1.26.4
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.1
-git+https://github.com/bcgov/business-schemas.git@2.15.27#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.15.34#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
