@@ -90,6 +90,11 @@ def get_unprocessed_firms_query(data_load_env: str):
                        -- bn num tests
 --                         and e.corp_num in ('FM0476538') -- has bn 15
 --                         and e.corp_num in ('FM0046262') -- has bn 9
+                       -- adfirm events with no filing 
+--                         and e.corp_num in ('FM0055113', 'FM0416637', 'FM0445808', 'FM0020924', 'FM0054588', 
+--                                            'FM0067077', 'FM0070431', 'FM0109121', 'FM0116406', 'FM0159962', 
+--                                            'FM0187352', 'FM0601717', 'FM0601877', 'FM0668295', 'FM0711517', 
+--                                            'FM0809641', 'FM0864098')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 

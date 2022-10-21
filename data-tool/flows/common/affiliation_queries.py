@@ -4,8 +4,9 @@ def get_unaffiliated_firms_query(data_load_env: str):
             from affiliation_processing ap
                      join corporation c on ap.corp_num = c.corp_num
             where environment = '{data_load_env}'
-               and processed_status is null
-              or processed_status <> 'COMPLETED'
+              -- and processed_status is null
+              --or processed_status <> 'COMPLETED'
+              and (processed_status is null or processed_status not in ('COMPLETED', 'FAILED'))
             limit 5
             ;
         """
