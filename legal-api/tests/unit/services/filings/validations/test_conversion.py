@@ -167,38 +167,3 @@ def test_invalid_business_address(session, test_name, legal_type, filing):
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
     assert err.msg[1]['error'] == "Address Country must be 'CA'."
 
-
-@pytest.mark.parametrize(
-    'test_name, legal_type, start_date, filing, expected_msg',
-    [
-        ('sp_invalid_start_date_past', 'SP', '2016-01-01', copy.deepcopy(SP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the '+
-         'future from the registration date.'),
-        ('gp_invalid_start_date_past', 'GP', '2016-01-01', copy.deepcopy(GP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
-         'future from the registration date.'),
-        ('sp_invalid_start_date_future', 'SP', '2020-12-01', copy.deepcopy(SP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
-         'future from the registration date.'),
-        ('gp_invalid_start_date_future', 'GP', '2020-12-01', copy.deepcopy(GP_CONVERSION),
-         'Start Date must be less than or equal to 2 years in the past and less than or equal to 90 days in the ' +
-         'future from the registration date.'),
-        ('sp_valid_start_date', 'SP', '2019-01-01', copy.deepcopy(SP_CONVERSION), None),
-        ('gp_valid_start_date', 'GP', '2019-01-01', copy.deepcopy(GP_CONVERSION), None),
-    ]
-)
-def test_invalid_start_date(session, test_name, legal_type, start_date,  filing, expected_msg):
-    """Assert that party is invalid."""
-    registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type=legal_type,
-                                state=Business.State.ACTIVE)
-    filing['filing']['conversion']['startDate'] = start_date
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        err = validate(business, filing)
-
-    if test_name in ['sp_valid_start_date', 'gp_valid_start_date']:
-        assert not err
-    else:
-        assert err
-        assert err.msg[0]['error'] == expected_msg
