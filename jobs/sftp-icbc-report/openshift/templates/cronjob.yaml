@@ -176,8 +176,10 @@ parameters:
 
   - name: "SCHEDULE"
     displayName: "Cron Schedule"
-    description: "Cron Schedule to Execute the Job (using local cluster system TZ)"
-    value: "30 1 * * TUE"
+
+    description: "Cron Schedule to Execute the Job (using local cluster system TZ) to run at 0:55 * * TUE-SAT at pacific time"
+    value: "55 7 * * TUE-SAT"
+
     required: true
 
   - name: "SUCCESS_JOBS_HISTORY_LIMIT"

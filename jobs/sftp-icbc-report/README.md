@@ -27,6 +27,7 @@ to setup your local development environment.
 ## Added permission to run.sh file if it is needed
 
 git add --chmod=+x path/to/file
+python sftpicbc.py
 
 ## Running Unit Tests
 
@@ -79,7 +80,9 @@ git add --chmod=+x path/to/file
    ```sh
    oc process -f openshift/templates/cronjob.yaml \
   -p TAG=dev \
-  -p SCHEDULE="30 1 * * TUE" \
+
+  -p SCHEDULE="55 7 * * TUE-SAT" \
+
   -o yaml \
   | oc apply -f - -n cc892f-dev
   ```
