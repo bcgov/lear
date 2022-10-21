@@ -102,7 +102,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     if start_date := registration_filing.get('startDate'):
         business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
-    business.founding_date = filing_rec.effective_date
+    business.founding_date = filing_event_data['c_recognition_dts_pacific']
     business.admin_freeze = filing_event_data['c_is_frozen']
 
     business_obj = registration_filing.get('business', {})
