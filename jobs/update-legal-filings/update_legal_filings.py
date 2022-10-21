@@ -18,6 +18,7 @@ This module is the API for the Legal Entity system.
 import asyncio
 import logging
 import os
+import uuid
 
 import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
@@ -26,7 +27,7 @@ from colin_api.models.filing import Filing
 from flask import Flask
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.queue import QueueService
-from sentry_sdk import capture_message
+from legal_api.utils.datetime import datetime
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config  # pylint: disable=import-error
@@ -247,23 +248,38 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
             application.logger.debug('colin_last_update not updated in legal db.')
 
     except Exception as err:
-        application.logger.error(err)
+        application.logger.error('Update-legal-filings: unhandled error %s', err)
 
 
-async def send_emails(tax_ids: dict, application: Flask):  # pylint: disable=redefined-outer-name
-    """Put bn email messages on the queue for all businesses with new tax ids."""
+async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: disable=redefined-outer-name
+    """Publish events for all businesses with new tax ids (for email + entity listeners)."""
     for identifier in tax_ids.keys():
         try:
-            subject = application.config['EMAIL_PUBLISH_OPTIONS']['subject']
+            subject = application.config['NATS_EMAILER_SUBJECT']
             payload = {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': identifier}}
             await qsm.publish_json_to_subject(payload, subject)
         except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
             # mark any failure for human review
-            capture_message(
-                f'Queue Error: Failed to place bn email for {identifier}'
-                f' on Queue with error:{err}',
-                level='error'
-            )
+            application.logger.debug(err)
+            # NB: error log will trigger sentry message
+            application.logger.error('Update-legal-filings: Failed to publish bn email event for %s.', identifier)
+        try:
+            subject = application.config['NATS_ENTITY_EVENTS_SUBJECT']
+            payload = {
+                'specversion': '1.0.1',
+                'type': 'bc.registry.business.bn',
+                'source': 'update-legal-filings.publish_queue_events',
+                'id': str(uuid.uuid4()),
+                'time': datetime.utcnow().isoformat(),
+                'datacontenttype': 'application/json',
+                'identifier': identifier
+            }
+            await qsm.publish_json_to_subject(payload, subject)
+        except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+            # mark any failure for human review
+            application.logger.debug(err)
+            # NB: error log will trigger sentry message
+            application.logger.error('Update-legal-filings: Failed to publish bn entity event for %s.', identifier)
 
 
 async def update_business_nos(application):  # pylint: disable=redefined-outer-name
@@ -307,7 +323,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                     application.logger.error('legal-updater failed to update tax_ids in lear.')
                     raise Exception
 
-                await send_emails(tax_ids, application)
+                await publish_queue_events(tax_ids, application)
 
                 application.logger.debug('Successfully updated tax ids in lear.')
             else:

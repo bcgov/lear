@@ -13,10 +13,16 @@
   {% for filing in stateFilings %}
     <tr class="no-page-break">
         <td>
-            <div class="section-sub-title">{{filing.filing_name}}</div>
+            <div class="section-sub-title">{{filing.filingName}}</div>
             <div class="pt-2">
                 <span>Filing Date:</span>
-                <span>{{filing.filing_date_time}}</span>
+                <span>{{filing.filingDateTime}}</span>
+                {% if filing.dissolution_date_str %}
+                    <div class="pt-2">
+                        <span>Dissolution Date:</span>
+                        <span>{{ filing.dissolution_date_str }}</span>
+                    </div>
+                {% endif %}
             </div>
         </td>
     </tr>

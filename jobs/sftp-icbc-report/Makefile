@@ -9,6 +9,7 @@ CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
 PROJECT_NAME:=sftp-icbc-report
 DOCKER_NAME:=sftp-icbc-report
 
+
 #################################################################################
 # COMMANDS -- license                                                           #
 #################################################################################

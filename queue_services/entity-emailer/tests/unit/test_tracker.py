@@ -132,8 +132,16 @@ from . import create_mock_message  # noqa: I003
                      },
                  }
              }
-         }
-         ),
+         }),
+        ('bc.registry.bnmove_993777399BC0001',
+         {
+             'type': 'bc.registry.bnmove',
+             'identifier': 'FM1234567',
+             'data': {
+                 'oldBn': '993775204BC0001',
+                 'newBn': '993777399BC0001'
+             }
+         }),
         ('businessNumber_BC1234567',
          {'email': {
              'type': 'businessNumber',

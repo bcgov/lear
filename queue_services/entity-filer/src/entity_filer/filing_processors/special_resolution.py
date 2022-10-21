@@ -20,14 +20,14 @@ from legal_api.models import Business, Filing, Party, Resolution
 def process(business: Business, filing: Dict, filing_rec: Filing):
     """Render the special resolution filing unto the model objects."""
     logger.debug('Processing Special Resolution : %s', filing)
-    if(resolution_filing := filing.get('specialResolution')):
+    if (resolution_filing := filing.get('specialResolution')):
         resolution = Resolution(
             resolution=resolution_filing.get('resolution'),
             resolution_type=Resolution.ResolutionType.SPECIAL.value,
             resolution_sub_type=filing_rec.filing_type
         )
 
-        if(signatory := resolution_filing.get('signatory')):
+        if (signatory := resolution_filing.get('signatory')):
             party = Party(
                 first_name=signatory.get('givenName', '').upper(),
                 last_name=signatory.get('familyName', '').upper(),

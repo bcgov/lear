@@ -47,7 +47,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
     city = db.Column('city', db.String(4096))
     region = db.Column('region', db.String(4096))
     country = db.Column('country', db.String(2))
-    postal_code = db.Column('postal_code', db.String(10))
+    postal_code = db.Column('postal_code', db.String(15))
     delivery_instructions = db.Column('delivery_instructions', db.String(4096))
 
     # parent keys

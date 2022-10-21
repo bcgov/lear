@@ -17,7 +17,7 @@ TODO: Move in internal filings calls.
 """
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.models import Business
@@ -39,7 +39,8 @@ class InternalBusinessResource(Resource):
     def get():
         """Return all identifiers with no tax_id set that are supposed to have a tax_id.
 
-        Excludes COOPS because they do not ge a tax id/business number.
+        Excludes COOPS because they do not get a tax id/business number.
+        Excludes SP/GP we don't sync firm to colin and we use entity-bn to get tax id/business number.
         """
         if not jwt.validate_roles([COLIN_SVC_ROLE]):
             return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
@@ -65,7 +66,10 @@ class InternalBusinessResource(Resource):
         for identifier in json_input.keys():
             # json input is a dict -> identifier: tax id
             business = Business.find_by_identifier(identifier)
-            business.tax_id = json_input[identifier]
-            business.save()
-
+            if business:
+                business.tax_id = json_input[identifier]
+                business.save()
+            else:
+                current_app.logger.error('Unable to update tax_id for business (%s), which is missing in lear',
+                                         identifier)
         return jsonify({'message': 'Successfully updated tax ids.'}), HTTPStatus.CREATED

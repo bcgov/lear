@@ -13,5 +13,11 @@
             "entity-service-account",
             "sentry"
         ]
+    },
+    {
+        "vault": "nats",
+        "application": [
+            "entity-events-listener"
+        ]
     }
 ]

@@ -37,12 +37,20 @@ def update_affiliation(business: Business, filing: Filing):
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
         pass_code = business_info.get_firm_affiliation_passcode(business.id)
 
+        nr_number = filing.filing_json.get('filing').get('registration', {}).get('nameRequest', {}).get('nrNumber')
+        details = {
+            'bootstrapIdentifier': bootstrap.identifier,
+            'identifier': business.identifier,
+            'nrNumber': nr_number
+        }
+
         rv = AccountService.create_affiliation(
             account=bootstrap.account,
             business_registration=business.identifier,
             business_name=business.legal_name,
             corp_type_code=business.legal_type,
-            pass_code=pass_code
+            pass_code=pass_code,
+            details=details
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
@@ -100,7 +108,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business.start_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business.founding_date = filing_rec.effective_date
 
     business_obj = registration_filing.get('business', {})
     if (naics := business_obj.get('naics')) and naics.get('naicsCode'):

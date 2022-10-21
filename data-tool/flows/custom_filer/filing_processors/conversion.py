@@ -22,11 +22,13 @@ altered.
 There are no corrections for a conversion filing.
 """
 # pylint: disable=superfluous-parens; as pylance requires it
+import datetime
 from contextlib import suppress
+from datetime import timedelta
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, Comment
 
 from ..filing_meta import FilingMeta
 from ..filing_processors.change_of_registration import update_parties as upsert_parties
@@ -43,14 +45,15 @@ from ..filing_processors.filing_components.parties import update_parties
 def process(business: Business,  # pylint: disable=too-many-branches
             filing: Dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
+            filing_meta: FilingMeta,
+            filing_event_data: Dict):  # pylint: disable=too-many-branches
     """Process the incoming historic conversion filing."""
     # Extract the filing information for incorporation
     filing_meta.conversion = {}
     if not (conversion_filing := filing.get('filing', {}).get('conversion')):
         print(f'CONVL legal_filing:conversion missing from {filing_rec.id}')
     if business and business.legal_type in ['SP', 'GP']:
-        _process_firms_conversion(business, filing, filing_rec, filing_meta)
+        _process_firms_conversion(business, filing, filing_rec, filing_meta, filing_event_data)
     else:
         business = _process_corps_conversion(business, conversion_filing, filing, filing_rec)
 
@@ -77,7 +80,8 @@ def _process_corps_conversion(business, conversion_filing, filing, filing_rec):
     return business
 
 
-def _process_firms_conversion(business: Business, conversion_filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def _process_firms_conversion(business: Business, conversion_filing: Dict, filing_rec: Filing, filing_meta: FilingMeta,
+                              filing_event_data: Dict):
     # Name change if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(conversion_filing, '/filing/conversion/nameRequest')
@@ -103,7 +107,16 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
         party_json = dpath.util.get(conversion_filing, '/filing/conversion/parties')
         upsert_parties(business, party_json, filing_rec)
 
-    # Update court order
-    if (court_order := conversion_filing.get('filing', {}).get('conversion', {}).get('courtOrder', {})) and \
-            court_order.get('orderDetails'):
-        update_filing_court_order(filing_rec, court_order)
+    # update business start date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        business_start_date = dpath.util.get(conversion_filing, '/filing/conversion/startDate')
+        if business_start_date:
+            business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
+
+    if lt_notation := filing_event_data.get('lt_notation'):
+        filing_rec.comments.append(
+            Comment(
+                comment=lt_notation,
+                staff_id=filing_rec.submitter_id
+            )
+        )

@@ -6,6 +6,7 @@ def get_unprocessed_firms_query(data_load_env: str):
                          string_agg(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ','
                                     order by e.event_id)           as event_file_types,
                          array_agg(e.event_id order by e.event_id) as event_ids,
+                         array_agg(e.event_id order by e.event_id) FILTER (WHERE e.event_type_cd = 'FILE' and f.filing_type_cd in ('CORGP', 'CORSP', 'FRCCH', 'FRCRG') ) as correction_event_ids,
                          min(e.event_id)                           as first_event_id,
                          max(e.event_id)                           as last_event_id
                   from event e
@@ -67,13 +68,40 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                           and e.corp_num in ('FM0713982', 'FM0805895')
                        -- firms with ledger text 
 --                        and e.corp_num in ('FM0000226', 'FM0695709')
+                       -- firms with corrections
+--                           and e.corp_num in ('FM0278687', 'FM0540659') -- FILE_CORGP
+--                           and e.corp_num in ('FM0446660', 'FM0610227') -- FILE_CORSP
+--                           and e.corp_num in ('FM0277872', 'FM0391750') -- FILE_FRCCH
+--                           and e.corp_num in ('FM0285571', 'FM0391762') -- FILE_FRCRG
+                       -- firms for filing user tests
+--                           and e.corp_num in ('FM0292609', 'FM0554196', 'FM0608573')
+                       -- firms that have paper only flag set for registration related filings but need to be 
+                       -- available as electronic outputs 
+--                         and e.corp_num in ('FM0367712', 'FM0474350', 'FM0554151')
+                       -- firms with only one filing and with no known effective date
+--                         and e.corp_num in ('FM0346815', 'FM0346781', 'FM0346897')
+                       -- firms with dissolutions
+--                         and e.corp_num in ('FM0439147', 'FM0272498', 'FM0354293', 'FM0274699', 'FM0272756')
+                       -- firms that test corp party business company number scenarios
+--                         and e.corp_num in ('FM0554987', 'FM0557171', 'FM0563506', 'FM0566805')
+                       -- contact info test
+--                         and e.corp_num in ('FM0558990') -- has contact email
+--                         and e.corp_num in ('FM0887464') -- has no contact email
+                       -- bn num tests
+--                         and e.corp_num in ('FM0476538') -- has bn 15
+--                         and e.corp_num in ('FM0046262') -- has bn 9
+                       -- adfirm events with no filing 
+--                         and e.corp_num in ('FM0055113', 'FM0416637', 'FM0445808', 'FM0020924', 'FM0054588', 
+--                                            'FM0067077', 'FM0070431', 'FM0109121', 'FM0116406', 'FM0159962', 
+--                                            'FM0187352', 'FM0601717', 'FM0601877', 'FM0668295', 'FM0711517', 
+--                                            'FM0809641', 'FM0864098')
                   group by e.corp_num) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
                         and cp.flow_name = 'sp-gp-flow'
                         and cp.environment = '{data_load_env}'
             where 1 = 1
-                   and tbl_fe.event_file_types = 'FILE_FRREG'
+--                   and tbl_fe.event_file_types = 'FILE_FRREG'
 --                 and tbl_fe.event_file_types like 'FILE_FRREG%'
 --                 and tbl_fe.event_file_types like '%FILE_FRREG,%FRCHG%'
 --                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
@@ -116,8 +144,13 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                 and tbl_fe.event_file_types like '%FILE_FRARG%'
 --                 and tbl_fe.event_file_types like '%CONVFMRCP_FRARG%'
 --                 and tbl_fe.event_file_types like '%CONVFMRCP_FRMEM%'
---                    and tbl_fe.event_file_types like '%CONVFMRCP_NULL%'
-                   and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+--                 and tbl_fe.event_file_types like '%CONVFMRCP_NULL%'
+--                 and tbl_fe.event_file_types like '%FILE_CORGP%'
+--                 and tbl_fe.event_file_types like '%FILE_CORSP%'
+--                 and tbl_fe.event_file_types like '%FILE_FRCCH%'
+--                 and tbl_fe.event_file_types like '%FILE_FRCRG%'                   
+--                 and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
+                   and ((cp.processed_status is null or cp.processed_status not in ('COMPLETED', 'FAILED', 'PARTIAL'))
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
             limit 50
@@ -149,7 +182,15 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             to_char(f.effective_dt, 'YYYY-MM-DD') as f_effective_dt_str,
             to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as f_effective_dts_pacific,
             f.withdrawn_event_id   as f_withdrawn_event_id,
-            f.ods_type_cd          as f_ods_type,
+            case
+                when e.event_type_cd = 'CONVFMRCP' and f.ods_type_cd is null THEN 'P'
+                -- registration related filings marked as paper only but should be available as electronic filings
+                when (f.effective_dt >= '2004-03-15' and f.effective_dt <= '2011-04-08')
+                      and f.filing_type_cd in ('FRREG', 'FRARG', 'FRCRG')
+                      and not (f.filing_type_cd = 'FRARG' and e.event_type_cd ~ '^CONV.*$')
+                    THEN 'F'
+                else f.ods_type_cd
+            end f_ods_type,            
             f.nr_num               as f_nr_num,
             -- corporation
             c.corp_num             as c_corp_num,
@@ -158,6 +199,11 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             to_char(c.recognition_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as c_recognition_dts_pacific,
             c.bn_9                 as c_bn_9,
             c.bn_15                as c_bn_15,
+            case 
+                when (c.bn_15 is null or c.bn_15 = '')
+                    THEN c.bn_9
+                else c.bn_15
+            end c_bn,
             c.admin_email          as c_admin_email,
             -- corp_name
             cn.corp_num            as cn_corp_num,
@@ -174,30 +220,21 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             bd.corp_num            as bd_corp_num,
             bd.start_event_id      as bd_start_event_id,
             bd.end_event_id        as bd_end_event_id,
+            to_char(bd.business_start_date, 'YYYY-MM-DD') as bd_business_start_date_dt_str,
             to_char(bd.business_start_date, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as bd_business_start_date_dts_pacific,
             bd.naics_code          as bd_naics_code,
             bd.description         as bd_description,
             -- ledger_text
             lt.event_id            as lt_event_id,
             lt.notation            as lt_notation,
-            -- payment
-            p.event_id             as p_event_id,
-            p.payment_typ_cd       as payment_typ_cd,
-            p.fee_cd               as p_fee_cd,
-            p.gst_num              as p_gst_num,
-            p.bcol_account_num     as p_bcol_account_num,
-            p.payment_total        as p_payment_total,
-            p.folio_num            as p_folio_num,
-            p.dat_num              as p_dat_num,
-            p.routing_slip         as p_routing_slip,
-            p.fas_balance          as p_fas_balance,
             -- filing user
             u.event_id             as u_event_id,
             u.user_id              as u_user_id,
             u.last_name            as u_last_name,
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
-            u.email_addr           as u_email_addr
+            u.email_addr           as u_email_addr,
+            to_char(u.event_timestmp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as u_event_timestmp_dts_pacific            
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join corporation c on c.corp_num = e.corp_num
@@ -205,7 +242,6 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
                  left outer join corp_state cs on cs.start_event_id = e.event_id
                  left outer join business_description bd on bd.start_event_id = e.event_id
                  left outer join ledger_text lt on lt.event_id = e.event_id
-                 left outer join unused_payment p on p.event_id = e.event_id
                  left outer join filing_user u on u.event_id = e.event_id
         where 1 = 1
           and e.corp_num = '{corp_num}'
@@ -273,7 +309,9 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
                cp.business_name          as cp_business_name,
                case 
                     when cp.bus_company_num = '' then NULL
-                    when cp.bus_company_num ~ '^[0-9]*$' then concat('BC', cp.bus_company_num)
+                    when cp.bus_company_num ~ '^[0-9]+$' and length(cp.bus_company_num) <= 7  
+                        then concat('BC', cp.bus_company_num)
+                    else cp.bus_company_num
                end cp_bus_company_num,
                cp.email_address          as cp_email_address,
                cp.phone                  as cp_phone,

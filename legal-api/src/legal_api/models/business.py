@@ -167,7 +167,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'tax_id',
             'naics_key',
             'naics_code',
-            'naics_description'
+            'naics_description',
+            'start_date',
+            'jurisdiction',
+            'foreignIdentifier',
+            'foreignLegalName',
+            'foreignLegalType',
+            'foreignIncorporationDate'
         ]
     }
 
@@ -183,6 +189,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    start_date = db.Column('start_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -199,6 +206,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
+
+    jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
+    foreign_identifier = db.Column(db.String(15))
+    foreign_legal_name = db.Column(db.String(1000))
+    foreign_legal_type = db.Column(db.String(10))
+    foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -286,12 +299,21 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Address.address_type == Address.DELIVERY)
 
     @property
+    def is_firm(self):
+        """Return if is firm, otherwise false."""
+        return self.legal_type in (self.LegalTypes.SOLE_PROP, self.LegalTypes.PARTNERSHIP)
+
+    @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
+        # A firm is always in good standing
+        if self.is_firm:
+            return True
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
-        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day
-        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
+        is_active = self.state.name == Business.State.ACTIVE.name
+        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
+        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow() and is_active
 
     def save(self):
         """Render a Business to the local cache."""
@@ -354,7 +376,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).isoformat()
 
         if self.dissolution_date:
-            d['dissolutionDate'] = self.dissolution_date.isoformat()
+            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.tax_id:
@@ -362,7 +384,26 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
-        d['hasCorrections'] = any(x for x in self.filings.all() if x.filing_type == 'correction' and
+        if self.start_date:
+            d['startDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.start_date)
+            ).isoformat()
+
+        if self.jurisdiction:
+            d['jurisdiction'] = self.jurisdiction
+            d['foreignIdentifier'] = self.foreign_identifier
+            d['foreignLegalName'] = self.foreign_legal_name
+            d['foreignLegalType'] = self.foreign_legal_type
+            d['foreignIncorporationDate'] = datetime.date(
+                LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
+            ).isoformat()
+
+        filings = self.filings.all()
+
+        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
+                                  x.status == 'COMPLETED')
+
+        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
         return d
 
@@ -423,12 +464,22 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         return business
 
     @classmethod
+    def find_by_tax_id(cls, tax_id: str):
+        """Return a Business by the tax_id."""
+        business = None
+        if tax_id:
+            business = cls.query.filter_by(tax_id=tax_id).one_or_none()
+        return business
+
+    @classmethod
     def get_all_by_no_tax_id(cls):
         """Return all businesses with no tax_id."""
-        no_tax_id_types = Business.LegalTypes.COOP.value
-        tax_id_types = [x.value for x in Business.LegalTypes]
-        tax_id_types.remove(no_tax_id_types)
-        businesses = cls.query.filter(Business.legal_type.in_(tax_id_types)).filter_by(tax_id=None).all()
+        no_tax_id_types = [
+            Business.LegalTypes.COOP.value,
+            Business.LegalTypes.SOLE_PROP.value,
+            Business.LegalTypes.PARTNERSHIP.value,
+        ]
+        businesses = cls.query.filter(~Business.legal_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return businesses
 
     @classmethod

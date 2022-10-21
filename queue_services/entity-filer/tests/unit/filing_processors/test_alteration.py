@@ -18,7 +18,9 @@ from datetime import datetime
 from typing import Final
 
 import pytest
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, Document
+from legal_api.models.document import DocumentType
+from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
@@ -31,6 +33,7 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
+from tests.utils import upload_file, assert_pdf_contains_text
 
 
 CONTACT_POINT = {
@@ -199,3 +202,92 @@ async def test_worker_alteration_court_order(app, session, mocker):
     assert file_number == final_filing.court_order_file_number
     assert datetime.fromisoformat(order_date) == final_filing.court_order_date
     assert effect_of_order == final_filing.court_order_effect_of_order
+
+@pytest.mark.parametrize( 'new_association_type',
+    [
+        (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value),
+        (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value)
+    ]
+)
+def test_alteration_coop_association_type(app, session, new_association_type):
+    """Assert that the coop association type is altered."""
+    # setup
+    identifier = 'CP1234567'
+    business = create_business(identifier)
+    business.legal_type = Business.LegalTypes.COOP.value
+
+    alteration_filing = copy.deepcopy(FILING_HEADER)
+    alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    alteration_filing['filing']['alteration']['cooperativeAssociationType'] = new_association_type
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # test
+    alteration.process(business=business,
+                       filing_submission=filing_submission,
+                       filing=alteration_filing['filing'],
+                       filing_meta=filing_meta)
+
+    # validate
+    assert business.association_type == new_association_type
+
+
+def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
+    """Assert that the coop association type is altered."""
+    # setup
+    identifier = 'CP1234567'
+    business = create_business(identifier)
+    business.legal_type = Business.LegalTypes.COOP.value
+
+    alteration_filing = copy.deepcopy(FILING_HEADER)
+    alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    
+    rules_file_key_uploaded_by_user = upload_file('rules.pdf')
+    memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
+    alteration_filing['filing']['alteration']['rulesFileKey'] = \
+        rules_file_key_uploaded_by_user
+    alteration_filing['filing']['alteration']['rulesFileName'] = 'Rules_File.pdf'
+    alteration_filing['filing']['alteration']['memorandumFileKey'] = \
+        memorandum_file_key_uploaded_by_user
+    alteration_filing['filing']['alteration']['memorandumFileName'] = 'Memorandum_File.pdf'
+    
+    
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # test
+    alteration.process(business=business,
+                       filing_submission=filing_submission,
+                       filing=alteration_filing['filing'],
+                       filing_meta=filing_meta)
+
+    business.save()
+
+    rules_document = session.query(Document). \
+        filter(Document.filing_id == filing_submission.id). \
+        filter(Document.type == DocumentType.COOP_RULES.value). \
+        one_or_none()
+
+    assert rules_document.file_key == alteration_filing['filing']['alteration']['rulesFileKey']
+    assert MinioService.get_file(rules_document.file_key)
+    rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+    assert rules_files_obj
+    assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+
+    memorandum_document = session.query(Document). \
+        filter(Document.filing_id == filing_submission.id). \
+        filter(Document.type == DocumentType.COOP_MEMORANDUM.value). \
+        one_or_none()
+
+    assert memorandum_document.file_key == alteration_filing['filing']['alteration']['memorandumFileKey']
+    assert MinioService.get_file(memorandum_document.file_key)
+    memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+    assert memorandum_file_obj
+    assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())

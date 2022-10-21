@@ -56,18 +56,9 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     NATS_SERVERS = os.getenv('NATS_SERVERS', None)
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
-    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
-    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', None)
-
-    EMAIL_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
-    }
-
-    SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'error'),
-        'queue': os.getenv('NATS_QUEUE', 'error'),
-        'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
-    }
+    NATS_CLIENT_NAME = os.getenv('NATS_LEGAL_UPDATER_CLIENT_NAME', 'entity.updatelegalfilings')
+    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
+    NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
 
     SECRET_KEY = 'a secret'
 

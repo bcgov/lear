@@ -27,24 +27,31 @@ to be pursued.
 """
 import json
 import os
+import uuid
 from typing import Dict
 
 import nats
-from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
+from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_bn import config
-from entity_bn.bn_processors import admin, change_of_registration, dissolution_or_put_back_on, registration
+from entity_bn.bn_processors import (  # noqa: I001
+    admin,
+    change_of_registration,
+    correction,
+    dissolution_or_put_back_on,
+    publish_event,
+    registration,
+)
 from entity_bn.exceptions import BNException
 
 
-qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
@@ -56,6 +63,7 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
     if not msg or msg.get('type') not in [
         'bc.registry.business.registration',
         'bc.registry.business.changeOfRegistration',
+        'bc.registry.business.correction',
         'bc.registry.business.dissolution',
         'bc.registry.business.putBackOn',
         'bc.registry.admin.bn'
@@ -67,8 +75,8 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
 
     with flask_app.app_context():
         if msg['type'] == 'bc.registry.admin.bn':
-            admin.process(msg)
-            return
+            await admin.process(msg)
+            return msg['data']['business']['identifier']
 
         filing_core_submission = FilingCore.find_by_id(msg['data']['filing']['header']['filingId'])
         if not filing_core_submission:
@@ -80,14 +88,20 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
             raise QueueException
 
         if filing_submission.filing_type == filing_core_submission.FilingTypes.REGISTRATION.value:
-            registration.process(business)
+            await registration.process(business)
         elif filing_submission.filing_type == filing_core_submission.FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing_core_submission.storage)
+        elif filing_submission.filing_type == filing_core_submission.FilingTypes.CORRECTION.value and \
+                business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                        Business.LegalTypes.PARTNERSHIP.value):
+            correction.process(business, filing_core_submission.storage)
         elif filing_submission.filing_type in (filing_core_submission.FilingTypes.DISSOLUTION.value,
                                                filing_core_submission.FilingTypes.PUTBACKON.value) and \
                 business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
                                         Business.LegalTypes.PARTNERSHIP.value):
             dissolution_or_put_back_on.process(business, filing_core_submission.storage)
+
+        return business.identifier
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
@@ -96,7 +110,24 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         event_message = json.loads(msg.data.decode('utf-8'))
         logger.debug('Event Message Received: %s', event_message)
-        await process_event(event_message, FLASK_APP)
+        identifier = await process_event(event_message, FLASK_APP)
+        # publish identifier (so other things know business has changed)
+        try:
+            payload = {
+                'specversion': '1.x-wip',
+                'type': 'bc.registry.business.bn',
+                'source': 'entity-bn.cb_subscription_handler',
+                'id': str(uuid.uuid4()),
+                'time': datetime.utcnow().isoformat(),
+                'datacontenttype': 'application/json',
+                'identifier': identifier,
+                'data': {}
+            }
+            subject = APP_CONFIG.SUBSCRIPTION_OPTIONS['subject']
+            publish_event(payload, subject)
+        except Exception as err:  # pylint: disable=broad-except; # noqa: B902
+            capture_message('Entity-bn queue publish identifier error: ' + identifier, level='error')
+            logger.error('Queue Publish queue publish identifier error: %s %s', identifier, err, exc_info=True)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(event_message), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue

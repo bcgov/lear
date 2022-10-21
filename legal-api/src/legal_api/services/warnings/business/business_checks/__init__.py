@@ -59,6 +59,8 @@ class BusinessWarningCodes(str, Enum):
     NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE = 'NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE'
     NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION = 'NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION'
 
+    NO_START_DATE = 'NO_START_DATE'
+
 
 class BusinessWarningReferers(str, Enum):
     """Enum for for business warning referers."""

@@ -17,7 +17,8 @@
 """s2i based launch script to run the service."""
 import asyncio
 
-from entity_bn.worker import APP_CONFIG, cb_subscription_handler, qsm
+from entity_bn.bn_processors import qsm
+from entity_bn.worker import APP_CONFIG, cb_subscription_handler
 
 
 if __name__ == '__main__':

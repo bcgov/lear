@@ -15,6 +15,14 @@ def get_base_change_registration_filing_json(num_parties: int):
     return change_registration_json
 
 
+def get_base_correction_filing_json(num_parties: int):
+    correction_json = get_base_correction_json()
+    parties = correction_json['filing']['correction']['parties']
+    for _ in range(num_parties):
+        parties.append(get_base_party_json())
+    return correction_json
+
+
 def get_base_dissolution_filing_json(dissolution_type: str):
     if dissolution_type != 'voluntary':
         return None
@@ -78,7 +86,8 @@ def get_base_registration_json():
                         'naicsCode': None,
                         'naicsDescription': None
                     },
-                    'identifier': None
+                    'identifier': None,
+                    "taxId": None,
                 },
                 'startDate': None,
                 'nameRequest': {
@@ -88,8 +97,7 @@ def get_base_registration_json():
                 },
                 'businessType': None,
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
@@ -149,13 +157,77 @@ def get_base_change_registration_json():
                     'legalType': None
                 },
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }
     }
     return change_registration_json
+
+
+def get_base_correction_json():
+    correction_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'correction',
+                'certifiedBy': None,
+                'folioNumber': ''
+            },
+            'business': {
+                'legalName': None,
+                'legalType': None,
+                'identifier': None
+            },
+            'correction': {
+                'type': None,
+                'comment': None,
+                'correctedFilingId': None,
+                'correctedFilingDate': None,
+                'correctedFilingType': None,
+                'offices': {
+                    'businessOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    }
+                },
+                'parties': [],
+                'business': {
+                    'naics': {
+                        'naicsCode': None,
+                        'naicsDescription': None
+                    },
+                    'identifier': None
+                },
+                'startDate': None,
+                'nameRequest': {
+                    'nrNumber': None,
+                    'legalName': None,
+                    'legalType': None
+                },
+                'contactPoint': {
+                    'email': None
+                }
+            }
+        }
+    }
+    return correction_json
 
 
 def get_base_dissolution_json(dissolution_type: str):
@@ -235,15 +307,9 @@ def get_base_conversion_json():
                     'legalName': None,
                     'legalType': None
                 },
-                'courtOrder': {
-                    'fileNumber': None,
-                    'orderDate': None,
-                    'effectOfOrder': None,
-                    'orderDetails': None
-                },
+                'startDate': None,
                 'contactPoint': {
-                    'email': None,
-                    'phone': None
+                    'email': None
                 }
             }
         }

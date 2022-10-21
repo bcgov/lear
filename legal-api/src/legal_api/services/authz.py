@@ -15,6 +15,7 @@
 from http import HTTPStatus
 from typing import Final, List
 
+import requests
 from flask import current_app
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
@@ -52,7 +53,7 @@ def authorized(  # pylint: disable=too-many-return-statements
             return False
 
         template_url = current_app.config.get('AUTH_SVC_URL')
-        auth_url = template_url.format(**vars())
+        auth_url = f'{template_url}/entities/{identifier}/authorizations'
 
         token = jwt.get_token_auth_header()
         headers = {'Authorization': 'Bearer ' + token}
@@ -102,24 +103,24 @@ ALLOWABLE_FILINGS: Final = {
             'changeOfRegistration': ['SP', 'GP'],
             'conversion': ['SP', 'GP', 'BEN'],
             'correction': ['CP', 'BEN', 'SP', 'GP'],
-            'courtOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
             'incorporationApplication': ['CP', 'BC', 'BEN'],
             'registration': ['SP', 'GP'],
             'specialResolution': ['CP'],
             'transition': ['BC', 'BEN'],
-            'registrarsNotation': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            'registrarsOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
         },
         Business.State.HISTORICAL: {
-            'courtOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            'registrarsNotation': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            'registrarsOrder': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'restoration': {
                 'fullRestoration': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
                 'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
-            'putBackOn': ['SP', 'GP']
+            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC']
         }
     },
     'user': {
@@ -173,3 +174,20 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
             })
 
     return allowable_filing_types
+
+
+def get_account_by_affiliated_identifier(token, identifier: str):
+    """Return the account affiliated to the business."""
+    auth_url = current_app.config.get('AUTH_SVC_URL')
+    url = f'{auth_url}/orgs?affiliation={identifier}'
+
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+
+    res = requests.get(url, headers=headers)
+    try:
+        return res.json()
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get response')
+        return None

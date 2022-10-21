@@ -18,11 +18,14 @@ Processors hold the logic to communicate with CRA.
 from pathlib import Path
 
 import requests
+from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import RequestTracker
 
+
+qsm = QueueServiceManager()  # pylint: disable=invalid-name
 
 program_type_code = {
     'SP': '113',
@@ -67,3 +70,8 @@ def request_bn_hub(input_xml):
     except requests.exceptions.RequestException as err:
         logger.error(err, exc_info=True)
         return None, str(err)
+
+
+async def publish_event(payload: dict, subject: str):  # pylint: disable=redefined-outer-name
+    """Publish the message onto the NATS subject."""
+    await qsm.service.publish(subject, payload)

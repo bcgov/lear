@@ -34,7 +34,8 @@ from tests import integration_affiliation
 def account(app):
     """Create an account to be used for testing."""
     with app.app_context():
-        account_url = current_app.config.get('ACCOUNT_SVC_AFFILIATE_URL')
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_url = auth_url + '/orgs/{account_id}/affiliations'
         account_url = account_url[:account_url.rfind('{') - 1]
 
         org_data = json.dumps({'name': str(uuid.uuid4())})

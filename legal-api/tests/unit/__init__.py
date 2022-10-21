@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Centralized setup of logging for the service."""
+from datetime import datetime
+
 
 class MockResponse:
     """Mock http response."""
@@ -23,3 +25,12 @@ class MockResponse:
     def json(self):
         """Return mock json data."""
         return self.json_data
+
+
+def has_expected_date_str_format(date_str: str, format: str) -> bool:
+    "Determine if date string confirms to expected format"
+    try:
+        datetime.strptime(date_str, format)
+    except ValueError:
+        return False
+    return True

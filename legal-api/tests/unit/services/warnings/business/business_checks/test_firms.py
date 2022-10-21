@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
+from datetime import datetime
 
 import pytest
 
@@ -22,7 +23,8 @@ from tests.unit.services.warnings import factory_party_role_person, factory_part
 from legal_api.models import Address, Business, Office, PartyRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
-    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business
+    check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business,\
+    check_start_date
 
 
 
@@ -338,7 +340,8 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                     firm_num_persons_roles=num_persons_roles,
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party)
+                    filing_has_completing_party=filing_has_completing_party,
+                    start_date=datetime.utcnow())
 
     business = Business.find_by_identifier(identifier)
     assert business
@@ -411,5 +414,58 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
         business_warning = result[0]
         assert business_warning['code'] == expected_code
         assert business_warning['message'] == expected_msg
+    else:
+        assert len(result) == 0
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier, num_persons_roles, num_org_roles, person_cessation_dates, org_cessation_dates, filing_types, filing_has_completing_party, expected_code, expected_msg',
+    [
+        # SP tests
+        ('SUCCESS_PARTY_MA_MISSING_STREET', 'SP', 'FM0000001', 2, 0, [None, datetime.utcnow()], [], ['registration'], [True], None, None),
+        # GP tests
+        ('SUCCESS_PARTY_MA_MISSING_STREET', 'GP', 'FM0000001', 3, 0, [None, None, datetime.utcnow()], [], ['registration'], [True], None, None),
+    ])
+def test_check_parties_cessation_date(session, test_name, legal_type, identifier, num_persons_roles:int,
+                                      num_org_roles:int, person_cessation_dates:list, org_cessation_dates:list,
+                                      filing_types: list, filing_has_completing_party: list,
+                                      expected_code, expected_msg):
+    """Assert that business firm parties check functions properly."""
+
+    business = None
+
+    create_business(legal_type=legal_type,
+                    identifier=identifier,
+                    firm_num_persons_roles=num_persons_roles,
+                    firm_num_org_roles=num_org_roles,
+                    person_cessation_dates=person_cessation_dates,
+                    org_cessation_dates=org_cessation_dates,
+                    create_firm_party_address=True,
+                    filing_types=filing_types,
+                    filing_has_completing_party=filing_has_completing_party,
+                    create_completing_party_address=True)
+
+
+    business = Business.find_by_identifier(identifier)
+    assert business
+    assert business.legal_type == legal_type
+    assert business.identifier == identifier
+
+    ceased_party = None
+    if 'PARTY_MA_MISSING_STREET' in test_name:
+        ceased_party_role = business.party_roles \
+            .filter(PartyRole.role.in_(['partner', 'proprietor'])) \
+            .filter(PartyRole.cessation_date != None).one_or_none()
+        ceased_party = ceased_party_role.party
+        ceased_party.mailing_address.street = None
+
+    if ceased_party:
+        ceased_party.save()
+
+    result = check_parties(legal_type, business)
+
+
+    if expected_code:
+        assert len(result) == 1
     else:
         assert len(result) == 0

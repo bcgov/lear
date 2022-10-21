@@ -19,7 +19,7 @@ from http import HTTPStatus
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Business, Filing, RegistrationBootstrap, Comment
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 
@@ -72,6 +72,7 @@ def update_affiliation(config, business: Business, filing: Filing):
         #     level='error'
         # )
         print(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
+        raise Exception(f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}')
 
 
 
@@ -85,7 +86,6 @@ def process(business: Business,  # pylint: disable=too-many-branches
     registration_filing = filing.get('filing', {}).get('registration')
     filing_meta.registration = {}
     corp_num = registration_filing['business']['identifier']
-    tax_id = filing_event_data['c_bn_15']
 
     if not registration_filing:
         # raise QueueException(f'Registration legal_filing:registration missing from {filing_rec.id}')
@@ -99,12 +99,14 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     # Initial insert of the business record
     business = Business()
-    business = business_info.update_business_info(corp_num, tax_id, business, business_info_obj, filing_rec)
-    business.founding_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
+    business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
+    if start_date := registration_filing.get('startDate'):
+        business.start_date = datetime.fromisoformat(start_date) + timedelta(hours=8)
+    business.founding_date = filing_event_data['c_recognition_dts_pacific']
     business.admin_freeze = filing_event_data['c_is_frozen']
 
     business_obj = registration_filing.get('business', {})
-    if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
+    if (naics := registration_filing.get('business', {}).get('naics')):
         business_info.update_naics_info(business, naics)
     business.tax_id = business_obj.get('taxId', None)
     business.state = Business.State.ACTIVE
@@ -129,7 +131,13 @@ def process(business: Business,  # pylint: disable=too-many-branches
         court_order_json = dpath.util.get(filing, '/registration/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    filings.update_filing_order_details(filing_rec, filing_event_data)
+    if lt_notation := filing_event_data.get('lt_notation'):
+        filing_rec.comments.append(
+            Comment(
+                comment=lt_notation,
+                staff_id=filing_rec.submitter_id
+            )
+        )
 
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)
@@ -141,3 +149,16 @@ def process(business: Business,  # pylint: disable=too-many-branches
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
+
+
+def post_process(business: Business, filing: Filing):
+    """Post processing activities for registration.
+
+    THIS SHOULD NOT ALTER THE MODEL
+    """
+    with suppress(IndexError, KeyError, TypeError):
+        if err := business_profile.update_business_profile(
+                business,
+                filing.json['filing']['registration']['contactPoint']
+        ):
+            print(f'Queue Error: Update Business for filing:{filing.id}, error:{err}')

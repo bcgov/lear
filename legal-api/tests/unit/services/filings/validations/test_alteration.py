@@ -30,7 +30,7 @@ TEST_DATA = [
     (False, '', 'BEN', '', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', False, 1),
-    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 2),
+    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
 ]
 
@@ -149,3 +149,70 @@ def test_alteration_share_classes_optional(session):
 
     err = validate(business, f)
     assert None is err
+
+
+@pytest.mark.parametrize(
+    'test_status, should_pass, rules_file_key, rules_file_name', [
+        ('SUCCESS', True, "rulesFileKey", "rulesFileName"),
+        ('FAILURE', False, None, "rulesFileName"),
+        ('FAILURE', False, "rulesFileKey", None),
+    ])
+def test_rules_change(session, test_status, should_pass, rules_file_key, rules_file_name):
+    """Assert riles is optional in alteration."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
+
+    if rules_file_key:
+        f['filing']['alteration']['rulesFileKey'] = rules_file_key
+    if rules_file_name:
+        f['filing']['alteration']['rulesFileName'] = rules_file_name
+
+    err = validate(business, f)
+    
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+
+@pytest.mark.parametrize(
+    'test_status, should_pass, memorandum_file_key, memorandum_file_name', [
+        ('SUCCESS', True, "memorandumFileKey", "memorandumFileName"),
+        ('FAILURE', False, None, "memorandumFileName"),
+        ('FAILURE', False, "memorandumFileKey", None),
+    ])
+def test_memorandum_change(session, test_status, should_pass, memorandum_file_key, memorandum_file_name):
+    """Assert riles is optional in alteration."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    del f['filing']['alteration']['nameRequest']
+
+    if memorandum_file_key:
+        f['filing']['alteration']['memorandumFileKey'] = memorandum_file_key
+    if memorandum_file_name:
+        f['filing']['alteration']['memorandumFileName'] = memorandum_file_name
+
+    err = validate(business, f)
+    
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code

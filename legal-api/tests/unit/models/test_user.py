@@ -27,7 +27,12 @@ def test_user(session):
 
     Start with a blank database.
     """
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username',
+                firstname='firstname',
+                middlename='middlename',
+                lastname='lastname',
+                sub='sub',
+                iss='iss')
 
     session.add(user)
     session.commit()
@@ -141,21 +146,23 @@ def test_user_delete(session):
 
 
 TEST_USER_DISPLAY_NAME = [
-    ('nothing to show', '', '', '', None),
-    ('simple username', 'someone', '', '', 'someone'),
+    ('nothing to show', '', '', '', '', None),
+    ('simple username', 'someone', '', '', '', 'someone'),
     # below: idir is idir\blablabla; flake thinks we're trying to escape a character, hence the double slashes
-    ('username - idir with slash', 'idir\\joefresh', '', '', 'joefresh'),
-    ('username - idir with @', 'joefresh@idir', '', '', 'joefresh'),
-    ('username - services card', 'bcsc/abc123', '', '', None),
-    ('simple name', 'anything', 'First', 'Last', 'First Last'),
-    ('name - first name only', 'anything', 'First', '', 'First'),
-    ('name - last name only', 'anything', '', 'Last', 'Last'),
+    ('username - idir with slash', 'idir\\joefresh', '', '', '', 'joefresh'),
+    ('username - idir with @', 'joefresh@idir', '', '', '', 'joefresh'),
+    ('username - services card', 'bcsc/abc123', '', '', '', None),
+    ('simple name', 'anything', 'First', 'Last', '', 'First Last'),
+    ('name - first name only', 'anything', 'First', '', '', 'First'),
+    ('name - last name only', 'anything', '', 'Last', '', 'Last'),
+    ('name - middle name only', 'anything', '', '', 'Middle', 'Middle'),
+    ('name - full name', 'anything', 'First', 'Last', 'Middle', 'First Middle Last')
 ]
 
 
-@pytest.mark.parametrize('test_description, username, firstname, lastname, display_name', TEST_USER_DISPLAY_NAME)
-def test_user_display_name(session, test_description, username, firstname, lastname, display_name):
+@pytest.mark.parametrize('test_description, username, firstname, lastname, middlename, display_name', TEST_USER_DISPLAY_NAME)
+def test_user_display_name(session, test_description, username, firstname, lastname, middlename, display_name):
     """Assert the User record is deleted."""
-    user = User(username=username, firstname=firstname, lastname=lastname, sub='sub', iss='iss')
+    user = User(username=username, firstname=firstname, lastname=lastname, middlename=middlename, sub='sub', iss='iss')
 
     assert display_name == user.display_name

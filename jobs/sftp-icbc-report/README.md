@@ -28,6 +28,7 @@ to setup your local development environment.
 
 git add --chmod=+x path/to/file
 python sftpicbc.py
+
 ## Running Unit Tests
 
 1. Run `python -m pytest` or `pytest` command.
@@ -79,7 +80,9 @@ python sftpicbc.py
    ```sh
    oc process -f openshift/templates/cronjob.yaml \
   -p TAG=dev \
+
   -p SCHEDULE="55 7 * * TUE-SAT" \
+
   -o yaml \
   | oc apply -f - -n cc892f-dev
   ```

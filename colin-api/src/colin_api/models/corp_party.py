@@ -53,7 +53,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         'Officer': 'OFF',
         'Attorney': 'ATT',
         'Completing Party': 'CPRTY',
-        'Custodian': 'RCC'
+        'Custodian': 'RCC',
+        'Firm Business Owner': 'FBO',
+        'Firm Individual Owner': 'FIO'
     }
 
     def __init__(self):

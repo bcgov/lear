@@ -41,12 +41,7 @@
      }
 
      .outer-container {
-        padding: 2rem;
-     }
-
-     .footer-table {
-        width: 95%;
-        margin-bottom: 3rem;
+        padding: 2rem 6rem 0 6rem;
      }
 
      td.seal-container {
@@ -65,8 +60,6 @@
         display: flex;
         justify-content: space-between;
         font-family: 'eb-regular', sans-serif !important;
-        padding-left: 4rem;
-        padding-right: 4rem;
         margin-top: 3rem;
         height: 1.3rem;
      }
@@ -79,12 +72,6 @@
      .correction-on {
         display: inline-block;
         text-align: center;
-     }
-
-      td.registrar-info-container {
-        width: 50%;
-        text-align: center;
-        padding-right: 0.5rem;
      }
 
      .sub-header-1 {
@@ -116,7 +103,7 @@
         text-align: center;
     }
 
-    .incorporation-header {
+    .certificate-header {
         font-family: 'eb-bold', sans-serif !important;
         font-size: 42px;
         margin-bottom: 0.5rem;
@@ -126,56 +113,60 @@
        font-family: 'eb-bold', sans-serif !important;
        font-size: 20px;
        text-transform: uppercase;
-       margin: auto;
-       width: 90%;
-       height: 85px;
     }
 
-     .company-name-header-cogs {
-       font-family: 'eb-bold', sans-serif !important;
-       font-size: 20px;
-       text-transform: uppercase;
-       margin: auto;
-       width: 90%;
-       margin-top: 0.5rem;
-       margin-bottom: 0.5rem
-    }
-
-    .cert-statement-cogs {
-       font-family: 'eb-italic', sans-serif !important;
-       font-size: 22px;
-       margin: auto;
-       width: 90%;
-    }
-
-    .company-name-text {
-      margin-left: auto;
-      margin-right: auto;
-      position: relative;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .registrar-info {
-        display: inline-block;
+    div.company-name-header {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     .certificate-seal {
-        display: inline-block;
-        text-align: left;
+        margin: auto;
         width: 284px;
         height: 205px;
     }
 
     .certificate-seal img {
+        margin-left: -50px; /*image contains white space on the left*/
         width: 100%;
         height: 100%;
     }
 
-    .cert-statement {
-       font-family: 'eb-italic', sans-serif !important;
-       font-size: 22px;
-       padding-top: 0.5rem;
+    .electronic-cert {
+        font-size: 14px;
+        font-family: 'eb-regular', sans-serif !important;
+        margin: 54px 0 6px 0;
+        text-align: center;
+    }
+
+    .cert-footer {
+        bottom: 0;
+        position: absolute;
+        width: 100%;
+    }
+
+    .cert-footer-content {
+        margin: -12px auto 0 auto; /*cogs needs this offset on longest name*/
+    }
+
+    .cert-footer-table {
+        margin: 0 auto;
+        width: 80%;
+     }
+
+    .cert-issued-by {
+        margin-top: -4px; /*offset line-height of 1st line*/
+    }
+
+    .cert-registrar-content {
+        margin: auto;
+        text-align: center;
+    }
+
+    .cert-separator {
+        border-top: 0.5px solid #313132;
+        margin: 20px auto;
+        width: 50px;
     }
 
     .cert-title-container {
@@ -183,6 +174,8 @@
     }
 
     .certify-clause-container {
+        font-family: 'eb-italic', sans-serif !important;
+        font-size: 20.7px; /*approx 15.5px after render*/
         margin-top: 1.5rem;
         vertical-align: top;
         text-align: center;
@@ -213,26 +206,6 @@
         width: 130px;
         height: 50px;
         vertical-align: center;
-    }
-
-    .footer-style {
-       font-size: 14px;
-       font-family: 'eb-regular', sans-serif !important;
-       text-align: center;
-       position:fixed;
-       width:95%;
-       margin-bottom:0.5rem;
-       margin-top: -1.5rem;
-       padding-left: 0.5rem;
-    }
-
-     .issue-details {
-        padding-top: 0.5rem;
-     }
-
-     .cert-statement-no-spacing {
-       font-family: 'eb-italic', sans-serif !important;
-       font-size: 22px;
     }
 
     .current-registrar-name {

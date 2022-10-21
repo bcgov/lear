@@ -56,6 +56,7 @@ class User(db.Model):
     username = db.Column(db.String(1000), index=True)
     firstname = db.Column(db.String(1000))
     lastname = db.Column(db.String(1000))
+    middlename = db.Column(db.String(1000))
     email = db.Column(db.String(1024))
     sub = db.Column(db.String(36), unique=True)
     iss = db.Column(db.String(1024))
@@ -67,8 +68,8 @@ class User(db.Model):
 
         If there is actual name info, return that; otherwise username.
         """
-        if self.firstname or self.lastname:
-            return ' '.join(filter(None, [self.firstname, self.lastname])).strip()
+        if self.firstname or self.lastname or self.middlename:
+            return ' '.join(filter(None, [self.firstname, self.middlename, self.lastname])).strip()
 
         # parse off idir\ or @idir
         if self.username[:4] == 'idir':
