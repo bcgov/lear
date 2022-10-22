@@ -102,11 +102,6 @@ objects:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
                         key: BCREG_FTP_PRIVATE_KEY_PASSPHRASE
-                  - name: SFTP_ARCHIVE_DIRECTORY
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: SFTP_ARCHIVE_DIRECTORY    
                   - name: SFTP_HOST
                     valueFrom:
                       secretKeyRef:
