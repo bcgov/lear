@@ -2,7 +2,7 @@ from enum import Enum
 
 import pandas as pd
 
-from flows.common.event_filing_service import ChangeRegistrationEventFilings
+from .event_filing_service import ChangeRegistrationEventFilings
 
 
 class AddressFormatType(str, Enum):

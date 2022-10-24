@@ -24,7 +24,7 @@ def get_unprocessed_firms_query(data_load_env: str):
 --                                           'FM0270319', 'FM0344562', 'FM0344563', 'FM0285081', 'FM0303834', 'FM0789778', 
 --                                           'FM0535825', 'FM0749012')
 --                     -- firms with missing req'd business info 
---                     and e.corp_num in ('FM0614946', 'FM0614924', 'FM0613627', 'FM0613561', 'FM0272480', 'FM0272488')
+--                        and e.corp_num in ('FM0272480', 'FM0272482', 'FM0272481', 'FM0272478', 'FM0272477', 'FM0272479')
                        -- naics length greater than 150
 --                        and e.corp_num in ('FM0779644', 'FM0779657', 'FM0779771', 'FM0780109', 'FM0780298', 'FM0780352')
                        -- firms that had address issues
