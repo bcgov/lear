@@ -46,6 +46,11 @@ def clean_corp_party_data(filing_data: dict):
             raise Exception('no corp party type provided')
 
         if corp_party_type in ('FIO'):
+            if (not corp_party['cp_first_name'] and not corp_party['cp_last_name']
+                    and not corp_party['cp_middle_name']) \
+                    and (corp_party['cp_business_name'] or corp_party['cp_bus_company_num']):
+                corp_party_type = 'FBO'
+                break
             if not(corp_party['cp_first_name'] or corp_party['cp_last_name'] or corp_party['cp_middle_name']):
                 raise Exception(f'no first, last or middle name provided for {corp_party_type}')
 
