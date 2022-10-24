@@ -1,11 +1,17 @@
 <div class="no-page-break section-data mt-4">
-     {% if business.naicsDescription %}
      <div class="pt-2">
-         <span class="bold">Nature of Business: </span>{{business.naicsDescription}}
+         {% if business.naicsDescription is defined %}
+            <span class="bold">Nature of Business: </span>{{business.naicsDescription}}
+         {% else %}
+            <span class="bold">Nature of Business: </span>Not Available
+         {% endif %}
      </div>
-     {% endif %}
      <div class="mt-4">
-         <span class="bold">Business Start Date: </span>{{start_date_utc}}
+         {% if start_date_utc is defined %}
+            <span class="bold">Business Start Date: </span>{{start_date_utc}}
+         {% else %}
+            <span class="bold">Business Start Date: </span>Not Available
+         {% endif %}
      </div>
 </div>
 <div class="section-data mt-4">
