@@ -95,7 +95,7 @@ if __name__ == '__main__':
         os.makedirs(temp_dir)
 
     processnotebooks('notebook', temp_dir)
-    shutil.rmtree(temp_dir)
+    # shutil.rmtree(temp_dir)
 
     end_time = datetime.utcnow()
     logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
