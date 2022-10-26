@@ -102,8 +102,8 @@ def _get_coop_documents_ist(business):
     coop_memorandum_doc_url =  url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': coop_memorandum_filing.id,
                                                    'legal_filing_name': None})
-    coopDocuments = {}
-    coopDocuments['certifiedRules'] = f'{base_url}{coop_rules_doc_url}/certifiedRules'
-    coopDocuments['certifiedMemorandum'] = f'{base_url}{coop_memorandum_doc_url}/certifiedMemorandum'
+    coop_documents = {}
+    coop_documents['certifiedRules'] = f'{base_url}{coop_rules_doc_url}/certifiedRules'
+    coop_documents['certifiedMemorandum'] = f'{base_url}{coop_memorandum_doc_url}/certifiedMemorandum'
 
-    return coopDocuments
+    return coop_documents
