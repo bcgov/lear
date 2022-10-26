@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, desc
 
 from .db import db
 
@@ -58,3 +58,8 @@ class Document(db.Model):
     def find_by_id(cls, document_id: int) -> Document:
         """Return the document matching the id."""
         return cls.query.filter_by(id=document_id).one_or_none()
+    
+    @classmethod
+    def find_by_business_id_and_type(cls, business_id: int, type: String):
+        """Return the document matching the business id and type"""
+        return cls.query.filter_by(business_id=business_id, type=type).order_by(desc(Document.id)).limit(1).one_or_none()
