@@ -43,16 +43,28 @@
         </div>
         <div>
             <span class="section-sub-title">Nature of Business: </span>
-            <span class="section-data">{{business.naicsDescription}}</span
+            {% if business.naicsDescription is defined %}
+                <span class="section-data">{{business.naicsDescription}}</span>
+            {% else %}
+                <span class="section-data">Not Available</span>
+            {% endif %}
         </div>
         <div>
             <span class="section-sub-title">Business Start Date: </span>
-            <span class="section-data">{{start_date_utc}}</span>
+            {% if start_date_utc is defined %}
+                <span class="section-data">{{start_date_utc}}</span>
+            {% else %}
+                <span class="section-data">Not Available</span>
+            {% endif %}
         </div>
         {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
             <div>
                 <span class="section-sub-title">Business End Date: </span>
-                <span class="section-data">{{formatted_dissolution_date}}</span>
+                {% if formatted_dissolution_date is defined %}
+                    <span class="section-data">{{formatted_dissolution_date}}</span>
+                {% else %}
+                    <span class="section-data">Not Available</span>
+                {% endif %}
             </div>
         {% endif %}
      {% else %}
@@ -65,12 +77,20 @@
 
             <div class="mt-2">
                 <span class="section-sub-title">Last Annual Report: </span>
-                <span class="section-data">{{business.last_ar_date}}</span>
+                {% if business.last_ar_date is defined %}
+                    <span class="section-data">{{business.last_ar_date}}</span>
+                {% else %}
+                    <span class="section-data">Not Available</span>
+                {% endif %}
             </div>
             {% if business.legalType == 'CP' %}
                 <div>
                     <span class="section-sub-title">Last Annual General Meeting: </span>
-                    <span class="section-data">{{business.last_agm_date}}</span>
+                    {% if business.last_agm_date is defined %}
+                        <span class="section-data">{{business.last_agm_date}}</span>
+                    {% else %}
+                        <span class="section-data">Not Available</span>
+                    {% endif %}
                 </div>
             {% endif %}
             <div class = "mt-2">
