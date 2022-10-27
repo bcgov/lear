@@ -86,6 +86,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     corp_num = None
     corp_state = None
     corp_type = None
+    corp_state_class = None
     founding_date = None
     jurisdiction = None
     last_agm_date = None
