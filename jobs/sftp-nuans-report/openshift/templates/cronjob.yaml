@@ -36,6 +36,13 @@ objects:
             containers:
               - name: "${NAME}-${TAG}"
                 image: "${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/${NAME}:${TAG}"
+                resources:
+                  limits:
+                    cpu: 250m
+                    memory: 2Gi
+                  requests:
+                    cpu: 50m
+                    memory: 256Mi
                 imagePullPolicy: Always
                 command:
                   - /bin/sh
