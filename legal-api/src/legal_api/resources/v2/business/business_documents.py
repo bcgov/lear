@@ -77,13 +77,14 @@ def _get_document_list(business):
 
     if business.legal_type == Business.LegalTypes.COOP.value:
         coop_documents = _get_coop_documents_ist(business)
-        for coop_doc in coop_documents:
-            documents['documents'][coop_doc] = coop_documents[coop_doc]
+        for coop_doc_key, coop_doc_value in coop_documents.items():
+            documents['documents'][coop_doc_key] = coop_doc_value
 
     return jsonify(documents), HTTPStatus.OK
 
+
 def _get_coop_documents_ist(business):
-    """Get certified memorandum and rules for coop"""
+    """Get certified memorandum and rules for coop."""
     coop_documents = {}
 
     if not business:
@@ -99,18 +100,17 @@ def _get_coop_documents_ist(business):
     if coop_rules_document:
         coop_rules_filing = Filing.find_by_id(coop_rules_document.filing_id)
         coop_rules_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
-                                                   'filing_id': coop_rules_filing.id,
-                                                   'legal_filing_name': None})
+                                                              'filing_id': coop_rules_filing.id,
+                                                              'legal_filing_name': None})
         coop_documents['certifiedRules'] = f'{base_url}{coop_rules_doc_url}/certifiedRules'
 
     coop_memorandum_document = Document.find_by_business_id_and_type(business_id, DocumentType.COOP_MEMORANDUM.value)
 
     if coop_memorandum_document:
         coop_memorandum_filing = Filing.find_by_id(coop_memorandum_document.filing_id)
-        coop_memorandum_doc_url =  url_for('API2.get_documents', **{'identifier': business_identifier,
-                                                   'filing_id': coop_memorandum_filing.id,
-                                                   'legal_filing_name': None})
+        coop_memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+                                                                   'filing_id': coop_memorandum_filing.id,
+                                                                   'legal_filing_name': None})
         coop_documents['certifiedMemorandum'] = f'{base_url}{coop_memorandum_doc_url}/certifiedMemorandum'
-
 
     return coop_documents
