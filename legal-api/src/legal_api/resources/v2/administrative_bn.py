@@ -31,7 +31,7 @@ bp = Blueprint('ADMINISTRATIVE_BN', __name__, url_prefix='/api/v2/admin/bn')
 @bp.route('<string:identifier>', methods=['POST'])
 @bp.route('<string:identifier>/<string:business_number>', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.admin_edit])
+@jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def create_bn_request(identifier: str, business_number: str = None):
     """Create a bn request."""
     business = Business.find_by_identifier(identifier)

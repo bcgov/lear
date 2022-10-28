@@ -28,7 +28,7 @@ bp = Blueprint('REQUEST_TRACKER', __name__, url_prefix='/api/v2/requestTracker')
 
 @bp.route('bn/<string:identifier>', methods=['GET'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.admin_edit])
+@jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def get_bn_request_trackers(identifier: str):
     """Return a list of request trackers."""
     business = Business.find_by_identifier(identifier)
@@ -47,7 +47,7 @@ def get_bn_request_trackers(identifier: str):
 
 @bp.route('bn/<string:identifier>', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.admin_edit])
+@jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def resubmit_bn_request(identifier: str):
     """Resubmit BN request."""
     business = Business.find_by_identifier(identifier)
@@ -80,7 +80,7 @@ def resubmit_bn_request(identifier: str):
 
 @bp.route('<int:request_tracker_id>', methods=['GET'])
 @cross_origin(origin='*')
-@jwt.requires_auth
+@jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def get_request_tracker(request_tracker_id: int):
     """Return request/response objects."""
     request_tracker = RequestTracker.find_by_id(request_tracker_id)
