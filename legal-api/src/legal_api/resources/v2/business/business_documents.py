@@ -76,14 +76,14 @@ def _get_document_list(business):
         documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
     if business.legal_type == Business.LegalTypes.COOP.value:
-        coop_documents = _get_coop_documents_ist(business)
+        coop_documents = _get_coop_documents_list(business)
         for coop_doc_key, coop_doc_value in coop_documents.items():
             documents['documents'][coop_doc_key] = coop_doc_value
 
     return jsonify(documents), HTTPStatus.OK
 
 
-def _get_coop_documents_ist(business):
+def _get_coop_documents_list(business):
     """Get certified memorandum and rules for coop."""
     coop_documents = {}
 
