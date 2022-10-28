@@ -34,6 +34,6 @@ def test_create_bn_request(session, client, jwt):
 
     with patch.object(administrative_bn, 'publish_entity_event'):
         rv = client.post(f'/api/v2/admin/bn/{identifier}',
-                         headers=create_header(jwt, [UserRoles.admin_edit], identifier))
+                         headers=create_header(jwt, [UserRoles.bn_edit], identifier))
 
         assert rv.status_code == HTTPStatus.CREATED
