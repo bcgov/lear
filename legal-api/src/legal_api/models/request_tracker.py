@@ -14,11 +14,12 @@
 """This module holds data for request tracker."""
 from __future__ import annotations
 
-from datetime import datetime
 from enum import auto
 from typing import List
 
 from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 
@@ -68,7 +69,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
             'requestType': self.request_type.name,
             'isProcessed': self.is_processed,
             'serviceName': self.service_name.name,
-            'isAdmin': self.is_admin
+            'isAdmin': self.is_admin,
+            'creationDate': LegislationDatetime.as_legislation_timezone(self.creation_date).isoformat()
         }
 
     def save(self):
@@ -109,5 +111,5 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         if message_id:
             query = query.filter(RequestTracker.message_id == message_id)
 
-        request_trackers = query.all()
+        request_trackers = query.order_by(RequestTracker.id).all()
         return request_trackers
