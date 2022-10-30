@@ -2,7 +2,7 @@ from .firm_filing_base_json import get_base_registration_filing_json, get_base_c
     get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json, \
     get_base_correction_filing_json
 from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
-    get_street_address, get_street_additional, AddressFormatType
+    get_street_address, get_street_additional, AddressFormatType, get_effective_date_str
 
 
 class FirmFilingJsonFactoryService:
@@ -22,7 +22,7 @@ class FirmFilingJsonFactoryService:
             if filing_data_completing_party:
                 self._completing_party = filing_data_completing_party
 
-        self._event_id = self._filing_data['f_event_id']
+        self._event_id = self._filing_data['e_event_id']
         self._prev_event_id = self._filing_data.get('prev_event_filing_data', {}).get('e_event_id', None)
         self._corp_type_cd = self._filing_data['c_corp_type_cd']
 
@@ -135,7 +135,7 @@ class FirmFilingJsonFactoryService:
 
     def populate_header(self, filing_root_dict: dict):
         header = filing_root_dict['filing']['header']
-        effective_dt_str= self._filing_data['f_effective_dt_str']
+        effective_dt_str = get_effective_date_str(self._filing_data)
         header['date'] = effective_dt_str
 
         certified_by = get_certified_by(self._filing_data)

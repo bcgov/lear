@@ -73,6 +73,9 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
     _inform_cra(business, inform_cra_tracker, business_number, skip_build)
 
     if not inform_cra_tracker.is_processed:
+        if skip_build:
+            return  # No retry for resubmit admin request
+
         if inform_cra_tracker.retry_number < max_retry:
             raise BNException(f'Retry number: {inform_cra_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')

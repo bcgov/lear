@@ -39,6 +39,7 @@ class UserRoles(BaseEnum):
 
     # pylint: disable=invalid-name
     admin_edit = auto()
+    bn_edit = auto()
     system = auto()
     staff = auto()
     basic = auto()

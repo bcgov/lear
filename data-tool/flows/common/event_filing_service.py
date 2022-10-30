@@ -59,6 +59,8 @@ class ChangeRegistrationEventFilings(str, Enum):
     FILE_FRACH = 'FILE_FRACH'
     FILE_FRARG = 'FILE_FRARG'
 
+    ADFIRM_NULL = 'ADFIRM_NULL'
+
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
@@ -138,6 +140,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     ChangeRegistrationEventFilings.FILE_AMDSP: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.FILE_FRACH: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
     ChangeRegistrationEventFilings.FILE_FRARG: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
+
+    ChangeRegistrationEventFilings.ADFIRM_NULL: FilingCore.FilingTypes.CHANGEOFREGISTRATION.value,
 
     DissolutionEventFilings.CONVFMDISS_FRDIS: FilingCore.FilingTypes.DISSOLUTION.value,
     DissolutionEventFilings.FILE_DISGP: FilingCore.FilingTypes.DISSOLUTION.value,
