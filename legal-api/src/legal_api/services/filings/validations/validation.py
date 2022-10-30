@@ -26,6 +26,7 @@ from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
+from .change_of_name import validate_v2 as con_validate_v2
 from .change_of_registration import validate as change_of_registration_validate
 from .conversion import validate as conversion_validate
 from .correction import validate as correction_validate
@@ -99,7 +100,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
         if 'changeOfName' in filing_json['filing'].keys():
             either_con_or_alteration_flag = True
-            err = con_validate(business, filing_json)
+            err = con_validate_v2(business, filing_json)
         if 'alteration' in filing_json['filing'].keys():
             either_con_or_alteration_flag = True
             err = alteration_validate(business, filing_json)
