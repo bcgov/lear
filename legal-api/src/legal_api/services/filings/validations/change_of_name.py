@@ -38,7 +38,8 @@ def validate(business: Business, con: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
-def validate_v2(business:Business, filing: Dict) -> Error:
+
+def validate_v2(business: Business, filing: Dict) -> Error:
     """Validate the Change of Name filing non legacy."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
