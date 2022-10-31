@@ -172,8 +172,8 @@ parameters:
   - name: "SCHEDULE"
     displayName: "Cron Schedule"
 
-    description: "Cron Schedule to Execute the Job (using local cluster system TZ) to run at 0:55 * * TUE-SAT at pacific time"
-    value: "55 7 * * TUE-SAT"
+    description: "Cron Schedule to Execute the Job (using local cluster system TZ) to run at 5:50 * * SUN,TUE-SAT at pacific time so it will be 12:50 at UTC"
+    value: "50 12 * * SUN,TUE-SAT"
 
     required: true
 
