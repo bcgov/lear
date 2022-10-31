@@ -19,6 +19,8 @@ import logging
 import os
 
 import sentry_sdk
+from flask import current_app
+from legal_api.services import Flags
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 
@@ -47,7 +49,12 @@ logging.basicConfig(
 )
 logging.getLogger('asyncio').setLevel(logging.DEBUG)
 
-if os.getenv('DISABLE_HTTP_ACCESS_LOGS', 'False').lower() == 'true':
+flag_service = Flags()
+if current_app.extensions['featureFlags'] is None:
+    flag_service.init_app(current_app)
+enable_logging = flag_service.value('http-log-enable')
+
+if not enable_logging:
     # This disables the healthz / readyz / meta logging messsages.
     logging.getLogger('aiohttp.access').setLevel(logging.ERROR)
 
