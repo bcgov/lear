@@ -75,13 +75,13 @@ python sftpicbc.py
    oc project cc892f-dev
    ```
 
-3. Create cron
+3. Create cron - to run at 5:50 * * SUN,TUE-SAT at pacific time so it will be 12:50 at UTC
 
    ```sh
    oc process -f openshift/templates/cronjob.yaml \
   -p TAG=dev \
 
-  -p SCHEDULE="55 7 * * TUE-SAT" \
+  -p SCHEDULE="50 12 * * SUN,TUE-SAT" \
 
   -o yaml \
   | oc apply -f - -n cc892f-dev
