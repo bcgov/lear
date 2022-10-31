@@ -50,21 +50,16 @@ def update_affiliation(business: Business, filing: Filing):
                 level='error'
             )
         else:
-            # flip the registration
-            # recreate the bootstrap, but point to the new business in the name
-            old_bs_affiliation = AccountService.delete_affiliation(bootstrap.account, bootstrap.identifier)
-            new_bs_affiliation = AccountService.create_affiliation(
-                account=bootstrap.account,
+            # update the bootstrap to use the new business identifier for the name
+            bootstrap_update = AccountService.update_entity(
                 business_registration=bootstrap.identifier,
                 business_name=business.identifier,
                 corp_type_code='TMP'
             )
-            reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
-                               and old_bs_affiliation == HTTPStatus.OK)
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
-                or ('reaffiliate' in locals() and not reaffiliate):
+                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK) \
+                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(

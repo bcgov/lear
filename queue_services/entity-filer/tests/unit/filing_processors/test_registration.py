@@ -120,7 +120,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     """Assert affiliation of a firm calls expected auth api endpoints and with expected parameter values."""
 
     # setup
-    bootstrap = RegistrationBootstrap(account=1111111)
+    bootstrap = RegistrationBootstrap(account=1111111, _identifier='TNpUnst/Va')
     identifier = 'NR 1234567'
     org_party_tax_id = '123456789'
     org_party_identifier = 'BC1011333'
@@ -158,16 +158,24 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
 
     with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
         with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
-            with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
-                registration.update_affiliation(business, filing_rec)
-                assert AccountService.create_affiliation.call_count == 2
-                assert AccountService.delete_affiliation.call_count == 1
-                first_affiliation_call_args = AccountService.create_affiliation.call_args_list[0]
-                expected_call_args = call(account=1111111,
-                                          business_registration=business.identifier,
-                                          business_name='Test',
-                                          corp_type_code=legal_type,
-                                          pass_code=expected_pass_code,
-                                          details=details)
-                assert first_affiliation_call_args == expected_call_args
+            with patch.object(AccountService, 'update_entity', return_value=HTTPStatus.OK):
+                with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
+                    registration.update_affiliation(business, filing_rec)
+                    assert AccountService.create_affiliation.call_count == 1
+                    assert AccountService.delete_affiliation.call_count == 0
+                    assert AccountService.update_entity.call_count == 1
 
+                    first_affiliation_call_args = AccountService.create_affiliation.call_args_list[0]
+                    expected_affiliation_call_args = call(account=1111111,
+                                                          business_registration=business.identifier,
+                                                          business_name=business.legal_name,
+                                                          corp_type_code=legal_type,
+                                                          pass_code=expected_pass_code,
+                                                          details=details)
+                    assert first_affiliation_call_args == expected_affiliation_call_args
+
+                    first_update_entity_call_args = AccountService.update_entity.call_args_list[0]
+                    expected_update_entity_call_args = call(business_registration=bootstrap.identifier,
+                                                            business_name=business.identifier,
+                                                            corp_type_code='RTMP')
+                    assert first_update_entity_call_args == expected_update_entity_call_args
