@@ -74,12 +74,12 @@ git add --chmod=+x path/to/file
    oc project cc892f-dev
    ```
 
-3. Create cron
+3. Create cron - to run at 0:55 * * TUE-SAT at pacific time so it will be 7:55 at UTC
 
    ```sh
    oc process -f openshift/templates/cronjob.yaml \
   -p TAG=dev \
-  -p SCHEDULE="30 1 * * TUE" \
+  -p SCHEDULE="55 7 * * TUE-SAT" \
   -o yaml \
   | oc apply -f - -n cc892f-dev
   ```
