@@ -747,7 +747,10 @@ class Report:  # pylint: disable=too-few-public-methods
                     share_class['series'] = [share_series]
 
     def _format_special_resolution(self, filing):
-        filing['header']['displayName'] = FILINGS.get(self._filing.filing_type, {}).get('displayName')
+        display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
+        if isinstance(display_name, dict):
+            display_name = display_name.get(self._business.legal_type)
+        filing['header']['displayName'] = display_name
         resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
         signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
         if resolution_date_str:
