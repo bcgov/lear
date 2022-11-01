@@ -74,6 +74,15 @@ def test_validate_nr(session, use_nr, new_name, legal_type, nr_type, should_pass
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
+    CHANGE_OF_NAME = {
+        'legalName': 'My New Entity Name',
+        'nameRequest': {
+            'nrNumber': 'NR 8798956',
+            'legalName': 'legal_name-CP1234568',
+            'legalType': 'CP'
+        },
+    }
+
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['changeOfName'] = copy.deepcopy(CHANGE_OF_NAME)
 
