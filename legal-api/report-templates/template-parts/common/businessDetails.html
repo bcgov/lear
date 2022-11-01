@@ -20,7 +20,7 @@
               <td class="col-67">
                  <div>{{business.identifier}}</div>
                  <div class="pt-2">
-                   {% if business.taxId is defined %}
+                   {% if business.taxId is defined and business.taxId|length > 9 %}
                       <span>{{ business.taxId }}</span>
                    {% else %}
                       <span>Not Available</span>
@@ -106,8 +106,8 @@
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
-                  {% if business.taxId is defined %}
-                      <span>{{ business.taxId }}</span>
+                  {% if taxId is defined and taxId|length > 9 %}
+                      <span>{{ taxId }}</span>
                   {% else %}
                       <span>Not Available</span>
                   {% endif %}
@@ -127,8 +127,8 @@
                <div class="pt-2">{{recognition_date_utc}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
-                  {% if business.taxId is defined %}
-                      <span>{{ business.taxId }}</span>
+                  {% if taxId is defined and taxId|length > 9 %}
+                      <span>{{ taxId }}</span>
                   {% else %}
                       <span>Not Available</span>
                   {% endif %}
@@ -148,8 +148,8 @@
                <div class="pt-2">{{recognition_date_utc}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
-                  {% if business.taxId is defined %}
-                      <span>{{ business.taxId }}</span>
+                  {% if taxId is defined and taxId|length > 9 %}
+                      <span>{{ taxId }}</span>
                   {% else %}
                       <span>Not Available</span>
                   {% endif %}
@@ -186,7 +186,7 @@
          {% elif header.name == 'annualReport' %}
             <td>
                <div class="bold">Incorporation Number:</div>
-               {% if taxId %}
+               {% if taxId and taxId|length > 9 %}
                <div class="bold pt-2">Business Number:</div>
                {% endif %}
                <div class="bold pt-2">Filed Date and Time:</div>
@@ -196,7 +196,7 @@
             </td>
             <td>
                <div>{{business.identifier}}</div>
-               {% if taxId %}
+               {% if taxId and taxId|length > 9 %}
                <div class="pt-2">{{taxId}}</div>
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
@@ -276,8 +276,8 @@
                   <div class="pt-2">{{effective_date_time}}</div>
                {% endif %}
                {% if business.legalType in ['GP', 'SP'] %}
-                   {% if business.taxId is defined %}
-                      <div class="pt-2">{{ business.taxId }}</div>
+                   {% if taxId is defined and taxId|length > 9 %}
+                      <div class="pt-2">{{ taxId }}</div>
                    {% else %}
                       <div class="pt-2">Not Available</div>
                    {% endif %}
