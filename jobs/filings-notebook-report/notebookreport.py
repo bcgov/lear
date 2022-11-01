@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
         processnotebooks(subdir, data_dir)
 
-    shutil.rmtree(data_dir)
+    # shutil.rmtree(data_dir)
     end_time = datetime.utcnow()
     logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
     sys.exit()
