@@ -51,8 +51,8 @@ def validate(business: Business, filing: Dict) -> Error:
             msg.append({'error': babel('SR CON of Name Request has a different legal name.'),
                         'path': legal_name_path})
     elif not legal_name:
-         msg.append({'error': babel('Either Legal Name or NR number must be provided.'),
-                    'path': legal_name_path + ' or ' + nr__number_path })   
+        msg.append({'error': babel('Either Legal Name or NR number must be provided.'),
+                    'path': legal_name_path + ' or ' + nr__number_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
