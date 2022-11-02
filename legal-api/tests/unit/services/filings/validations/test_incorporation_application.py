@@ -29,9 +29,9 @@ from registry_schemas.example_data import COOP_INCORPORATION, INCORPORATION, INC
 from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address
+from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
 
-from . import create_party, create_party_address, lists_are_equal
+from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
 
 
@@ -452,6 +452,225 @@ def test_validate_incorporation_parties_mailing_address(session, test_name, lega
     # perform test
     with freeze_time(now):
         err = validate_parties_mailing_address(filing_json)
+
+    # validate outcomes
+    if expected_msg:
+        assert lists_are_equal(err, expected_msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, parties, expected_msg',
+    [
+        (
+                'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'BEN',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Incorporator'],
+                        'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Incorporator', 'Director'],
+                        'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    }
+                ],
+                None
+        ),
+        (
+                'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'BEN',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Incorporator'],
+                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Incorporator', 'Director'],
+                        'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    }
+                ],
+                [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Incorporator, Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+                'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'BEN',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Incorporator'],
+                        'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    }
+                ],
+                [{'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+                'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'BEN',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Incorporator'],
+                        'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'Janeajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    },
+                ],
+                [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+                'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'CP',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Director'],
+                        'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer3',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane', 'middleName': None, 'lastName': 'Doe'}
+                    }
+                ],
+                None
+        ),
+        (
+                'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'CP',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Director'],
+                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer3',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    }
+                ],
+                [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+                'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'CP',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Director'],
+                        'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane1', 'middleName': None, 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer3',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane2', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    }
+                ],
+                [{'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'CP',
+                [
+                    {
+                        'partyName': 'officer1',
+                        'roles': ['Completing Party', 'Director'],
+                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer2',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'Jane1ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    },
+                    {
+                        'partyName': 'officer3',
+                        'roles': ['Director'],
+                        'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    }
+                ],
+                [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director first name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
+                  'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director middle name cannot be longer than 20 characters',
+                   'path': '/filing/incorporationApplication/parties'},
+                 {'error': 'Director middle name cannot be longer than 20 characters',
+                   'path': '/filing/incorporationApplication/parties'}]
+        )
+    ])
+def test_validate_incorporation_party_names(session, test_name,
+                                     legal_type, parties, expected_msg):
+    """Assert that incorporation parties roles can be validated."""
+
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    base_officer = filing_json['filing'][incorporation_application_name]['parties'][0]['officer']
+    filing_json['filing']['business']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['parties'] = []
+
+    # populate party and party role info
+    for index, party in enumerate(parties):
+        officer = party['officer']
+        first_name = officer['firstName']
+        middle_name = officer['middleName']
+        last_name = officer['lastName']
+
+        base_officer_copy = copy.deepcopy(base_officer)
+        officer = create_officer(base_officer=base_officer_copy,
+                                 first_name=first_name,
+                                 middle_name=middle_name,
+                                 last_name=last_name)
+        p = create_party(roles=party['roles'], officer=officer)
+        filing_json['filing'][incorporation_application_name]['parties'].append(p)
+
+    # perform test
+    with freeze_time(now):
+        err = validate_parties_names(filing_json)
 
     # validate outcomes
     if expected_msg:
