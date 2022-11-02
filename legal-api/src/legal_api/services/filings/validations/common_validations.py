@@ -20,6 +20,7 @@ import PyPDF2
 from flask_babel import _
 
 from legal_api.errors import Error
+from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
@@ -192,3 +193,35 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
         return msg
 
     return None
+
+
+def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
+    """Validate party name."""
+    msg = []
+
+    custom_allowed_max_length = 20
+    officer = party['officer']
+    party_type = officer['partyType']
+
+    if party_type == 'person' and legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value]:
+        party_roles = [x.get('roleType') for x in party['roles']]
+        party_roles_str = ', '.join(party_roles)
+
+        first_name = officer['firstName']
+        if len(first_name) > custom_allowed_max_length:
+            err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
+            msg.append({'error': err_msg, 'path': party_path})
+
+        if 'middleInitial' in officer \
+                and (middle_initial := officer['middleInitial']) \
+                and len(middle_initial) > custom_allowed_max_length:
+            err_msg = f'{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters'
+            msg.append({'error': err_msg, 'path': party_path})
+
+        if 'middleName' in officer \
+                and (middle_name := officer['middleName']) \
+                and len(middle_name) > custom_allowed_max_length:
+            err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
+            msg.append({'error': err_msg, 'path': party_path})
+
+    return msg

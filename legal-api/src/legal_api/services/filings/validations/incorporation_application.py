@@ -27,7 +27,7 @@ from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
-from .common_validations import validate_share_structure  # noqa: I001
+from .common_validations import validate_share_structure, validate_party_name  # noqa: I001
 from ... import namex
 from ...utils import get_str
 
@@ -44,6 +44,13 @@ def validate(incorporation_json: Dict):
         msg.extend(err)
 
     err = validate_roles(incorporation_json)
+    if err:
+        msg.extend(err)
+
+    # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
+    # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
+    # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
+    err = validate_parties_names(incorporation_json)
     if err:
         msg.extend(err)
 
@@ -150,6 +157,23 @@ def validate_roles(incorporation_json) -> Error:
         if director_count < 1:
             err_path = '/filing/incorporationApplication/parties/roles'
             msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+# pylint: disable=too-many-branches
+def validate_parties_names(incorporation_json) -> Error:
+    """Validate the party names of the incorporation filing."""
+    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    party_path = '/filing/incorporationApplication/parties'
+    legal_type = get_str(incorporation_json, '/filing/business/legalType')
+    msg = []
+
+    for item in parties_array:
+        msg.extend(validate_party_name(legal_type, item, party_path))
 
     if msg:
         return msg
