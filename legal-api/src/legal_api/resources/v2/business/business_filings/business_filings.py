@@ -55,9 +55,8 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ..bp import bp
-
-
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
+
 
 class QueryModel(BaseModel):
     """Query string model."""
@@ -641,6 +640,8 @@ class ListFilingResource():
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
+        waive_fees_flag = filing_json['filing']['header'].get('waiveFees', False)
+
         if filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
             Filing.FILINGS['registration']['name']
@@ -654,8 +655,37 @@ class ListFilingResource():
             filing_types.append({
                 'filingTypeCode': filing_type_code,
                 'priority': priority_flag,
-                'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                'waiveFees': waive_fees_flag
             })
+        elif any(filing_type in x for x in ['dissolution']):
+            dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
+            if dissolution_type == 'voluntary':
+                filing_type_code = Filing.FILINGS.get('dissolution', {}).get('codes', {}).get(legal_type)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                    'priority': priority_flag,
+                    'waiveFees': waive_fees_flag
+                })
+                if legal_type == Business.LegalTypes.COOP.value:
+                    filing_type_code =\
+                        Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'priority': priority_flag,
+                        'waiveFees': waive_fees_flag
+                    })
+                    filing_type_code =\
+                        Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'waiveFees': waive_fees_flag
+                    })
+            elif dissolution_type == 'administrative':
+                filing_types.append({
+                    'filingTypeCode': 'NOFEE',
+                    'waiveFees': waive_fees_flag
+                })
         elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
@@ -666,13 +696,6 @@ class ListFilingResource():
             for k in filing_json['filing'].keys():
                 filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
                 priority = priority_flag
-
-                # ToDo: bcgov/entity 12684, update the dissolution related code to support sub types.
-                # Check if it is administrative dissolution, then pass NOFEE code
-                if k == 'dissolution':
-                    dissolution_type = filing_json['filing'][k].get('dissolutionType')
-                    if dissolution_type == 'administrative':
-                        filing_type_code = 'NOFEE'
 
                 # check if changeOfDirectors is a free filing
                 if k == 'changeOfDirectors':
@@ -699,7 +722,7 @@ class ListFilingResource():
                     filing_types.append({
                         'filingTypeCode': filing_type_code,
                         'priority': priority,
-                        'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
+                        'waiveFees': waive_fees_flag
                     })
         return filing_types
 
