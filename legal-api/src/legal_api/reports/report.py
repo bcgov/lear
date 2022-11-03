@@ -368,6 +368,10 @@ class Report:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _format_address(address):
+        address['streetAddressAdditional'] = address.get('streetAddressAdditional') or ''
+        address['addressRegion'] = address.get('addressRegion') or ''
+        address['deliveryInstructions'] = address.get('deliveryInstructions') or ''
+
         country = address['addressCountry']
         country = pycountry.countries.search_fuzzy(country)[0].name
         address['addressCountry'] = country
