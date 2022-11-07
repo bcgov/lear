@@ -85,7 +85,7 @@ def validate_offices(incorporation_json) -> Error:
 
     for item in addresses.keys():
         for k, v in addresses[item].items():
-            region = v['addressRegion']
+            region = v.get('addressRegion')
             country = v['addressCountry']
 
             if region != 'BC':

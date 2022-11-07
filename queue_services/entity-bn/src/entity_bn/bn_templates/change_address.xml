@@ -21,7 +21,7 @@
         {% endif %}
       </foreignLegacy>
       <municipality>{{address.addressCity[0:30]}}</municipality>
-      {% if address.addressRegion|length %}
+      {% if address.addressRegion is not none and address.addressRegion|length %}
       <provinceStateCode>{{address.addressRegion}}</provinceStateCode>
       {% endif %}
       <postalCode>{{address.postalCode | replace(' ', '')}}</postalCode>
