@@ -126,3 +126,79 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     # check that validation passed
     assert err
     assert err.msg[0]['error'] == expected_msg
+
+
+
+@pytest.mark.parametrize(
+    'test_name, filing, existing_naics_code, existing_naics_desc, correction_naics_code, correction_naics_desc, naics_response, expected_msg',
+    [
+        # SP tests
+        ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
+         None, None, '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
+         None, 'some desc', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, '112910', 'Apiculture', '112910', 'Apiculture',
+         None, None),
+        ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, None, '112910', None, '112910', None, None),
+        ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, '112910', None, '112910', None, None, None),
+        ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, None, 'some desc', None, 'some desc', None, None),
+        ('sp_naics_change_no_code_match', SP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '111111', 'desc 23434', None, 'Invalid naics code or description.'),
+        ('sp_naics_change_desc_mismatch', SP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '112910', 'wrong desc', {'code': '112910', 'classTitle': 'Apiculture'},
+         'Invalid naics code or description.'),
+        # GP tests
+        ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
+         None, None, '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
+         None, 'some desc', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+        ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, '112910', 'Apiculture', '112910', 'Apiculture',
+         None, None),
+        ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, None, '112910', None, '112910', None, None),
+        ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, '112910', None, '112910', None, None, None),
+        ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, None, 'some desc', None, 'some desc', None, None),
+        ('gp_naics_change_no_code_match', GP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '111111', 'desc 23434', None, 'Invalid naics code or description.'),
+        ('gp_naics_change_desc_mismatch', GP_CORRECTION_REGISTRATION_APPLICATION,
+         '112910', 'Apiculture', '112910', 'wrong desc', {'code': '112910', 'classTitle': 'Apiculture'},
+         'Invalid naics code or description.'),
+    ]
+)
+def test_firms_correction_naics(session, test_name, filing, existing_naics_code, existing_naics_desc,
+                                correction_naics_code, correction_naics_desc, naics_response, expected_msg):
+    """Test that NAICS code and description are correctly validated."""
+    # setup
+    identifier = 'FM1234567'
+    business = factory_business(identifier=identifier, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
+
+    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+
+    f = copy.deepcopy(filing)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    if correction_naics_code:
+        f['filing']['correction']['business']['naics']['naicsCode'] = correction_naics_code
+    else:
+        del f['filing']['correction']['business']['naics']['naicsCode']
+    if correction_naics_desc:
+        f['filing']['correction']['business']['naics']['naicsDescription'] = correction_naics_desc
+    else:
+        del f['filing']['correction']['business']['naics']['naicsDescription']
+
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(business, f)
+
+            if err:
+                print(err.msg)
+
+    # check for expected validation resultsn
+    if expected_msg:
+        assert err
+        assert err.msg[0]['error'] == expected_msg
+    else:
+        assert None is err
