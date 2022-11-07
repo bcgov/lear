@@ -1,4 +1,4 @@
-{% if parties and partyChange%}
+{% if parties and (partyChange or newParties or ceasedParties) %}
 {% if header.reportType == 'changeOfRegistration' %}
 <div class="no-page-break">
     <div class="section-title mt-4">
