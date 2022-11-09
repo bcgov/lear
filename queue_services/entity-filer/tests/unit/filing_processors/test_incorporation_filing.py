@@ -35,11 +35,12 @@ from tests.unit import create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
 
 
-@pytest.mark.parametrize('legal_type,filing', [
-    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE)),
-    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE)),
+@pytest.mark.parametrize('legal_type,filing,valid_pdf', [
+    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), True),
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), True),
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), False)
 ])
-def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing):
+def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing, valid_pdf):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
@@ -48,8 +49,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
         if legal_type == 'CP':
-            rules_file_key_uploaded_by_user = upload_file('rules.pdf')
-            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
+            rules_file_key_uploaded_by_user = upload_file('rules.pdf', valid_pdf)
+            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf', valid_pdf)
             filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
                 rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
@@ -62,46 +63,50 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
         filing_meta = FilingMeta(application_date=effective_date)
 
-        # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+        if(valid_pdf):
+            # test
+            business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
-        # Assertions
-        assert business.identifier == next_corp_num
-        assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-        assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
-        assert business.state == Business.State.ACTIVE
-        assert len(business.party_roles.all()) == 1
-        if legal_type == 'BC':
-            assert len(filing_rec.filing_party_roles.all()) == 2
-        if legal_type == 'CP':
-            assert len(filing_rec.filing_party_roles.all()) == 1
-        if legal_type == 'BC':
-            assert len(business.share_classes.all()) == 2
-            assert len(business.offices.all()) == 2  # One office is created in create_business method.
-        elif legal_type == 'CP':
-            assert len(business.offices.all()) == 1
-            documents = business.documents.all()
-            assert len(documents) == 2
-            for document in documents:
-                if document.type == DocumentType.COOP_RULES.value:
-                    original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-                    assert document.file_key == original_rules_key
-                    assert MinioService.get_file(document.file_key)
-                elif document.type == DocumentType.COOP_MEMORANDUM.value:
-                    original_memorandum_key = \
-                        filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-                    assert document.file_key == original_memorandum_key
-                    assert MinioService.get_file(document.file_key)
+            # Assertions
+            assert business.identifier == next_corp_num
+            assert business.founding_date == effective_date
+            assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
+            assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
+            assert business.state == Business.State.ACTIVE
+            assert len(business.party_roles.all()) == 1
+            if legal_type == 'BC':
+                assert len(filing_rec.filing_party_roles.all()) == 2
+            if legal_type == 'CP':
+                assert len(filing_rec.filing_party_roles.all()) == 1
+            if legal_type == 'BC':
+                assert len(business.share_classes.all()) == 2
+                assert len(business.offices.all()) == 2  # One office is created in create_business method.
+            elif legal_type == 'CP':
+                assert len(business.offices.all()) == 1
+                documents = business.documents.all()
+                assert len(documents) == 2
+                for document in documents:
+                    if document.type == DocumentType.COOP_RULES.value:
+                        original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                        assert document.file_key == original_rules_key
+                        assert MinioService.get_file(document.file_key)
+                    elif document.type == DocumentType.COOP_MEMORANDUM.value:
+                        original_memorandum_key = \
+                            filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
+                        assert document.file_key == original_memorandum_key
+                        assert MinioService.get_file(document.file_key)
 
-            rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
-            assert rules_files_obj
-            assert_pdf_contains_text('Filed on ', rules_files_obj.read())
-            memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
-            assert memorandum_file_obj
-            assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
+                rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+                assert rules_files_obj
+                assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+                memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+                assert memorandum_file_obj
+                assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+        mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+    if(not valid_pdf):
+        with pytest.raises(Exception):
+            incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
 
 def test_incorporation_filing_process_no_nr(app, session):

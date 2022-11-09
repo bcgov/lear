@@ -246,8 +246,8 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
     alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
     
-    rules_file_key_uploaded_by_user = upload_file('rules.pdf')
-    memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
+    rules_file_key_uploaded_by_user = upload_file('rules.pdf', valid_pdf=True)
+    memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf', valid_pdf=True)
     alteration_filing['filing']['alteration']['rulesFileKey'] = \
         rules_file_key_uploaded_by_user
     alteration_filing['filing']['alteration']['rulesFileName'] = 'Rules_File.pdf'
