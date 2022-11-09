@@ -19,11 +19,11 @@ import io
 import os
 
 import PyPDF2
+from entity_queue_common.service_utils import QueueException
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import PdfService
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from entity_queue_common.service_utils import QueueException
 
 from entity_filer.version import __version__
 

@@ -35,12 +35,11 @@ from tests.unit import create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
 
 
-@pytest.mark.parametrize('legal_type,filing,valid_pdf', [
-    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), True),
-    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), True),
-    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), False),
+@pytest.mark.parametrize('legal_type,filing', [
+    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE)),
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE)),
 ])
-def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing, valid_pdf):
+def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
@@ -49,8 +48,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
         if legal_type == 'CP':
-            rules_file_key_uploaded_by_user = upload_file('rules.pdf', valid_pdf)
-            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf', valid_pdf)
+            rules_file_key_uploaded_by_user = upload_file('rules.pdf', valid_pdf=True)
+            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf', valid_pdf=True)
             filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
                 rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
