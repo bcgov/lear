@@ -38,7 +38,7 @@ from tests.utils import upload_file, assert_pdf_contains_text
 @pytest.mark.parametrize('legal_type,filing,valid_pdf', [
     ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), True),
     ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), True),
-    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), False)
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), False),
 ])
 def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing, valid_pdf):
     """Assert that the incorporation object is correctly populated to model objects."""
