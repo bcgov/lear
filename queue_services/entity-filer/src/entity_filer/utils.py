@@ -47,7 +47,7 @@ def replace_file_with_certified_copy(_bytes, business, key, certify_date):
 
     # Check that all pages in the pdf are letter size and able to be processed.
     if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-        raise QueueException(f'Pdf pages are not letter size.')
+        raise QueueException('Pdf pages are not letter size.')
     pdf_writer = PyPDF2.PdfFileWriter()
     pdf_writer.appendPagesFromReader(pdf_reader)
     output_original_pdf = io.BytesIO()
