@@ -30,7 +30,7 @@ from entity_filer.filing_processors import dissolution
 from tests.unit import create_business, create_filing
 
 
-@pytest.mark.parametrize('legal_type,identifier,dissolution_type,page_count,valid', [
+@pytest.mark.parametrize('legal_type,identifier,dissolution_type,valid', [
     ('BC', 'BC1234567', 'voluntary', True),
     ('BEN', 'BC1234567', 'voluntary', True),
     ('CC', 'BC1234567', 'voluntary', True),
