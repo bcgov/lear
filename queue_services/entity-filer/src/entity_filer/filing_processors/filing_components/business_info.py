@@ -102,8 +102,8 @@ def get_next_corp_num(legal_type: str):
     try:
         # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
         if legal_type in (Business.LegalTypes.BCOMP.value,
-                          Business.LegalTypes.BC_ULC_COMPANY,
-                          Business.LegalTypes.BC_CCC,
+                          Business.LegalTypes.BC_ULC_COMPANY.value,
+                          Business.LegalTypes.BC_CCC.value,
                           Business.LegalTypes.COMP.value):
             business_type = 'BC'
         else:
