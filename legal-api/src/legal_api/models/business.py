@@ -140,16 +140,20 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
     BUSINESSES = {
         LegalTypes.BCOMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.'
+            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedDescription': 'Numbered Benefit Company'
         },
         LegalTypes.COMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.'
+            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedDescription': 'Numbered Limited Company'
         },
         LegalTypes.BC_ULC_COMPANY: {
-            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY'
+            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY',
+            'numberedDescription': 'Numbered Unlimited Liability Company'
         },
         LegalTypes.BC_CCC: {
-            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'
+            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
+            'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
 
