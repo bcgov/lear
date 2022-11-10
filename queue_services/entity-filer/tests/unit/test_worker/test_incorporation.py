@@ -87,11 +87,18 @@ async def test_incorporation_filing(app, session, bootstrap):
     assert completing_party.appointment_date
 
 
-def test_update_affiliation():
+@pytest.mark.parametrize('legal_type, corp_num', [
+    ('BC', 'BC0001095'),
+    ('BEN', 'BC0001095'),
+    ('CP', 'CP0001095'),
+    ('ULC', 'BC0001095'),
+    ('CC', 'BC0001095'),
+])
+def test_update_affiliation(legal_type, corp_num):
     """Assert that affiliation for IA results in expected Auth API calls."""
     from entity_filer.filing_processors import incorporation_filing
 
-    business = Business(identifier='FM1234567', legal_type='BEN', legal_name='Test')
+    business = Business(identifier=corp_num, legal_type=legal_type, legal_name='Test')
     filing = Filing(id=1)
     bootstrap = RegistrationBootstrap(account=1111111, _identifier='TNpUnst/Va')
 

@@ -25,7 +25,7 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
@@ -105,7 +105,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
     return business
 
 
-def process(business: Business,  # pylint: disable=too-many-branches
+def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
             filing: Dict,
             filing_rec: Filing,
             filing_meta: FilingMeta):  # pylint: disable=too-many-branches
@@ -165,6 +165,9 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     if name_translations := incorp_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
+
+    if court_order := incorp_filing.get('courtOrder'):
+        filings.update_filing_court_order(filing_rec, court_order)
 
     if not is_correction and not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
