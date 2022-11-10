@@ -138,6 +138,21 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         SP_SOLE_PROPRIETORSHIP = 'SP'
         SP_DOING_BUSINESS_AS = 'DBA'
 
+    BUSINESSES = {
+        LegalTypes.BCOMP: {
+            'numberedLegalNameSuffix': 'B.C. LTD.'
+        },
+        LegalTypes.COMP: {
+            'numberedLegalNameSuffix': 'B.C. LTD.'
+        },
+        LegalTypes.BC_ULC_COMPANY: {
+            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY'
+        },
+        LegalTypes.BC_CCC: {
+            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'
+        }
+    }
+
     __versioned__ = {}
     __tablename__ = 'businesses'
     __mapper_args__ = {
