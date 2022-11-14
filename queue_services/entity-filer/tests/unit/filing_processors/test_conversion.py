@@ -82,6 +82,7 @@ def test_conversion_coop_from_colin(app, session):
     """Assert that an existing coop incorporation is loaded corrrectly."""
     # setup
     identifier = 'CP0000001'
+    nr_num = 'NR 1234567'
     colind_id = 1
     filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 
@@ -89,6 +90,8 @@ def test_conversion_coop_from_colin(app, session):
     filing['filing']['business']['legalType'] = 'CP'
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['conversion']['nameRequest']['legalType'] = 'CP'
+    filing['filing']['conversion']['nameRequest']['legalName'] = 'Test'
+    filing['filing']['conversion']['nameRequest']['nrNumber'] = nr_num
     filing['filing']['conversion'].pop('shareStructure')
     effective_date = datetime.utcnow()
     # Create the Filing obeject in the DB
@@ -110,16 +113,16 @@ def test_conversion_coop_from_colin(app, session):
     assert business.identifier == identifier
     assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
     assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
-    assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+    assert business.legal_name == 'Test'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
 
-@pytest.mark.parametrize('legal_type', [
-    ('BC'),
-    ('ULC'),
-    ('CC'),
+@pytest.mark.parametrize('legal_type, legal_name_suffix', [
+    ('BC', 'B.C. LTD.'),
+    ('ULC', 'B.C. UNLIMITED LIABILITY COMPANY'),
+    ('CC', 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'),
 ])
-def test_conversion_bc_company_from_colin(app, session, legal_type):
+def test_conversion_bc_company_from_colin(app, session, legal_type, legal_name_suffix):
     """Assert that an existing bc company(LTD, ULC, CCC) incorporation is loaded corrrectly."""
     # setup
     identifier = 'BC0000001'
@@ -150,7 +153,7 @@ def test_conversion_bc_company_from_colin(app, session, legal_type):
     assert business.identifier == identifier
     assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
     assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
-    assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+    assert business.legal_name == f'{business.identifier[2:]} {legal_name_suffix}'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
     assert len(business.share_classes.all()) == 2
     assert len(business.party_roles.all()) == 1
