@@ -37,8 +37,6 @@ class Business:  # pylint: disable=too-many-instance-attributes
         COOP = 'CP'
         BCOMP = 'BEN'
         BC_COMP = 'BC'
-        ULC_COMP = 'ULC'
-        CCC_COMP = 'CC'
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
