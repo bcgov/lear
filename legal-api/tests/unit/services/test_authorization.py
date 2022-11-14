@@ -255,10 +255,10 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
             'courtOrder', 'dissolution', 'incorporationApplication',
             'transition', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_cc', Business.State.ACTIVE, 'CC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'dissolution',
+         ['courtOrder', 'dissolution', 'incorporationApplication',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_ulc', Business.State.ACTIVE, 'ULC', 'staff', [STAFF_ROLE],
-         ['alteration', 'courtOrder', 'dissolution',
+         ['alteration', 'courtOrder', 'dissolution', 'incorporationApplication',
          'registrarsNotation', 'registrarsOrder']),
         ('staff_active_llc', Business.State.ACTIVE, 'LLC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'dissolution',
@@ -278,8 +278,10 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_ben', Business.State.ACTIVE, 'BEN', 'user', [BASIC_USER],
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
             'dissolution', 'incorporationApplication', 'transition']),
-        ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER], ['dissolution']),
-        ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER], ['alteration', 'dissolution']),
+        ('user_active_cc', Business.State.ACTIVE, 'CC', 'user', [BASIC_USER],
+         ['dissolution', 'incorporationApplication']),
+        ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'user', [BASIC_USER],
+         ['alteration', 'dissolution', 'incorporationApplication']),
         ('user_active_llc', Business.State.ACTIVE, 'LLC', 'user', [BASIC_USER], ['dissolution']),
         ('user_active_sp', Business.State.ACTIVE, 'SP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
         ('user_active_gp', Business.State.ACTIVE, 'GP', 'user', [BASIC_USER], ['changeOfRegistration', 'dissolution', 'registration']),
@@ -361,7 +363,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
-         ['CP', 'BC', 'BEN'], 'staff', [STAFF_ROLE], True),
+         ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
@@ -419,7 +421,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'user', [BASIC_USER], True),
 
         ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
-         ['CP', 'BC', 'BEN'], 'user', [BASIC_USER], True),
+         ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'user', [BASIC_USER], True),
 
         ('user_active_allowed', Business.State.ACTIVE, 'registration', None,
          ['SP', 'GP'], 'user', [BASIC_USER], True),
