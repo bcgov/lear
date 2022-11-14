@@ -246,7 +246,9 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(
+        email_info: dict,
+        token: str) -> dict:  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
     """Build the email for Business Number notification."""
     logger.debug('filing_notification: %s', email_info)
     # get template and fill in parts
