@@ -83,11 +83,11 @@ def create_filing(token=None, filing_json=None, business_id=None, filing_date=EP
     return filing
 
 
-def prep_incorp_filing(session, identifier, payment_id, option):
+def prep_incorp_filing(session, identifier, payment_id, option, legal_type='BC'):
     """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier)
+    business = create_business(identifier, legal_type=legal_type)
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing_template['filing']['business'] = {'identifier': business.identifier, 'legalType': business.legal_type}
     for party in filing_template['filing']['incorporationApplication']['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':

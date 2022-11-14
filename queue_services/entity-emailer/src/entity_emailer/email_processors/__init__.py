@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple
 
 import requests
 from entity_queue_common.service_utils import logger
@@ -27,7 +28,7 @@ from legal_api.models import Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def get_filing_info(filing_id: str) -> (Filing, dict, dict, str, str):
+def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
     business = (filing.json)['filing'].get('business')
