@@ -18,9 +18,9 @@
     {% elif filing.nameRequest.legalName %}
     <!-- try to get legal name from Name Request object -->
     <td class="value bold">{{ filing.nameRequest.legalName }}</td>
-    {% elif business.legalType == 'BEN' %}
+    {% elif numbered_description %}
     <!-- fallback BC label -->
-    <td class="value bold">Numbered Benefit Company</td>
+    <td class="value bold">{{ numbered_description }}</td>
     {% else %}
     <!-- add other cases here -->
     <td class="value bold">Unknown</td>
@@ -33,8 +33,7 @@
     {% else %}
       <td class="name">Incorporation Number:</td>
     {% endif %}
-    {% if header.status == 'PAID' and filing_type == 'incorporationApplication'
-    %}
+    {% if header.status == 'PAID' and filing_type == 'incorporationApplication' %}
     <td class="value bold">Pending</td>
     {% else %}
     <!-- Eg, BC0878529 -->

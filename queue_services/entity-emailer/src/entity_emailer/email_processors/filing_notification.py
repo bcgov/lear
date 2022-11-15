@@ -246,15 +246,17 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
+        email_info: dict, token: str) -> dict:
     """Build the email for Business Number notification."""
     logger.debug('filing_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    legal_type = business.get('legalType')
     if filing_type == 'correction':
-        if business.get('legalType') in ['SP', 'GP']:
+        if legal_type in ['SP', 'GP']:
             return process_correction(email_info, token)
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type != 'incorporationApplication':
@@ -276,6 +278,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
+    numbered_description = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{original_filing_type}'] if filing_type == 'correction' \
         else (filing.json)['filing'][f'{filing_type}']
@@ -289,6 +292,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type,
+        numbered_description=numbered_description,
         additional_info=get_additional_info(filing)
     )
 

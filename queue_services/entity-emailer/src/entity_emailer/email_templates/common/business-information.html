@@ -17,9 +17,9 @@
     {% elif filing.nameRequest.legalName %}
     <!-- try to get legal name from Name Request object -->
     <div class="value">{{ filing.nameRequest.legalName }}</div>
-    {% elif business.legalType == 'BEN' %}
+    {% elif numbered_description %}
     <!-- fallback BC label -->
-    <div class="value">Numbered Benefit Company</div>
+    <div class="value">{{ numbered_description }}</div>
     {% else %}
     <!-- add other cases here -->
     <div class="value">Unknown</div>
