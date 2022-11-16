@@ -32,7 +32,7 @@ from ... import namex
 from ...utils import get_str
 
 
-def validate(incorporation_json: Dict):
+def validate(incorporation_json: Dict):  # pylint: disable=too-many-branches;
     """Validate the Incorporation filing."""
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
@@ -58,10 +58,17 @@ def validate(incorporation_json: Dict):
     if err:
         msg.extend(err)
 
-    if legal_type == Business.LegalTypes.BCOMP.value:
+    if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
+                      Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
         err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
         if err:
             msg.extend(err)
+
+        if incorporation_json.get('filing', {}).get('incorporationApplication', {}).get('nameRequest', {})\
+                .get('nrNumber'):
+            err = validate_name_request(incorporation_json)
+            if err:
+                msg.extend(err)
 
     elif legal_type == Business.LegalTypes.COOP.value:
         err = validate_cooperative_documents(incorporation_json)
@@ -114,6 +121,12 @@ def validate_offices(incorporation_json) -> Error:
 # pylint: disable=too-many-branches
 def validate_roles(incorporation_json) -> Error:
     """Validate the required completing party of the incorporation filing."""
+    min_director_count_info = {
+        Business.LegalTypes.BCOMP.value: 1,
+        Business.LegalTypes.COMP.value: 1,
+        Business.LegalTypes.BC_ULC_COMPANY.value: 1,
+        Business.LegalTypes.BC_CCC.value: 3
+    }
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
     legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
@@ -150,13 +163,14 @@ def validate_roles(incorporation_json) -> Error:
             msg.append({'error': 'Must have a minimum of three Directors', 'path': err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
+        min_director_count = min_director_count_info.get(legal_type)
         if incorporator_count < 1:
             err_path = '/filing/incorporationApplication/parties/roles'
             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
-        if director_count < 1:
+        if director_count < min_director_count:
             err_path = '/filing/incorporationApplication/parties/roles'
-            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+            msg.append({'error': f'Must have a minimum of {min_director_count} Director', 'path': err_path})
 
     if msg:
         return msg
@@ -363,6 +377,42 @@ def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Op
     nr_name = namex.get_approved_name(nr_response.json())
     if nr_name != legal_name:
         msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_name_request(incorporation_filing: Dict) -> Optional[List]:
+    """Validate Name Request section."""
+    nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
+    nr_number = get_str(incorporation_filing, nr_path)
+
+    msg = []
+
+    # ensure NR is approved or conditionally approved
+    nr_response = namex.query_nr_number(nr_number)
+    nr_response_json = nr_response.json()
+    validation_result = namex.validate_nr(nr_response_json)
+    if not validation_result['is_consumable']:
+        msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
+
+    # ensure business type
+    legal_type_path = '/filing/incorporationApplication/nameRequest/legalType'
+    legal_type = get_str(incorporation_filing, legal_type_path)
+    nr_legal_type = nr_response_json.get('legalType')
+    if legal_type != nr_legal_type:
+        msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
+                    'path': legal_type_path})
+
+    # ensure NR request has the same legal name
+    legal_name_path = '/filing/incorporationApplication/nameRequest/legalName'
+    legal_name = get_str(incorporation_filing, legal_name_path)
+    nr_name = namex.get_approved_name(nr_response_json)
+    if nr_name != legal_name:
+        msg.append({'error': babel('Name Request legal name is not same as the business legal name.'),
+                    'path': legal_name_path})
 
     if msg:
         return msg
