@@ -291,7 +291,14 @@ def test_ledger_display_alteration_report(session, client, jwt):
     assert filing_json['displayName'] == 'Alteration'
 
 
-def test_ledger_display_incorporation(session, client, jwt):
+@pytest.mark.parametrize('test_name,entity_type,expected_display_name', [
+    ('CP', Business.LegalTypes.COOP.value, 'Incorporation Application'),
+    ('BEN', Business.LegalTypes.BCOMP.value, 'BC Benefit Company Incorporation Application'),
+    ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC Unlimited Liability Company Incorporation Application'),
+    ('CC', Business.LegalTypes.BC_CCC.value, 'BC Community Contribution Company Incorporation Application'),
+    ('BC', Business.LegalTypes.COMP.value, 'BC Limited Company Incorporation Application'),
+])
+def test_ledger_display_incorporation(session, client, jwt, test_name, entity_type, expected_display_name):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -300,7 +307,6 @@ def test_ledger_display_incorporation(session, client, jwt):
     filing_date = founding_date
     filing_name = 'incorporationApplication'
     business_name = 'The Truffle House'
-    entity_type = Business.LegalTypes.BCOMP.value
 
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
     business.legal_name = business_name
@@ -309,8 +315,9 @@ def test_ledger_display_incorporation(session, client, jwt):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'].pop('business')
     filing['filing']['header']['name'] = filing_name
-    filing['filing'][filing_name] = INCORPORATION
-    filing['filing'][filing_name]['nameRequest'] = 'NR0000001'
+    filing['filing'][filing_name] = copy.deepcopy(INCORPORATION)
+    filing['filing'][filing_name]['nameRequest']['nrNumber'] = nr_number
+    filing['filing'][filing_name]['nameRequest']['legalType'] = entity_type
     filing['filing'][filing_name]['legalName'] = business_name
 
     f = factory_completed_filing(business, filing, filing_date=filing_date)
@@ -327,7 +334,7 @@ def test_ledger_display_incorporation(session, client, jwt):
 
     # validate
     assert rv.json['filings']
-    assert rv.json['filings'][0]['displayName'] == 'BC Benefit Company Incorporation Application'
+    assert rv.json['filings'][0]['displayName'] == expected_display_name
 
 
 def test_ledger_display_corrected_incorporation(session, client, jwt):

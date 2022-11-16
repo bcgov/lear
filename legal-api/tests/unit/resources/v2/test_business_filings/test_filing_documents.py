@@ -558,7 +558,79 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
          }
      },
      HTTPStatus.OK, '2017-10-01'
-     )
+     ),
+    ('ulc_ia_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cc_ia_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('bc_ia_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,
                                                  test_name,
@@ -575,6 +647,9 @@ def test_document_list_for_various_filing_states(session, client, jwt,
 
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = filing_name_1
+    filing_json['filing']['business']['legalType'] = entity_type
+    if filing_name_1 == 'incorporationApplication':
+        legal_filing_1['nameRequest']['legalType'] = entity_type
     filing_json['filing'][filing_name_1] = legal_filing_1
 
     if legal_filing_2:
