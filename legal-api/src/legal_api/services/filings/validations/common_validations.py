@@ -203,7 +203,10 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
     officer = party['officer']
     party_type = officer['partyType']
 
-    if party_type == 'person' and legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value]:
+    if party_type == 'person' and legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value,
+                                                 Business.LegalTypes.BC_ULC_COMPANY.value,
+                                                 Business.LegalTypes.BC_CCC.value,
+                                                 Business.LegalTypes.COMP.value]:
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
