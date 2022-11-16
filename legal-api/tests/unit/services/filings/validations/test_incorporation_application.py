@@ -945,72 +945,246 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
 
 
 @pytest.mark.parametrize(
-    'test_name, '
+    'test_name, legal_type,'
     'class_name_1,class_has_max_shares,class_max_shares,has_par_value,par_value,currency,'
     'series_name_1,series_has_max_shares,series_max_shares,'
     'class_name_2,series_name_2,'
     'expected_code, expected_msg',
     [
-        ('SUCCESS', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BEN', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'BEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS-CLASS2', 'BEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', None, None, None),
-        ('FAIL-CLASS2',
+        ('FAIL-CLASS2', 'BEN',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 1', None,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share class Share Class 1 name already used in a share class or series.',
              'path': '/filing/incorporationApplication/shareClasses/1/name/'
          }]),
-        ('FAIL-SERIES2',
+        ('FAIL-SERIES2', 'BEN',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', 'Share Series 1',
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share series Share Series 1 name already used in a share class or series.',
              'path': '/filing/incorporationApplication/shareClasses/0/series/1'
          }]),
-        ('FAIL_INVALID_CLASS_MAX_SHARES',
+        ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share class Share Class 1 must provide value for maximum number of shares',
              'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
          }]),
-        ('FAIL_INVALID_CURRENCY',
+        ('FAIL_INVALID_CURRENCY', 'BEN',
          'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share class Share Class 1 must specify currency',
              'path': '/filing/incorporationApplication/shareClasses/0/currency/'
          }]),
-        ('FAIL_INVALID_PAR_VALUE',
+        ('FAIL_INVALID_PAR_VALUE', 'BEN',
          'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share class Share Class 1 must specify par value',
              'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
          }]),
-        ('FAIL_INVALID_SERIES_MAX_SHARES',
+        ('FAIL_INVALID_SERIES_MAX_SHARES', 'BEN',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share series Share Series 1 must provide value for maximum number of shares',
              'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
-        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES',
+        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'BEN',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
          None, None,
             HTTPStatus.BAD_REQUEST, [{
                 'error':
                 'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
                 'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-            }])
+        }]),
+        ('SUCCESS', 'BC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+             None, None, None, None),
+        ('SUCCESS', 'BC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None, None, None),
+        ('SUCCESS', 'BC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         None, None, None, None),
+        ('SUCCESS-CLASS2', 'BC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', None, None, None),
+        ('FAIL-CLASS2', 'BC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 1', None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/1/name/'
+        }]),
+        ('FAIL-SERIES2', 'BC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', 'Share Series 1',
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+        }]),
+        ('FAIL_INVALID_CLASS_MAX_SHARES', 'BC',
+         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+        }]),
+        ('FAIL_INVALID_CURRENCY', 'BC',
+         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify currency',
+            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+        }]),
+        ('FAIL_INVALID_PAR_VALUE', 'BC',
+         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify par value',
+            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+        }]),
+        ('FAIL_INVALID_SERIES_MAX_SHARES', 'BC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }]),
+        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'BC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error':
+                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }]),
+        ('SUCCESS', 'ULC',  'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+             None, None, None, None),
+        ('SUCCESS', 'ULC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None, None, None),
+        ('SUCCESS', 'ULC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         None, None, None, None),
+        ('SUCCESS-CLASS2', 'ULC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', None, None, None),
+        ('FAIL-CLASS2', 'ULC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 1', None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/1/name/'
+        }]),
+        ('FAIL-SERIES2', 'ULC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', 'Share Series 1',
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+        }]),
+        ('FAIL_INVALID_CLASS_MAX_SHARES', 'ULC',
+         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+        }]),
+        ('FAIL_INVALID_CURRENCY', 'ULC',
+         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify currency',
+            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+        }]),
+        ('FAIL_INVALID_PAR_VALUE', 'ULC',
+         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify par value',
+            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+        }]),
+        ('FAIL_INVALID_SERIES_MAX_SHARES', 'ULC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }]),
+        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'ULC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error':
+                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }]),
+        ('SUCCESS', 'CC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+             None, None, None, None),
+        ('SUCCESS', 'CC',  'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None, None, None),
+        ('SUCCESS', 'CC',  'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         None, None, None, None),
+        ('SUCCESS-CLASS2', 'CC',  'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', None, None, None),
+        ('FAIL-CLASS2', 'CC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 1', None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/1/name/'
+        }]),
+        ('FAIL-SERIES2', 'CC',
+         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         'Share Class 2', 'Share Series 1',
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 name already used in a share class or series.',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+        }]),
+        ('FAIL_INVALID_CLASS_MAX_SHARES', 'CC',
+         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+        }]),
+        ('FAIL_INVALID_CURRENCY', 'CC',
+         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify currency',
+            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+        }]),
+        ('FAIL_INVALID_PAR_VALUE', 'CC',
+         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share class Share Class 1 must specify par value',
+            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+        }]),
+        ('FAIL_INVALID_SERIES_MAX_SHARES', 'CC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }]),
+        ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CC',
+         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         None, None,
+         HTTPStatus.BAD_REQUEST, [{
+            'error':
+                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+        }])
     ])
-def test_validate_incorporation_share_classes(session, mocker, test_name,
+def test_validate_incorporation_share_classes(session, mocker, test_name,legal_type,
                                               class_name_1, class_has_max_shares, class_max_shares,
                                               has_par_value, par_value, currency, series_name_1, series_has_max_shares,
                                               series_max_shares,
@@ -1024,8 +1198,25 @@ def test_validate_incorporation_share_classes(session, mocker, test_name,
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = 'NR 1234567'
-    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = 'BC'
-    filing_json['filing']['business']['legalType'] = 'BEN'
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing']['business']['legalType'] = legal_type
+
+    base_mailing_address = filing_json['filing'][incorporation_application_name]['parties'][0]['mailingAddress']
+    base_delivery_address = filing_json['filing'][incorporation_application_name]['parties'][0]['deliveryAddress']
+    filing_json['filing'][incorporation_application_name]['parties'] = []
+
+    parties = [
+        {'partyName': 'officer1', 'roles': ['Director', 'Completing Party']},
+        {'partyName': 'officer2', 'roles': ['Incorporator', 'Director']},
+        {'partyName': 'officer3', 'roles': ['Director']}
+    ]
+
+    # populate party and party role info
+    for index, party in enumerate(parties):
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
+        filing_json['filing'][incorporation_application_name]['parties'].append(p)
 
     share_structure = filing_json['filing'][incorporation_application_name]['shareStructure']
 
