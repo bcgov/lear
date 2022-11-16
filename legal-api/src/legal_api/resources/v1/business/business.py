@@ -88,8 +88,12 @@ class BusinessResource(Resource):
         except KeyError:
             business_name = bootstrap.identifier
 
+        legal_type = json_input['filing'][filing_type]['nameRequest']['legalType']
         corp_type_code = Filing.FILINGS[filing_type]['temporaryCorpTypeCode']
-        rv = RegistrationBootstrapService.register_bootstrap(bootstrap, business_name, corp_type_code)
+        rv = RegistrationBootstrapService.register_bootstrap(bootstrap,
+                                                             business_name,
+                                                             corp_type_code=corp_type_code,
+                                                             corp_sub_type_code=legal_type)
         if not isinstance(rv, HTTPStatus):
             with suppress(Exception):
                 bootstrap.delete()
