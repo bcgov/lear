@@ -203,7 +203,9 @@ FILINGS: Final = {
         'name': 'incorporationApplication',
         'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
         'displayName': {
-            'BC': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+            'BC': 'BC Limited Company Incorporation Application',
+            'ULC': 'BC Unlimited Liability Company Incorporation Application',
+            'CC': 'BC Community Contribution Company Incorporation Application',
             'BEN': 'BC Benefit Company Incorporation Application',
             'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
         },
@@ -212,7 +214,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', 'certificate']},
+            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
     'registrarsNotation': {
