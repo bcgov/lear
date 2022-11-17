@@ -63,7 +63,8 @@ class RegistrationBootstrapService:
     @staticmethod
     def register_bootstrap(bootstrap: RegistrationBootstrap,
                            business_name: str,
-                           corp_type_code: str = 'TMP') -> Union[HTTPStatus, Dict]:
+                           corp_type_code: str = 'TMP',
+                           corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
@@ -71,7 +72,8 @@ class RegistrationBootstrapService:
         rv = AccountService.create_affiliation(account=bootstrap.account,
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name,
-                                               corp_type_code=corp_type_code)
+                                               corp_type_code=corp_type_code,
+                                               corp_sub_type_code=corp_sub_type_code)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
@@ -125,11 +127,12 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments, disable=invalid-name;
+    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name;
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
+                           corp_sub_type_code: str = None,
                            pass_code: str = '',
                            details: dict = None):
         """Affiliate a business to an account."""
@@ -146,6 +149,7 @@ class AccountService:
         entity_data = {
             'businessIdentifier': business_registration,
             'corpTypeCode': corp_type_code,
+            'corpSubTypeCode': corp_sub_type_code,
             'name': business_name or business_registration
         }
         entity_record = requests.post(
