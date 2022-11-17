@@ -680,8 +680,8 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['business']['legalType'] = 'CP'
     filing_json['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
-    rules_file_key = _upload_file(letter)
-    memorandum_file_key = _upload_file(letter)
+    rules_file_key = _upload_file(letter, invalid=False)
+    memorandum_file_key = _upload_file(letter, invalid=False)
     filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
     filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
     filing = factory_filing(Business(), filing_json, filing_type='incorporationApplication')
@@ -714,7 +714,7 @@ def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, 
     filing_json['filing']['header']['name'] = 'dissolution'
     filing_json['filing']['business']['legalType'] = 'CP'
     filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-    file_key = _upload_file(letter)
+    file_key = _upload_file(letter, invalid=False)
     filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
     filing = factory_filing(b, filing_json, filing_type='dissolution')
     headers = create_header(jwt, [STAFF_ROLE], identifier)

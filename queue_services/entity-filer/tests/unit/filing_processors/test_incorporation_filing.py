@@ -48,8 +48,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
         if legal_type == 'CP':
-            rules_file_key_uploaded_by_user = upload_file('rules.pdf', valid_pdf=True)
-            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf', valid_pdf=True)
+            rules_file_key_uploaded_by_user = upload_file('rules.pdf')
+            memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
             filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
                 rules_file_key_uploaded_by_user
             filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'

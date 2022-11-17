@@ -43,7 +43,6 @@ def replace_file_with_certified_copy(_bytes, business, key, certify_date):
     """Create a certified copy and replace it into Minio server."""
     open_pdf_file = io.BytesIO(_bytes)
     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
-
     pdf_writer = PyPDF2.PdfFileWriter()
     pdf_writer.appendPagesFromReader(pdf_reader)
     output_original_pdf = io.BytesIO()
