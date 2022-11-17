@@ -271,7 +271,7 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
     def _set_tax_id(self, filing):
-        if self._business:
+        if self._business and self._business.tax_id:
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
