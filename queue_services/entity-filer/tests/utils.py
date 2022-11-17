@@ -19,25 +19,22 @@ import requests
 import PyPDF2
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import _write_text
-from reportlab.lib.pagesizes import letter, legal
+from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-def upload_file(file_name: str, valid_pdf: bool):
+def upload_file(file_name: str):
     """Upload a sample file for testing."""
     signed_url = MinioService.create_signed_put_url(file_name)
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
-    requests.put(pre_signed_put, data=_create_pdf_file(valid_pdf).read(), headers={'Content-Type': 'application/octet-stream'})
+    requests.put(pre_signed_put, data=_create_pdf_file().read(), headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
-def _create_pdf_file(valid: bool):
+def _create_pdf_file():
     """Create a sample pdf file for testing."""
     buffer = io.BytesIO()
-    if(valid):
-        can = canvas.Canvas(buffer, pagesize=letter)
-    else:
-        can = canvas.Canvas(buffer, pagesize=legal)
+    can = canvas.Canvas(buffer, pagesize=letter)
     doc_height = letter[1]
 
     for _ in range(3):

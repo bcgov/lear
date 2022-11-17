@@ -19,7 +19,6 @@ import io
 import os
 
 import PyPDF2
-from entity_queue_common.service_utils import QueueException
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import PdfService
 from legal_api.services.minio import MinioService
@@ -45,9 +44,6 @@ def replace_file_with_certified_copy(_bytes, business, key, certify_date):
     open_pdf_file = io.BytesIO(_bytes)
     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
 
-    # Check that all pages in the pdf are letter size and able to be processed.
-    if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-        raise QueueException('Pdf pages are not letter size.')
     pdf_writer = PyPDF2.PdfFileWriter()
     pdf_writer.appendPagesFromReader(pdf_reader)
     output_original_pdf = io.BytesIO()
