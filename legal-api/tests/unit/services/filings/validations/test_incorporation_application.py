@@ -22,7 +22,7 @@ import pytest
 from registry_schemas.example_data.schema_data import FILING_HEADER
 import requests
 from freezegun import freeze_time
-from reportlab.lib.pagesizes import legal, letter
+from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from registry_schemas.example_data import COOP_INCORPORATION, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
@@ -485,8 +485,8 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     if legal_type == 'CP':
         filing_json['filing'][incorporation_application_name] = copy.deepcopy(COOP_INCORPORATION)
         # Provide mocked valid documents
-        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
-        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
     else:
         filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
 
@@ -1355,20 +1355,20 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     # Mock upload file for test scenarios
     if scenario:
         if scenario == 'success':
-            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
-            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
         if scenario == 'failRules':
             filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = scenario
-            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
         if scenario == 'failMemorandum':
-            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
             filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = scenario
         if scenario == 'invalidRulesSize':
-            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(legal)
-            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=True)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
         if scenario == 'invalidMemorandumSize':
-            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter)
-            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(legal)
+            filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+            filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=True)
     else:
         # Assign key and value to test empty variables for failures
         key_value = ''
@@ -1388,22 +1388,25 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
         assert err is None
 
 
-def _upload_file(page_size):
+def _upload_file(page_size, invalid):
     signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(),
+    requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
                  headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
-def _create_pdf_file(page_size):
+def _create_pdf_file(page_size, invalid):
     buffer = io.BytesIO()
     can = canvas.Canvas(buffer, pagesize=page_size)
     doc_height = letter[1]
 
     for _ in range(3):
+        # Create invalid page size on last page of pdf
+        if(invalid and _ == 2):
+            can.setPageSize((500, 500))
         text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
         text_x_margin = 100
         text_y_margin = doc_height - 300
