@@ -149,9 +149,11 @@ class AccountService:
         entity_data = {
             'businessIdentifier': business_registration,
             'corpTypeCode': corp_type_code,
-            'corpSubTypeCode': corp_sub_type_code,
             'name': business_name or business_registration
         }
+        if corp_sub_type_code:
+            entity_data['corpSubTypeCode'] = corp_sub_type_code
+
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
