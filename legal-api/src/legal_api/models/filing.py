@@ -70,7 +70,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Notice of Alteration Filing',
             'codes': {
                 'BC': 'ALTER',
-                'BEN': 'ALTER'
+                'BEN': 'ALTER',
+                'ULC': 'ALTER',
+                'CC': 'ALTER'
             }
         },
         'annualReport': {
@@ -78,7 +80,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Annual Report Filing',
             'codes': {
                 'CP': 'OTANN',
-                'BEN': 'BCANN'
+                'BEN': 'BCANN',
+                'BC': 'BCANN',
+                'ULC': 'BCANN',
+                'CC': 'BCANN'
             }
         },
         'changeOfAddress': {
@@ -86,7 +91,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Change of Address Filing',
             'codes': {
                 'CP': 'OTADD',
-                'BEN': 'BCADD'
+                'BEN': 'BCADD',
+                'BC': 'BCADD',
+                'ULC': 'BCADD',
+                'CC': 'BCADD'
             }
         },
         'changeOfDirectors': {
@@ -94,12 +102,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Change of Directors Filing',
             'codes': {
                 'CP': 'OTCDR',
-                'BEN': 'BCCDR'
+                'BEN': 'BCCDR',
+                'BC': 'BCCDR',
+                'ULC': 'BCCDR',
+                'CC': 'BCCDR'
             },
             'free': {
                 'codes': {
                     'CP': 'OTFDR',
-                    'BEN': 'BCFDR'
+                    'BEN': 'BCFDR',
+                    'BC': 'BCFDR',
+                    'ULC': 'BCFDR',
+                    'CC': 'BCFDR'
                 }
             }
         },
@@ -109,6 +123,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Correction',
             'codes': {
                 'BEN': 'CRCTN',
+                'BC': 'CRCTN',
+                'ULC': 'CRCTN',
+                'CC': 'CRCTN',
                 'CP': 'CRCTN',
                 'SP': 'FMCORR',
                 'GP': 'FMCORR'
@@ -165,7 +182,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Transition',
             'codes': {
                 'BC': 'TRANS',
-                'BEN': 'TRANS'
+                'BEN': 'TRANS',
+                'ULC': 'TRANS',
+                'CC': 'TRANS'
             }
         },
         'changeOfRegistration': {
@@ -427,9 +446,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
-            self.effective_date is None or (
-                self.payment_completion_date
-                and self.effective_date < self.payment_completion_date
+                self.effective_date is None or (
+                    self.payment_completion_date
+                    and self.effective_date < self.payment_completion_date
                 )):  # pylint: disable=W0143; hybrid property
             self.effective_date = self.payment_completion_date
 
