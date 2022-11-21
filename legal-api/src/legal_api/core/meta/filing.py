@@ -79,7 +79,9 @@ FILINGS: Final = {
         'displayName': 'Alteration',
         'codes': {
             'BC': 'ALTER',
-            'BEN': 'ALTER'
+            'BEN': 'ALTER',
+            'ULC': 'ALTER',
+            'CC': 'ALTER'
         },
         'additional': [
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
@@ -91,7 +93,10 @@ FILINGS: Final = {
         'displayName': 'Annual Report',
         'codes': {
             'CP': 'OTANN',
-            'BEN': 'BCANN'
+            'BEN': 'BCANN',
+            'BC': 'BCANN',
+            'ULC': 'BCANN',
+            'CC': 'BCANN'
         }
     },
     'changeOfAddress': {
@@ -100,7 +105,10 @@ FILINGS: Final = {
         'displayName': 'Address Change',
         'codes': {
             'CP': 'OTADD',
-            'BEN': 'BCADD'
+            'BEN': 'BCADD',
+            'BC': 'BCADD',
+            'ULC': 'BCADD',
+            'CC': 'BCADD'
         },
         'additional': [
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
@@ -112,12 +120,18 @@ FILINGS: Final = {
         'displayName': 'Director Change',
         'codes': {
             'CP': 'OTCDR',
-            'BEN': 'BCCDR'
+            'BEN': 'BCCDR',
+            'BC': 'BCCDR',
+            'ULC': 'BCCDR',
+            'CC': 'BCCDR'
         },
         'free': {
             'codes': {
                 'CP': 'OTFDR',
-                'BEN': 'BCFDR'
+                'BEN': 'BCFDR',
+                'BC': 'BCFDR',
+                'ULC': 'BCFDR',
+                'CC': 'BCFDR'
             }
         },
         'additional': [
@@ -150,12 +164,18 @@ FILINGS: Final = {
         'title': 'Correction',
         'displayName': {
             'BEN': 'Correction',
+            'BC': 'Correction',
+            'ULC': 'Correction',
+            'CC': 'Correction',
             'CP': 'Correction',
             'SP': 'Register Correction Application',
             'GP': 'Register Correction Application',
         },
         'codes': {
             'BEN': 'CRCTN',
+            'BC': 'CRCTN',
+            'ULC': 'CRCTN',
+            'CC': 'CRCTN',
             'CP': 'CRCTN',
             'SP': 'FMCORR',
             'GP': 'FMCORR'
@@ -210,7 +230,11 @@ FILINGS: Final = {
             'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
         },
         'codes': {
-            'BEN': 'BCINC'
+            'BEN': 'BCINC',
+            'BC': 'BCINC',
+            'ULC': 'BCINC',
+            'CC': 'BCINC',
+            'CP': 'OTINC'
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
@@ -255,7 +279,9 @@ FILINGS: Final = {
         'displayName': 'Transition Application',
         'codes': {
             'BC': 'TRANS',
-            'BEN': 'TRANS'
+            'BEN': 'TRANS',
+            'ULC': 'TRANS',
+            'CC': 'TRANS'
         },
         'additional': [
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
