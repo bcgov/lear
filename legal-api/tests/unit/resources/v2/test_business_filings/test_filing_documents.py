@@ -631,6 +631,117 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
       },
      HTTPStatus.OK, '2017-10-01'
      ),
+    ('bc_annual_report_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ccc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ulc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cp_annual_report_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_annual_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+
+    ('bc_annual_report_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ccc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ulc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('cp_annual_report_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_annual_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'annualReport':
+                             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,
                                                  test_name,
