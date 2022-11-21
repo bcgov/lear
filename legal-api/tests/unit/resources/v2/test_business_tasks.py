@@ -253,15 +253,33 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
         assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
 
 
-@freeze_time("Jul 2nd, 2022")
+@freeze_time('Jul 2nd, 2022')
 @pytest.mark.parametrize('test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length', [
-    ('BCOMP first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BCOMP.value, 1),
-    ('BCOMP no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BCOMP.value, 0),
-    ('BCOMP 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BCOMP.value, 3),
-    ('BCOMP current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BCOMP.value, 0),
-    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),
-    ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
-    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),
+    ('BEN first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BCOMP.value, 1),
+    ('BEN no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BCOMP.value, 0),
+    ('BEN 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BCOMP.value, 3),
+    ('BEN current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BCOMP.value, 0),
+
+    ('BC first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.COMP.value, 1),
+    ('BC no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.COMP.value, 0),
+    ('BC 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.COMP.value, 3),
+    ('BC current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.COMP.value, 0),
+
+    ('ULC first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BC_ULC_COMPANY.value, 1),
+    ('ULC no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BC_ULC_COMPANY.value, 0),
+    ('ULC 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BC_ULC_COMPANY.value, 3),
+    ('ULC current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03',
+     Business.LegalTypes.BC_ULC_COMPANY.value, 0),
+
+    ('CC first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BC_CCC.value, 1),
+    ('CC no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BC_CCC.value, 0),
+    ('CC 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BC_CCC.value, 3),
+    ('CC current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BC_CCC.value, 0),
+
+    ('CP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),
+    ('CP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
+    ('CP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),
+
     ('SP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.SOLE_PROP.value, 0),
     ('GP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.PARTNERSHIP.value, 0)
 ])
@@ -289,6 +307,8 @@ def test_construct_task_list(session, client, jwt, test_name, identifier, foundi
     ('NO_CONVERSION_TODO_NON_FIRM', 'CP', 'CP7654321', True, False),
     ('NO_CONVERSION_TODO_NON_FIRM', 'BEN', 'CP7654321', True, False),
     ('NO_CONVERSION_TODO_NON_FIRM', 'BC', 'BC7654321', True, False),
+    ('NO_CONVERSION_TODO_NON_FIRM', 'ULC', 'BC7654321', True, False),
+    ('NO_CONVERSION_TODO_NON_FIRM', 'CC', 'BC7654321', True, False),
 ])
 def test_conversion_filing_task(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
                                 conversion_task_expected):
@@ -315,8 +335,8 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
 
     if conversion_task_expected:
         conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
-                                and x['task']['todo']['header']['status'] == 'NEW'
-                                for x in rv_json['tasks'])
+                               and x['task']['todo']['header']['status'] == 'NEW'
+                               for x in rv_json['tasks'])
         assert conversion_to_do
     else:
         conversion_to_do = any(x['task']['todo']['header']['name'] == 'conversion'
