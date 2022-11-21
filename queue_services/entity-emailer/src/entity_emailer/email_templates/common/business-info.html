@@ -41,7 +41,7 @@
     {% endif %}
   </tr>
 
-  {% if business.tax_id %}
+  {% if business.tax_id and business.tax_id|length > 9 %}
   <tr>
     <td class="name">Business Number:</td>
     <td class="value bold">{{ business.tax_id }}</td>
