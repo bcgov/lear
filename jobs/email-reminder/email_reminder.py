@@ -121,13 +121,16 @@ def get_businesses(legal_types: list):
         " END  + interval '1 year'= CURRENT_DATE")
     return db.session.query(Business).filter(
         Business.legal_type.in_(legal_types), where_clause
-    ).all()
+    ).order_by(Business.id).paginate(per_page=20)
 
 
 async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
     """Find business to send annual report reminder."""
     try:
-        legal_types = [Business.LegalTypes.BCOMP.value]  # entity types to send ar reminder
+        legal_types = [Business.LegalTypes.BCOMP.value,
+                       Business.LegalTypes.COMP.value,
+                       Business.LegalTypes.BC_CCC.value,
+                       Business.LegalTypes.BC_ULC_COMPANY.value]  # entity types to send ar reminder
         ar_fees = {}
 
         # get token
@@ -136,13 +139,19 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
             ar_fees[legal_type] = get_ar_fee(app, legal_type, token)
 
         app.logger.debug('Getting businesses to send AR reminder today')
-        businesses = get_businesses(legal_types)
-        app.logger.debug('Processing businesses to send AR reminder')
-        for business in businesses:
-            ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+        pagination = get_businesses(legal_types)
+        while pagination.items:
+            app.logger.debug('Processing businesses to send AR reminder')
+            for business in pagination.items:
+                ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
-            await send_email(business.id, ar_fees[business.legal_type], str(ar_year), app, qsm)
-            app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+                await send_email(business.id, ar_fees[business.legal_type], str(ar_year), app, qsm)
+                app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+
+            if pagination.next_num:
+                pagination = pagination.next()
+            else:
+                break
 
     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         app.logger.error(err)
