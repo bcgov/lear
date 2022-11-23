@@ -22,6 +22,7 @@ import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; confli
 from flask import Flask
 from legal_api.models import Business, Filing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.flags import Flags
 from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -39,6 +40,8 @@ SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 
+flags = Flags()
+
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
@@ -52,6 +55,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             dsn=app.config.get('SENTRY_DSN'),
             integrations=[SENTRY_LOGGING]
         )
+
+    if app.config.get('LD_SDK_KEY', None):
+        flags.init_app(app)
 
     register_shellcontext(app)
 
@@ -127,10 +133,15 @@ def get_businesses(legal_types: list):
 async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
     """Find business to send annual report reminder."""
     try:
-        legal_types = [Business.LegalTypes.BCOMP.value,
-                       Business.LegalTypes.COMP.value,
-                       Business.LegalTypes.BC_CCC.value,
-                       Business.LegalTypes.BC_ULC_COMPANY.value]  # entity types to send ar reminder
+        legal_types = [Business.LegalTypes.BCOMP.value]  # entity types to send ar reminder
+
+        if flags.is_on('enable-bc-ccc-ulc'):
+            legal_types.extend(
+                [Business.LegalTypes.COMP.value,
+                 Business.LegalTypes.BC_CCC.value,
+                 Business.LegalTypes.BC_ULC_COMPANY.value]
+            )
+
         ar_fees = {}
 
         # get token
