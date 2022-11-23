@@ -107,7 +107,7 @@ def get_ar_fee(app: Flask, legal_type: str, token: str) -> str:
     app.logger.debug(f'filing_type_code: {filing_type_code}')
     fee_url = ''.join([fee_url, '/', legal_type, '/', filing_type_code])
     app.logger.debug(f'fee_url: {fee_url}')
-    res = requests.get(url=fee_url,
+    res = requests.get(url=fee_url,  # pylint: disable=missing-timeout
                        headers={
                            'Content-Type': 'application/json',
                            'Authorization': 'Bearer ' + token})
@@ -196,7 +196,7 @@ async def send_outstanding_bcomps_ar_reminder(app: Flask, qsm: QueueService):  #
 
 
 if __name__ == '__main__':
-    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None
+    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None  # pylint: disable=invalid-name
     application = create_app()
     with application.app_context():
         event_loop = asyncio.get_event_loop()
