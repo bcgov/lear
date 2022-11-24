@@ -18,10 +18,12 @@
       <span class="bold">Company Address Changes</span> - update any changes to a company's registered or records
       office addresses as they occur.
   </div>
+  {% if business.legalType == 'BEN' %}
   <div class="section-data mt-5">
      <span class="bold">Benefit Reports</span> - the directors must produce and publish a benefit report on or before
       each annual reference date for the company. To learn more about benefit reports, <a
           href="https://www.bclaws.ca/civix/document/id/complete/statreg/02057_03b#section51.994" target="_blank">
       read the legislation</a> for specific rules. The report does not get filed with the Corporate Registry.
   </div>
+  {% endif %}
 </div>
