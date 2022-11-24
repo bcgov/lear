@@ -16,17 +16,13 @@
           </td>
           <td>
             <div class="report-type">{{ effective_date[-4:] }} ANNUAL REPORT</div>
-            <div class="report-type-desc">BC Benefit Company - Business Corporations Act</div>
+            <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
           </td>
         </tr>
       </table>
       <div class="business-name-header">
         <label class="lbl-business-name">
-          {% if business.legalName is defined %}
           {{business.legalName}}
-          {% else %}
-          Numbered Benefit Company
-          {% endif %}
         </label>
       </div>
     </div>

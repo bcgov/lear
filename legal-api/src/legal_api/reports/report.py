@@ -276,10 +276,16 @@ class Report:  # pylint: disable=too-few-public-methods
 
     def _set_description(self, filing):
         legal_type = self._filing.filing_json['filing'].get('business', {}).get('legalType', 'NA')
+        filing['numberedDescription'] = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+
         corp_type = CorpType.find_by_id(legal_type)
         filing['entityDescription'] = corp_type.full_desc
 
         act = {
+            Business.LegalTypes.BCOMP.value: 'Business Corporations Act',
+            Business.LegalTypes.COMP.value: 'Business Corporations Act',
+            Business.LegalTypes.BC_CCC.value: 'Business Corporations Act',
+            Business.LegalTypes.BC_ULC_COMPANY.value: 'Business Corporations Act',
             Business.LegalTypes.COOP.value: 'Cooperative Association Act',
             Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
             Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
