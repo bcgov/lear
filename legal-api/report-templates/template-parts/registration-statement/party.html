@@ -20,6 +20,8 @@
                 <span class="capitalize-text">{{ party.officer.firstName }}</span>
                 {% if party.officer.middleName %}
                   <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                {% elif party.officer.middleInitial %}
+                  <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
                 {% endif %}
               {% endif %}
             </div>
