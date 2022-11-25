@@ -17,7 +17,7 @@
 Test-Suite to ensure that the RegistrationBootstrap Model is working as expected.
 """
 import pytest
-from sqlalchemy.orm.exc import FlushError
+import sqlalchemy
 
 from legal_api.models import RegistrationBootstrap
 
@@ -29,7 +29,7 @@ def test_only_one_registration_bootstrap(session):
     r = RegistrationBootstrap(identifier=identifier, account=12)
     r.save()
 
-    with pytest.raises(FlushError):
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
         p = RegistrationBootstrap(identifier=identifier, account=12)
         p.save()
 
