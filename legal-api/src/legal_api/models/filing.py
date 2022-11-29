@@ -22,6 +22,7 @@ from sqlalchemy import desc, event, func, inspect, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
+from sqlalchemy_json import mutable_json_type
 
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
@@ -250,8 +251,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
-    _filing_json = db.Column('filing_json', JSONB)
-    _meta_data = db.Column('meta_data', JSONB)
+    _filing_json = db.Column('filing_json', mutable_json_type(dbtype=JSONB, nested=True))
+    _meta_data = db.Column('meta_data', mutable_json_type(dbtype=JSONB, nested=True))
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
     _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
@@ -262,7 +263,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     payment_account = db.Column('payment_account', db.String(30))
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     submitter_roles = db.Column('submitter_roles', db.String(200))
-    tech_correction_json = db.Column('tech_correction_json', JSONB)
+    tech_correction_json = db.Column('tech_correction_json', mutable_json_type(dbtype=JSONB, nested=True))
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
     court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
