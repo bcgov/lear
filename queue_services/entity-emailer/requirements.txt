@@ -5,7 +5,7 @@ Flask-SQLAlchemy==2.5.1
 Flask-Script==2.0.6
 Flask==1.1.2
 Jinja2==2.11.3
-Mako==1.1.4
+Mako==1.2.2
 alembic==1.6.0
 MarkupSafe==1.1.1
 SQLAlchemy-Utils==0.37.1
