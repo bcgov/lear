@@ -79,6 +79,11 @@ def validate(incorporation_json: Dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
+    if legal_type in [Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.BC_CCC.value]:
+        err = validate_incorporation_agreement(incorporation_json)
+        if err:
+            msg.extend(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
@@ -441,6 +446,21 @@ def validate_pdf(file_key: str):
 
     except Exception:
         msg.append({'error': babel('Invalid file.')})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_incorporation_agreement(incorporation_json) -> Error:
+    """Validate the incorporation agreement of the incorporation filing."""
+    agreement_type_path = '/filing/incorporationApplication/incorporationAgreement/agreementType'
+    agreement_type = get_str(incorporation_json, agreement_type_path)
+    msg = []
+
+    if agreement_type != 'custom':
+        msg.append({'error': babel('Agreement type must be custom.')})
 
     if msg:
         return msg
