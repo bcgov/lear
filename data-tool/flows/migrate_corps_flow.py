@@ -6,7 +6,7 @@ from prefect.task_runners import ConcurrentTaskRunner, SequentialTaskRunner
 from prefect_dask import DaskTaskRunner
 
 from config import get_named_config
-from common.firm_queries import get_unprocessed_firms_query
+from common.corp_queries import get_unprocessed_corps_query
 from common.event_filing_service import EventFilingService, RegistrationEventFilings
 from common.filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data, \
     clean_corp_data, clean_event_data
@@ -45,10 +45,10 @@ def get_config():
     return config
 
 
-@task(name='get_unprocessed_firms')
-def get_unprocessed_firms(config, db_engine: engine):
+@task(name='get_unprocessed_corps')
+def get_unprocessed_corps(config, db_engine: engine):
     logger = prefect.get_run_logger()
-    query = get_unprocessed_firms_query(config.DATA_LOAD_ENV)
+    query = get_unprocessed_corps_query(config.DATA_LOAD_ENV)
     sql_text = text(query)
 
     with db_engine.connect() as conn:
@@ -60,33 +60,33 @@ def get_unprocessed_firms(config, db_engine: engine):
         status_service = ProcessingStatusService(config.DATA_LOAD_ENV, db_engine)
         # TODO: optimize to update all records in one-shot
         for corp_num in corp_nums:
-            status_service.update_flow_status(flow_name='sp-gp-flow',
+            status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               processed_status=ProcessingStatuses.PROCESSING)
     return raw_data_dict
 
 
 @task(name='get_event_filing_data')
-def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict: dict):
+def get_event_filing_data(config, colin_db_engine: engine, unprocessed_corp_dict: dict):
     logger = prefect.get_run_logger()
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
     event_filing_service = EventFilingService(colin_db_engine, config)
-    corp_num = unprocessed_firm_dict.get('corp_num')
+    corp_num = unprocessed_corp_dict.get('corp_num')
     corp_name = ''
     # print(f'get event filing data for {corp_num}')
 
     try:
-        event_ids = unprocessed_firm_dict.get('event_ids')
-        correction_event_ids = unprocessed_firm_dict.get('correction_event_ids')
-        events_ids_to_process, event_filing_types_to_process = get_event_info_to_retrieve(unprocessed_firm_dict)
-        processed_events_ids = get_processed_event_ids(unprocessed_firm_dict)
-        unprocessed_firm_dict['retrieved_events_cnt'] = len(events_ids_to_process)
+        event_ids = unprocessed_corp_dict.get('event_ids')
+        correction_event_ids = unprocessed_corp_dict.get('correction_event_ids')
+        events_ids_to_process, event_filing_types_to_process = get_event_info_to_retrieve(unprocessed_corp_dict)
+        processed_events_ids = get_processed_event_ids(unprocessed_corp_dict)
+        unprocessed_corp_dict['retrieved_events_cnt'] = len(events_ids_to_process)
         event_filing_data_arr = []
 
         corp_comments = event_filing_service.get_corp_comments_data(corp_num)
-        unprocessed_firm_dict['corp_comments'] = corp_comments
-        unprocessed_firm_dict['correctionEventFilingMappings'] = {}
-        correction_event_filing_mappings = unprocessed_firm_dict['correctionEventFilingMappings']
+        unprocessed_corp_dict['corp_comments'] = corp_comments
+        unprocessed_corp_dict['correctionEventFilingMappings'] = {}
+        correction_event_filing_mappings = unprocessed_corp_dict['correctionEventFilingMappings']
 
         prev_event_filing_data = None
         for idx, event_id in enumerate(events_ids_to_process):
@@ -116,12 +116,12 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
             })
             prev_event_filing_data = event_filing_data_dict
 
-        unprocessed_firm_dict['event_filing_data'] = event_filing_data_arr
+        unprocessed_corp_dict['event_filing_data'] = event_filing_data_arr
 
     except Exception as err:
         error_msg = f'error getting event filing data {corp_num}, {corp_name}, {err}'
         logger.error(error_msg)
-        status_service.update_flow_status(flow_name='sp-gp-flow',
+        status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
                                           processed_status=ProcessingStatuses.FAILED,
@@ -130,7 +130,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_firm_dict
                                           last_error=error_msg)
         raise CustomException(error_msg, event_filing_data_dict)
 
-    return unprocessed_firm_dict
+    return unprocessed_corp_dict
 
 
 @task(name='clean_event_filing_data')
@@ -158,7 +158,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
     except Exception as err:
         error_msg = f'error cleaning business {corp_num}, {corp_name}, {err}'
         logger.error(error_msg)
-        status_service.update_flow_status(flow_name='sp-gp-flow',
+        status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
                                           processed_status=ProcessingStatuses.FAILED,
@@ -189,13 +189,13 @@ def transform_event_filing_data(config, colin_db_engine: engine, event_filing_da
                 event_filing_type = filing_data['event_file_type']
                 event_id=filing_data['e_event_id']
                 corp_name = filing_data['curr_corp_name']
-                firm_filing_json_factory_service = FilingJsonFactoryService(event_filing_data)
-                filing_json = firm_filing_json_factory_service.get_filing_json()
+                corp_filing_json_factory_service = FilingJsonFactoryService(event_filing_data)
+                filing_json = corp_filing_json_factory_service.get_filing_json()
                 event_filing_data['filing_json'] = filing_json
     except Exception as err:
         error_msg = f'error transforming business {corp_num}, {corp_name}, {err}'
         logger.error(error_msg)
-        status_service.update_flow_status(flow_name='sp-gp-flow',
+        status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
                                           processed_status=ProcessingStatuses.FAILED,
@@ -227,7 +227,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                 event_filing_type = filing_data['event_file_type']
 
                 if not event_filing_data['is_supported_type']:
-                    error_msg = f'could not finish processing this firm as there is an unsupported event/filing type: {event_filing_type}'
+                    error_msg = f'could not finish processing this corp as there is an unsupported event/filing type: {event_filing_type}'
                     raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
 
                 if not event_filing_data['is_in_lear'] and not event_filing_data['skip_filing']:
@@ -257,7 +257,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     if event_cnt == (idx + 1):
                         corp_type = event_filing_data_dict['corp_type_cd']
                         filings_count = event_filing_data_dict['cnt']
-                        status_service.update_flow_status(flow_name='sp-gp-flow',
+                        status_service.update_flow_status(flow_name='corps-flow',
                                                           corp_num=corp_num,
                                                           corp_name=corp_name,
                                                           corp_type=corp_type,
@@ -265,7 +265,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                                           processed_status=ProcessingStatuses.COMPLETED,
                                                           last_processed_event_id=event_id)
                     else:
-                        status_service.update_flow_status(flow_name='sp-gp-flow',
+                        status_service.update_flow_status(flow_name='corps-flow',
                                                           corp_num=corp_num,
                                                           corp_name=corp_name,
                                                           processed_status=ProcessingStatuses.PROCESSING,
@@ -273,7 +273,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
         except CustomUnsupportedTypeException as err:
             error_msg = f'Partial loading of business {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)
-            status_service.update_flow_status(flow_name='sp-gp-flow',
+            status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
                                               corp_type=corp_type,
@@ -286,7 +286,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
         except InvalidRequestError as err:
             error_msg = f'error loading business InvalidRequestError: {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)
-            status_service.update_flow_status(flow_name='sp-gp-flow',
+            status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
                                               corp_type=corp_type,
@@ -303,7 +303,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
         except Exception as err:
             error_msg = f'error loading business {corp_num}, {corp_name}, {err}'
             logger.error(error_msg)
-            status_service.update_flow_status(flow_name='sp-gp-flow',
+            status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
                                               corp_type=corp_type,
@@ -320,21 +320,21 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
 
 
-# @flow(name="SP-GP-Migrate-ETL", task_runner=ConcurrentTaskRunner())
-# @flow(name="SP-GP-Migrate-ETL", task_runner=DaskTaskRunner())
-@flow(name="SP-GP-Migrate-ETL", task_runner=SequentialTaskRunner())
+# @flow(name="Corps-Migrate-ETL", task_runner=ConcurrentTaskRunner())
+# @flow(name="Corps-Migrate-ETL", task_runner=DaskTaskRunner())
+@flow(name="Corps-Migrate-ETL", task_runner=SequentialTaskRunner())
 def migrate_flow():
     # setup
     config = get_config()
     db_colin_engine = colin_init(config)
     FLASK_APP, db_lear = lear_init(config)
 
-    unprocessed_firms = get_unprocessed_firms(config, db_colin_engine)
+    unprocessed_corps = get_unprocessed_corps(config, db_colin_engine)
 
-    # get event/filing related data for each firm
+    # get event/filing related data for each corp
     event_filing_data = get_event_filing_data.map(unmapped(config),
                                                   colin_db_engine=unmapped(db_colin_engine),
-                                                  unprocessed_firm_dict=unprocessed_firms)
+                                                  unprocessed_corp_dict=unprocessed_corps)
 
     # clean/validate filings for a given business
     cleaned_event_filing_data = clean_event_filing_data.map(unmapped(config),
