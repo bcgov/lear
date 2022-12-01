@@ -1,4 +1,4 @@
-def get_unprocessed_firms_query(data_load_env: str):
+def get_unprocessed_corps_query(data_load_env: str):
     query = f"""
             select tbl_fe.*, cp.flow_name, cp.processed_status, cp.last_processed_event_id
             from (select e.corp_num,
@@ -14,154 +14,23 @@ def get_unprocessed_firms_query(data_load_env: str):
                            join corporation c on c.corp_num = e.corp_num
                            left outer join filing f on e.event_id = f.event_id
                   where 1 = 1
-                        -- complex change registration examples
---                         and e.corp_num in ('FM0632494', 'FM0554197', 'FM0429973', 'FM0433647', 'FM0433664', 'FM0434289', 
---                                            'FM0436872') 
---                     and e.corp_num = 'FM0399872' -- can be used to test incremental processing
---                     and e.corp_num = 'FM0554955' -- can be used to test incremental processing
-                       -- incremental load testing 
---                        and e.corp_num in ('FM0775109', 'FM0558927', 'FM0706557', 'FM0799312','FM0675146', 'FM0772925')
-                        -- firms that need backslash added to corp name
---                        and e.corp_num in ('FM0151616', 'FM0236781', 'FM0185321', 'FM0259938', 'FM0249302', 'FM0446106',
---                                           'FM0270319', 'FM0344562', 'FM0344563', 'FM0285081', 'FM0303834', 'FM0789778', 
---                                           'FM0535825', 'FM0749012')
---                     -- firms with missing req'd business info 
---                        and e.corp_num in ('FM0272480', 'FM0272482', 'FM0272481', 'FM0272478', 'FM0272477', 'FM0272479')
-                       -- naics length greater than 150
---                        and e.corp_num in ('FM0779644', 'FM0779657', 'FM0779771', 'FM0780109', 'FM0780298', 'FM0780352')
-                       -- firms that had address issues
---                     and e.corp_num in ('FM0281021', 'FM0472059', 'FM0279239')
-                       -- firms with basic address format
---                        and e.corp_num = 'FM0585484'  
-                       -- firms with advanced address format
---                        and e.corp_num = 'FM0367712'
-                        -- utc testing
---                         and e.corp_num in ('FM0554193', 'FM0554211', 'FM0554212')
-                       -- firms with conversion filings
---                         and e.corp_num in ('FM0272508', 'FM0272576', 'FM0308447')
-                       -- firms with put back on filings
---                         and e.corp_num in ('FM0278254', 'FM0349992', 'FM0418992') 
-                       -- firms with amendments
---                           and e.corp_num in ('FM0433512', 'FM0529248')
---                           and e.corp_num in ('FM0517864', 'FM0068468')
---                           and e.corp_num = 'FM0481290'
---                           and e.corp_num in ('FM0728666', 'FM0870505')
---                           and e.corp_num in ('FM0485573', 'FM0844569')
---                           and e.corp_num in ('FM0486528', 'FM0035099')
---                           and e.corp_num in ('FM0463071', 'FM0554195')
-                       -- firms with CONVFMRCP event type
---                        and e.corp_num = 'FM0481290'
---                        and e.corp_num = 'FM0498493'
---                        and e.corp_num = 'FM0343769'
-                       -- firms with CONVFMMISS event type
---                           and e.corp_num = 'FM0165240' -- CONVFMMISS_FRACH
---                           and e.corp_num = 'FM0351799' -- CONVFMMISS_FRADD
---                           and e.corp_num in ('FM0526040', 'FM0151771') -- CONVFMMISS_FRARG
---                           and e.corp_num in ('FM0273864', 'FM0457533') -- CONVFMMISS_FRCHG
---                           and e.corp_num in ('FM0417074', 'FM0296158') -- CONVFMMISS_FRMEM
---                           and e.corp_num = 'FM0299481' -- CONVFMMISS_FRNAT
---                              and e.corp_num in ('FM0165240', 'FM0351799', 'FM0526040', 'FM0151771', 'FM0273864', 
---                                                 'FM0457533', 'FM0417074', 'FM0296158', 'FM0299481')
-                       -- firms with firm comments 
---                        and e.corp_num in ('FM0814468', 'FM0385546')
-                       -- firms with missing business names
---                           and e.corp_num in ('FM0641636', 'FM0314690')
-                       -- firms that are frozen
---                           and e.corp_num in ('FM0713982', 'FM0805895')
-                       -- firms with ledger text 
---                        and e.corp_num in ('FM0000226', 'FM0695709')
-                       -- firms with corrections
---                           and e.corp_num in ('FM0278687', 'FM0540659') -- FILE_CORGP
---                           and e.corp_num in ('FM0446660', 'FM0610227') -- FILE_CORSP
---                           and e.corp_num in ('FM0277872', 'FM0391750') -- FILE_FRCCH
---                           and e.corp_num in ('FM0285571', 'FM0391762') -- FILE_FRCRG
-                       -- firms for filing user tests
---                           and e.corp_num in ('FM0292609', 'FM0554196', 'FM0608573')
-                       -- firms that have paper only flag set for registration related filings but need to be 
-                       -- available as electronic outputs 
---                         and e.corp_num in ('FM0367712', 'FM0474350', 'FM0554151')
-                       -- firms with only one filing and with no known effective date
---                         and e.corp_num in ('FM0346815', 'FM0346781', 'FM0346897')
-                       -- firms with dissolutions
---                         and e.corp_num in ('FM0439147', 'FM0272498', 'FM0354293', 'FM0274699', 'FM0272756')
-                       -- firms that test corp party business company number scenarios
---                         and e.corp_num in ('FM0554987', 'FM0557171', 'FM0563506', 'FM0566805')
-                       -- contact info test
---                         and e.corp_num in ('FM0558990') -- has contact email
---                         and e.corp_num in ('FM0887464') -- has no contact email
-                       -- bn num tests
---                         and e.corp_num in ('FM0476538') -- has bn 15
---                         and e.corp_num in ('FM0046262') -- has bn 9
-                       -- adfirm events with no filing 
---                         and e.corp_num in ('FM0055113', 'FM0416637', 'FM0445808', 'FM0020924', 'FM0054588', 
---                                            'FM0067077', 'FM0070431', 'FM0109121', 'FM0116406', 'FM0159962', 
---                                            'FM0187352', 'FM0601717', 'FM0601877', 'FM0668295', 'FM0711517', 
---                                            'FM0809641', 'FM0864098')
                   group by e.corp_num, c.corp_type_cd) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
-                        and cp.flow_name = 'sp-gp-flow'
+                        and cp.flow_name = 'corps-flow'
                         and cp.environment = '{data_load_env}'
-            where 1 = 1
---                   and tbl_fe.event_file_types = 'FILE_FRREG'
---                 and tbl_fe.event_file_types like 'FILE_FRREG%'
---                 and tbl_fe.event_file_types like '%FILE_FRREG,%FRCHG%'
---                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG,CONVFMACP_FRMEM'
---                 and tbl_fe.event_file_types = 'CONVFMREGI_FRREG'
---                 and tbl_fe.event_file_types like '%CONVFMACP_FRMEM%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRACH%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRADD%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRARG%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRCHG%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRMEM%'
---                 and tbl_fe.event_file_types like '%CONVFMMISS_FRNAT%'
---                 and tbl_fe.event_file_types like '%CONVFMNC_FRCHG%'
---                 and tbl_fe.event_file_types like '%CONVFMREGI_FRCHG%'
---                 and tbl_fe.event_file_types like '%FILE_ADDGP%'
---                 and tbl_fe.event_file_types like '%FILE_ADDSP%'
---                 and tbl_fe.event_file_types like '%FILE_CHGGP%'
---                 and tbl_fe.event_file_types like '%FILE_CHGSP%'
---                 and tbl_fe.event_file_types like 'FILE_FRREG,FILE_CHGSP%'
---                 and tbl_fe.event_file_types like '%FILE_FRNAM%'
---                 and tbl_fe.event_file_types like '%FILE_FRNAT%'
---                 and tbl_fe.event_file_types like '%FILE_MEMGP%'
---                 and tbl_fe.event_file_types like '%FILE_NAMGP%'
---                 and tbl_fe.event_file_types like '%FILE_NAMSP%'
---                 and tbl_fe.event_file_types like '%FILE_NATGP%'
---                 and tbl_fe.event_file_types like '%FILE_NATSP%'
---                 and tbl_fe.event_file_types like '%CONVFMDISS_FRDIS%'
---                 and tbl_fe.event_file_types like '%FILE_DISGP%'
---                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISGP'
---                 and tbl_fe.event_file_types like '%FILE_DISSP%'
---                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_DISSP'
---                 and tbl_fe.event_file_types like '%FILE_FRDIS%'
---                 and tbl_fe.event_file_types like 'CONVFMREGI_FRREG,FILE_FRDIS'
---                 and tbl_fe.event_file_types like '%ADMIN_ADMCF%'
---                 and tbl_fe.event_file_types like '%FILE_FRPBO%'
---                 and tbl_fe.event_file_types like '%CONVFMACP_FRARG%'
---                 and tbl_fe.event_file_types like '%CONVFMNC_FRARG%'
---                 and tbl_fe.event_file_types like '%FILE_AMDGP%'
---                 and tbl_fe.event_file_types like '%FILE_AMDSP%'
---                 and tbl_fe.event_file_types like '%FILE_FRACH%'
---                 and tbl_fe.event_file_types like '%FILE_FRARG%'
---                 and tbl_fe.event_file_types like '%CONVFMRCP_FRARG%'
---                 and tbl_fe.event_file_types like '%CONVFMRCP_FRMEM%'
---                 and tbl_fe.event_file_types like '%CONVFMRCP_NULL%'
---                 and tbl_fe.event_file_types like '%FILE_CORGP%'
---                 and tbl_fe.event_file_types like '%FILE_CORSP%'
---                 and tbl_fe.event_file_types like '%FILE_FRCCH%'
---                 and tbl_fe.event_file_types like '%FILE_FRCRG%'                   
+            where 1 = 1                 
 --                 and ((cp.processed_status is null or cp.processed_status <> 'COMPLETED')
                    and ((cp.processed_status is null or cp.processed_status not in ('PROCESSING', 'COMPLETED', 'FAILED', 'PARTIAL'))
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
-            limit 50
+            limit 10
             ;
         """
     return query
 
 
-def get_firm_event_filing_data_query(corp_num: str, event_id: int):
+def get_corp_event_filing_data_query(corp_num: str, event_id: int):
     query = f"""
         select
             -- current corp_name at point in time
@@ -254,7 +123,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
     return query
 
 
-def get_firm_event_filing_corp_party_data_query(corp_num: str,
+def get_corp_event_filing_corp_party_data_query(corp_num: str,
                                                 event_id: int,
                                                 prev_event_ids: list,
                                                 event_filing_data_dict: dict):
@@ -378,7 +247,7 @@ def get_firm_event_filing_corp_party_data_query(corp_num: str,
     return query
 
 
-def get_firm_event_filing_office_data_query(corp_num: str, event_id: int):
+def get_corp_event_filing_office_data_query(corp_num: str, event_id: int):
     query = f"""
         select o.corp_num                as o_corp_num,
                o.office_typ_cd           as o_office_typ_cd,
@@ -441,6 +310,19 @@ def get_firm_event_filing_office_data_query(corp_num: str, event_id: int):
         where 1 = 1
           and e.corp_num = '{corp_num}'
           and e.event_id = {event_id}
+        ;
+        """
+    return query
+
+
+def get_corp_comments_data_query(corp_num: str):
+    query = f"""
+        select to_char(cc.comment_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as cc_comment_dts_pacific,
+               cc.corp_num as cc_corp_num,
+               cc.comments as cc_comments
+        from corp_comments cc
+        where cc.corp_num = '{corp_num}'
+        order by cc.comment_dts
         ;
         """
     return query

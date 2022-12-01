@@ -19,6 +19,8 @@ class ProcessingStatusService:
                            corp_num:str,
                            processed_status: str,
                            corp_name=None,
+                           corp_type=None,
+                           filings_count=None,
                            last_processed_event_id=None,
                            failed_event_id=None,
                            failed_event_file_type=None,
@@ -26,6 +28,8 @@ class ProcessingStatusService:
 
         dynamic_insert_cols = self.get_dynamic_insert_cols(corp_name,
                                                            processed_status,
+                                                           corp_type,
+                                                           filings_count,
                                                            last_processed_event_id,
                                                            failed_event_id,
                                                            failed_event_file_type,
@@ -33,6 +37,8 @@ class ProcessingStatusService:
 
         dynamic_insert_values = self.get_dynamic_insert_values(corp_name,
                                                                processed_status,
+                                                               corp_type,
+                                                               filings_count,
                                                                last_processed_event_id,
                                                                failed_event_id,
                                                                failed_event_file_type,
@@ -40,6 +46,8 @@ class ProcessingStatusService:
 
         do_update_query = self.get_do_update_query(corp_name,
                                                    processed_status,
+                                                   corp_type,
+                                                   filings_count,
                                                    last_processed_event_id,
                                                    failed_event_id,
                                                    failed_event_file_type,
@@ -47,6 +55,8 @@ class ProcessingStatusService:
 
         dynamic_query_params = self.get_dynamic_query_params(corp_name,
                                                              processed_status,
+                                                             corp_type,
+                                                             filings_count,
                                                              last_processed_event_id,
                                                              failed_event_id,
                                                              failed_event_file_type,
@@ -76,6 +86,8 @@ class ProcessingStatusService:
     def get_dynamic_insert_cols(self,
                                   corp_name: str,
                                   processed_status: str,
+                                  corp_type=None,
+                                  filings_count=None,
                                   last_processed_event_id=None,
                                   failed_event_id=None,
                                   failed_event_file_type=None,
@@ -87,6 +99,10 @@ class ProcessingStatusService:
             query = f'{query}, corp_name'
         if processed_status:
             query = f'{query}, processed_status'
+        if corp_type:
+            query = f'{query}, corp_type_cd'
+        if filings_count:
+            query = f'{query}, filings_count'
         if self.data_load_env:
             query = f'{query}, environment'
         if last_error:
@@ -104,6 +120,8 @@ class ProcessingStatusService:
     def get_dynamic_insert_values(self,
                                   corp_name: str,
                                   processed_status: str,
+                                  corp_type=None,
+                                  filings_count=None,
                                   last_processed_event_id=None,
                                   failed_event_id=None,
                                   failed_event_file_type=None,
@@ -115,6 +133,10 @@ class ProcessingStatusService:
             query = f'{query}, :corp_name'
         if processed_status:
             query = f'{query}, :processed_status'
+        if corp_type:
+            query = f'{query}, :corp_type_cd'
+        if filings_count:
+            query = f'{query}, :filings_count'
         if self.data_load_env:
             query = f'{query}, :environment'
         if last_error:
@@ -132,6 +154,8 @@ class ProcessingStatusService:
     def get_do_update_query(self,
                            corp_name: str,
                            processed_status: str,
+                           corp_type=None,
+                           filings_count=None,
                            last_processed_event_id=None,
                            failed_event_id=None,
                            failed_event_file_type=None,
@@ -143,6 +167,10 @@ class ProcessingStatusService:
             query = f'{query}, corp_name = :corp_name'
         if processed_status:
             query = f'{query}, processed_status = :processed_status'
+        if corp_type:
+            query = f'{query}, corp_type_cd = :corp_type_cd'
+        if filings_count:
+            query = f'{query}, filings_count = :filings_count'
         if last_error:
             query = f'{query}, last_error = :last_error'
         if last_processed_event_id:
@@ -159,6 +187,8 @@ class ProcessingStatusService:
     def get_dynamic_query_params(self,
                                  corp_name: str,
                                  processed_status: str,
+                                 corp_type=None,
+                                 filings_count=None,
                                  last_processed_event_id=None,
                                  failed_event_id=None,
                                  failed_event_file_type=None,
@@ -170,6 +200,10 @@ class ProcessingStatusService:
             params_dict['corp_name'] = corp_name
         if processed_status:
             params_dict['processed_status'] = processed_status
+        if corp_type:
+            params_dict['corp_type_cd'] = corp_type
+        if filings_count:
+            params_dict['filings_count'] = filings_count
         if last_error:
             params_dict['last_error'] = last_error
         if last_processed_event_id:

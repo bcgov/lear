@@ -4,7 +4,7 @@ from legal_api.models import Party, PartyRole, Business, Office, Address, Filing
 from legal_api.models.colin_event_id import ColinEventId
 
 from .event_filing_service import RegistrationEventFilings, CorrectionEventFilings
-from .firm_filing_data_utils import get_is_paper_only, get_effective_date
+from .filing_data_utils import get_is_paper_only, get_effective_date
 
 
 def get_party_match(db: any, party_dict: dict, corp_num: str):
