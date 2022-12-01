@@ -98,6 +98,7 @@ class BusinessDocument:
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
             'common/certificateStyle',
+            'common/courtOrder',
             'footer',
             'logo',
             'macros',
