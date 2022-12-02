@@ -19,12 +19,12 @@ from http import HTTPStatus
 
 import datedelta
 import pytest
-from registry_schemas.example_data.schema_data import FILING_HEADER
 import requests
 from freezegun import freeze_time
+from registry_schemas.example_data import COOP_INCORPORATION, COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from registry_schemas.example_data import COOP_INCORPORATION, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.models import Business
 from legal_api.services import MinioService
@@ -45,6 +45,7 @@ now = date(2020, 9, 17)
 founding_date = now - datedelta.YEAR
 business = Business(identifier=identifier)
 effective_date = '2020-09-18T00:00:00+00:00'
+court_order_date = '2020-09-17T00:00:00+00:00'
 incorporation_application_name = 'incorporationApplication'
 
 nr_response = {
@@ -56,6 +57,7 @@ nr_response = {
         'consumptionDate': ''
     }]
 }
+
 
 @pytest.mark.parametrize(
     'test_name, legal_type, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
@@ -254,6 +256,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
                  return_value=[])
 
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
+                 return_value=[])
+
     # perform test
     with freeze_time(now):
         err = validate(business, filing_json)
@@ -283,8 +288,8 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
          [{'error': 'Name Request legal name is not same as the business legal name.',
            'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
         ('FAIL_LEGAL_NAME_MISMATCH', Business.LegalTypes.COMP.value, HTTPStatus.BAD_REQUEST,
-        [{'error': 'Name Request legal name is not same as the business legal name.',
-           'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
+         [{'error': 'Name Request legal name is not same as the business legal name.',
+          'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
         ('FAIL_LEGAL_TYPE_MISMATCH', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}]),
@@ -298,7 +303,7 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}])
     ])
-def test_validate_name_request(session, test_name, legal_type, expected_code, expected_msg):
+def test_validate_name_request(session, mocker, test_name, legal_type, expected_code, expected_msg):
     """Assert that incorporation name request can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
@@ -312,9 +317,14 @@ def test_validate_name_request(session, test_name, legal_type, expected_code, ex
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = curr_legal_type
     if test_name not in ['FAIL_LEGAL_NAME_MISMATCH']:
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = legal_name
+    else:
+        filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = 'company name'
     filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
     nr_response_copy = copy.deepcopy(nr_response)
     nr_response_copy['legalType'] = legal_type
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
+                 return_value=[])
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response_copy)):
         with freeze_time(now):
@@ -479,7 +489,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     """Assert that incorporation parties roles can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1}
+                                       'email': 'no_one@never.get', 'filingId': 1}
     filing_json['filing']['business']['legalType'] = legal_type
 
     if legal_type == 'CP':
@@ -684,7 +694,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     """Assert that incorporation parties mailing address is not empty."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing']['business']['legalType'] = legal_type
@@ -713,7 +723,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_mailing_address(filing_json)
+        err = validate_parties_mailing_address(filing_json, legal_type)
 
     # validate outcomes
     if expected_msg:
@@ -726,181 +736,180 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     'test_name, legal_type, parties, expected_msg',
     [
         (
-                'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'BEN',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Incorporator'],
-                        'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Incorporator', 'Director'],
-                        'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                    }
-                ],
-                None
+            'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            None
         ),
         (
-                'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'BEN',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Incorporator'],
-                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Incorporator', 'Director'],
-                        'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                    }
-                ],
-                [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Incorporator, Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'}]
+            'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-                'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'BEN',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Incorporator'],
-                        'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    }
-                ],
-                [{'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'}]
+            'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-                'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'BEN',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Incorporator'],
-                        'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'Janeajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    },
-                ],
-                [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'}]
+            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'Janeajksdfjljdkslfjab', 'lastName': 'Doe'}
+                },
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-                'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'CP',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Director'],
-                        'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer3',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane', 'middleName': None, 'lastName': 'Doe'}
-                    }
-                ],
-                None
+            'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'CP',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Director'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer3',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane', 'middleName': None, 'lastName': 'Doe'}
+                }
+            ],
+            None
         ),
         (
-                'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'CP',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Director'],
-                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer3',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                    }
-                ],
-                [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'}]
+            'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'CP',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Director'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer3',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-                'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'CP',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Director'],
-                        'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane1', 'middleName': None, 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer3',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane2', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    }
-                ],
-                [{'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'}]
+            'FAIL_PARTY_MIDDLE_NAME_TOO_LONG', 'CP',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Director'],
+                    'officer': {'firstName': 'John', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane1', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer3',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane2', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
             'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'CP',
-                [
-                    {
-                        'partyName': 'officer1',
-                        'roles': ['Completing Party', 'Director'],
-                        'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer2',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'Jane1ajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    },
-                    {
-                        'partyName': 'officer3',
-                        'roles': ['Director'],
-                        'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
-                    }
-                ],
-                [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director first name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
-                  'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director middle name cannot be longer than 20 characters',
-                   'path': '/filing/incorporationApplication/parties'},
-                 {'error': 'Director middle name cannot be longer than 20 characters',
-                   'path': '/filing/incorporationApplication/parties'}]
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Director'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfjab', 'middleName': 'Johnajksdfjljdkslfjab', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane1jksdfjljdkslfjab', 'middleName': 'Jane1ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer3',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane2jksdfjljdkslfjab', 'middleName': 'Jane2ajksdfjljdkslfjab', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director first name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'}]
         )
     ])
 def test_validate_incorporation_party_names(session, mocker, test_name,
-                                     legal_type, parties, expected_msg):
+                                            legal_type, parties, expected_msg):
     """Assert that incorporation parties roles can be validated."""
-
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
                                        'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
@@ -935,7 +944,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_names(filing_json)
+        err = validate_parties_names(filing_json, legal_type)
 
     # validate outcomes
     if expected_msg:
@@ -1008,9 +1017,9 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
                 'error':
                 'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
                 'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
+            }]),
         ('SUCCESS', 'BC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
-             None, None, None, None),
+         None, None, None, None),
         ('SUCCESS', 'BC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
         ('SUCCESS', 'BC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
@@ -1021,54 +1030,54 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 1', None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/1/name/'
-        }]),
+             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/1/name/'
+         }]),
         ('FAIL-SERIES2', 'BC',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', 'Share Series 1',
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
-        }]),
+             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+         }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BC',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
-        }]),
+             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+         }]),
         ('FAIL_INVALID_CURRENCY', 'BC',
          'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify currency',
-            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
-        }]),
+             'error': 'Share class Share Class 1 must specify currency',
+             'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+         }]),
         ('FAIL_INVALID_PAR_VALUE', 'BC',
          'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify par value',
-            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
-        }]),
+             'error': 'Share class Share Class 1 must specify par value',
+             'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+         }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'BC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
+             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'BC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error':
-                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
-        ('SUCCESS', 'ULC',  'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
-             None, None, None, None),
+             'error':
+             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }]),
+        ('SUCCESS', 'ULC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None, None, None),
         ('SUCCESS', 'ULC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
         ('SUCCESS', 'ULC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
@@ -1079,112 +1088,112 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 1', None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/1/name/'
-        }]),
+             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/1/name/'
+         }]),
         ('FAIL-SERIES2', 'ULC',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', 'Share Series 1',
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
-        }]),
+             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+         }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'ULC',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
-        }]),
+             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+         }]),
         ('FAIL_INVALID_CURRENCY', 'ULC',
          'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify currency',
-            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
-        }]),
+             'error': 'Share class Share Class 1 must specify currency',
+             'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+         }]),
         ('FAIL_INVALID_PAR_VALUE', 'ULC',
          'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify par value',
-            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
-        }]),
+             'error': 'Share class Share Class 1 must specify par value',
+             'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+         }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'ULC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
+             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'ULC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error':
-                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
+             'error':
+             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }]),
         ('SUCCESS', 'CC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
-             None, None, None, None),
-        ('SUCCESS', 'CC',  'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CC',  'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'CC',  'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+         None, None, None, None),
+        ('SUCCESS-CLASS2', 'CC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', None, None, None),
         ('FAIL-CLASS2', 'CC',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 1', None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/1/name/'
-        }]),
+             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/1/name/'
+         }]),
         ('FAIL-SERIES2', 'CC',
          'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
          'Share Class 2', 'Share Series 1',
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 name already used in a share class or series.',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/1'
-        }]),
+             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+         }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CC',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
-        }]),
+             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+         }]),
         ('FAIL_INVALID_CURRENCY', 'CC',
          'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify currency',
-            'path': '/filing/incorporationApplication/shareClasses/0/currency/'
-        }]),
+             'error': 'Share class Share Class 1 must specify currency',
+             'path': '/filing/incorporationApplication/shareClasses/0/currency/'
+         }]),
         ('FAIL_INVALID_PAR_VALUE', 'CC',
          'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share class Share Class 1 must specify par value',
-            'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
-        }]),
+             'error': 'Share class Share Class 1 must specify par value',
+             'path': '/filing/incorporationApplication/shareClasses/0/parValue/'
+         }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'CC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error': 'Share series Share Series 1 must provide value for maximum number of shares',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }]),
+             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CC',
          'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-            'error':
-                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
-            'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
-        }])
+             'error':
+             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+         }])
     ])
-def test_validate_incorporation_share_classes(session, mocker, test_name,legal_type,
+def test_validate_incorporation_share_classes(session, mocker, test_name, legal_type,
                                               class_name_1, class_has_max_shares, class_max_shares,
                                               has_par_value, par_value, currency, series_name_1, series_has_max_shares,
                                               series_max_shares,
@@ -1193,7 +1202,7 @@ def test_validate_incorporation_share_classes(session, mocker, test_name,legal_t
     """Assert that validator validates share class correctly."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -1252,6 +1261,7 @@ def test_validate_incorporation_share_classes(session, mocker, test_name,legal_t
     else:
         assert err is None
 
+
 @pytest.mark.parametrize(
     'test_name, effective_date, expected_code, expected_msg',
     [
@@ -1276,7 +1286,7 @@ def test_validate_incorporation_effective_date(session, mocker, test_name, effec
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1}
+                                       'email': 'no_one@never.get', 'filingId': 1}
 
     if effective_date is not None:
         filing_json['filing']['header']['effectiveDate'] = effective_date
@@ -1343,7 +1353,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     """Assert that validator validates cooperative documents correctly."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                             'email': 'no_one@never.get', 'filingId': 1}
+                                       'email': 'no_one@never.get', 'filingId': 1}
     filing_json['filing']['business']['legalType'] = 'CP'
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(COOP_INCORPORATION)
 
@@ -1384,6 +1394,42 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     if expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'legal_type, expected_code, expected_msg', [
+        ('BEN', HTTPStatus.BAD_REQUEST, '(BEN) incorporationApplication does not support court order.'),
+        ('BC', HTTPStatus.BAD_REQUEST, '(BC) incorporationApplication does not support court order.'),
+        ('CC', HTTPStatus.BAD_REQUEST, '(CC) incorporationApplication does not support court order.'),
+        ('ULC', None, None),
+    ])
+def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg):
+    """Assert that incorporation court order can be validated."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['courtOrder'] = COURT_ORDER
+    filing_json['filing'][incorporation_application_name]['courtOrder']['orderDate'] = court_order_date
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
+                 return_value=[])
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(
+            err.msg,
+            [{'error': expected_msg, 'path': '/filing/incorporationApplication/courtOrder'}]
+        )
     else:
         assert err is None
 
