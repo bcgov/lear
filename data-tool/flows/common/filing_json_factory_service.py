@@ -1,11 +1,11 @@
-from .firm_filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
+from .filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
     get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json, \
     get_base_correction_filing_json
-from .firm_filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
+from .filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType, get_effective_date_str
 
 
-class FirmFilingJsonFactoryService:
+class FilingJsonFactoryService:
 
     def __init__(self, event_filing_data: dict):
         self._event_filing_data = event_filing_data

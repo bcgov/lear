@@ -2,7 +2,7 @@ import re
 import datetime
 
 from .data.firms_data import get_custom_corp_names
-from .firm_filing_data_utils import get_is_frozen
+from .filing_data_utils import get_is_frozen
 
 
 def clean_naics_data(filing_data: dict):

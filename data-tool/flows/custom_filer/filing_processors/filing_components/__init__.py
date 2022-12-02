@@ -176,10 +176,10 @@ def create_share_class(share_class_info: dict) -> ShareClass:
 
 
 def create_comments(business: Business, filing_event_data: Dict):
-    firm_comments = filing_event_data['firm_comments']
+    corp_comments = filing_event_data['corp_comments']
     comments = []
-    if len(firm_comments) > 0:
-        for comment in firm_comments:
+    if len(corp_comments) > 0:
+        for comment in corp_comments:
             firm_comment = Comment(business_id=business.id,
                                    comment=comment['cc_comments'],
                                    timestamp=comment['cc_comment_dts_pacific'])
