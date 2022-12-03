@@ -21,7 +21,8 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import MinioService
+from legal_api.services import MinioService, namex
+from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
 
@@ -223,5 +224,57 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
                 and len(middle_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})
+
+    return msg
+
+
+def validate_name_request(filing_json: dict, legal_type: str, filing_type: str) -> list:
+    """Validate name request section."""
+    nr_path = f'/filing/{filing_type}/nameRequest'
+    nr_number_path = f'{nr_path}/nrNumber'
+    legal_name_path = f'{nr_path}/legalName'
+    legal_type_path = f'{nr_path}/legalType'
+
+    nr_number = get_str(filing_json, nr_number_path)
+    legal_name = get_str(filing_json, legal_name_path)
+
+    valid_numbered_legal_type = [Business.LegalTypes.BCOMP.value,
+                                 Business.LegalTypes.COMP.value,
+                                 Business.LegalTypes.BC_CCC.value,
+                                 Business.LegalTypes.BC_ULC_COMPANY.value]
+    if not nr_number and not legal_name:
+        if legal_type in valid_numbered_legal_type:
+            return []  # It's numbered company
+        else:
+            # CP, SP, GP doesn't support numbered company
+            return [{'error': _('Legal name and nrNumber is missing in nameRequest.'), 'path': nr_path}]
+    elif nr_number and not legal_name:
+        return [{'error': _('Legal name is missing in nameRequest.'), 'path': legal_name_path}]
+    elif not nr_number and legal_name:
+        # expecting nrNumber when legalName provided
+        return [{
+            'error': _('nrNumber is missing for the legal name provided in nameRequest.'),
+            'path': nr_number_path
+        }]
+
+    msg = []
+    # ensure NR is approved or conditionally approved
+    nr_response = namex.query_nr_number(nr_number)
+    nr_response_json = nr_response.json()
+    validation_result = namex.validate_nr(nr_response_json)
+    if not validation_result['is_consumable']:
+        msg.append({'error': _('Name Request is not approved.'), 'path': nr_number_path})
+
+    # ensure business type
+    nr_legal_type = nr_response_json.get('legalType')
+    if legal_type != nr_legal_type:
+        msg.append({'error': _('Name Request legal type is not same as the business legal type.'),
+                    'path': legal_type_path})
+
+    # ensure NR request has the same legal name
+    nr_name = namex.get_approved_name(nr_response_json)
+    if nr_name != legal_name:
+        msg.append({'error': _('Name Request legal name is not same as the business legal name.'),
+                    'path': legal_name_path})
 
     return msg

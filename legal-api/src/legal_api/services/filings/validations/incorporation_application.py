@@ -27,13 +27,19 @@ from legal_api.services import MinioService
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
-from .common_validations import validate_court_order, validate_share_structure, validate_party_name  # noqa: I001
+from .common_validations import (  # noqa: I001
+    validate_court_order,
+    validate_name_request,
+    validate_party_name,
+    validate_share_structure,
+)
 from ... import namex
 from ...utils import get_str
 
 
 def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     """Validate the Incorporation filing."""
+    filing_type = 'incorporationApplication'
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
@@ -63,9 +69,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
-    err = validate_name_request(incorporation_json, legal_type)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
 
     if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
                       Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
@@ -379,64 +383,6 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
     nr_name = namex.get_approved_name(nr_response.json())
     if nr_name != legal_name:
         msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
-
-    if msg:
-        return msg
-
-    return None
-
-
-def validate_name_request(incorporation_filing: dict, legal_type: str) -> Optional[list]:
-    """Validate Name Request section."""
-    msg = []
-    nr_path = '/filing/incorporationApplication/nameRequest'
-    nr_number_path = f'{nr_path}/nrNumber'
-    legal_name_path = f'{nr_path}/legalName'
-    legal_type_path = f'{nr_path}/legalType'
-
-    nr_number = get_str(incorporation_filing, nr_number_path)
-    legal_name = get_str(incorporation_filing, legal_name_path)
-    legal_type = get_str(incorporation_filing, legal_type_path)
-
-    valid_numbered_legal_type = [Business.LegalTypes.BCOMP.value,
-                                 Business.LegalTypes.COMP.value,
-                                 Business.LegalTypes.BC_CCC.value,
-                                 Business.LegalTypes.BC_ULC_COMPANY.value]
-    if not nr_number and not legal_name:
-        if legal_type in valid_numbered_legal_type:
-            return None  # It's numbered company
-        else:
-            msg.append({'error': babel('Legal name and nrNumber is missing in nameRequest.'), 'path': nr_path})
-            return msg  # As of today COOP doesn't support numbered company
-
-    if nr_number and not legal_name:
-        msg.append({'error': babel('Legal name is missing in nameRequest.'), 'path': legal_name_path})
-        return msg
-    elif not nr_number and legal_name:
-        msg.append({
-            'error': babel('nrNumber is missing for the legal name provided in nameRequest.'),
-            'path': nr_number_path
-        })
-        return msg
-
-    # ensure NR is approved or conditionally approved
-    nr_response = namex.query_nr_number(nr_number)
-    nr_response_json = nr_response.json()
-    validation_result = namex.validate_nr(nr_response_json)
-    if not validation_result['is_consumable']:
-        msg.append({'error': babel('Name Request is not approved.'), 'path': nr_number_path})
-
-    # ensure business type
-    nr_legal_type = nr_response_json.get('legalType')
-    if legal_type != nr_legal_type:
-        msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
-                    'path': legal_type_path})
-
-    # ensure NR request has the same legal name
-    nr_name = namex.get_approved_name(nr_response_json)
-    if nr_name != legal_name:
-        msg.append({'error': babel('Name Request legal name is not same as the business legal name.'),
-                    'path': legal_name_path})
 
     if msg:
         return msg
