@@ -23,7 +23,8 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService
+from legal_api.services import MinioService, namex
+from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
@@ -33,8 +34,6 @@ from .common_validations import (  # noqa: I001
     validate_party_name,
     validate_share_structure,
 )
-from ... import namex
-from ...utils import get_str
 
 
 def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
