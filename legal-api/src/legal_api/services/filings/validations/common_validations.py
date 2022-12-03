@@ -228,7 +228,10 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
     return msg
 
 
-def validate_name_request(filing_json: dict, legal_type: str, filing_type: str) -> list:
+def validate_name_request(  # pylint: disable=too-many-locals
+        filing_json: dict,
+        legal_type: str,
+        filing_type: str) -> list:
     """Validate name request section."""
     nr_path = f'/filing/{filing_type}/nameRequest'
     nr_number_path = f'{nr_path}/nrNumber'
