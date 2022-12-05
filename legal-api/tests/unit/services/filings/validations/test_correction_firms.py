@@ -66,6 +66,7 @@ naics_response = {
     'classTitle': CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsDescription']
 }
 
+
 @pytest.mark.parametrize(
     'test_name, filing',
     [
@@ -85,7 +86,9 @@ def test_valid_firms_correction(session, test_name, filing):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
 
@@ -116,7 +119,9 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
     del f['filing']['correction']['parties'][0]['roles'][0]
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
 
@@ -126,7 +131,6 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     # check that validation passed
     assert err
     assert err.msg[0]['error'] == expected_msg
-
 
 
 @pytest.mark.parametrize(
@@ -189,7 +193,9 @@ def test_firms_correction_naics(session, test_name, filing, existing_naics_code,
     else:
         del f['filing']['correction']['business']['naics']['naicsDescription']
 
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
 
