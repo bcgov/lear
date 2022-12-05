@@ -84,7 +84,7 @@ FILINGS: Final = {
             'CC': 'ALTER'
         },
         'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BC,BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'annualReport': {
@@ -111,7 +111,7 @@ FILINGS: Final = {
             'CC': 'BCADD'
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfDirectors': {
@@ -135,7 +135,7 @@ FILINGS: Final = {
             }
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfName': {
@@ -181,7 +181,7 @@ FILINGS: Final = {
             'GP': 'FMCORR'
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
             {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]},
         ]
     },

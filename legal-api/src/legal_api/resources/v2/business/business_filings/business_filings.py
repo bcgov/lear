@@ -864,7 +864,8 @@ class ListFilingResource():
 
         elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
-            filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
+            effective_date_utc = LegislationDatetime.as_utc_timezone(effective_date)
+            filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date_utc.isoformat()
             filing.effective_date = effective_date
             filing.save()
 

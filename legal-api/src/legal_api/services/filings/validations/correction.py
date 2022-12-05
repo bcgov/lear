@@ -20,7 +20,8 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import NaicsService
-from legal_api.services.filings.validations.registration import validate_name_request, validate_offices
+from legal_api.services.filings.validations.common_validations import validate_name_request
+from legal_api.services.filings.validations.registration import validate_offices
 
 from ...utils import get_str
 from .common_validations import has_at_least_one_share_class
@@ -60,7 +61,7 @@ def validate(business: Business, filing: Dict) -> Error:
 def _validate_firms_correction(business: Business, filing, legal_type, msg):
     filing_type = 'correction'
     if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
-        msg.extend(validate_name_request(filing, filing_type))
+        msg.extend(validate_name_request(filing, legal_type, filing_type))
     if filing.get('filing', {}).get('correction', {}).get('parties', None):
         msg.extend(validate_party(filing, legal_type))
     if filing.get('filing', {}).get('correction', {}).get('offices', None):

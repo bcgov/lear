@@ -19,7 +19,8 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services.filings.validations.registration import validate_name_request, validate_offices, validate_party
+from legal_api.services.filings.validations.common_validations import validate_name_request
+from legal_api.services.filings.validations.registration import validate_offices, validate_party
 
 from ...utils import get_str
 
@@ -35,7 +36,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         msg = []
         if filing.get('filing', {}).get('conversion', {}).get('nameRequest', None):
-            msg.extend(validate_name_request(filing, filing_type))
+            msg.extend(validate_name_request(filing, legal_type, filing_type))
         msg.extend(validate_party(filing, legal_type, filing_type))
         msg.extend(validate_offices(filing, filing_type))
 

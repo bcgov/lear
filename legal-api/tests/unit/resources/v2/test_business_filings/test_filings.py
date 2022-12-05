@@ -1163,3 +1163,48 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['header']['submitter'] == expected
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier, future_effective_date_expected',
+    [
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('CP', Business.LegalTypes.COOP.value, 'CP1234567', False),
+    ]
+)
+def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identifier, future_effective_date_expected):
+    """Assert COA is applied correctly for entity types."""
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    coa['filing']['business']['identifier'] = identifier
+
+    requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                       json={'id': 21322, 'statusCode': 'COMPLETED', 'isPaymentActionRequired': False},
+                       status_code=HTTPStatus.CREATED)
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=coa,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+    assert 'effectiveDate' in rv.json['filing']['header']
+
+    if future_effective_date_expected:
+        effective_date = parse(rv.json['filing']['header']['effectiveDate'])
+        valid_date = LegislationDatetime.tomorrow_midnight()
+        assert effective_date == valid_date
+
+        assert 'futureEffectiveDate' in rv.json['filing']['header']
+        future_effective_date = parse(rv.json['filing']['header']['futureEffectiveDate'])
+        assert future_effective_date == valid_date
+    else:
+        assert 'futureEffectiveDate' not in rv.json['filing']['header']
