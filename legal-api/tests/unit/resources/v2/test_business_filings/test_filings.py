@@ -1187,7 +1187,9 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     coa['filing']['business']['identifier'] = identifier
 
     requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
-                       json={'id': 21322, 'statusCode': 'COMPLETED', 'isPaymentActionRequired': False},
+                       json= {'id': 21322,
+                              'statusCode': 'COMPLETED',
+                              'isPaymentActionRequired': False},
                        status_code=HTTPStatus.CREATED)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=coa,

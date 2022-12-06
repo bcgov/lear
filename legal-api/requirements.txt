@@ -58,6 +58,5 @@ urllib3==1.26.4
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
-sqlalchemy-json==0.5.0
 git+https://github.com/bcgov/business-schemas.git@2.15.39#egg=registry_schemas
 
