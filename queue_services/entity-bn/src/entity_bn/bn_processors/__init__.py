@@ -27,9 +27,10 @@ from legal_api.models import RequestTracker
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 
-bn_note = 'Cannot inform CRA about this change before receiving Business Number (BN15). Modify the ' + \
-    'request xml by providing businessRegistrationNumber, businessProgramIdentifier and ' + \
-    'businessProgramAccountReferenceNumber before resubmitting it.'
+bn_note = ('Cannot inform CRA about this change before receiving ' +  # pylint: disable=invalid-name
+           'Business Number (BN15). Modify the ' +
+           'request xml by providing businessRegistrationNumber, businessProgramIdentifier and ' +
+           'businessProgramAccountReferenceNumber before resubmitting it.')
 
 program_type_code = {
     'SP': '113',
