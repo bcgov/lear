@@ -71,7 +71,8 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
                 "name": new_name,
                 "state": "APPROVED",
                 "consumptionDate": ""
-            }]
+            }],
+            "legalType": legal_type
         }
 
         nr_response = MockResponse(nr_json, 200)
