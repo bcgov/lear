@@ -88,7 +88,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     msg.extend(validate_ia_court_order(incorporation_json, legal_type))
 
     if legal_type in [Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.BC_CCC.value]:
-        err = validate_incorporation_agreement(incorporation_json)
+        err = validate_incorporation_agreement(incorporation_json, legal_type)
         if err:
             msg.extend(err)
 
@@ -439,14 +439,14 @@ def validate_ia_court_order(filing: dict, legal_type: str) -> list:
     return []
 
 
-def validate_incorporation_agreement(incorporation_json) -> Error:
+def validate_incorporation_agreement(incorporation_json, legal_type) -> Error:
     """Validate the incorporation agreement of the incorporation filing."""
     agreement_type_path = '/filing/incorporationApplication/incorporationAgreement/agreementType'
     agreement_type = get_str(incorporation_json, agreement_type_path)
     msg = []
 
     if agreement_type != 'custom':
-        msg.append({'error': babel('Agreement type must be custom.')})
+        msg.append({'error': babel(f'Agreement type for {legal_type} must be custom.')})
 
     if msg:
         return msg

@@ -259,6 +259,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
 
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement',
+                 return_value=None)
+
     # perform test
     with freeze_time(now):
         err = validate(business, filing_json)
@@ -325,6 +328,8 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement',
+                 return_value=None)
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response_copy)):
         with freeze_time(now):
@@ -519,6 +524,8 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement',
+                 return_value=None)
 
     # perform test
     err = validate(business, filing_json)
@@ -1249,6 +1256,8 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement',
+                 return_value=None)
 
     # perform test
     with freeze_time(now):
@@ -1419,6 +1428,8 @@ def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement',
+                 return_value=None)
 
     # perform test
     with freeze_time(now):
