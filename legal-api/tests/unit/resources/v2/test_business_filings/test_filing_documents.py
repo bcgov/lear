@@ -917,21 +917,22 @@ def test_document_list_for_various_filing_states(session, client, jwt,
     if status == 'COMPLETED':
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
-        filing._meta_data = {'legalFilings': legal_filings}
+        meta_data = {'legalFilings': legal_filings}
 
         if filing_name_1 == 'correction' and \
                 (legal_name := filing_json['filing']
                  .get('incorporationApplication', {}).get('nameRequest', {}).get('legalName')):
-            filing._meta_data['correction'] = {}
-            filing._meta_data['correction']['fromLegalName'] = business.legal_name
-            filing._meta_data['correction']['toLegalName'] = legal_name
+            meta_data['correction'] = {}
+            meta_data['correction']['fromLegalName'] = business.legal_name
+            meta_data['correction']['toLegalName'] = legal_name
 
         if filing_name_1 == 'alteration' and \
                 (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
-            filing._meta_data['alteration'] = {}
-            filing._meta_data['alteration']['fromLegalName'] = business.legal_name
-            filing._meta_data['alteration']['toLegalName'] = legal_name
+            meta_data['alteration'] = {}
+            meta_data['alteration']['fromLegalName'] = business.legal_name
+            meta_data['alteration']['toLegalName'] = legal_name
 
+        filing._meta_data = meta_data
         filing.save()
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',

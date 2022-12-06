@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+import copy
 from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
@@ -865,7 +866,9 @@ class ListFilingResource():
         elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
             effective_date_utc = LegislationDatetime.as_utc_timezone(effective_date)
-            filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date_utc.isoformat()
+            filing_json_update = copy.deepcopy(filing.filing_json)
+            filing_json_update['filing']['header']['futureEffectiveDate'] = effective_date_utc.isoformat()
+            filing._filing_json = filing_json_update  # pylint: disable=protected-access;
             filing.effective_date = effective_date
             filing.save()
 
