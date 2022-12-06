@@ -22,16 +22,12 @@ from legal_api.models import Business, Filing, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from entity_bn.bn_processors import build_input_xml, request_bn_hub
+from entity_bn.bn_processors import bn_note, build_input_xml, get_splitted_business_number, request_bn_hub
 from entity_bn.exceptions import BNException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming dissolution/putBackOn request (SP/GP)."""
-    if not business.tax_id or len(business.tax_id) != 15:
-        raise BNException(f'Business {business.identifier}, ' +
-                          'Cannot inform CRA about change of status before receiving Business Number (BN15).')
-
     max_retry = current_app.config.get('BN_HUB_MAX_RETRY')
     request_trackers = RequestTracker.find_by(business.id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -52,10 +48,6 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
     if request_tracker.is_processed:
         return
 
-    business_registration_number = business.tax_id[0:9]
-    business_program_identifier = business.tax_id[9:11]
-    business_program_account_reference_number = business.tax_id[11:15]
-
     effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime('%Y-%m-%d')
 
     program_account_status_code = {
@@ -74,12 +66,15 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
         'programAccountReasonCode': program_account_reason_code[filing.filing_type],
         'effectiveDate': effective_date,
         'business': business.json(),
-        'businessRegistrationNumber': business_registration_number,
-        'businessProgramIdentifier': business_program_identifier,
-        'businessProgramAccountReferenceNumber': business_program_account_reference_number
+        **get_splitted_business_number(business.tax_id)
     })
 
     request_tracker.request_object = input_xml
+    if not business.tax_id or len(business.tax_id) != 15:
+        request_tracker.response_object = bn_note
+        request_tracker.save()
+        return
+
     status_code, response = request_bn_hub(input_xml)
     if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):

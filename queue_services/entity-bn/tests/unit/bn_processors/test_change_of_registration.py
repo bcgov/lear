@@ -18,6 +18,7 @@ import pytest
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import RequestTracker
 
+from entity_bn.bn_processors import bn_note
 from entity_bn.exceptions import BNException
 from entity_bn.worker import process_event
 from tests.unit import create_filing, create_registration_data
@@ -112,6 +113,91 @@ async def test_change_of_registration(app, session, mocker, legal_type):
     assert request_trackers[0].retry_number == 0
 
 
+@pytest.mark.parametrize('legal_type, tax_id', [
+    ('SP', None),
+    ('SP', ''),
+    ('SP', '993775204'),
+    ('GP', None),
+    ('GP', ''),
+    ('GP', '993775204'),
+])
+async def test_bn15_not_available_change_of_registration(app, session, mocker, legal_type, tax_id):
+    """Skip cra call when BN15 is not available while doing a change of SP/GP registration."""
+    filing_id, business_id = create_registration_data(legal_type, tax_id=tax_id)
+    json_filing = {
+        'filing': {
+            'header': {
+                'name': 'changeOfRegistration'
+            },
+            'changeOfRegistration': {
+                'offices': {
+                    'businessOffice': {
+                        'mailingAddress': {},
+                        'deliveryAddress': {}
+                    }
+                },
+                'parties': [{}]
+            }
+        }
+    }
+    filing = create_filing(json_filing=json_filing, business_id=business_id)
+    filing._meta_data = {'changeOfRegistration': {'toLegalName': 'new name'}}
+    filing.save()
+    filing_id = filing.id
+
+    mocker.patch('entity_bn.bn_processors.change_of_registration.has_previous_address', return_value=True)
+    mocker.patch('entity_bn.bn_processors.change_of_registration.has_party_name_changed', return_value=True)
+
+    await process_event({
+        'type': 'bc.registry.business.changeOfRegistration',
+        'data': {
+            'filing': {
+                'header': {'filingId': filing_id}
+            }
+        }
+    }, app)
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_NAME,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert not request_trackers[0].is_processed
+    assert request_trackers[0].response_object == bn_note
+    assert request_trackers[0].retry_number == 0
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_PARTY,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert not request_trackers[0].is_processed
+    assert request_trackers[0].response_object == bn_note
+    assert request_trackers[0].retry_number == 0
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert not request_trackers[0].is_processed
+    assert request_trackers[0].response_object == bn_note
+    assert request_trackers[0].retry_number == 0
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_MAILING_ADDRESS,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert not request_trackers[0].is_processed
+    assert request_trackers[0].response_object == bn_note
+    assert request_trackers[0].retry_number == 0
+
+
 @pytest.mark.parametrize('request_type, data', [
     (RequestTracker.RequestType.CHANGE_NAME, {'nameRequest': {'legalName': 'new name'}}),
     (RequestTracker.RequestType.CHANGE_PARTY, {'parties': [{}]}),
@@ -120,7 +206,7 @@ async def test_change_of_registration(app, session, mocker, legal_type):
     (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, {'offices': {'businessOffice': {'mailingAddress': {},
                                                                                         'deliveryAddress': {}}}}),
 ])
-async def test_retry_registration(app, session, mocker, request_type, data):
+async def test_retry_change_of_registration(app, session, mocker, request_type, data):
     """Test retry change of SP/GP registration."""
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
     json_filing = {
