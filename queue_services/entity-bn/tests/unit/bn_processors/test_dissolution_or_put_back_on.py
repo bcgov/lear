@@ -18,6 +18,7 @@ import pytest
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import RequestTracker
 
+from entity_bn.bn_processors import bn_note
 from entity_bn.exceptions import BNException
 from entity_bn.worker import process_event
 from tests.unit import create_filing, create_registration_data
@@ -75,6 +76,57 @@ async def test_change_of_status(app, session, mocker, legal_type, filing_type):
     assert request_trackers
     assert len(request_trackers) == 1
     assert request_trackers[0].is_processed
+    assert request_trackers[0].retry_number == 0
+
+
+@pytest.mark.parametrize('legal_type, filing_type, tax_id', [
+    ('SP', 'dissolution', None),
+    ('SP', 'dissolution', ''),
+    ('SP', 'dissolution', '993775204'),
+    ('GP', 'dissolution', None),
+    ('GP', 'dissolution', ''),
+    ('GP', 'dissolution', '993775204'),
+    ('SP', 'putBackOn', None),
+    ('SP', 'putBackOn', ''),
+    ('SP', 'putBackOn', '993775204'),
+    ('GP', 'putBackOn', None),
+    ('GP', 'putBackOn', ''),
+    ('GP', 'putBackOn', '993775204'),
+])
+async def test_bn15_not_available_change_of_status(app, session, mocker, legal_type, filing_type, tax_id):
+    """Skip cra call when BN15 is not available while doing a change of status SP/GP."""
+    filing_id, business_id = create_registration_data(legal_type, tax_id=tax_id)
+    json_filing = {
+        'filing': {
+            'header': {
+                'name': filing_type
+            },
+            filing_type: {
+            }
+        }
+    }
+    filing = create_filing(json_filing=json_filing, business_id=business_id)
+    filing._filing_type = filing_type
+    filing.save()
+    filing_id = filing.id
+
+    await process_event({
+        'type': f'bc.registry.business.{filing_type}',
+        'data': {
+            'filing': {
+                'header': {'filingId': filing_id}
+            }
+        }
+    }, app)
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_STATUS,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert len(request_trackers) == 1
+    assert not request_trackers[0].is_processed
+    assert request_trackers[0].response_object == bn_note
     assert request_trackers[0].retry_number == 0
 
 
