@@ -103,7 +103,7 @@ def test_registration_process(app, session, legal_type, filing):
         assert len(filing_rec.filing_party_roles.all()) == 1
         assert len(business.party_roles.all()) == 2
     assert len(business.offices.all()) == 1
-    assert business.offices.first().office_type == 'businessOffice'
+    assert business.offices[0].office_type == 'businessOffice'
 
 
 @pytest.mark.parametrize('legal_type, filing, party_type, organization_name, first_name, last_name, middle_name, expected_pass_code',
