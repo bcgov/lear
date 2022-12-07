@@ -29,7 +29,7 @@ from reportlab.pdfgen import canvas
 from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
+from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names, validate_incorporation_agreement
 
 from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
@@ -1481,3 +1481,25 @@ def _write_text(can, text, line_height, x_margin, y_margin):
     for line in text.splitlines():
         can.drawString(x_margin, y_margin, line)
         y_margin -= line_height
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, agreement_type, expected_msg', [
+        ('SUCCESS_ULC', 'ULC', 'custom', None),
+        ('SUCCESS_CCC', 'CC', 'custom', None),
+        ('FAILURE_ULC', 'ULC', 'sample', 'Agreement type for ULC must be custom.'),
+        ('FAILURE_CCC', 'CC', 'sample', 'Agreement type for CC must be custom.'),
+    ])
+def test_validate_incorporation_agreement(test_name, legal_type, agreement_type, expected_msg):
+    """Assert that incorporation agreement is 'custom' for ULC/CCC."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['incorporationAgreement']['agreementType'] = agreement_type
+
+    err = validate_incorporation_agreement(filing_json, legal_type)
+
+    # validate outcomes
+    if expected_msg:
+        assert lists_are_equal(err, expected_msg)
+    else:
+        assert err is None
