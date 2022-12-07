@@ -1487,8 +1487,8 @@ def _write_text(can, text, line_height, x_margin, y_margin):
     'test_name, legal_type, agreement_type, expected_msg', [
         ('SUCCESS_ULC', 'ULC', 'custom', None),
         ('SUCCESS_CCC', 'CC', 'custom', None),
-        ('FAILURE_ULC', 'ULC', 'sample', 'Agreement type for ULC must be custom.'),
-        ('FAILURE_CCC', 'CC', 'sample', 'Agreement type for CC must be custom.'),
+        ('FAILURE_ULC', 'ULC', 'sample', [{'error': 'Agreement type for ULC must be custom.'}]),
+        ('FAILURE_CCC', 'CC', 'sample', [{'error': 'Agreement type for CC must be custom.'}]),
     ])
 def test_validate_incorporation_agreement(test_name, legal_type, agreement_type, expected_msg):
     """Assert that incorporation agreement is 'custom' for ULC/CCC."""
