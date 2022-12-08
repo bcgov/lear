@@ -29,7 +29,7 @@ from reportlab.pdfgen import canvas
 from legal_api.models import Business
 from legal_api.services import MinioService
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
+from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names, validate_incorporation_agreement
 
 from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
@@ -47,6 +47,7 @@ business = Business(identifier=identifier)
 effective_date = '2020-09-18T00:00:00+00:00'
 court_order_date = '2020-09-17T00:00:00+00:00'
 incorporation_application_name = 'incorporationApplication'
+validate_incorporation_agreement_path = 'legal_api.services.filings.validations.incorporation_application.validate_incorporation_agreement'
 
 nr_response = {
     'state': 'APPROVED',
@@ -259,6 +260,8 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
 
+    mocker.patch(validate_incorporation_agreement_path, return_value=None)
+
     # perform test
     with freeze_time(now):
         err = validate(business, filing_json)
@@ -325,6 +328,7 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
+    mocker.patch(validate_incorporation_agreement_path, return_value=None)
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response_copy)):
         with freeze_time(now):
@@ -519,6 +523,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
                  return_value=[])
+    mocker.patch(validate_incorporation_agreement_path, return_value=None)
 
     # perform test
     err = validate(business, filing_json)
@@ -1249,6 +1254,7 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
                  return_value=[])
+    mocker.patch(validate_incorporation_agreement_path, return_value=None)
 
     # perform test
     with freeze_time(now):
@@ -1419,6 +1425,7 @@ def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
+    mocker.patch(validate_incorporation_agreement_path, return_value=None)
 
     # perform test
     with freeze_time(now):
@@ -1470,3 +1477,25 @@ def _write_text(can, text, line_height, x_margin, y_margin):
     for line in text.splitlines():
         can.drawString(x_margin, y_margin, line)
         y_margin -= line_height
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, agreement_type, expected_msg', [
+        ('SUCCESS_ULC', 'ULC', 'custom', None),
+        ('SUCCESS_CCC', 'CC', 'custom', None),
+        ('FAILURE_ULC', 'ULC', 'sample', [{'error': 'Agreement type for ULC must be custom.'}]),
+        ('FAILURE_CCC', 'CC', 'sample', [{'error': 'Agreement type for CC must be custom.'}]),
+    ])
+def test_validate_incorporation_agreement(test_name, legal_type, agreement_type, expected_msg):
+    """Assert that incorporation agreement is 'custom' for ULC/CCC."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['incorporationAgreement']['agreementType'] = agreement_type
+
+    err = validate_incorporation_agreement(filing_json, legal_type)
+
+    # validate outcomes
+    if expected_msg:
+        assert lists_are_equal(err, expected_msg)
+    else:
+        assert err is None
