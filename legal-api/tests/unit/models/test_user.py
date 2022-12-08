@@ -32,7 +32,10 @@ def test_user(session):
                 middlename='middlename',
                 lastname='lastname',
                 sub='sub',
-                iss='iss')
+                iss='iss',
+                idp_userid='idp_userid',
+                login_source='source'
+    )
 
     session.add(user)
     session.commit()
@@ -61,7 +64,9 @@ def test_create_from_jwt_token(session):
              'given_name': 'given_name',
              'family_name': 'family_name',
              'iss': 'iss',
-             'sub': 'sub'
+             'sub': 'sub',
+             'idp_userid': 'idp_userid',
+             'loginSource': 'source'
              }
     u = User.create_from_jwt_token(token)
     assert u.id is not None
@@ -73,7 +78,9 @@ def test_get_or_create_user_by_jwt(session):
              'given_name': 'given_name',
              'family_name': 'family_name',
              'iss': 'iss',
-             'sub': 'sub'
+             'sub': 'sub',
+             'idp_userid': 'idp_userid',
+             'loginSource': 'source'
              }
     u = User.get_or_create_user_by_jwt(token)
     assert u.id is not None
