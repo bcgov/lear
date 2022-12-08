@@ -7,7 +7,7 @@ Werkzeug==1.0.1
 aniso8601==9.0.1
 attrs==20.3.0
 blinker==1.4
-certifi==2020.12.5
+certifi==2022.12.7
 click==7.1.2
 ecdsa==0.14.1
 flask-jwt-oidc==0.3.0
