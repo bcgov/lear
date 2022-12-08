@@ -40,7 +40,7 @@ def test_user(session):
     assert user.id is not None
 
 
-def test_user_find_by_jwt_idp_userid(session):
+def test_user_find_by_jwt_token(session):
     """Assert that a User can be stored in the service.
 
     Start with a blank database.
@@ -50,7 +50,7 @@ def test_user_find_by_jwt_idp_userid(session):
     session.commit()
 
     token = {'idp_userid': '123'}
-    u = User.find_by_jwt_idp_userid(token)
+    u = User.find_by_jwt_token(token)
 
     assert u.id is not None
 

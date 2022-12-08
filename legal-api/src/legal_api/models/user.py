@@ -94,10 +94,6 @@ class User(db.Model):
     @classmethod
     def find_by_jwt_token(cls, token: dict):
         """Return a User if they exist and match the provided JWT."""
-        return cls.query.filter_by(sub=token['sub']).one_or_none()
-
-    @classmethod
-    def find_by_jwt_idp_userid(cls, token):
         return cls.query.filter_by(sub=token['idp_userid']).one_or_none()
 
     @classmethod
@@ -128,7 +124,7 @@ class User(db.Model):
         """Return a valid user for audit tracking purposes."""
         # GET existing or CREATE new user based on the JWT info
         try:
-            user = User.find_by_jwt_idp_userid(jwt_oidc_token)
+            user = User.find_by_jwt_token(jwt_oidc_token)
             current_app.logger.debug(f'finding user: {jwt_oidc_token}')
             if not user:
                 current_app.logger.debug(f'didnt find user, attempting to create new user:{jwt_oidc_token}')
