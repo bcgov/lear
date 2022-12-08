@@ -61,6 +61,8 @@ class User(db.Model):
     email = db.Column(db.String(1024))
     sub = db.Column(db.String(36), unique=True)
     iss = db.Column(db.String(1024))
+    idp_userid = db.Column(db.String(256), index=True)
+    login_source = db.Column(db.String(200), nullable=True)
     creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
 
     @property
@@ -95,6 +97,10 @@ class User(db.Model):
         return cls.query.filter_by(sub=token['sub']).one_or_none()
 
     @classmethod
+    def find_by_jwt_idp_userid(cls, token):
+        return cls.query.filter_by(sub=token['idp_userid']).one_or_none()
+
+    @classmethod
     def create_from_jwt_token(cls, token: dict):
         """Create a user record from the provided JWT token.
 
@@ -107,7 +113,9 @@ class User(db.Model):
                 firstname=token.get(current_app.config.get('JWT_OIDC_FIRSTNAME'), None),
                 lastname=token.get(current_app.config.get('JWT_OIDC_LASTNAME'), None),
                 iss=token['iss'],
-                sub=token['sub']
+                sub=token['sub'],
+                idp_userid=token['idp_userid'],
+                login_source=token['loginSource']
             )
             current_app.logger.debug('Creating user from JWT:{}; User:{}'.format(token, user))
             db.session.add(user)
@@ -120,7 +128,7 @@ class User(db.Model):
         """Return a valid user for audit tracking purposes."""
         # GET existing or CREATE new user based on the JWT info
         try:
-            user = User.find_by_jwt_token(jwt_oidc_token)
+            user = User.find_by_jwt_idp_userid(jwt_oidc_token)
             current_app.logger.debug(f'finding user: {jwt_oidc_token}')
             if not user:
                 current_app.logger.debug(f'didnt find user, attempting to create new user:{jwt_oidc_token}')

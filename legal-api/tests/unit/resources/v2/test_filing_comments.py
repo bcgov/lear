@@ -96,7 +96,7 @@ def test_comment_json_output(session, client, jwt):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
-    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     u.save()
 
     now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)

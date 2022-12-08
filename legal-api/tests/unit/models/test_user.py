@@ -40,17 +40,17 @@ def test_user(session):
     assert user.id is not None
 
 
-def test_user_find_by_jwt_token(session):
+def test_user_find_by_jwt_idp_userid(session):
     """Assert that a User can be stored in the service.
 
     Start with a blank database.
     """
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     session.add(user)
     session.commit()
 
-    token = {'sub': 'sub'}
-    u = User.find_by_jwt_token(token)
+    token = {'idp_userid': '123'}
+    u = User.find_by_jwt_idp_userid(token)
 
     assert u.id is not None
 
@@ -108,7 +108,7 @@ def test_create_from_invalid_jwt_token_no_token(session):
 
 def test_find_by_username(session):
     """Assert User can be found by the most current username."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     session.add(user)
     session.commit()
 
@@ -119,7 +119,7 @@ def test_find_by_username(session):
 
 def test_find_by_sub(session):
     """Assert find User by the unique sub key."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     session.add(user)
     session.commit()
 
@@ -130,7 +130,7 @@ def test_find_by_sub(session):
 
 def test_user_save(session):
     """Assert User record is saved."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     user.save()
 
     assert user.id is not None
@@ -138,7 +138,7 @@ def test_user_save(session):
 
 def test_user_delete(session):
     """Assert the User record is deleted."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     user.save()
     user.delete()
 
@@ -163,6 +163,6 @@ TEST_USER_DISPLAY_NAME = [
 @pytest.mark.parametrize('test_description, username, firstname, lastname, middlename, display_name', TEST_USER_DISPLAY_NAME)
 def test_user_display_name(session, test_description, username, firstname, lastname, middlename, display_name):
     """Assert the User record is deleted."""
-    user = User(username=username, firstname=firstname, lastname=lastname, middlename=middlename, sub='sub', iss='iss')
+    user = User(username=username, firstname=firstname, lastname=lastname, middlename=middlename, sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
 
     assert display_name == user.display_name
