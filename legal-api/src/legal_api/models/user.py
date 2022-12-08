@@ -94,7 +94,7 @@ class User(db.Model):
     @classmethod
     def find_by_jwt_token(cls, token: dict):
         """Return a User if they exist and match the provided JWT."""
-        return cls.query.filter_by(sub=token['idp_userid']).one_or_none()
+        return cls.query.filter_by(idp_userid=token['idp_userid']).one_or_none()
 
     @classmethod
     def create_from_jwt_token(cls, token: dict):
