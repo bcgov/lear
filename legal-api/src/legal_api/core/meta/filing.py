@@ -221,13 +221,13 @@ FILINGS: Final = {
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',
-        'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+        'title': 'Incorporation Application',
         'displayName': {
             'BC': 'BC Limited Company Incorporation Application',
             'ULC': 'BC Unlimited Liability Company Incorporation Application',
             'CC': 'BC Community Contribution Company Incorporation Application',
             'BEN': 'BC Benefit Company Incorporation Application',
-            'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+            'CP': 'Incorporation Application',
         },
         'codes': {
             'BEN': 'BCINC',
