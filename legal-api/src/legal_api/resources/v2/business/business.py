@@ -140,7 +140,7 @@ def update_businesses(identifier: str):
     business = Business.find_by_identifier(identifier)
 
     if not business:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND    
+        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
     json_input = request.get_json()
 
