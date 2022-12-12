@@ -106,6 +106,7 @@ def company_name_validation(filing):
         legal_type_path: Final = '/filing/business/legalType'
         if get_str(filing, legal_type_path) not in \
                 (Business.LegalTypes.BC_ULC_COMPANY.value,
+                 Business.LegalTypes.BC_CCC.value,
                  Business.LegalTypes.COMP.value,
                  Business.LegalTypes.BCOMP.value,
                  Business.LegalTypes.COOP.value):
