@@ -34,10 +34,6 @@
               <div class="pt-2">Incorporation Number:</div>
               <div class="upper-text">{{ party.officer.identifier }}</div>
             {% endif %}
-            {% if party.officer.taxId %}
-              <div class="pt-2">Business Number:</div>
-              <div class="upper-text">{{ party.officer.taxId }}</div>
-            {% endif %}
           </td>
           {% if party.mailingAddress is defined %}
           <td>

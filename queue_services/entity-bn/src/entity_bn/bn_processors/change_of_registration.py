@@ -25,16 +25,18 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from sqlalchemy import and_
 from sqlalchemy_continuum import version_class
 
-from entity_bn.bn_processors import build_input_xml, document_sub_type, request_bn_hub
+from entity_bn.bn_processors import (
+    bn_note,
+    build_input_xml,
+    document_sub_type,
+    get_splitted_business_number,
+    request_bn_hub,
+)
 from entity_bn.exceptions import BNException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming change of registration request."""
-    if not business.tax_id or len(business.tax_id) != 15:
-        raise BNException(f'Business {business.identifier}, ' +
-                          'Cannot inform CRA about change of registration before receiving Business Number (BN15).')
-
     if filing.meta_data and filing.meta_data.get('changeOfRegistration', {}).get('toLegalName'):
         change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
 
@@ -77,10 +79,6 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
     if request_tracker.is_processed:
         return
 
-    business_registration_number = business.tax_id[0:9]
-    business_program_identifier = business.tax_id[9:11]
-    business_program_account_reference_number = business.tax_id[11:15]
-
     client_name_type_code = {
         RequestTracker.RequestType.CHANGE_PARTY: '01',
         RequestTracker.RequestType.CHANGE_NAME: '02'
@@ -108,12 +106,15 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
         'updateReasonCode': update_reason_code[name_type],
         'newName': new_name,
         'business': business.json(),
-        'businessRegistrationNumber': business_registration_number,
-        'businessProgramIdentifier': business_program_identifier,
-        'businessProgramAccountReferenceNumber': business_program_account_reference_number
+        **get_splitted_business_number(business.tax_id)
     })
 
     request_tracker.request_object = input_xml
+    if not business.tax_id or len(business.tax_id) != 15:
+        request_tracker.response_object = bn_note
+        request_tracker.save()
+        return
+
     status_code, response = request_bn_hub(input_xml)
     if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):
@@ -161,10 +162,6 @@ def change_address(business: Business, filing: Filing,  # pylint: disable=too-ma
     if request_tracker.is_processed:
         return
 
-    business_registration_number = business.tax_id[0:9]
-    business_program_identifier = business.tax_id[9:11]
-    business_program_account_reference_number = business.tax_id[11:15]
-
     effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime('%Y-%m-%d')
     address = (business.delivery_address
                if address_type == RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS
@@ -177,12 +174,15 @@ def change_address(business: Business, filing: Filing,  # pylint: disable=too-ma
         'addressTypeCode': address_type_code[address_type],
         'effectiveDate': effective_date,
         'address': address.one_or_none().json,
-        'businessRegistrationNumber': business_registration_number,
-        'businessProgramIdentifier': business_program_identifier,
-        'businessProgramAccountReferenceNumber': business_program_account_reference_number
+        **get_splitted_business_number(business.tax_id)
     })
 
     request_tracker.request_object = input_xml
+    if not business.tax_id or len(business.tax_id) != 15:
+        request_tracker.response_object = bn_note
+        request_tracker.save()
+        return
+
     status_code, response = request_bn_hub(input_xml)
     if status_code == HTTPStatus.OK:
         with suppress(Et.ParseError):

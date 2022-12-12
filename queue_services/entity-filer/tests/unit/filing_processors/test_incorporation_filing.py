@@ -34,19 +34,31 @@ from entity_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
 
+INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['courtOrder'] = \
+    {
+        'fileNumber': '12356',
+        'effectOfOrder': 'planOfArrangement',
+        'hasPlanOfArrangement': True
+    }
 
-@pytest.mark.parametrize('legal_type,filing', [
-    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE)),
-    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE)),
+@pytest.mark.parametrize('legal_type, filing, next_corp_num ', [
+    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'BC0001095'),
+    ('BEN', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'BC0001095'),
+    ('CP', copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), 'CP0001095'),
+    ('ULC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'BC0001095'),
+    ('CC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'BC0001095'),
 ])
-def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing):
+def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_type, filing, next_corp_num):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
-    next_corp_num = 'BC0001095'
     with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
         identifier = 'NR 1234567'
         filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
         filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
+        if legal_type not in ('CC', 'CP'):
+            del filing['filing']['incorporationApplication']['courtOrder']
         if legal_type == 'CP':
             rules_file_key_uploaded_by_user = upload_file('rules.pdf')
             memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
@@ -72,14 +84,15 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         assert business.legal_name == filing['filing']['incorporationApplication']['nameRequest']['legalName']
         assert business.state == Business.State.ACTIVE
         assert len(business.party_roles.all()) == 1
-        if legal_type == 'BC':
+        if legal_type in ('BC', 'BEN', 'ULC', 'CC'):
             assert len(filing_rec.filing_party_roles.all()) == 2
-        if legal_type == 'CP':
-            assert len(filing_rec.filing_party_roles.all()) == 1
-        if legal_type == 'BC':
             assert len(business.share_classes.all()) == 2
             assert len(business.offices.all()) == 2  # One office is created in create_business method.
-        elif legal_type == 'CP':
+        if legal_type == 'CC':
+            assert filing_rec.court_order_file_number == '12356'
+            assert filing_rec.court_order_effect_of_order == 'planOfArrangement'
+        if legal_type == 'CP':
+            assert len(filing_rec.filing_party_roles.all()) == 1
             assert len(business.offices.all()) == 1
             documents = business.documents.all()
             assert len(documents) == 2
@@ -93,7 +106,6 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
                         filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
                     assert document.file_key == original_memorandum_key
                     assert MinioService.get_file(document.file_key)
-
             rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
             assert rules_files_obj
             assert_pdf_contains_text('Filed on ', rules_files_obj.read())
@@ -104,12 +116,18 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
-def test_incorporation_filing_process_no_nr(app, session):
+@pytest.mark.parametrize('legal_type, filing, legal_name_suffix', [
+    ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'B.C. LTD.'),
+    ('BEN', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'B.C. LTD.'),
+    ('ULC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'B.C. UNLIMITED LIABILITY COMPANY'),
+    ('CC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'),
+])
+def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, legal_name_suffix):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = 'BC0001095'
     with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()
@@ -122,12 +140,14 @@ def test_incorporation_filing_process_no_nr(app, session):
         # Assertions
         assert business.identifier == next_corp_num
         assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-        assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+        assert business.legal_type == legal_type
+        assert business.legal_name == f'{business.identifier[2:]} {legal_name_suffix}'
         assert len(business.share_classes.all()) == 2
         assert len(business.offices.all()) == 2  # One office is created in create_business method.
         assert len(business.party_roles.all()) == 1
         assert len(filing_rec.filing_party_roles.all()) == 2
+        assert filing_rec.court_order_file_number == '12356'
+        assert filing_rec.court_order_effect_of_order == 'planOfArrangement'
 
         # Parties
         parties = filing_rec.filing_json['filing']['incorporationApplication']['parties']
@@ -206,6 +226,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     """Assert that an existing coop incorporation is loaded corrrectly."""
     # setup
     corp_num = 'CP0000001'
+    nr_num = 'NR 1234567'
     colind_id = 1
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 
@@ -213,6 +234,8 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing['filing']['business']['legalType'] = 'CP'
     filing['filing']['business']['identifier'] = corp_num
     filing['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
+    filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
+    filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_num
     filing['filing']['incorporationApplication'].pop('shareStructure')
     effective_date = datetime.utcnow()
     # Create the Filing obeject in the DB
@@ -234,16 +257,16 @@ def test_incorporation_filing_coop_from_colin(app, session):
     assert business.identifier == corp_num
     assert business.founding_date.replace(tzinfo=None) == effective_date
     assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-    assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+    assert business.legal_name == 'Test'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
 
-@pytest.mark.parametrize('legal_type', [
-    ('BC'),
-    ('ULC'),
-    ('CC'),
+@pytest.mark.parametrize('legal_type, legal_name_suffix', [
+    ('BC', 'B.C. LTD.'),
+    ('ULC', 'B.C. UNLIMITED LIABILITY COMPANY'),
+    ('CC', 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'),
 ])
-def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
+def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, legal_name_suffix):
     """Assert that an existing bc company(LTD, ULC, CCC) incorporation is loaded corrrectly."""
     # setup
     corp_num = 'BC0000001'
@@ -274,7 +297,7 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type):
     assert business.identifier == corp_num
     assert business.founding_date.replace(tzinfo=None) == effective_date
     assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-    assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
+    assert business.legal_name == f'{business.identifier[2:]} {legal_name_suffix}'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
     assert len(business.share_classes.all()) == 2
     assert len(business.party_roles.all()) == 1

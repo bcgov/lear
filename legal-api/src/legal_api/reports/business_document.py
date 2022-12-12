@@ -98,6 +98,7 @@ class BusinessDocument:
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
             'common/certificateStyle',
+            'common/courtOrder',
             'footer',
             'logo',
             'macros',
@@ -411,6 +412,10 @@ class BusinessDocument:
 
     @staticmethod
     def _format_address(address):
+        address['streetAddressAdditional'] = address.get('streetAddressAdditional') or ''
+        address['addressRegion'] = address.get('addressRegion') or ''
+        address['deliveryInstructions'] = address.get('deliveryInstructions') or ''
+
         country = address['addressCountry']
         country = pycountry.countries.search_fuzzy(country)[0].name
         address['addressCountry'] = country
@@ -440,7 +445,8 @@ class BusinessDocument:
 
     @staticmethod
     def _get_legal_type_description(legal_type: str) -> str:
-        return BusinessDocument.LEGAL_TYPE_DESCRIPTION[legal_type]
+        corp_type = CorpType.find_by_id(legal_type)
+        return corp_type.full_desc if corp_type else ''
 
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {

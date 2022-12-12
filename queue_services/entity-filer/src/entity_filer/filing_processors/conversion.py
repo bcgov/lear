@@ -66,7 +66,7 @@ def _process_corps_conversion(business, conversion_filing, filing, filing_rec):
     if business:
         raise QueueException(f'Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}')
     if not (corp_num := filing.get('filing', {}).get('business', {}).get('identifier')):
-        raise QueueException(f'conversion {filing_rec.id} missing the business idnetifier.')
+        raise QueueException(f'conversion {filing_rec.id} missing the business identifier.')
     # Initial insert of the business record
     business_info_obj = conversion_filing.get('nameRequest')
     if not (business := business_info.update_business_info(corp_num, Business(), business_info_obj, filing_rec)):

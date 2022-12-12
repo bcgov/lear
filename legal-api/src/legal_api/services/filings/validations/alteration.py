@@ -94,6 +94,13 @@ def company_name_validation(filing):
         if nr_name != legal_name:
             msg.append({'error': babel('Alteration of Name Request has a different legal name.'),
                         'path': legal_name_path})
+
+        legal_type_path = '/filing/alteration/nameRequest/legalType'
+        legal_type = get_str(filing, legal_type_path)
+        nr_legal_type = nr_response.get('legalType')
+        if legal_type != nr_legal_type:
+            msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
+                        'path': legal_type_path})
     else:
         # ensure legalType is valid
         legal_type_path: Final = '/filing/business/legalType'

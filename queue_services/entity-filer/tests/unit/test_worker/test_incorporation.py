@@ -16,12 +16,15 @@ import asyncio
 import copy
 import datetime
 import random
+from http import HTTPStatus
+from unittest.mock import patch, call
 
 import pytest
 from entity_queue_common.messages import get_data_from_msg
 from entity_queue_common.service_utils import subscribe_to_queue
-from legal_api.models import Business, Filing, PartyRole
+from legal_api.models import Business, Filing, PartyRole, RegistrationBootstrap
 from legal_api.services import RegistrationBootstrapService
+from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
@@ -82,6 +85,45 @@ async def test_incorporation_filing(app, session, bootstrap):
     completing_party = (PartyRole.get_parties_by_role(business.id, 'completing_party'))[0]
     assert incorporator.appointment_date
     assert completing_party.appointment_date
+
+
+@pytest.mark.parametrize('legal_type, corp_num', [
+    ('BC', 'BC0001095'),
+    ('BEN', 'BC0001095'),
+    ('CP', 'CP0001095'),
+    ('ULC', 'BC0001095'),
+    ('CC', 'BC0001095'),
+])
+def test_update_affiliation(legal_type, corp_num):
+    """Assert that affiliation for IA results in expected Auth API calls."""
+    from entity_filer.filing_processors import incorporation_filing
+
+    business = Business(identifier=corp_num, legal_type=legal_type, legal_name='Test')
+    filing = Filing(id=1)
+    bootstrap = RegistrationBootstrap(account=1111111, _identifier='TNpUnst/Va')
+
+    with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
+        with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
+            with patch.object(AccountService, 'update_entity', return_value=HTTPStatus.OK):
+                with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
+                    incorporation_filing.update_affiliation(business, filing)
+
+                    assert AccountService.create_affiliation.call_count == 1
+                    assert AccountService.delete_affiliation.call_count == 0
+                    assert AccountService.update_entity.call_count == 1
+
+                    first_affiliation_call_args = AccountService.create_affiliation.call_args_list[0]
+                    expected_affiliation_call_args = call(account=bootstrap.account,
+                                                          business_registration=business.identifier,
+                                                          business_name=business.legal_name,
+                                                          corp_type_code=business.legal_type)
+                    assert first_affiliation_call_args == expected_affiliation_call_args
+
+                    first_update_entity_call_args = AccountService.update_entity.call_args_list[0]
+                    expected_update_entity_call_args = call(business_registration=bootstrap.identifier,
+                                                            business_name=business.identifier,
+                                                            corp_type_code='TMP')
+                    assert first_update_entity_call_args == expected_update_entity_call_args
 
 
 def test_update_affiliation_error(mocker):

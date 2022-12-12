@@ -96,19 +96,19 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
 ALLOWABLE_FILINGS: Final = {
     'staff': {
         Business.State.ACTIVE: {
-            'alteration': ['BC', 'BEN', 'ULC'],
-            'annualReport': ['CP', 'BEN'],
-            'changeOfAddress': ['CP', 'BEN'],
-            'changeOfDirectors': ['CP', 'BEN'],
+            'alteration': ['BC', 'BEN', 'ULC', 'CC'],
+            'annualReport': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+            'changeOfAddress': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+            'changeOfDirectors': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
             'changeOfRegistration': ['SP', 'GP'],
             'conversion': ['SP', 'GP', 'BEN'],
-            'correction': ['CP', 'BEN', 'SP', 'GP'],
+            'correction': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],
             'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            'incorporationApplication': ['CP', 'BC', 'BEN'],
+            'incorporationApplication': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
             'registration': ['SP', 'GP'],
             'specialResolution': ['CP'],
-            'transition': ['BC', 'BEN'],
+            'transition': ['BC', 'BEN', 'CC', 'ULC'],
             'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
         },
@@ -120,21 +120,21 @@ ALLOWABLE_FILINGS: Final = {
                 'fullRestoration': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
                 'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
-            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC']
+            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC']
         }
     },
     'user': {
         Business.State.ACTIVE: {
-            'alteration': ['BC', 'BEN', 'ULC'],
-            'annualReport': ['CP', 'BEN'],
-            'changeOfAddress': ['CP', 'BEN'],
-            'changeOfDirectors': ['CP', 'BEN'],
+            'alteration': ['BC', 'BEN', 'ULC', 'CC'],
+            'annualReport': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+            'changeOfAddress': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+            'changeOfDirectors': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
             'changeOfRegistration': ['SP', 'GP'],
             'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            'incorporationApplication': ['CP', 'BC', 'BEN'],
+            'incorporationApplication': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
             'registration': ['SP', 'GP'],
             'specialResolution': ['CP'],
-            'transition': ['BC', 'BEN'],
+            'transition': ['BC', 'BEN', 'CC', 'ULC'],
         },
     }
 }

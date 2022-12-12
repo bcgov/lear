@@ -49,6 +49,26 @@ def test_incorp_notification(app, session, status):
         assert mock_get_pdfs.call_args[0][3] == filing
 
 
+@pytest.mark.parametrize('legal_type', [
+    ('BEN'),
+    ('BC'),
+    ('ULC'),
+    ('CC'),
+])
+def test_numbered_incorp_notification(app, session, legal_type):
+    """Assert that the legal name is changed."""
+    # setup filing + business for email
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', legal_type=legal_type)
+    token = 'token'
+    # test processor
+    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+        email = filing_notification.process(
+            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
+
+        assert email['content']['body']
+        assert Business.BUSINESSES[legal_type]['numberedDescription'] in email['content']['body']
+
+
 @pytest.mark.parametrize(['status', 'has_name_change_with_new_nr'], [
     ('PAID', True),
     ('COMPLETED', True),

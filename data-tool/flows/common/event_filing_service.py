@@ -5,9 +5,9 @@ from legal_api.core import Filing as FilingCore
 from sqlalchemy import engine, text
 from .firm_queries import get_firm_event_filing_data_query, \
     get_firm_event_filing_corp_party_data_query, \
-    get_firm_event_filing_office_data_query, \
-    get_firm_comments_data_query
+    get_firm_event_filing_office_data_query
 from .query_utils import convert_result_set_to_dict
+from .shared_queries import get_corp_comments_data_query
 
 
 class RegistrationEventFilings(str, Enum):
@@ -290,13 +290,13 @@ class EventFilingService:
                                     correction_event_filing_mappings)
 
 
-    def get_firm_comments_data(self,
+    def get_corp_comments_data(self,
                               corp_num: str):
         with self.db_engine.connect() as conn:
-            sql_text = get_firm_comments_data_query(corp_num)
+            sql_text = get_corp_comments_data_query(corp_num)
             rs = conn.execute(sql_text)
-            firm_comments = convert_result_set_to_dict(rs)
-            return firm_comments
+            corp_comments = convert_result_set_to_dict(rs)
+            return corp_comments
 
 
 

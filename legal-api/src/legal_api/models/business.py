@@ -138,6 +138,25 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         SP_SOLE_PROPRIETORSHIP = 'SP'
         SP_DOING_BUSINESS_AS = 'DBA'
 
+    BUSINESSES = {
+        LegalTypes.BCOMP: {
+            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedDescription': 'Numbered Benefit Company'
+        },
+        LegalTypes.COMP: {
+            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedDescription': 'Numbered Limited Company'
+        },
+        LegalTypes.BC_ULC_COMPANY: {
+            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY',
+            'numberedDescription': 'Numbered Unlimited Liability Company'
+        },
+        LegalTypes.BC_CCC: {
+            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
+            'numberedDescription': 'Numbered Community Contribution Company'
+        }
+    }
+
     __versioned__ = {}
     __tablename__ = 'businesses'
     __mapper_args__ = {
@@ -258,7 +277,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             else:
                 # If this is a CO-OP, set the max date as April 30th next year.
                 ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-        elif self.legal_type == self.LegalTypes.BCOMP.value:
+        elif self.legal_type in [self.LegalTypes.BCOMP.value,
+                                 self.LegalTypes.COMP.value,
+                                 self.LegalTypes.BC_ULC_COMPANY.value,
+                                 self.LegalTypes.BC_CCC.value]:
             # For BCOMP min date is next anniversary date.
             ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)

@@ -22,11 +22,11 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import NaicsService, namex
+from legal_api.services import NaicsService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
-from .common_validations import validate_court_order
+from .common_validations import validate_court_order, validate_name_request
 
 
 def validate(registration_json: Dict) -> Optional[Error]:
@@ -43,7 +43,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
         )
 
     msg = []
-    msg.extend(validate_name_request(registration_json))
+    msg.extend(validate_name_request(registration_json, legal_type, 'registration'))
     msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
@@ -54,32 +54,6 @@ def validate(registration_json: Dict) -> Optional[Error]:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
-
-
-def validate_name_request(filing: Dict, filing_type='registration') -> list:
-    """Validate name request."""
-    nr_path = f'/filing/{filing_type}/nameRequest/nrNumber'
-    nr_number = get_str(filing, nr_path)
-    msg = []
-
-    # ensure NR is approved or conditionally approved
-    try:
-        nr_json = namex.query_nr_number(nr_number).json()
-        validation_result = namex.validate_nr(nr_json)
-        if not validation_result['is_consumable']:
-            msg.append({'error': babel('Name Request is not approved.'), 'path': nr_path})
-
-        # ensure NR request has the same legal name
-        legal_name_path = f'/filing/{filing_type}/nameRequest/legalName'
-        legal_name = get_str(filing, legal_name_path)
-        nr_name = namex.get_approved_name(nr_json)
-        if not legal_name or nr_name != legal_name:
-            msg.append({'error': babel(f'{filing_type} of Name Request has a different legal name.'),
-                        'path': legal_name_path})
-    except KeyError:
-        msg.append({'error': babel('Invalid Name Request.'), 'path': nr_path})
-
-    return msg
 
 
 def validate_business_type(filing: Dict, legal_type: str) -> list:

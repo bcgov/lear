@@ -43,6 +43,7 @@
               filing your annual report.
             </p>
 
+            {% if business.legal_type == 'BEN' %}
             [[whitespace-16px.html]]
             <p>
               In addition to filing the annual report with the Business Registry, there is a legal requirement for
@@ -50,6 +51,7 @@
               Act for more information on the annual Benefit Report. We recommend seeking legal assistance when
               creating your annual Benefit Report.
             </p>
+            {% endif %}
 
             [[whitespace-16px.html]]
             <p>

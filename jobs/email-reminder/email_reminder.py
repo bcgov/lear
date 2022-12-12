@@ -22,6 +22,7 @@ import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; confli
 from flask import Flask
 from legal_api.models import Business, Filing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.flags import Flags
 from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -39,6 +40,8 @@ SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 
+flags = Flags()
+
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
@@ -52,6 +55,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             dsn=app.config.get('SENTRY_DSN'),
             integrations=[SENTRY_LOGGING]
         )
+
+    if app.config.get('LD_SDK_KEY', None):
+        flags.init_app(app)
 
     register_shellcontext(app)
 
@@ -101,7 +107,7 @@ def get_ar_fee(app: Flask, legal_type: str, token: str) -> str:
     app.logger.debug(f'filing_type_code: {filing_type_code}')
     fee_url = ''.join([fee_url, '/', legal_type, '/', filing_type_code])
     app.logger.debug(f'fee_url: {fee_url}')
-    res = requests.get(url=fee_url,
+    res = requests.get(url=fee_url,  # pylint: disable=missing-timeout
                        headers={
                            'Content-Type': 'application/json',
                            'Authorization': 'Bearer ' + token})
@@ -121,13 +127,21 @@ def get_businesses(legal_types: list):
         " END  + interval '1 year'= CURRENT_DATE")
     return db.session.query(Business).filter(
         Business.legal_type.in_(legal_types), where_clause
-    ).all()
+    ).order_by(Business.id).paginate(per_page=20)
 
 
 async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
     """Find business to send annual report reminder."""
     try:
         legal_types = [Business.LegalTypes.BCOMP.value]  # entity types to send ar reminder
+
+        if flags.is_on('enable-bc-ccc-ulc'):
+            legal_types.extend(
+                [Business.LegalTypes.COMP.value,
+                 Business.LegalTypes.BC_CCC.value,
+                 Business.LegalTypes.BC_ULC_COMPANY.value]
+            )
+
         ar_fees = {}
 
         # get token
@@ -136,13 +150,19 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
             ar_fees[legal_type] = get_ar_fee(app, legal_type, token)
 
         app.logger.debug('Getting businesses to send AR reminder today')
-        businesses = get_businesses(legal_types)
-        app.logger.debug('Processing businesses to send AR reminder')
-        for business in businesses:
-            ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+        pagination = get_businesses(legal_types)
+        while pagination.items:
+            app.logger.debug('Processing businesses to send AR reminder')
+            for business in pagination.items:
+                ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
-            await send_email(business.id, ar_fees[business.legal_type], str(ar_year), app, qsm)
-            app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+                await send_email(business.id, ar_fees[business.legal_type], str(ar_year), app, qsm)
+                app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+
+            if pagination.next_num:
+                pagination = pagination.next()
+            else:
+                break
 
     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         app.logger.error(err)
@@ -176,7 +196,7 @@ async def send_outstanding_bcomps_ar_reminder(app: Flask, qsm: QueueService):  #
 
 
 if __name__ == '__main__':
-    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None
+    condition = sys.argv[1] if sys.argv and len(sys.argv) > 1 else None  # pylint: disable=invalid-name
     application = create_app()
     with application.app_context():
         event_loop = asyncio.get_event_loop()

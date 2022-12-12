@@ -40,7 +40,7 @@
         {% endif %}
       </foreignLegacy>
       <municipality>{{deliveryAddress.addressCity[0:30]}}</municipality>
-      {% if deliveryAddress.addressRegion|length %}
+      {% if deliveryAddress.addressRegion is not none and deliveryAddress.addressRegion|length %}
       <provinceStateCode>{{deliveryAddress.addressRegion}}</provinceStateCode>
       {% endif %}
       <postalCode>{{deliveryAddress.postalCode | replace(' ', '')}}</postalCode>
@@ -54,7 +54,7 @@
         {% endif %}
       </foreignLegacy>
       <municipality>{{mailingAddress.addressCity[0:30]}}</municipality>
-      {% if mailingAddress.addressRegion|length %}
+      {% if mailingAddress.addressRegion is not none and mailingAddress.addressRegion|length %}
       <provinceStateCode>{{mailingAddress.addressRegion}}</provinceStateCode>
       {% endif %}
       <postalCode>{{mailingAddress.postalCode | replace(' ', '')}}</postalCode>

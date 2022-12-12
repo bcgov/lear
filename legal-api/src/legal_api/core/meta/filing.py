@@ -79,10 +79,12 @@ FILINGS: Final = {
         'displayName': 'Alteration',
         'codes': {
             'BC': 'ALTER',
-            'BEN': 'ALTER'
+            'BEN': 'ALTER',
+            'ULC': 'ALTER',
+            'CC': 'ALTER'
         },
         'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BC,BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'annualReport': {
@@ -91,7 +93,10 @@ FILINGS: Final = {
         'displayName': 'Annual Report',
         'codes': {
             'CP': 'OTANN',
-            'BEN': 'BCANN'
+            'BEN': 'BCANN',
+            'BC': 'BCANN',
+            'ULC': 'BCANN',
+            'CC': 'BCANN'
         }
     },
     'changeOfAddress': {
@@ -100,10 +105,13 @@ FILINGS: Final = {
         'displayName': 'Address Change',
         'codes': {
             'CP': 'OTADD',
-            'BEN': 'BCADD'
+            'BEN': 'BCADD',
+            'BC': 'BCADD',
+            'ULC': 'BCADD',
+            'CC': 'BCADD'
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfDirectors': {
@@ -112,16 +120,22 @@ FILINGS: Final = {
         'displayName': 'Director Change',
         'codes': {
             'CP': 'OTCDR',
-            'BEN': 'BCCDR'
+            'BEN': 'BCCDR',
+            'BC': 'BCCDR',
+            'ULC': 'BCCDR',
+            'CC': 'BCCDR'
         },
         'free': {
             'codes': {
                 'CP': 'OTFDR',
-                'BEN': 'BCFDR'
+                'BEN': 'BCFDR',
+                'BC': 'BCFDR',
+                'ULC': 'BCFDR',
+                'CC': 'BCFDR'
             }
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
     'changeOfName': {
@@ -150,18 +164,24 @@ FILINGS: Final = {
         'title': 'Correction',
         'displayName': {
             'BEN': 'Correction',
+            'BC': 'Correction',
+            'ULC': 'Correction',
+            'CC': 'Correction',
             'CP': 'Correction',
             'SP': 'Register Correction Application',
             'GP': 'Register Correction Application',
         },
         'codes': {
             'BEN': 'CRCTN',
+            'BC': 'CRCTN',
+            'ULC': 'CRCTN',
+            'CC': 'CRCTN',
             'CP': 'CRCTN',
             'SP': 'FMCORR',
             'GP': 'FMCORR'
         },
         'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
+            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
             {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]},
         ]
     },
@@ -201,18 +221,24 @@ FILINGS: Final = {
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',
-        'title': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+        'title': 'Incorporation Application',
         'displayName': {
-            'BC': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+            'BC': 'BC Limited Company Incorporation Application',
+            'ULC': 'BC Unlimited Liability Company Incorporation Application',
+            'CC': 'BC Community Contribution Company Incorporation Application',
             'BEN': 'BC Benefit Company Incorporation Application',
-            'CP': FilingTitles.INCORPORATION_APPLICATION_DEFAULT,
+            'CP': 'Incorporation Application',
         },
         'codes': {
-            'BEN': 'BCINC'
+            'BEN': 'BCINC',
+            'BC': 'BCINC',
+            'ULC': 'BCINC',
+            'CC': 'BCINC',
+            'CP': 'OTINC'
         },
         'additional': [
             {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', 'certificate']},
+            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
     'registrarsNotation': {
@@ -253,7 +279,9 @@ FILINGS: Final = {
         'displayName': 'Transition Application',
         'codes': {
             'BC': 'TRANS',
-            'BEN': 'TRANS'
+            'BEN': 'TRANS',
+            'ULC': 'TRANS',
+            'CC': 'TRANS'
         },
         'additional': [
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},

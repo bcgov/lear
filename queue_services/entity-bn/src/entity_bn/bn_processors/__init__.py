@@ -27,6 +27,11 @@ from legal_api.models import RequestTracker
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 
+bn_note = ('Cannot inform CRA about this change before receiving ' +  # pylint: disable=invalid-name
+           'Business Number (BN15). Modify the ' +
+           'request xml by providing businessRegistrationNumber, businessProgramIdentifier and ' +
+           'businessProgramAccountReferenceNumber before resubmitting it.')
+
 program_type_code = {
     'SP': '113',
     'GP': '114'
@@ -57,6 +62,24 @@ def build_input_xml(template_name, data):
     ).read_text()
     jnja_template = Template(template, autoescape=True)
     return jnja_template.render(data)
+
+
+def get_splitted_business_number(tax_id: str):
+    """Split BN15 as required by CRA."""
+    registration_number = ''
+    program_identifier = ''
+    program_account_reference_number = ''
+
+    if tax_id and len(tax_id) == 15:
+        registration_number = tax_id[0:9]
+        program_identifier = tax_id[9:11]
+        program_account_reference_number = tax_id[11:15]
+
+    return {
+        'businessRegistrationNumber': registration_number,
+        'businessProgramIdentifier': program_identifier,
+        'businessProgramAccountReferenceNumber': program_account_reference_number
+    }
 
 
 def request_bn_hub(input_xml):
