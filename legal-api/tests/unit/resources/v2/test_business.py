@@ -25,7 +25,7 @@ from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_OR
     INCORPORATION
 
 from legal_api.models import Business, Filing
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import STAFF_ROLE, BASIC_USER
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_business
@@ -174,6 +174,51 @@ def test_get_business_info(session, client, jwt):
     print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
     assert registry_schemas.validate(rv.json, 'business')
+
+def test_business_freeze_unfreeze(session, client, jwt):
+    """Assert that the business can be freezed and unfreezed."""
+    identifier = 'CP7654321'
+    legal_name = identifier + ' legal name'
+    factory_business_model(legal_name=legal_name,
+                           identifier=identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None)
+
+    rv = client.patch('/api/v2/businesses/' + identifier,
+                     json={'adminFreeze': True},
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.json['business']['adminFreeze'] == True
+
+    rv = client.get('/api/v2/businesses/' + identifier,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.json['business']['adminFreeze'] == True
+
+    rv = client.patch('/api/v2/businesses/' + identifier,
+                     json={'adminFreeze': False},
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+    assert rv.json['business']['adminFreeze'] == False
+
+    rv = client.patch('/api/v2/businesses/' + identifier,
+                     json={'adminFreeze': False},
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.json['business']['adminFreeze'] == False
+
+    rv = client.patch('/api/v2/businesses/' + identifier,
+                     json={'adminFreeze': True},
+                     headers=create_header(jwt, [BASIC_USER], identifier)
+                     )
+    # Unauthorized
+    assert rv.status_code == 401
 
 
 def test_get_business_with_correction_filings(session, client, jwt):

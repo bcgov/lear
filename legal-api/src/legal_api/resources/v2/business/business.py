@@ -30,6 +30,7 @@ from legal_api.services import (  # noqa: I001;
     AccountService,
     RegistrationBootstrapService,
     check_warnings,
+    authorized
 )  # noqa: I001;
 from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
@@ -131,6 +132,10 @@ def post_businesses():
 @jwt.requires_auth
 def update_businesses(identifier: str):
     """Update a business."""
+    if not authorized(identifier, jwt, 'freeze_unfreeze'):
+        return jsonify({'message':
+                            f'You are not authorized to patch business {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
     business = Business.find_by_identifier(identifier)
 
