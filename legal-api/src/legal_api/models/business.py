@@ -95,6 +95,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
         TRUST = 'T'
         TRAMWAYS = 'TMY'
         XPRO_COOP = 'XCP'
+        CCC_CONTINUE_IN = 'CCC'
         SOCIETY = 'S'
         XPRO_SOCIETY = 'XS'
         SOLE_PROP = 'SP'
