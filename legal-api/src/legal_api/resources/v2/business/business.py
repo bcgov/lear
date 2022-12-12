@@ -126,13 +126,16 @@ def post_businesses():
 
     return ListFilingResource.put(bootstrap.identifier, None)
 
-@bp.route('/<string:identifier>', methods=['PUT'])
+@bp.route('/<string:identifier>', methods=['PATCH'])
 @cross_origin(origin='*')
 @jwt.requires_auth
 def update_businesses(identifier: str):
     """Update a business."""
 
     business = Business.find_by_identifier(identifier)
+
+    if not business:
+        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND    
 
     json_input = request.get_json()
 
