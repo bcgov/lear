@@ -57,7 +57,12 @@ def set_association_type(business: Business, association_type: String) -> Dict:
 def set_legal_name(corp_num: str, business: Business, business_info: Dict):
     """Set the legal_name in the business object."""
     legal_name = business_info.get('legalName', None)
-    business.legal_name = legal_name if legal_name else corp_num[2:] + ' B.C. LTD.'
+    if legal_name:
+        business.legal_name = legal_name
+    else:
+        legal_type = business_info.get('legalType', None)
+        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
+        business.legal_name = f'{corp_num[2:]} {numbered_legal_name_suffix}'
 
 
 def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):
@@ -96,7 +101,10 @@ def get_next_corp_num(legal_type: str):
     # legacy Business.Identifier generation
     try:
         # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
-        if legal_type == Business.LegalTypes.BCOMP.value:
+        if legal_type in (Business.LegalTypes.BCOMP.value,
+                          Business.LegalTypes.BC_ULC_COMPANY.value,
+                          Business.LegalTypes.BC_CCC.value,
+                          Business.LegalTypes.COMP.value):
             business_type = 'BC'
         else:
             business_type = legal_type

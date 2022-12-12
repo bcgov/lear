@@ -1,25 +1,14 @@
+{% if business.legalType not in ['GP', 'SP'] %}
 <div class="no-page-break">
    <div class="separator mt-4"></div>
-   <div class="section-title mt-4">
-      {% if offices.registeredOffice is defined %}
-         <span>Registered Office Information</span>
-      {% elif offices.recordsOffice is defined %}
-         <span>Records Office Information</span>
-      {% elif offices.businessOffice %}
-         <span>Business Addresses</span>
-      {% endif %}
-   </div>
+   <div class="section-title mt-4">Registered Office Information</div>
    <div class="section-data mt-4">
       <table class="section-data-table" role="presentation">
          <tr>
-            <td class="col-33">
+            <td class="col-50">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
                   {% if offices.registeredOffice is defined and offices.registeredOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% elif offices.recordsOffice is defined and offices.recordsOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% elif offices.businessOffice is defined and offices.businessOffice.mailingAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
@@ -39,7 +28,58 @@
                   <div class="delivery-instructions pt-1">
                      {{ offices.registeredOffice.mailingAddress.deliveryInstructions }}
                   </div>
-               {% elif offices.recordsOffice is defined %}
+               {% else %}
+                  <div class="pt-2">Not Available</div>
+               {% endif %}
+            </td>
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Delivery Address</span>
+                  {% if offices.registeredOffice is defined and offices.registeredOffice.deliveryAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               {% if offices.registeredOffice is defined %}
+               <div class="pt-2">{{ offices.registeredOffice.deliveryAddress.streetAddress }}</div>
+               <div>{{ offices.registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ offices.registeredOffice.deliveryAddress.addressCity }}
+                  {{ offices.registeredOffice.deliveryAddress.addressRegion }}
+                  &nbsp;{{ offices.registeredOffice.deliveryAddress.postalCode }}
+               </div>
+               {% if offices.registeredOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ offices.registeredOffice.deliveryAddress.addressCountry }}</div>
+               {% endif %}
+               <div class="delivery-instructions pt-1">
+                  {{ offices.registeredOffice.deliveryAddress.deliveryInstructions }}
+               </div>
+               {% else %}
+                  Not Available
+               {% endif %}
+            </td>
+         </tr>
+      </table>
+   </div>
+</div>
+{% endif %}
+
+{% if business.legalType not in ['GP', 'SP', 'CP'] %}
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Records Office Information</div>
+   <div class="section-data mt-4">
+      <table class="section-data-table" role="presentation">
+         <tr>
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Mailing Address</span>
+                  {% if offices.recordsOffice is defined and offices.recordsOffice.mailingAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               {% if offices.recordsOffice is defined %}
                   <div class="pt-2">{{ offices.recordsOffice.mailingAddress.streetAddress }}</div>
                   <div>{{ offices.recordsOffice.mailingAddress.streetAddressAdditional }}</div>
                   <div>
@@ -55,7 +95,58 @@
                   <div class="delivery-instructions pt-1">
                      {{ offices.recordsOffice.mailingAddress.deliveryInstructions }}
                   </div>
-               {% elif offices.businessOffice is defined %}
+               {% else %}
+                   <div class="pt-2">Not Available</div>
+               {% endif %}
+            </td>
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Delivery Address</span>
+                  {% if offices.recordsOffice is defined and offices.recordsOffice.deliveryAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               {% if offices.recordsOffice is defined %}
+                  <div class="pt-2">{{ offices.recordsOffice.deliveryAddress.streetAddress }}</div>
+                  <div>{{ offices.recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
+                  <div>
+                     {{ offices.recordsOffice.deliveryAddress.addressCity }}
+                     {{ offices.recordsOffice.deliveryAddress.addressRegion }}
+                     &nbsp;{{ offices.recordsOffice.deliveryAddress.postalCode }}
+                  </div>
+                  {% if offices.recordsOffice.deliveryAddress.addressCountryDescription %}
+                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountryDescription }}</div>
+                  {% else %}
+                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountry }}</div>
+                  {% endif %}
+                  <div class="delivery-instructions pt-1">
+                     {{ offices.recordsOffice.deliveryAddress.deliveryInstructions }}
+                  </div>
+               {% else %}
+                   <div class="pt-2">Not Available</div>
+               {% endif %}
+            </td>
+         </tr>
+      </table>
+   </div>
+</div>
+{% endif %}
+
+{% if business.legalType in ['GP', 'SP'] %}
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Business Addresses</div>
+   <div class="section-data mt-4">
+      <table class="section-data-table" role="presentation">
+         <tr>
+            <td class="col-33">
+               <div>
+                  <span class="section-sub-title">Mailing Address</span>
+                  {% if offices.businessOffice is defined and offices.businessOffice.mailingAddress.hasCorrected %}
+                     <span class="chip">CORRECTED</span>
+                  {% endif %}
+               </div>
+               {% if offices.businessOffice is defined %}
                   <div class="pt-2">{{ offices.businessOffice.mailingAddress.streetAddress }}</div>
                   <div>{{ offices.businessOffice.mailingAddress.streetAddressAdditional }}</div>
                   <div>
@@ -75,47 +166,11 @@
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.registeredOffice is defined and offices.registeredOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% elif offices.recordsOffice is defined and offices.recordsOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% elif offices.businessOffice is defined and if offices.businessOffice.deliveryAddress.hasCorrected %}
+                  {% if offices.businessOffice is defined and offices.businessOffice.deliveryAddress.hasCorrected %}
                      <span class="chip">CORRECTED</span>
                   {% endif %}
                </div>
-               {% if offices.registeredOffice is defined %}
-                  <div class="pt-2">{{ offices.registeredOffice.deliveryAddress.streetAddress }}</div>
-                  <div>{{ offices.registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
-                  <div>
-                     {{ offices.registeredOffice.deliveryAddress.addressCity }}
-                     {{ offices.registeredOffice.deliveryAddress.addressRegion }}
-                     &nbsp;{{ offices.registeredOffice.deliveryAddress.postalCode }}
-                  </div>
-                  {% if offices.registeredOffice.deliveryAddress.addressCountryDescription %}
-                     <div>{{ offices.registeredOffice.deliveryAddress.addressCountryDescription }}</div>
-                  {% else %}
-                     <div>{{ offices.registeredOffice.deliveryAddress.addressCountry }}</div>
-                  {% endif %}
-                  <div class="delivery-instructions pt-1">
-                     {{ offices.registeredOffice.deliveryAddress.deliveryInstructions }}
-                  </div>
-               {% elif offices.recordsOffice is defined %}
-                  <div class="pt-2">{{ offices.recordsOffice.deliveryAddress.streetAddress }}</div>
-                  <div>{{ offices.recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
-                  <div>
-                     {{ offices.recordsOffice.deliveryAddress.addressCity }}
-                     {{ offices.recordsOffice.deliveryAddress.addressRegion }}
-                     &nbsp;{{ offices.recordsOffice.deliveryAddress.postalCode }}
-                  </div>
-                  {% if offices.recordsOffice.deliveryAddress.addressCountryDescription %}
-                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountryDescription }}</div>
-                  {% else %}
-                     <div>{{ offices.recordsOffice.deliveryAddress.addressCountry }}</div>
-                  {% endif %}
-                  <div class="delivery-instructions pt-1">
-                     {{ offices.recordsOffice.deliveryAddress.deliveryInstructions }}
-                  </div>
-               {% elif offices.businessOffice is defined %}
+               {% if offices.businessOffice is defined %}
                   <div class="pt-2">{{ offices.businessOffice.deliveryAddress.streetAddress }}</div>
                   <div>{{ offices.businessOffice.deliveryAddress.streetAddressAdditional }}</div>
                   <div>
@@ -137,4 +192,5 @@
       </table>
    </div>
 </div>
+{% endif %}
 

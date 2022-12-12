@@ -49,7 +49,7 @@ def replace_file_with_certified_copy(_bytes, business, key, certify_date):
     pdf_writer.write(output_original_pdf)
     output_original_pdf.seek(0)
 
-    registrar_info = RegistrarInfo.get_registrar_info(business.founding_date)
+    registrar_info = RegistrarInfo.get_registrar_info(certify_date)
     registrars_signature = registrar_info['signatureAndText']
     pdf_service = PdfService()
     registrars_stamp = \

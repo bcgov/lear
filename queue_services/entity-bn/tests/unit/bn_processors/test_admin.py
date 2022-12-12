@@ -31,11 +31,13 @@ acknowledgement_response = """<?xml version="1.0"?>
     </SBNAcknowledgement>"""
 
 
-@pytest.mark.parametrize('request_type', [
-    ('BN15'),
-    ('RESUBMIT_INFORM_CRA'),
+@pytest.mark.parametrize('request_type,business_number', [
+    ('BN15', '993775204'),
+    ('BN15', ''),
+    ('BN15', None),
+    ('RESUBMIT_INFORM_CRA', None),
 ])
-async def test_admin_bn15(app, session, mocker, request_type):
+async def test_admin_bn15(app, session, mocker, request_type, business_number):
     """Test inform cra about new SP/GP registration."""
     message_id = str(uuid.uuid4())
     filing_id, business_id = create_registration_data('SP')
@@ -59,11 +61,11 @@ async def test_admin_bn15(app, session, mocker, request_type):
     mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
     mocker.patch('entity_bn.bn_processors.registration.publish_event')
 
-    business_number = '993775204' if request_type == 'BN15' else None
     business_program_id = 'BC'
     program_account_ref_no = 1
+    new_bn = '1234567'
     mocker.patch('entity_bn.bn_processors.registration._get_program_account', return_value=(200, {
-        'business_no': business_number,
+        'business_no': business_number or new_bn,
         'business_program_id': business_program_id,
         'cross_reference_program_no': 'FM1234567',
         'program_account_ref_no': program_account_ref_no})
@@ -103,7 +105,7 @@ async def test_admin_bn15(app, session, mocker, request_type):
     assert request_trackers[0].is_admin
 
     business = Business.find_by_internal_id(business_id)
-    assert business.tax_id == f'{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}'
+    assert business.tax_id == f'{business_number or new_bn}{business_program_id}{str(program_account_ref_no).zfill(4)}'
 
 
 @pytest.mark.parametrize('request_type, request_xml', [

@@ -23,15 +23,10 @@ from entity_bn.bn_processors.change_of_registration import (
     has_party_name_changed,
     has_previous_address,
 )
-from entity_bn.exceptions import BNException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming correction request."""
-    if not business.tax_id or len(business.tax_id) != 15:
-        raise BNException(f'Business {business.identifier}, ' +
-                          'Cannot inform CRA about correction before receiving Business Number (BN15).')
-
     if filing.meta_data and filing.meta_data.get('correction', {}).get('toLegalName'):
         change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
 

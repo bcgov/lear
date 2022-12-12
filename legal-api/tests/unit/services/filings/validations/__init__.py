@@ -30,24 +30,36 @@ def lists_are_equal(list_1, list_2) -> bool:
 
 
 def create_party(roles: list,
-                 party_id,
-                 mailing_addr,
-                 delivery_addr):
+                 party_id=None,
+                 mailing_addr=None,
+                 delivery_addr=None,
+                 officer=None):
     """Create party object with custom roles, mailing addresses and delivery aadresses."""
-    party = {
-        'officer': {
-            'id': party_id,
-            'firstName': 'Joe',
-            'lastName': 'Swanson',
-            'middleName': 'P',
-            'email': 'joe@email.com',
-            'organizationName': '',
-            'partyType': 'person'
-        },
-        'mailingAddress': None,
-        'deliveryAddress': None,
-        'roles': []
-    }
+
+    if officer:
+        party = {
+            'officer': officer,
+            'mailingAddress': None,
+            'deliveryAddress': None,
+            'roles': []
+        }
+        if party_id:
+            party.id = party_id
+    else:
+        party = {
+            'officer': {
+                'id': party_id,
+                'firstName': 'Joe',
+                'lastName': 'Swanson',
+                'middleName': 'P',
+                'email': 'joe@email.com',
+                'organizationName': '',
+                'partyType': 'person'
+            },
+            'mailingAddress': None,
+            'deliveryAddress': None,
+            'roles': []
+        }
 
     for role in roles:
         party['roles'].append({
@@ -92,6 +104,32 @@ def create_party_address(base_address=None,
            }
 
     return party_address
+
+
+def create_officer(base_officer=None,
+                   first_name=None,
+                   middle_name=None,
+                   last_name=None,
+                   organization_name=None,
+                   party_type=None):
+    if base_officer:
+        officer = base_officer
+        base_officer['firstName'] = first_name if first_name is not None else officer['firstName']
+        base_officer['middleName'] = middle_name if middle_name is not None else officer['middleName']
+        base_officer['lastName'] = last_name if last_name is not None else officer['lastName']
+        base_officer['organizationName'] = organization_name if organization_name is not None \
+                                            else officer['organizationName']
+        base_officer['partyType'] = party_type if party_type is not None else officer['partyType']
+        return officer
+    else:
+        return {
+            'firstName': first_name,
+            'middleName': middle_name,
+            'lastName': last_name,
+            'organizationName': organization_name,
+            'partyType': party_type
+        }
+
 
 def create_utc_future_date_str(days: int):
     """Create a future utc date and return as string."""

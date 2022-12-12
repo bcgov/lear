@@ -526,10 +526,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             country_description = pycountry.countries.search_fuzzy(address_revision.country)[0].name
         return {
             'streetAddress': address_revision.street,
-            'streetAddressAdditional': address_revision.street_additional,
+            'streetAddressAdditional': address_revision.street_additional or '',
             'addressType': address_revision.address_type,
             'addressCity': address_revision.city,
-            'addressRegion': address_revision.region,
+            'addressRegion': address_revision.region or '',
             'addressCountry': address_revision.country,
             'addressCountryDescription': country_description,
             'postalCode': address_revision.postal_code,

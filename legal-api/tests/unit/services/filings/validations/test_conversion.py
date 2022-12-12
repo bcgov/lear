@@ -20,7 +20,7 @@ import pytest
 from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE, FIRMS_CONVERSION
 
 from legal_api.models import Business
-from legal_api.services import  NameXService
+from legal_api.services import NameXService
 from legal_api.services.filings.validations.conversion import validate
 from tests.unit.models import factory_business
 
@@ -63,6 +63,7 @@ nr_response = {
     }]
 }
 
+
 class MockResponse:
     """Mock http response."""
 
@@ -81,8 +82,10 @@ def test_gp_conversion(session):
     business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
                                 entity_type='GP',
                                 state=Business.State.ACTIVE)
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(business, GP_CONVERSION)
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = business.legal_type
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        err = validate(business, GP_CONVERSION)
     assert not err
 
 
@@ -92,8 +95,10 @@ def test_sp_conversion(session):
     business = factory_business('FM1234567', founding_date=registration_date, last_ar_date=None,
                                 entity_type='SP',
                                 state=Business.State.ACTIVE)
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(business, SP_CONVERSION)
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = business.legal_type
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        err = validate(business, SP_CONVERSION)
 
     assert not err
 
@@ -115,7 +120,7 @@ def test_invalid_nr_conversion(session):
         }]
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-            err = validate(business, filing)
+        err = validate(business, filing)
 
     assert err
 
@@ -136,8 +141,10 @@ def test_invalid_party(session, test_name, legal_type, filing, expected_msg):
                                 entity_type=legal_type,
                                 state=Business.State.ACTIVE)
     filing['filing']['conversion']['parties'][0]['roles'] = []
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(business, filing)
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = legal_type
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        err = validate(business, filing)
 
     assert err
     assert err.msg[0]['error'] == expected_msg
@@ -160,10 +167,11 @@ def test_invalid_business_address(session, test_name, legal_type, filing):
         'invalid'
     filing['filing']['conversion']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = \
         'invalid'
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-            err = validate(business, filing)
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = legal_type
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        err = validate(business, filing)
 
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."
     assert err.msg[1]['error'] == "Address Country must be 'CA'."
-

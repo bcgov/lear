@@ -49,22 +49,25 @@ def test_get_str(f, p):
         assert isinstance(d, str)
 
 
-def _upload_file(page_size):
+def _upload_file(page_size, invalid):
     signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
     key = signed_url.get('key')
     pre_signed_put = signed_url.get('preSignedUrl')
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size).read(),
+    requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
                  headers={'Content-Type': 'application/octet-stream'})
     return key
 
 
-def _create_pdf_file(page_size):
+def _create_pdf_file(page_size, invalid):
     buffer = io.BytesIO()
     can = canvas.Canvas(buffer, pagesize=page_size)
     doc_height = letter[1]
 
     for _ in range(3):
+        # Create invalid page size on last page of pdf
+        if(invalid and _ == 2):
+            can.setPageSize((500, 500))
         text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
         text_x_margin = 100
         text_y_margin = doc_height - 300

@@ -18,7 +18,8 @@ from flask import current_app, jsonify, request, url_for
 from flask_cors import cross_origin
 
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business
+from legal_api.models import Business, Filing
+from legal_api.models.document import Document, DocumentType
 from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized
 from legal_api.services.business import validate_document_request
@@ -74,4 +75,42 @@ def _get_document_list(business):
     for doc in business_documents:
         documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
+    if business.legal_type == Business.LegalTypes.COOP.value:
+        coop_documents = _get_coop_documents_list(business)
+        for coop_doc_key, coop_doc_value in coop_documents.items():
+            documents['documents'][coop_doc_key] = coop_doc_value
+
     return jsonify(documents), HTTPStatus.OK
+
+
+def _get_coop_documents_list(business):
+    """Get certified memorandum and rules for coop."""
+    coop_documents = {}
+
+    if not business:
+        return coop_documents
+
+    base_url = current_app.config.get('LEGAL_API_BASE_URL')
+    base_url = base_url[:base_url.find('/api')]
+    business_id = business.id
+    business_identifier = business.identifier
+
+    coop_rules_document = Document.find_by_business_id_and_type(business_id, DocumentType.COOP_RULES.value)
+
+    if coop_rules_document:
+        coop_rules_filing = Filing.find_by_id(coop_rules_document.filing_id)
+        coop_rules_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+                                                              'filing_id': coop_rules_filing.id,
+                                                              'legal_filing_name': None})
+        coop_documents['certifiedRules'] = f'{base_url}{coop_rules_doc_url}/certifiedRules'
+
+    coop_memorandum_document = Document.find_by_business_id_and_type(business_id, DocumentType.COOP_MEMORANDUM.value)
+
+    if coop_memorandum_document:
+        coop_memorandum_filing = Filing.find_by_id(coop_memorandum_document.filing_id)
+        coop_memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+                                                                   'filing_id': coop_memorandum_filing.id,
+                                                                   'legal_filing_name': None})
+        coop_documents['certifiedMemorandum'] = f'{base_url}{coop_memorandum_doc_url}/certifiedMemorandum'
+
+    return coop_documents

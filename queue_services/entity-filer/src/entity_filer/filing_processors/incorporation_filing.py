@@ -25,7 +25,7 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, shares
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
@@ -50,21 +50,16 @@ def update_affiliation(business: Business, filing: Filing):
                 level='error'
             )
         else:
-            # flip the registration
-            # recreate the bootstrap, but point to the new business in the name
-            old_bs_affiliation = AccountService.delete_affiliation(bootstrap.account, bootstrap.identifier)
-            new_bs_affiliation = AccountService.create_affiliation(
-                account=bootstrap.account,
+            # update the bootstrap to use the new business identifier for the name
+            bootstrap_update = AccountService.update_entity(
                 business_registration=bootstrap.identifier,
                 business_name=business.identifier,
                 corp_type_code='TMP'
             )
-            reaffiliate = bool(new_bs_affiliation in (HTTPStatus.OK, HTTPStatus.CREATED)
-                               and old_bs_affiliation == HTTPStatus.OK)
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
-                or ('reaffiliate' in locals() and not reaffiliate):
+                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK) \
+                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(
@@ -110,7 +105,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
     return business
 
 
-def process(business: Business,  # pylint: disable=too-many-branches
+def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
             filing: Dict,
             filing_rec: Filing,
             filing_meta: FilingMeta):  # pylint: disable=too-many-branches
@@ -170,6 +165,9 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     if name_translations := incorp_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
+
+    if court_order := incorp_filing.get('courtOrder'):
+        filings.update_filing_court_order(filing_rec, court_order)
 
     if not is_correction and not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.

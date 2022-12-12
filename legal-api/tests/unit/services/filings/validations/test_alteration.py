@@ -71,7 +71,8 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
                 "name": new_name,
                 "state": "APPROVED",
                 "consumptionDate": ""
-            }]
+            }],
+            "legalType": legal_type
         }
 
         nr_response = MockResponse(nr_json, 200)
@@ -93,6 +94,58 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
         assert len(err.msg) == num_errors
+
+
+@pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
+    ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
+    ('legal_name-BC1234567_Changed', 'BEN', 'CP', 'BECV', 'Name Request legal type is not same as the business legal type.')
+])
+def test_alteration_name_change(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+    """Test that validator validates the alteration with legal type change."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['alteration']['business']['legalType'] = legal_type
+
+
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['business']['legalName'] = 'legal_name-BC1234567'
+
+    f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
+    f['filing']['alteration']['nameRequest']['legalName'] = new_name
+    f['filing']['alteration']['nameRequest']['legalType'] = legal_type
+
+    nr_json = {
+        "state": "APPROVED",
+        "expirationDate": "",
+        "requestTypeCd": nr_type,
+        "names": [{
+            "name": new_name,
+            "state": "APPROVED",
+            "consumptionDate": ""
+        }],
+        "legalType": nr_legal_type
+    }
+
+    nr_response = MockResponse(nr_json, 200)
+
+    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+        err = validate(business, f)
+
+    if err:
+        print(err.msg)
+
+    if not err_msg:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err.msg[0]['error'] == err_msg
 
 
 @pytest.mark.parametrize(

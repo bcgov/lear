@@ -15,7 +15,7 @@
 import io
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Dict, List, Optional
+from typing import Final, Optional
 
 import pycountry
 import PyPDF2
@@ -23,35 +23,55 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService
+from legal_api.services import MinioService, namex
+from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
-from .common_validations import validate_share_structure  # noqa: I001
-from ... import namex
-from ...utils import get_str
+from .common_validations import (  # noqa: I001
+    validate_court_order,
+    validate_name_request,
+    validate_party_name,
+    validate_share_structure,
+)
 
 
-def validate(incorporation_json: Dict):
+def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     """Validate the Incorporation filing."""
+    filing_type = 'incorporationApplication'
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
-    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
+
+    legal_type_path = '/filing/incorporationApplication/nameRequest/legalType'
+    legal_type = get_str(incorporation_json, legal_type_path)
+    if not legal_type:
+        msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
+        return msg  # Cannot continue validation without legal_type
 
     err = validate_offices(incorporation_json)
     if err:
         msg.extend(err)
 
-    err = validate_roles(incorporation_json)
+    err = validate_roles(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
-    err = validate_parties_mailing_address(incorporation_json)
+    # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
+    # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
+    # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
+    err = validate_parties_names(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
-    if legal_type == Business.LegalTypes.BCOMP.value:
+    err = validate_parties_mailing_address(incorporation_json, legal_type)
+    if err:
+        msg.extend(err)
+
+    msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
+
+    if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
+                      Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
         err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
         if err:
             msg.extend(err)
@@ -65,12 +85,19 @@ def validate(incorporation_json: Dict):
     if err:
         msg.extend(err)
 
+    msg.extend(validate_ia_court_order(incorporation_json, legal_type))
+
+    if legal_type in [Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.BC_CCC.value]:
+        err = validate_incorporation_agreement(incorporation_json, legal_type)
+        if err:
+            msg.extend(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
 
-def validate_offices(incorporation_json) -> Error:
+def validate_offices(incorporation_json: dict) -> Error:
     """Validate the office addresses of the incorporation filing."""
     offices_array = incorporation_json['filing']['incorporationApplication']['offices']
     addresses = offices_array
@@ -78,7 +105,7 @@ def validate_offices(incorporation_json) -> Error:
 
     for item in addresses.keys():
         for k, v in addresses[item].items():
-            region = v['addressRegion']
+            region = v.get('addressRegion')
             country = v['addressCountry']
 
             if region != 'BC':
@@ -105,10 +132,15 @@ def validate_offices(incorporation_json) -> Error:
 
 
 # pylint: disable=too-many-branches
-def validate_roles(incorporation_json) -> Error:
+def validate_roles(incorporation_json: dict, legal_type: str) -> Error:
     """Validate the required completing party of the incorporation filing."""
+    min_director_count_info = {
+        Business.LegalTypes.BCOMP.value: 1,
+        Business.LegalTypes.COMP.value: 1,
+        Business.LegalTypes.BC_ULC_COMPANY.value: 1,
+        Business.LegalTypes.BC_CCC.value: 3
+    }
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
-    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -143,13 +175,14 @@ def validate_roles(incorporation_json) -> Error:
             msg.append({'error': 'Must have a minimum of three Directors', 'path': err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
+        min_director_count = min_director_count_info.get(legal_type, 0)
         if incorporator_count < 1:
             err_path = '/filing/incorporationApplication/parties/roles'
             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
-        if director_count < 1:
+        if director_count < min_director_count:
             err_path = '/filing/incorporationApplication/parties/roles'
-            msg.append({'error': 'Must have a minimum of one Director', 'path': err_path})
+            msg.append({'error': f'Must have a minimum of {min_director_count} Director', 'path': err_path})
 
     if msg:
         return msg
@@ -157,9 +190,24 @@ def validate_roles(incorporation_json) -> Error:
     return None
 
 
-def validate_parties_mailing_address(incorporation_json) -> Error:
+# pylint: disable=too-many-branches
+def validate_parties_names(incorporation_json: dict, legal_type: str) -> Error:
+    """Validate the party names of the incorporation filing."""
+    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    party_path = '/filing/incorporationApplication/parties'
+    msg = []
+
+    for item in parties_array:
+        msg.extend(validate_party_name(legal_type, item, party_path))
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_parties_mailing_address(incorporation_json: dict, legal_type: str) -> Error:
     """Validate the person data of the incorporation filing."""
-    legal_type = get_str(incorporation_json, '/filing/business/legalType')
     parties_array = incorporation_json['filing']['incorporationApplication']['parties']
     msg = []
     bc_party_ma_count = 0
@@ -200,7 +248,7 @@ def validate_parties_mailing_address(incorporation_json) -> Error:
     return None
 
 
-def validate_incorporation_effective_date(incorporation_json) -> Error:
+def validate_incorporation_effective_date(incorporation_json: dict) -> Error:
     """Return an error or warning message based on the effective date validation rules.
 
     Rules:
@@ -237,7 +285,7 @@ def validate_incorporation_effective_date(incorporation_json) -> Error:
     return None
 
 
-def validate_cooperative_documents(incorporation_json):
+def validate_cooperative_documents(incorporation_json: dict):
     """Return an error or warning message based on the cooperative documents validation rules.
 
     Rules:
@@ -279,7 +327,7 @@ def validate_cooperative_documents(incorporation_json):
     return None
 
 
-def validate_correction_ia(filing: Dict) -> Optional[Error]:
+def validate_correction_ia(filing: dict) -> Optional[Error]:
     """Validate correction of Incorporation Application."""
     if not (corrected_filing  # pylint: disable=superfluous-parens; needed to pass pylance
             := Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])):
@@ -299,7 +347,7 @@ def validate_correction_ia(filing: Dict) -> Optional[Error]:
     return None
 
 
-def validate_correction_effective_date(filing: Dict, corrected_filing: Dict) -> Optional[Dict]:
+def validate_correction_effective_date(filing: dict, corrected_filing: dict) -> Optional[dict]:
     """Validate that effective dates follow the rules.
 
     Currently effective dates cannot be changed.
@@ -310,7 +358,7 @@ def validate_correction_effective_date(filing: Dict, corrected_filing: Dict) -> 
     return None
 
 
-def validate_correction_name_request(filing: Dict, corrected_filing: Dict) -> Optional[List]:
+def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Optional[list]:
     """Validate correction of Name Request."""
     nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
     nr_number = get_str(corrected_filing.json, nr_path)
@@ -353,9 +401,9 @@ def validate_pdf(file_key: str):
         file = MinioService.get_file(file_key)
         open_pdf_file = io.BytesIO(file.data)
         pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
-        pdf_size_units = pdf_reader.getPage(0).mediaBox
 
-        if pdf_size_units.getWidth() != 612 or pdf_size_units.getHeight() != 792:
+        # Check that all pages in the pdf are letter size and able to be processed.
+        if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
             msg.append({'error': babel('Document must be set to fit onto 8.5” x 11” letter-size paper.')})
 
         file_info = MinioService.get_file_info(file_key)
@@ -367,6 +415,38 @@ def validate_pdf(file_key: str):
 
     except Exception:
         msg.append({'error': babel('Invalid file.')})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_ia_court_order(filing: dict, legal_type: str) -> list:
+    """Validate court order."""
+    if court_order := filing.get('filing', {}).get('incorporationApplication', {}).get('courtOrder', None):
+        court_order_path: Final = '/filing/incorporationApplication/courtOrder'
+        if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
+            err = validate_court_order(court_order_path, court_order)
+            if err:
+                return err
+        else:
+            return [{
+                'error': f'({legal_type}) incorporationApplication does not support court order.',
+                'path': court_order_path
+            }]
+
+    return []
+
+
+def validate_incorporation_agreement(incorporation_json, legal_type) -> Error:
+    """Validate the incorporation agreement of the incorporation filing."""
+    agreement_type_path = '/filing/incorporationApplication/incorporationAgreement/agreementType'
+    agreement_type = get_str(incorporation_json, agreement_type_path)
+    msg = []
+
+    if agreement_type != 'custom':
+        msg.append({'error': babel(f'Agreement type for {legal_type} must be custom.')})
 
     if msg:
         return msg

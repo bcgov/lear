@@ -17,7 +17,7 @@ import datetime
 import os
 import random
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 import pytest
 from flask import Flask
@@ -112,11 +112,10 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         # Clear out any existing tables
         metadata = MetaData(_db.engine)
         metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                _db.engine.execute(DropConstraint(fk.constraint))
-        metadata.drop_all()
-        _db.drop_all()
+        with suppress(Exception):
+            metadata.drop_all()
+        with suppress(Exception):
+            _db.drop_all()
 
         sequence_sql = """SELECT sequence_name FROM information_schema.sequences
                           WHERE sequence_schema='public'

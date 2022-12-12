@@ -112,10 +112,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         # Clear out any existing tables
         metadata = MetaData(_db.engine)
         metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                with suppress(Exception):
-                    _db.engine.execute(DropConstraint(fk.constraint))
         with suppress(Exception):
             metadata.drop_all()
         with suppress(Exception):

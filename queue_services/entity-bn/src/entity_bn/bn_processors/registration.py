@@ -48,9 +48,8 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
             raise QueueException('code issue: msg is required for admin request')
 
         message_id = msg.get('id')
-        business_number = msg.get('data', {}).get('header', {}).get('businessNumber')
-
-    if not business_number and business.tax_id and len(business.tax_id) == 9:
+        business_number = msg.get('data', {}).get('header', {}).get('businessNumber') or None
+    elif business.tax_id and len(business.tax_id) == 9:
         business_number = business.tax_id
 
     request_trackers = RequestTracker.find_by(business.id,

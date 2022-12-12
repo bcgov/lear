@@ -19,8 +19,11 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services.filings.validations.registration import validate_naics, validate_name_request, validate_offices
+from legal_api.services import NaicsService
+from legal_api.services.filings.validations.common_validations import validate_name_request
+from legal_api.services.filings.validations.registration import validate_offices
 
+from ...utils import get_str
 from .common_validations import has_at_least_one_share_class
 
 
@@ -47,7 +50,7 @@ def validate(business: Business, filing: Dict) -> Error:
     # validations for firms
     legal_type = filing.get('filing', {}).get('business', {}).get('legalType')
     if legal_type and legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-        _validate_firms_correction(filing, legal_type, msg)
+        _validate_firms_correction(business, filing, legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -55,15 +58,15 @@ def validate(business: Business, filing: Dict) -> Error:
     return None
 
 
-def _validate_firms_correction(filing, legal_type, msg):
+def _validate_firms_correction(business: Business, filing, legal_type, msg):
     filing_type = 'correction'
     if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
-        msg.extend(validate_name_request(filing, filing_type))
+        msg.extend(validate_name_request(filing, legal_type, filing_type))
     if filing.get('filing', {}).get('correction', {}).get('parties', None):
         msg.extend(validate_party(filing, legal_type))
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
-    msg.extend(validate_naics(filing, filing_type))
+    msg.extend(validate_naics(business, filing, filing_type))
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
@@ -96,5 +99,21 @@ def validate_party(filing: Dict, legal_type: str) -> list:
             msg.append({'error': '1 Proprietor and a Completing Party is required.', 'path': party_path})
         elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
             msg.append({'error': '2 Partners and a Completing Party is required.', 'path': party_path})
+
+    return msg
+
+
+def validate_naics(business: Business, filing: Dict, filing_type: str) -> list:
+    """Validate naics."""
+    msg = []
+    naics_code_path = f'/filing/{filing_type}/business/naics/naicsCode'
+    naics_code = get_str(filing, naics_code_path)
+    naics_desc = get_str(filing, f'/filing/{filing_type}/business/naics/naicsDescription')
+
+    # Note: if existing naics code and description has not changed, no NAICS validation is required
+    if naics_code and (business.naics_code != naics_code or business.naics_description != naics_desc):
+        naics = NaicsService.find_by_code(naics_code)
+        if not naics or naics['classTitle'] != naics_desc:
+            msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
 
     return msg

@@ -271,15 +271,21 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
     def _set_tax_id(self, filing):
-        if self._business:
+        if self._business and self._business.tax_id:
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
         legal_type = self._filing.filing_json['filing'].get('business', {}).get('legalType', 'NA')
+        filing['numberedDescription'] = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+
         corp_type = CorpType.find_by_id(legal_type)
         filing['entityDescription'] = corp_type.full_desc
 
         act = {
+            Business.LegalTypes.BCOMP.value: 'Business Corporations Act',
+            Business.LegalTypes.COMP.value: 'Business Corporations Act',
+            Business.LegalTypes.BC_CCC.value: 'Business Corporations Act',
+            Business.LegalTypes.BC_ULC_COMPANY.value: 'Business Corporations Act',
             Business.LegalTypes.COOP.value: 'Cooperative Association Act',
             Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
             Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
@@ -368,6 +374,10 @@ class Report:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _format_address(address):
+        address['streetAddressAdditional'] = address.get('streetAddressAdditional') or ''
+        address['addressRegion'] = address.get('addressRegion') or ''
+        address['deliveryInstructions'] = address.get('deliveryInstructions') or ''
+
         country = address['addressCountry']
         country = pycountry.countries.search_fuzzy(country)[0].name
         address['addressCountry'] = country
@@ -747,7 +757,10 @@ class Report:  # pylint: disable=too-few-public-methods
                     share_class['series'] = [share_series]
 
     def _format_special_resolution(self, filing):
-        filing['header']['displayName'] = FILINGS.get(self._filing.filing_type, {}).get('displayName')
+        display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
+        if isinstance(display_name, dict):
+            display_name = display_name.get(self._business.legal_type)
+        filing['header']['displayName'] = display_name
         resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
         signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
         if resolution_date_str:

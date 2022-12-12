@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 import pytest
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
-from reportlab.lib.pagesizes import letter, legal
+from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
 from legal_api.services import MinioService
@@ -254,14 +254,14 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
     if scenario:
         if scenario == 'success':
             if legal_type == Business.LegalTypes.COOP.value:
-                filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter)
+                filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter, invalid=False)
             else:
                 del filing['filing']['dissolution']['affidavitFileKey']
                 del filing['filing']['dissolution']['affidavitFileName']
         elif scenario == 'failAffidavit':
             filing['filing']['dissolution']['affidavitFileKey'] = 'invalid file key'
         elif scenario == 'invalidAffidavitPageSize':
-            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(legal)
+            filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter, invalid=True)
     else:
         # Assign key and value to test empty variables for failures
         key_value = ''

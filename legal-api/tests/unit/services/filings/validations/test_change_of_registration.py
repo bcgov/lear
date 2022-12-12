@@ -64,6 +64,7 @@ DBA_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0]['role
 nr_response = {
     'state': 'APPROVED',
     'expirationDate': '',
+    'legalType': 'GP',
     'names': [{
         'name': REGISTRATION['nameRequest']['legalName'],
         'state': 'APPROVED',
@@ -99,7 +100,9 @@ def test_gp_change_of_registration(session):
 
 def test_sp_change_of_registration(session):
     """Assert that the sole proprietor change of registration is valid."""
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = 'SP'
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(SP_CHANGE_OF_REGISTRATION)
 
@@ -108,7 +111,9 @@ def test_sp_change_of_registration(session):
 
 def test_dba_change_of_registration(session):
     """Assert that the dba change of registration is valid."""
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = 'SP'
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(DBA_CHANGE_OF_REGISTRATION)
 
@@ -148,7 +153,10 @@ def test_invalid_nr_change_of_registration(session):
 def test_invalid_party(session, test_name, filing, expected_msg):
     """Assert that party is invalid."""
     filing['filing']['changeOfRegistration']['parties'][0]['roles'] = []
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = filing['filing']['changeOfRegistration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
@@ -170,7 +178,10 @@ def test_invalid_business_address(session, test_name, filing):
         'invalid'
     filing['filing']['changeOfRegistration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = \
         'invalid'
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = filing['filing']['changeOfRegistration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(filing)
 
