@@ -26,14 +26,6 @@ from tests.unit.models import factory_business
 
 ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
 
-TEST_DATA = [
-    (False, '', 'BEN', '', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', False, 1),
-    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
-]
-
 
 class MockResponse:
     def __init__(self, json_data, status_code):
@@ -44,7 +36,16 @@ class MockResponse:
         return self.json_data
 
 
-@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', TEST_DATA)
+@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', [
+     (False, '', 'BEN', '', True, 0),
+     (False, '', 'BC', '', True, 0),
+     (False, '', 'ULC', '', True, 0),
+     (False, '', 'CC', '', True, 0),
+     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
+     (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True, 0),
+     (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
+     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
+])
 def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
@@ -225,7 +226,7 @@ def test_rules_change(session, test_status, should_pass, rules_file_key, rules_f
         f['filing']['alteration']['rulesFileName'] = rules_file_name
 
     err = validate(business, f)
-    
+
     if err:
         print(err.msg)
 
@@ -258,7 +259,7 @@ def test_memorandum_change(session, test_status, should_pass, memorandum_file_ke
         f['filing']['alteration']['memorandumFileName'] = memorandum_file_name
 
     err = validate(business, f)
-    
+
     if err:
         print(err.msg)
 
