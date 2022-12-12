@@ -125,3 +125,22 @@ def post_businesses():
             HTTPStatus.SERVICE_UNAVAILABLE
 
     return ListFilingResource.put(bootstrap.identifier, None)
+
+@bp.route('/<string:identifier>', methods=['PUT'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def update_businesses(identifier: str):
+    """Update a business."""
+
+    business = Business.find_by_identifier(identifier)
+
+    json_input = request.get_json()
+
+    admin_freeze = json_input['adminFreeze'] or False
+
+    business.admin_freeze = admin_freeze
+
+    business.save()
+
+    business_json = business.json()
+    return jsonify(business=business_json)
