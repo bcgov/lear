@@ -48,7 +48,8 @@ def authorized(  # pylint: disable=too-many-return-statements
 
         # if the action is create_comment or courtOrder/registrarsNotation/registrarsOrder filings
         # disallow - only staff are allowed
-        staff_only_actions = ['add_comment', 'court_order', 'registrars_notation', 'registrars_order', 'freeze_unfreeze']
+        staff_only_actions = ['add_comment', 'court_order', 'registrars_notation', 'registrars_order',
+                              'freeze_unfreeze']
         if any(elem in action for elem in staff_only_actions):
             return False
 

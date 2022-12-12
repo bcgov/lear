@@ -131,6 +131,7 @@ def post_businesses():
 
     return ListFilingResource.put(bootstrap.identifier, None)
 
+
 @bp.route('/<string:identifier>', methods=['PATCH'])
 @cross_origin(origin='*')
 @jwt.requires_auth
@@ -138,7 +139,7 @@ def update_businesses(identifier: str):
     """Update a business."""
     if not authorized(identifier, jwt, 'freeze_unfreeze'):
         return jsonify({'message':
-                            f'You are not authorized to patch business {identifier}.'}), \
+                        f'You are not authorized to patch business {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
 
     business = Business.find_by_identifier(identifier)
