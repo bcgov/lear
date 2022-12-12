@@ -29,8 +29,8 @@ from legal_api.services import (  # noqa: I001;
     SYSTEM_ROLE,
     AccountService,
     RegistrationBootstrapService,
+    authorized,
     check_warnings,
-    authorized
 )  # noqa: I001;
 from legal_api.services.authz import get_allowed
 from legal_api.utils.auth import jwt
