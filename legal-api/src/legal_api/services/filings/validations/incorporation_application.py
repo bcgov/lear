@@ -92,9 +92,9 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     return None
 
 
-def validate_offices(incorporation_json: dict) -> Error:
-    """Validate the office addresses of the incorporation filing."""
-    offices_array = incorporation_json['filing']['incorporationApplication']['offices']
+def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> Error:
+    """Validate the office addresses of the specified corp filing type."""
+    offices_array = filing_json['filing'][filing_type]['offices']
     addresses = offices_array
     msg = []
 
@@ -104,7 +104,7 @@ def validate_offices(incorporation_json: dict) -> Error:
             country = v['addressCountry']
 
             if region != 'BC':
-                path = '/filing/incorporationApplication/offices/%s/%s/addressRegion' % (
+                path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
                     item, k
                 )
                 msg.append({'error': "Address Region must be 'BC'.",
@@ -115,7 +115,7 @@ def validate_offices(incorporation_json: dict) -> Error:
                 if country != 'CA':
                     raise LookupError
             except LookupError:
-                err_path = '/filing/incorporationApplication/offices/%s/%s/addressCountry' % (
+                err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
                     item, k
                 )
                 msg.append({'error': "Address Country must be 'CA'.",
@@ -127,7 +127,7 @@ def validate_offices(incorporation_json: dict) -> Error:
 
 
 # pylint: disable=too-many-branches
-def validate_roles(incorporation_json: dict, legal_type: str) -> Error:
+def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
         Business.LegalTypes.BCOMP.value: 1,
@@ -135,7 +135,7 @@ def validate_roles(incorporation_json: dict, legal_type: str) -> Error:
         Business.LegalTypes.BC_ULC_COMPANY.value: 1,
         Business.LegalTypes.BC_CCC.value: 3
     }
-    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    parties_array = incorporation_json['filing'][filing_type]['parties']
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -153,30 +153,30 @@ def validate_roles(incorporation_json: dict, legal_type: str) -> Error:
                 director_count += 1
 
     if completing_party_count == 0:
-        err_path = '/filing/incorporationApplication/parties/roles'
+        err_path = f'/filing/{filing_type}/parties/roles'
         msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
 
     if completing_party_count > 1:
-        err_path = '/filing/incorporationApplication/parties/roles'
+        err_path = f'/filing/{filing_type}/parties/roles'
         msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
 
     if legal_type == Business.LegalTypes.COOP.value:
         if incorporator_count > 0:
-            err_path = '/filing/incorporationApplication/parties/roles'
+            err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Incorporator is an invalid party role', 'path': err_path})
 
         if director_count < 3:
-            err_path = '/filing/incorporationApplication/parties/roles'
+            err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Must have a minimum of three Directors', 'path': err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
         min_director_count = min_director_count_info.get(legal_type, 0)
         if incorporator_count < 1:
-            err_path = '/filing/incorporationApplication/parties/roles'
+            err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
 
         if director_count < min_director_count:
-            err_path = '/filing/incorporationApplication/parties/roles'
+            err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': f'Must have a minimum of {min_director_count} Director', 'path': err_path})
 
     if msg:
@@ -186,10 +186,11 @@ def validate_roles(incorporation_json: dict, legal_type: str) -> Error:
 
 
 # pylint: disable=too-many-branches
-def validate_parties_names(incorporation_json: dict, legal_type: str) -> Error:
+def validate_parties_names(incorporation_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') ->\
+        Error:
     """Validate the party names of the incorporation filing."""
-    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
-    party_path = '/filing/incorporationApplication/parties'
+    parties_array = incorporation_json['filing'][filing_type]['parties']
+    party_path = f'/filing/{filing_type}/parties'
     msg = []
 
     for item in parties_array:
@@ -201,9 +202,10 @@ def validate_parties_names(incorporation_json: dict, legal_type: str) -> Error:
     return None
 
 
-def validate_parties_mailing_address(incorporation_json: dict, legal_type: str) -> Error:
+def validate_parties_mailing_address(incorporation_json: dict, legal_type: str,
+                                     filing_type: str = 'incorporationApplication') -> Error:
     """Validate the person data of the incorporation filing."""
-    parties_array = incorporation_json['filing']['incorporationApplication']['parties']
+    parties_array = incorporation_json['filing'][filing_type]['parties']
     msg = []
     bc_party_ma_count = 0
     country_ca_party_ma_count = 0
@@ -212,7 +214,7 @@ def validate_parties_mailing_address(incorporation_json: dict, legal_type: str) 
     for item in parties_array:
         for k, v in item['mailingAddress'].items():
             if v is None:
-                err_path = '/filing/incorporationApplication/parties/%s/mailingAddress/%s/%s/' % (
+                err_path = f'/filing/{filing_type}/parties/%s/mailingAddress/%s/%s/' % (
                     item['officer']['id'], k, v
                 )
                 msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
@@ -229,12 +231,12 @@ def validate_parties_mailing_address(incorporation_json: dict, legal_type: str) 
 
     if legal_type == Business.LegalTypes.COOP.value:
         if bc_party_ma_count < 1:
-            err_path = '/filing/incorporationApplication/parties/mailingAddress'
+            err_path = f'/filing/{filing_type}/parties/mailingAddress'
             msg.append({'error': 'Must have minimum of one BC mailing address', 'path': err_path})
 
         country_ca_percentage = country_ca_party_ma_count / country_total_ma_count * 100
         if country_ca_percentage <= 50:
-            err_path = '/filing/incorporationApplication/parties/mailingAddress'
+            err_path = f'/filing/{filing_type}/parties/mailingAddress'
             msg.append({'error': 'Must have majority of mailing addresses in Canada', 'path': err_path})
 
     if msg:
