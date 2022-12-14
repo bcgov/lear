@@ -212,7 +212,7 @@ def test_business_find_by_identifier_no_identifier(session):
 
 TEST_GOOD_STANDING_DATA = [
     (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, True),
     (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False),
     (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, True),
     (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, True),
