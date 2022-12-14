@@ -34,6 +34,7 @@ def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = 'test-
         'jti': 'flask-jwt-oidc-test-support',
         'typ': 'Bearer',
         'username': f'{username}',
+        'idp_userid': '123',
         'realm_access': {
             'roles': [] + roles
         }

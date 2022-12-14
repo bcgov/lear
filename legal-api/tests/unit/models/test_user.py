@@ -33,7 +33,7 @@ def test_user(session):
                 lastname='lastname',
                 sub='sub',
                 iss='iss',
-                idp_userid='idp_userid',
+                idp_userid='123',
                 login_source='source'
     )
 
