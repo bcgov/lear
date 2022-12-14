@@ -25,7 +25,7 @@ from legal_api.services.filings.validations.incorporation_application import val
 from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
     validate_parties_names,
-    validate_roles,
+    validate_roles
 )
 from legal_api.services.filings.validations.registration import validate_offices
 
@@ -75,26 +75,28 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
     msg.extend(validate_naics(business, filing, filing_type))
 
 
-def _validate_corps_correction(filing, legal_type, msg):
+def _validate_corps_correction(filing_dict, legal_type, msg):
     filing_type = 'correction'
-    if filing.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
-        msg.extend(validate_name_request(filing, legal_type, filing_type))
-    if filing.get('filing', {}).get('correction', {}).get('offices', None):
-        msg.extend(validate_corp_offices(filing, filing_type))
-    if filing.get('filing', {}).get('correction', {}).get('parties', None):
-        err = validate_roles(filing, legal_type, filing_type)
+    if filing_dict.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
+        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+    if filing_dict.get('filing', {}).get('correction', {}).get('offices', None):
+        err = validate_corp_offices(filing_dict, filing_type)
+        if err:
+            msg.extend(err)
+    if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
+        err = validate_roles(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing, legal_type, filing_type)
+        err = validate_parties_names(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
 
-        err = validate_parties_mailing_address(filing, legal_type, filing_type)
+        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
-    if filing.get('filing', {}).get('correction', {}).get('shareStructure', None):
-        err = validate_share_structure(filing, filing_type)
+    if filing_dict.get('filing', {}).get('correction', {}).get('shareStructure', None):
+        err = validate_share_structure(filing_dict, filing_type)
         if err:
             msg.extend(err)
 
