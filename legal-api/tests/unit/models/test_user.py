@@ -65,7 +65,7 @@ def test_create_from_jwt_token(session):
              'family_name': 'family_name',
              'iss': 'iss',
              'sub': 'sub',
-             'idp_userid': 'idp_userid',
+             'idp_userid': '123',
              'loginSource': 'source'
              }
     u = User.create_from_jwt_token(token)
@@ -79,7 +79,7 @@ def test_get_or_create_user_by_jwt(session):
              'family_name': 'family_name',
              'iss': 'iss',
              'sub': 'sub',
-             'idp_userid': 'idp_userid',
+             'idp_userid': '123',
              'loginSource': 'source'
              }
     u = User.get_or_create_user_by_jwt(token)
