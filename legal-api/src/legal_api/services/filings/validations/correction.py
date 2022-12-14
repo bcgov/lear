@@ -54,7 +54,7 @@ def validate(business: Business, filing: Dict) -> Error:
         if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
             _validate_firms_correction(business, filing, legal_type, msg)
         elif legal_type in [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value,
-                            Business.LegalTypes.LIMITED_CO.value, Business.LegalTypes.BC_ULC_COMPANY.value,
+                            Business.LegalTypes.BC_ULC_COMPANY.value,
                             Business.LegalTypes.BC_CCC.value]:
             _validate_corps_correction(filing, legal_type, msg)
 
