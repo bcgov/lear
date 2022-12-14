@@ -24,7 +24,6 @@ from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATIO
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing
-from tests import todo_tech_debt
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)

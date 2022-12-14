@@ -25,7 +25,7 @@ from legal_api.services.filings.validations.incorporation_application import val
 from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
     validate_parties_names,
-    validate_roles
+    validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
 
