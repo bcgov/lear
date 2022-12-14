@@ -35,6 +35,7 @@ def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = 'test-
         'typ': 'Bearer',
         'username': f'{username}',
         'idp_userid': '123',
+        'loginSource': 'IDIR',
         'realm_access': {
             'roles': [] + roles
         }

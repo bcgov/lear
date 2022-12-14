@@ -34,7 +34,7 @@ def test_user(session):
                 sub='sub',
                 iss='iss',
                 idp_userid='123',
-                login_source='source'
+                login_source='IDIR'
     )
 
     session.add(user)
@@ -66,7 +66,7 @@ def test_create_from_jwt_token(session):
              'iss': 'iss',
              'sub': 'sub',
              'idp_userid': '123',
-             'loginSource': 'source'
+             'loginSource': 'IDIR'
              }
     u = User.create_from_jwt_token(token)
     assert u.id is not None
@@ -80,7 +80,7 @@ def test_get_or_create_user_by_jwt(session):
              'iss': 'iss',
              'sub': 'sub',
              'idp_userid': '123',
-             'loginSource': 'source'
+             'loginSource': 'IDIR'
              }
     u = User.get_or_create_user_by_jwt(token)
     assert u.id is not None
