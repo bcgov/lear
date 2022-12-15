@@ -448,7 +448,7 @@ def validate_incorporation_agreement(incorporation_json, legal_type) -> Error:
     msg = []
 
     if agreement_type != 'custom':
-        msg.append({'error': babel(f'Agreement type for {legal_type} must be custom.')})
+        msg.append({'error': babel(f'Agreement type for {legal_type} must be custom.'), 'path': agreement_type_path})
 
     if msg:
         return msg
