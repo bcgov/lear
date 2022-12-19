@@ -1,0 +1,751 @@
+create sequence affiliation_processing_id_seq;
+
+alter sequence affiliation_processing_id_seq owner to postgres;
+
+create sequence corp_processing_id_seq;
+
+alter sequence corp_processing_id_seq owner to postgres;
+
+create sequence synonym_id_seq;
+
+alter sequence synonym_id_seq owner to postgres;
+
+create table if not exists address
+(
+    addr_id                numeric(10)
+        constraint unq_address_addr_id
+            unique,
+    province               varchar(2),
+    country_typ_cd         varchar(2),
+    postal_cd              varchar(15),
+    addr_line_1            varchar(50),
+    addr_line_2            varchar(50),
+    addr_line_3            varchar(50),
+    city                   varchar(40),
+    address_format_type    varchar(3),
+    delivery_instructions  varchar(80),
+    unit_no                varchar(6),
+    unit_type              varchar(10),
+    civic_no               varchar(6),
+    civic_no_suffix        varchar(10),
+    street_name            varchar(30),
+    street_type            varchar(10),
+    street_direction       varchar(10),
+    lock_box_no            varchar(5),
+    installation_type      varchar(10),
+    installation_name      varchar(30),
+    installation_qualifier varchar(15),
+    route_service_type     varchar(10),
+    route_service_no       varchar(4)
+);
+
+alter table address
+    owner to postgres;
+
+create table if not exists corporation
+(
+    corp_num            varchar(10)
+        constraint unq_corporation_corp_num
+            unique,
+    corp_frozen_type_cd varchar(1),
+    corp_type_cd        varchar(3),
+    recognition_dts     timestamp with time zone,
+    bn_9                varchar(9),
+    bn_15               varchar(15),
+    admin_email         varchar(254),
+    accession_num       varchar(10),
+    send_ar_ind         boolean
+);
+
+alter table corporation
+    owner to postgres;
+
+create index if not exists idx_corporation_corp_type_cd
+    on corporation (corp_type_cd);
+
+create table if not exists event
+(
+    event_id         numeric(9)
+        constraint unq_event_event_id
+            unique,
+    corp_num         varchar(10)
+        constraint fk_event_corporation
+            references corporation (corp_num),
+    event_type_cd    varchar(10),
+    event_timerstamp timestamp with time zone,
+    trigger_dts      timestamp with time zone
+);
+
+alter table event
+    owner to postgres;
+
+create index if not exists idx_event_event_type_cd
+    on event (event_type_cd);
+
+create index if not exists idx_event_corp_num
+    on event (corp_num);
+
+create table if not exists filing
+(
+    event_id           numeric(9)
+        constraint unq_filing_event_id
+            unique
+        constraint fk_filing_event
+            references event (event_id),
+    filing_type_cd     varchar(5),
+    effective_dt       timestamp with time zone,
+    withdrawn_event_id numeric(9),
+    ods_type_cd        varchar(1),
+    nr_num             varchar(10),
+    change_dt          timestamp with time zone,
+    period_end_dt      timestamp with time zone,
+    arrangement_ind    boolean,
+    auth_sign_dt       timestamp with time zone,
+    court_appr_ind     boolean
+);
+
+alter table filing
+    owner to postgres;
+
+create index if not exists idx_filing_filing_type_cd
+    on filing (filing_type_cd);
+
+create table if not exists filing_user
+(
+    event_id       numeric(9)
+        constraint fk_filing_user_event
+            references event (event_id),
+    user_id        varchar(32),
+    last_name      varchar(200),
+    first_name     varchar(50),
+    middle_name    varchar(50),
+    email_addr     varchar(254),
+    event_timestmp timestamp with time zone,
+    bcol_acct_num  integer,
+    role_typ_cd    varchar(30)
+);
+
+alter table filing_user
+    owner to postgres;
+
+create table if not exists jurisdiction
+(
+    corp_num         varchar(10) not null
+        constraint fk_jurisdiction_corporation
+            references corporation (corp_num),
+    start_event_id   numeric(9)
+        constraint fk_jurisdiction_event
+            references event (event_id),
+    end_event_id     numeric(9),
+    can_jur_typ_cd   char(2),
+    xpro_typ_cd      char(3),
+    home_recogn_dt   timestamp with time zone,
+    othr_juris_desc  varchar(40),
+    home_juris_num   varchar(40),
+    bc_xpro_num      varchar(10),
+    home_company_nme varchar(150)
+);
+
+alter table jurisdiction
+    owner to postgres;
+
+create table if not exists ledger_text
+(
+    event_id numeric(9)
+        constraint fk_ledger_text_event
+            references event (event_id),
+    notation varchar(2000),
+    user_id  varchar(32)
+);
+
+alter table ledger_text
+    owner to postgres;
+
+create table if not exists notification
+(
+    event_id        numeric(9) not null
+        constraint fk_notification_filing
+            references filing (event_id),
+    method_typ_cd   char(4),
+    mailing_addr_id numeric(9)
+        constraint fk_notification_address
+            references address (addr_id),
+    first_nme       varchar(30),
+    last_nme        varchar(30),
+    middle_nme      varchar(30),
+    pickup_by       varchar(40),
+    email_address   varchar(254),
+    phone_number    varchar(20)
+);
+
+comment on table notification is 'new table\n\n2,999,121 rows.  recipient of filing outputs for 35 different filing types\n\nIts not displayed on the ledger anywhere. I found this info regarding the EVENT_ID and notifications. - COLIN updates the Notification table with the notification method details';
+
+alter table notification
+    owner to postgres;
+
+create table if not exists notification_resend
+(
+    event_id        numeric(9) not null
+        constraint fk_notification_resend_filing
+            references filing (event_id),
+    method_typ_cd   char(4),
+    mailing_addr_id numeric(9)
+        constraint fk_notification_resend_address
+            references address (addr_id),
+    first_nme       varchar(20),
+    last_nme        varchar(30),
+    middle_nme      varchar(20),
+    pickup_by       varchar(40),
+    email_address   varchar(254),
+    phone_number    varchar(20)
+);
+
+comment on table notification_resend is 'new table\n\nThis is displayed in the ledger when a staff member has resent a document to the client after the original filing.  It appears in the notification information on the original filing';
+
+alter table notification_resend
+    owner to postgres;
+
+create table if not exists office
+(
+    corp_num         varchar(10)
+        constraint fk_office_corporation
+            references corporation (corp_num),
+    office_typ_cd    varchar(2),
+    start_event_id   numeric(9)
+        constraint fk_office_start_event
+            references event (event_id),
+    end_event_id     numeric(9)
+        constraint fk_office_end_event
+            references event (event_id),
+    mailing_addr_id  numeric(9)
+        constraint fk_office_mailing_address
+            references address (addr_id),
+    delivery_addr_id numeric(9)
+        constraint fk_office_delivery_address
+            references address (addr_id)
+);
+
+alter table office
+    owner to postgres;
+
+create table if not exists resolution
+(
+    corp_num             varchar(10) not null
+        constraint fk_resolution_corporation
+            references corporation (corp_num),
+    resolution_dt        timestamp with time zone,
+    resolution_type_code varchar(10),
+    start_event_id       numeric(9)
+        constraint fk_resolution_event
+            references event (event_id),
+    end_event_id         numeric(9)
+        constraint fk_resolution_event_0
+            references event (event_id)
+);
+
+alter table resolution
+    owner to postgres;
+
+create table if not exists share_struct
+(
+    corp_num       varchar(10) not null
+        constraint fk_share_struct_corporation
+            references corporation (corp_num),
+    start_event_id numeric(9)
+        constraint fk_share_struct_event
+            references event (event_id),
+    end_event_id   numeric(9)
+        constraint fk_share_struct_event_0
+            references event (event_id),
+    constraint idx_share_struct
+        unique (corp_num, start_event_id)
+);
+
+comment on table share_struct is 'new table\n\n972,136 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
+
+alter table share_struct
+    owner to postgres;
+
+create table if not exists share_struct_cls
+(
+    corp_num        varchar(10) not null,
+    share_class_id  numeric(9)  not null,
+    currency_typ_cd char(3),
+    max_share_ind   boolean,
+    share_quantity  numeric(20, 5),
+    spec_rights_ind boolean,
+    par_value_ind   boolean,
+    par_value_amt   numeric(38, 20),
+    other_currency  varchar(40),
+    start_event_id  numeric(9)  not null,
+    constraint pk_share_struct_cls
+        primary key (corp_num, share_class_id, start_event_id),
+    constraint fk_share_struct_cls
+        foreign key (corp_num, start_event_id) references share_struct (corp_num, start_event_id)
+);
+
+comment on table share_struct_cls is 'new table\n\n3,441,652 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
+
+alter table share_struct_cls
+    owner to postgres;
+
+create table if not exists submitting_party
+(
+    event_id          numeric(9) not null
+        constraint fk_submitting_party_event
+            references event (event_id),
+    mailing_addr_id   numeric(9)
+        constraint fk_submitting_party_address
+            references address (addr_id),
+    notify_addr_id    numeric(9)
+        constraint fk_submitting_party_address_0
+            references address (addr_id),
+    method_typ_cd     char(4),
+    first_nme         varchar(20),
+    last_nme          varchar(30),
+    middle_nme        varchar(20),
+    email_req_address varchar(254),
+    pickup_by         varchar(40),
+    business_nme      varchar(150),
+    notify_first_nme  varchar(20),
+    notify_last_nme   varchar(30),
+    notify_middle_nme varchar(20),
+    phone_number      varchar(20)
+);
+
+comment on table submitting_party is 'new table\n\n81,205 rows.  Submitting_party table used by NWPTA and voluntary diss.  party_roles.role= completing_party';
+
+comment on column submitting_party.method_typ_cd is 'MAIL, EMAL, PICK  lots have mailing address and email';
+
+comment on column submitting_party.last_nme is 'if trim(last_nme) is not null then parties.party_type=person';
+
+comment on column submitting_party.pickup_by is 'does the new application have pickup?';
+
+comment on column submitting_party.business_nme is 'if trim(business_nme) is not null then parties.party_type=organization';
+
+comment on column submitting_party.notify_last_nme is '2846 different from last_nme';
+
+comment on column submitting_party.phone_number is 'all for PICKUP, does the new application have pickup?';
+
+alter table submitting_party
+    owner to postgres;
+
+create table if not exists affiliation_processing
+(
+    id               integer                  default nextval('affiliation_processing_id_seq'::regclass) not null
+        constraint pk_affiliation_processing
+            primary key,
+    account_id       integer                                                                             not null,
+    contact_name     varchar(150),
+    contact_email    varchar(150),
+    corp_num         varchar(10)                                                                         not null
+        constraint fk_affiliation_processing_corporation
+            references corporation (corp_num),
+    corp_name        varchar(150),
+    notes            varchar(600),
+    environment      varchar(25)                                                                         not null,
+    processed_status varchar(25)              default 'NOT_PROCESSED'::character varying                 not null,
+    create_date      timestamp with time zone default CURRENT_TIMESTAMP                                  not null,
+    last_modified    timestamp with time zone,
+    last_error       varchar(1000),
+    constraint unq_affiliation_processing
+        unique (account_id, corp_num, environment)
+);
+
+alter table affiliation_processing
+    owner to postgres;
+
+create table if not exists business_description
+(
+    corp_num            varchar(10)
+        constraint fk_business_description_corporation
+            references corporation (corp_num),
+    start_event_id      numeric(9)
+        constraint fk_business_description_start_event
+            references event (event_id),
+    end_event_id        numeric(9)
+        constraint fk_business_description_event
+            references event (event_id),
+    business_start_date timestamp with time zone,
+    naics_code          varchar(6),
+    description         varchar(300)
+);
+
+alter table business_description
+    owner to postgres;
+
+create table if not exists completing_party
+(
+    event_id          numeric(9) not null
+        constraint fk_completing_party_event
+            references event (event_id),
+    mailing_addr_id   numeric(9)
+        constraint fk_completing_party_address
+            references address (addr_id),
+    first_nme         varchar(20),
+    last_nme          varchar(30),
+    middle_nme        varchar(20),
+    email_req_address varchar(254)
+);
+
+comment on table completing_party is 'new table\n\ncompleting_party table only used for incorporations.  parties.party_type=person.  party_roles.role= incorporator';
+
+alter table completing_party
+    owner to postgres;
+
+create table if not exists cont_out
+(
+    corp_num         varchar(10) not null
+        constraint fk_cont_out_corporation
+            references corporation (corp_num),
+    can_jur_typ_cd   char(2),
+    cont_out_dt      timestamp with time zone,
+    othr_juri_desc   varchar(40),
+    home_company_nme varchar(120),
+    start_event_id   numeric(9)
+        constraint fk_cont_out_event
+            references event (event_id),
+    end_event_id     numeric(9)
+);
+
+comment on table cont_out is 'new table\n\nWhen a BC company continues out to another jurisdiction, the information is saved here, and it shows on the corporate summary';
+
+alter table cont_out
+    owner to postgres;
+
+create table if not exists conv_event
+(
+    event_id         numeric(9) not null
+        constraint fk_conv_event_event
+            references event (event_id),
+    effective_dt     timestamp with time zone,
+    report_corp_ind  boolean,
+    activity_user_id varchar(7),
+    activity_dt      timestamp with time zone,
+    annual_file_dt   timestamp with time zone,
+    accession_num    varchar(10),
+    remarks          varchar(120)
+);
+
+comment on table conv_event is 'new table \n\n1,243,749 rows, 15 have a filing, pre-COLIN ARs are a different format and maybe use this? Exclusively used by event_typ_cd CONV*';
+
+alter table conv_event
+    owner to postgres;
+
+create table if not exists conv_ledger
+(
+    event_id         numeric(9) not null
+        constraint fk_conv_ledger_event
+            references event (event_id),
+    ledger_title_txt varchar(55),
+    ledger_desc      varchar(1000)
+);
+
+comment on table conv_ledger is 'new table\n\n"4,072,795 rows, event is FILE except for 5, filing is always CONVL, 4 rows after March 26, 2004\nCOLIN ledger displays:\nledger_title_txt\nevent.event_timestmp\nledger_desc and filing.effective_dt and filing_user"\n\nthis is the ledger_text table prior to March 26, 2004.  filing_typ_cd =''CONVL'' may be best way to detect this';
+
+alter table conv_ledger
+    owner to postgres;
+
+create table if not exists corp_comments
+(
+    comment_dts        timestamp with time zone,
+    corp_num           varchar(10)
+        constraint fk_corp_comments_corporation
+            references corporation (corp_num),
+    comments           varchar(2000),
+    user_id            varchar(32),
+    first_nme          varchar(20),
+    last_nme           varchar(30),
+    middle_nme         varchar(20),
+    accession_comments varchar(2000)
+);
+
+alter table corp_comments
+    owner to postgres;
+
+create table if not exists corp_flag
+(
+    corp_num          varchar(10) not null
+        constraint fk_corp_flag_corporation
+            references corporation (corp_num),
+    corp_flag_type_cd varchar(5)  not null,
+    start_event_id    numeric(9)
+        constraint fk_corp_flag_event
+            references event (event_id),
+    end_event_id      numeric(9)
+        constraint fk_corp_flag_event_0
+            references event (event_id)
+);
+
+comment on table corp_flag is 'new table\n\n114,405 businesses have 29 different flags (mostly societies)\n\nsome flags are for societies, some for XPROs, and some are set on BC companies by staff';
+
+alter table corp_flag
+    owner to postgres;
+
+create table if not exists corp_involved
+(
+    event_id         numeric(9)  not null
+        constraint fk_corp_involved_event
+            references event (event_id),
+    corp_num         varchar(10) not null
+        constraint fk_corp_involved_corporation
+            references corporation (corp_num),
+    corp_involve_id  numeric(9)  not null,
+    can_jur_typ_cd   char(2),
+    adopted_corp_ind boolean,
+    home_juri_num    varchar(40),
+    othr_juri_desc   varchar(40),
+    foreign_nme      varchar(150)
+);
+
+comment on table corp_involved is 'new table\n\nused for almagmations\n\nselect all where TED is a BC Corp, 37 will not be be BC Corps';
+
+alter table corp_involved
+    owner to postgres;
+
+create table if not exists corp_name
+(
+    corp_num         varchar(10)
+        constraint fk_corp_name_corporation
+            references corporation (corp_num),
+    corp_name_typ_cd varchar(2),
+    start_event_id   numeric(9)
+        constraint fk_corp_name_start_event
+            references event (event_id),
+    end_event_id     numeric(9)
+        constraint fk_corp_name_end_event
+            references event (event_id),
+    corp_name        varchar(150)
+);
+
+alter table corp_name
+    owner to postgres;
+
+create table if not exists corp_party
+(
+    corp_party_id          numeric(9)
+        constraint unq_corp_party_corp_party_id
+            unique,
+    mailing_addr_id        numeric(9)
+        constraint fk_corp_party_mailing_address
+            references address (addr_id),
+    delivery_addr_id       numeric(9)
+        constraint fk_corp_party_delivery_address
+            references address (addr_id),
+    corp_num               varchar(10)
+        constraint fk_corp_party_corporation
+            references corporation (corp_num),
+    party_typ_cd           varchar(3),
+    start_event_id         numeric(9)
+        constraint fk_corp_party_start_event
+            references event (event_id),
+    end_event_id           numeric(9)
+        constraint fk_corp_party_end_event
+            references event (event_id),
+    prev_party_id          numeric(9),
+    appointment_dt         timestamp with time zone,
+    cessation_dt           timestamp with time zone,
+    last_name              varchar(30),
+    middle_name            varchar(30),
+    first_name             varchar(30),
+    business_name          varchar(150),
+    bus_company_num        varchar(15),
+    email_address          varchar(254),
+    phone                  varchar(30),
+    corr_typ_cd            char,
+    office_notification_dt timestamp with time zone
+);
+
+alter table corp_party
+    owner to postgres;
+
+create index if not exists idx_corp_party_party_typ_cd
+    on corp_party (party_typ_cd);
+
+create index if not exists idx_corp_party_last_name
+    on corp_party (last_name);
+
+create index if not exists idx_corp_party_middle_name
+    on corp_party (middle_name);
+
+create index if not exists idx_corp_party_first_name
+    on corp_party (first_name);
+
+create index if not exists idx_corp_party_business_name
+    on corp_party (business_name);
+
+create index if not exists idx_corp_party_bus_company_num
+    on corp_party (bus_company_num);
+
+create index if not exists idx_corp_party_email_address
+    on corp_party (email_address);
+
+create index if not exists idx_corp_party_phone
+    on corp_party (phone);
+
+create table if not exists corp_party_relationship
+(
+    corp_party_id       numeric(9) not null
+        constraint fk_corp_party_relationship_corp_party
+            references corp_party (corp_party_id),
+    relationship_typ_cd varchar(3) not null
+);
+
+comment on table corp_party_relationship is 'new table\n\n11,138 rows, lots in 2022, all have party_typ_cd=''APP'' (applicant) and this gives further info';
+
+comment on column corp_party_relationship.corp_party_id is 'This column is used with EP corps as well. ( A corps)The code used is PARTY_TYPE = ATT for Attorney';
+
+comment on column corp_party_relationship.relationship_typ_cd is 'Court ordered person, Heir, Shareholder, officer, director';
+
+alter table corp_party_relationship
+    owner to postgres;
+
+create table if not exists corp_processing
+(
+    id                      integer default nextval('corp_processing_id_seq'::regclass) not null
+        constraint pk_corp_processing
+            primary key,
+    corp_num                varchar(10)                                                 not null
+        constraint fk_corp_processing_corporation
+            references corporation (corp_num),
+    corp_type_cd            varchar(3),
+    corp_name               varchar(150),
+    filings_count           integer,
+    flow_name               varchar(100)                                                not null,
+    processed_status        varchar(25)                                                 not null,
+    failed_event_file_type  varchar(25),
+    last_processed_event_id integer
+        constraint fk_corp_processing_event_0
+            references event (event_id),
+    failed_event_id         integer
+        constraint fk_corp_processing_event
+            references event (event_id),
+    environment             varchar(25),
+    create_date             timestamp with time zone,
+    last_modified           timestamp with time zone,
+    last_error              varchar(1000),
+    constraint unq_corp_processing
+        unique (corp_num, flow_name, environment)
+);
+
+alter table corp_processing
+    owner to postgres;
+
+create index if not exists idx_corp_processing_processed_status
+    on corp_processing (processed_status);
+
+create index if not exists idx_corp_processing_last_processed_event_id
+    on corp_processing (last_processed_event_id);
+
+create index if not exists idx_corp_processing_flow_name
+    on corp_processing (flow_name);
+
+create table if not exists corp_restriction
+(
+    corp_num        varchar(10) not null
+        constraint fk_corp_restriction_corporation
+            references corporation (corp_num),
+    restriction_ind boolean,
+    start_event_id  numeric(9)
+        constraint fk_corp_restriction_event
+            references event (event_id),
+    end_event_id    numeric(9)
+        constraint fk_corp_restriction_event_0
+            references event (event_id)
+);
+
+comment on table corp_restriction is 'new table\n\n726,574 rows, pre-existing company provisions';
+
+alter table corp_restriction
+    owner to postgres;
+
+create table if not exists corp_state
+(
+    corp_num       varchar(10)
+        constraint fk_corp_state_corporation
+            references corporation (corp_num),
+    start_event_id numeric(9)
+        constraint fk_corp_state_start_event
+            references event (event_id),
+    end_event_id   numeric(9)
+        constraint fk_corp_state_end_event
+            references event (event_id),
+    state_type_cd  varchar(3)
+);
+
+alter table corp_state
+    owner to postgres;
+
+create table if not exists correction
+(
+    event_id            numeric(9)  not null
+        constraint fk_correction_filing
+            references filing (event_id),
+    corp_num            varchar(10) not null
+        constraint fk_correction_corporation
+            references corporation (corp_num),
+    associated_doc_desc varchar(4000)
+);
+
+comment on table correction is 'new table\n\nAny correction filings completed appear to have this kind of entry, which includes BC Companyies, and the details show on the filing history on the ledger.';
+
+alter table correction
+    owner to postgres;
+
+create table if not exists offices_held
+(
+    corp_party_id  numeric(9) not null
+        constraint fk_offices_held_corp_party
+            references corp_party (corp_party_id),
+    officer_typ_cd char(3)    not null
+);
+
+comment on table offices_held is 'new table\n\nBoth BC companies and XPROs can input officers, secretaries, etc information in their annual reports';
+
+comment on column offices_held.officer_typ_cd is '9 values:  secretary, president, treasurer etc.';
+
+alter table offices_held
+    owner to postgres;
+
+create table if not exists party_notification
+(
+    party_id        numeric(9) not null
+        constraint fk_party_notification_corp_party
+            references corp_party (corp_party_id),
+    method_typ_cd   char(4),
+    mailing_addr_id numeric(9)
+        constraint fk_party_notification_address
+            references address (addr_id),
+    first_nme       varchar(20),
+    last_nme        varchar(30),
+    middle_nme      varchar(20),
+    business_nme    varchar(150),
+    pickup_by       varchar(40),
+    email_address   varchar(254),
+    phone_number    varchar(20)
+);
+
+alter table party_notification
+    owner to postgres;
+
+create table if not exists share_series
+(
+    corp_num       varchar(10) not null,
+    share_class_id numeric(9)  not null,
+    series_id      numeric(9)  not null,
+    max_share_ind  boolean,
+    share_quantity numeric(20, 5),
+    spec_right_ind boolean,
+    series_nme     varchar(200),
+    start_event_id numeric(9)  not null,
+    constraint pk_share_series
+        primary key (corp_num, share_class_id, series_id, start_event_id),
+    constraint fk_share_series
+        foreign key (corp_num, share_class_id, start_event_id) references share_struct_cls
+);
+
+comment on table share_series is 'new table\n\n55,484 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
+
+alter table share_series
+    owner to postgres;
+
