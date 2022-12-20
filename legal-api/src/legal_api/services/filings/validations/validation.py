@@ -21,6 +21,7 @@ from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.services.utils import get_str
 
+from .admin_freeze import validate as admin_freeze_validate
 from .alteration import validate as alteration_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
@@ -40,7 +41,7 @@ from .registrars_order import validate as registrars_order_validate
 from .registration import validate as registration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
-from .admin_freeze import validate as admin_freeze_validate
+
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches,too-many-statements
     """Validate the filing JSON."""

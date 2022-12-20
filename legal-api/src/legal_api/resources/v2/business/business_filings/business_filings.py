@@ -687,7 +687,8 @@ class ListFilingResource():
                     'filingTypeCode': 'NOFEE',
                     'waiveFees': waive_fees_flag
                 })
-        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn', 'adminFreeze']):
+        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+                 'putBackOn', 'adminFreeze']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,
