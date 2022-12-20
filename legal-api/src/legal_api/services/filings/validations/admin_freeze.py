@@ -33,6 +33,9 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
     if not get_str(put_back_on, '/filing/adminFreeze/details'):
         msg.append({'error': babel('Admin Freeze details are required.'), 'path': '/filing/adminFreeze/details'})
 
+    if not get_str(put_back_on, '/filing/adminFreeze/action'):
+        msg.append({'error': babel('Admin Freeze action is required.'), 'path': '/filing/adminFreeze/action'})
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
