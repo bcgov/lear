@@ -40,7 +40,7 @@ from .registrars_order import validate as registrars_order_validate
 from .registration import validate as registration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
-from .admin_freeze import validate as admin_freeze_validation
+from .admin_freeze import validate as admin_freeze_validate
 
 def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches,too-many-statements
     """Validate the filing JSON."""
@@ -161,7 +161,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
                     err = put_back_on_validate(business, filing_json)
                 
                 elif k == Filing.FILINGS['adminFreeze'].get('name'):
-                    err = put_back_on_validate(business, filing_json)
+                    err = admin_freeze_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['conversion'].get('name'):
                     err = conversion_validate(business, filing_json)
