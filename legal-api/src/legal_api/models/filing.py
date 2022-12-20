@@ -200,7 +200,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
         'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
         'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'},
-        'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'}
+        'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
+        'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'}
     }
 
     __tablename__ = 'filings'

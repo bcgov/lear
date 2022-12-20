@@ -111,6 +111,7 @@ ALLOWABLE_FILINGS: Final = {
             'transition': ['BC', 'BEN', 'CC', 'ULC'],
             'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'adminFreeze': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
         },
         Business.State.HISTORICAL: {
             'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
