@@ -40,7 +40,8 @@ def validate(business: Business, filing: Dict) -> Error:
 
     # confirm corrected filing ID is a valid complete filing
     corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
-    if not corrected_filing or corrected_filing.status != Filing.Status.COMPLETED.value:
+    if not corrected_filing or corrected_filing.status not in [Filing.Status.COMPLETED.value,
+                                                               Filing.Status.CORRECTED.value]:
         path = '/filing/correction/correctedFilingId'
         msg.append({'error': _('Corrected filing is not a valid filing.'), 'path': path})
 

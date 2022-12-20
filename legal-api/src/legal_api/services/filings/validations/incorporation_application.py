@@ -132,7 +132,7 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
 
 
 # pylint: disable=too-many-branches
-def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
+def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
         Business.LegalTypes.BCOMP.value: 1,
@@ -140,7 +140,7 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
         Business.LegalTypes.BC_ULC_COMPANY.value: 1,
         Business.LegalTypes.BC_CCC.value: 3
     }
-    parties_array = incorporation_json['filing'][filing_type]['parties']
+    parties_array = filing_dict['filing'][filing_type]['parties']
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -157,13 +157,18 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
             if role['roleType'] == 'Director':
                 director_count += 1
 
-    if completing_party_count == 0:
+    if filing_type == 'incorporationApplication' or \
+            (filing_type == 'correction' and filing_dict['filing'][filing_type].get('type') == 'CLIENT'):
+        if completing_party_count == 0:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
+        elif completing_party_count > 1:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
+    elif filing_type == 'correction' and filing_dict['filing'][filing_type].get('type') == 'STAFF' and \
+            completing_party_count != 0:
         err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
-
-    if completing_party_count > 1:
-        err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
+        msg.append({'error': 'Should not provide completing party when correction type is STAFF', 'path': err_path})
 
     if legal_type == Business.LegalTypes.COOP.value:
         if incorporator_count > 0:
@@ -176,9 +181,12 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
         min_director_count = min_director_count_info.get(legal_type, 0)
-        if incorporator_count < 1:
+        if filing_type == 'incorporationApplication' and incorporator_count < 1:
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+        elif filing_type == 'correction' and incorporator_count > 0:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Cannot correct Incorporator role', 'path': err_path})
 
         if director_count < min_director_count:
             err_path = f'/filing/{filing_type}/parties/roles'
