@@ -98,3 +98,75 @@ select (select count(*) from event)       as events,
        (select count(*) from party_notification) as party_notifications
 ;
 
+
+-- Update all email addresses in extract to desired value when req'd
+select *
+from completing_party cp
+where cp.email_req_address is not null or cp.email_req_address != '';
+
+update completing_party
+set email_req_address = '<some_email_address>'
+where email_req_address is not null or email_req_address != '';
+
+
+select *
+from corp_party cp
+where cp.email_address is not null or cp.email_address != '';
+
+update corp_party
+set email_address = '<some_email_address>'
+where email_address is not null or email_address != '';
+
+
+select *
+from corporation c
+where c.admin_email is not null or c.admin_email != '';
+
+update corporation
+set admin_email = '<some_email_address>'
+where admin_email is not null or admin_email != '';
+
+
+select *
+from filing_user u
+where u.email_addr is not null or u.email_addr != '';
+
+update filing_user
+set email_addr = '<some_email_address>'
+where email_addr is not null or email_addr != '';
+
+
+select *
+from notification n
+where n.email_address is not null or n.email_address != '';
+
+update notification
+set email_address = '<some_email_address>'
+where email_address is not null or email_address != '';
+
+
+select *
+from notification_resend nr
+where nr.email_address is not null or nr.email_address != '';
+
+update notification_resend
+set email_address = '<some_email_address>'
+where email_address is not null or email_address != '';
+
+
+select *
+from party_notification pn
+where pn.email_address is not null or pn.email_address != '';
+
+update party_notification
+set email_address = '<some_email_address>'
+where email_address is not null or email_address != '';
+
+
+select *
+from submitting_party sp
+where sp.email_req_address is not null or sp.email_req_address != '';
+
+update submitting_party
+set email_req_address = '<some_email_address>'
+where email_req_address is not null or email_req_address != '';
