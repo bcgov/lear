@@ -159,7 +159,7 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['putBackOn'].get('name'):
                     err = put_back_on_validate(business, filing_json)
-                
+
                 elif k == Filing.FILINGS['adminFreeze'].get('name'):
                     err = admin_freeze_validate(business, filing_json)
 

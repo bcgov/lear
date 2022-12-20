@@ -13,14 +13,13 @@
 # limitations under the License.
 """Validation for the Admin Freeze filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Dict, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
 
-from .common_validations import validate_court_order
 from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
