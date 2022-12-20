@@ -14,6 +14,7 @@ select CORP_NUM,
        bn_15,
        admin_email,
        ACCESSION_NUM,
+       LAST_AR_FILED_DT,
        case SEND_AR_IND
            when 'N' then 0
            when 'Y' then 1
@@ -86,6 +87,7 @@ select e.event_id,
        f.withdrawn_event_id,
        trim(f.ods_typ_cd) as ods_type_cd,
        f.nr_num,
+       f.COURT_ORDER_NUM,
        f.CHANGE_DT,
        f.PERIOD_END_DT,
        case f.ARRANGEMENT_IND
@@ -118,7 +120,9 @@ select e.event_id,
        u.last_nme as last_name,
        u.first_nme as first_name,
        u.middle_nme as middle_name,
-       u.email_addr
+       u.email_addr,
+       u.BCOL_ACCT_NUM,
+       u.ROLE_TYP_CD
 from event e
    , filing_user u
    , corporation c
@@ -255,7 +259,8 @@ order by c.corp_num, comment_dts;
 transfer public.ledger_text from cprd using
 select e.event_id,
        l.notation,
-       l.USER_ID
+       l.USER_ID,
+       l.LEDGER_TEXT_DTS
 from ledger_text l
    , event e
    , corporation c
@@ -576,6 +581,7 @@ order by c.corp_num, ss.start_event_id;
 transfer public.SHARE_STRUCT_CLS from cprd using
 select c.CORP_NUM,
        ssc.SHARE_CLASS_ID,
+       ssc.CLASS_NME,
        ssc.CURRENCY_TYP_CD,
        case ssc.MAX_SHARE_IND
            when 'N' then 0

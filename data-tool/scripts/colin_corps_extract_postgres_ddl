@@ -54,7 +54,8 @@ create table if not exists corporation
     bn_15               varchar(15),
     admin_email         varchar(254),
     accession_num       varchar(10),
-    send_ar_ind         boolean
+    send_ar_ind         boolean,
+    last_ar_filed_dt    timestamp with time zone
 );
 
 alter table corporation
@@ -101,7 +102,8 @@ create table if not exists filing
     period_end_dt      timestamp with time zone,
     arrangement_ind    boolean,
     auth_sign_dt       timestamp with time zone,
-    court_appr_ind     boolean
+    court_appr_ind     boolean,
+    court_order_num    varchar(255)
 );
 
 alter table filing
@@ -151,11 +153,12 @@ alter table jurisdiction
 
 create table if not exists ledger_text
 (
-    event_id numeric(9)
+    event_id        numeric(9)
         constraint fk_ledger_text_event
             references event (event_id),
-    notation varchar(2000),
-    user_id  varchar(32)
+    notation        varchar(2000),
+    user_id         varchar(32),
+    ledger_text_dts timestamp with time zone
 );
 
 alter table ledger_text
@@ -278,6 +281,7 @@ create table if not exists share_struct_cls
     par_value_amt   numeric(38, 20),
     other_currency  varchar(40),
     start_event_id  numeric(9)  not null,
+    class_nme       varchar(200),
     constraint pk_share_struct_cls
         primary key (corp_num, share_class_id, start_event_id),
     constraint fk_share_struct_cls
