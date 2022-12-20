@@ -464,7 +464,7 @@ order by e.event_id;
 -- corp_involved
 transfer public.CORP_INVOLVED from cprd using
 select e.event_id,
-       c.CORP_NUM,
+       ci.CORP_NUM,
        ci.CORP_INVOLVE_ID,
        ci.CAN_JUR_TYP_CD,
        case ci.ADOPTED_CORP_IND
