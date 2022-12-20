@@ -33,18 +33,6 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
     if not get_str(put_back_on, '/filing/adminFreeze/details'):
         msg.append({'error': babel('Admin Freeze details are required.'), 'path': '/filing/adminFreeze/details'})
 
-    msg.extend(_validate_court_order(put_back_on))
-
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
-
-
-def _validate_court_order(filing):
-    """Validate court order."""
-    if court_order := filing.get('filing', {}).get('putBackOn', {}).get('courtOrder', None):
-        court_order_path: Final = '/filing/putBackOn/courtOrder'
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
-    return []
