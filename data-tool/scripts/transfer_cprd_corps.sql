@@ -39,7 +39,8 @@ from event e
    , corporation c
 where c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  and event_typ_cd not in ('BNUPD') --not doing anything
+  and event_typ_cd not in ('BNUPD','ADDLEDGR') --not doing anything
+  and event_id NOT in (select event_id from filing_user where user_id='BCOMPS')
   -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
   -- and rownum <= 5
 order by e.event_id desc;
