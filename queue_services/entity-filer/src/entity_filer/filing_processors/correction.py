@@ -48,7 +48,7 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
             staff_id=correction_filing.submitter_id
         )
     )
-    if business.legal_type in ['SP', 'GP', 'BEN']:
+    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC']:
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         if not any('incorporationApplication' in x for x in correction_filing.legal_filings()):

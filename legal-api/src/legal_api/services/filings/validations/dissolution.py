@@ -28,7 +28,7 @@ from ...utils import get_str  # noqa: I003; needed as the linter gets confused f
 
 CORP_TYPES: Final = [Business.LegalTypes.COMP.value,
                      Business.LegalTypes.BCOMP.value,
-                     Business.LegalTypes.CCC_CONTINUE_IN.value,
+                     Business.LegalTypes.BC_CCC.value,
                      Business.LegalTypes.BC_ULC_COMPANY.value]
 
 

@@ -163,7 +163,7 @@ def test_flag_bool_unique_user():
     app.env = 'development'
     app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss')
+    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
 
     app_env = app.env
     try:

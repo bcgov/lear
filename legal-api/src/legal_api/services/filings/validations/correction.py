@@ -20,11 +20,16 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import NaicsService
-from legal_api.services.filings.validations.common_validations import validate_name_request
+from legal_api.services.filings.validations.common_validations import validate_name_request, validate_share_structure
+from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
+from legal_api.services.filings.validations.incorporation_application import (
+    validate_parties_mailing_address,
+    validate_parties_names,
+    validate_roles,
+)
 from legal_api.services.filings.validations.registration import validate_offices
 
 from ...utils import get_str
-from .common_validations import has_at_least_one_share_class
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -44,13 +49,14 @@ def validate(business: Business, filing: Dict) -> Error:
         path = '/filing/correction/correctedFilingId'
         msg.append({'error': _('Corrected filing is not a valid filing for this business.'), 'path': path})
 
-    if err := has_at_least_one_share_class(filing, 'incorporationApplication'):
-        msg.append({'error': _(err), 'path': '/filing/incorporationApplication/shareStructure'})
-
     # validations for firms
-    legal_type = filing.get('filing', {}).get('business', {}).get('legalType')
-    if legal_type and legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-        _validate_firms_correction(business, filing, legal_type, msg)
+    if legal_type := filing.get('filing', {}).get('business', {}).get('legalType'):
+        if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+            _validate_firms_correction(business, filing, legal_type, msg)
+        elif legal_type in [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value,
+                            Business.LegalTypes.BC_ULC_COMPANY.value,
+                            Business.LegalTypes.BC_CCC.value]:
+            _validate_corps_correction(filing, legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -67,6 +73,32 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
     msg.extend(validate_naics(business, filing, filing_type))
+
+
+def _validate_corps_correction(filing_dict, legal_type, msg):
+    filing_type = 'correction'
+    if filing_dict.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
+        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+    if filing_dict.get('filing', {}).get('correction', {}).get('offices', None):
+        err = validate_corp_offices(filing_dict, filing_type)
+        if err:
+            msg.extend(err)
+    if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
+        err = validate_roles(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+        # FUTURE: this should be removed when COLIN sync back is no longer required.
+        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+    if filing_dict.get('filing', {}).get('correction', {}).get('shareStructure', None):
+        err = validate_share_structure(filing_dict, filing_type)
+        if err:
+            msg.extend(err)
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
