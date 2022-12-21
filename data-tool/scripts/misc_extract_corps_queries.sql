@@ -19,7 +19,8 @@ ALTER TABLE corp_flag DISABLE TRIGGER ALL;
 ALTER TABLE cont_out DISABLE TRIGGER ALL;
 ALTER TABLE conv_event DISABLE TRIGGER ALL;
 ALTER TABLE conv_ledger DISABLE TRIGGER ALL;
-ALTER TABLE corp_involved DISABLE TRIGGER ALL;
+ALTER TABLE corp_involved_amalgamating DISABLE TRIGGER ALL;
+ALTER TABLE corp_involved_cont_in DISABLE TRIGGER ALL;
 ALTER TABLE corp_restriction DISABLE TRIGGER ALL;
 ALTER TABLE correction DISABLE TRIGGER ALL;
 ALTER TABLE jurisdiction DISABLE TRIGGER ALL;
@@ -52,7 +53,8 @@ ALTER TABLE corp_flag ENABLE TRIGGER ALL;
 ALTER TABLE cont_out ENABLE TRIGGER ALL;
 ALTER TABLE conv_event ENABLE TRIGGER ALL;
 ALTER TABLE conv_ledger ENABLE TRIGGER ALL;
-ALTER TABLE corp_involved ENABLE TRIGGER ALL;
+ALTER TABLE corp_involved_amalgamating ENABLE TRIGGER ALL;
+ALTER TABLE corp_involved_cont_in ENABLE TRIGGER ALL;
 ALTER TABLE corp_restriction ENABLE TRIGGER ALL;
 ALTER TABLE correction ENABLE TRIGGER ALL;
 ALTER TABLE jurisdiction ENABLE TRIGGER ALL;
@@ -85,10 +87,11 @@ select (select count(*) from event)       as events,
        (select count(*) from cont_out) as cont_outs,
        (select count(*) from conv_event) as conv_events,
        (select count(*) from conv_ledger) as conv_ledgers,
-       (select count(*) from corp_involved) as corps_involved,
+       (select count(*) from corp_involved_amalgamating) as corp_involved_amalgamating,
+       (select count(*) from corp_involved_cont_in) as corp_involved_cont_in,
        (select count(*) from corp_restriction) as corp_restrictions,
        (select count(*) from correction) as corrections,
-       (select count(*) from jurisdiction) as jurisdictions,
+       (select count(*) from jurisdiction) as jurisdiction,
        (select count(*) from resolution) as resolutions,
        (select count(*) from share_series) as share_series,
        (select count(*) from share_struct) as share_structs,

@@ -461,26 +461,72 @@ order by e.event_id;
 
 
 
--- corp_involved
-transfer public.CORP_INVOLVED from cprd using
+-- corp_involved - amalgamaTING_businesses
+transfer public.corp_involved_amalgamating from cprd using
+select *
+from (select e.event_id, -- SELECT BY EVENT
+             ci.CORP_NUM,
+             ci.CORP_INVOLVE_ID,
+             ci.CAN_JUR_TYP_CD,
+             case ci.ADOPTED_CORP_IND
+                 when 'N' then 0
+                 when 'Y' then 1
+                 else 0
+                 end ADOPTED_CORP_IND,
+             ci.HOME_JURI_NUM,
+             ci.OTHR_JURI_DESC,
+             ci.FOREIGN_NME
+      from event e
+         , CORP_INVOLVED ci
+         , corporation c
+      where e.event_id = ci.event_id
+        and c.corp_num = e.corp_num
+        and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and event_typ_cd = 'CONVAMAL'
+        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and rownum <= 5
+      UNION ALL
+      select e.event_id, -- SELECT BY FILING
+             ci.CORP_NUM,
+             ci.CORP_INVOLVE_ID,
+             ci.CAN_JUR_TYP_CD,
+             case ci.ADOPTED_CORP_IND
+                 when 'N' then 0
+                 when 'Y' then 1
+                 else 0
+                 end ADOPTED_CORP_IND,
+             ci.HOME_JURI_NUM,
+             ci.OTHR_JURI_DESC,
+             ci.FOREIGN_NME
+      from event e
+         , CORP_INVOLVED ci
+         , corporation c
+         , filing f
+      where e.event_id = ci.event_id
+        and c.corp_num = e.corp_num
+        and e.event_id = f.event_id
+        and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 'AMLHC', 'AMLVC', 'AMLRC')
+        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and rownum <= 5
+     )
+order by event_id;
+
+
+
+-- corp_involved - continue_in_historical_xpro
+transfer public.corp_involved_cont_in from cprd using
 select e.event_id,
-       ci.CORP_NUM,
-       ci.CORP_INVOLVE_ID,
-       ci.CAN_JUR_TYP_CD,
-       case ci.ADOPTED_CORP_IND
-           when 'N' then 0
-           when 'Y' then 1
-           else 0
-           end ADOPTED_CORP_IND,
-       ci.HOME_JURI_NUM,
-       ci.OTHR_JURI_DESC,
-       ci.FOREIGN_NME
+       ci.CORP_NUM
 from event e
    , CORP_INVOLVED ci
    , corporation c
+   , filing f
 where e.event_id = ci.event_id
   and c.corp_num = e.corp_num
+  and e.event_id = f.event_id
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+  and filing_typ_cd in ('CONTI', 'CONTU', 'CONTC')
   -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
   -- and rownum <= 5
 order by e.event_id;
@@ -524,8 +570,8 @@ order by e.event_id;
 
 
 
--- jurisdiction
-transfer public.JURISDICTION from cprd using
+-- continued_in_from_jurisdiction
+transfer public.jurisdiction from cprd using
 select c.CORP_NUM,
        j.CAN_JUR_TYP_CD,
        j.XPRO_TYP_CD,
@@ -534,8 +580,7 @@ select c.CORP_NUM,
        j.HOME_JURIS_NUM,
        j.BC_XPRO_NUM,
        j.HOME_COMPANY_NME,
-       j.start_event_id,
-       j.end_event_id
+       j.start_event_id
 from JURISDICTION j
    , corporation c
 where j.corp_num = c.corp_num

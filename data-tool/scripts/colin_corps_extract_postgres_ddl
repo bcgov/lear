@@ -138,7 +138,6 @@ create table if not exists jurisdiction
     start_event_id   numeric(9)
         constraint fk_jurisdiction_event
             references event (event_id),
-    end_event_id     numeric(9),
     can_jur_typ_cd   char(2),
     xpro_typ_cd      char(3),
     home_recogn_dt   timestamp with time zone,
@@ -147,6 +146,8 @@ create table if not exists jurisdiction
     bc_xpro_num      varchar(10),
     home_company_nme varchar(150)
 );
+
+comment on table jurisdiction is 'new table \n\nThis table does hold continued in company former home jurisdiction information, and XPRO company home jurisdiction information. which will not be going over to the new system quite yet.\n\nevery "Continued In" has one and only one row with a corp_num starting with a C';
 
 alter table jurisdiction
     owner to postgres;
@@ -273,6 +274,7 @@ create table if not exists share_struct_cls
 (
     corp_num        varchar(10) not null,
     share_class_id  numeric(9)  not null,
+    class_nme       varchar(200),
     currency_typ_cd char(3),
     max_share_ind   boolean,
     share_quantity  numeric(20, 5),
@@ -281,7 +283,6 @@ create table if not exists share_struct_cls
     par_value_amt   numeric(38, 20),
     other_currency  varchar(40),
     start_event_id  numeric(9)  not null,
-    class_nme       varchar(200),
     constraint pk_share_struct_cls
         primary key (corp_num, share_class_id, start_event_id),
     constraint fk_share_struct_cls
@@ -486,7 +487,7 @@ comment on table corp_flag is 'new table\n\n114,405 businesses have 29 different
 alter table corp_flag
     owner to postgres;
 
-create table if not exists corp_involved
+create table if not exists corp_involved_amalgamating
 (
     event_id         numeric(9)  not null
         constraint fk_corp_involved_event
@@ -502,9 +503,9 @@ create table if not exists corp_involved
     foreign_nme      varchar(150)
 );
 
-comment on table corp_involved is 'new table\n\nused for almagmations\n\nselect all where TED is a BC Corp, 37 will not be be BC Corps';
+comment on table corp_involved_amalgamating is 'new table\n\nused for almagmations\n\nselect all where TED is a BC Corp, 37 will not be be BC Corps';
 
-alter table corp_involved
+alter table corp_involved_amalgamating
     owner to postgres;
 
 create table if not exists corp_name
@@ -751,5 +752,20 @@ create table if not exists share_series
 comment on table share_series is 'new table\n\n55,484 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
 
 alter table share_series
+    owner to postgres;
+
+create table if not exists corp_involved_cont_in
+(
+    event_id numeric(9)  not null
+        constraint fk_continue_in_historical_xpro
+            references event (event_id),
+    corp_num varchar(10) not null
+        constraint fk_continue_in_historical_xpro_corporation
+            references corporation (corp_num)
+);
+
+comment on table corp_involved_cont_in is 'new table\n\n"Optionally, a ""Continuation In"" causes an existing xpro in CPRD to become ""Historical Continued In"".\nSearching the xpro shows the Continue In corp_num, date, and status.\nSearching the Continued In corp shows the xpro corp_num and name on the certificate and the Corporate Summary."';
+
+alter table corp_involved_cont_in
     owner to postgres;
 
