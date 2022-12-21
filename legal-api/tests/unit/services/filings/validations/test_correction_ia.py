@@ -28,10 +28,6 @@ from tests.unit.services.filings.validations import lists_are_equal
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
-CORRECTION['filing']['correction']['parties'][0]['roles'].append({
-    "roleType": "Incorporator",
-    "appointmentDate": "2018-01-01"
-})
 
 
 def test_valid_ia_correction(session):
@@ -48,7 +44,6 @@ def test_valid_ia_correction(session):
 
     del f['filing']['correction']['diff']
     del f['filing']['incorporationApplication']
-    del f['filing']['correction']['parties'][0]['roles'][2]
 
     err = validate(business, f)
 
@@ -114,24 +109,14 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
 
 
 @pytest.mark.parametrize('test_name, legal_type, correction_type, err_msg', [
-    ('valid_parties', 'BEN', 'CLIENT',
-     [{'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
-    ('valid_parties', 'BC', 'CLIENT',
-     [{'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
-    ('valid_parties', 'ULC', 'CLIENT',
-     [{'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
-    ('valid_parties', 'BEN', 'STAFF',
-     [{'error': 'Should not provide completing party when correction type is STAFF',
-       'path': '/filing/correction/parties/roles'},
-      {'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
-    ('valid_parties', 'BC', 'STAFF',
-     [{'error': 'Should not provide completing party when correction type is STAFF',
-       'path': '/filing/correction/parties/roles'},
-      {'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
-    ('valid_parties', 'ULC', 'STAFF',
-     [{'error': 'Should not provide completing party when correction type is STAFF',
-       'path': '/filing/correction/parties/roles'},
-      {'error': 'Cannot correct Incorporator role', 'path': '/filing/correction/parties/roles'}]),
+    ('valid_parties', 'BEN', 'CLIENT', None),
+    ('valid_parties', 'BC', 'CLIENT', None),
+    ('valid_parties', 'ULC', 'CLIENT', None),
+    ('valid_parties', 'CC', 'CLIENT', None),
+    ('valid_parties', 'BEN', 'STAFF', None),
+    ('valid_parties', 'BC', 'STAFF', None),
+    ('valid_parties', 'ULC', 'STAFF', None),
+    ('valid_parties', 'CC', 'STAFF', None),
 
     ('no_roles', 'BC', 'CLIENT',
      [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
@@ -139,6 +124,9 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     ('no_roles', 'ULC', 'CLIENT',
      [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
       {'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CC', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
     ('no_roles', 'BEN', 'CLIENT',
      [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
       {'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
@@ -148,6 +136,8 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
      [{'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
     ('no_roles', 'ULC', 'STAFF',
      [{'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CC', 'STAFF',
+     [{'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
 ])
 def test_parties_correction(session, test_name, legal_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
@@ -175,6 +165,15 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
+    elif test_name == 'valid_parties':
+        if legal_type == 'CC':
+            director = copy.deepcopy(f['filing']['correction']['parties'][0])
+            del director['roles'][0]  # completing party
+            f['filing']['correction']['parties'].append(director)
+            f['filing']['correction']['parties'].append(director)
+
+        if correction_type == 'STAFF':
+            del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
 
     nr_response_json = {
         'state': 'APPROVED',
