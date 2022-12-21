@@ -20,7 +20,7 @@ from unittest.mock import patch
 from dateutil.parser import parse
 
 import pytest
-from legal_api.models import Address, Business, Filing, PartyRole
+from legal_api.models import Address, Alias, Business, Filing, PartyRole
 from legal_api.services import NaicsService
 from registry_schemas.example_data import (
     COURT_ORDER,
@@ -28,7 +28,7 @@ from registry_schemas.example_data import (
 )
 
 from entity_filer.worker import process_filing
-from tests.unit import create_entity, create_filing, create_office, create_office_address, create_party, \
+from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_party, \
     create_party_role, factory_completed_filing
 
 CONTACT_POINT = {
@@ -99,6 +99,10 @@ BC_CORRECTION = {
                 'legalName': 'HAULER MEDIA INC.',
                 'legalType': 'BEN'
             },
+            'nameTranslations': [
+                {'id': '1', 'name': 'ABCD Ltd.'},  # Modified translation
+                {'name': 'Financire de lOdet'}  # New translation
+            ],
             'parties': [
                 {
                     'officer': {
@@ -234,7 +238,7 @@ naics_response = {
     ]
 )
 async def test_correction_name_start_date(app, session, mocker, test_name, legal_name, new_legal_name,
-                                                 legal_type, filing_template):
+                                          legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = 'BC1234567'
@@ -294,6 +298,61 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    'test_name, legal_type',
+    [
+        ('bc_name_translation_change', 'BC'),
+        ('ben_name_translation_change', 'BEN'),
+        ('cc_name_translation_change', 'CC'),
+        ('ulc_name_translation_change', 'ULC'),
+    ]
+)
+async def test_correction_name_translation(app, session, mocker, test_name, legal_type):
+    """Assert the worker process calls the business address change correctly."""
+    identifier = 'BC1234567'
+    business = create_entity(identifier, legal_type, 'HAULER MEDIA INC.')
+    business.save()
+    business_id = business.id
+
+    filing = copy.deepcopy(BC_CORRECTION)
+
+    alias = create_alias(business, 'ABCD')
+    filing['filing']['correction']['nameTranslations'][0]['id'] = alias.id
+
+    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
+
+    del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['business']['naics']
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
+
+    filing['filing']['correction']['correctedFilingType'] = 'incorporationApplication'
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    await process_filing(filing_msg, app)
+
+    aliases = Alias.find_by_type(business.id, Alias.AliasType.TRANSLATION.value)
+    assert len(aliases) == 2
+    assert all(x for x in aliases if x.alias in [
+        filing['filing']['correction']['nameTranslations'][0]['name'],
+        filing['filing']['correction']['nameTranslations'][1]['name']
+    ])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     'test_name, legal_type, legal_name, filing_template',
     [
         ('bc_address_change', 'BC', 'Test Firm', BC_CORRECTION),
@@ -303,7 +362,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     ]
 )
 async def test_correction_business_address(app, session, mocker, test_name, legal_type, legal_name,
-                                                       filing_template):
+                                           filing_template):
     """Assert the worker process calls the business address change correctly."""
     identifier = 'BC1234567'
     business = create_entity(identifier, legal_type, legal_name)
@@ -351,11 +410,11 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
     changed_delivery_address = Address.find_by_id(office_delivery_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
-               filing['filing']['correction']['offices']['registeredOffice']['deliveryAddress'][key]
+            filing['filing']['correction']['offices']['registeredOffice']['deliveryAddress'][key]
     changed_mailing_address = Address.find_by_id(office_mailing_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
-               filing['filing']['correction']['offices']['registeredOffice']['mailingAddress'][key]
+            filing['filing']['correction']['offices']['registeredOffice']['mailingAddress'][key]
 
 
 @pytest.mark.asyncio
@@ -520,21 +579,21 @@ async def test_worker_director_name_and_address_change(app, session, mocker, tes
     'test_name, legal_type',
     [
         ('bc_add_resolution_dates', 'BC'),
-        ('bc_update_existing_resolution_dates','BC'),
-        ('bc_update_with_new_resolution_dates','BC'),
-        ('bc_delete_resolution_dates','BC'),
+        ('bc_update_existing_resolution_dates', 'BC'),
+        ('bc_update_with_new_resolution_dates', 'BC'),
+        ('bc_delete_resolution_dates', 'BC'),
         ('ben_add_resolution_dates', 'BEN'),
-        ('ben_update_existing_resolution_dates','BEN'),
-        ('ben_update_with_new_resolution_dates','BEN'),
-        ('ben_delete_resolution_dates','BEN'),
+        ('ben_update_existing_resolution_dates', 'BEN'),
+        ('ben_update_with_new_resolution_dates', 'BEN'),
+        ('ben_delete_resolution_dates', 'BEN'),
         ('cc_add_resolution_dates', 'CC'),
-        ('cc_update_existing_resolution_dates','CC'),
-        ('cc_update_with_new_resolution_dates','CC'),
-        ('cc_delete_resolution_dates','CC'),
+        ('cc_update_existing_resolution_dates', 'CC'),
+        ('cc_update_with_new_resolution_dates', 'CC'),
+        ('cc_delete_resolution_dates', 'CC'),
         ('ulc_add_resolution_dates', 'ULC'),
-        ('ulc_update_existing_resolution_dates','ULC'),
-        ('ulc_update_with_new_resolution_dates','ULC'),
-        ('ulc_delete_resolution_dates','ULC'),
+        ('ulc_update_existing_resolution_dates', 'ULC'),
+        ('ulc_update_with_new_resolution_dates', 'ULC'),
+        ('ulc_delete_resolution_dates', 'ULC'),
     ]
 )
 async def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_type):
@@ -573,7 +632,6 @@ async def test_worker_resolution_dates_change(app, session, mocker, test_name, l
             filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_dates]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
-
 
     filing_msg = {'filing': {'id': filing_id}}
 
@@ -705,7 +763,6 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
             filing['filing']['correction']['shareStructure']['shareClasses'] = [updated_share_class]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
-
 
     filing_msg = {'filing': {'id': filing_id}}
 
