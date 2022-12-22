@@ -316,17 +316,17 @@ async def test_correction_name_translation(app, session, mocker, test_name, lega
     filing = copy.deepcopy(BC_CORRECTION)
 
     alias = create_alias(business, 'ABCD')
-    filing['filing']['correction']['nameTranslations'][0]['id'] = alias.id
+    filing['filing']['correction']['nameTranslations'][0]['id'] = str(alias.id)
 
     corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
+    filing['filing']['correction']['correctedFilingType'] = 'incorporationApplication'
 
     del filing['filing']['correction']['nameRequest']
-    del filing['filing']['correction']['business']['naics']
+    del filing['filing']['correction']['business']
+    del filing['filing']['correction']['startDate']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
-
-    filing['filing']['correction']['correctedFilingType'] = 'incorporationApplication'
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
