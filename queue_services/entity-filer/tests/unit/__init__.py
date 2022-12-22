@@ -470,11 +470,21 @@ def create_entity(identifier, legal_type, legal_name):
 
 
 def create_office(business, office_type: str):
+    """Create office."""
     from legal_api.models import Address, Office
     office = Office(office_type=office_type)
     business.offices.append(office)
     business.save()
     return office
+
+
+def create_alias(business, alias):
+    """Create alias."""
+    from legal_api.models import Alias
+    alias = Alias(alias=alias, type=Alias.AliasType.TRANSLATION.value)
+    business.aliases.append(alias)
+    business.save()
+    return alias
 
 
 def create_office_address(business, office, address_type):
@@ -569,6 +579,3 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
             colin_event.save()
         filing.save()
     return filing
-
-
-

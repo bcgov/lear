@@ -24,13 +24,10 @@ from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATIO
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.services.filings.validations import lists_are_equal
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
-CORRECTION['filing']['correction']['parties'][0]['roles'].append({
-    "roleType": "Incorporator",
-    "appointmentDate": "2018-01-01"
-})
 
 
 def test_valid_ia_correction(session):
@@ -111,15 +108,38 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
         assert err.msg[0]['error'] == err_msg
 
 
-@pytest.mark.parametrize('test_name, legal_type, err_msg', [
-    ('valid_parties', 'BEN', None),
-    ('valid_parties', 'BC', None),
-    ('valid_parties', 'ULC', None),
-    ('no_roles', 'BC', 'Must have a minimum of one completing party'),
-    ('no_roles', 'ULC', 'Must have a minimum of one completing party'),
-    ('no_roles', 'BEN', 'Must have a minimum of one completing party')
+@pytest.mark.parametrize('test_name, legal_type, correction_type, err_msg', [
+    ('valid_parties', 'BEN', 'CLIENT', None),
+    ('valid_parties', 'BC', 'CLIENT', None),
+    ('valid_parties', 'ULC', 'CLIENT', None),
+    ('valid_parties', 'CC', 'CLIENT', None),
+    ('valid_parties', 'BEN', 'STAFF', None),
+    ('valid_parties', 'BC', 'STAFF', None),
+    ('valid_parties', 'ULC', 'STAFF', None),
+    ('valid_parties', 'CC', 'STAFF', None),
+
+    ('no_roles', 'BC', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'ULC', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CC', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'BEN', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'BEN', 'STAFF',
+     [{'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'BC', 'STAFF',
+     [{'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'ULC', 'STAFF',
+     [{'error': 'Must have a minimum of 1 Director', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CC', 'STAFF',
+     [{'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_correction(session, test_name, legal_type, err_msg):
+def test_parties_correction(session, test_name, legal_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -133,6 +153,7 @@ def test_parties_correction(session, test_name, legal_type, err_msg):
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = correction_type
 
     f['filing']['correction']['nameRequest']['nrNumber'] = identifier
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
@@ -144,6 +165,15 @@ def test_parties_correction(session, test_name, legal_type, err_msg):
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
+    elif test_name == 'valid_parties':
+        if legal_type == 'CC':
+            director = copy.deepcopy(f['filing']['correction']['parties'][0])
+            del director['roles'][0]  # completing party
+            f['filing']['correction']['parties'].append(director)
+            f['filing']['correction']['parties'].append(director)
+
+        if correction_type == 'STAFF':
+            del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
 
     nr_response_json = {
         'state': 'APPROVED',
@@ -162,13 +192,12 @@ def test_parties_correction(session, test_name, legal_type, err_msg):
         if err:
             print(err.msg)
 
-    if not err_msg:
-        assert None is err
-    else:
+    if err_msg:
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert len(err.msg) == 3
-        assert err.msg[0]['error'] == err_msg
+        assert lists_are_equal(err.msg, err_msg)
+    else:
+        assert None is err
 
 
 @ pytest.mark.parametrize('test_name, json1, json2, expected', [
