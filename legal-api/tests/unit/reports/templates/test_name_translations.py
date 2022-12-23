@@ -39,7 +39,8 @@ def test_render_translations(session, list_of_translations, previous_translation
     """Test Company Name Translation(s) rendering."""
     template = get_template()
     rendered = template.render(listOfTranslations=list_of_translations,
-                               previousNameTranslations=previous_translations)
+                               previousNameTranslations=previous_translations,
+                               header={'name': ''})
     if len(list_of_translations):
         assert title in rendered
         assert list_of_translations[0]['name'] in rendered

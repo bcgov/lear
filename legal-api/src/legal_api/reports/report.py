@@ -645,7 +645,7 @@ class Report:  # pylint: disable=too-few-public-methods
         versioned_business = VersionedBusinessDetailsService.\
             get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
 
-        self._format_name_request_data(filing, prev_completed_filing, versioned_business)
+        self._format_name_request_data(filing, versioned_business)
         self._format_name_translations_data(filing, prev_completed_filing)
         self._format_office_data(filing, prev_completed_filing)
         self._format_party_data(filing, prev_completed_filing)
@@ -653,7 +653,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
         filing['provisionsRemoved'] = filing.get('correction').get('provisionsRemoved')
 
-    def _format_name_request_data(self, filing, prev_completed_filing: Filing, versioned_business: Business):
+    def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
         prev_legal_name = versioned_business.legal_name
@@ -664,40 +664,11 @@ class Report:  # pylint: disable=too-few-public-methods
             filing['newLegalName'] = business.legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
-        filing['listOfTranslations'] = filing['correction'].get('nameTranslations')
+        filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
         versioned_name_translations = VersionedBusinessDetailsService.\
             get_name_translations_revision(prev_completed_filing.transaction_id, self._business.id)
         filing['previousNameTranslations'] = versioned_name_translations
-        has_name_translations_corrected = False
-
-        if name_translations := filing.get('listOfTranslations'):
-            for alias in name_translations:
-                if alias_id := alias.get('id'):
-                    if previous_alias := next(
-                            (x for x in versioned_name_translations if str(x['id']) == alias_id), None):
-                        if previous_alias['name'].upper() != alias['name'].upper():
-                            # modified translation
-                            alias['prevName'] = previous_alias['name'].upper()
-                            has_name_translations_corrected = True
-                    else:
-                        # new translation
-                        del alias['id']
-                        has_name_translations_corrected = True
-                else:
-                    # new translation
-                    has_name_translations_corrected = True
-
-            for current_alias in versioned_name_translations:
-                if not next((x for x in name_translations if x['name'].upper() == current_alias.alias.upper()), None):
-                    # removed translation
-                    has_name_translations_corrected = True
-                    break
-
-        elif versioned_name_translations:
-            # removed all translation's
-            has_name_translations_corrected = True
-
-        filing['nameTranslationsChange'] = has_name_translations_corrected
+        filing['nameTranslationsChange'] = sorted(filing['listOfTranslations']) != sorted(versioned_name_translations)
 
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing['offices'] = {}
