@@ -3,7 +3,7 @@
   <div class="section-title mt-4">Incorporator Information</div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
-  {% for party in (incorporationApplication.parties| selectattr("officer.partyType", "in", '["person", "Person"]')|sort(attribute='officer.lastName') + incorporationApplication.parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
+  {% for party in (parties| selectattr("officer.partyType", "in", '["person", "Person"]')|sort(attribute='officer.lastName') + parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
     {% for party_role in party.roles %}
       {% if party_role.roleType == 'Incorporator' %}
         <tr class="no-page-break">
@@ -19,11 +19,6 @@
                 {% endif %}
               {% endif %}
             </div>
-            {% if party.hasCorrected %}
-              <span class="chip">CORRECTED</span>
-            {% elif party.hasRemoved %}
-              <span class="chip">REMOVED</span>
-            {% endif %}
           </td>
           <td>
             <div class="section-sub-title">Mailing Address</div>

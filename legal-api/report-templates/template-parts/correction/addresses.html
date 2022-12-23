@@ -1,0 +1,127 @@
+{% set registeredOffice = offices.registeredOffice if offices else None %}
+{% if registeredOffice and registeredOffice.changed %}
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Registered Office Information</div>
+   <div class="section-data mt-4">
+      <table class="section-data-table" role="presentation">
+         <tr>
+            {% if registeredOffice.mailingAddress is defined %}
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Mailing Address</span>
+                  {% if registeredOffice.mailingAddress.changed %}
+                     {{ labelCorrected() }}
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ registeredOffice.mailingAddress.streetAddress }}</div>
+               <div>{{ registeredOffice.mailingAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ registeredOffice.mailingAddress.addressCity }}
+                  {{ registeredOffice.mailingAddress.addressRegion }}
+                  &nbsp;{{ registeredOffice.mailingAddress.postalCode }}
+               </div>
+               {% if registeredOffice.mailingAddress.addressCountryDescription %}
+                  <div>{{ registeredOffice.mailingAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ registeredOffice.mailingAddress.addressCountry }}</div>
+               {% endif %}
+               <div class="delivery-instructions pt-1">
+                  {{ registeredOffice.mailingAddress.deliveryInstructions }}
+               </div>
+            </td>
+            {% endif %}
+            {% if registeredOffice.deliveryAddress is defined %}
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Delivery Address</span>
+                  {% if registeredOffice.deliveryAddress.changed %}
+                     {{ labelCorrected() }}
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ registeredOffice.deliveryAddress.streetAddress }}</div>
+               <div>{{ registeredOffice.deliveryAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ registeredOffice.deliveryAddress.addressCity }}
+                  {{ registeredOffice.deliveryAddress.addressRegion }}
+                  &nbsp;{{ registeredOffice.deliveryAddress.postalCode }}
+               </div>
+               {% if registeredOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ registeredOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ registeredOffice.deliveryAddress.addressCountry }}</div>
+               {% endif %}
+               <div class="delivery-instructions pt-1">
+                  {{ registeredOffice.deliveryAddress.deliveryInstructions }}
+               </div>
+            </td>
+            {% endif %}
+         </tr>
+      </table>
+   </div>
+</div>
+{% endif %}
+
+{% set recordsOffice = offices.recordsOffice if offices else None %}
+{% if recordsOffice and recordsOffice.changed %}
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Records Office Information</div>
+   <div class="section-data mt-4">
+      <table class="section-data-table" role="presentation">
+         <tr>
+            {% if recordsOffice.mailingAddress is defined %}
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Mailing Address</span>
+                  {% if recordsOffice.mailingAddress.changed %}
+                     {{ labelCorrected() }}
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ recordsOffice.mailingAddress.streetAddress }}</div>
+               <div>{{ recordsOffice.mailingAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ recordsOffice.mailingAddress.addressCity }}
+                  {{ recordsOffice.mailingAddress.addressRegion }}
+                  &nbsp;{{ recordsOffice.mailingAddress.postalCode }}
+               </div>
+               {% if recordsOffice.mailingAddress.addressCountryDescription %}
+                  <div>{{ recordsOffice.mailingAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ recordsOffice.mailingAddress.addressCountry }}</div>
+               {% endif %}
+               <div class="delivery-instructions pt-1">
+                  {{ recordsOffice.mailingAddress.deliveryInstructions }}
+               </div>
+            </td>
+            {% endif %}
+            {% if recordsOffice.deliveryAddress is defined %}
+            <td class="col-50">
+               <div>
+                  <span class="section-sub-title">Delivery Address</span>
+                  {% if recordsOffice is defined and recordsOffice.deliveryAddress.changed %}
+                     {{ labelCorrected() }}
+                  {% endif %}
+               </div>
+               <div class="pt-2">{{ recordsOffice.deliveryAddress.streetAddress }}</div>
+               <div>{{ recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
+               <div>
+                  {{ recordsOffice.deliveryAddress.addressCity }}
+                  {{ recordsOffice.deliveryAddress.addressRegion }}
+                  &nbsp;{{ recordsOffice.deliveryAddress.postalCode }}
+               </div>
+               {% if recordsOffice.deliveryAddress.addressCountryDescription %}
+                  <div>{{ recordsOffice.deliveryAddress.addressCountryDescription }}</div>
+               {% else %}
+                  <div>{{ recordsOffice.deliveryAddress.addressCountry }}</div>
+               {% endif %}
+               <div class="delivery-instructions pt-1">
+                  {{ recordsOffice.deliveryAddress.deliveryInstructions }}
+               </div>
+            </td>
+            {% endif %}
+         </tr>
+      </table>
+   </div>
+</div>
+{% endif %}

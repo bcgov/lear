@@ -16,9 +16,6 @@
                </td>
                <td>
                   <div class="report-type">
-                     {% if correction %}
-                        <span>CORRECTION - </span>
-                     {% endif %}
                      INCORPORATION APPLICATION
                   </div>
                   <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
@@ -27,8 +24,8 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if incorporationApplication.nameRequest.legalName %}
-               {{ incorporationApplication.nameRequest.legalName }}
+            {% if nameRequest.legalName %}
+               {{ nameRequest.legalName }}
             {% else %}
                {{ numberedDescription }}
             {% endif %}
@@ -36,11 +33,6 @@
          </div>
       </div>
       [[common/businessDetails.html]]
-      {% if correction %}
-         <div class="section-statement">
-            This replaces the Incorporation Application filed on {{ original_filing_date_time }}
-         </div>
-      {% endif %}
 
       {% if business.legalType == 'CP' %}
          <div class="container">

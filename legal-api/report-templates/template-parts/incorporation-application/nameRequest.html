@@ -3,20 +3,20 @@
         <tr>
             <td class="bold col-33">Name Reservation Number:</td>
             <td>
-                {% if not incorporationApplication.nameRequest.nrNumber %}
+                {% if not nameRequest.nrNumber %}
                 N/A
                 {% else %}
-                {{incorporationApplication.nameRequest.nrNumber}}
+                {{nameRequest.nrNumber}}
                 {% endif %}
             </td>
         </tr>
         <tr>
             <td class="bold pt-2">Name Reserved:</td>
             <td class="pt-2">
-                {% if not incorporationApplication.nameRequest.nrNumber %}
+                {% if not nameRequest.nrNumber %}
                 The company is to be incorporated with a name created by adding "B.C. LTD." after the incorporation number.
                 {% else %}
-                {{incorporationApplication.nameRequest.legalName}}
+                {{nameRequest.legalName}}
                 {% endif %}
             </td>
         </tr>
