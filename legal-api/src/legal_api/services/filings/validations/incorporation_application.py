@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
-import io
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
 import pycountry
-import PyPDF2
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService, namex
+from legal_api.services import namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 

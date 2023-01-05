@@ -472,7 +472,7 @@ class Filing:
             if filing.filing_type == 'courtOrder' and \
                     (filing.documents.filter(
                         Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                documents['documents'][doc] = f'{base_url}{doc_url}/uploadedCourtOrder'
+                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
 
             return documents
 
