@@ -27,7 +27,7 @@ from sqlalchemy import desc
 
 from legal_api.core.meta import FilingMeta
 from legal_api.core.utils import diff_dict, diff_list
-from legal_api.models import Business
+from legal_api.models import Business, Document, DocumentType
 from legal_api.models import Filing as FilingStorage  # noqa: I001
 from legal_api.models import UserRoles
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
@@ -440,7 +440,14 @@ class Filing:
     @staticmethod
     def get_document_list(business, filing, request) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
-        no_output_filings = ['conversion']
+        no_output_filings = [
+            'conversion',
+            'courtOrder',
+            'putBackOn',
+            'registrarsNotation',
+            'registrarsOrder'
+        ]
+
         if not filing \
             or filing.status in (
                 Filing.Status.PAPER_ONLY,
@@ -458,7 +465,15 @@ class Filing:
 
         documents = {'documents': {}}
         # for paper_only filings return and empty documents list
-        if filing.storage and (filing.storage.paper_only or filing.storage.filing_type in no_output_filings):
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        if filing.storage and filing.storage.filing_type in no_output_filings:
+            if filing.filing_type == 'courtOrder' and \
+                    (filing.documents.filter(
+                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
+                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
+
             return documents
 
         # return a receipt for filings completed in our system
@@ -498,7 +513,7 @@ class Filing:
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 
-                FilingMeta.alter_outputs(filing.filing_type, filing.storage.meta_data, additional)
+                FilingMeta.alter_outputs(filing.storage, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 

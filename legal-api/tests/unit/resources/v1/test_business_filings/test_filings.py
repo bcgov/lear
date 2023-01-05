@@ -33,7 +33,6 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
-    COOP_INCORPORATION,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
@@ -725,7 +724,14 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
 
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['business']['legalType'] = 'CP'
-    filing_json['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+    del filing_json['filing']['incorporationApplication']['offices']['recordsOffice']
+    del filing_json['filing']['incorporationApplication']['parties'][1]
+    del filing_json['filing']['incorporationApplication']['shareStructure']
+    del filing_json['filing']['incorporationApplication']['incorporationAgreement']
+    filing_json['filing']['incorporationApplication']['cooperative'] = {
+        'cooperativeAssociationType': 'CP'
+    }
+
     rules_file_key = _upload_file(letter, invalid=False)
     memorandum_file_key = _upload_file(letter, invalid=False)
     filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key

@@ -31,6 +31,7 @@ class DocumentType(Enum):
     COOP_RULES = 'coop_rules'
     COOP_MEMORANDUM = 'coop_memorandum'
     AFFIDAVIT = 'affidavit'
+    COURT_ORDER = 'court_order'
 
 
 class Document(db.Model):
@@ -42,8 +43,6 @@ class Document(db.Model):
     id = Column(db.Integer, primary_key=True)
     type = Column('type', String(30), nullable=False)
     file_key = Column('file_key', String(100), nullable=False)
-    file_name = Column('file_name', String(100), nullable=False)
-    content_type = Column('content_type', String(20), nullable=False)
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
@@ -63,5 +62,5 @@ class Document(db.Model):
     def find_by_business_id_and_type(cls, business_id: int, document_type: String):
         """Return the document matching the business id and type."""
         return cls.query.filter_by(
-                    business_id=business_id, type=document_type
-                ).order_by(desc(Document.id)).limit(1).one_or_none()
+            business_id=business_id, type=document_type
+        ).order_by(desc(Document.id)).limit(1).one_or_none()

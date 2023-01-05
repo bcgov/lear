@@ -241,27 +241,16 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         return None
 
-    msg = []
-
     if legal_type == Business.LegalTypes.COOP.value:
-        affidavit_file_key = filing_json['filing']['dissolution'].get('affidavitFileKey', None)
-        affidavit_file_name = filing_json['filing']['dissolution'].get('affidavitFileName', None)
+        affidavit_file_key_path = '/filing/dissolution/affidavitFileKey'
+        affidavit_file_key = get_str(filing_json, affidavit_file_key_path)
 
         # Validate key values exist
         if not affidavit_file_key:
-            msg.append({'error': _('A valid affidavit key is required.'),
-                        'path': '/filing/dissolution/affidavitFileKey'})
+            return [{'error': _('A valid affidavit key is required.'),
+                     'path': affidavit_file_key_path}]
 
-        if not affidavit_file_name:
-            msg.append({'error': _('A valid affidavit file name is required.'),
-                        'path': '/filing/dissolution/affidavitFileName'})
-
-        if msg:
-            return msg
-
-        affidavit_err = validate_pdf(affidavit_file_key, '/filing/dissolution/affidavitFileKey')
-        if affidavit_err:
-            return affidavit_err
+        return validate_pdf(affidavit_file_key, affidavit_file_key_path)
 
     return None
 

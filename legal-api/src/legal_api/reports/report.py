@@ -916,5 +916,8 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         'affidavit': {
             'documentType': 'affidavit'
+        },
+        'uploadedCourtOrder': {
+            'documentType': 'court_order'
         }
     }
