@@ -49,7 +49,7 @@ from entity_bn.bn_processors import (  # noqa: I001
     publish_event,
     registration,
 )
-from entity_bn.exceptions import BNException
+from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
@@ -134,6 +134,8 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
     except BNException as err:
         logger.error('Queue BN Issue: %s, %s', err, json.dumps(event_message), exc_info=True)
         raise err  # We don't want to handle the error, try again after sometime
+    except BNRetryExceededException as err:
+        logger.error('Queue BN Retry Exceeded: %s, %s', err, json.dumps(event_message), exc_info=True)
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(event_message), level='error')
