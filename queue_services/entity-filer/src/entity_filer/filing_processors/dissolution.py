@@ -97,14 +97,11 @@ def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Fi
     # create certified copy for affidavit document
     affidavit_file_key = dissolution_filing.get('affidavitFileKey')
     affidavit_file = MinioService.get_file(affidavit_file_key)
-    affidavit_file_name = dissolution_filing.get('affidavitFileName')
     replace_file_with_certified_copy(affidavit_file.data, business, affidavit_file_key, filing.effective_date)
 
     document = Document()
     document.type = DocumentType.AFFIDAVIT.value
     document.file_key = affidavit_file_key
-    document.file_name = affidavit_file_name
-    document.content_type = document.file_name.split('.')[-1]
     document.business_id = business.id
     document.filing_id = filing.id
     business.documents.append(document)

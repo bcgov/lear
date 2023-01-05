@@ -74,15 +74,12 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         # create certified copy for rules document
         rules_file_key = cooperative_obj.get('rulesFileKey')
         rules_file = MinioService.get_file(rules_file_key)
-        rules_file_name = cooperative_obj.get('rulesFileName')
         replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
 
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
         document.type = DocumentType.COOP_RULES.value
         document.file_key = rules_file_key
-        document.file_name = rules_file_name
-        document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)
@@ -90,14 +87,11 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         # create certified copy for memorandum document
         memorandum_file_key = cooperative_obj.get('memorandumFileKey')
         memorandum_file = MinioService.get_file(memorandum_file_key)
-        memorandum_file_name = cooperative_obj.get('memorandumFileName')
         replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
 
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value
         document.file_key = memorandum_file_key
-        document.file_name = memorandum_file_name
-        document.content_type = document.file_name.split('.')[-1]
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)

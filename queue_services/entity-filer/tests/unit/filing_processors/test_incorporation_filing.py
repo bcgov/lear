@@ -23,7 +23,6 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
-    COOP_INCORPORATION_FILING_TEMPLATE,
     CORRECTION_INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
 )
@@ -34,13 +33,27 @@ from entity_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
 
+
+COOP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+del COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['offices']['recordsOffice']
+del COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['parties'][1]
+del COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['shareStructure']
+del COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['incorporationAgreement']
+COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['nameRequest']['legalType'] = 'CP'
+COOP_INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['cooperative'] = {
+    'cooperativeAssociationType': 'CP',
+    'rulesFileKey': 'cooperative/fa00c6bf-eaad-4a07-a3d2-4786ecd6b83b.jpg',
+    'memorandumFileKey': 'cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf'
+}
+
 INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication']['courtOrder'] = \
     {
         'fileNumber': '12356',
         'effectOfOrder': 'planOfArrangement',
         'hasPlanOfArrangement': True
-    }
+}
+
 
 @pytest.mark.parametrize('legal_type, filing, next_corp_num ', [
     ('BC', copy.deepcopy(INCORPORATION_FILING_TEMPLATE), 'BC0001095'),
@@ -64,10 +77,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
             memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
             filing['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = \
                 rules_file_key_uploaded_by_user
-            filing['filing']['incorporationApplication']['cooperative']['rulesFileName'] = 'Rules_File.pdf'
             filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = \
                 memorandum_file_key_uploaded_by_user
-            filing['filing']['incorporationApplication']['cooperative']['memorandumFileName'] = 'Memorandum_File.pdf'
         create_filing('123', filing)
 
         effective_date = datetime.utcnow()

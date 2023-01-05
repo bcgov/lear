@@ -15,7 +15,7 @@
 import copy
 import random
 
-from legal_api.models import Filing
+from legal_api.models import DocumentType, Filing
 from registry_schemas.example_data import COURT_ORDER_FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
@@ -43,3 +43,8 @@ async def test_worker_court_order(app, session):
     assert filing['filing']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
     assert filing['filing']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
     assert filing['filing']['courtOrder']['orderDetails'] == final_filing.order_details
+
+    court_order_file = final_filing.documents.one_or_none()
+    assert court_order_file
+    assert court_order_file.type == DocumentType.COURT_ORDER.value
+    assert court_order_file.file_key == filing['filing']['courtOrder']['fileKey']
