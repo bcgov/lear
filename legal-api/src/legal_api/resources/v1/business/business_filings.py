@@ -283,7 +283,6 @@ class ListFilingResource(Resource):
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
 
-
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):
         business = Business.find_by_identifier(identifier)
