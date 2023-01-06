@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 git+https://github.com/bcgov/business-schemas.git@2.16.0#egg=registry_schemas
+=======
+git+https://github.com/bcgov/business-schemas.git@2.15.40#egg=registry_schemas
+>>>>>>> main

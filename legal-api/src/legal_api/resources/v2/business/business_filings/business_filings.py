@@ -886,11 +886,15 @@ class ListFilingResource():
     @staticmethod
     def delete_from_minio(filing):
         """Delete file from minio."""
-        if filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name') \
+        if (filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name')
                 and (cooperative := filing.filing_json
                      .get('filing', {})
                      .get('incorporationApplication', {})
-                     .get('cooperative', None)):
+                     .get('cooperative', None))) or \
+            (filing.filing_type == Filing.FILINGS['alteration'].get('name')
+                and (cooperative := filing.filing_json
+                     .get('filing', {})
+                     .get('alteration', {}))):
             if rules_file_key := cooperative.get('rulesFileKey', None):
                 MinioService.delete_file(rules_file_key)
             if memorandum_file_key := cooperative.get('memorandumFileKey', None):
@@ -901,3 +905,9 @@ class ListFilingResource():
                      .get('dissolution', {})
                      .get('affidavitFileKey', None)):
             MinioService.delete_file(affidavit_file_key)
+        elif filing.filing_type == Filing.FILINGS['courtOrder'].get('name') \
+                and (file_key := filing.filing_json
+                     .get('filing', {})
+                     .get('courtOrder', {})
+                     .get('fileKey', None)):
+            MinioService.delete_file(file_key)

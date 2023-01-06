@@ -25,6 +25,7 @@ from legal_api.services.utils import get_str
 
 from .common_validations import (
     validate_court_order,
+    validate_pdf,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
@@ -88,19 +89,19 @@ def company_name_validation(filing):
             msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
         # ensure NR request has the same legal name
-        legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
-        legal_name = get_str(filing, legal_name_path)
+        nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
+        legal_name = get_str(filing, nr_legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
             msg.append({'error': babel('Alteration of Name Request has a different legal name.'),
-                        'path': legal_name_path})
+                        'path': nr_legal_name_path})
 
-        legal_type_path = '/filing/alteration/nameRequest/legalType'
-        legal_type = get_str(filing, legal_type_path)
+        nr_legal_type_path: Final = '/filing/alteration/nameRequest/legalType'
+        legal_type = get_str(filing, nr_legal_type_path)
         nr_legal_type = nr_response.get('legalType')
         if legal_type != nr_legal_type:
             msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
-                        'path': legal_type_path})
+                        'path': nr_legal_type_path})
     else:
         # ensure legalType is valid
         legal_type_path: Final = '/filing/business/legalType'
@@ -143,26 +144,26 @@ def type_change_validation(filing):
 def rules_change_validation(filing):
     """Validate rules change."""
     msg = []
-    rules_file_key: Final = get_str(filing, '/filing/alteration/rulesFileKey')
-    rules_file_name: Final = get_str(filing, '/filing/alteration/rulesFileName')
+    rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
+    rules_file_key: Final = get_str(filing, rules_file_key_path)
 
-    if (rules_file_key and not rules_file_name) or (not rules_file_key and rules_file_name):
-        missing_path = 'rulesFileKey' if not rules_file_key else 'rulesFileName'
-        msg.append({'error': babel(missing_path + 'should be provided'),
-                    'path': '/filing/alteration/' + missing_path})
-        return msg
-    return []
+    if rules_file_key:
+        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
+        if rules_err:
+            msg.extend(rules_err)
+
+    return msg
 
 
 def memorandum_change_validation(filing):
     """Validate memorandum change."""
     msg = []
-    memorandum_file_key: Final = get_str(filing, '/filing/alteration/memorandumFileKey')
-    memorandum_file_name: Final = get_str(filing, '/filing/alteration/memorandumFileName')
+    memorandum_file_key_path: Final = '/filing/alteration/memorandumFileKey'
+    memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
 
-    if (memorandum_file_key and not memorandum_file_name) or (not memorandum_file_key and memorandum_file_name):
-        missing_path = 'memorandumFileKey' if not memorandum_file_key else 'memorandumFileName'
-        msg.append({'error': babel(missing_path + 'should be provided'),
-                    'path': '/filing/alteration/' + missing_path})
-        return msg
-    return []
+    if memorandum_file_key:
+        memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
+        if memorandum_err:
+            msg.extend(memorandum_err)
+
+    return msg

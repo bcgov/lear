@@ -62,7 +62,6 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     if legal_type == Business.LegalTypes.COOP.value:
         affidavit_uploaded_by_user_file_key = upload_file('affidavit.pdf')
         filing_json['filing']['dissolution']['affidavitFileKey'] = affidavit_uploaded_by_user_file_key
-        filing_json['filing']['dissolution']['affidavitFileName'] = 'affidavit.pdf'
 
     business = create_business(identifier, legal_type=legal_type)
     member = Party(
@@ -101,10 +100,10 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     assert len(filing.filing_party_roles.all()) == 1
 
     custodial_office = session.query(Business, Office). \
-            filter(Business.id == Office.business_id). \
-            filter(Business.id == business_id). \
-            filter(Office.office_type == OfficeType.CUSTODIAL). \
-            one_or_none()
+        filter(Business.id == Office.business_id). \
+        filter(Business.id == business_id). \
+        filter(Office.office_type == OfficeType.CUSTODIAL). \
+        one_or_none()
     assert custodial_office
 
     if filing_json['filing']['business']['legalType'] == Business.LegalTypes.COOP.value:
@@ -156,7 +155,6 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     if legal_type == Business.LegalTypes.COOP.value:
         affidavit_uploaded_by_user_file_key = upload_file('affidavit.pdf')
         filing_json['filing']['dissolution']['affidavitFileKey'] = affidavit_uploaded_by_user_file_key
-        filing_json['filing']['dissolution']['affidavitFileName'] = 'affidavit.pdf'
 
     business = create_business(identifier, legal_type=legal_type)
     member = Party(
@@ -197,10 +195,10 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     assert len(filing.filing_party_roles.all()) == 1
 
     custodial_office = session.query(Business, Office). \
-            filter(Business.id == Office.business_id). \
-            filter(Business.id == business_id). \
-            filter(Office.office_type == OfficeType.CUSTODIAL). \
-            one_or_none()
+        filter(Business.id == Office.business_id). \
+        filter(Business.id == business_id). \
+        filter(Office.office_type == OfficeType.CUSTODIAL). \
+        one_or_none()
     assert custodial_office
 
     if filing_json['filing']['business']['legalType'] == Business.LegalTypes.COOP.value:

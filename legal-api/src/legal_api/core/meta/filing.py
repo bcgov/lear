@@ -25,13 +25,13 @@ from legal_api.services import VersionedBusinessDetailsService as VersionService
 class AutoName(str, Enum):
     """Replace autoname from Enum class."""
 
-    #pragma warning disable S5720; # noqa: E265
+    # pragma warning disable S5720; # noqa: E265
     # disable sonar cloud complaining about this signature
     def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key, but in lowercase."""
         names = name.split('_')
         return ''.join([x.lower() if i == 0 else x.capitalize() for i, x in enumerate(names)])
-    #pragma warning enable S5720; # noqa: E265
+    # pragma warning enable S5720; # noqa: E265
 
 
 class ReportTitles(str, Enum):
@@ -365,15 +365,15 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return []
 
     @staticmethod
-    def alter_outputs(filing_type: str, filing_meta_data: dict, outputs: set):
+    def alter_outputs(filing: FilingStorage, outputs: set):
         """Add or remove outputs conditionally."""
-        if filing_type == 'alteration':
-            if filing_meta_data.get('alteration', {}).get('toLegalName'):
+        if filing.filing_type == 'alteration':
+            if filing.meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
-        elif filing_type == 'specialResolution' and 'changeOfName' in filing_meta_data.get('legalFilings', []):
+        elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
             outputs.add('certificateOfNameChange')
-        elif filing_type == 'correction':
-            if not filing_meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
+        elif filing.filing_type == 'correction':
+            if not filing.meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
                 # For IA correction, certificate will be populated in get_all_outputs since
                 # legalFilings list contains correction and incorporationApplication
                 # and it should be removed if correction does not contain name change.

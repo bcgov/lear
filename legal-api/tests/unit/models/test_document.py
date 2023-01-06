@@ -24,8 +24,6 @@ def test_document_save_and_find(session):
     document = Document()
     document.type = DocumentType.COOP_RULES.value
     document.file_key = 'cooperative/a5c51016-4de7-407b-ab73-bb131f852053.pdf'
-    document.file_name = 'coops_rules.pdf'
-    document.content_type = 'pdf'
     document.save()
     assert document.id
 

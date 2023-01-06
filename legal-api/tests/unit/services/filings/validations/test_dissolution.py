@@ -40,7 +40,7 @@ from tests.unit.services.filings.validations import lists_are_equal
         ('SUCCESS', 'GP', 'administrative', 'FM1234567', None, None),
         ('SUCCESS', 'SP', 'administrative', 'FM1234567', None, None),
         ('SUCCESS', 'CP', 'administrative', 'CP1234567', None, None),
-        ('SUCCESS', 'BC', 'administrative', 'BC1234567', None, None), 
+        ('SUCCESS', 'BC', 'administrative', 'BC1234567', None, None),
         ('FAIL', 'CP', 'involuntary', 'CP1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BC', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
         ('FAIL', 'BEN', 'voluntaryLiquidation', 'BC1234567', HTTPStatus.BAD_REQUEST, 'Invalid Dissolution type.'),
@@ -68,7 +68,6 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
     if dissolution_type == 'administrative':
         filing['filing']['dissolution']['details'] = "Some Details"
         del filing['filing']['dissolution']['affidavitFileKey']
-        del filing['filing']['dissolution']['affidavitFileName']
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)
@@ -184,7 +183,7 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
     ]
 )
 def test_dissolution_special_resolution(session, test_name, legal_type, dissolution_type,
-        identifier, has_special_resolution_filing, expected_code, expected_msg):  # pylint: disable=too-many-arguments
+                                        identifier, has_special_resolution_filing, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that special resolution can be validated."""
     from legal_api.services.filings import validate
     # setup
@@ -213,6 +212,7 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
     else:
         assert err is None
 
+
 @pytest.mark.parametrize(
     'test_name, legal_type, dissolution_type, key, scenario, identifier, expected_code, expected_msg',
     [
@@ -225,10 +225,6 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
         ('FAIL_REQUIRED_AFFIDAVIT_FILE_KEY', 'CP', 'voluntary', 'affidavitFileKey', '', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
              'error': 'A valid affidavit key is required.', 'path': '/filing/dissolution/affidavitFileKey'
-         }]),
-        ('FAIL_REQUIRED_AFFIDAVIT_FILE_NAME', 'CP', 'voluntary', 'affidavitFileName', '', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, [{
-             'error': 'A valid affidavit file name is required.', 'path': '/filing/dissolution/affidavitFileName'
          }]),
         ('FAIL_INVALID_AFFIDAVIT_FILE', 'CP', 'voluntary', 'affidavitFileKey', 'invalidAffidavitPageSize', 'CP1234567',
          HTTPStatus.BAD_REQUEST, [{
@@ -257,7 +253,6 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
                 filing['filing']['dissolution']['affidavitFileKey'] = _upload_file(letter, invalid=False)
             else:
                 del filing['filing']['dissolution']['affidavitFileKey']
-                del filing['filing']['dissolution']['affidavitFileName']
         elif scenario == 'failAffidavit':
             filing['filing']['dissolution']['affidavitFileKey'] = 'invalid file key'
         elif scenario == 'invalidAffidavitPageSize':
