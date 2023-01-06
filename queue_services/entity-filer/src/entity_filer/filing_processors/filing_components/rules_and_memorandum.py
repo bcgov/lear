@@ -27,14 +27,13 @@ from entity_filer.utils import replace_file_with_certified_copy
 def update_rules(
     business: Business,
     filing: Filing,
-    rules_file_key: String,
-    rules_file_name: String
+    rules_file_key: String
 ) -> Optional[List]:
     """Updtes rules if any.
 
     Assumption: rules file key and name have already been validated
     """
-    if not business or not rules_file_key or not rules_file_name:
+    if not business or not rules_file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
 
@@ -44,8 +43,6 @@ def update_rules(
     document = Document()
     document.type = DocumentType.COOP_RULES.value
     document.file_key = rules_file_key
-    document.file_name = rules_file_name
-    document.content_type = document.file_name.split('.')[-1]
     document.business_id = business.id
     document.filing_id = filing.id
     business.documents.append(document)
@@ -56,14 +53,13 @@ def update_rules(
 def update_memorandum(
     business: Business,
     filing: Filing,
-    memorandum_file_key: String,
-    memorandum_file_name: String
+    memorandum_file_key: String
 ) -> Optional[List]:
     """Updtes memorandum if any.
 
     Assumption: memorandum file key and name have already been validated
     """
-    if not business or not memorandum_file_key or not memorandum_file_name:
+    if not business or not memorandum_file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
 
@@ -74,8 +70,6 @@ def update_memorandum(
     document = Document()
     document.type = DocumentType.COOP_MEMORANDUM.value
     document.file_key = memorandum_file_key
-    document.file_name = memorandum_file_name
-    document.content_type = document.file_name.split('.')[-1]
     document.business_id = business.id
     document.filing_id = filing.id
     business.documents.append(document)

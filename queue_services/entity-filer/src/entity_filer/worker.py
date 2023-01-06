@@ -201,7 +201,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                                                      filing_meta)
 
                 elif filing.get('courtOrder'):
-                    court_order.process(filing_submission, filing, filing_meta)
+                    court_order.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('registrarsNotation'):
                     registrars_notation.process(filing_submission, filing, filing_meta)
@@ -240,19 +240,19 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             # post filing changes to other services
             if any('dissolution' in x for x in legal_filings):
                 AccountService.update_entity(
-                        business_registration=business.identifier,
-                        business_name=business.legal_name,
-                        corp_type_code=business.legal_type,
-                        state=Business.State.HISTORICAL.name
-                    )
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type,
+                    state=Business.State.HISTORICAL.name
+                )
 
             if any('putBackOn' in x for x in legal_filings):
                 AccountService.update_entity(
-                        business_registration=business.identifier,
-                        business_name=business.legal_name,
-                        corp_type_code=business.legal_type,
-                        state=Business.State.ACTIVE.name
-                    )
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type,
+                    state=Business.State.ACTIVE.name
+                )
 
             if any('alteration' in x for x in legal_filings):
                 alteration.post_process(business, filing_submission, is_correction)

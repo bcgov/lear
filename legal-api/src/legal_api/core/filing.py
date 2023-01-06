@@ -470,7 +470,7 @@ class Filing:
 
         if filing.storage and filing.storage.filing_type in no_output_filings:
             if filing.filing_type == 'courtOrder' and \
-                    (filing.documents.filter(
+                    (filing.storage.documents.filter(
                         Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
                 documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
 
