@@ -18,10 +18,13 @@ from unittest.mock import patch
 
 import pytest
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
+from reportlab.lib.pagesizes import letter
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business
+from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.validations import lists_are_equal
 
 
 ALTERATION_FILING = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
@@ -37,14 +40,14 @@ class MockResponse:
 
 
 @pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', [
-     (False, '', 'BEN', '', True, 0),
-     (False, '', 'BC', '', True, 0),
-     (False, '', 'ULC', '', True, 0),
-     (False, '', 'CC', '', True, 0),
-     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
-     (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True, 0),
-     (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
-     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
+    (False, '', 'BEN', '', True, 0),
+    (False, '', 'BC', '', True, 0),
+    (False, '', 'ULC', '', True, 0),
+    (False, '', 'CC', '', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True, 0),
+    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
 ])
 def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
@@ -112,7 +115,6 @@ def test_alteration_name_change(session, new_name, legal_type, nr_legal_type, nr
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     f['filing']['alteration']['business']['legalType'] = legal_type
-
 
     f['filing']['business']['identifier'] = identifier
     f['filing']['business']['legalName'] = 'legal_name-BC1234567'
@@ -207,68 +209,67 @@ def test_alteration_share_classes_optional(session):
     assert None is err
 
 
+rules_file_key_path = '/filing/alteration/rulesFileKey'
+memorandum_file_key_path = '/filing/alteration/memorandumFileKey'
+
+
 @pytest.mark.parametrize(
-    'test_status, should_pass, rules_file_key, rules_file_name', [
-        ('SUCCESS', True, "rulesFileKey", "rulesFileName"),
-        ('FAILURE', False, None, "rulesFileName"),
-        ('FAILURE', False, "rulesFileKey", None),
+    'test_name, key, scenario, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'rulesFileKey', 'success', None, None),
+        ('SUCCESS', 'memorandumFileKey', 'success', None, None),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'failRules',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid file.', 'path': rules_file_key_path
+            }]),
+        ('FAIL_INVALID_MEMORANDUM_FILE_KEY', 'memorandumFileKey', 'failMemorandum',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid file.', 'path': memorandum_file_key_path
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidRulesSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
+                'path': rules_file_key_path
+            }]),
+        ('FAIL_INVALID_RULES_FILE_KEY', 'rulesFileKey', 'invalidMemorandumSize',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
+                'path': memorandum_file_key_path
+            }]),
     ])
-def test_rules_change(session, test_status, should_pass, rules_file_key, rules_file_name):
-    """Assert riles is optional in alteration."""
+def test_validate_cooperative_documents(session, mocker, minio_server, test_name, key, scenario, expected_code,
+                                        expected_msg):
+    """Assert that validator validates cooperative documents correctly."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
-    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    f['filing']['header']['identifier'] = identifier
-    del f['filing']['alteration']['nameRequest']
+    filing_json = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing_json['filing']['header']['identifier'] = identifier
+    del filing_json['filing']['alteration']['nameRequest']
 
-    if rules_file_key:
-        f['filing']['alteration']['rulesFileKey'] = rules_file_key
-    if rules_file_name:
-        f['filing']['alteration']['rulesFileName'] = rules_file_name
+    # Mock upload file for test scenarios
+    if scenario == 'success':
+        filing_json['filing']['alteration']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing']['alteration']['memorandumFileKey'] = _upload_file(letter, invalid=False)
+    if scenario == 'failRules':
+        filing_json['filing']['alteration']['rulesFileKey'] = scenario
+        filing_json['filing']['alteration']['memorandumFileKey'] = _upload_file(letter, invalid=False)
+    if scenario == 'failMemorandum':
+        filing_json['filing']['alteration']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing']['alteration']['memorandumFileKey'] = scenario
+    if scenario == 'invalidRulesSize':
+        filing_json['filing']['alteration']['rulesFileKey'] = _upload_file(letter, invalid=True)
+        filing_json['filing']['alteration']['memorandumFileKey'] = _upload_file(letter, invalid=False)
+    if scenario == 'invalidMemorandumSize':
+        filing_json['filing']['alteration']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing']['alteration']['memorandumFileKey'] = _upload_file(letter, invalid=True)
 
-    err = validate(business, f)
+    # perform test
+    err = validate(business, filing_json)
 
-    if err:
-        print(err.msg)
-
-    if should_pass:
-        # check that validation passed
-        assert None is err
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
     else:
-        # check that validation failed
-        assert err
-        assert HTTPStatus.BAD_REQUEST == err.code
-
-@pytest.mark.parametrize(
-    'test_status, should_pass, memorandum_file_key, memorandum_file_name', [
-        ('SUCCESS', True, "memorandumFileKey", "memorandumFileName"),
-        ('FAILURE', False, None, "memorandumFileName"),
-        ('FAILURE', False, "memorandumFileKey", None),
-    ])
-def test_memorandum_change(session, test_status, should_pass, memorandum_file_key, memorandum_file_name):
-    """Assert riles is optional in alteration."""
-    identifier = 'CP1234567'
-    business = factory_business(identifier)
-
-    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    f['filing']['header']['identifier'] = identifier
-    del f['filing']['alteration']['nameRequest']
-
-    if memorandum_file_key:
-        f['filing']['alteration']['memorandumFileKey'] = memorandum_file_key
-    if memorandum_file_name:
-        f['filing']['alteration']['memorandumFileName'] = memorandum_file_name
-
-    err = validate(business, f)
-
-    if err:
-        print(err.msg)
-
-    if should_pass:
-        # check that validation passed
-        assert None is err
-    else:
-        # check that validation failed
-        assert err
-        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err is None

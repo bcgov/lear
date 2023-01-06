@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
-import io
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
 import pycountry
-import PyPDF2
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import MinioService, namex
+from legal_api.services import namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -32,6 +30,7 @@ from .common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
     validate_party_name,
+    validate_pdf,
     validate_share_structure,
 )
 
@@ -77,20 +76,13 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
             msg.extend(err)
 
     elif legal_type == Business.LegalTypes.COOP.value:
-        err = validate_cooperative_documents(incorporation_json)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_cooperative_documents(incorporation_json))
 
     err = validate_incorporation_effective_date(incorporation_json)
     if err:
         msg.extend(err)
 
     msg.extend(validate_ia_court_order(incorporation_json, legal_type))
-
-    if legal_type in [Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.BC_CCC.value]:
-        err = validate_incorporation_agreement(incorporation_json, legal_type)
-        if err:
-            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -132,7 +124,7 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
 
 
 # pylint: disable=too-many-branches
-def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
+def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
         Business.LegalTypes.BCOMP.value: 1,
@@ -140,7 +132,7 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
         Business.LegalTypes.BC_ULC_COMPANY.value: 1,
         Business.LegalTypes.BC_CCC.value: 3
     }
-    parties_array = incorporation_json['filing'][filing_type]['parties']
+    parties_array = filing_dict['filing'][filing_type]['parties']
     msg = []
     completing_party_count = 0
     incorporator_count = 0
@@ -157,13 +149,18 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
             if role['roleType'] == 'Director':
                 director_count += 1
 
-    if completing_party_count == 0:
+    if filing_type == 'incorporationApplication' or \
+            (filing_type == 'correction' and filing_dict['filing'][filing_type].get('type') == 'CLIENT'):
+        if completing_party_count == 0:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
+        elif completing_party_count > 1:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
+    elif filing_type == 'correction' and filing_dict['filing'][filing_type].get('type') == 'STAFF' and \
+            completing_party_count != 0:
         err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a minimum of one completing party', 'path': err_path})
-
-    if completing_party_count > 1:
-        err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a maximum of one completing party', 'path': err_path})
+        msg.append({'error': 'Should not provide completing party when correction type is STAFF', 'path': err_path})
 
     if legal_type == Business.LegalTypes.COOP.value:
         if incorporator_count > 0:
@@ -176,9 +173,12 @@ def validate_roles(incorporation_json: dict, legal_type: str, filing_type: str =
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
         min_director_count = min_director_count_info.get(legal_type, 0)
-        if incorporator_count < 1:
+        if filing_type == 'incorporationApplication' and incorporator_count < 1:
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Must have a minimum of one Incorporator', 'path': err_path})
+        elif filing_type == 'correction' and incorporator_count > 0:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Cannot correct Incorporator role', 'path': err_path})
 
         if director_count < min_director_count:
             err_path = f'/filing/{filing_type}/parties/roles'
@@ -294,39 +294,27 @@ def validate_cooperative_documents(incorporation_json: dict):
         - The documents are provided.
         - Document IDs are unique.
     """
-    # Setup
+    if not (cooperative := incorporation_json['filing']['incorporationApplication'].get('cooperative')):
+        return [{
+            'error': babel('cooperative data is missing in incorporationApplication.'),
+            'path': '/filing/incorporationApplication/cooperative'
+        }]
+
     msg = []
 
-    rules_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileKey']
-    rules_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['rulesFileName']
-    memorandum_file_key = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
-    memorandum_file_name = incorporation_json['filing']['incorporationApplication']['cooperative']['memorandumFileName']
-
-    # Validate key values exist
-    if not rules_file_key:
-        msg.append({'error': babel('A valid rules key is required.')})
-
-    if not rules_file_name:
-        msg.append({'error': babel('A valid rules file name is required.')})
-
-    if not memorandum_file_key:
-        msg.append({'error': babel('A valid memorandum key is required.')})
-
-    if not memorandum_file_name:
-        msg.append({'error': babel('A valid memorandum file name is required.')})
-
-    if msg:
-        return msg
-
-    rules_err = validate_pdf(rules_file_key)
+    rules_file_key = cooperative['rulesFileKey']
+    rules_file_key_path = '/filing/incorporationApplication/cooperative/rulesFileKey'
+    rules_err = validate_pdf(rules_file_key, rules_file_key_path)
     if rules_err:
-        return rules_err
+        msg.extend(rules_err)
 
-    memorandum_err = validate_pdf(memorandum_file_key)
+    memorandum_file_key = cooperative['memorandumFileKey']
+    memorandum_file_key_path = '/filing/incorporationApplication/cooperative/memorandumFileKey'
+    memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
     if memorandum_err:
-        return memorandum_err
+        msg.extend(memorandum_err)
 
-    return None
+    return msg
 
 
 def validate_correction_ia(filing: dict) -> Optional[Error]:
@@ -396,34 +384,6 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
     return None
 
 
-def validate_pdf(file_key: str):
-    """Validate the PDF file."""
-    msg = []
-    try:
-        file = MinioService.get_file(file_key)
-        open_pdf_file = io.BytesIO(file.data)
-        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
-
-        # Check that all pages in the pdf are letter size and able to be processed.
-        if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-            msg.append({'error': babel('Document must be set to fit onto 8.5” x 11” letter-size paper.')})
-
-        file_info = MinioService.get_file_info(file_key)
-        if file_info.size > 30000000:
-            msg.append({'error': babel('File exceeds maximum size.')})
-
-        if pdf_reader.isEncrypted:
-            msg.append({'error': babel('File must be unencrypted.')})
-
-    except Exception:
-        msg.append({'error': babel('Invalid file.')})
-
-    if msg:
-        return msg
-
-    return None
-
-
 def validate_ia_court_order(filing: dict, legal_type: str) -> list:
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('incorporationApplication', {}).get('courtOrder', None):
@@ -439,18 +399,3 @@ def validate_ia_court_order(filing: dict, legal_type: str) -> list:
             }]
 
     return []
-
-
-def validate_incorporation_agreement(incorporation_json, legal_type) -> Error:
-    """Validate the incorporation agreement of the incorporation filing."""
-    agreement_type_path = '/filing/incorporationApplication/incorporationAgreement/agreementType'
-    agreement_type = get_str(incorporation_json, agreement_type_path)
-    msg = []
-
-    if agreement_type != 'custom':
-        msg.append({'error': babel(f'Agreement type for {legal_type} must be custom.')})
-
-    if msg:
-        return msg
-
-    return None

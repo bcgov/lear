@@ -75,17 +75,20 @@ def test_filing_court_order_validation(client, jwt, session):
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['courtOrder']['orderDetails'] = ''
     filing['filing']['courtOrder']['effectOfOrder'] = ''
+    del filing['filing']['courtOrder']['fileKey']
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'] == [{'error': 'Court Order is required.', 'path': '/filing/courtOrder/orderDetails'}]
+    assert rv.json['errors'] == [{'error': 'Court Order is required (in orderDetails/fileKey).',
+                                  'path': '/filing/courtOrder'}]
 
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['courtOrder']['effectOfOrder'] = 'invalid'
+    del filing['filing']['courtOrder']['fileKey']
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,

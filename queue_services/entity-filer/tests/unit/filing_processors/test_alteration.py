@@ -203,12 +203,11 @@ async def test_worker_alteration_court_order(app, session, mocker):
     assert datetime.fromisoformat(order_date) == final_filing.court_order_date
     assert effect_of_order == final_filing.court_order_effect_of_order
 
-@pytest.mark.parametrize( 'new_association_type',
-    [
-        (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value),
-        (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value)
-    ]
-)
+
+@pytest.mark.parametrize('new_association_type', [
+    (Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value),
+    (Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value)
+])
 def test_alteration_coop_association_type(app, session, new_association_type):
     """Assert that the coop association type is altered."""
     # setup
@@ -245,17 +244,12 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
     alteration_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
-    
+
     rules_file_key_uploaded_by_user = upload_file('rules.pdf')
     memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
-    alteration_filing['filing']['alteration']['rulesFileKey'] = \
-        rules_file_key_uploaded_by_user
-    alteration_filing['filing']['alteration']['rulesFileName'] = 'Rules_File.pdf'
-    alteration_filing['filing']['alteration']['memorandumFileKey'] = \
-        memorandum_file_key_uploaded_by_user
-    alteration_filing['filing']['alteration']['memorandumFileName'] = 'Memorandum_File.pdf'
-    
-    
+    alteration_filing['filing']['alteration']['rulesFileKey'] = rules_file_key_uploaded_by_user
+    alteration_filing['filing']['alteration']['memorandumFileKey'] = memorandum_file_key_uploaded_by_user
+
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)

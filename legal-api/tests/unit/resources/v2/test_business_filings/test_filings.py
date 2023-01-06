@@ -27,7 +27,7 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from minio.error import S3Error
-from registry_schemas.example_data.schema_data import COOP_INCORPORATION, COURT_ORDER_FILING_TEMPLATE
+from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
@@ -679,7 +679,14 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
 
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['business']['legalType'] = 'CP'
-    filing_json['filing']['incorporationApplication'] = copy.deepcopy(COOP_INCORPORATION)
+    del filing_json['filing']['incorporationApplication']['offices']['recordsOffice']
+    del filing_json['filing']['incorporationApplication']['parties'][1]
+    del filing_json['filing']['incorporationApplication']['shareStructure']
+    del filing_json['filing']['incorporationApplication']['incorporationAgreement']
+    filing_json['filing']['incorporationApplication']['cooperative'] = {
+        'cooperativeAssociationType': 'CP'
+    }
+
     rules_file_key = _upload_file(letter, invalid=False)
     memorandum_file_key = _upload_file(letter, invalid=False)
     filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
@@ -1164,6 +1171,7 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['header']['submitter'] == expected
 
+
 @pytest.mark.parametrize(
     'test_name, legal_type, identifier, future_effective_date_expected',
     [
@@ -1187,9 +1195,9 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     coa['filing']['business']['identifier'] = identifier
 
     requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
-                       json= {'id': 21322,
-                              'statusCode': 'COMPLETED',
-                              'isPaymentActionRequired': False},
+                       json={'id': 21322,
+                             'statusCode': 'COMPLETED',
+                             'isPaymentActionRequired': False},
                        status_code=HTTPStatus.CREATED)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=coa,

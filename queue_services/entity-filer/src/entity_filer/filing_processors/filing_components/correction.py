@@ -22,6 +22,7 @@ from legal_api.models import Address, Business, Filing, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
+    aliases,
     business_info,
     create_party,
     create_role,
@@ -59,6 +60,11 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
                    'toNaicsCode': to_naics_code,
                    'naicsDescription': to_naics_description}}
             business_info.update_naics_info(business, naics)
+
+    # update name translations, if any
+    with suppress(IndexError, KeyError, TypeError):
+        alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
+        aliases.update_aliases(business, alias_json)
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
