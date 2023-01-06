@@ -32,7 +32,7 @@ from entity_bn.bn_processors import (
     publish_event,
     request_bn_hub,
 )
-from entity_bn.exceptions import BNException
+from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
 async def process(business: Business,  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
@@ -79,7 +79,7 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
             raise BNException(f'Retry number: {inform_cra_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
 
-        raise QueueException(
+        raise BNRetryExceededException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}.')
 
     root = Et.fromstring(inform_cra_tracker.response_object)
@@ -110,7 +110,7 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
             raise BNException(f'Retry number: {get_bn_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
 
-        raise QueueException(
+        raise BNRetryExceededException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}.')
 
     try:
