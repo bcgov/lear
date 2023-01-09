@@ -28,12 +28,6 @@ def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    if not get_str(admin_freeze, '/filing/adminFreeze/details'):
-        msg.append({'error': babel('Admin Freeze details are required.'), 'path': '/filing/adminFreeze/details'})
-
-    if not get_str(admin_freeze, '/filing/adminFreeze/freeze'):
-        msg.append({'error': babel('Admin Freeze flag is required.'), 'path': '/filing/adminFreeze/freeze'})
-
     current_state = business.admin_freeze or False
 
     if current_state == bool(get_str(admin_freeze, '/filing/adminFreeze/freeze')):
