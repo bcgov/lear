@@ -29,6 +29,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 @pytest.mark.parametrize(
     'freeze, identifier, expected_code',
     [
+        (True, 'CP1234567', None),
         (False, 'CP1234567', HTTPStatus.BAD_REQUEST),
     ]
 )

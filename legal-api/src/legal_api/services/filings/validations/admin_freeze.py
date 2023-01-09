@@ -19,17 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
-from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
-
-
-def str_to_bool(string):
-    """Convert String to bool."""
-    if string == 'True':
-        return True
-    elif string == 'False':
-        return False
-    else:
-        raise ValueError  # evil ValueError that doesn't tell you what the wrong value was
+from ...utils import get_bool, get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
@@ -40,7 +30,7 @@ def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
 
     current_state = business.admin_freeze or False
 
-    if current_state == str_to_bool(get_str(admin_freeze, '/filing/adminFreeze/freeze')):
+    if current_state == get_bool(admin_freeze, '/filing/adminFreeze/freeze'):
         msg.append({'error': babel('Admin Freeze flag cannot be same as current state.'),
                     'path': '/filing/adminFreeze/freeze'})
 
