@@ -455,7 +455,7 @@ class ListFilingResource():
             action = ['registrars_notation']
         elif filing_type == 'registrarsOrder':
             action = ['registrars_order']
-        if admin_freeze or \
+        if (admin_freeze and filing_type != 'adminFreeze') or \
                 not authorized(identifier, jwt, action=action) or \
                 not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
             return jsonify({'message':
@@ -687,7 +687,8 @@ class ListFilingResource():
                     'filingTypeCode': 'NOFEE',
                     'waiveFees': waive_fees_flag
                 })
-        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn']):
+        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder',
+                 'putBackOn', 'adminFreeze']):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,

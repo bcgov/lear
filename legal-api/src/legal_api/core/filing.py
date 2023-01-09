@@ -57,6 +57,7 @@ class Filing:
     class FilingTypes(str, Enum):
         """Render an Enum of all Filing Types."""
 
+        ADMIN_FREEZE = 'adminFreeze'
         ALTERATION = 'alteration'
         AMALGAMATIONAPPLICATION = 'amalgamationApplication'
         AMENDEDAGM = 'amendedAGM'
