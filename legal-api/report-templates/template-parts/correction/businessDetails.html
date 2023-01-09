@@ -1,9 +1,12 @@
 <div class="business-details-container">
     <table class="business-details-table" role="presentation">
         <tr>
-            {% if business.legalType in ['SP', 'GP'] %}
             <td>
-                <div class="bold">Registration Number:</div>
+                {% if business.legalType in ['SP', 'GP'] %}
+                    <div class="bold">Registration Number:</div>
+                {% else %}
+                    <div class="bold">Incorporation Number:</div>
+                {% endif %}
                 <div class="bold pt-2">Recognition Date and Time:</div>
                 <div class="bold pt-2">Correction Date and Time:</div>
                 <div class="bold pt-2">Retrieved Date and Time:</div>
@@ -26,27 +29,15 @@
                     <div class="registrar-name">{{ registrarInfo.name }}</div>
                 </div>
             </td>
-            {% endif %}
         </tr>
     </table>
 </div>
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
-    {% if reportType == 'summary' %}
-    {% if business.legalType in ['SP', 'GP'] %}
-    <span>Registration #{{business.identifier}}</span>
-    {% else %}
-    <span>Incorporation #{{business.identifier}}</span>
-    {% endif %}
-    {% else %}
     Filing #{{header.filingId}}
     {% if business.legalType in ['SP', 'GP'] %}
-    <span> | Registration #{{business.identifier}}</span>
+        <span> | Registration #{{business.identifier}}</span>
     {% else %}
-    {% if header.name != 'incorporationApplication' %}
-    <!-- not required for incorporationApplication -->
-    <span> | Incorporation #{{business.identifier}}</span>
-    {% endif %}
-    {% endif %}
+        <span> | Incorporation #{{business.identifier}}</span>
     {% endif %}
 </div>

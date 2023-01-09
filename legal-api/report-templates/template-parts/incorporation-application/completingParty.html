@@ -2,7 +2,7 @@
    <div class="separator mt-4"></div>
    <div class="section-title mt-4">Completing Party</div>
    {% set ns = namespace(cp=0) %}
-   {% for party in incorporationApplication.parties %}
+   {% for party in parties %}
       {% for party_role in party.roles %}
          {% if party_role.roleType == 'Completing Party' %}
             <table class="section-data section-data-table mt-4" role="presentation">
@@ -15,11 +15,6 @@
                            <span class="capitalize-text">{{ party.officer.middleName }}</span>
                         {% endif %}
                      </div>
-                     {% if party.hasCorrected %}
-                        <span class="chip">CORRECTED</span>
-                     {% elif party.hasRemoved %}
-                        <span class="chip">REMOVED</span>
-                     {% endif %}
                   </td>
                   <td>
                      <div class="section-sub-title">Mailing Address</div>

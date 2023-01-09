@@ -1,10 +1,10 @@
 <div class="no-page-break">
     <div class="section-data mt-4">
         <span class="bold">Name of Company:</span>
-        {% if not incorporationApplication.nameRequest.nrNumber%}
+        {% if not nameRequest.nrNumber%}
             A company name using the Incorporation Number will be provided on the Recognition Date and Time.
         {% else %}
-            <span class="bold">{{incorporationApplication.nameRequest.legalName}}</span>
+            <span class="bold">{{nameRequest.legalName}}</span>
         {% endif %}
     </div>
 </div>
@@ -14,9 +14,6 @@
         <div class="section-data mt-4">
             <div>
                 <span class="bold">Translation(s) of Company Name:</span>
-                {% if hasNameTranslationsCorrected %}
-                    <span class="chip">CORRECTED</span>
-                {% endif %}
             </div>
             <table class="name-translation-table" role="presentation">
                 {% for translation in listOfTranslations %}
