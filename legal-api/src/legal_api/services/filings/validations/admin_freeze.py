@@ -35,7 +35,7 @@ def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
         msg.append({'error': babel('Admin Freeze flag is required.'), 'path': '/filing/adminFreeze/freeze'})
 
     if business.admin_freeze == bool(get_str(admin_freeze, '/filing/adminFreeze/freeze')):
-        msg.append({'error': babel('Admin Freeze flag cannot be same as currunt state.'),
+        msg.append({'error': babel('Admin Freeze flag cannot be same as current state.'),
                     'path': '/filing/adminFreeze/freeze'})
 
     if msg:
