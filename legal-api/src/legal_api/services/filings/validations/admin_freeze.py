@@ -22,19 +22,19 @@ from legal_api.models import Business
 from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
+def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
-    if not business or not put_back_on:
+    if not business or not admin_freeze:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    if not get_str(put_back_on, '/filing/adminFreeze/details'):
+    if not get_str(admin_freeze, '/filing/adminFreeze/details'):
         msg.append({'error': babel('Admin Freeze details are required.'), 'path': '/filing/adminFreeze/details'})
 
-    if not get_str(put_back_on, '/filing/adminFreeze/freeze'):
+    if not get_str(admin_freeze, '/filing/adminFreeze/freeze'):
         msg.append({'error': babel('Admin Freeze flag is required.'), 'path': '/filing/adminFreeze/freeze'})
     
-    if business.admin_freeze == bool(get_str(put_back_on, '/filing/adminFreeze/freeze')):
+    if business.admin_freeze == bool(get_str(admin_freeze, '/filing/adminFreeze/freeze')):
         msg.append({'error': babel('Admin Freeze flag cannot be same as current status'), 'path': '/filing/adminFreeze/freeze'})
 
     if msg:
