@@ -24,7 +24,7 @@ from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
-def test_worker_admin_Freeze(app, session):
+def test_worker_admin_freeze(app, session):
     """Assert that the admin freeze object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
