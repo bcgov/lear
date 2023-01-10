@@ -52,3 +52,4 @@ def test_worker_admin_freeze(app, session):
     assert business.state_filing_id is None
     assert business.dissolution_date is None
     assert filing_json['filing']['adminFreeze']['details'] == final_filing.order_details
+    assert filing_json['filing']['adminFreeze']['freeze'] == filing_meta.adminFreeze['freeze']
