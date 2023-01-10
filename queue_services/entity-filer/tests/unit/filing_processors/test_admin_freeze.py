@@ -24,7 +24,7 @@ from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
-def test_worker_admin_freeze(app, session):
+async def test_worker_admin_freeze(app, session, mocker):
     """Assert that the admin freeze object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
@@ -34,21 +34,23 @@ def test_worker_admin_freeze(app, session):
     filing_json['filing']['adminFreeze'] = copy.deepcopy(ADMIN_FREEZE)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = (create_filing(payment_id, filing_json, business_id=business.id))
+    filing_id = (create_filing(payment_id, filing_json, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = {'filing': {'id': filing_id}}
 
-    filing_meta = FilingMeta()
-    filing = create_filing('123', filing_json)
-
+        # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
     # Test
-    admin_freeze.process(business, filing_json['filing'], filing, filing_meta)
-    business.save()
+    await process_filing(filing_msg, app)
 
     # Check outcome
-    final_filing = Filing.find_by_id(filing.id)
+    final_filing = Filing.find_by_id(filing_id)
 
     assert business.admin_freeze == True
     assert business.state_filing_id is None
     assert business.dissolution_date is None
     assert filing_json['filing']['adminFreeze']['details'] == final_filing.order_details
+
+    adminFreeze = final_filing.meta_data.get('adminFreeze')
+    assert filing_json['filing']['adminFreeze']['freeze'] == adminFreeze.get('freeze')
