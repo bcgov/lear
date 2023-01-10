@@ -36,4 +36,4 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
 
     filing_meta.admin_freeze = {}
     filing_meta.admin_freeze = {**filing_meta.admin_freeze,
-                               **{'freeze': freeze}}
+                                **{'freeze': freeze}}
