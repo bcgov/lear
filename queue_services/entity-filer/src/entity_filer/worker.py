@@ -47,6 +47,7 @@ from sqlalchemy_continuum import versioning_manager
 from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
+    admin_freeze,
     alteration,
     annual_report,
     change_of_address,
@@ -220,6 +221,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('putBackOn'):
                     put_back_on.process(business, filing, filing_submission, filing_meta)
+
+                elif filing.get('adminFreeze'):
+                    admin_freeze.process(business, filing, filing_submission, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)

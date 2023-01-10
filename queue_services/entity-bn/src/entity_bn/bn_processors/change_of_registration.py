@@ -17,7 +17,6 @@ from contextlib import suppress
 from http import HTTPStatus
 
 import dpath
-from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
 from legal_api.utils.datetime import datetime
@@ -32,7 +31,7 @@ from entity_bn.bn_processors import (
     get_splitted_business_number,
     request_bn_hub,
 )
-from entity_bn.exceptions import BNException
+from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
@@ -129,7 +128,7 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
             raise BNException(f'Retry number: {request_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {request_tracker.id}.')
 
-        raise QueueException(
+        raise BNRetryExceededException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 
@@ -197,7 +196,7 @@ def change_address(business: Business, filing: Filing,  # pylint: disable=too-ma
             raise BNException(f'Retry number: {request_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {request_tracker.id}.')
 
-        raise QueueException(
+        raise BNRetryExceededException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')
 
 

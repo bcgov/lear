@@ -1,34 +1,84 @@
 {% if shareClasses|length > 0 %}
-   <div class="no-page-break">
-      <div class="separator mt-4"></div>
-      <div class="section-title mt-4">Authorized Share Structure</div>
-   
-      <table class="share-structure-table mt-4" role="presentation">
-         <tr class="solid-row-separator share-structure-table-header no-page-break">
-            <td class="top-align"> Name of Share Class or Series</td>
-            <td class="right-align top-align">Max. Number of Shares</td>
-            <td class="right-align top-align">Par Value</td>
-            <td class="top-align">Currency</td>
-            <td class="top-align">Special Rights or Restrictions</td>
-         </tr>
-         {% for share_class in shareClasses %}
-            <tr class="no-page-break">
-               <td>
-                  <div class="share-name">{{share_class.name}}</div>
-                  {% if share_class.hasCorrected and header.name != 'alteration' %}
-                     <span class="chip">CORRECTED</span>
-                  {% elif share_class.hasRemoved and header.name != 'alteration' %}
-                     <span class="chip">REMOVED</span>
+<div class="no-page-break">
+   <div class="separator mt-4"></div>
+   <div class="section-title mt-4">Authorized Share Structure</div>
+
+   <table class="share-structure-table mt-4" role="presentation">
+      <tr class="solid-row-separator share-structure-table-header no-page-break">
+         <td class="top-align"> Name of Share Class or Series</td>
+         <td class="right-align top-align">Max. Number of Shares</td>
+         <td class="right-align top-align">Par Value</td>
+         <td class="top-align">Currency</td>
+         <td class="top-align">Special Rights or Restrictions</td>
+      </tr>
+      {% for share_class in shareClasses %}
+         <tr class="no-page-break">
+            <td>
+               <div class="share-name">{{share_class.name}}
+               {% if header.name == 'correction' %}
+                  {% if not share_class.id %}
+                     <div class="section-sub-title">{{ labelAdded() }}</div>
                   {% endif %}
+                  {% if share_class.changed is defined and share_class.changed %}
+                     <div class="section-sub-title">{{ labelCorrected() }}</span>
+                  {% endif %}
+               {% endif %}
+               </div>
+            </td>
+            <td class="right-align">
+               {% if share_class.hasMaximumShares %}
+               {{ '{0:,}'.format(share_class.maxNumberOfShares | int) }}
+               {% else %}
+               No Maximum
+               {% endif %}
+            </td>
+            <td class="right-align">
+               {% if share_class.hasParValue %}
+               {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
+                  $
+               {% endif %}
+               {{ share_class.parValue }}
+               {% else %}
+               No Par Value
+               {% endif %}
+            </td>
+            <td>
+               {% if share_class.hasParValue %}
+               {{ share_class.currency }}
+               {% else %}
+               {% endif %}
+            </td>
+            <td>
+               {% if share_class.hasRightsOrRestrictions %}
+               Yes
+               {% else %}
+               No
+               {% endif %}
+            </td>
+         </tr>
+         {% for series in share_class.series %}
+            <tr class="dashed-row-separator no-page-break">
+               <td>
+                  <div class="series-name">&bull;&nbsp;{{ series.name }}
+                  {% if header.name == 'correction' %}
+                     {% if not series.id %}
+                        <div class="section-sub-title">{{ labelAdded() }}</div>
+                     {% endif %}
+                     {% if series.changed is defined and series.changed %}
+                        <div class="section-sub-title">{{ labelCorrected() }}</div>
+                     {% endif %}
+                  {% endif %}
+                  </div>
                </td>
                <td class="right-align">
-                  {% if share_class.hasMaximumShares %}
-                  {{ '{0:,}'.format(share_class.maxNumberOfShares | int) }}
+                  {% if series.hasMaximumShares %}
+                     {{ '{0:,}'.format(series.maxNumberOfShares | int) }}
                   {% else %}
                   No Maximum
                   {% endif %}
                </td>
                <td class="right-align">
+                  <!-- hasParValue, parValue and currency are in share_class -->
                   {% if share_class.hasParValue %}
                   {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
                      $
@@ -45,60 +95,18 @@
                   {% endif %}
                </td>
                <td>
-                  {% if share_class.hasRightsOrRestrictions %}
+                  {% if series.hasRightsOrRestrictions %}
                   Yes
                   {% else %}
                   No
                   {% endif %}
                </td>
             </tr>
-            {% for series in share_class.series %}
-               <tr class="dashed-row-separator no-page-break">
-                  <td>
-                     <div class="series-name">&bull;&nbsp;{{ series.name }}</div>
-                     {% if series.hasCorrected and header.name != 'alteration' %}
-                        <span class="chip">CORRECTED</span>
-                     {% elif series.hasRemoved and header.name != 'alteration' %}
-                        <span class="chip">REMOVED</span>
-                     {% endif %}
-                  </td>
-                  <td class="right-align">
-                     {% if series.hasMaximumShares %}
-                        {{ '{0:,}'.format(series.maxNumberOfShares | int) }}
-                     {% else %}
-                     No Maximum
-                     {% endif %}
-                  </td>
-                  <td class="right-align">
-                     <!-- hasParValue, parValue and currency are in share_class -->
-                     {% if share_class.hasParValue %}
-                     {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
-                        $
-                     {% endif %}
-                     {{ share_class.parValue }}
-                     {% else %}
-                     No Par Value
-                     {% endif %}
-                  </td>
-                  <td>
-                     {% if share_class.hasParValue %}
-                     {{ share_class.currency }}
-                     {% else %}
-                     {% endif %}
-                  </td>
-                  <td>
-                     {% if series.hasRightsOrRestrictions %}
-                     Yes
-                     {% else %}
-                     No
-                     {% endif %}
-                  </td>
-               </tr>
-            {% endfor %}
-            <tr class="solid-row-separator no-page-break">
-               <td colspan="5" style="height:1px"/>
-            </tr>
          {% endfor %}
-      </table>
-   </div>
+         <tr class="solid-row-separator no-page-break">
+            <td colspan="5" style="height:1px"/>
+         </tr>
+      {% endfor %}
+   </table>
+</div>
 {% endif %}

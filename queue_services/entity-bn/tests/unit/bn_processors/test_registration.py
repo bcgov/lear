@@ -15,10 +15,9 @@
 import xml.etree.ElementTree as Et
 
 import pytest
-from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, RequestTracker
 
-from entity_bn.exceptions import BNException
+from entity_bn.exceptions import BNException, BNRetryExceededException
 from entity_bn.worker import process_event
 from tests.unit import create_registration_data
 
@@ -120,7 +119,7 @@ async def test_retry_registration(app, session, mocker, request_type):
 
         except BNException:
             continue
-        except QueueException:
+        except BNRetryExceededException:
             break
 
     request_trackers = RequestTracker.find_by(business_id,

@@ -16,14 +16,13 @@ import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
 
-from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from legal_api.models import Business, Filing, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_bn.bn_processors import bn_note, build_input_xml, get_splitted_business_number, request_bn_hub
-from entity_bn.exceptions import BNException
+from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
@@ -89,5 +88,5 @@ def process(business: Business, filing: Filing):  # pylint: disable=too-many-bra
             raise BNException(f'Retry number: {request_tracker.retry_number + 1}' +
                               f' for {business.identifier}, TrackerId: {request_tracker.id}.')
 
-        raise QueueException(
+        raise BNRetryExceededException(
             f'Retry exceeded the maximum count for {business.identifier}, TrackerId: {request_tracker.id}.')

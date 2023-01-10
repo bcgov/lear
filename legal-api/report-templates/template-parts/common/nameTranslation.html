@@ -4,7 +4,11 @@
         {% if reportType == 'summary' %}
             <div class="section-sub-title mt-4">Translation(s) of Company Name:</div>
         {% else %}
-            <div class="section-title mt-4">Company Name Translation(s)</div>
+            <div class="section-title mt-4">Company Name Translation(s)
+            {% if header.name == 'correction' %}
+                <span class="section-sub-title">{{ labelCorrected() }}</span>
+            {% endif %}
+            </div>
         {% endif %}
         <div class="section-data mt-3">
             <table class="section-translation-table" role="presentation">

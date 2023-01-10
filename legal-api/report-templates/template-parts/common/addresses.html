@@ -8,9 +8,6 @@
             <td class="col-50">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
-                  {% if offices.registeredOffice is defined and offices.registeredOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.registeredOffice is defined %}
                   <div class="pt-2">{{ offices.registeredOffice.mailingAddress.streetAddress }}</div>
@@ -35,9 +32,6 @@
             <td class="col-50">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.registeredOffice is defined and offices.registeredOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.registeredOffice is defined %}
                <div class="pt-2">{{ offices.registeredOffice.deliveryAddress.streetAddress }}</div>
@@ -75,9 +69,6 @@
             <td class="col-50">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
-                  {% if offices.recordsOffice is defined and offices.recordsOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.recordsOffice is defined %}
                   <div class="pt-2">{{ offices.recordsOffice.mailingAddress.streetAddress }}</div>
@@ -102,9 +93,6 @@
             <td class="col-50">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.recordsOffice is defined and offices.recordsOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.recordsOffice is defined %}
                   <div class="pt-2">{{ offices.recordsOffice.deliveryAddress.streetAddress }}</div>
@@ -142,9 +130,6 @@
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Mailing Address</span>
-                  {% if offices.businessOffice is defined and offices.businessOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.businessOffice is defined %}
                   <div class="pt-2">{{ offices.businessOffice.mailingAddress.streetAddress }}</div>
@@ -166,9 +151,6 @@
             <td class="col-33">
                <div>
                   <span class="section-sub-title">Delivery Address</span>
-                  {% if offices.businessOffice is defined and offices.businessOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
-                  {% endif %}
                </div>
                {% if offices.businessOffice is defined %}
                   <div class="pt-2">{{ offices.businessOffice.deliveryAddress.streetAddress }}</div>

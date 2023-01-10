@@ -21,6 +21,7 @@ from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.services.utils import get_str
 
+from .admin_freeze import validate as admin_freeze_validate
 from .alteration import validate as alteration_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
@@ -159,6 +160,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['putBackOn'].get('name'):
                     err = put_back_on_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['adminFreeze'].get('name'):
+                    err = admin_freeze_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['conversion'].get('name'):
                     err = conversion_validate(business, filing_json)
