@@ -266,6 +266,9 @@ class Report:  # pylint: disable=too-few-public-methods
             current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
             if original_registrar['name'] != current_registrar['name']:
                 filing['currentRegistrarInfo'] = current_registrar
+        elif filing.get('annualReport'):
+            # effective_date in annualReport will be ar_date or agm_date, which could be in past.
+            filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
         else:
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
