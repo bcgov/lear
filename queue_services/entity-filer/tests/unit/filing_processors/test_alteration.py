@@ -86,9 +86,13 @@ async def test_worker_alteration(app, session, mocker, orig_legal_type, new_lega
     """Assert the worker process calls the alteration correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=orig_legal_type)
+    business.restriction_ind = True
+    business.save()
+
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type
+    filing['filing']['alteration']['provisionsRemoved'] = True
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -109,6 +113,7 @@ async def test_worker_alteration(app, session, mocker, orig_legal_type, new_lega
     # Check outcome
     business = Business.find_by_internal_id(business.id)
     assert business.legal_type == new_legal_type
+    assert not business.restriction_ind
 
 
 @pytest.mark.parametrize(

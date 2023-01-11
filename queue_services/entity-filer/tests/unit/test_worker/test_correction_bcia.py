@@ -161,7 +161,6 @@ BC_CORRECTION = {
                     ]
                 }
             ],
-            'provisionsRemoved': False,
             'shareStructure': {
                 'resolutionDates': [
                     '2022-07-01',
