@@ -654,8 +654,6 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_party_data(filing, prev_completed_filing)
         self._format_share_class_data(filing, prev_completed_filing)
 
-        filing['provisionsRemoved'] = filing.get('correction').get('provisionsRemoved')
-
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
