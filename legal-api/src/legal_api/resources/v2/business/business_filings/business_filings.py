@@ -260,11 +260,6 @@ class ListFilingResource():
         if original_filing:
             return jsonify(rv.redacted(rv.raw, jwt))
 
-        if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
-            if diff := rv.json['filing']['correction'].get('diff'):
-                # This is required until #5302 ticket implements
-                rv.storage._filing_json['filing']['correction']['diff'] = diff  # pylint: disable=protected-access; # noqa: E501;
-
         if str(request.accept_mimetypes) == 'application/pdf':
             report_type = request.args.get('type', None)
             return legal_api.reports.get_pdf(rv.storage, report_type)

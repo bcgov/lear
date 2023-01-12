@@ -26,7 +26,6 @@ from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
 from legal_api.core.meta import FilingMeta
-from legal_api.core.utils import diff_dict, diff_list
 from legal_api.models import Business, Document, DocumentType
 from legal_api.models import Filing as FilingStorage  # noqa: I001
 from legal_api.models import UserRoles
@@ -158,7 +157,7 @@ class Filing:
         return False
 
     # json is returned as a property defined after this method
-    def get_json(self, with_diff: bool = True) -> Optional[Dict]:
+    def get_json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
                                                                                 Filing.Status.PAID.value,
@@ -181,12 +180,6 @@ class Filing:
 
         else:  # Filing.Status.COMPLETED.value
             filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
-
-        if with_diff and self.filing_type == Filing.FilingTypes.CORRECTION.value:
-            if correction_id := filing_json.get('filing', {}).get('correction', {}).get('correctedFilingId'):
-                # filing_json = copy.deepcopy(filing)
-                if diff := self._diff(filing_json, correction_id):
-                    filing_json['filing']['correction']['diff'] = diff
 
         return filing_json
     json = property(get_json)
@@ -231,22 +224,6 @@ class Filing:
             # self._storage.paper_only = self._paper_only
             self._storage.payment_account = self._payment_account
             self.storage.save()
-
-    def _diff(self, filing_json, correction_id):
-        """Return the diff block for the filing this one corrects, if any."""
-        if filing_json and correction_id and self._storage and self.status in [Filing.Status.COMPLETED.value,
-                                                                               Filing.Status.PAID.value,
-                                                                               Filing.Status.PENDING.value,
-                                                                               Filing.Status.PENDING_CORRECTION.value
-                                                                               ]:
-            if corrected_filing := Filing.find_by_id(correction_id):
-                if diff_nodes := diff_dict(filing_json,
-                                           corrected_filing.json,
-                                           ignore_keys=['header', 'business', 'correction'],
-                                           diff_list_callback=diff_list):
-                    diff_json = [d.json for d in diff_nodes]
-                    return diff_json
-        return None
 
     @staticmethod
     def validate():
@@ -305,14 +282,14 @@ class Filing:
             return filing_json
         return None
 
-    def legal_filings(self, with_diff: bool = True) -> Optional[List]:
+    def legal_filings(self) -> Optional[List]:
         """Return a list of the filings extracted from this filing submission.
 
         Returns: {
             List: or None of the Legal Filing JSON segments.
             }
         """
-        if not (filing := self.get_json(with_diff)):
+        if not (filing := self.get_json()):
             return None
 
         legal_filings = []
