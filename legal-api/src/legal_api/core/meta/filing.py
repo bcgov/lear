@@ -162,7 +162,15 @@ FILINGS: Final = {
     'correction': {
         'name': 'correction',
         'title': 'Correction',
-        'displayName': 'Register Correction Application',
+        'displayName': {
+            'BEN': 'Correction',
+            'BC': 'Correction',
+            'ULC': 'Correction',
+            'CC': 'Correction',
+            'CP': 'Correction',
+            'SP': 'Register Correction Application',
+            'GP': 'Register Correction Application',
+        },
         'codes': {
             'BEN': 'CRCTN',
             'BC': 'CRCTN',
