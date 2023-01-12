@@ -307,8 +307,7 @@ FILINGS: Final = {
         'title': 'Put Back On',
         'displayName': 'Correction - Put Back On',
         'code': 'NOFEE'
-    }
-    ,
+    },
     'adminFreeze': {
         'name': 'adminFreeze',
         'title': 'Admin Freeze',
@@ -352,9 +351,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
                 name = 'Administrative Dissolution'
-        
+
         elif filing.filing_type in ('adminFreeze') and filing.meta_data:
-            if filing.meta_data['adminFreeze'].get('freeze') == False:
+            if filing.meta_data['adminFreeze'].get('freeze') is False:
                 name = 'Admin Unfreeze'
 
         return name
