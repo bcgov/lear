@@ -162,15 +162,7 @@ FILINGS: Final = {
     'correction': {
         'name': 'correction',
         'title': 'Correction',
-        'displayName': {
-            'BEN': 'Correction',
-            'BC': 'Correction',
-            'ULC': 'Correction',
-            'CC': 'Correction',
-            'CP': 'Correction',
-            'SP': 'Register Correction Application',
-            'GP': 'Register Correction Application',
-        },
+        'displayName': 'Register Correction Application',
         'codes': {
             'BEN': 'CRCTN',
             'BC': 'CRCTN',
@@ -372,9 +364,3 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfNameChange')
         elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
             outputs.add('certificateOfNameChange')
-        elif filing.filing_type == 'correction':
-            if not filing.meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
-                # For IA correction, certificate will be populated in get_all_outputs since
-                # legalFilings list contains correction and incorporationApplication
-                # and it should be removed if correction does not contain name change.
-                outputs.remove('certificate')

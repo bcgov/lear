@@ -136,13 +136,6 @@ def test_unpaid_filing(session, client, jwt):
 
 base_url = 'https://LEGAL_API_BASE_URL'
 
-CORRECTION = {
-    'correctedFilingId': 4,
-    'correctedFilingType': 'incorporationApplication',
-    'correctedFilingDate': '2019-04-08',
-    'comment': """Sample Comment"""
-}
-
 ALTERATION_WITHOUT_NR = copy.deepcopy(ALTERATION)
 del ALTERATION_WITHOUT_NR['nameRequest']['nrNumber']
 del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
@@ -224,58 +217,50 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      HTTPStatus.OK, None
      ),
     ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+     'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
-                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
                     ]
                     }
       },
      HTTPStatus.OK, None
      ),
     ('bc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+     'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
-                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
                     ]
                     }
       },
      HTTPStatus.OK, None
      ),
     ('ccc_correction_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+     'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
-                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
-                        {
-                            'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
                     ]
                     }
       },
      HTTPStatus.OK, None
      ),
     ('ulc_correction_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+     'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
-                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
-                        {
-                            'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
                     ]
                     }
       },
      HTTPStatus.OK, None
      ),
-    ('ben_correction_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'correction', CORRECTION, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
-                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'},
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                        {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
                     ]
                     }
       },
@@ -917,13 +902,6 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
         meta_data = {'legalFilings': legal_filings}
-
-        if filing_name_1 == 'correction' and \
-                (legal_name := filing_json['filing']
-                 .get('incorporationApplication', {}).get('nameRequest', {}).get('legalName')):
-            meta_data['correction'] = {}
-            meta_data['correction']['fromLegalName'] = business.legal_name
-            meta_data['correction']['toLegalName'] = legal_name
 
         if filing_name_1 == 'alteration' and \
                 (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
