@@ -77,7 +77,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
     # convenience flag to set that the envelope is a correction
     is_correction = (filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION)
 
-    if legal_filings := filing_core_submission.legal_filings(with_diff=False):
+    if legal_filings := filing_core_submission.legal_filings():
         uow = versioning_manager.unit_of_work(db.session)
         transaction = uow.create_transaction(db.session)
 
