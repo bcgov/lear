@@ -791,9 +791,9 @@ class ListFilingResource():
             },
             'filingInfo': {
                 'filingTypes': filing_types
-            }
+            },
+            'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
-
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
@@ -911,3 +911,16 @@ class ListFilingResource():
                      .get('courtOrder', {})
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
+
+    @staticmethod
+    def details_for_invoice(business_identifier: str, corp_type: str):
+        """Generate details for invoice."""
+        # Avoid temporary identifiers.
+        if not business_identifier or business_identifier.startswith('T'):
+            return []
+        return [
+            {
+                'label': 'Registration Number:' if corp_type in ('SP', 'GP') else 'Incorporation Number:',
+                'value': f'{business_identifier}'
+            }
+        ]
