@@ -313,7 +313,15 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_historical_gp', Business.State.HISTORICAL, 'GP', 'staff', [STAFF_ROLE],
          ['courtOrder', 'registrarsNotation', 'registrarsOrder', {'restoration': []}, 'putBackOn']),
 
-        ('user_historical_llc', Business.State.HISTORICAL, 'LLC', 'user', [BASIC_USER], []),
+        ('user_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [BASIC_USER],
+         [{'restoration': ['fullRestoration', 'limitedRestoration']}]),
+        ('user_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [BASIC_USER],
+         [{'restoration': ['fullRestoration', 'limitedRestoration']}]),
+        ('user_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [BASIC_USER],
+         [{'restoration': ['fullRestoration', 'limitedRestoration']}]),
+        ('user_historical_ulc', Business.State.HISTORICAL, 'ULC', 'staff', [BASIC_USER],
+         [{'restoration': ['fullRestoration', 'limitedRestoration']}]),
+        ('user_historical_llc', Business.State.HISTORICAL, 'LLC', 'user', [BASIC_USER], [{'restoration': []}]),
     ]
 )
 def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, username, roles, expected):
@@ -531,10 +539,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
         ('user_historical', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+         ['BC', 'BEN', 'CC', 'ULC'], 'user', [BASIC_USER], True),
 
         ('user_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
+         ['BC', 'BEN', 'CC', 'ULC'], 'user', [BASIC_USER], True),
 
         ('user_historical', Business.State.HISTORICAL, 'specialResolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),

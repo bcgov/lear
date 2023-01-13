@@ -600,6 +600,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_filing_types(business: Business, filing_json: dict):
+        # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -649,8 +650,13 @@ class ListFilingResource(Resource):
             })
         else:
             for k in filing_json['filing'].keys():
-                filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+                filing_sub_type = Filing.get_filings_sub_type(k, filing_json)
                 priority = priority_flag
+                if filing_sub_type:
+                    filing_type_code = \
+                        Filing.FILINGS.get(k, {}).get(filing_sub_type, {}).get('codes', {}).get(legal_type)
+                else:
+                    filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
 
                 # check if changeOfDirectors is a free filing
                 if k == 'changeOfDirectors':

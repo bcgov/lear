@@ -137,6 +137,12 @@ ALLOWABLE_FILINGS: Final = {
             'specialResolution': ['CP'],
             'transition': ['BC', 'BEN', 'CC', 'ULC'],
         },
+        Business.State.HISTORICAL: {
+            'restoration': {
+                'fullRestoration': ['BC', 'BEN', 'CC', 'ULC'],
+                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC']
+            }
+        }
     }
 }
 
