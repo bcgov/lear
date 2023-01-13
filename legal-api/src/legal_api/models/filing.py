@@ -16,7 +16,7 @@ import copy
 from datetime import date, datetime
 from enum import Enum
 from http import HTTPStatus
-from typing import List
+from typing import Final, List
 
 from sqlalchemy import desc, event, func, inspect, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -195,6 +195,29 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'GP': 'FMCHANGE'
             }
         },
+        'restoration': {
+            'name': 'restoration',
+            'fullRestoration': {
+                'name': 'fullRestoration',
+                'title': 'Full Restoration',
+                'codes': {
+                    'BC': 'RESTF',
+                    'BEN': 'RESTF',
+                    'ULC': 'RESTF',
+                    'CC': 'RESTF'
+                }
+            },
+            'limitedRestoration': {
+                'name': 'limitedRestoration',
+                'title': 'Limited Restoration',
+                'codes': {
+                    'BC': 'RESTL',
+                    'BEN': 'RESTL',
+                    'ULC': 'RESTL',
+                    'CC': 'RESTL'
+                }
+            }
+        },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
@@ -202,6 +225,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
         'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'}
+    }
+
+    FILING_SUB_TYPE_KEYS: Final = {
+        # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
+        #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
+        # 'dissolution': 'dissolutionType',
+        'restoration': 'type'
     }
 
     __tablename__ = 'filings'
@@ -680,6 +710,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             order_by(Filing.effective_date.desc()).all()
         if filings:
             return filings[0]
+        return None
+
+    @staticmethod
+    def get_filings_sub_type(filing_type: str, filing_json: dict):
+        """Return sub-type from filing json if sub-type exists for filing type."""
+        filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type)
+        if filing_sub_type_key:
+            filing_sub_type = filing_json['filing'][filing_type][filing_sub_type_key]
+            return filing_sub_type
+
         return None
 
     def save(self):
