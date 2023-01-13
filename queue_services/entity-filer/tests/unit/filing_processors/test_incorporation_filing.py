@@ -22,16 +22,13 @@ from legal_api.models import Business, Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from registry_schemas.example_data import (
-    CORRECTION_INCORPORATION,
-    INCORPORATION_FILING_TEMPLATE,
-)
+from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
 from entity_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
-from tests.utils import upload_file, assert_pdf_contains_text
+from tests.utils import assert_pdf_contains_text, upload_file
 
 
 COOP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -170,50 +167,6 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
     mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
-
-
-def test_incorporation_filing_process_correction(app, session):
-    """Assert that the incorporation correction is correctly populated to model objects."""
-    # setup
-    next_corp_num = 'BC0001095'
-    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as mock_get_next_corp_num:
-        filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-        create_filing('123', filing)
-
-        effective_date = datetime.utcnow()
-        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
-        filing_meta = FilingMeta(application_date=filing_rec.effective_date)
-
-        # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
-
-        # Assertions
-        assert business.identifier == next_corp_num
-        assert business.founding_date == effective_date
-        assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
-        assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
-        assert len(business.share_classes.all()) == 2
-        assert len(business.offices.all()) == 2  # One office is created in create_business method.
-        assert len(business.party_roles.all()) == 1
-        assert len(filing_rec.filing_party_roles.all()) == 2
-
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
-
-    correction_filing = copy.deepcopy(CORRECTION_INCORPORATION)
-    correction_filing['filing']['incorporationApplication']['nameTranslations'] = [{'name': 'A5 Ltd.'}]
-    del correction_filing['filing']['incorporationApplication']['shareStructure']['shareClasses'][1]
-    corrected_filing_rec = Filing(effective_date=effective_date, filing_json=correction_filing)
-    corrected_filing_meta = FilingMeta(application_date=corrected_filing_rec.effective_date)
-    corrected_filing_meta.correction = {}
-    corrected_business, corrected_filing_rec, corrected_filing_meta =\
-        incorporation_filing.process(business, correction_filing, corrected_filing_rec, corrected_filing_meta)
-    assert corrected_business.identifier == next_corp_num
-    assert corrected_business.legal_name == \
-        correction_filing['filing']['incorporationApplication']['nameRequest']['legalName']
-    assert corrected_filing_meta.correction['toLegalName'] == corrected_business.legal_name
-    assert len(corrected_business.share_classes.all()) == 1
-    assert len(corrected_business.party_roles.all()) == 1
-    assert len(corrected_filing_rec.filing_party_roles.all()) == 1
 
 
 @pytest.mark.parametrize('test_name,response,expected', [

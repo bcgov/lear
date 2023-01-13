@@ -106,47 +106,37 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing.get('filing', {}).get('incorporationApplication')
-    is_correction = filing_rec.filing_type == 'correction'
     filing_meta.incorporation_application = {}
 
     if not incorp_filing:
         raise QueueException(f'IA legal_filing:incorporationApplication missing from {filing_rec.id}')
-    if business and not is_correction:
+    if business:
         raise QueueException(f'Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}')
 
     business_info_obj = incorp_filing.get('nameRequest')
 
-    if is_correction:
-        business_info.set_legal_name(business.identifier, business, business_info_obj)
-        if legal_name := business_info_obj.get('legalName', None):
-            filing_meta.correction = {**filing_meta.correction,
-                                      **{'fromLegalName': business.legal_name,
-                                         'toLegalName': legal_name}}
+    if filing_rec.colin_event_ids:
+        corp_num = filing['filing']['business']['identifier']
     else:
+        # Reserve the Corp Number for this entity
+        corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
+        if not corp_num:
+            raise QueueException(
+                f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
 
-        if filing_rec.colin_event_ids:
-            corp_num = filing['filing']['business']['identifier']
+    # Initial insert of the business record
+    business = Business()
+    business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
+    business = _update_cooperative(incorp_filing, business, filing_rec)
+    business.state = Business.State.ACTIVE
 
-        else:
-            # Reserve the Corp Number for this entity
-            corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
-            if not corp_num:
-                raise QueueException(
-                    f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
+    if nr_number := business_info_obj.get('nrNumber', None):
+        filing_meta.incorporation_application = {**filing_meta.incorporation_application,
+                                                 **{'nrNumber': nr_number,
+                                                    'legalName': business_info_obj.get('legalName', None)}}
 
-        # Initial insert of the business record
-        business = Business()
-        business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-        business = _update_cooperative(incorp_filing, business, filing_rec)
-        business.state = Business.State.ACTIVE
-
-        if nr_number := business_info_obj.get('nrNumber', None):
-            filing_meta.incorporation_application = {**filing_meta.incorporation_application,
-                                                     **{'nrNumber': nr_number,
-                                                        'legalName': business_info_obj.get('legalName', None)}}
-
-        if not business:
-            raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
+    if not business:
+        raise QueueException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
 
     if offices := incorp_filing['offices']:
         update_offices(business, offices)
@@ -163,7 +153,7 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
     if court_order := incorp_filing.get('courtOrder'):
         filings.update_filing_court_order(filing_rec, court_order)
 
-    if not is_correction and not filing_rec.colin_event_ids:
+    if not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
         ia_json = copy.deepcopy(filing_rec.filing_json)
         if not ia_json['filing'].get('business'):
