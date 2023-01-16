@@ -162,15 +162,7 @@ FILINGS: Final = {
     'correction': {
         'name': 'correction',
         'title': 'Correction',
-        'displayName': {
-            'BEN': 'Correction',
-            'BC': 'Correction',
-            'ULC': 'Correction',
-            'CC': 'Correction',
-            'CP': 'Correction',
-            'SP': 'Register Correction Application',
-            'GP': 'Register Correction Application',
-        },
+        'displayName': 'Register Correction Application',
         'codes': {
             'BEN': 'CRCTN',
             'BC': 'CRCTN',
@@ -321,7 +313,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(business: Business, filing: FilingStorage, full_name: bool = True) -> Optional[str]:
+    def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
@@ -345,8 +337,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                if business_revision.legal_type not in ['SP', 'GP']:
-                    name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
+                # Depending on filing_json to get corrected filing until changing the parent_filing logic.
+                # Now staff can correct a filing multiple time and parent_filing in the original filing will be
+                # overriden with the latest correction, which cause loosing the previous correction link.
+                corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+                corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
+                if corrected_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
+                    corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
+                    name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':

@@ -41,11 +41,11 @@
     {% endif %}
   </div>
   
-  {% if business.tax_id and business.tax_id|length > 9 %}
+  {% if business.taxId and business.taxId|length > 9 %}
   [[20px.html]]
   <div>
     <div class="name bold">Business Number:</div>
-    <div class="value">{{ business.tax_id }}</div>
+    <div class="value">{{ business.taxId }}</div>
   </div>
   {% endif %}
   

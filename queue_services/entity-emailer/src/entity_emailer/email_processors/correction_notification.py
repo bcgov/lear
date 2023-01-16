@@ -23,7 +23,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
+from legal_api.models import Filing
 from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
@@ -44,6 +44,7 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
+    legal_type = business.get('legalType', None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -68,7 +69,6 @@ def _get_pdfs(
             attach_order += 1
 
         corp_name = business.get('legalName')
-        business_data = Business.find_by_internal_id(filing.business_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
@@ -76,7 +76,7 @@ def _get_pdfs(
                 'filingDateTime': filing_date_time,
                 'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
                 'filingIdentifier': str(filing.id),
-                'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+                'businessNumber': business.get('taxId', '')
             },
             headers=headers
         )
@@ -95,27 +95,50 @@ def _get_pdfs(
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        # add corrected registration statement
-        certificate = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=correctedRegistrationStatement',
-            headers=headers
-        )
-        if certificate.status_code != HTTPStatus.OK:
-            logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=correctedRegistrationStatement generation',
-                            level='error')
-        else:
-            certificate_encoded = base64.b64encode(certificate.content)
-            pdfs.append(
-                {
-                    'fileName': 'Corrected - Registration Statement.pdf',
-                    'fileBytes': certificate_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
+        if legal_type in ('SP', 'GP'):
+            # add corrected registration statement
+            certificate = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=correctedRegistrationStatement',
+                headers=headers
             )
-            attach_order += 1
+            if certificate.status_code != HTTPStatus.OK:
+                logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
+                capture_message(f'Email Queue: filing id={filing.id}, error=correctedRegistrationStatement generation',
+                                level='error')
+            else:
+                certificate_encoded = base64.b64encode(certificate.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Corrected - Registration Statement.pdf',
+                        'fileBytes': certificate_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': attach_order
+                    }
+                )
+                attach_order += 1
+        elif legal_type in ('BC', 'BEN', 'CC', 'ULC'):
+            # add notice of articles
+            noa = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=noticeOfArticles',
+                headers=headers
+            )
+            if noa.status_code != HTTPStatus.OK:
+                logger.error('Failed to get noa pdf for filing: %s', filing.id)
+                capture_message(f'Email Queue: filing id={filing.id}, error=noa generation', level='error')
+            else:
+                noa_encoded = base64.b64encode(noa.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Notice of Articles.pdf',
+                        'fileBytes': noa_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': attach_order
+                    }
+                )
+                attach_order += 1
+
     return pdfs
 
 
@@ -128,8 +151,19 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
+    prefix = 'BC'
+    legal_type = business.get('legalType', None)
+    if legal_type in ['SP', 'GP']:
+        prefix = 'FIRM'
+    elif legal_type in ['BC', 'BEN', 'CC', 'ULC']:
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
+            return None
+    else:
+        return None
+
     template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/FIRM-CRCTN-{status}.html'
+        f'{current_app.config.get("TEMPLATE_PATH")}/{prefix}-CRCTN-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
@@ -141,8 +175,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -170,7 +203,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         subject = 'Confirmation of Filing from the Business Registry'
 
     elif status == Filing.Status.COMPLETED.value:
-        subject = 'Correction of Registration Documents from the Business Registry'
+        subject = 'Correction Documents from the Business Registry'
 
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'

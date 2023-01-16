@@ -85,7 +85,7 @@ def create_filing(token=None, filing_json=None, business_id=None, filing_date=EP
 
 def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None):
     """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier, legal_type=legal_type)
+    business = create_business(identifier, legal_type=legal_type, legal_name='test business')
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = {'identifier': business.identifier}
     if business.legal_type:
@@ -286,26 +286,20 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     return filing
 
 
-def prep_incorporation_correction_filing(session, business, original_filing_id, payment_id, option,
-                                         name_change_with_new_nr):
+def prep_incorporation_correction_filing(session, business, original_filing_id, payment_id, option):
     """Return a new incorporation correction filing prepped for email notification."""
     filing_template = copy.deepcopy(CORRECTION_INCORPORATION)
     filing_template['filing']['business'] = {'identifier': business.identifier}
-    for party in filing_template['filing']['incorporationApplication']['parties']:
+    for party in filing_template['filing']['correction']['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['incorporationApplication']['contactPoint'] = {}
-    filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
+    filing_template['filing']['correction']['contactPoint']['email'] = 'test@test.com'
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
-    if not name_change_with_new_nr:
-        del filing_template['filing']['incorporationApplication']['nameRequest']['legalName']
-    else:
-        filing_template['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
     filing.payment_completion_date = filing.filing_date
     filing.save()
-    if option in ['COMPLETED', 'bn']:
+    if option in ['COMPLETED']:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
