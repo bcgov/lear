@@ -96,7 +96,7 @@ def test_maintenance_notification(app, session, status, filing_type):
             assert mock_get_pdfs.call_args[0][0] == status
             assert mock_get_pdfs.call_args[0][1] == token
             assert mock_get_pdfs.call_args[0][2] == \
-                {'identifier': 'BC1234567', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
+                {'identifier': 'BC1234567', 'legalType': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
             assert mock_get_pdfs.call_args[0][3] == filing
             assert mock_get_recipients.call_args[0][0] == status
             assert mock_get_recipients.call_args[0][1] == filing.filing_json

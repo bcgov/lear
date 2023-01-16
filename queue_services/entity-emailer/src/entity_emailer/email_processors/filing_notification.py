@@ -238,6 +238,9 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    if filing_type == 'incorporationApplication' and status == Filing.Status.PAID.value:
+        business = (filing.json)['filing']['incorporationApplication']['nameRequest']
+
     legal_type = business.get('legalType')
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
@@ -252,6 +255,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
+        filing_status=status,
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,

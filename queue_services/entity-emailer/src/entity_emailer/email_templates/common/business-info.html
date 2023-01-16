@@ -12,18 +12,20 @@
     <td class="name">Company Name:</td>
     {% endif %}
 
-    {% if business.legalName %}
+    {% if filing_status == 'PAID' and filing_type == 'incorporationApplication' %}
+      {% if filing.nameRequest.legalName %}
+      <!-- try to get legal name from Name Request object -->
+      <td class="value bold">{{ filing.nameRequest.legalName }}</td>
+      {% elif numbered_description %}
+      <!-- fallback BC label -->
+      <td class="value bold">{{ numbered_description }}</td>
+      {% else %}
+      <!-- add other cases here -->
+      <td class="value bold">Unknown</td>
+      {% endif %}
+    {% elif business.legalName %}
     <!-- try to get legal name from Business object -->
     <td class="value bold">{{ business.legalName }}</td>
-    {% elif filing.nameRequest.legalName %}
-    <!-- try to get legal name from Name Request object -->
-    <td class="value bold">{{ filing.nameRequest.legalName }}</td>
-    {% elif numbered_description %}
-    <!-- fallback BC label -->
-    <td class="value bold">{{ numbered_description }}</td>
-    {% else %}
-    <!-- add other cases here -->
-    <td class="value bold">Unknown</td>
     {% endif %}
   </tr>
 
@@ -33,7 +35,7 @@
     {% else %}
       <td class="name">Incorporation Number:</td>
     {% endif %}
-    {% if header.status == 'PAID' and filing_type == 'incorporationApplication' %}
+    {% if filing_status == 'PAID' and filing_type == 'incorporationApplication' %}
     <td class="value bold">Pending</td>
     {% else %}
     <!-- Eg, BC0878529 -->
