@@ -46,6 +46,8 @@ FILING_TYPE_MAPPER = {
     'alteration': ALTERATION_FILING_TEMPLATE
 }
 
+LEGAL_NAME = 'test business'
+
 
 def create_user(user_name: str):
     """Return a new user model."""
@@ -85,7 +87,7 @@ def create_filing(token=None, filing_json=None, business_id=None, filing_date=EP
 
 def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None):
     """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier, legal_type=legal_type, legal_name='test business')
+    business = create_business(identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = {'identifier': business.identifier}
     if business.legal_type:
@@ -282,11 +284,11 @@ def prep_alteration_filing(session, identifier, option, company_name):
 
 def prep_maintenance_filing(session, identifier, payment_id, status, filing_type):
     """Return a new maintenance filing prepped for email notification."""
-    business = create_business(identifier, Business.LegalTypes.BCOMP.value, 'test business')
+    business = create_business(identifier, Business.LegalTypes.BCOMP.value, LEGAL_NAME)
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
     filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
+        {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': LEGAL_NAME}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
     filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
     filing.save()

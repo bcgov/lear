@@ -18,6 +18,7 @@ import base64
 import re
 from http import HTTPStatus
 from pathlib import Path
+from typing import Optional
 
 import requests
 from entity_queue_common.service_utils import logger
@@ -142,7 +143,7 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Correction notification."""
     logger.debug('correction_notification: %s', email_info)
     # get template and fill in parts
@@ -199,12 +200,12 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    if status == Filing.Status.PAID.value:
-        subject = 'Confirmation of Filing from the Business Registry'
+    subjects = {
+        Filing.Status.PAID.value: 'Confirmation of Filing from the Business Registry',
+        Filing.Status.COMPLETED.value: 'Correction Documents from the Business Registry'
+    }
 
-    elif status == Filing.Status.COMPLETED.value:
-        subject = 'Correction Documents from the Business Registry'
-
+    subject = subjects[status]
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 
