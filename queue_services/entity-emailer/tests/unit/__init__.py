@@ -18,7 +18,7 @@ from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import Business, Filing, User
+from legal_api.models import Business, Filing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -90,12 +90,19 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
     filing_template['filing']['business'] = {'identifier': business.identifier}
     if business.legal_type:
         filing_template['filing']['business']['legalType'] = business.legal_type
+        filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = business.legal_type
     for party in filing_template['filing']['incorporationApplication']['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+
+    temp_identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+    filing = create_filing(token=payment_id, filing_json=filing_template,
+                           business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED', 'bn']:

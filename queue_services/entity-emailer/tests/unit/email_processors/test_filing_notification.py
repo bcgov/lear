@@ -28,7 +28,7 @@ from tests.unit import prep_incorp_filing, prep_maintenance_filing
 def test_incorp_notification(app, session, status):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', status)
+    filing = prep_incorp_filing(session, 'BC1234567', '1', status, 'BC')
     token = 'token'
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -45,7 +45,12 @@ def test_incorp_notification(app, session, status):
         assert email['content']['attachments'] == []
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2] == {'identifier': 'BC1234567'}
+        if status == 'PAID':
+            assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
+        else:
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+
+        assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
         assert mock_get_pdfs.call_args[0][3] == filing
 
 
@@ -95,8 +100,9 @@ def test_maintenance_notification(app, session, status, filing_type):
             assert email['content']['attachments'] == []
             assert mock_get_pdfs.call_args[0][0] == status
             assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2] == \
-                {'identifier': 'BC1234567', 'legalType': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
+            assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
             assert mock_get_pdfs.call_args[0][3] == filing
             assert mock_get_recipients.call_args[0][0] == status
             assert mock_get_recipients.call_args[0][1] == filing.filing_json
