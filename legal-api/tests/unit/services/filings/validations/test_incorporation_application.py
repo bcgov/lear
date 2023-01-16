@@ -1397,13 +1397,11 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
 
 
 @pytest.mark.parametrize(
-    'legal_type, expected_code, expected_msg', [
-        ('BEN', HTTPStatus.BAD_REQUEST, '(BEN) incorporationApplication does not support court order.'),
-        ('BC', HTTPStatus.BAD_REQUEST, '(BC) incorporationApplication does not support court order.'),
-        ('CC', HTTPStatus.BAD_REQUEST, '(CC) incorporationApplication does not support court order.'),
-        ('ULC', None, None),
+    'test_name', [
+        ('with_court_order'),
+        ('without_court_order')
     ])
-def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg):
+def test_ia_court_order(session, mocker, test_name):
     """Assert that incorporation court order can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
@@ -1411,9 +1409,9 @@ def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg
                                        'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
-    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
-    filing_json['filing'][incorporation_application_name]['courtOrder'] = COURT_ORDER
-    filing_json['filing'][incorporation_application_name]['courtOrder']['orderDate'] = court_order_date
+    if test_name == 'with_court_order':
+        filing_json['filing'][incorporation_application_name]['courtOrder'] = COURT_ORDER
+        filing_json['filing'][incorporation_application_name]['courtOrder']['orderDate'] = court_order_date
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
@@ -1422,11 +1420,4 @@ def test_ia_court_order(session, mocker, legal_type, expected_code, expected_msg
     with freeze_time(now):
         err = validate(None, filing_json)
 
-    if expected_code:
-        assert err.code == expected_code
-        assert lists_are_equal(
-            err.msg,
-            [{'error': expected_msg, 'path': '/filing/incorporationApplication/courtOrder'}]
-        )
-    else:
-        assert err is None
+    assert err is None

@@ -82,7 +82,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
-    msg.extend(validate_ia_court_order(incorporation_json, legal_type))
+    msg.extend(validate_ia_court_order(incorporation_json))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -384,18 +384,11 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
     return None
 
 
-def validate_ia_court_order(filing: dict, legal_type: str) -> list:
+def validate_ia_court_order(filing: dict) -> list:
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('incorporationApplication', {}).get('courtOrder', None):
         court_order_path: Final = '/filing/incorporationApplication/courtOrder'
-        if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
-            err = validate_court_order(court_order_path, court_order)
-            if err:
-                return err
-        else:
-            return [{
-                'error': f'({legal_type}) incorporationApplication does not support court order.',
-                'path': court_order_path
-            }]
-
+        err = validate_court_order(court_order_path, court_order)
+        if err:
+            return err
     return []
