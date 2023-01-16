@@ -270,7 +270,7 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
 
 def prep_alteration_filing(session, identifier, option, company_name):
     """Return an alteration filing prepped for email notification."""
-    business = create_business(identifier)
+    business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP.value, legal_name=company_name)
     filing_template = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = \
         {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': company_name}

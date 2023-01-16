@@ -45,7 +45,7 @@ def test_process_filing_missing_app(app, session):
 def test_process_incorp_email(app, session, option):
     """Assert that an INCORP email msg is processed correctly."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', option)
+    filing = prep_incorp_filing(session, 'BC1234567', '1', option, 'BC')
     token = '1'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -56,7 +56,12 @@ def test_process_incorp_email(app, session, option):
 
                 assert mock_get_pdfs.call_args[0][0] == option
                 assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2] == {'identifier': 'BC1234567'}
+                if option == 'PAID':
+                    assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
+                else:
+                    assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+
+                assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
                 assert mock_get_pdfs.call_args[0][3] == filing
 
                 if option == 'PAID':
@@ -95,11 +100,11 @@ def test_maintenance_notification(app, session, status, filing_type):
 
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
-                    assert mock_get_pdfs.call_args[0][2] == {
-                        'identifier': 'BC1234567',
-                        'legalype': Business.LegalTypes.BCOMP.value,
-                        'legalName': 'test business'
-                    }
+
+                    assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+                    assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
+                    assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
+
                     assert mock_get_pdfs.call_args[0][3] == filing
                     assert mock_get_recipients.call_args[0][0] == status
                     assert mock_get_recipients.call_args[0][1] == filing.filing_json
