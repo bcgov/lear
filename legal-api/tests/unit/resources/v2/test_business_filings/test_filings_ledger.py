@@ -148,8 +148,8 @@ def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling'
     return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
 
 
-def ledger_element_setup_filing(business, filing_name, filing_date):
-    filing = copy.deepcopy(FILING_TEMPLATE)
+def ledger_element_setup_filing(business, filing_name, filing_date, filing_dict=None):
+    filing = filing_dict or copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = filing_name
     f = factory_completed_filing(business, filing, filing_date=filing_date)
     return f
@@ -354,7 +354,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
         if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == 'Correction'
+            assert filing_json['displayName'] == 'Register Correction Application'
         elif filing_json['name'] == 'incorporationApplication':
             assert filing_json['displayName'] == 'BC Benefit Company Incorporation Application'
         else:
@@ -366,7 +366,13 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     business, original = ledger_element_setup_help(identifier, 'annualReport')
-    correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
+    ar_correction = copy.deepcopy(CORRECTION_AR)
+    ar_correction['filing']['correction']['correctedFilingId'] = original.id
+    correction = ledger_element_setup_filing(
+        business,
+        'correction',
+        filing_date=business.founding_date + datedelta.datedelta(months=3),
+        filing_dict=ar_correction)
     original.parent_filing_id = correction.id
     original.save()
 
