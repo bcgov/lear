@@ -23,7 +23,6 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.services import NameXService
-from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import substitute_template_parts
 
@@ -45,7 +44,6 @@ def process(email_info: dict) -> dict:
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
         logger.error('Failed to get nr info for name request: %s', nr_number)
-        capture_message(f'Email Queue: nr_id={nr_number}, error=receipt generation', level='error')
         return {}
     nr_data = nr_response.json()
 
@@ -90,7 +88,6 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
     )
     if nr_payments.status_code != HTTPStatus.OK:
         logger.error('Failed to get payment info for name request id: %s', nr_id)
-        capture_message(f'Email Queue: nr_id={nr_id}, error=receipt generation', level='error')
         return []
 
     # find specific payment corresponding to payment token
@@ -100,8 +97,6 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
             payment_id = payment['id']
     if not payment_id:
         logger.error('No matching payment info found for name request id: %s, payment token: %s', nr_id, payment_token)
-        capture_message(
-            f'Email Queue: nr_id={nr_id}, payment_token={payment_token}, error=receipt generation', level='error')
         return []
 
     # get receipt
@@ -115,7 +110,6 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
     )
     if receipt.status_code != HTTPStatus.OK:
         logger.error('Failed to get receipt pdf for name request id: %s', nr_id)
-        capture_message(f'Email Queue: NR id: {nr_id}, error=receipt generation', level='error')
         return []
 
     # add receipt to pdfs
@@ -147,5 +141,4 @@ def get_nr_bearer_token():
         return res.json().get('access_token')
     except Exception:  # noqa B902; pylint: disable=W0703;
         logger.error('Failed to get nr token')
-        capture_message('Failed to get nr token', level='error')
         return None

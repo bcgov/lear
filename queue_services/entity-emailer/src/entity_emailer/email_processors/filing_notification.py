@@ -24,7 +24,6 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business, Filing
-from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
@@ -63,7 +62,6 @@ def _get_pdfs(
         )
         if filing_pdf.status_code != HTTPStatus.OK:
             logger.error('Failed to get pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             file_name = filing.filing_type[0].upper() + \
@@ -100,7 +98,6 @@ def _get_pdfs(
         )
         if receipt.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get receipt pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=receipt generation', level='error')
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -122,7 +119,6 @@ def _get_pdfs(
             )
             if noa.status_code != HTTPStatus.OK:
                 logger.error('Failed to get noa pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=noa generation', level='error')
             else:
                 noa_encoded = base64.b64encode(noa.content)
                 pdfs.append(
@@ -144,7 +140,6 @@ def _get_pdfs(
             )
             if certificate.status_code != HTTPStatus.OK:
                 logger.error('Failed to get certificate pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=certificate generation', level='error')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 file_name = 'Incorporation Certificate.pdf'
@@ -167,8 +162,6 @@ def _get_pdfs(
                 )
                 if rules.status_code != HTTPStatus.OK:
                     logger.error('Failed to get certifiedRules pdf for filing: %s', filing.id)
-                    capture_message(f'Email Queue: filing id={filing.id}, error=certifiedRules generation',
-                                    level='error')
                 else:
                     certified_rules_encoded = base64.b64encode(rules.content)
                     pdfs.append(
@@ -189,8 +182,6 @@ def _get_pdfs(
                 )
                 if memorandum.status_code != HTTPStatus.OK:
                     logger.error('Failed to get certifiedMemorandum pdf for filing: %s', filing.id)
-                    capture_message(f'Email Queue: filing id={filing.id}, error=certifiedMemorandum generation',
-                                    level='error')
                 else:
                     certified_memorandum_encoded = base64.b64encode(memorandum.content)
                     pdfs.append(
@@ -212,8 +203,6 @@ def _get_pdfs(
             )
             if certificate.status_code != HTTPStatus.OK:
                 logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=certificateOfNameChange generation',
-                                level='error')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 file_name = 'Certificate of Name Change.pdf'
