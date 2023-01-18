@@ -1035,6 +1035,12 @@ RESTORATION_FULL_FILING['filing']['restoration']['type'] = 'fullRestoration'
 RESTORATION_LIMITED_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_FILING['filing']['restoration']['type'] = 'limitedRestoration'
 
+RESTORATION_LIMITED_EXT_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestorationExtension'
+
+RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1089,6 +1095,14 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
         ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
         ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
     ]
 )
 def test_get_correct_fee_codes(
