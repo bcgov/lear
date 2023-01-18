@@ -216,6 +216,26 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'ULC': 'RESTL',
                     'CC': 'RESTL'
                 }
+            },
+            'limitedRestorationExtension': {
+                'name': 'limitedRestorationExtension',
+                'title': 'Limited Restoration Extension',
+                'codes': {
+                    'BC': 'RESXL',
+                    'BEN': 'RESXL',
+                    'ULC': 'RESXL',
+                    'CC': 'RESXL'
+                }
+            },
+            'limitedRestorationToFull': {
+                'name': 'limitedRestorationToFull',
+                'title': 'Limited Restoration To Full',
+                'codes': {
+                    'BC': 'RESXF',
+                    'BEN': 'RESXF',
+                    'ULC': 'RESXF',
+                    'CC': 'RESXF'
+                }
             }
         },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder

@@ -119,7 +119,9 @@ ALLOWABLE_FILINGS: Final = {
             'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'restoration': {
                 'fullRestoration': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
+                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'limitedRestorationExtension': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'limitedRestorationToFull': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
             'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC']
         }
@@ -140,7 +142,9 @@ ALLOWABLE_FILINGS: Final = {
         Business.State.HISTORICAL: {
             'restoration': {
                 'fullRestoration': ['BC', 'BEN', 'CC', 'ULC'],
-                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC']
+                'limitedRestoration': ['BC', 'BEN', 'CC', 'ULC'],
+                'limitedRestorationExtension': ['BC', 'BEN', 'CC', 'ULC'],
+                'limitedRestorationToFull': ['BC', 'BEN', 'CC', 'ULC']
             }
         }
     }
