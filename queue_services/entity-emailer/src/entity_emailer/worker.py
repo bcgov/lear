@@ -70,7 +70,7 @@ async def publish_event(payload: dict):
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
     except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
-        logger.error('Queue Publish Event Error: email msg=%s', payload, exc_info=True)
+        logger.error('Queue Publish Event Error: {} email msg={}'.format(str(err), json.dumps(payload)), exc_info=True)
 
 
 def send_email(email: dict, token: str):
