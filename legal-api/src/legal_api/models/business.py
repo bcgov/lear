@@ -192,7 +192,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foreignIdentifier',
             'foreignLegalName',
             'foreignLegalType',
-            'foreignIncorporationDate'
+            'foreignIncorporationDate',
+            'send_ar_ind'
         ]
     }
 
@@ -221,6 +222,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+    send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
