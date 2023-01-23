@@ -54,6 +54,14 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
     """Return a dict of the json string in the Msg.data."""
     return json.loads(msg.data.decode('utf-8'))
 
+def is_processable_message(msg: dict) -> bool:
+    """Return if message is processable.  A non-null filingIdentifier is a message unrelated to entity-pay."""
+    if not (payment_token := msg.get('paymentToken', None)) or \
+            payment_token.get('filingIdentifier', None) is not None:
+        return False
+
+    return True
+
 
 def get_filing_by_payment_id(payment_id: int) -> Filing:
     """Return the outcome of Filing.get_filing_by_payment_token."""
@@ -79,7 +87,7 @@ async def process_payment(payment_token, flask_app):
         # before it is assigned to filing.
         counter = 1
         filing_submission = None
-        while not filing_submission and counter <= 5:
+        while not filing_submission and counter <= 2:
             filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
             counter += 1
             if not filing_submission:
@@ -142,7 +150,10 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         payment_token = extract_payment_token(msg)
         logger.debug('Extracted payment token: %s', payment_token)
-        await process_payment(payment_token, FLASK_APP)
+        if is_processable_message(payment_token):
+            await process_payment(payment_token, FLASK_APP)
+        else:
+            logger.debug('skipping unprocessable payment token: %s', payment_token)
     except OperationalError as err:
         logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
