@@ -1,4 +1,22 @@
 
+def get_base_ia_filing_json(num_parties: int, num_corp_names = 0, num_share_classes = 0):
+    ia_json = get_base_ia_json()
+
+    parties = ia_json['filing']['incorporationApplication']['parties']
+    for x in range(num_parties):
+        parties.append(get_base_party_json())
+
+    name_translations = ia_json['filing']['incorporationApplication']['nameTranslations']
+    for x in range(num_corp_names):
+        name_translations.append(get_base_name_translation_json())
+
+    share_classes = ia_json['filing']['incorporationApplication']['shareStructure']['shareClasses']
+    for x in range(num_share_classes):
+        share_classes.append(get_base_share_class_json())
+
+    return ia_json
+
+
 def get_base_registration_filing_json(num_parties: int):
     registration_json = get_base_registration_json()
     parties = registration_json['filing']['registration']['parties']
@@ -41,6 +59,90 @@ def get_base_conversion_filing_json(num_parties: int):
         parties.append(get_base_party_json())
     return conversion_json
 
+
+def get_base_ia_json():
+    ia_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'incorporationApplication',
+                'certifiedBy': None,
+                'folioNumber': '',
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            'incorporationApplication': {
+                'offices': {
+                    'recordsOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    },
+                    'registeredOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    }
+                },
+                'parties': [],
+                'nameRequest': {
+                    'nrNumber': None,
+                    'legalName': None,
+                    'legalType': None
+                },
+                'contactPoint': {
+                    'email': None
+                },
+                'shareStructure': {
+                    'shareClasses': []
+                },
+                'nameTranslations': [],
+                'incorporationAgreement': {
+                    'agreementType': None
+                },
+                'courtOrder': {
+                    'fileNumber': None,
+                    'effectOfOrder': None,
+                    'hasPlanOfArrangement': False
+                }
+            }
+        }
+    }
+    return ia_json
 
 def get_base_registration_json():
     registration_json = {
@@ -380,3 +482,42 @@ def get_base_party_json():
             }
         }
     return party_json
+
+
+def get_base_name_translation_json():
+    name_translation_json = {
+        'name': None,
+        'type': None
+    }
+    return name_translation_json
+
+
+def get_base_share_class_json():
+    share_class_json = {
+        'name': None,
+        'type': 'Class',
+        'series': [],
+        'currency': None,
+        'parValue': None,
+        'priority': None,
+        'hasParValue': None,
+        'hasMaximumShares': None,
+        'maxNumberOfShares': None,
+        'hasRightsOrRestrictions': False
+    }
+    return share_class_json
+
+
+def get_base_share_series_json():
+    share_series_json = {
+        'name': None,
+        'type': 'Series',
+        'currency': None,
+        'parValue': None,
+        'priority': None,
+        'hasParValue': None,
+        'hasMaximumShares': None,
+        'maxNumberOfShares': None,
+        'hasRightsOrRestrictions': None
+    }
+    return share_series_json
