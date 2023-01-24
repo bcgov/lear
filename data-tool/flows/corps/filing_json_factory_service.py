@@ -1,8 +1,8 @@
-from .filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
-    get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json, \
-    get_base_correction_filing_json, get_base_ia_filing_json
+from flows.common.filing_base_json import  get_base_dissolution_filing_json, get_base_put_back_on_filing_json, \
+    get_base_correction_filing_json, get_base_ia_filing_json, get_base_share_series_json
 from .filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
-    get_street_address, get_street_additional, AddressFormatType, get_effective_date_str
+    get_street_address, get_street_additional, AddressFormatType, get_effective_date_str, \
+    get_alias_type
 
 
 class FilingJsonFactoryService:
@@ -32,16 +32,10 @@ class FilingJsonFactoryService:
 
         if self._target_lear_filing_type == 'incorporationApplication':
             filing_json = self.get_ia_filing_json()
-        elif self._target_lear_filing_type == 'registration':
-            filing_json = self.get_registration_filing_json()
-        elif self._target_lear_filing_type == 'changeOfRegistration':
-            filing_json = self.get_change_registration_filing_json()
         elif self._target_lear_filing_type == 'correction':
             filing_json = self.get_correction_filing_json()
         elif self._target_lear_filing_type == 'dissolution':
             filing_json = self.get_voluntary_dissolution_filing_json()
-        elif self._target_lear_filing_type == 'conversion':
-            filing_json = self.get_conversion_filing_json()
         elif self._target_lear_filing_type == 'putBackOn':
             filing_json = self.get_put_back_on_filing_json()
 
@@ -55,9 +49,9 @@ class FilingJsonFactoryService:
 
     def build_ia_filing(self):
         num_parties = len(self._filing_data['corp_parties'])
-        # num_name_translations = len(self._filing_data['corp_parties'])
-        # filing_root_dict = get_base_ia_filing_json(num_parties, num_name_translations)
-        filing_root_dict = get_base_ia_filing_json(num_parties)
+        num_corp_names = len(self._filing_data['corp_names'])
+        num_share_classes = len(self._filing_data['share_structure']['share_classes'])
+        filing_root_dict = get_base_ia_filing_json(num_parties, num_corp_names, num_share_classes)
 
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
@@ -65,39 +59,9 @@ class FilingJsonFactoryService:
         return filing_root_dict
 
 
-    def get_registration_filing_json(self):
-        result = self.build_registration_filing()
-        return result
-
-
-    def build_registration_filing(self):
-        num_parties = len(self._filing_data['corp_parties'])
-        filing_root_dict = get_base_registration_filing_json(num_parties)
-
-        self.populate_header(filing_root_dict)
-        self.populate_business(filing_root_dict)
-        self.populate_registration(filing_root_dict)
-        return filing_root_dict
-
-
-    def get_change_registration_filing_json(self):
-        result = self.build_change_registration_filing()
-        return result
-
-
     def get_correction_filing_json(self):
         result = self.build_correction_filing()
         return result
-
-
-    def build_change_registration_filing(self):
-        num_parties = len(self._filing_data['corp_parties'])
-        filing_root_dict = get_base_change_registration_filing_json(num_parties)
-
-        self.populate_header(filing_root_dict)
-        self.populate_business(filing_root_dict)
-        self.populate_change_registration(filing_root_dict)
-        return filing_root_dict
 
 
     def build_correction_filing(self):
@@ -121,20 +85,6 @@ class FilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_dissolution(filing_root_dict)
-        return filing_root_dict
-
-    def get_conversion_filing_json(self):
-        result = self.build_conversion_filing()
-        return result
-
-
-    def build_conversion_filing(self):
-        num_parties = len(self._filing_data['corp_parties'])
-        filing_root_dict = get_base_conversion_filing_json(num_parties)
-
-        self.populate_header(filing_root_dict)
-        self.populate_business(filing_root_dict)
-        self.populate_conversion(filing_root_dict)
         return filing_root_dict
 
 
@@ -172,59 +122,19 @@ class FilingJsonFactoryService:
         ia_dict = filing_root_dict['filing']['incorporationApplication']
         ia_dict['businessType'] = self._filing_data['c_corp_type_cd']
 
-        self.populate_filing_business(ia_dict)
         self.populate_offices(ia_dict)
         self.populate_parties(ia_dict)
+        self.populate_name_translations(ia_dict)
         self.populate_nr(ia_dict)
+        if len(ia_dict['shareStructure']['shareClasses']) > 0:
+            self.populate_share_structure(ia_dict)
+        else:
+            del ia_dict['shareStructure']
+
         if self._filing_data['c_admin_email']:
             self.populate_contact_point(ia_dict)
         else:
             del ia_dict['contactPoint']
-
-
-    def populate_registration(self, filing_root_dict: dict):
-        registration_dict = filing_root_dict['filing']['registration']
-        registration_dict['businessType'] = self._filing_data['c_corp_type_cd']
-        if start_date := self._filing_data['bd_business_start_date_dts_pacific']:
-            registration_dict['startDate'] = str(start_date)
-
-        self.populate_filing_business(registration_dict)
-        self.populate_offices(registration_dict)
-        self.populate_parties(registration_dict)
-        self.populate_nr(registration_dict)
-        if self._filing_data['c_admin_email']:
-            self.populate_contact_point(registration_dict)
-        else:
-            del registration_dict['contactPoint']
-
-
-    def populate_change_registration(self, filing_dict: dict):
-        change_registration_dict = filing_dict['filing']['changeOfRegistration']
-
-        if self._filing_data.get('bd_start_event_id', None):
-            self.populate_filing_business(change_registration_dict)
-        else:
-            del change_registration_dict['business']
-
-        if len(self._filing_data['offices']) > 0:
-            self.populate_offices(change_registration_dict)
-        else:
-            del change_registration_dict['offices']
-
-        if len(self._filing_data['corp_parties']) > 0:
-            self.populate_parties(change_registration_dict)
-        else:
-            del change_registration_dict['parties']
-
-        if self._filing_data.get('cn_start_event_id') and self._filing_data.get('cn_corp_name'):
-            self.populate_nr(change_registration_dict)
-        else:
-            del change_registration_dict['nameRequest']
-
-        if self._filing_data['c_admin_email']:
-            self.populate_contact_point(change_registration_dict)
-        else:
-            del change_registration_dict['contactPoint']
 
 
     def populate_correction(self, filing_dict: dict):
@@ -262,59 +172,45 @@ class FilingJsonFactoryService:
             del correction_dict['contactPoint']
 
 
+    def populate_offices(self, ia_dict: dict):
+        registered_office_json = ia_dict['offices']['registeredOffice']
+        records_office_json = ia_dict['offices']['recordsOffice']
 
-    def populate_conversion(self, filing_dict: dict):
-        conversion_dict = filing_dict['filing']['conversion']
-        conversion_dict['startDate'] = self._filing_data.get('bd_business_start_date_dt_str', None)
-
-        if self._filing_data.get('bd_start_event_id', None):
-            self.populate_filing_business(conversion_dict)
-        else:
-            del conversion_dict['business']
-
-        if len(self._filing_data['offices']) > 0:
-            self.populate_offices(conversion_dict)
-        else:
-            del conversion_dict['offices']
-
-        if len(self._filing_data['corp_parties']) > 0:
-            self.populate_parties(conversion_dict)
-        else:
-            del conversion_dict['parties']
-
-        if self._filing_data.get('cn_start_event_id') and self._filing_data.get('cn_corp_name'):
-            self.populate_nr(conversion_dict)
-        else:
-            del conversion_dict['nameRequest']
-
-        if self._filing_data['c_admin_email']:
-            self.populate_contact_point(conversion_dict)
-        else:
-            del conversion_dict['contactPoint']
-
-
-
-    def populate_offices(self, registration_dict: dict):
-        office = registration_dict['offices']['businessOffice']
         if len(self._filing_data['offices']) == 0:
-            del registration_dict['offices']['businessOffice']
+            del ia_dict['offices']
+            return
 
-        if len(self._filing_data['offices']) > 0:
-            filing_data_office = self._filing_data['offices'][0]
+        registered_office_filing_data = \
+            next((o for o in self._filing_data['offices'] if o.get('o_office_typ_cd', '') == 'RG'), None)
+        records_office_filing_data = \
+            next((o for o in self._filing_data['offices'] if o.get('o_office_typ_cd', '') == 'RC'), None)
 
-            mailing_addr_id = filing_data_office['ma_addr_id']
-            if mailing_addr_id:
-                mailing_addr = office['mailingAddress']
-                self.populate_address(mailing_addr, filing_data_office, 'ma_')
-            else:
-                del office['mailingAddress']
+        if registered_office_filing_data:
+            self.populate_office(registered_office_json, registered_office_filing_data)
+        else:
+            del registered_office_json
 
-            delivery_addr_id = filing_data_office['da_addr_id']
-            if delivery_addr_id:
-                delivery_addr = office['deliveryAddress']
-                self.populate_address(delivery_addr, filing_data_office, 'da_')
-            else:
-                del office['deliveryAddress']
+        if records_office_filing_data:
+            self.populate_office(records_office_json, records_office_filing_data)
+        else:
+            del records_office_json
+
+
+    def populate_office(self, office_json: dict, filing_data_office: dict):
+
+        mailing_addr_id = filing_data_office['ma_addr_id']
+        if mailing_addr_id:
+            mailing_addr = office_json['mailingAddress']
+            self.populate_address(mailing_addr, filing_data_office, 'ma_')
+        else:
+            del office_json['mailingAddress']
+
+        delivery_addr_id = filing_data_office['da_addr_id']
+        if delivery_addr_id:
+            delivery_addr = office_json['deliveryAddress']
+            self.populate_address(delivery_addr, filing_data_office, 'da_')
+        else:
+            del office_json['deliveryAddress']
 
 
     def populate_parties(self, filings_dict: dict):
@@ -337,6 +233,17 @@ class FilingJsonFactoryService:
                 self.populate_address(delivery_addr, filing_data_party, 'da_')
             else:
                 del party['deliveryAddress']
+
+
+    def populate_name_translations(self, filings_dict: dict):
+        corp_names = filings_dict['nameTranslations']
+
+        for idx, corp_name in enumerate(corp_names):
+            filing_data_corp_name = self._filing_data['corp_names'][idx]
+            corp_name['name'] = filing_data_corp_name['cn_corp_name']
+            corp_name_typ_cd = filing_data_corp_name['cn_corp_name_typ_cd']
+            alias_type = get_alias_type(corp_name_typ_cd)
+            corp_name['type'] = alias_type
 
 
     def populate_completing_party(self, filings_dict: dict):
@@ -572,3 +479,42 @@ class FilingJsonFactoryService:
     def populate_contact_point(self, filing_dict: dict):
         contact_point_dict = filing_dict['contactPoint']
         contact_point_dict['email'] = self._filing_data['c_admin_email']
+
+
+    def populate_share_structure(self, filings_dict: dict):
+        share_classes = filings_dict['shareStructure']['shareClasses']
+
+        for idx, share_class in enumerate(share_classes):
+            filing_data_share_class = self._filing_data['share_structure']['share_classes'][idx]
+            self.populate_share_class(share_class, filing_data_share_class)
+
+
+    def populate_share_class(self, share_class_dict: dict, filing_share_class_dict: dict):
+        share_class_dict['name'] = filing_share_class_dict['ssc_class_nme']
+        share_class_dict['currency'] = filing_share_class_dict['ssc_currency_typ_cd']
+        share_class_dict['otherCurrency'] = filing_share_class_dict['ssc_other_currency']
+        share_class_dict['hasParValue'] = filing_share_class_dict['ssc_par_value_ind']
+        par_value = filing_share_class_dict['ssc_par_value_amt']
+        share_class_dict['parValue'] = float(par_value) if par_value else None
+        share_class_dict['hasMaximumShares'] = filing_share_class_dict['ssc_max_share_ind']
+        share_class_dict['hasSpecialRights'] = filing_share_class_dict['ssc_spec_rights_ind']
+
+        share_quantity = filing_share_class_dict['ssc_share_quantity']
+        share_class_dict['maxNumberOfShares'] = int(share_quantity) if share_quantity else None
+        self.populate_share_series(share_class_dict, filing_share_class_dict)
+
+
+    def populate_share_series(self, share_class_dict: dict, filing_share_class_dict: dict):
+        if not(filing_data_share_series := filing_share_class_dict['share_series']):
+            return
+
+        for series_data_dict in filing_data_share_series:
+            series_dict = get_base_share_series_json()
+            series_dict['name'] = series_data_dict['srs_series_nme']
+            series_dict['hasMaximumShares'] = series_data_dict['srs_max_share_ind']
+
+            share_quantity = series_data_dict['srs_share_quantity']
+            series_dict['maxNumberOfShares'] = int(share_quantity) if share_quantity else None
+
+            series_dict['hasSpecialRights'] = series_data_dict['srs_spec_right_ind']
+            share_class_dict['series'].append(series_dict)

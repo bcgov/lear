@@ -6,16 +6,15 @@ from prefect.task_runners import ConcurrentTaskRunner, SequentialTaskRunner
 from prefect_dask import DaskTaskRunner
 
 from config import get_named_config
-from common.corp_queries import get_unprocessed_corps_query
-from common.event_filing_service import EventFilingService, RegistrationEventFilings
-from common.filing_data_cleaning_utils import clean_naics_data, clean_corp_party_data, clean_offices_data, \
-    clean_corp_data, clean_event_data
+from flows.corps.corp_queries import get_unprocessed_corps_query
+from flows.corps.event_filing_service import EventFilingService, IAEventFilings
+from corps.filing_data_cleaning_utils import clean_offices_data, clean_corp_party_data, clean_corp_data, clean_event_data
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
-from custom_filer.filer import process_filing
+from custom_filer.corps_filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
-from common.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing
-from common.filing_json_factory_service import FilingJsonFactoryService
-from common.filing_data_utils import get_is_paper_only, get_previous_event_ids, \
+from flows.corps.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing
+from corps.filing_json_factory_service import FilingJsonFactoryService
+from corps.filing_data_utils import get_is_paper_only, get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy import create_engine, engine, text
@@ -120,7 +119,8 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_corp_dict
 
     except Exception as err:
         error_msg = f'error getting event filing data {corp_num}, {corp_name}, {err}'
-        logger.error(error_msg)
+        error_msg_minimal = f'error getting event filing data {corp_num}, {corp_name}'
+        logger.error(error_msg_minimal)
         status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
@@ -128,7 +128,7 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_corp_dict
                                           failed_event_id=event_id,
                                           failed_event_file_type=event_file_type,
                                           last_error=error_msg)
-        raise CustomException(error_msg, event_filing_data_dict)
+        raise CustomException(error_msg_minimal)
 
     return unprocessed_corp_dict
 
@@ -152,12 +152,12 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
                 clean_event_data(filing_data)
                 clean_corp_data(config, filing_data)
                 corp_name = filing_data['curr_corp_name']
-                clean_naics_data(filing_data)
                 clean_corp_party_data(filing_data)
                 clean_offices_data(filing_data)
     except Exception as err:
         error_msg = f'error cleaning business {corp_num}, {corp_name}, {err}'
-        logger.error(error_msg)
+        error_msg_minimal = f'error cleaning business {corp_num}, {corp_name}'
+        logger.error(error_msg_minimal)
         status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
@@ -165,7 +165,7 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
                                           failed_event_id=event_id,
                                           failed_event_file_type=event_filing_type,
                                           last_error=error_msg)
-        raise CustomException(error_msg, event_filing_data_dict)
+        raise CustomException(error_msg_minimal)
 
     return event_filing_data_dict
 
@@ -194,7 +194,8 @@ def transform_event_filing_data(config, colin_db_engine: engine, event_filing_da
                 event_filing_data['filing_json'] = filing_json
     except Exception as err:
         error_msg = f'error transforming business {corp_num}, {corp_name}, {err}'
-        logger.error(error_msg)
+        error_msg_minimal = f'error transforming business {corp_num}, {corp_name}'
+        logger.error(error_msg_minimal)
         status_service.update_flow_status(flow_name='corps-flow',
                                           corp_num=corp_num,
                                           corp_name=corp_name,
@@ -202,7 +203,7 @@ def transform_event_filing_data(config, colin_db_engine: engine, event_filing_da
                                           failed_event_id=event_id,
                                           failed_event_file_type=event_filing_type,
                                           last_error=error_msg)
-        raise CustomException(error_msg, event_filing_data_dict)
+        raise CustomException(error_msg_minimal)
 
     return event_filing_data_dict
 
@@ -212,6 +213,8 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
     logger = prefect.get_run_logger()
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
     corp_num = event_filing_data_dict['corp_num']
+    corp_type = event_filing_data_dict['corp_type_cd']
+    filings_count = event_filing_data_dict['cnt']
     corp_name = ''
     event_id = None
     event_filing_type = None
@@ -228,7 +231,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
                 if not event_filing_data['is_supported_type']:
                     error_msg = f'could not finish processing this corp as there is an unsupported event/filing type: {event_filing_type}'
-                    raise CustomUnsupportedTypeException(f'{error_msg}', filing_data)
+                    raise CustomUnsupportedTypeException(f'{error_msg}')
 
                 if not event_filing_data['is_in_lear'] and not event_filing_data['skip_filing']:
                     # the corp_processing table should already track whether an event/filing has been processed and
@@ -237,10 +240,10 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     # colin_event = get_colin_event(db_lear, event_id)
                     # if colin_event:
                     #     error_msg = f'colin event id ({event_id}) already exists in lear: {event_filing_type}'
-                    #     raise CustomException(f'{error_msg}', filing_data)
+                    #     raise CustomException(f'{error_msg}')
 
                     business = None
-                    if not RegistrationEventFilings.has_value(event_filing_type):
+                    if not IAEventFilings.has_value(event_filing_type):
                         business = Business.find_by_identifier(corp_num)
                     populate_filing_json_from_lear(db, event_filing_data, business)
                     corp_name = filing_data['curr_corp_name']
@@ -255,8 +258,6 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
                     event_cnt = event_filing_data_dict['retrieved_events_cnt']
                     if event_cnt == (idx + 1):
-                        corp_type = event_filing_data_dict['corp_type_cd']
-                        filings_count = event_filing_data_dict['cnt']
                         status_service.update_flow_status(flow_name='corps-flow',
                                                           corp_num=corp_num,
                                                           corp_name=corp_name,
@@ -272,7 +273,8 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                                           last_processed_event_id=event_id)
         except CustomUnsupportedTypeException as err:
             error_msg = f'Partial loading of business {corp_num}, {corp_name}, {err}'
-            logger.error(error_msg)
+            error_msg_minimal = f'Partial loading of business {corp_num}, {corp_name}'
+            logger.error(error_msg_minimal)
             status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
@@ -282,10 +284,11 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                               failed_event_id=event_id,
                                               failed_event_file_type=event_filing_type,
                                               last_error=error_msg)
-            raise err
+            raise CustomException(error_msg_minimal)
         except InvalidRequestError as err:
             error_msg = f'error loading business InvalidRequestError: {corp_num}, {corp_name}, {err}'
-            logger.error(error_msg)
+            error_msg_minimal = f'error loading business InvalidRequestError: {corp_num}, {corp_name}'
+            logger.error(error_msg_minimal)
             status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
@@ -299,10 +302,11 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
             logger.info('lear db rollback')
             db_lear.session.rollback()
 
-            raise err
+            raise CustomException(error_msg_minimal)
         except Exception as err:
             error_msg = f'error loading business {corp_num}, {corp_name}, {err}'
-            logger.error(error_msg)
+            error_msg_minimal = f'error loading business {corp_num}, {corp_name}'
+            logger.error(error_msg_minimal)
             status_service.update_flow_status(flow_name='corps-flow',
                                               corp_num=corp_num,
                                               corp_name=corp_name,
@@ -316,7 +320,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
             logger.info('lear db rollback')
             db_lear.session.rollback()
 
-            raise err
+            raise CustomException(error_msg_minimal)
 
 
 
