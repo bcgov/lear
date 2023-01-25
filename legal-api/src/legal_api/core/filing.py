@@ -367,6 +367,9 @@ class Filing:
 
                 **Filing.common_ledger_items(business.identifier, filing),
             }
+            if filing.filing_sub_type:
+                ledger_filing['filingSubType'] = filing.filing_sub_type
+
             # correction
             if filing.parent_filing:
                 ledger_filing['correctionFilingId'] = filing.parent_filing.id

@@ -58,4 +58,4 @@ urllib3==1.26.4
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
-git+https://github.com/bcgov/business-schemas.git@2.16.1#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.16.2#egg=registry_schemas

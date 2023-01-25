@@ -193,7 +193,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foreignLegalName',
             'foreignLegalType',
             'foreignIncorporationDate',
-            'send_ar_ind'
+            'send_ar_ind',
+            'restoration_expiry_date'
         ]
     }
 
@@ -210,6 +211,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column('start_date', db.DateTime(timezone=True))
+    restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -412,6 +414,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['startDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.start_date)
             ).isoformat()
+
+        if self.restoration_expiry_date:
+            d['restorationExpiryDate'] = self.restoration_expiry_date
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction

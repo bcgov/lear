@@ -96,27 +96,31 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
     msg = []
 
     for item in addresses.keys():
-        for k, v in addresses[item].items():
-            region = v.get('addressRegion')
-            country = v['addressCountry']
+        if item in ('registeredOffice', 'recordsOffice'):
+            for k, v in addresses[item].items():
+                region = v.get('addressRegion')
+                country = v['addressCountry']
 
-            if region != 'BC':
-                path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
-                    item, k
-                )
-                msg.append({'error': "Address Region must be 'BC'.",
-                            'path': path})
+                if region != 'BC':
+                    path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
+                        item, k
+                    )
+                    msg.append({'error': "Address Region must be 'BC'.",
+                                'path': path})
 
-            try:
-                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                if country != 'CA':
-                    raise LookupError
-            except LookupError:
-                err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
-                    item, k
-                )
-                msg.append({'error': "Address Country must be 'CA'.",
-                            'path': err_path})
+                try:
+                    country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                    if country != 'CA':
+                        raise LookupError
+                except LookupError:
+                    err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
+                        item, k
+                    )
+                    msg.append({'error': "Address Country must be 'CA'.",
+                                'path': err_path})
+        else:
+            msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
+                        'path': f'/filing/{filing_type}/offices'})
     if msg:
         return msg
 
