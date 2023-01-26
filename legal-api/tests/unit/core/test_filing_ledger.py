@@ -34,6 +34,7 @@ def load_ledger(business, founding_date):
         filing = copy.deepcopy(FILING_TEMPLATE)
         filing['filing']['header']['name'] = filing_meta['name']
         if filing_meta['name'] == 'restoration':
+            filing['filing']['restoration'] = {}
             filing['filing']['restoration']['type'] = 'fullRestoration'
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
