@@ -254,6 +254,8 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
         'legalType': legal_type,
         'legalName': legal_name
     }
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
 
     filing = create_filing(
         token=payment_id,
@@ -282,7 +284,7 @@ def prep_alteration_filing(session, identifier, option, company_name):
     return filing
 
 
-def prep_maintenance_filing(session, identifier, payment_id, status, filing_type):
+def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None):
     """Return a new maintenance filing prepped for email notification."""
     business = create_business(identifier, Business.LegalTypes.BCOMP.value, LEGAL_NAME)
     filing_template = copy.deepcopy(FILING_TEMPLATE)
@@ -290,7 +292,16 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     filing_template['filing']['business'] = \
         {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': LEGAL_NAME}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
+
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
     filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
     filing.save()
     return filing
 

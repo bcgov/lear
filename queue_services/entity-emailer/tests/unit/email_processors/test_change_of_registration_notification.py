@@ -21,19 +21,27 @@ from entity_emailer.email_processors import change_of_registration_notification
 from tests.unit import prep_change_of_registration_filing
 
 
-@pytest.mark.parametrize('status,legal_type', [
-    ('PAID', Business.LegalTypes.SOLE_PROP.value),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value),
+@pytest.mark.parametrize('status,legal_type,submitter_role', [
+    ('PAID', Business.LegalTypes.SOLE_PROP.value, None),
+    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value, None),
+    ('PAID', Business.LegalTypes.PARTNERSHIP.value, None),
+    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value, None),
+
+    ('PAID', Business.LegalTypes.SOLE_PROP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'staff'),
+    ('PAID', Business.LegalTypes.PARTNERSHIP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value, 'staff'),
 ])
-def test_change_of_registration_notification(app, session, status, legal_type):
+def test_change_of_registration_notification(app, session, mocker, status, legal_type, submitter_role):
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type, legal_name, 'staff')
+    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type, legal_name, submitter_role)
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.change_of_registration_notification.get_user_email_from_auth',
+        return_value='user@email.com')
     with patch.object(change_of_registration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = change_of_registration_notification.process(
             {'filingId': filing.id, 'type': 'changeOfRegistration', 'option': status}, token)
@@ -42,6 +50,11 @@ def test_change_of_registration_notification(app, session, status, legal_type):
         else:
             assert email['content']['subject'] == \
                 legal_name + ' - Change of Registration Documents from the Business Registry'
+
+        if submitter_role:
+            assert f'{submitter_role}@email.com' in email['recipients']
+        else:
+            assert 'user@email.com' in email['recipients']
 
         if status == 'COMPLETED':
             assert 'no_one@never.get' in email['recipients']
