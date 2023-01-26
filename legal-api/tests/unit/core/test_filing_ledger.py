@@ -26,12 +26,15 @@ from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from tests.unit.services.utils import helper_create_jwt
 
+
 def load_ledger(business, founding_date):
     """Create a ledger of all filing types."""
     i = 0
     for k, filing_meta in Filing.FILINGS.items():
         filing = copy.deepcopy(FILING_TEMPLATE)
         filing['filing']['header']['name'] = filing_meta['name']
+        if filing_meta['name'] == 'restoration':
+            filing['filing']['restoration']['type'] = 'fullRestoration'
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()
@@ -40,6 +43,7 @@ def load_ledger(business, founding_date):
         f.save()
         i += 1
     return i
+
 
 def test_simple_ledger_search(session):
     """Assert that the ledger returns values for all the expected keys."""
@@ -56,18 +60,18 @@ def test_simple_ledger_search(session):
     assert len(ledger) == num_of_files
 
     # Fully examine 1 filing - alteration
-    alteration = next((f for f in ledger if f.get('name')=='alteration'), None)
+    alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
 
     assert alteration
     assert 15 == len(alteration.keys())
-    assert 'availableOnPaperOnly' in alteration 
-    assert 'effectiveDate' in alteration 
-    assert 'filingId' in alteration 
-    assert 'name' in alteration 
-    assert 'paymentStatusCode' in alteration 
-    assert 'status' in alteration 
-    assert 'submittedDate' in alteration 
-    assert 'submitter' in alteration 
+    assert 'availableOnPaperOnly' in alteration
+    assert 'effectiveDate' in alteration
+    assert 'filingId' in alteration
+    assert 'name' in alteration
+    assert 'paymentStatusCode' in alteration
+    assert 'status' in alteration
+    assert 'submittedDate' in alteration
+    assert 'submitter' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
@@ -91,5 +95,3 @@ def test_common_ledger_items(session):
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
     assert common_ledger_items['documentsLink'] is not None
-
-
