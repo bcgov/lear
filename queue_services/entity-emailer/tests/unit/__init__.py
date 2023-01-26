@@ -295,7 +295,7 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
 
     if submitter_role:
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-    filing = create_filing(token=None, filing_json=filing_template, business_id=business.id)
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
 
     user = create_user('test_user')
     filing.submitter_id = user.id
@@ -303,6 +303,12 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
         filing.submitter_roles = submitter_role
 
     filing.save()
+    if status == 'COMPLETED':
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+
     return filing
 
 
