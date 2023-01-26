@@ -17,11 +17,10 @@ from typing import Dict, Final, Optional
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
-# noqa: I004
+
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-
-from src.legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
+from legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -95,6 +94,6 @@ def validate_restoration_court_order(filing: dict, restoration_type: str) -> lis
             msg.extend(err)
     elif restoration_type in ('fullRestoration', 'limitedRestoration') and \
             get_str(filing, '/filing/restoration/approvalType') == 'courtOrder':
-        msg.append({'error': 'Must provide Court Order Number', 'path': '/filing/restoration/courtOrder/fileNumber'})
+        msg.append({'error': 'Must provide Court Order Number.', 'path': '/filing/restoration/courtOrder/fileNumber'})
 
     return msg

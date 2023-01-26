@@ -18,9 +18,9 @@ from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
 import pytest
-from registry_schemas.example_data import RESTORATION
+from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from legal_api.models import PartyRole
+from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.restoration import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -61,15 +61,22 @@ class MockResponse:
 )
 def test_invalid_party(session, test_name, party_role, expected_msg):
     """Assert that party is invalid."""
-    filing = copy.deepcopy(RESTORATION)
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+
     if party_role:
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
     else:
         filing['filing']['restoration']['parties'] = []
-    err = validate(filing)
+    err = validate(business, filing)
 
-    assert err
-    assert err.msg[0]['error'] == expected_msg
+    if expected_msg:
+        assert err
+        assert err.msg[0]['error'] == expected_msg
+    else:
+        assert err is None
 
 
 @pytest.mark.parametrize(
@@ -88,14 +95,18 @@ def test_invalid_party(session, test_name, party_role, expected_msg):
 )
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):
     """Assert that expiry date is validated."""
+    business = Business(identifier='BC1234567', legal_type='BC')
     expiry_date = LegislationDatetime.now()
     if delta_date:
         expiry_date = expiry_date + delta_date
 
-    filing = copy.deepcopy(RESTORATION)
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+
     filing['filing']['restoration']['type'] = restoration_type
     filing['filing']['restoration']['expiryDate'] = expiry_date.strftime('%Y-%m-%d')
-    err = validate(filing)
+    err = validate(business, filing)
 
     if is_valid:
         assert not err
@@ -106,20 +117,23 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
 @pytest.mark.parametrize(
     'test_status, file_number, expected_code, expected_msg',
     [
-        ('FAIL', None, HTTPStatus.BAD_REQUEST, 'Court order file number is required.'),
+        ('FAIL', None, HTTPStatus.BAD_REQUEST, 'Must provide Court Order Number.'),
         ('SUCCESS', '12345678901234567890', None, None)
     ]
 )
 def test_restoration_court_orders(session, test_status, file_number, expected_code, expected_msg):
     """Assert valid court orders."""
-    filing = copy.deepcopy(RESTORATION)
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
 
     court_order = {}
     if file_number:
         court_order['fileNumber'] = file_number
     filing['filing']['restoration']['courtOrder'] = court_order
 
-    err = validate(filing)
+    err = validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':
