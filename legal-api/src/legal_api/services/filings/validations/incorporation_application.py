@@ -48,9 +48,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    err = validate_offices(incorporation_json)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_offices(incorporation_json))
 
     err = validate_roles(incorporation_json, legal_type)
     if err:
@@ -89,7 +87,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     return None
 
 
-def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> Error:
+def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> list:
     """Validate the office addresses of the specified corp filing type."""
     offices_array = filing_json['filing'][filing_type]['offices']
     addresses = offices_array
@@ -97,34 +95,41 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
 
     for item in addresses.keys():
         if item in ('registeredOffice', 'recordsOffice'):
-            for k, v in addresses[item].items():
-                region = v.get('addressRegion')
-                country = v['addressCountry']
-
-                if region != 'BC':
-                    path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
-                        item, k
-                    )
-                    msg.append({'error': "Address Region must be 'BC'.",
-                                'path': path})
-
-                try:
-                    country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                    if country != 'CA':
-                        raise LookupError
-                except LookupError:
-                    err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
-                        item, k
-                    )
-                    msg.append({'error': "Address Country must be 'CA'.",
-                                'path': err_path})
+            msg.extend(_validate_address(addresses, item, filing_type))
         else:
             msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
                         'path': f'/filing/{filing_type}/offices'})
-    if msg:
-        return msg
 
-    return None
+    return msg
+
+
+def _validate_address(addresses: dict, address_key: str, filing_type: str) -> list:
+    """Validate the addresses of the specified corp filing type."""
+    msg = []
+
+    for k, v in addresses[address_key].items():
+        region = v.get('addressRegion')
+        country = v['addressCountry']
+
+        if region != 'BC':
+            path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
+                address_key, k
+            )
+            msg.append({'error': "Address Region must be 'BC'.",
+                        'path': path})
+
+        try:
+            country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+            if country != 'CA':
+                raise LookupError
+        except LookupError:
+            err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
+                address_key, k
+            )
+            msg.append({'error': "Address Country must be 'CA'.",
+                        'path': err_path})
+
+    return msg
 
 
 # pylint: disable=too-many-branches

@@ -81,9 +81,7 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
     if filing_dict.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('offices', None):
-        err = validate_corp_offices(filing_dict, filing_type)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_corp_offices(filing_dict, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
         err = validate_roles(filing_dict, legal_type, filing_type)
         if err:

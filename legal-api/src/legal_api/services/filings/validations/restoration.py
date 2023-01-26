@@ -40,10 +40,7 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
 
     msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
     msg.extend(validate_party(restoration))
-
-    err = validate_offices(restoration, filing_type)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_offices(restoration, filing_type))
 
     msg.extend(validate_restoration_court_order(restoration, restoration_type))
 

@@ -360,7 +360,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
@@ -391,6 +390,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).astimezone(timezone.utc).isoformat(),
             'associationType': self.association_type
         }
+        self._extend_json(d)
+
+        return d
+
+    def _extend_json(self, d):
+        """Include conditional fields to json."""
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(
@@ -434,7 +440,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
-        return d
 
     @property
     def compliance_warnings(self):
