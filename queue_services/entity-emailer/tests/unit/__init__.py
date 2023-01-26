@@ -20,6 +20,7 @@ from unittest.mock import Mock
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
+    ALTERATION,
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
@@ -43,7 +44,7 @@ FILING_TYPE_MAPPER = {
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
-    'alteration': ALTERATION_FILING_TEMPLATE
+    'alteration': ALTERATION
 }
 
 LEGAL_NAME = 'test business'
