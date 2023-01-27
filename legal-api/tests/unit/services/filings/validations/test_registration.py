@@ -193,8 +193,8 @@ def test_business_type_required(session):
         ('valid_taxId', '123456789', None)
     ]
 )
-def test_tax_id_invalid(session, test_name, tax_id, expected):
-    """Assert that naics is invalid."""
+def test_validate_tax_id(session, test_name, tax_id, expected):
+    """Assert that taxId is validated."""
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['business']['taxId'] = tax_id
 
