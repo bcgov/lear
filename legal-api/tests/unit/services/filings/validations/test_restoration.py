@@ -21,7 +21,7 @@ import pytest
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.restoration import validate
+from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -54,9 +54,9 @@ class MockResponse:
 @pytest.mark.parametrize(
     'test_name, party_role, expected_msg',
     [
-        ('invalid_party', PartyRole.RoleTypes.COMPLETING_PARTY.value, 'Role can only be Applicant.'),
+        ('invalid_party', 'Completing Party', 'Role can only be Applicant.'),
         ('no_party', None, 'Must have an Applicant.'),
-        ('valid_party', PartyRole.RoleTypes.APPLICANT.value, None),
+        ('valid_party', 'Applicant', None),
     ]
 )
 def test_invalid_party(session, test_name, party_role, expected_msg):
@@ -128,10 +128,12 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
 
-    court_order = {}
     if file_number:
+        court_order = {}
         court_order['fileNumber'] = file_number
-    filing['filing']['restoration']['courtOrder'] = court_order
+        filing['filing']['restoration']['courtOrder'] = court_order
+    else:
+        del filing['filing']['restoration']['courtOrder']
 
     err = validate(business, filing)
 

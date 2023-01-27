@@ -39,6 +39,7 @@ from .put_back_on import validate as put_back_on_validate
 from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
 from .registration import validate as registration_validate
+from .restoration import validate as restoration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 
@@ -166,6 +167,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['conversion'].get('name'):
                     err = conversion_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['restoration'].get('name'):
+                    err = restoration_validate(business, filing_json)
 
                 if err:
                     return err
