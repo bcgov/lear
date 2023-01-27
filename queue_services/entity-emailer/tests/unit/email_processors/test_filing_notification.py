@@ -74,26 +74,36 @@ def test_numbered_incorp_notification(app, session, legal_type):
         assert Business.BUSINESSES[legal_type]['numberedDescription'] in email['content']['body']
 
 
-@pytest.mark.parametrize(['status', 'filing_type'], [
-    ('PAID', 'annualReport'),
-    ('PAID', 'changeOfAddress'),
-    ('PAID', 'changeOfDirectors'),
-    ('PAID', 'alteration'),
-    ('COMPLETED', 'changeOfAddress'),
-    ('COMPLETED', 'changeOfDirectors'),
-    ('COMPLETED', 'alteration')
+@pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
+    ('PAID', 'annualReport', None),
+    ('PAID', 'changeOfAddress', None),
+    ('PAID', 'changeOfDirectors', None),
+    ('PAID', 'alteration', None),
+    ('COMPLETED', 'changeOfAddress', None),
+    ('COMPLETED', 'changeOfDirectors', None),
+    ('COMPLETED', 'alteration', None),
+    ('COMPLETED', 'alteration', 'staff')
 ])
-def test_maintenance_notification(app, session, status, filing_type):
+def test_maintenance_notification(app, session, mocker, status, filing_type, submitter_role):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, submitter_role=submitter_role)
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_user_email_from_auth',
+        return_value='user@email.com')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
                 as mock_get_recipients:
             email = filing_notification.process(
                 {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
+
+            if filing_type == 'alteration':
+                if submitter_role:
+                    assert f'{submitter_role}@email.com' in email['recipients']
+                else:
+                    assert 'user@email.com' in email['recipients']
 
             assert 'test@test.com' in email['recipients']
             assert email['content']['body']

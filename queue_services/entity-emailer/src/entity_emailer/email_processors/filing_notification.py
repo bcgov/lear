@@ -23,9 +23,14 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, UserRoles
 
-from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
+from entity_emailer.email_processors import (
+    get_filing_info,
+    get_recipients,
+    get_user_email_from_auth,
+    substitute_template_parts,
+)
 
 
 FILING_TYPE_CONVERTER = {
@@ -261,6 +266,16 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token)
+    if filing_type == 'alteration':
+        if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
+            # when staff do filing documentOptionalEmail may contain completing party email
+            optional_email = filing.filing_json['filing']['header'].get('documentOptionalEmail')
+            if optional_email:
+                recipients = f'{recipients}, {optional_email}'
+        else:
+            user_email = get_user_email_from_auth(filing.filing_submitter.username, token)
+            recipients = f'{recipients}, {user_email}'
+
     if not recipients:
         return {}
 
