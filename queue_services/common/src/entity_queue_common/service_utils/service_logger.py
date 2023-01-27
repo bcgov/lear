@@ -32,7 +32,7 @@ SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
 # Configure default log level to ERROR
 # Override with envirionment variable if needed
-LOG_LEVEL = os.getenv('LOG_LEVEL', logging.ERROR).upper()
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'ERROR').upper()
 if SENTRY_DSN:
 
     SENTRY_LOGGING = LoggingIntegration(
