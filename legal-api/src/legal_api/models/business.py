@@ -193,7 +193,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foreignLegalName',
             'foreignLegalType',
             'foreignIncorporationDate',
-            'send_ar_ind'
+            'send_ar_ind',
+            'restoration_expiry_date'
         ]
     }
 
@@ -210,6 +211,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column('start_date', db.DateTime(timezone=True))
+    restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -358,7 +360,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         None fields are not included.
         """
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
@@ -389,6 +390,13 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).astimezone(timezone.utc).isoformat(),
             'associationType': self.association_type
         }
+        self._extend_json(d)
+
+        return d
+
+    def _extend_json(self, d):
+        """Include conditional fields to json."""
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(
@@ -413,6 +421,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
                 LegislationDatetime.as_legislation_timezone(self.start_date)
             ).isoformat()
 
+        if self.restoration_expiry_date:
+            d['restorationExpiryDate'] = self.restoration_expiry_date
+
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
             d['foreignIdentifier'] = self.foreign_identifier
@@ -429,7 +440,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
-        return d
 
     @property
     def compliance_warnings(self):

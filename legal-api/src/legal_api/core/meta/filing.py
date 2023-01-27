@@ -305,6 +305,49 @@ FILINGS: Final = {
         'title': 'Admin Freeze',
         'displayName': 'Admin Freeze',
         'code': 'NOFEE'
+    },
+    'restoration': {
+        'name': 'restoration',
+        'fullRestoration': {
+            'name': 'fullRestoration',
+            'title': 'Full Restoration',
+            'codes': {
+                'BC': 'RESTF',
+                'BEN': 'RESTF',
+                'ULC': 'RESTF',
+                'CC': 'RESTF'
+            }
+        },
+        'limitedRestoration': {
+            'name': 'limitedRestoration',
+            'title': 'Limited Restoration',
+            'codes': {
+                'BC': 'RESTL',
+                'BEN': 'RESTL',
+                'ULC': 'RESTL',
+                'CC': 'RESTL'
+            }
+        },
+        'limitedRestorationExtension': {
+            'name': 'limitedRestorationExtension',
+            'title': 'Limited Restoration Extension',
+            'codes': {
+                'BC': 'RESXL',
+                'BEN': 'RESXL',
+                'ULC': 'RESXL',
+                'CC': 'RESXL'
+            }
+        },
+        'limitedRestorationToFull': {
+            'name': 'limitedRestorationToFull',
+            'title': 'Limited Restoration To Full',
+            'codes': {
+                'BC': 'RESXF',
+                'BEN': 'RESXF',
+                'ULC': 'RESXF',
+                'CC': 'RESXF'
+            }
+        }
     }
 }
 

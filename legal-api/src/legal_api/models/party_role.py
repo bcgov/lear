@@ -29,11 +29,12 @@ class PartyRole(db.Model):
     class RoleTypes(Enum):
         """Render an Enum of the role types."""
 
-        CUSTODIAN = 'custodian'
-        LIQUIDATOR = 'liquidator'
+        APPLICANT = 'applicant'
         COMPLETING_PARTY = 'completing_party'
+        CUSTODIAN = 'custodian'
         DIRECTOR = 'director'
         INCORPORATOR = 'incorporator'
+        LIQUIDATOR = 'liquidator'
         PROPRIETOR = 'proprietor'
         PARTNER = 'partner'
 

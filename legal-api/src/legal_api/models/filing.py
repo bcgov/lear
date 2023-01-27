@@ -272,6 +272,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_filing_date',
             '_filing_json',
             '_filing_type',
+            '_filing_sub_type',
             '_meta_data',
             '_payment_completion_date',
             '_payment_status_code',
@@ -293,7 +294,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'submitter_roles',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id'
+            'transaction_id',
+            'approval_type'
         ]
     }
 
@@ -301,6 +303,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
+    _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _meta_data = db.Column('meta_data', JSONB)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
@@ -319,6 +322,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
     order_details = db.Column(db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
+    approval_type = db.Column('approval_type', db.String(15))
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -364,6 +368,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def filing_type(self):
         """Property containing the filing type."""
         return self._filing_type
+
+    @property
+    def filing_sub_type(self):
+        """Property containing the filing sub type."""
+        return self._filing_sub_type
 
     @hybrid_property
     def payment_status_code(self):
@@ -452,6 +461,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 error='No filings found.',
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             ) from err
+
+        self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
         if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
