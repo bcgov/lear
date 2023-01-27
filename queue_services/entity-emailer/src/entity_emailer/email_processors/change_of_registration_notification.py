@@ -157,13 +157,14 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if filing.filing_json['filing']['changeOfRegistration'].get('contactPoint'):
         recipients.append(filing.filing_json['filing']['changeOfRegistration']['contactPoint']['email'])
 
+    recipients = list(set(recipients))
+
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff do filing documentOptionalEmail may contain completing party email
         recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
     else:
         recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
-    recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject

@@ -70,7 +70,7 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
 def validate_tax_id(filing: Dict) -> list:
     """Validate tax id."""
     msg = []
-    tax_id_path = f'/filing/registration/business/taxId'
+    tax_id_path = '/filing/registration/business/taxId'
     if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == 15:
         msg.append({'error': 'Can only provide BN9 for SP/GP registration.', 'path': tax_id_path})
 
