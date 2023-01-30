@@ -3,7 +3,7 @@
 # Testing
 pytest
 pytest-aiohttp
-pytest-asyncio
+pytest-asyncio==0.18.3
 pytest-mock
 requests
 pyhamcrest
@@ -11,7 +11,7 @@ dpath
 
 # Lint and code style
 pydocstyle<4
-flake8
+flake8==5.0.4
 flake8-blind-except
 flake8-debugger
 flake8-docstrings
@@ -22,9 +22,8 @@ autopep8
 coverage
 pylint
 pylint-flask
-isort<5,>=4.2.5
+isort
 pytest-cov
 
 # docker
 lovely-pytest-docker
-pytest_docker
