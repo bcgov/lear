@@ -140,23 +140,25 @@ async def process_payment(payment_token, flask_app):
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
-    try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-        payment_token = extract_payment_token(msg)
-        logger.debug('Extracted payment token: %s', payment_token)
-        if is_processable_message(payment_token):
-            await process_payment(payment_token, FLASK_APP)
-        else:
-            logger.debug('skipping unprocessable payment token: %s', payment_token)
-    except OperationalError as err:
-        logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
-        raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except FilingException:
-        # log to sentry and absorb the error, ie: do NOT raise it, otherwise the message would be put back on the queue
-        if APP_CONFIG.ENVIRONMENT == 'prod':
-            capture_message(f'Queue Error: cannot find filing:{json.dumps(payment_token)}', level='error')
-            logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
-    except (QueueException, Exception):  # pylint: disable=broad-except  # noqa: B902
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message(f'Queue Error: {json.dumps(payment_token)}', level='error')
-        logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)
+    with FLASK_APP.app_context():
+        try:
+            logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+            payment_token = extract_payment_token(msg)
+            logger.debug('Extracted payment token: %s', payment_token)
+            if is_processable_message(payment_token):
+                await process_payment(payment_token, FLASK_APP)
+            else:
+                logger.debug('skipping unprocessable payment token: %s', payment_token)
+        except OperationalError as err:
+            logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
+            raise err  # We don't want to handle the error, as a DB down would drain the queue
+        except FilingException:
+            # log to sentry and absorb the error,
+            # ie: do NOT raise it, otherwise the message would be put back on the queue
+            if APP_CONFIG.ENVIRONMENT == 'prod':
+                capture_message(f'Queue Error: cannot find filing:{json.dumps(payment_token)}', level='error')
+                logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
+        except (QueueException, Exception):  # pylint: disable=broad-except  # noqa: B902
+            # Catch Exception so that any error is still caught and the message is removed from the queue
+            capture_message(f'Queue Error: {json.dumps(payment_token)}', level='error')
+            logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)
