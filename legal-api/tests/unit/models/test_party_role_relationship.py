@@ -24,7 +24,7 @@ from legal_api.models import PartyRole, PartyRoleRelationship
 
 def test_party_role_relationship_save(session):
     """Assert that the party role relationship saves correctly."""
-    RelationshipTypes = PartyRoleRelationship.RelationshipTypes
+    relationship_types = PartyRoleRelationship.RelationshipTypes
 
     party_role = PartyRole(
         role=PartyRole.RoleTypes.APPLICANT.value,
@@ -32,16 +32,15 @@ def test_party_role_relationship_save(session):
         cessation_date=None
     )
     party_role.party_role_relationships.append(
-        PartyRoleRelationship(relationship_type=RelationshipTypes.HEIR_OR_LEGAL_REPRESENTATIVE.value)
+        PartyRoleRelationship(relationship_type=relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value)
     )
     party_role.party_role_relationships.append(
-        PartyRoleRelationship(relationship_type=RelationshipTypes.DIRECTOR.value)
+        PartyRoleRelationship(relationship_type=relationship_types.DIRECTOR.value)
     )
     party_role.save()
     assert party_role.id
 
     relationships = PartyRoleRelationship.find_by_party_role_id(party_role.id)
     assert len(relationships) == 2
-    expected = [RelationshipTypes.HEIR_OR_LEGAL_REPRESENTATIVE.value, RelationshipTypes.DIRECTOR.value]
-    relationships[0].relationship_type in expected
-    relationships[1].relationship_type in expected
+    relationships[0].relationship_type == relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value
+    relationships[1].relationship_type == relationship_types.DIRECTOR.value
