@@ -49,8 +49,6 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # Incorporation Number of organization
     identifier = db.Column('identifier', db.String(10))
-    # CRA Business Number of organization
-    tax_id = db.Column('tax_id', db.String(15))
     email = db.Column(db.String(254))
 
     # parent keys
@@ -90,8 +88,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
                     'id': self.id,
                     'partyType': self.party_type,
                     'organizationName': self.organization_name,
-                    'identifier': self.identifier,
-                    'taxId': self.tax_id
+                    'identifier': self.identifier
                 }
             }
         member['officer']['email'] = self.email

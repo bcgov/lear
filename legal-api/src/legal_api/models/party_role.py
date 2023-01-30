@@ -52,6 +52,7 @@ class PartyRole(db.Model):
 
     # relationships
     party = db.relationship('Party')
+    party_role_relationships = db.relationship('PartyRoleRelationship', lazy='dynamic')
 
     def save(self):
         """Save the object to the database immediately."""

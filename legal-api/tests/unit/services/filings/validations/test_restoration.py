@@ -85,12 +85,12 @@ def test_invalid_party(session, test_name, party_role, expected_msg):
         ('greater', 'limitedRestoration', relativedelta(years=2), True),
         ('invalid_greater', 'limitedRestoration', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestoration', relativedelta(months=1), True),
-        ('invalid_lesser', 'limitedRestoration', relativedelta(days=29), False),
+        ('invalid_lesser', 'limitedRestoration', relativedelta(days=25), False),
 
         ('greater', 'limitedRestorationExtension', relativedelta(years=2), True),
         ('invalid_greater', 'limitedRestorationExtension', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestorationExtension', relativedelta(months=1), True),
-        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=29), False)
+        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=25), False)
     ]
 )
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):

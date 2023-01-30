@@ -79,6 +79,7 @@ class Filing:
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
         PUTBACKON = 'putBackOn'
+        RESTORATION = 'restoration'
 
     def __init__(self):
         """Create the Filing."""
