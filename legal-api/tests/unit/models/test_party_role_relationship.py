@@ -42,5 +42,6 @@ def test_party_role_relationship_save(session):
 
     relationships = PartyRoleRelationship.find_by_party_role_id(party_role.id)
     assert len(relationships) == 2
-    relationships[0].relationship_type == relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value
-    relationships[1].relationship_type == relationship_types.DIRECTOR.value
+    expected = [relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value, relationship_types.DIRECTOR.value]
+    assert relationships[0].relationship_type in expected
+    assert relationships[1].relationship_type in expected
