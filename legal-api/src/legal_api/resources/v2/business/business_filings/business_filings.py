@@ -790,6 +790,7 @@ class ListFilingResource():
                                 'country': mailing_address.country}
             },
             'filingInfo': {
+                'filingIdentifier': f'{filing.id}',
                 'filingTypes': filing_types
             },
             'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
