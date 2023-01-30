@@ -25,7 +25,6 @@ Flask-SQLAlchemy currently allows the base model to be changed, or reworking
 the model to a standalone SQLAlchemy usage with an async engine would need
 to be pursued.
 """
-import asyncio
 import datetime
 import json
 import os
@@ -36,7 +35,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from legal_api import db
-from legal_api.models import Filing
+from legal_api.models import CorpType, Filing
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -54,18 +53,21 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
     """Return a dict of the json string in the Msg.data."""
     return json.loads(msg.data.decode('utf-8'))
 
+
 def is_processable_message(msg: dict) -> bool:
-    """Return if message is processable.  A non-null filingIdentifier is a message unrelated to entity-pay."""
+    """Return if message is processable."""
     if not (payment_token := msg.get('paymentToken', None)) or \
-            payment_token.get('filingIdentifier', None) is not None:
+            not payment_token.get('filingIdentifier', None) or \
+            not (corp_type_code := payment_token.get('corpTypeCode', None)) or \
+            not CorpType.find_by_id(corp_type_code):
         return False
 
     return True
 
 
-def get_filing_by_payment_id(payment_id: int) -> Filing:
-    """Return the outcome of Filing.get_filing_by_payment_token."""
-    return Filing.get_filing_by_payment_token(str(payment_id))
+def get_filing_by_id(filing_id: int) -> Filing:
+    """Return the outcome of Filing.find_by_id."""
+    return Filing.find_by_id(filing_id)
 
 
 async def publish_filing(filing: Filing):
@@ -82,16 +84,8 @@ async def process_payment(payment_token, flask_app):
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-
-        # try to find the filing 5 times before putting back on the queue - in case payment token ends up on the queue
-        # before it is assigned to filing.
-        counter = 1
-        filing_submission = None
-        while not filing_submission and counter <= 2:
-            filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
-            counter += 1
-            if not filing_submission:
-                await asyncio.sleep(0.2)
+        filing_id = int(payment_token['paymentToken'].get('filingIdentifier'))
+        filing_submission = get_filing_by_id(filing_id)
         if not filing_submission:
             raise FilingException
 

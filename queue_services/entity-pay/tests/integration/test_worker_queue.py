@@ -28,9 +28,10 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
-    from entity_pay.worker import APP_CONFIG, cb_subscription_handler, get_filing_by_payment_id, qsm
     from legal_api.models import Business, Filing
-    from tests.unit import create_filing, create_business
+
+    from entity_pay.worker import APP_CONFIG, cb_subscription_handler, get_filing_by_id, qsm
+    from tests.unit import create_business, create_filing
 
     # vars
     uuid = str(random.SystemRandom().getrandbits(0x58))
@@ -47,7 +48,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     business = create_business(identifier)
     business_id = business.id
     # create_filing(payment_id, AR_FILING, business.id)
-    create_filing(payment_id, None, business.id)
+    filing = create_filing(payment_id, None, business.id)
 
     # register the handler to test it
     entity_subject = await subscribe_to_queue(entity_stan,
@@ -78,7 +79,11 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     qsm.service = s
 
     # add payment tokens to queue
-    await helper_add_payment_to_queue(entity_stan, entity_subject, payment_id=payment_id, status_code='COMPLETED')
+    await helper_add_payment_to_queue(entity_stan,
+                                      entity_subject,
+                                      payment_id=payment_id,
+                                      status_code='COMPLETED',
+                                      filing_id=filing.id)
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -86,7 +91,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
         print(err)
 
     # Get modified data
-    filing = get_filing_by_payment_id(payment_id)
+    filing = get_filing_by_id(filing.id)
     business = Business.find_by_internal_id(business_id)
 
     # check it out
@@ -103,8 +108,9 @@ async def test_publish_filing(app, session, stan_server, event_loop, client_id, 
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
-    from entity_pay.worker import APP_CONFIG, publish_filing, qsm
     from legal_api.models import Filing
+
+    from entity_pay.worker import APP_CONFIG, publish_filing, qsm
 
     # file handler callback
     msgs = []
@@ -147,8 +153,9 @@ async def test_publish_email_message(app, session, stan_server, event_loop, clie
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
-    from entity_pay.worker import APP_CONFIG, publish_email_message, qsm
     from legal_api.models import Filing
+
+    from entity_pay.worker import APP_CONFIG, publish_email_message, qsm
 
     # file handler callback
     msgs = []
