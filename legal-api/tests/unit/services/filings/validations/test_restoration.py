@@ -59,12 +59,13 @@ class MockResponse:
         ('valid_party', 'Applicant', None),
     ]
 )
-def test_invalid_party(session, test_name, party_role, expected_msg):
-    """Assert that party is invalid."""
+def test_validate_party(session, test_name, party_role, expected_msg):
+    """Assert that party is validated."""
     business = Business(identifier='BC1234567', legal_type='BC')
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
 
     if party_role:
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
@@ -77,6 +78,41 @@ def test_invalid_party(session, test_name, party_role, expected_msg):
         assert err.msg[0]['error'] == expected_msg
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_status, restoration_type, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'limitedRestoration', None, None),
+        ('SUCCESS', 'limitedRestorationExtension', None, None),
+        ('SUCCESS', 'fullRestoration', None, None),
+        ('SUCCESS', 'limitedRestorationToFull', None, None),
+        ('FAIL', 'fullRestoration', HTTPStatus.BAD_REQUEST, 'Applicants relationship is required.'),
+        ('FAIL', 'limitedRestorationToFull', HTTPStatus.BAD_REQUEST, 'Applicants relationship is required.')
+    ]
+)
+def test_validate_relationship(session, test_status, restoration_type, expected_code, expected_msg):
+    """Assert that applicant's relationship is validated."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['type'] = restoration_type
+
+    if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+        expiry_date = LegislationDatetime.now() + relativedelta(months=1)
+        filing['filing']['restoration']['expiryDate'] = expiry_date.strftime('%Y-%m-%d')
+    elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
+        filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
+
+    err = validate(business, filing)
+
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
 
 
 @pytest.mark.parametrize(
@@ -127,6 +163,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
 
     if file_number:
         court_order = {}
