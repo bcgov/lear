@@ -33,7 +33,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('relationship_type', sa.String(length=30), nullable=False),
     sa.Column('party_role_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['party_role_id'], ['party_roles.id'], ),
+    sa.ForeignKeyConstraint(['party_role_id'], ['party_roles.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.drop_column('parties', 'tax_id')

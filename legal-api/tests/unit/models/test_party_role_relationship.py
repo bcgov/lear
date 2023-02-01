@@ -17,31 +17,46 @@
 Test-Suite to ensure that the PartyRoleRelationship Model is working as expected.
 """
 import datetime
-import json
 
 from legal_api.models import PartyRole, PartyRoleRelationship
 
 
-def test_party_role_relationship_save(session):
-    """Assert that the party role relationship saves correctly."""
-    relationship_types = PartyRoleRelationship.RelationshipTypes
-
+def _create_party_role_relationship():
     party_role = PartyRole(
         role=PartyRole.RoleTypes.APPLICANT.value,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None
     )
     party_role.party_role_relationships.append(
-        PartyRoleRelationship(relationship_type=relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value)
-    )
+        PartyRoleRelationship(
+            relationship_type=PartyRoleRelationship.RelationshipTypes.HEIR_OR_LEGAL_REPRESENTATIVE.value))
     party_role.party_role_relationships.append(
-        PartyRoleRelationship(relationship_type=relationship_types.DIRECTOR.value)
-    )
+        PartyRoleRelationship(
+            relationship_type=PartyRoleRelationship.RelationshipTypes.DIRECTOR.value))
     party_role.save()
+    return party_role
+
+
+def test_party_role_relationship_save(session):
+    """Assert that the party role relationship saves correctly."""
+    party_role = _create_party_role_relationship()
     assert party_role.id
 
     relationships = PartyRoleRelationship.find_by_party_role_id(party_role.id)
     assert len(relationships) == 2
-    expected = [relationship_types.HEIR_OR_LEGAL_REPRESENTATIVE.value, relationship_types.DIRECTOR.value]
+    expected = [PartyRoleRelationship.RelationshipTypes.HEIR_OR_LEGAL_REPRESENTATIVE.value,
+                PartyRoleRelationship.RelationshipTypes.DIRECTOR.value]
     assert relationships[0].relationship_type in expected
     assert relationships[1].relationship_type in expected
+
+
+def test_party_role_relationship_delete(session, db):
+    """Assert that the party role relationship delete correctly."""
+    party_role = _create_party_role_relationship()
+    party_role_id = party_role.id
+
+    db.session.delete(party_role)
+    db.session.commit()
+
+    relationships = PartyRoleRelationship.find_by_party_role_id(party_role_id)
+    assert len(relationships) == 0

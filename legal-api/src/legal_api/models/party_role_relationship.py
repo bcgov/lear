@@ -37,7 +37,8 @@ class PartyRoleRelationship(db.Model):  # pylint: disable=too-many-instance-attr
     id = db.Column(db.Integer, primary_key=True)
     relationship_type = db.Column('relationship_type', db.String(30), nullable=False)
 
-    party_role_id = db.Column('party_role_id', db.Integer, db.ForeignKey('party_roles.id'), nullable=False)
+    party_role_id = db.Column('party_role_id', db.Integer,
+                              db.ForeignKey('party_roles.id', ondelete='CASCADE'), nullable=False)
 
     def save(self):
         """Save the object to the database immediately."""
