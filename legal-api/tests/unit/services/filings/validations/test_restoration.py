@@ -24,8 +24,8 @@ from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-
-now = datetime.now().strftime('%Y-%m-%d')
+date_format = '%Y-%m-%d'
+now = datetime.now().strftime(date_format)
 
 legal_name = 'Test name request'
 nr_response = {
@@ -37,6 +37,7 @@ nr_response = {
         'consumptionDate': ''
     }]
 }
+relationships = ['Heir or Legal Representative', 'Director']
 
 
 class MockResponse:
@@ -65,7 +66,7 @@ def test_validate_party(session, test_name, party_role, expected_msg):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
+    filing['filing']['restoration']['relationships'] = relationships
 
     if party_role:
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
@@ -102,9 +103,9 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         expiry_date = LegislationDatetime.now() + relativedelta(months=1)
-        filing['filing']['restoration']['expiryDate'] = expiry_date.strftime('%Y-%m-%d')
+        filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
     elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
-        filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
+        filing['filing']['restoration']['relationships'] = relationships
 
     err = validate(business, filing)
 
@@ -141,7 +142,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['header']['name'] = 'restoration'
 
     filing['filing']['restoration']['type'] = restoration_type
-    filing['filing']['restoration']['expiryDate'] = expiry_date.strftime('%Y-%m-%d')
+    filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
     err = validate(business, filing)
 
     if is_valid:
@@ -163,7 +164,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    filing['filing']['restoration']['relationships'] = ['Heir or Legal Representative', 'Director']
+    filing['filing']['restoration']['relationships'] = relationships
 
     if file_number:
         court_order = {}

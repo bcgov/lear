@@ -455,7 +455,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         try:
             self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
             if not self._filing_type:
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
         except Exception as err:
             raise BusinessException(
                 error='No filings found.',
