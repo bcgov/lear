@@ -464,8 +464,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 'officer': {
                     'organizationName': party_revision.organization_name,
                     'partyType': Party.PartyTypes.ORGANIZATION.value,
-                    'identifier': party_revision.identifier,
-                    'taxId': party_revision.tax_id
+                    'identifier': party_revision.identifier
                 }
             }
         if party_revision.email:

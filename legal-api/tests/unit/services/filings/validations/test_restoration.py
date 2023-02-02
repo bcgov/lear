@@ -24,8 +24,8 @@ from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-
-now = datetime.now().strftime('%Y-%m-%d')
+date_format = '%Y-%m-%d'
+now = datetime.now().strftime(date_format)
 
 legal_name = 'Test name request'
 nr_response = {
@@ -37,6 +37,7 @@ nr_response = {
         'consumptionDate': ''
     }]
 }
+relationships = ['Heir or Legal Representative', 'Director']
 
 
 class MockResponse:
@@ -59,12 +60,13 @@ class MockResponse:
         ('valid_party', 'Applicant', None),
     ]
 )
-def test_invalid_party(session, test_name, party_role, expected_msg):
-    """Assert that party is invalid."""
+def test_validate_party(session, test_name, party_role, expected_msg):
+    """Assert that party is validated."""
     business = Business(identifier='BC1234567', legal_type='BC')
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = relationships
 
     if party_role:
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
@@ -80,17 +82,52 @@ def test_invalid_party(session, test_name, party_role, expected_msg):
 
 
 @pytest.mark.parametrize(
+    'test_status, restoration_type, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'limitedRestoration', None, None),
+        ('SUCCESS', 'limitedRestorationExtension', None, None),
+        ('SUCCESS', 'fullRestoration', None, None),
+        ('SUCCESS', 'limitedRestorationToFull', None, None),
+        ('FAIL', 'fullRestoration', HTTPStatus.BAD_REQUEST, 'Applicants relationship is required.'),
+        ('FAIL', 'limitedRestorationToFull', HTTPStatus.BAD_REQUEST, 'Applicants relationship is required.')
+    ]
+)
+def test_validate_relationship(session, test_status, restoration_type, expected_code, expected_msg):
+    """Assert that applicant's relationship is validated."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['type'] = restoration_type
+
+    if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+        expiry_date = LegislationDatetime.now() + relativedelta(months=1)
+        filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
+    elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
+        filing['filing']['restoration']['relationships'] = relationships
+
+    err = validate(business, filing)
+
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize(
     'test_name, restoration_type, delta_date, is_valid',
     [
         ('greater', 'limitedRestoration', relativedelta(years=2), True),
         ('invalid_greater', 'limitedRestoration', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestoration', relativedelta(months=1), True),
-        ('invalid_lesser', 'limitedRestoration', relativedelta(days=29), False),
+        ('invalid_lesser', 'limitedRestoration', relativedelta(days=25), False),
 
         ('greater', 'limitedRestorationExtension', relativedelta(years=2), True),
         ('invalid_greater', 'limitedRestorationExtension', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestorationExtension', relativedelta(months=1), True),
-        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=29), False)
+        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=25), False)
     ]
 )
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):
@@ -105,7 +142,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['header']['name'] = 'restoration'
 
     filing['filing']['restoration']['type'] = restoration_type
-    filing['filing']['restoration']['expiryDate'] = expiry_date.strftime('%Y-%m-%d')
+    filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
     err = validate(business, filing)
 
     if is_valid:
@@ -127,6 +164,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = relationships
 
     if file_number:
         court_order = {}
