@@ -308,6 +308,9 @@ FILINGS: Final = {
     },
     'restoration': {
         'name': 'restoration',
+        'additional': [
+            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
+        ],
         'fullRestoration': {
             'name': 'fullRestoration',
             'title': 'Full Restoration',

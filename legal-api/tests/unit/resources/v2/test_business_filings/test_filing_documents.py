@@ -42,6 +42,7 @@ from registry_schemas.example_data import (
     FIRMS_CONVERSION,
     INCORPORATION_FILING_TEMPLATE,
     REGISTRATION,
+    RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
@@ -866,6 +867,30 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     }
       },
      HTTPStatus.OK, None
+     ),
+    ('ben_restoration', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {
+                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_restoration', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'restoration', RESTORATION, None, None, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {
+                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
      )
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,
