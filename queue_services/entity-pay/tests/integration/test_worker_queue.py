@@ -48,7 +48,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     business = create_business(identifier)
     business_id = business.id
     # create_filing(payment_id, AR_FILING, business.id)
-    filing = create_filing(payment_id, None, business.id)
+    filing = create_filing(None, None, business.id)
 
     # register the handler to test it
     entity_subject = await subscribe_to_queue(entity_stan,
@@ -98,6 +98,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     # assert filing.transaction_id
     assert filing.business_id == business_id
     assert filing.status == Filing.Status.PAID.value
+    assert filing.payment_token == payment_id
 
     assert len(msgs) == 1
     assert get_filing_id_from_msg(msgs[0]) == filing.id

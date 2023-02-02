@@ -104,8 +104,11 @@ async def process_payment(payment_token, flask_app):
             # technically the filing is still pending payment/processing
             return
 
+        # pylint: disable=protected-access;
         if payment_token['paymentToken'].get('statusCode') == Filing.Status.COMPLETED.value:
-            filing_submission.payment_completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+            filing_submission._payment_token = payment_token['paymentToken'].get('id')
+            filing_submission._payment_completion_date = \
+                datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
             db.session.add(filing_submission)
             db.session.commit()
 

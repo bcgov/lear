@@ -115,7 +115,7 @@ async def test_process_payment_failed(app, session):
     # setup
     business = create_business(identifier)
     business_id = business.id
-    filing = create_filing(payment_id, None, business.id)
+    filing = create_filing(None, None, business.id)
     payment_token = {'paymentToken': {'id': payment_id,
                                       'statusCode': 'TRANSACTION_FAILED',
                                       'filingIdentifier': f'{filing.id}'}}
