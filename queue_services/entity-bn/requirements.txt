@@ -15,7 +15,7 @@ protobuf==3.15.8
 python-dotenv==0.17.1
 sentry-sdk==1.0.0
 six==1.15.0
-urllib3==1.26.4
+urllib3==1.26.5
 git+https://github.com/bcgov/business-schemas.git@2.15.21#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
