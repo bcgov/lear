@@ -29,7 +29,6 @@ from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
 from .office import Office, OfficeType
 from .party_role import Party, PartyRole
-from .party_role_relationship import PartyRoleRelationship
 from .registration_bootstrap import RegistrationBootstrap
 from .request_tracker import RequestTracker
 from .resolution import Resolution
@@ -42,5 +41,4 @@ __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType',
            'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'Document', 'DocumentType',
            'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
-           'PartyRole', 'PartyRoleRelationship', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure',
-           'NaicsElement')
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')

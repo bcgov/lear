@@ -74,12 +74,12 @@ class Filing:
         DISSOLUTION = 'dissolution'
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
+        PUTBACKON = 'putBackOn'
         RESTORATIONAPPLICATION = 'restorationApplication'
         REGISTRATION = 'registration'
+        RESTORATION = 'restoration'
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
-        PUTBACKON = 'putBackOn'
-        RESTORATION = 'restoration'
 
     def __init__(self):
         """Create the Filing."""
