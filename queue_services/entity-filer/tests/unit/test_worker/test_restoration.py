@@ -27,6 +27,10 @@ from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
+legal_name = 'old name'
+legal_type = 'BC'
+
+
 @pytest.mark.parametrize('restoration_type', [
     ('fullRestoration'),
     ('limitedRestoration'),
@@ -36,8 +40,6 @@ from tests.unit import create_business, create_filing
 async def test_restoration_business_update(app, session, mocker, restoration_type):
     """Assert the worker process update business correctly."""
     identifier = 'BC1234567'
-    legal_name = 'old name'
-    legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.state = Business.State.HISTORICAL
     business.dissolution_date = datetime(2017, 5, 17)
@@ -55,13 +57,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    _mock_out(mocker)
 
     await process_filing(filing_msg, app)
 
@@ -89,8 +85,6 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
 async def test_restoration_legal_name(app, session, mocker, test_name):
     """Assert the worker process calls the legal name change correctly."""
     identifier = 'BC1234567'
-    legal_name = 'old name'
-    legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -108,13 +102,7 @@ async def test_restoration_legal_name(app, session, mocker, test_name):
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    _mock_out(mocker)
 
     await process_filing(filing_msg, app)
 
@@ -138,7 +126,7 @@ async def test_restoration_legal_name(app, session, mocker, test_name):
 async def test_restoration_office_addresses(app, session, mocker):
     """Assert the worker process calls the address change correctly."""
     identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC', legal_name='old name')
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
@@ -150,13 +138,7 @@ async def test_restoration_office_addresses(app, session, mocker):
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    _mock_out(mocker)
 
     await process_filing(filing_msg, app)
 
@@ -178,8 +160,6 @@ async def test_restoration_office_addresses(app, session, mocker):
 async def test_restoration_court_order(app, session, mocker, approval_type):
     """Assert the worker process the court order correctly."""
     identifier = 'BC1234567'
-    legal_name = 'old name'
-    legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -195,13 +175,7 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    _mock_out(mocker)
 
     await process_filing(filing_msg, app)
 
@@ -217,7 +191,7 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
 async def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""
     identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC', legal_name='old name')
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
@@ -229,13 +203,7 @@ async def test_update_party(app, session, mocker):
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = {'filing': {'id': filing_id}}
 
-    # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    _mock_out(mocker)
 
     member = Party(
         first_name='Michael',
@@ -273,3 +241,12 @@ async def test_update_party(app, session, mocker):
         filing['filing']['restoration']['parties'][0]['deliveryAddress']['streetAddress']
     assert party_role.party.mailing_address.street == \
         filing['filing']['restoration']['parties'][0]['mailingAddress']['streetAddress']
+
+
+def _mock_out(mocker):
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)

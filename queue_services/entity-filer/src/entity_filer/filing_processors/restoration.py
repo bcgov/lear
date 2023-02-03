@@ -41,6 +41,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         **filing_meta.restoration,
         'fromLegalName': from_legal_name,
         'toLegalName': business.legal_name
+        # if restoration is from a numbered to numbered, fromLegalName and toLegalName will be same
+        # adding this intentionally for now to refer in ledger (filing-ui)
     }
     if nr_number := name_request_json.get('nrNumber', None):
         filing_meta.restoration = {
