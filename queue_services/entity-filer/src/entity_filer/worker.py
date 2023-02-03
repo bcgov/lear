@@ -149,7 +149,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             return None, None
 
         # convenience flag to set that the envelope is a correction
-        is_correction = (filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION)
+        is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
             uow = versioning_manager.unit_of_work(db.session)
