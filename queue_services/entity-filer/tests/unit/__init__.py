@@ -384,12 +384,13 @@ def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_D
     return filing
 
 
-def create_business(identifier, legal_type=None):
+def create_business(identifier, legal_type=None, legal_name=None):
     """Return a test business."""
     from legal_api.models import Address, Business
     business = Business()
     business.identifier = identifier
     business.legal_type = legal_type
+    business.legal_name = legal_name
     business = create_business_address(business, Address.DELIVERY)
     # business = create_business_address(business, Address.MAILING)
     business.save()
@@ -416,30 +417,6 @@ def create_business_address(business, type):
     business.offices.append(office)
     business.save()
     return business
-
-
-def create_director(director):
-    """Create a director."""
-    from legal_api.models import Address, Director
-    new_address = Address(
-        street=director['deliveryAddress']['streetAddress'],
-        city=director['deliveryAddress']['addressCity'],
-        country='CA',
-        postal_code=director['deliveryAddress']['postalCode'],
-        region=director['deliveryAddress']['addressRegion'],
-        delivery_instructions=director['deliveryAddress'].get('deliveryInstructions', '').upper()
-    )
-    new_address.save()
-    new_director = Director(
-        first_name=director['officer'].get('firstName', '').upper(),
-        last_name=director['officer'].get('lastName', '').upper(),
-        middle_initial=director['officer'].get('middleInitial', '').upper(),
-        appointment_date=director['appointmentDate'],
-        cessation_date=None,
-        delivery_address=new_address
-    )
-    new_director.save()
-    return new_director
 
 
 def create_user(username='temp_user', firstname='firstname', lastname='lastname', sub='sub', iss='iss'):
