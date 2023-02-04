@@ -55,7 +55,7 @@ def validate_expiry_date(filing: Dict) -> list:
     """Validate expiry date."""
     # Between 1 month and 2 years in the future
     msg = []
-    expiry_date_path = '/filing/restoration/expiryDate'
+    expiry_date_path = '/filing/restoration/expiry'
     expiry_date = get_date(filing, expiry_date_path)
     now = LegislationDatetime.now().date()
     greater = now + relativedelta(years=2)

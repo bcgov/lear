@@ -422,7 +422,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             ).isoformat()
 
         if self.restoration_expiry_date:
-            d['restorationExpiryDate'] = self.restoration_expiry_date
+            d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
