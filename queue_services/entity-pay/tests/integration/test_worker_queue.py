@@ -30,7 +30,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     from entity_queue_common.service import ServiceWorker
     from legal_api.models import Business, Filing
 
-    from entity_pay.worker import APP_CONFIG, cb_subscription_handler, get_filing_by_id, qsm
+    from entity_pay.worker import APP_CONFIG, cb_subscription_handler, get_filing_by_payment_id, qsm
     from tests.unit import create_business, create_filing
 
     # vars
@@ -48,7 +48,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     business = create_business(identifier)
     business_id = business.id
     # create_filing(payment_id, AR_FILING, business.id)
-    filing = create_filing(payment_id, None, business.id)
+    create_filing(payment_id, None, business.id)
 
     # register the handler to test it
     entity_subject = await subscribe_to_queue(entity_stan,
@@ -82,8 +82,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
     await helper_add_payment_to_queue(entity_stan,
                                       entity_subject,
                                       payment_id=payment_id,
-                                      status_code='COMPLETED',
-                                      filing_id=filing.id)
+                                      status_code='COMPLETED')
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -91,7 +90,7 @@ async def test_cb_subscription_handler(app, session, stan_server, event_loop, cl
         print(err)
 
     # Get modified data
-    filing = get_filing_by_id(filing.id)
+    filing = get_filing_by_payment_id(payment_id)
     business = Business.find_by_internal_id(business_id)
 
     # check it out

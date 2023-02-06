@@ -37,6 +37,8 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     restoration_type = get_str(restoration, '/filing/restoration/type')
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         msg.extend(validate_expiry_date(restoration))
+    elif restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
+        msg.extend(validate_relationship(restoration))
 
     msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
     msg.extend(validate_party(restoration))
@@ -53,7 +55,7 @@ def validate_expiry_date(filing: Dict) -> list:
     """Validate expiry date."""
     # Between 1 month and 2 years in the future
     msg = []
-    expiry_date_path = '/filing/restoration/expiryDate'
+    expiry_date_path = '/filing/restoration/expiry'
     expiry_date = get_date(filing, expiry_date_path)
     now = LegislationDatetime.now().date()
     greater = now + relativedelta(years=2)
@@ -61,6 +63,15 @@ def validate_expiry_date(filing: Dict) -> list:
     if expiry_date < lesser or expiry_date > greater:
         msg.append({'error': 'Expiry Date must be between 1 month and 2 years in the future.',
                     'path': expiry_date_path})
+
+    return msg
+
+
+def validate_relationship(filing: dict) -> list:
+    """Validate applicant's relationship to the company at the time the company was dissolved."""
+    msg = []
+    if not filing.get('filing', {}).get('restoration', {}).get('relationships', []):
+        msg.append({'error': 'Applicants relationship is required.', 'path': '/filing/restoration/relationships'})
 
     return msg
 

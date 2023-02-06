@@ -70,6 +70,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         # filing_type's yet to be handled alteration, changeOfName, specialResolution, voluntaryDissolution
         if not revision_json['filing']:
             revision_json = filing.json
+            revision_json['filing']['business'] = \
+                VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
 
         revision_json['filing']['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
 
@@ -464,8 +466,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 'officer': {
                     'organizationName': party_revision.organization_name,
                     'partyType': Party.PartyTypes.ORGANIZATION.value,
-                    'identifier': party_revision.identifier,
-                    'taxId': party_revision.tax_id
+                    'identifier': party_revision.identifier
                 }
             }
         if party_revision.email:
@@ -593,6 +594,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             business_json['dissolutionDate'] = datetime.date(business_revision.dissolution_date).isoformat()
         else:
             business_json['dissolutionDate'] = None
+        if business_revision.restoration_expiry_date:
+            business_json['restorationExpiryDate'] = datetime.date(
+                business_revision.restoration_expiry_date).isoformat()
+        else:
+            business_json['restorationExpiryDate'] = None
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
         business_json['legalName'] = business_revision.legal_name

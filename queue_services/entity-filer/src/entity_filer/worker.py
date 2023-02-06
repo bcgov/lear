@@ -63,6 +63,7 @@ from entity_filer.filing_processors import (
     registrars_notation,
     registrars_order,
     registration,
+    restoration,
     special_resolution,
     transition,
 )
@@ -148,7 +149,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             return None, None
 
         # convenience flag to set that the envelope is a correction
-        is_correction = (filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION)
+        is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
             uow = versioning_manager.unit_of_work(db.session)
@@ -222,6 +223,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('putBackOn'):
                     put_back_on.process(business, filing, filing_submission, filing_meta)
 
+                elif filing.get('restoration'):
+                    restoration.process(business, filing, filing_submission, filing_meta)
+
                 elif filing.get('adminFreeze'):
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
 
@@ -251,6 +255,15 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 )
 
             if any('putBackOn' in x for x in legal_filings):
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type,
+                    state=Business.State.ACTIVE.name
+                )
+
+            if filing_core_submission.filing_type == FilingCore.FilingTypes.RESTORATION:
+                restoration.post_process(business, filing_submission)
                 AccountService.update_entity(
                     business_registration=business.identifier,
                     business_name=business.legal_name,

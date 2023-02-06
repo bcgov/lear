@@ -65,14 +65,15 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
         aliases.update_aliases(business, alias_json)
 
-    # Update business office if present
+    # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(correction_filing, '/correction/offices/businessOffice')
-        for updated_address in business_office_json.values():
-            if updated_address.get('id', None):
-                address = Address.find_by_id(updated_address.get('id'))
-                if address:
-                    update_address(address, updated_address)
+        offices_structure = dpath.util.get(correction_filing, '/correction/offices')
+        for addresses in offices_structure.values():
+            for updated_address in addresses.values():
+                if updated_address.get('id', None):
+                    address = Address.find_by_id(updated_address.get('id'))
+                    if address:
+                        update_address(address, updated_address)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):

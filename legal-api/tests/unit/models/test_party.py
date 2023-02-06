@@ -56,7 +56,6 @@ def test_party_json(session):
             'partyType': Party.PartyTypes.ORGANIZATION.value,
             'organizationName': organization.organization_name,
             'identifier': None,
-            'taxId': None,
             'email': None
         },
     }

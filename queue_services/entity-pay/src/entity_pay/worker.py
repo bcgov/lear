@@ -25,6 +25,7 @@ Flask-SQLAlchemy currently allows the base model to be changed, or reworking
 the model to a standalone SQLAlchemy usage with an async engine would need
 to be pursued.
 """
+import asyncio
 import datetime
 import json
 import os
@@ -57,7 +58,6 @@ def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
 def is_processable_message(msg: dict) -> bool:
     """Return if message is processable."""
     if not (payment_token := msg.get('paymentToken', None)) or \
-            not payment_token.get('filingIdentifier', None) or \
             not (corp_type_code := payment_token.get('corpTypeCode', None)) or \
             not CorpType.find_by_id(corp_type_code):
         return False
@@ -65,9 +65,9 @@ def is_processable_message(msg: dict) -> bool:
     return True
 
 
-def get_filing_by_id(filing_id: int) -> Filing:
-    """Return the outcome of Filing.find_by_id."""
-    return Filing.find_by_id(filing_id)
+def get_filing_by_payment_id(payment_id: int) -> Filing:
+    """Return the outcome of Filing.get_filing_by_payment_token."""
+    return Filing.get_filing_by_payment_token(str(payment_id))
 
 
 async def publish_filing(filing: Filing):
@@ -84,8 +84,15 @@ async def process_payment(payment_token, flask_app):
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        filing_id = int(payment_token['paymentToken'].get('filingIdentifier'))
-        filing_submission = get_filing_by_id(filing_id)
+        # try to find the filing 5 times before putting back on the queue - in case payment token ends up on the queue
+        # before it is assigned to filing.
+        counter = 1
+        filing_submission = None
+        while not filing_submission and counter <= 5:
+            filing_submission = get_filing_by_payment_id(payment_token['paymentToken'].get('id'))
+            counter += 1
+            if not filing_submission:
+                await asyncio.sleep(0.2)
         if not filing_submission:
             raise FilingException
 

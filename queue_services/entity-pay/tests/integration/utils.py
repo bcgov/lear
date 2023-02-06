@@ -20,12 +20,10 @@ import stan
 async def helper_add_payment_to_queue(stan_client: stan.aio.client.Client,
                                       subject: str,
                                       payment_id: str,
-                                      status_code: str,
-                                      filing_id: int):
+                                      status_code: str):
     """Add a payment token to the Queue."""
     payload = {'paymentToken': {'id': payment_id,
                                 'statusCode': status_code,
-                                'filingIdentifier': f'{filing_id}',
                                 'corpTypeCode': 'BC'}}
     await stan_client.publish(subject=subject,
                               payload=json.dumps(payload).encode('utf-8'))
