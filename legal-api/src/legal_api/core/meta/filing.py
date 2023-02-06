@@ -314,6 +314,7 @@ FILINGS: Final = {
         'fullRestoration': {
             'name': 'fullRestoration',
             'title': 'Full Restoration',
+            'displayName': 'Full Restoration Application',
             'codes': {
                 'BC': 'RESTF',
                 'BEN': 'RESTF',
@@ -324,6 +325,7 @@ FILINGS: Final = {
         'limitedRestoration': {
             'name': 'limitedRestoration',
             'title': 'Limited Restoration',
+            'displayName': 'Limited Restoration Application',
             'codes': {
                 'BC': 'RESTL',
                 'BEN': 'RESTL',
@@ -334,6 +336,7 @@ FILINGS: Final = {
         'limitedRestorationExtension': {
             'name': 'limitedRestorationExtension',
             'title': 'Limited Restoration Extension',
+            'displayName': 'Limited Restoration Extension Application',
             'codes': {
                 'BC': 'RESXL',
                 'BEN': 'RESXL',
@@ -344,6 +347,7 @@ FILINGS: Final = {
         'limitedRestorationToFull': {
             'name': 'limitedRestorationToFull',
             'title': 'Limited Restoration To Full',
+            'displayName': 'Conversion to Full Restoration Application',
             'codes': {
                 'BC': 'RESXF',
                 'BEN': 'RESXF',
@@ -363,9 +367,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
-            return ' '.join(word.capitalize()
-                            for word in
-                            re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
+            if not (filing.filing_sub_type and \
+                (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get('displayName'))):
+                return ' '.join(word.capitalize()
+                                for word in
+                                re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
 
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name

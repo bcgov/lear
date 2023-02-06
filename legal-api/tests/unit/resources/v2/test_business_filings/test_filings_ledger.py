@@ -37,6 +37,7 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
+    RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
@@ -289,6 +290,44 @@ def test_ledger_display_alteration_report(session, client, jwt):
     filing_json = rv.json['filings'][0]
     assert filing_json['data'] == meta_data
     assert filing_json['displayName'] == 'Alteration'
+
+
+@pytest.mark.parametrize('restoration_type,expected_display_name', [
+    ('fullRestoration', 'Full Restoration Application'),
+    ('limitedRestoration', 'Limited Restoration Application'),
+    ('limitedRestorationExtension', 'Limited Restoration Extension Application'),
+    ('limitedRestorationToFull', 'Conversion to Full Restoration Application'),
+])
+def test_ledger_display_restoration(session, client, jwt, restoration_type, expected_display_name):
+    """Assert that the ledger returns the correct names of the four restoration types."""
+    # setup
+    identifier = 'BC1234567'
+    nr_number = 'NR000001'
+    founding_date = datetime.utcnow()
+    filing_date = founding_date
+    filing_name = 'restoration'
+    business_name = 'The Truffle House'
+
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
+    business.legal_name = business_name
+    business.save()
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing'].pop('business')
+    filing['filing']['header']['name'] = filing_name
+    filing['filing'][filing_name] = copy.deepcopy(RESTORATION)
+    filing['filing']['restoration']['type'] = restoration_type
+
+    f = factory_completed_filing(business, filing, filing_date=filing_date)
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [UserRoles.system], identifier))
+
+    # validate
+    assert rv.json['filings']
+    assert rv.json['filings'][0]['filingSubType'] == restoration_type
+    assert rv.json['filings'][0]['displayName'] == expected_display_name
 
 
 @pytest.mark.parametrize('test_name,entity_type,expected_display_name', [
