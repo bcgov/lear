@@ -367,7 +367,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
-            if not (filing.filing_sub_type and \
+            if not (filing.filing_sub_type and
                 (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get('displayName'))):
                 return ' '.join(word.capitalize()
                                 for word in
