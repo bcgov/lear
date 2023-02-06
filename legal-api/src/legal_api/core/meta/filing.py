@@ -368,7 +368,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
             if not (filing.filing_sub_type and
-                (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get('displayName'))):
+                    (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get('displayName'))):
                 return ' '.join(word.capitalize()
                                 for word in
                                 re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
