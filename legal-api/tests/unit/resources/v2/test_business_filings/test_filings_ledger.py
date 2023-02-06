@@ -302,11 +302,10 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     """Assert that the ledger returns the correct names of the four restoration types."""
     # setup
     identifier = 'BC1234567'
-    nr_number = 'NR000001'
     founding_date = datetime.utcnow()
     filing_date = founding_date
     filing_name = 'restoration'
-    business_name = 'The Truffle House'
+    business_name = 'Skinners Fine Saves'
 
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
     business.legal_name = business_name
@@ -318,7 +317,7 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     filing['filing'][filing_name] = copy.deepcopy(RESTORATION)
     filing['filing']['restoration']['type'] = restoration_type
 
-    f = factory_completed_filing(business, filing, filing_date=filing_date)
+    factory_completed_filing(business, filing, filing_date=filing_date)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
