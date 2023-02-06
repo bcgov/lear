@@ -103,7 +103,7 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         expiry_date = LegislationDatetime.now() + relativedelta(months=1)
-        filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
+        filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
     elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         filing['filing']['restoration']['relationships'] = relationships
 
@@ -142,7 +142,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['header']['name'] = 'restoration'
 
     filing['filing']['restoration']['type'] = restoration_type
-    filing['filing']['restoration']['expiryDate'] = expiry_date.strftime(date_format)
+    filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
     err = validate(business, filing)
 
     if is_valid:
