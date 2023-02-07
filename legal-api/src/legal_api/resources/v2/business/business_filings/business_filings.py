@@ -436,9 +436,7 @@ class ListFilingResource():
     def check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
-        sub_filing_type = None
-        if filing_type == 'restoration':
-            sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+        filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
 
         # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
@@ -449,7 +447,7 @@ class ListFilingResource():
 
         if (admin_freeze and filing_type != 'adminFreeze') or \
                 not authorized(identifier, jwt, action=['edit']) or \
-                not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
+                not is_allowed(state, filing_type, legal_type, jwt, filing_sub_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
