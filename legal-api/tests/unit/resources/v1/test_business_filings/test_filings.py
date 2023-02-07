@@ -354,8 +354,8 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     assert not rv.json.get('errors')
 
 
-def test_post_only_validate_error_ar(session, client, jwt):
-    """Assert that a unpaid filing can be posted."""
+def test_validate_filing_json_for_filing_type(session, client, jwt):
+    """Assert that filing type is in filing json."""
     import copy
     identifier = 'CP7654321'
     factory_business(identifier)
@@ -368,9 +368,9 @@ def test_post_only_validate_error_ar(session, client, jwt):
                      headers=create_header(jwt, [BASIC_USER], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json.get('errors')
-    assert rv.json['errors'][0]['error'] == "'name' is a required property"
+    assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
 
 
 def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
@@ -953,7 +953,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):

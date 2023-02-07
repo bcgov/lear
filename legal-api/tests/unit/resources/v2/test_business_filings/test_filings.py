@@ -308,24 +308,23 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     assert not rv.json.get('errors')
 
 
-# This cannot be validated since the is_allowed function returns UNAUTHORIZED if `name` is empty
-# def test_post_only_validate_error_ar(session, client, jwt):
-#     """Assert that a unpaid filing can be posted."""
-#     import copy
-#     identifier = 'CP7654321'
-#     factory_business(identifier)
+def test_validate_filing_json_for_filing_type(session, client, jwt):
+    """Assert that filing type is in filing json."""
+    import copy
+    identifier = 'CP7654321'
+    factory_business(identifier)
 
-#     ar = copy.deepcopy(ANNUAL_REPORT)
-#     ar['filing']['header'].pop('name')
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['header'].pop('name')
 
-#     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-#                      json=ar,
-#                      headers=create_header(jwt, [STAFF_ROLE], identifier)
-#                      )
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
 
-#     assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-#     assert rv.json.get('errors')
-#     assert rv.json['errors'][0]['error'] == "'name' is a required property"
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
 
 
 def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
@@ -1040,6 +1039,7 @@ RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestor
 
 RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
+
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""

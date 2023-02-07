@@ -420,7 +420,11 @@ class ListFilingResource():
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
-        if json_input['filing']['header']['name'] not in [
+        filing_type = json_input.get('filing', {}).get('header', {}).get('name')
+        if not filing_type:
+            return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
+
+        if filing_type not in [
             Filing.FILINGS['incorporationApplication']['name'],
             Filing.FILINGS['registration']['name']
         ] and business is None:
