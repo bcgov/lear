@@ -152,7 +152,7 @@ class ListFilingResource(Resource):
         """Modify an incomplete filing for the business."""
         # basic checks
         business = Business.find_by_identifier(identifier)
-        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
+        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request, business)
         if err_msg:
             return jsonify({'errors': [err_msg, ]}), err_code
         json_input = request.get_json()
@@ -394,7 +394,7 @@ class ListFilingResource(Resource):
         return None, None
 
     @staticmethod
-    def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+    def _put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -406,6 +406,12 @@ class ListFilingResource(Resource):
             return ({'message':
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
+
+        if json_input['filing']['header']['name'] not in [
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ] and business is None:
+            return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         return None, None
 
