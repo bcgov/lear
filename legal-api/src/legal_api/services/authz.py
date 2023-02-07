@@ -46,9 +46,8 @@ def authorized(  # pylint: disable=too-many-return-statements
 
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
-        # if the action is create_comment or courtOrder/registrarsNotation/registrarsOrder filings
         # disallow - only staff are allowed
-        staff_only_actions = ['add_comment', 'court_order', 'registrars_notation', 'registrars_order']
+        staff_only_actions = ['add_comment']
         if any(elem in action for elem in staff_only_actions):
             return False
 
@@ -96,25 +95,27 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
 ALLOWABLE_FILINGS: Final = {
     'staff': {
         Business.State.ACTIVE: {
+            'adminFreeze': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'alteration': ['BC', 'BEN', 'ULC', 'CC'],
             'annualReport': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
             'changeOfAddress': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
             'changeOfDirectors': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
             'changeOfRegistration': ['SP', 'GP'],
+            'consentContinuationOut': ['BC', 'BEN', 'CC', 'ULC'],
             'conversion': ['SP', 'GP', 'BEN'],
             'correction': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],
             'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'dissolution': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
             'incorporationApplication': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
+            'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'registration': ['SP', 'GP'],
             'specialResolution': ['CP'],
             'transition': ['BC', 'BEN', 'CC', 'ULC'],
-            'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            'adminFreeze': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
         },
         Business.State.HISTORICAL: {
             'courtOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
             'registrarsNotation': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'registrarsOrder': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             'restoration': {
@@ -123,7 +124,6 @@ ALLOWABLE_FILINGS: Final = {
                 'limitedRestorationExtension': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
                 'limitedRestorationToFull': ['BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
-            'putBackOn': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC']
         }
     },
     'user': {

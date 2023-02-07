@@ -66,6 +66,12 @@ class FilingTitles(str, Enum):
 
 
 FILINGS: Final = {
+    'adminFreeze': {
+        'name': 'adminFreeze',
+        'title': 'Admin Freeze',
+        'displayName': 'Admin Freeze',
+        'code': 'NOFEE'
+    },
     'affidavit': {
         'name': 'affidavit',
         'title': 'Affidavit',
@@ -145,6 +151,32 @@ FILINGS: Final = {
         'additional': [
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
+    },
+    'changeOfRegistration': {
+        'name': 'changeOfRegistration',
+        'title': 'Change of Registration',
+        'displayName': {
+            'SP': 'Change of Registration Application',
+            'GP': 'Change of Registration Application'
+        },
+        'codes': {
+            'SP': 'FMCHANGE',
+            'GP': 'FMCHANGE'
+        },
+        'additional': [
+            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
+        ]
+    },
+    'consentContinuationOut': {
+        'name': 'consentContinuationOut',
+        'title': 'Consent Continuation Out',
+        'displayName': '6-Month Consent to Continue Out',
+        'codes': {
+            'BC': 'CONTO',
+            'BEN': 'CONTO',
+            'ULC': 'CONTO',
+            'CC': 'CONTO'
+        }
     },
     'conversion': {
         'name': 'conversion',
@@ -233,6 +265,12 @@ FILINGS: Final = {
             {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
+    'putBackOn': {
+        'name': 'putBackOn',
+        'title': 'Put Back On',
+        'displayName': 'Correction - Put Back On',
+        'code': 'NOFEE'
+    },
     'registrarsNotation': {
         'name': 'registrarsNotation',
         'title': 'Registrars Notation',
@@ -256,55 +294,6 @@ FILINGS: Final = {
             'SP': 'FRREG',
             'GP': 'FRREG'
         },
-    },
-    'specialResolution': {
-        'name': 'specialResolution',
-        'title': 'Special Resolution',
-        'displayName': 'Special Resolution',
-        'codes': {
-            'CP': 'SPRLN'
-        }
-    },
-    'transition': {
-        'name': 'transition',
-        'title': 'Transition',
-        'displayName': 'Transition Application',
-        'codes': {
-            'BC': 'TRANS',
-            'BEN': 'TRANS',
-            'ULC': 'TRANS',
-            'CC': 'TRANS'
-        },
-        'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
-        ]
-    },
-    'changeOfRegistration': {
-        'name': 'changeOfRegistration',
-        'title': 'Change of Registration',
-        'displayName': {
-            'SP': 'Change of Registration Application',
-            'GP': 'Change of Registration Application'
-        },
-        'codes': {
-            'SP': 'FMCHANGE',
-            'GP': 'FMCHANGE'
-        },
-        'additional': [
-            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
-        ]
-    },
-    'putBackOn': {
-        'name': 'putBackOn',
-        'title': 'Put Back On',
-        'displayName': 'Correction - Put Back On',
-        'code': 'NOFEE'
-    },
-    'adminFreeze': {
-        'name': 'adminFreeze',
-        'title': 'Admin Freeze',
-        'displayName': 'Admin Freeze',
-        'code': 'NOFEE'
     },
     'restoration': {
         'name': 'restoration',
@@ -355,6 +344,28 @@ FILINGS: Final = {
                 'CC': 'RESXF'
             }
         }
+    },
+    'specialResolution': {
+        'name': 'specialResolution',
+        'title': 'Special Resolution',
+        'displayName': 'Special Resolution',
+        'codes': {
+            'CP': 'SPRLN'
+        }
+    },
+    'transition': {
+        'name': 'transition',
+        'title': 'Transition',
+        'displayName': 'Transition Application',
+        'codes': {
+            'BC': 'TRANS',
+            'BEN': 'TRANS',
+            'ULC': 'TRANS',
+            'CC': 'TRANS'
+        },
+        'additional': [
+            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+        ]
     }
 }
 

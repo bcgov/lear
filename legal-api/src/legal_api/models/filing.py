@@ -118,6 +118,32 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             }
         },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
+        'changeOfRegistration': {
+            'name': 'changeOfRegistration',
+            'title': 'Change of Registration',
+            'codes': {
+                'SP': 'FMCHANGE',
+                'GP': 'FMCHANGE'
+            }
+        },
+        'consentContinuationOut': {
+            'name': 'consentContinuationOut',
+            'title': 'Consent Continuation Out',
+            'codes': {
+                'BC': 'CONTO',
+                'BEN': 'CONTO',
+                'ULC': 'CONTO',
+                'CC': 'CONTO'
+            }
+        },
+        'conversion': {
+            'name': 'conversion',
+            'title': 'Conversion Ledger',
+            'codes': {
+                'SP': 'FMCONV',
+                'GP': 'FMCONV'
+            },
+        },
         'correction': {
             'name': 'correction',
             'title': 'Correction',
@@ -166,35 +192,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'temporaryCorpTypeCode': 'RTMP'
         },
-        'conversion': {
-            'name': 'conversion',
-            'title': 'Conversion Ledger',
-            'codes': {
-                'SP': 'FMCONV',
-                'GP': 'FMCONV'
-            },
-        },
-        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
-                              'codes': {
-                                  'CP': 'SPRLN'}},
-        'transition': {
-            'name': 'transition',
-            'title': 'Transition',
-            'codes': {
-                'BC': 'TRANS',
-                'BEN': 'TRANS',
-                'ULC': 'TRANS',
-                'CC': 'TRANS'
-            }
-        },
-        'changeOfRegistration': {
-            'name': 'changeOfRegistration',
-            'title': 'Change of Registration',
-            'codes': {
-                'SP': 'FMCHANGE',
-                'GP': 'FMCHANGE'
-            }
-        },
         'restoration': {
             'name': 'restoration',
             'fullRestoration': {
@@ -238,13 +235,27 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 }
             }
         },
+        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
+                              'codes': {
+                                  'CP': 'SPRLN'}},
+        'transition': {
+            'name': 'transition',
+            'title': 'Transition',
+            'codes': {
+                'BC': 'TRANS',
+                'BEN': 'TRANS',
+                'ULC': 'TRANS',
+                'CC': 'TRANS'
+            }
+        },
+
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
+        'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
-        'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
-        'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
-        'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'}
+        'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
+        'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'}
     }
 
     FILING_SUB_TYPE_KEYS: Final = {

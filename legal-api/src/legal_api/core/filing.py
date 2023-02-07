@@ -68,6 +68,7 @@ class Filing:
         CHANGEOFDIRECTORS = 'changeOfDirectors'
         CHANGEOFNAME = 'changeOfName'
         CHANGEOFREGISTRATION = 'changeOfRegistration'
+        CONSENTCONTINUATIONOUT = 'consentContinuationOut'
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'
@@ -75,9 +76,9 @@ class Filing:
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         PUTBACKON = 'putBackOn'
-        RESTORATIONAPPLICATION = 'restorationApplication'
         REGISTRATION = 'registration'
         RESTORATION = 'restoration'
+        RESTORATIONAPPLICATION = 'restorationApplication'
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
 

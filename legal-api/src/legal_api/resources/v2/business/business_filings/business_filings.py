@@ -429,7 +429,7 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str, business: Business) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
         sub_filing_type = None
@@ -443,15 +443,8 @@ class ListFilingResource():
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         admin_freeze = business.admin_freeze if business else False
 
-        action = ['edit']
-        if filing_type == 'courtOrder':
-            action = ['court_order']
-        elif filing_type == 'registrarsNotation':
-            action = ['registrars_notation']
-        elif filing_type == 'registrarsOrder':
-            action = ['registrars_order']
         if (admin_freeze and filing_type != 'adminFreeze') or \
-                not authorized(identifier, jwt, action=action) or \
+                not authorized(identifier, jwt, action=['edit']) or \
                 not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
