@@ -1,8 +1,9 @@
-from flows.common.filing_base_json import  get_base_dissolution_filing_json, get_base_put_back_on_filing_json, \
-    get_base_correction_filing_json, get_base_ia_filing_json, get_base_share_series_json
+from flows.common.filing_base_json import get_base_dissolution_filing_json, get_base_put_back_on_filing_json, \
+    get_base_correction_filing_json, get_base_ia_filing_json, get_base_share_series_json, get_base_ar_filing_json
+from .event_filing_service import OtherEventFilings
 from .filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType, get_effective_date_str, \
-    get_alias_type
+    get_alias_type, get_effective_date, get_effective_date_iso_format
 
 
 class FilingJsonFactoryService:
@@ -10,6 +11,7 @@ class FilingJsonFactoryService:
     def __init__(self, event_filing_data: dict):
         self._event_filing_data = event_filing_data
         self._filing_data = event_filing_data['data']
+        self._event_filing_type = event_filing_data['data']['event_file_type']
         self._target_lear_filing_type = self._filing_data['target_lear_filing_type']
 
         # dissolution filing only needs FCP as party.  remove existing parties when constructing filing json
@@ -32,6 +34,8 @@ class FilingJsonFactoryService:
 
         if self._target_lear_filing_type == 'incorporationApplication':
             filing_json = self.get_ia_filing_json()
+        if self._target_lear_filing_type == 'annualReport':
+            filing_json = self.get_ar_filing_json()
         elif self._target_lear_filing_type == 'correction':
             filing_json = self.get_correction_filing_json()
         elif self._target_lear_filing_type == 'dissolution':
@@ -56,6 +60,22 @@ class FilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_ia(filing_root_dict)
+        return filing_root_dict
+
+
+    def get_ar_filing_json(self):
+        result = self.build_ar_filing()
+        return result
+
+
+    def build_ar_filing(self):
+        directors = [p for p in self._filing_data['corp_parties'] if p['cp_party_typ_cd'] == 'DIR']
+        num_directors = len(directors)
+        filing_root_dict = get_base_ar_filing_json(num_directors)
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_ar(filing_root_dict)
         return filing_root_dict
 
 
@@ -107,6 +127,9 @@ class FilingJsonFactoryService:
         effective_dt_str = get_effective_date_str(self._filing_data)
         header['date'] = effective_dt_str
 
+        if OtherEventFilings.FILE_ANNBC == self._event_filing_type:
+            header['effectiveDate'] = get_effective_date_iso_format(self._filing_data)
+
         certified_by = get_certified_by(self._filing_data)
         header['certifiedBy'] = certified_by
 
@@ -123,7 +146,7 @@ class FilingJsonFactoryService:
         ia_dict['businessType'] = self._filing_data['c_corp_type_cd']
 
         self.populate_offices(ia_dict)
-        self.populate_parties(ia_dict)
+        self.populate_parties(ia_dict['parties'])
         self.populate_name_translations(ia_dict)
         self.populate_nr(ia_dict)
         if len(ia_dict['shareStructure']['shareClasses']) > 0:
@@ -135,6 +158,15 @@ class FilingJsonFactoryService:
             self.populate_contact_point(ia_dict)
         else:
             del ia_dict['contactPoint']
+
+
+    def populate_ar(self, filing_root_dict: dict):
+        ar_dict = filing_root_dict['filing']['annualReport']
+
+        self.populate_offices(ar_dict)
+        self.populate_directors(ar_dict['directors'])
+        ar_dict['nextARDate'] = self._filing_data['f_period_end_dt_str']
+        ar_dict['annualReportDate'] = self._filing_data['f_period_end_dt_str']
 
 
     def populate_correction(self, filing_dict: dict):
@@ -157,7 +189,7 @@ class FilingJsonFactoryService:
             del correction_dict['offices']
 
         if len(self._filing_data['corp_parties']) > 0:
-            self.populate_parties(correction_dict)
+            self.populate_parties(correction_dict['parties'])
         else:
             del correction_dict['parties']
 
@@ -172,12 +204,12 @@ class FilingJsonFactoryService:
             del correction_dict['contactPoint']
 
 
-    def populate_offices(self, ia_dict: dict):
-        registered_office_json = ia_dict['offices']['registeredOffice']
-        records_office_json = ia_dict['offices']['recordsOffice']
+    def populate_offices(self, offices_dict: dict):
+        registered_office_json = offices_dict['offices']['registeredOffice']
+        records_office_json = offices_dict['offices']['recordsOffice']
 
         if len(self._filing_data['offices']) == 0:
-            del ia_dict['offices']
+            del offices_dict['offices']
             return
 
         registered_office_filing_data = \
@@ -213,12 +245,32 @@ class FilingJsonFactoryService:
             del office_json['deliveryAddress']
 
 
-    def populate_parties(self, filings_dict: dict):
-        parties = filings_dict['parties']
+    def populate_parties(self, parties_dict: dict):
 
-        for idx, party in enumerate(parties):
+        for idx, party in enumerate(parties_dict):
             filing_data_party = self._filing_data['corp_parties'][idx]
             self.populate_party(party, filing_data_party)
+
+            mailing_addr_id = filing_data_party['ma_addr_id']
+            if mailing_addr_id:
+                mailing_addr = party['mailingAddress']
+                self.populate_address(mailing_addr, filing_data_party, 'ma_')
+            else:
+                del party['mailingAddress']
+
+            delivery_addr_id = filing_data_party['da_addr_id']
+            if delivery_addr_id:
+                delivery_addr = party['deliveryAddress']
+                self.populate_address(delivery_addr, filing_data_party, 'da_')
+            else:
+                del party['deliveryAddress']
+
+
+    def populate_directors(self, directors_dict: dict):
+
+        for idx, party in enumerate(directors_dict):
+            filing_data_party = self._filing_data['corp_parties'][idx]
+            self.populate_director(party, filing_data_party)
 
             mailing_addr_id = filing_data_party['ma_addr_id']
             if mailing_addr_id:
@@ -275,6 +327,12 @@ class FilingJsonFactoryService:
         self.populate_party_officer(party_officer_dict, filing_party_data)
 
 
+    def populate_director(self, director_dict: dict, filing_party_data: dict):
+        party_officer_dict = director_dict['officer']
+        self.populate_director_officer(party_officer_dict, filing_party_data)
+        director_dict['appointmentDate'] = filing_party_data['cp_appointment_dt']
+
+
     def populate_party_role(self, party_role: dict, filing_party_data: dict):
         party_role_type = get_party_role_type(self._corp_type_cd, filing_party_data['cp_party_typ_cd'])
         party_role['roleType'] = party_role_type
@@ -296,7 +354,6 @@ class FilingJsonFactoryService:
 
     def populate_officer_json(self, officer: dict, filing_party_data: dict, party_type: str, to_upper=False):
         if to_upper:
-            officer['email'] = filing_party_data.get('cp_email_address', '').upper()
             officer['lastName'] = filing_party_data.get('cp_last_name', '').upper()
             officer['firstName'] = filing_party_data.get('cp_first_name', '').upper()
             officer['middleName'] = filing_party_data.get('cp_middle_name', '').upper()
@@ -304,10 +361,32 @@ class FilingJsonFactoryService:
             officer['organizationName'] = filing_party_data.get('cp_business_name', '').upper()
             officer['identifier'] = filing_party_data['cp_bus_company_num']
         else:
-            officer['email'] = filing_party_data.get('cp_email_address', '')
             officer['lastName'] = filing_party_data.get('cp_last_name', '')
             officer['firstName'] = filing_party_data.get('cp_first_name', '')
             officer['middleName'] = filing_party_data.get('cp_middle_name', '')
+            officer['partyType'] = party_type
+            officer['organizationName'] = filing_party_data.get('cp_business_name', '')
+            officer['identifier'] = filing_party_data['cp_bus_company_num']
+
+
+    def populate_director_officer_json(self, officer: dict, filing_party_data: dict, party_type: str, to_upper=False):
+        if to_upper:
+            officer['lastName'] = filing_party_data.get('cp_last_name', '').upper()
+            officer['firstName'] = filing_party_data.get('cp_first_name', '').upper()
+            officer['middleInitial'] = filing_party_data.get('cp_middle_name', '').upper()
+            officer['prevLastName'] = filing_party_data.get('cp_last_name', '').upper()
+            officer['prevFirstName'] = filing_party_data.get('cp_first_name', '').upper()
+            officer['prevMiddleInitial'] = filing_party_data.get('cp_middle_name', '').upper()
+            officer['partyType'] = party_type
+            officer['organizationName'] = filing_party_data.get('cp_business_name', '').upper()
+            officer['identifier'] = filing_party_data['cp_bus_company_num']
+        else:
+            officer['lastName'] = filing_party_data.get('cp_last_name', '')
+            officer['firstName'] = filing_party_data.get('cp_first_name', '')
+            officer['middleInitial'] = filing_party_data.get('cp_middle_name', '')
+            officer['prevLastName'] = filing_party_data.get('cp_last_name', '')
+            officer['prevFirstName'] = filing_party_data.get('cp_first_name', '')
+            officer['prevMiddleInitial'] = filing_party_data.get('cp_middle_name', '')
             officer['partyType'] = party_type
             officer['organizationName'] = filing_party_data.get('cp_business_name', '')
             officer['identifier'] = filing_party_data['cp_bus_company_num']
@@ -346,7 +425,6 @@ class FilingJsonFactoryService:
     def populate_previous_party_officer(self, officer: dict, prev_filing_party_data: dict):
         prev_officer = {}
         prev_party_type = get_party_type(prev_filing_party_data)
-        prev_officer['email'] = prev_filing_party_data.get('cp_email_address', '').upper()
         prev_officer['lastName'] = prev_filing_party_data.get('cp_last_name', '').upper()
         prev_officer['firstName'] = prev_filing_party_data.get('cp_first_name', '').upper()
         prev_officer['middleName'] = prev_filing_party_data.get('cp_middle_name', '').upper()
@@ -363,6 +441,13 @@ class FilingJsonFactoryService:
     def populate_party_officer(self, party_officer: dict, filing_party_data: dict):
         party_type = get_party_type(filing_party_data)
         self.populate_officer_json(party_officer, filing_party_data, party_type)
+        if self.is_previous_colin_party(filing_party_data):
+            self.populate_previous_party_officer_json(party_officer, filing_party_data)
+
+
+    def populate_director_officer(self, party_officer: dict, filing_party_data: dict):
+        party_type = get_party_type(filing_party_data)
+        self.populate_director_officer_json(party_officer, filing_party_data, party_type)
         if self.is_previous_colin_party(filing_party_data):
             self.populate_previous_party_officer_json(party_officer, filing_party_data)
 

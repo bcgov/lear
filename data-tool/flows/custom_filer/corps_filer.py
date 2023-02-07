@@ -36,7 +36,8 @@ from legal_api.services.bootstrap import AccountService
 from sqlalchemy_continuum import versioning_manager
 
 from .filing_meta import FilingMeta, json_serial
-from .filing_processors import incorporation_filing, registration, change_of_registration, dissolution, conversion, put_back_on, correction
+from .filing_processors import incorporation_filing, registration, change_of_registration, dissolution, conversion, \
+    put_back_on, correction, annual_report
 from .filing_processors.filing_components import create_comments, update_filing_user
 
 
@@ -97,6 +98,13 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
                                                                                         filing_submission,
                                                                                         filing_meta,
                                                                                         filing_data)
+
+            elif filing.get('annualReport'):
+                annual_report.process(business,
+                                      filing,
+                                      filing_submission,
+                                      filing_meta)
+
 
             elif filing.get('dissolution'):
                 dissolution.process(business,
