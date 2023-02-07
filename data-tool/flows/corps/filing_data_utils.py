@@ -2,6 +2,8 @@ from enum import Enum
 
 import pandas as pd
 
+from flows.corps.event_filing_service import OtherEventFilings
+
 
 class AddressFormatType(str, Enum):
     BASIC = 'BAS'
@@ -20,8 +22,8 @@ def get_certified_by(filing_data: dict):
         middle_name = filing_data.get('u_middle_name')
         last_name = filing_data.get('u_last_name')
         if first_name or middle_name or last_name:
-            result = f'{first_name} {middle_name} {last_name}'
-            result = result.replace('  ', ' ')
+            names = [first_name, middle_name, last_name]
+            result = ' '.join([n for n in names if n])
             return result
         return user_id
 
@@ -115,6 +117,13 @@ def get_is_paper_only(filing_data: dict):
 
 def get_effective_date(filing_data: dict):
     return filing_data['f_effective_dts_pacific']
+
+
+def get_effective_date_iso_format(filing_data: dict):
+    if effective_dt := filing_data['f_effective_dts_pacific']:
+        return effective_dt.isoformat()
+
+    return None
 
 
 def get_effective_date_str(filing_data: dict):

@@ -16,6 +16,8 @@ def get_unprocessed_corps_query(data_load_env: str):
                   where 1 = 1
                         -- corp with multiple share classes and series
 --                         and e.corp_num = 'BC1393945'
+                        -- corp with annual reports
+--                          and e.corp_num = 'BC1208648'
                   group by e.corp_num, c.corp_type_cd) as tbl_fe
                      left outer join corp_processing cp on 
                         cp.corp_num = tbl_fe.corp_num 
@@ -69,6 +71,7 @@ def get_corp_event_filing_data_query(corp_num: str, event_id: int):
                 else f.ods_type_cd
             end f_ods_type,            
             f.nr_num               as f_nr_num,
+            to_char(f.period_end_dt, 'YYYY-MM-DD') as f_period_end_dt_str,
             -- corporation
             c.corp_num             as c_corp_num,
             c.corp_frozen_type_cd  as c_corp_frozen_type_cd,
@@ -147,12 +150,12 @@ def get_corp_event_filing_corp_party_data_query(corp_num: str,
                 or (cp.start_event_id != {event_id} and 
                     cp.start_event_id in ({prev_event_ids_str}) and 
                     cp.end_event_id is null and
-                    cp.party_typ_cd != 'FCP') 
+                    cp.party_typ_cd not in ('FCP', 'INC')) 
                 or (cp.start_event_id != {event_id} and
                     cp.start_event_id in ({prev_event_ids_str}) and
                     cp.end_event_id != {event_id} and
                     cp.end_event_id not in ({prev_event_ids_str}) and
-                    cp.party_typ_cd != 'FCP')
+                    cp.party_typ_cd  not in ('FCP', 'INC'))
             """
 
     query = f"""
@@ -164,19 +167,19 @@ def get_corp_event_filing_corp_party_data_query(corp_num: str,
                cp.start_event_id                                                    as cp_start_event_id,
                cp.end_event_id                                                      as cp_end_event_id,
                case 
-                    when cp.party_typ_cd = 'FCP' 
+                    when cp.party_typ_cd in ('FCP', 'INC') 
                         THEN NULL
                     else cp.prev_party_id 
                end cp_prev_party_id,
                case
                     when cp.appointment_dt is not null 
                          and cp.start_event_id = {event_id} 
-                         and cp.party_typ_cd != 'FCP' 
+                         and cp.party_typ_cd  not in ('FCP', 'INC') 
                          and cp.prev_party_id is null
                          THEN to_char(cp.appointment_dt, 'YYYY-MM-DD')
                     when cp.appointment_dt is null 
                          and cp.start_event_id = {event_id} 
-                         and cp.party_typ_cd != 'FCP' 
+                         and cp.party_typ_cd  not in ('FCP', 'INC') 
                          and cp.prev_party_id is null
                          THEN '{appoint_dt_str}' 
                     else NULL
@@ -184,7 +187,7 @@ def get_corp_event_filing_corp_party_data_query(corp_num: str,
                cp.last_name              as cp_last_name,
                cp.middle_name            as cp_middle_name,
                cp.first_name             as cp_first_name,
-               cp.business_name          as cp_business_name,
+               trim(cp.business_name)    as cp_business_name,
                case 
                     when cp.bus_company_num = '' then NULL
                     when cp.bus_company_num ~ '^[0-9]+$' and length(cp.bus_company_num) <= 7  
@@ -254,7 +257,16 @@ def get_corp_event_filing_corp_party_data_query(corp_num: str,
     return query
 
 
-def get_corp_event_filing_office_data_query(corp_num: str, event_id: int):
+def get_corp_event_filing_office_data_query(corp_num: str, event_id: int, include_prev_active_offices: bool = False):
+    sub_condition = ''
+
+    if include_prev_active_offices:
+        sub_condition = \
+            f"""
+                or (o.start_event_id < {event_id} and o.end_event_id is null)
+                or (o.start_event_id < {event_id} and o.end_event_id > {event_id}) 
+            """
+
     query = f"""
         select o.corp_num                as o_corp_num,
                o.office_typ_cd           as o_office_typ_cd,
@@ -316,7 +328,7 @@ def get_corp_event_filing_office_data_query(corp_num: str, event_id: int):
                  left outer join address da on o.delivery_addr_id = da.addr_id
         where 1 = 1
           and e.corp_num = '{corp_num}'
-          and e.event_id = {event_id}
+          and (e.event_id = {event_id} {sub_condition})
         ;
         """
     return query

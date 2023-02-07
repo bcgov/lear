@@ -22,11 +22,20 @@ class IAEventFilings(str, Enum):
         return value in cls._value2member_map_
 
 
+class OtherEventFilings(str, Enum):
+    FILE_ANNBC = 'FILE_ANNBC'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
     IAEventFilings.FILE_ICORP: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
     IAEventFilings.FILE_ICORU: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
-    IAEventFilings.FILE_ICORC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value
+    IAEventFilings.FILE_ICORC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+
+    OtherEventFilings.FILE_ANNBC: FilingCore.FilingTypes.ANNUALREPORT.value
 }
 
 
@@ -85,7 +94,8 @@ class EventFilingService:
             event_filing_data_dict['corp_parties'] = event_filing_corp_party_data_dict
 
             # get office data
-            sql_text = get_corp_event_filing_office_data_query(corp_num, event_id)
+            include_prev_active_offices = event_file_type == 'FILE_ANNBC'
+            sql_text = get_corp_event_filing_office_data_query(corp_num, event_id, include_prev_active_offices)
             rs = conn.execute(sql_text)
             event_filing_office_data_dict = convert_result_set_to_dict(rs)
             event_filing_data_dict['offices'] = event_filing_office_data_dict
@@ -203,7 +213,8 @@ class EventFilingService:
 
 
     def get_event_filing_is_supported(self, event_file_type: str):
-        if IAEventFilings.has_value(event_file_type):
+        if IAEventFilings.has_value(event_file_type) or \
+                OtherEventFilings.has_value(event_file_type):
             return True
 
         return False
