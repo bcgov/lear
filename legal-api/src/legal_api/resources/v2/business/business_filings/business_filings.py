@@ -420,7 +420,11 @@ class ListFilingResource():
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
-        if json_input['filing']['header']['name'] not in [
+        filing_type = json_input.get('filing', {}).get('header', {}).get('name')
+        if not filing_type:
+            return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
+
+        if filing_type not in [
             Filing.FILINGS['incorporationApplication']['name'],
             Filing.FILINGS['registration']['name']
         ] and business is None:
@@ -429,12 +433,10 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str, business: Business) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
-        sub_filing_type = None
-        if filing_type == 'restoration':
-            sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+        filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
 
         # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
@@ -443,16 +445,9 @@ class ListFilingResource():
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         admin_freeze = business.admin_freeze if business else False
 
-        action = ['edit']
-        if filing_type == 'courtOrder':
-            action = ['court_order']
-        elif filing_type == 'registrarsNotation':
-            action = ['registrars_notation']
-        elif filing_type == 'registrarsOrder':
-            action = ['registrars_order']
         if (admin_freeze and filing_type != 'adminFreeze') or \
-                not authorized(identifier, jwt, action=action) or \
-                not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
+                not authorized(identifier, jwt, action=['edit']) or \
+                not is_allowed(state, filing_type, legal_type, jwt, filing_sub_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED

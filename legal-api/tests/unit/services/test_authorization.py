@@ -77,12 +77,6 @@ TEST_AUTHZ_DATA = [
      HTTPStatus.METHOD_NOT_ALLOWED),
     ('add_comment_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['add_comment'],
      HTTPStatus.METHOD_NOT_ALLOWED),
-    ('court_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['court_order'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
-    ('registrars_notation_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_notation'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
-    ('registrars_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_order'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
 ]
 
 
@@ -142,12 +136,6 @@ TEST_INTEG_AUTHZ_DATA = [
     ('invalid_action', 'CP1234567', 'Not-Match-Identifier', [BASIC_USER], None, ['scrum'],
      HTTPStatus.METHOD_NOT_ALLOWED),
     ('add_comment_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['add_comment'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
-    ('court_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['court_order'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
-    ('registrars_notation_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_notation'],
-     HTTPStatus.METHOD_NOT_ALLOWED),
-    ('registrars_order_not_allowed', 'CP0001237', 'CP1234567', [BASIC_USER], None, ['registrars_order'],
      HTTPStatus.METHOD_NOT_ALLOWED),
 ]
 
@@ -244,29 +232,32 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
     [
         # active business
         ('staff_active_cp', Business.State.ACTIVE, 'CP', 'staff', [STAFF_ROLE],
-         ['annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          'dissolution', 'incorporationApplication', 'specialResolution', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
+          'dissolution', 'incorporationApplication', 'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_bc', Business.State.ACTIVE, 'BC', 'staff', [STAFF_ROLE],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          'dissolution', 'incorporationApplication', 'transition', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
+          'correction', 'courtOrder', 'dissolution', 'incorporationApplication', 'registrarsNotation',
+          'registrarsOrder', 'transition']),
         ('staff_active_ben', Business.State.ACTIVE, 'BEN', 'staff', [STAFF_ROLE],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'conversion', 'correction',
-          'courtOrder', 'dissolution', 'incorporationApplication',
-          'transition', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
+          'conversion', 'correction', 'courtOrder', 'dissolution', 'incorporationApplication',
+          'registrarsNotation', 'registrarsOrder', 'transition']),
         ('staff_active_cc', Business.State.ACTIVE, 'CC', 'staff', [STAFF_ROLE],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          'dissolution', 'incorporationApplication', 'transition', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
+          'correction', 'courtOrder', 'dissolution', 'incorporationApplication', 'registrarsNotation',
+          'registrarsOrder', 'transition']),
         ('staff_active_ulc', Business.State.ACTIVE, 'ULC', 'staff', [STAFF_ROLE],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          'dissolution', 'incorporationApplication', 'transition', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
+         'correction', 'courtOrder', 'dissolution', 'incorporationApplication', 'registrarsNotation',
+          'registrarsOrder', 'transition']),
         ('staff_active_llc', Business.State.ACTIVE, 'LLC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'dissolution', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'courtOrder', 'dissolution', 'registrarsNotation', 'registrarsOrder']),
         ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'correction', 'courtOrder',
-          'dissolution', 'registration', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
+          'dissolution', 'registrarsNotation', 'registrarsOrder', 'registration']),
         ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['changeOfRegistration', 'conversion', 'correction', 'courtOrder',
-          'dissolution', 'registration', 'registrarsNotation', 'registrarsOrder', 'adminFreeze']),
+         ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
+          'dissolution', 'registrarsNotation', 'registrarsOrder', 'registration']),
 
         ('user_active_cp', Business.State.ACTIVE, 'CP', 'user', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
@@ -291,27 +282,27 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration']}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration']}]),
         ('staff_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_historical_ulc', Business.State.HISTORICAL, 'ULC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
+         {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_historical_llc', Business.State.HISTORICAL, 'LLC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_historical_sp', Business.State.HISTORICAL, 'SP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', {'restoration': []}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder', {'restoration': []}]),
         ('staff_historical_gp', Business.State.HISTORICAL, 'GP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'registrarsNotation', 'registrarsOrder', {'restoration': []}, 'putBackOn']),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder', {'restoration': []}]),
 
         ('user_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [BASIC_USER],
          [{'restoration': ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull']}]),
@@ -402,6 +393,9 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
         ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
+        ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
+
 
         ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'user', [BASIC_USER], True),
@@ -462,6 +456,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
         ('user_active', Business.State.ACTIVE, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
 
+        ('user_active', Business.State.ACTIVE, 'consentContinuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [BASIC_USER], False),
+
+
         # historical business
         ('staff_historical', Business.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
@@ -513,6 +511,9 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
         ('staff_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
+        ('staff_historical', Business.State.HISTORICAL, 'consentContinuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
+
 
         ('user_historical', Business.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'user', [BASIC_USER], False),
@@ -561,6 +562,9 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
 
         ('user_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
          ['SP', 'GP'], 'user', [BASIC_USER], False),
+
+        ('user_historical', Business.State.HISTORICAL, 'consentContinuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [BASIC_USER], False),
     ]
 )
 def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_filing_type,
