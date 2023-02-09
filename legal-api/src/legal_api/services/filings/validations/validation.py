@@ -28,6 +28,7 @@ from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .change_of_registration import validate as change_of_registration_validate
+from .consent_continuation_out import validate as consent_continuation_out_validate
 from .conversion import validate as conversion_validate
 from .correction import validate as correction_validate
 from .court_order import validate as court_order_validate
@@ -170,6 +171,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['restoration'].get('name'):
                     err = restoration_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['consentContinuationOut'].get('name'):
+                    err = consent_continuation_out_validate(business, filing_json)
 
                 if err:
                     return err
