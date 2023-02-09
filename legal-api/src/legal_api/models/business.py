@@ -214,7 +214,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     start_date = db.Column('start_date', db.DateTime(timezone=True))
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
-    cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True)) # consent continuation out expiry_date
+    cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True))  # consent continuation out expiry_date
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
