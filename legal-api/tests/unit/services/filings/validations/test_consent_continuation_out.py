@@ -47,7 +47,7 @@ class MockResponse:
     ]
 )
 def test_consent_continuation_out_active_and_good_standing(session, test_name, expected_code):
-    """Assert valid court order."""
+    """Assert Consent Continuation Out can be filed."""
     business = Business(
         identifier='BC1234567',
         legal_type='BC',
