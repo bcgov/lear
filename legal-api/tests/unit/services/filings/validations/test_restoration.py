@@ -123,11 +123,13 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
         ('invalid_greater', 'limitedRestoration', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestoration', relativedelta(months=1), True),
         ('invalid_lesser', 'limitedRestoration', relativedelta(days=25), False),
+        ('missing', 'limitedRestoration', None, False),
 
         ('greater', 'limitedRestorationExtension', relativedelta(years=2), True),
         ('invalid_greater', 'limitedRestorationExtension', relativedelta(years=2, days=1), False),
         ('lesser', 'limitedRestorationExtension', relativedelta(months=1), True),
-        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=25), False)
+        ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=25), False),
+        ('missing', 'limitedRestorationExtension', None, False),
     ]
 )
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):
@@ -142,7 +144,8 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['header']['name'] = 'restoration'
 
     filing['filing']['restoration']['type'] = restoration_type
-    filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+    if delta_date:
+        filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
     err = validate(business, filing)
 
     if is_valid:

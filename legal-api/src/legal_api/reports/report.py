@@ -35,7 +35,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
 
-class Report:  # pylint: disable=too-few-public-methods
+class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     # TODO review pylint warning and alter as required
     """Service to create report outputs."""
 

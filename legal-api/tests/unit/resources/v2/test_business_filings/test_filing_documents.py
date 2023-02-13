@@ -871,7 +871,7 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
     ('bc_restoration_completed', 'BC7654321', Business.LegalTypes.COMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {
@@ -891,11 +891,11 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     }
       },
      HTTPStatus.OK, '2017-10-01'
-    ),
+     ),
     ('ben_restoration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {
@@ -915,11 +915,11 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     }
       },
      HTTPStatus.OK, '2017-10-01'
-    ),
+     ),
     ('ulc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {
@@ -939,11 +939,11 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     }
       },
      HTTPStatus.OK, '2017-10-01'
-    ),
+     ),
     ('cc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {
