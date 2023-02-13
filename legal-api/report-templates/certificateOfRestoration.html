@@ -1,0 +1,58 @@
+[[macros.html]]
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Certificate of Restoration</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/certificateStyle.html]]
+  </head>
+
+  <body>
+    <div class="outer-container">
+      <div class="outer-container-header">
+        <div class="business-number">Incorporation Number: {{business.identifier}}</div>
+      </div>      
+
+      <div class="certificate-statements">
+          [[common/certificateLogo.html]]
+
+          <div class="cert-title-container">
+            <div class="sub-header-1">Certificate  of</div>
+            <div class="certificate-header">RESTORATION</div>
+            <div class="sub-header-2">{{entityAct}}</div>
+          </div>
+
+          <div class="certify-clause-container">
+            <div>I hereby certify that</div>
+            <div class="company-name-header">{{fromLegalName}}</div>
+            <div>
+              which was recognized on {{business.formatted_founding_date_time}} under certificate number
+              {{business.identifier}}, and was dissolved on {{formatted_dissolution_date}},
+              {% if restoration.type == 'fullRestoration' %}
+                has on {{effective_date_time}} been restored under the {{entityAct}} as
+                <span class="bold-italic">{{business.legalName}}</span>
+              {% elif restoration.type == 'limitedRestoration' %}
+                has on {{effective_date_time}} been restored for a period of 6 months ending
+                <span class="bold-italic">{{restoration_expiry_date}}</span> under the {{entityAct}}.
+              {% elif restoration.type == 'limitedRestorationExtension' %}
+                has on {{effective_date_time}} had the period of restoration extended to
+                <span class="bold-italic">expire on {{restoration_expiry_date}}</span>, under the {{entityAct}}.
+              {% elif restoration.type == 'limitedRestorationToFull' %}
+                and was restored for a period of ending on {{previous_restoration_expiry_date}} has on
+                {{effective_date_time}} been <span class="bold-italic">fully restored by way of conversion</span>
+                under the {{entityAct}}.
+              {% endif %}
+            </div>
+            <div class="cert-separator"></div>
+            <div class="cert-issued-by">
+              <div>Issued under my hand at Victoria, British Columbia</div>
+              <div>on {{report_date}}</div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </body>
+  [[common/certificateFooter.html]]
+</html>

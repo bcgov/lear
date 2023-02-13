@@ -34,8 +34,14 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     filing_meta.restoration = {}
 
     from_legal_name = business.legal_name
-    name_request_json = restoration_filing.get('nameRequest')
-    business_info.set_legal_name(business.identifier, business, name_request_json)
+
+    if name_request_json := restoration_filing.get('nameRequest'):
+        business_info.set_legal_name(business.identifier, business, name_request_json)
+        if nr_number := name_request_json.get('nrNumber', None):
+            filing_meta.restoration = {
+                **filing_meta.restoration,
+                'nrNumber': nr_number
+            }
 
     filing_meta.restoration = {
         **filing_meta.restoration,
@@ -44,11 +50,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         # if restoration is from a numbered to numbered, fromLegalName and toLegalName will be same
         # adding this intentionally for now to refer in ledger (filing-ui)
     }
-    if nr_number := name_request_json.get('nrNumber', None):
-        filing_meta.restoration = {
-            **filing_meta.restoration,
-            'nrNumber': nr_number
-        }
 
     if expiry := restoration_filing.get('expiry'):  # limitedRestoration, limitedRestorationExtension
         business.restoration_expiry_date = datetime.fromisoformat(expiry) + timedelta(hours=8)
