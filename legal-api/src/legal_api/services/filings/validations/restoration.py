@@ -56,14 +56,15 @@ def validate_expiry_date(filing: Dict) -> list:
     # Between 1 month and 2 years in the future
     msg = []
     expiry_date_path = '/filing/restoration/expiry'
-    expiry_date = get_date(filing, expiry_date_path)
-    now = LegislationDatetime.now().date()
-    greater = now + relativedelta(years=2)
-    lesser = now + relativedelta(months=1)
-    if expiry_date < lesser or expiry_date > greater:
-        msg.append({'error': 'Expiry Date must be between 1 month and 2 years in the future.',
-                    'path': expiry_date_path})
-
+    if expiry_date := get_date(filing, expiry_date_path):
+        now = LegislationDatetime.now().date()
+        greater = now + relativedelta(years=2)
+        lesser = now + relativedelta(months=1)
+        if expiry_date < lesser or expiry_date > greater:
+            msg.append({'error': 'Expiry Date must be between 1 month and 2 years in the future.',
+                        'path': expiry_date_path})
+    else:
+        msg.append({'error': 'Expiry Date is required.', 'path': expiry_date_path})
     return msg
 
 

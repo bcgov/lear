@@ -233,17 +233,21 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return business_revision
 
     @staticmethod
-    def get_business_revision_before_filing(filing_id, business_id) -> dict:
-        """Consolidates the business info of the previous filing."""
-        business = Business.find_by_internal_id(business_id)
-        filing = Filing.find_by_id(filing_id)
+    def find_last_value_from_business_revision(transaction_id, business_id,
+                                               is_dissolution_date=False,
+                                               is_restoration_expiry_date=False) -> dict:
+        """Get business info with last value of dissolution_date or restoration_expiry_date."""
         business_version = version_class(Business)
-        business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id < filing.transaction_id) \
+        query = db.session.query(business_version) \
+            .filter(business_version.transaction_id < transaction_id) \
             .filter(business_version.operation_type != 2) \
-            .filter(business_version.id == business.id) \
-            .order_by(business_version.transaction_id.desc()).first()
-        return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
+            .filter(business_version.id == business_id)
+        if is_dissolution_date:
+            query = query.filter(business_version.dissolution_date != None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
+        if is_restoration_expiry_date:
+            query = query.filter(business_version.restoration_expiry_date != None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
+        business_revision = query.order_by(business_version.transaction_id.desc()).first()
+        return business_revision
 
     @staticmethod
     def get_business_revision_after_filing(filing_id, business_id) -> dict:
