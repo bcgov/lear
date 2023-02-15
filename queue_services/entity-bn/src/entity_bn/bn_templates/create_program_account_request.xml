@@ -60,18 +60,20 @@
       <postalCode>{{mailingAddress.postalCode | replace(' ', '')}}</postalCode>
       <countryCode>{{mailingAddress.addressCountry}}</countryCode>
     </mailingAddress>
-    {% for party in parties %}
-    <owner>
-      <ownerIndividual>
-      {% if party.officer.partyType == 'person' %}
-        <lastName>{{party.officer.lastName}}</lastName>
-        <givenName>{{party.officer.firstName}}</givenName>
-      {% elif party.officer.partyType == 'organization' %}
-        <lastName>{{party.officer.organizationName}}</lastName>
-      {% endif %}
-      </ownerIndividual>
-    </owner>
-    {% endfor %}
+    {% if businessNumber is none %}
+      {% for party in parties %}
+      <owner>
+        <ownerIndividual>
+        {% if party.officer.partyType == 'person' %}
+          <lastName>{{party.officer.lastName}}</lastName>
+          <givenName>{{party.officer.firstName}}</givenName>
+        {% elif party.officer.partyType == 'organization' %}
+          <lastName>{{party.officer.organizationName[0:30]}}</lastName>
+        {% endif %}
+        </ownerIndividual>
+      </owner>
+      {% endfor %}
+    {% endif %}
     <businessActivityDeclaration>
       <businessActivityDescription>{{business.naicsDescription}}</businessActivityDescription>
     </businessActivityDeclaration>
