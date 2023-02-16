@@ -689,6 +689,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_incomplete_filings_by_types(business_id: int, filing_types: list):
+        """Return the filings of particular types and statuses."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type.in_(filing_types)). \
+            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            order_by(desc(Filing.effective_date)). \
+            all()
+        return filings
+
+    @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
@@ -774,6 +785,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             return filing_sub_type
 
         return None
+
+    @staticmethod
+    def get_fee_code(legal_type: str, filing_type: str, filing_sub_type: str = None):
+        """Return fee code for filing."""
+        filing_dict = Filing.FILINGS.get(filing_type, None)
+
+        if filing_sub_type:
+            fee_code = filing_dict[filing_sub_type]['codes'].get(legal_type, None)
+        else:
+            if fee_code := filing_dict.get('code', None):
+                return fee_code
+            fee_code = filing_dict['codes'].get(legal_type, None)
+
+        return fee_code
 
     def save(self):
         """Save and commit immediately."""

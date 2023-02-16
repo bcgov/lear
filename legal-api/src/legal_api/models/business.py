@@ -42,7 +42,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes
+class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
@@ -389,7 +389,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
-            'associationType': self.association_type
+            'associationType': self.association_type,
+            'allowedActions': self.allowable_actions
         }
         self._extend_json(d)
 
@@ -483,6 +484,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     def warnings(self, value):
         """Set warnings."""
         self._warnings = value
+
+    @property
+    def allowable_actions(self):
+        """Return warnings."""
+        if not hasattr(self, '_allowable_actions'):
+            return {}
+
+        return self._allowable_actions
+
+    @allowable_actions.setter
+    def allowable_actions(self, value):
+        """Set warnings."""
+        self._allowable_actions = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

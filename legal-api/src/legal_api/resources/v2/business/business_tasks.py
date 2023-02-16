@@ -26,6 +26,7 @@ from flask_cors import cross_origin
 
 from legal_api.models import Business, Filing
 from legal_api.services import check_warnings, namex
+from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -96,7 +97,7 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
     order = 1
 
     warnings = check_warnings(business)
-    if any(x['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO' for x in warnings):
+    if any(x['warningType'] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
         # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
         business.compliance_warnings = warnings
         business.warnings = warnings

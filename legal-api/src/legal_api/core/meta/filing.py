@@ -443,3 +443,19 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfNameChange')
         elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
             outputs.add('certificateOfNameChange')
+
+    @staticmethod
+    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
+        """Return display name for filing."""
+        filing_dict = FILINGS.get(filing_type, None)
+
+        if filing_sub_type:
+            display_name = filing_dict[filing_sub_type]['displayName']
+            if isinstance(display_name, dict):
+                display_name = display_name.get(legal_type)
+        else:
+            display_name = filing_dict['displayName']
+            if isinstance(display_name, dict):
+                display_name = display_name.get(legal_type)
+
+        return display_name
