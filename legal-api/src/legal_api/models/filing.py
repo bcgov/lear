@@ -492,6 +492,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self._filing_json = json_data
 
     @property
+    def json_legal_type(self):
+        """Return the legal type from a filing_json or None."""
+        return self._filing_json.get('filing', {}).get('business', {}).get('legalType', None)
+
+    @property
+    def json_nr(self):
+        """Return the NR Number from a filing_json or None."""
+        return self._filing_json.get('filing', {})\
+            .get(self.filing_type, {}).get('nameRequest', {}).get('nrNumber', None)
+
+    @property
     def meta_data(self):
         """Return the meta data collected about a filing, stored as JSON."""
         return self._meta_data

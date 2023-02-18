@@ -357,23 +357,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             self.save()
         return self
 
-    def json(self):
+    def json(self, slim=False):
         """Return the Business as a json object.
 
         None fields are not included.
         """
+        slim_json = self._slim_json()
+        if slim:
+            return slim_json
+
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
         d = {
+            **slim_json,
             'arMinDate': ar_min_date.isoformat(),
             'arMaxDate': ar_max_date.isoformat(),
-            'adminFreeze': self.admin_freeze or False,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
-            'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
-            'identifier': self.identifier,
             'complianceWarnings': self.compliance_warnings,
             'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
@@ -382,8 +383,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
             'lastModified': self.last_modified.isoformat(),
-            'legalName': self.legal_name,
-            'legalType': self.legal_type,
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,
@@ -393,6 +392,22 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'associationType': self.association_type
         }
         self._extend_json(d)
+
+        return d
+
+    def _slim_json(self):
+        """Return a smaller/faster version of the business json."""
+        d = {
+            'adminFreeze': self.admin_freeze or False,
+            'goodStanding': self.good_standing,
+            'identifier': self.identifier,
+            'legalName': self.legal_name,
+            'legalType': self.legal_type,
+            'state': self.state.name if self.state else Business.State.ACTIVE.name
+        }
+
+        if self.tax_id:
+            d['taxId'] = self.tax_id
 
         return d
 
@@ -413,8 +428,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
-        if self.tax_id:
-            d['taxId'] = self.tax_id
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
