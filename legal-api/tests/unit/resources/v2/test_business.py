@@ -366,7 +366,7 @@ def test_post_affiliated_businesses(session, client, jwt):
         filings.temp_reg = draft_business[0]
         filings.save()
 
-    rv = client.post('/api/v2/businesses/affiliations',
+    rv = client.post('/api/v2/businesses/search',
                      json={'identifiers': identifiers},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
 
@@ -377,7 +377,7 @@ def test_post_affiliated_businesses(session, client, jwt):
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
     """Assert that the affiliated businesses endpoint unauthorized if not a system token."""
-    rv = client.post('/api/v2/businesses/affiliations',
+    rv = client.post('/api/v2/businesses/search',
                      json={'identifiers': ['CP1234567']},
                      headers=create_header(jwt, [STAFF_ROLE]))
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
@@ -385,7 +385,7 @@ def test_post_affiliated_businesses_unathorized(session, client, jwt):
 
 def test_post_affiliated_businesses_invalid(session, client, jwt):
     """Assert that the affiliated businesses endpoint bad request when identifiers not given."""
-    rv = client.post('/api/v2/businesses/affiliations',
+    rv = client.post('/api/v2/businesses/search',
                      json={},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
     assert rv.status_code == HTTPStatus.BAD_REQUEST

@@ -56,7 +56,8 @@ def get_businesses(identifier: str):
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    # getting all business info is expensive so returning the slim version is desirable for some flows (i.e. business search update)
+    # getting all business info is expensive so returning the slim version is desirable for some flows
+    # - (i.e. business search update)
     if str(request.args.get('slim', None)).lower() == 'true':
         return jsonify(business=business.json(slim=True))
 
@@ -135,10 +136,10 @@ def post_businesses():
     return ListFilingResource.put(bootstrap.identifier, None)
 
 
-@bp.route('/affiliations', methods=['POST'])
+@bp.route('/search', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.requires_roles([SYSTEM_ROLE])
-def get_affiliated_businesses():
+def search_businesses():
     """Return the list of businesses and draft businesses."""
     try:
         json_input = request.get_json()
@@ -147,7 +148,7 @@ def get_affiliated_businesses():
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
         # base business query
-        bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # pylint: disable=protected-access
+        bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         draft_query = db.session.query(Filing).filter(Filing.temp_reg.in_(identifiers))
@@ -155,7 +156,11 @@ def get_affiliated_businesses():
         # parse results
         bus_results = [x.json(slim=True) for x in bus_query.all()]
         draft_results = [
-            {'identifier': x.temp_reg, 'legalType': x.json_legal_type, **({'nrNumber': x.json_nr} if x.json_nr else {})} for x in draft_query.all()]
+            {
+                'identifier': x.temp_reg,
+                'legalType': x.json_legal_type,
+                **({'nrNumber': x.json_nr} if x.json_nr else {})
+            } for x in draft_query.all()]
 
         return jsonify({'businessAffiliations': bus_results, 'draftAffiliations': draft_results}), HTTPStatus.OK
     except Exception as err:
