@@ -267,7 +267,7 @@ def test_business_json(session):
         'identifier': 'CP1234567',
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
-        'state': Business.State.ACTIVE.value,
+        'state': Business.State.ACTIVE.name,
         'taxId': '123456789'
     }
 
@@ -275,7 +275,7 @@ def test_business_json(session):
 
     # remove taxId to test it doesn't show up again until the final test
     business.tax_id = None
-    d.pop('taxId')
+    d_slim.pop('taxId')
 
     d = {
         **d_slim,
