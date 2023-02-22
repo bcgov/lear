@@ -254,14 +254,31 @@ def test_business_json(session):
                         restriction_ind=True,
                         association_type='CP',
                         # NB: default not intitialized since bus not committed before check
-                        state=Business.State.ACTIVE
+                        state=Business.State.ACTIVE,
+                        tax_id='123456789'
                         )
     # basic json
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    d = {
-        'legalName': 'legal_name',
-        'legalType': 'CP',
+
+    # slim json
+    d_slim = {
+        'adminFreeze': False,
+        'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
+        'legalName': 'legal_name',
+        'legalType': Business.LegalTypes.COOP.value,
+        'state': Business.State.ACTIVE.value,
+        'taxId': '123456789'
+    }
+
+    assert business.json(slim=True) == d_slim
+
+    # remove taxId to test it doesn't show up again until the final test
+    business.tax_id = None
+    d.pop('taxId')
+
+    d = {
+        **d_slim,
         'foundingDate': EPOCH_DATETIME.isoformat(),
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
@@ -274,11 +291,8 @@ def test_business_json(session):
         'naicsDescription': None,
         'nextAnnualReport': '1971-01-01T08:00:00+00:00',
         'hasRestrictions': True,
-        'goodStanding': False,  # good standing will be false because the epoch is 1970
         'arMinDate': '1971-01-01',
         'arMaxDate': '1972-04-30',
-        'adminFreeze': False,
-        'state': 'ACTIVE',
         'complianceWarnings': [],
         'warnings': [],
         'hasCorrections': False,
@@ -312,8 +326,6 @@ def test_business_json(session):
     business.tax_id = '123456789'
     d['taxId'] = business.tax_id
     assert business.json() == d
-    business.tax_id = None
-    d.pop('taxId')
 
 
 def test_business_relationships_json(session):
@@ -367,19 +379,19 @@ def test_get_next_value_from_sequence(session, business_type, expected):
 def test_continued_in_business(session):
     """Assert that the continued corp is saved successfully."""
     business = Business(
-                    legal_name='Test - Legal Name',
-                    legal_type='BC',
-                    founding_date=datetime.utcfromtimestamp(0),
-                    last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                    dissolution_date=None,
-                    identifier='BC1234567',
-                    state=Business.State.ACTIVE,
-                    jurisdiction='CA',
-                    foreign_identifier='C1234567',
-                    foreign_legal_name='Prev Legal Name',
-                    foreign_legal_type='BEN',
-                    foreign_incorporation_date=datetime.utcfromtimestamp(0),
-                    )
+        legal_name='Test - Legal Name',
+        legal_type='BC',
+        founding_date=datetime.utcfromtimestamp(0),
+        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+        dissolution_date=None,
+        identifier='BC1234567',
+        state=Business.State.ACTIVE,
+        jurisdiction='CA',
+        foreign_identifier='C1234567',
+        foreign_legal_name='Prev Legal Name',
+        foreign_legal_type='BEN',
+        foreign_incorporation_date=datetime.utcfromtimestamp(0),
+    )
     business.save()
     business_json = business.json()
     assert business_json['jurisdiction'] == business.jurisdiction
@@ -387,6 +399,5 @@ def test_continued_in_business(session):
     assert business_json['foreignLegalName'] == business.foreign_legal_name
     assert business_json['foreignLegalType'] == business.foreign_legal_type
     assert business_json['foreignIncorporationDate'] == datetime.date(
-                LegislationDatetime.as_legislation_timezone(business.foreign_incorporation_date)
-            ).isoformat()
-
+        LegislationDatetime.as_legislation_timezone(business.foreign_incorporation_date)
+    ).isoformat()
