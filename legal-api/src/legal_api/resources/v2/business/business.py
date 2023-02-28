@@ -31,7 +31,7 @@ from legal_api.services import (  # noqa: I001;
     RegistrationBootstrapService,
     check_warnings,
 )  # noqa: I001;
-from legal_api.services.authz import get_allowed
+from legal_api.services.authz import get_allowable_actions, get_allowed
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -65,6 +65,10 @@ def get_businesses(identifier: str):
     # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
     business.compliance_warnings = warnings
     business.warnings = warnings
+
+    allowable_actions = get_allowable_actions(jwt, business)
+    business.allowable_actions = allowable_actions
+
     business_json = business.json()
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:

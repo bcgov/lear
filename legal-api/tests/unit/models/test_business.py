@@ -298,7 +298,8 @@ def test_business_json(session):
         'hasCorrections': False,
         'associationType': 'CP',
         'startDate': '2021-08-05',
-        'hasCourtOrders': False
+        'hasCourtOrders': False,
+        'allowedActions': {}
     }
 
     assert business.json() == d

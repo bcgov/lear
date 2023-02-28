@@ -129,7 +129,8 @@ def factory_business(identifier,
                      entity_type=Business.LegalTypes.COOP.value,
                      state=Business.State.ACTIVE,
                      naics_code=None,
-                     naics_desc=None):
+                     naics_desc=None,
+                     admin_freeze=False):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
@@ -146,7 +147,8 @@ def factory_business(identifier,
                         legal_type=entity_type,
                         state=state,
                         naics_code=naics_code,
-                        naics_description=naics_desc)
+                        naics_description=naics_desc,
+                        admin_freeze=admin_freeze)
 
     # Versioning business
     uow = versioning_manager.unit_of_work(db.session)
@@ -203,7 +205,13 @@ def factory_incorporation_filing(business, data_dict, filing_date=FROZEN_DATETIM
     return filing
 
 
-def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
+def factory_completed_filing(business,
+                             data_dict,
+                             filing_date=FROZEN_DATETIME,
+                             payment_token=None,
+                             colin_id=None,
+                             filing_type=None,
+                             filing_sub_type=None):
     """Create a completed filing."""
     if not payment_token:
         payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
@@ -214,6 +222,10 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
         filing.business_id = business.id
         filing.filing_date = filing_date
         filing.filing_json = data_dict
+        if filing_type:
+            filing._filing_type = filing_type
+        if filing_sub_type:
+            filing._filing_sub_type = filing_sub_type
         filing.save()
 
         uow = versioning_manager.unit_of_work(db.session)
@@ -349,3 +361,17 @@ def factory_share_class(business_identifier: str):
     share_class.series.append(share_series_1)
     share_class.save()
     return share_class
+
+
+def factory_incomplete_statuses(unknown_statuses:list = []):
+    result = [Filing.Status.DRAFT.value,
+                       Filing.Status.PENDING.value,
+                       Filing.Status.PENDING_CORRECTION.value,
+                       Filing.Status.ERROR.value,
+                       Filing.Status.PAID.value]
+
+    if unknown_statuses:
+        result.extend(unknown_statuses)
+
+    return result
+
