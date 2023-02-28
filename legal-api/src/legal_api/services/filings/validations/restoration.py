@@ -40,7 +40,8 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     elif restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         msg.extend(validate_relationship(restoration))
 
-    msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
+    if restoration.get('filing', {}).get('restoration', {}).get('nameRequest', {}).get('nrNumber', None):
+        msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
     msg.extend(validate_party(restoration))
     msg.extend(validate_offices(restoration, filing_type))
 
