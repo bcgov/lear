@@ -40,7 +40,13 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     elif restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         msg.extend(validate_relationship(restoration))
 
-    msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
+    name_request = restoration.get('filing', {}).get('restoration', {}).get('nameRequest', {})
+    if name_request.get('nrNumber', None):
+        msg.extend(validate_name_request(restoration, business.legal_type, filing_type))
+    else:
+        if not name_request.get('legalName', None):
+            msg.append({'error': 'Legal name is missing in nameRequest.',
+                        'path': '/filing/restoration/nameRequest/legalName'})
     msg.extend(validate_party(restoration))
     msg.extend(validate_offices(restoration, filing_type))
 
