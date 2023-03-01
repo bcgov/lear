@@ -202,14 +202,16 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
         # full restoration
         ('SUCCESS_NEW_NR', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
         ('SUCCESS_NAME_ONLY', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'new name', None, None),
-        ('SUCCESS_NO_NR_AND_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, None, None),
+        ('FAIL_NO_NR_AND_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, HTTPStatus.BAD_REQUEST,
+         'Legal name is missing in nameRequest.'),
         ('FAIL_NR_AND_NO_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
 
         # limited restoration
         ('SUCCESS_NEW_NR', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
         ('SUCCESS_NAME_ONLY', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'new name', None, None),
-        ('SUCCESS_NO_NR_AND_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, None, None),
+        ('FAIL_NO_NR_AND_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, HTTPStatus.BAD_REQUEST,
+         'Legal name is missing in nameRequest.'),
         ('FAIL_NR_AND_NO_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
     ]
