@@ -77,6 +77,7 @@ def test_validate_party(session, test_name, party_role, expected_msg):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['relationships'] = relationships
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     if party_role:
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
@@ -110,6 +111,7 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['type'] = restoration_type
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         expiry_date = LegislationDatetime.now() + relativedelta(months=1)
@@ -152,6 +154,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     filing['filing']['restoration']['type'] = restoration_type
     if delta_date:
@@ -177,6 +180,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
     filing['filing']['restoration']['relationships'] = relationships
 
     if file_number:
