@@ -1,0 +1,30 @@
+{% if nameRequest is defined %}
+    <div class="no-page-break">
+        <div class="section-title mt-4">
+            <span>Name Reserved for the Company to be Restored</span>
+        </div>
+        <table class="section-data nr-name-table mt-4" role="presentation">
+            <tr>
+                <td class="bold col-33">Name Reservation Number:</td>
+                <td>
+                    {% if not nameRequest.nrNumber %}
+                    Not applicable
+                    {% else %}
+                    {{nameRequest.nrNumber}}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="bold pt-2">Name Reserved:</td>
+                <td class="pt-2">
+                    {% if not nameRequest.nrNumber %}
+                    The company is to be restored with a name created by adding "B.C. LTD." after the incorporation number.
+                    {% else %}
+                    {{nameRequest.legalName}}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="separator mt-4"></div>
+{% endif %}
