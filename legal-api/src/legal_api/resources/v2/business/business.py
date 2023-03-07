@@ -156,7 +156,8 @@ def search_businesses():
         bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
-        draft_query = db.session.query(Filing).filter(and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
+        draft_query = db.session.query(Filing).filter(
+            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
 
         # parse results
         bus_results = [x.json(slim=True) for x in bus_query.all()]
