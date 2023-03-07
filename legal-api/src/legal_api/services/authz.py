@@ -228,7 +228,7 @@ ALLOWABLE_FILINGS: Final = {
             },
             'restoration': {
                 'fullRestoration': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         # FUTURE add outstanding filings to invalidStateFilings when implemented
                         'invalidStateFilings': ['continuationIn', 'continuationOut']

@@ -122,7 +122,6 @@ class FilingKey(str, Enum):
     TRANSITION = 'TRANSITION'
     CHANGE_OF_REGISTRATION = 'CHANGE_OF_REGISTRATION'
     CONV_FIRMS = 'CONV_FIRM'
-    RESTRN_FULL_CP = 'RESTRN_FULL_CP'
     RESTRN_FULL_CORPS = 'RESTRN_FULL_CORPS'
     RESTRN_LTD_CORPS = 'RESTRN_LTD_CORPS'
     RESTRN_LTD_EXT_CORPS = 'RESTRN_LTD_EXT_CORPS'
@@ -172,8 +171,6 @@ EXPECTED_DATA = {
     FilingKey.CHANGE_OF_REGISTRATION: {'displayName': 'Change of Registration Application', 'feeCode': 'FMCHANGE',
                                        'name': 'changeOfRegistration'},
     FilingKey.CONV_FIRMS: {'displayName': 'Record Conversion', 'feeCode': 'FMCONV', 'name': 'conversion'},
-    FilingKey.RESTRN_FULL_CP: {'displayName': 'Full Restoration Application', 'feeCode': None, 'name': 'restoration',
-                               'type': 'fullRestoration'},
     FilingKey.RESTRN_FULL_CORPS:  {'displayName': 'Full Restoration Application', 'feeCode': 'RESTF',
                                    'name': 'restoration', 'type': 'fullRestoration'},
     FilingKey.RESTRN_LTD_CORPS: {'displayName': 'Limited Restoration Application', 'feeCode': 'RESTL',
@@ -433,8 +430,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration']}]),
+         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
         ('staff_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
@@ -632,10 +628,13 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
+         ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
         ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
+
+        ('staff_historical', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
+         ['CP'], 'staff', [STAFF_ROLE], False),
 
         ('staff_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['CP'], 'staff', [STAFF_ROLE], False),
@@ -799,8 +798,7 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_fi
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -951,8 +949,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1034,8 +1031,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
         expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1125,8 +1121,7 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.COURT_ORDER,
@@ -1230,8 +1225,7 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.COURT_ORDER,
@@ -1358,8 +1352,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1513,8 +1506,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CP])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_cp_invalid_state_filing_fail', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          ['continuationIn'], [None],
          expected_lookup([FilingKey.COURT_ORDER,
