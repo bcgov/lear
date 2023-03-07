@@ -21,6 +21,7 @@ from http import HTTPStatus
 from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
+from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
@@ -155,7 +156,7 @@ def search_businesses():
         bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
-        draft_query = db.session.query(Filing).filter(Filing.temp_reg.in_(identifiers))
+        draft_query = db.session.query(Filing).filter(and_(Filing.temp_reg.in_(identifiers), Filing.business_id == None))
 
         # parse results
         bus_results = [x.json(slim=True) for x in bus_query.all()]
@@ -166,7 +167,7 @@ def search_businesses():
                 **({'nrNumber': x.json_nr} if x.json_nr else {})
             } for x in draft_query.all()]
 
-        return jsonify({'businessAffiliations': bus_results, 'draftAffiliations': draft_results}), HTTPStatus.OK
+        return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
