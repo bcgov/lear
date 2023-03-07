@@ -122,7 +122,6 @@ class FilingKey(str, Enum):
     TRANSITION = 'TRANSITION'
     CHANGE_OF_REGISTRATION = 'CHANGE_OF_REGISTRATION'
     CONV_FIRMS = 'CONV_FIRM'
-    RESTRN_FULL_CP = 'RESTRN_FULL_CP'
     RESTRN_FULL_CORPS = 'RESTRN_FULL_CORPS'
     RESTRN_LTD_CORPS = 'RESTRN_LTD_CORPS'
     RESTRN_LTD_EXT_CORPS = 'RESTRN_LTD_EXT_CORPS'
@@ -172,8 +171,6 @@ EXPECTED_DATA = {
     FilingKey.CHANGE_OF_REGISTRATION: {'displayName': 'Change of Registration Application', 'feeCode': 'FMCHANGE',
                                        'name': 'changeOfRegistration'},
     FilingKey.CONV_FIRMS: {'displayName': 'Record Conversion', 'feeCode': 'FMCONV', 'name': 'conversion'},
-    FilingKey.RESTRN_FULL_CP: {'displayName': 'Full Restoration Application', 'feeCode': None, 'name': 'restoration',
-                               'type': 'fullRestoration'},
     FilingKey.RESTRN_FULL_CORPS:  {'displayName': 'Full Restoration Application', 'feeCode': 'RESTF',
                                    'name': 'restoration', 'type': 'fullRestoration'},
     FilingKey.RESTRN_LTD_CORPS: {'displayName': 'Limited Restoration Application', 'feeCode': 'RESTL',
