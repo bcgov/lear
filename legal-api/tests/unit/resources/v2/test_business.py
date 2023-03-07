@@ -370,7 +370,8 @@ def test_post_affiliated_businesses(session, client, jwt):
         filing.temp_reg = draft_business[0]
         if draft_business[0] in old_draft_businesses:
             # adding a business id informs the search that it is associated with a completed business
-            filing.business_id = 1
+            business = Business.find_by_identifier(identifiers[0])
+            filing.business_id = business.id
         filing.save()
 
     rv = client.post('/api/v2/businesses/search',
