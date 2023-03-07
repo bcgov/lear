@@ -330,17 +330,21 @@ def test_get_business_with_court_orders(session, client, jwt):
 def test_post_affiliated_businesses(session, client, jwt):
     """Assert that the affiliated businesses endpoint returns as expected."""
     # setup
-    identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq']
+    identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq', 'Tb31yQIuBz']
     businesses = [
         (identifiers[0], Business.LegalTypes.COOP.value, None),
         (identifiers[1], Business.LegalTypes.BCOMP.value, '123456789BC0001')]
     draft_businesses = [
         (identifiers[2], Business.LegalTypes.BCOMP.value, None),
-        (identifiers[3], Business.LegalTypes.SOLE_PROP.value, 'NR 1234567')]
+        (identifiers[3], Business.LegalTypes.SOLE_PROP.value, 'NR 1234567'),
+        (identifiers[4], Business.LegalTypes.BCOMP.value, None)]
+
+    # NB: these are real businesses now so temp should not get returned
+    old_draft_businesses = [identifiers[4]]
 
     for business in businesses:
         factory_business_model(legal_name=business[0] + 'name',
-                               identifier=business[0],
+                               identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
                                founding_date=datetime.utcfromtimestamp(0),
                                last_ledger_timestamp=datetime.utcfromtimestamp(0),
                                last_modified=datetime.utcfromtimestamp(0),
@@ -362,17 +366,20 @@ def test_post_affiliated_businesses(session, client, jwt):
             json_data['filing'][filing_name] = {
                 'nameRequest': {'nrNumber': draft_business[2]}
             }
-        filings = factory_pending_filing(None, json_data)
-        filings.temp_reg = draft_business[0]
-        filings.save()
+        filing = factory_pending_filing(None, json_data)
+        filing.temp_reg = draft_business[0]
+        if draft_business[0] in old_draft_businesses:
+            # adding a business id informs the search that it is associated with a completed business
+            filing.business_id = 1
+        filing.save()
 
     rv = client.post('/api/v2/businesses/search',
                      json={'identifiers': identifiers},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
 
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json['businessAffiliations']) == len(businesses)
-    assert len(rv.json['draftAffiliations']) == len(draft_businesses)
+    assert len(rv.json['businessEntities']) == len(businesses)
+    assert len(rv.json['draftEntities']) == len(draft_businesses) - len(old_draft_businesses)
 
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
