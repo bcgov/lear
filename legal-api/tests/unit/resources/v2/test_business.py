@@ -368,7 +368,6 @@ def test_post_affiliated_businesses(session, client, jwt):
             }
         filing = factory_pending_filing(None, json_data)
         filing.temp_reg = draft_business[0]
-        print(draft_business[0] in old_draft_businesses)
         if draft_business[0] in old_draft_businesses:
             # adding a business id informs the search that it is associated with a completed business
             filing.business_id = 1
