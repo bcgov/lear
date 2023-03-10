@@ -59,7 +59,9 @@
          [[restoration-application/nameRequest.html]]
          [[restoration-application/approvalType.html]]
          [[restoration-application/applicant.html]]
-         [[common/addresses.html]]
+         {% if restoration.type != 'limitedRestorationExtension' %}
+            [[common/addresses.html]]
+         {% endif %}
          [[restoration-application/expiry.html]]
       </div>
    </body>

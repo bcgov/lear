@@ -1,5 +1,6 @@
-{% if nameRequest is defined %}
+{% if nameRequest is defined and restoration.type != 'limitedRestorationExtension' %}
     <div class="no-page-break">
+        <div class="separator mt-4"></div>
         <div class="section-title mt-4">
             <span>Name Reserved for the Company to be Restored</span>
         </div>
@@ -26,5 +27,4 @@
             </tr>
         </table>
     </div>
-    <div class="separator mt-4"></div>
 {% endif %}
