@@ -144,6 +144,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
             'incorporation-application/cooperativeAssociationType',
+            'restoration-application/nameRequest',
+            'restoration-application/legalName',
+            'restoration-application/legalNameDissolution',
+            'restoration-application/approvalType',
+            'restoration-application/applicant',
+            'restoration-application/expiry',
             'registration/nameRequest',
             'registration/addresses',
             'registration/completingParty',
@@ -217,6 +223,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_name_change_data(filing)
             elif self._report_key == 'certificateOfRestoration':
                 self._format_certificate_of_restoration_data(filing)
+            elif self._report_key == 'restoration':
+                self._format_restoration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -468,10 +476,36 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 business_previous_restoration_expiry.restoration_expiry_date)
             filing['previous_restoration_expiry_date'] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
 
-        business_dissoltuion = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
             self._filing.transaction_id, self._business.id, is_dissolution_date=True)
         filing['formatted_dissolution_date'] = \
-            LegislationDatetime.format_as_report_string(business_dissoltuion.dissolution_date)
+            LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
+
+    def _format_restoration_data(self, filing):
+        filing['nameRequest'] = filing['restoration'].get('nameRequest')
+        filing['parties'] = filing['restoration'].get('parties')
+        filing['offices'] = filing['restoration']['offices']
+        meta_data = self._filing.meta_data or {}
+        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
+
+        if relationships := filing['restoration'].get('relationships'):
+            filing['relationshipsDesc'] = ', '.join(relationships)
+
+        approval_type = filing['restoration'].get('approvalType')
+        filing['approvalType'] = approval_type
+        if approval_type == 'courtOrder':
+            filing['courtOrder'] = filing['restoration'].get('courtOrder')
+        else:
+            filing['applicationDate'] = filing['restoration'].get('applicationDate')
+            filing['noticeDate'] = filing['restoration'].get('noticeDate')
+
+        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+        filing['dissolutionLegalName'] = business_dissolution.legal_name
+
+        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
+            expiry_date = datetime.fromisoformat(expiry_date).replace(minute=1)
+            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -998,6 +1032,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfRestoration': {
             'filingDescription': 'Certificate of Restoration',
             'fileName': 'certificateOfRestoration'
+        },
+        'restoration': {
+            'filingDescription': 'Restoration Application',
+            'fileName': 'restoration'
         }
     }
 

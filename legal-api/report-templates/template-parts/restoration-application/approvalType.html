@@ -1,0 +1,32 @@
+<div class="no-page-break">
+  <div class="section-title mt-4">
+    <span>Approval Type</span>
+  </div>
+  {% if approvalType is none %}
+    <div class="section-data mt-3">
+      N/A
+    </div>
+  {% else %}
+    {% if approvalType == 'courtOrder' %}
+      <div class="section-data mt-3">
+        The restoration is approved by a court order.
+      </div>
+      <div class="section-data mt-2">
+        Court order number: <span class="bold">{{courtOrder.fileNumber}}</span>
+      </div>
+    {% elif approvalType == 'registrar' %}
+      <div class="section-data mt-3">
+        The restoration is approved by Registrar.
+      </div>
+      <div class="section-data mt-2">
+        BC Gazette publish date: <span class="bold">{{applicationDate}}</span>
+      </div>
+      <div class="section-data mt-2">
+        Notice of Application mailed date: <span class="bold">{{noticeDate}}</span>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="separator mt-4"></div>
+
