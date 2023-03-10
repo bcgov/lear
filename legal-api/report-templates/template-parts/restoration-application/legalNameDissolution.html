@@ -1,5 +1,8 @@
 {% if restoration.type in ('fullRestoration', 'limitedRestoration', 'limitedRestorationToFull') %}
   <div class="no-page-break">
+    {% if restoration.type == 'limitedRestorationToFull' %}
+      <div class="separator mt-4"></div>
+    {% endif %}
     <div class="section-title mt-4">
         <span>Name of Company at the Time of Dissolution</span>
     </div>
@@ -7,5 +10,4 @@
       <div class="upper-text">{{dissolutionLegalName}}</div>
     </div>
   </div>
-  <div class="separator mt-4"></div>
 {% endif %}
