@@ -487,14 +487,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['offices'] = filing['restoration']['offices']
         meta_data = self._filing.meta_data or {}
         filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
-
-        legal_type_desc = {
-            Business.LegalTypes.COMP.value: 'B.C. LTD.',
-            Business.LegalTypes.BCOMP.value: 'B.C. LTD.',
-            Business.LegalTypes.BC_ULC_COMPANY.value: 'ULC LTD.',
-            Business.LegalTypes.BC_CCC.value: 'CCC LTD.'
-        }
-        filing['numbered_legal_type_desc'] = legal_type_desc.get(self._business.legal_type)
+        filing['numberedLegalNameSuffix'] = Business.BUSINESSES[self._business.legal_type]['numberedLegalNameSuffix']
 
         if relationships := filing['restoration'].get('relationships'):
             filing['relationshipsDesc'] = ', '.join(relationships)
