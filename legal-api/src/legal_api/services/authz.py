@@ -33,6 +33,7 @@ STAFF_ROLE = 'staff'
 BASIC_USER = 'basic'
 COLIN_SVC_ROLE = 'colin'
 PUBLIC_USER = 'public_user'
+ACCOUNT_IDENTITY = 'account_identity'
 
 
 class BusinessBlocker(str, Enum):

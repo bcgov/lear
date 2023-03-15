@@ -16,20 +16,29 @@
 
 Test-Suite to ensure that the /businesses../share-classes endpoint is working as expected.
 """
+import pytest
 from http import HTTPStatus
 
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import factory_business, factory_share_class
 from tests.unit.services.utils import create_header
 
 
-def test_get_business_share_classes(session, client, jwt):
+@pytest.mark.parametrize('test_name,role', [
+    ('public-user', PUBLIC_USER),
+    ('staff', STAFF_ROLE),
+    ('system', SYSTEM_ROLE)
+])
+def test_get_business_share_classes(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business share classes are returned."""
     identifier = 'CP1234567'
     share_class = factory_share_class(identifier)
 
+    # mock response from auth to give view access (not needed if staff / system)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+
     rv = client.get(f'/api/v2/businesses/{identifier}/share-classes',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    headers=create_header(jwt, [role], identifier)
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
@@ -95,3 +104,21 @@ def test_get_share_classes_invalid_business(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock):
+    """Assert that share classes are not returned for an unauthorized user."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.save()
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/share-classes',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json == {'message': f'You are not authorized to view share classes for {identifier}.'}
