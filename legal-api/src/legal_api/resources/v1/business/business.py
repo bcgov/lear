@@ -26,6 +26,7 @@ from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services import RegistrationBootstrapService
 from legal_api.utils.auth import jwt
+from legal_api.services import authorized
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -42,12 +43,6 @@ class BusinessResource(Resource):
     @jwt.requires_auth
     def get(identifier: str):
         """Return a JSON object with meta information about the Service."""
-        # check authorization
-        # if not authorized(identifier, jwt, action=['view']):
-        #     return jsonify({'message':
-        #                     f'You are not authorized to view business {identifier}.'}), \
-        #         HTTPStatus.UNAUTHORIZED
-
         if identifier.startswith('T'):
             return {'message': babel('No information on temp registrations.')}, 200
 
@@ -55,6 +50,12 @@ class BusinessResource(Resource):
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view business {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         return jsonify(business=business.json())
 

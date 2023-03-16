@@ -42,7 +42,7 @@ def get_addresses(identifier, addresses_id=None):
     # check authorization
     if not authorized(identifier, jwt, action=['view']):
         return jsonify({'message':
-                        f'You are not authorized to view business {identifier}.'}), \
+                        f'You are not authorized to view addresses for {identifier}.'}), \
             HTTPStatus.UNAUTHORIZED
 
     address_type = request.args.get('addressType', None)

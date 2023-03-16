@@ -223,4 +223,4 @@ def test_get_addresses_unauthorized(app, session, client, jwt, requests_mock):
                     )
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
-    assert rv.json == {'message': f'You are not authorized to view business {identifier}.'}
+    assert rv.json == {'message': f'You are not authorized to view addresses for {identifier}.'}
