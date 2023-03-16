@@ -50,7 +50,6 @@ from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.services import authorized
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API

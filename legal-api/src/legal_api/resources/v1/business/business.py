@@ -24,9 +24,8 @@ from flask_restx import Resource, cors
 
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v1.business.business_filings import ListFilingResource
-from legal_api.services import RegistrationBootstrapService
+from legal_api.services import RegistrationBootstrapService, authorized
 from legal_api.utils.auth import jwt
-from legal_api.services import authorized
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
