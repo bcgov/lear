@@ -230,7 +230,8 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
 
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
-                          filing_type: str) -> list:
+                          filing_type: str,
+                          accepted_request_types: list = []) -> list:
     """Validate name request section."""
     nr_path = f'/filing/{filing_type}/nameRequest'
     nr_number_path = f'{nr_path}/nrNumber'
@@ -266,6 +267,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     validation_result = namex.validate_nr(nr_response_json)
     if not validation_result['is_consumable']:
         msg.append({'error': _('Name Request is not approved.'), 'path': nr_number_path})
+
+    # ensure NR request type code
+    if accepted_request_types and not nr_response_json['requestTypeCd'] in accepted_request_types:
+            msg.append({'error': _('The name type associated with the name request number entered cannot be used for this transaction type.'),
+                        'path': nr_number_path})
 
     # ensure business type
     nr_legal_type = nr_response_json.get('legalType')
