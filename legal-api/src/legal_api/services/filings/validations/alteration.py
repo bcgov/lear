@@ -55,40 +55,22 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
 def court_order_validation(filing):
     """Validate court order."""
-    msg = []
     court_order_path: Final = '/filing/alteration/courtOrder'
-    court_order: Final = get_str(filing, court_order_path)
-    
-    if not court_order in ('CCR', 'CCP', 'BEC', 'BECV'):
-        error_msg = """The name type associated with the name request number entered cannot be used for this
-                       transaction type."""
-        msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                        'path': court_order_path})
-
-    if court_order:
+    if get_str(filing, court_order_path):
         err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
         if err:
-            msg.extend(err)
-    return msg
+            return err
+    return []
 
 
 def share_structure_validation(filing):
     """Validate share structure."""
-    msg = []
     share_structure_path: Final = '/filing/alteration/shareStructure'
-    share_structure: Final = get_str(filing, share_structure_path)
-
-    if not share_structure in ('CCR', 'CCP', 'BEC', 'BECV'):
-        error_msg = """The name type associated with the name request number entered cannot be used for this
-                       transaction type."""
-        msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                        'path': share_structure_path})
-
-    if share_structure:
+    if get_str(filing, share_structure_path):
         err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
         if err:
-            msg.extend(err)
-    return msg
+            return err
+    return []
 
 
 def company_name_validation(filing):
@@ -168,12 +150,6 @@ def rules_change_validation(filing):
     rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
-    if not rules_file_key['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECV'):
-        error_msg = """The name type associated with the name request number entered cannot be used for this
-                       transaction type."""
-        msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                    'path': rules_file_key_path})
-
     if rules_file_key:
         rules_err = validate_pdf(rules_file_key, rules_file_key_path)
         if rules_err:
@@ -187,12 +163,6 @@ def memorandum_change_validation(filing):
     msg = []
     memorandum_file_key_path: Final = '/filing/alteration/memorandumFileKey'
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
-
-    if not memorandum_file_key['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECV'):
-        error_msg = """The name type associated with the name request number entered cannot be used for this
-                       transaction type."""
-        msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                    'path': memorandum_file_key_path})
 
     if memorandum_file_key:
         memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
