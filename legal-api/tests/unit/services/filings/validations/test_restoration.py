@@ -44,8 +44,7 @@ nr_response = {
         'name': legal_name,
         'state': 'APPROVED',
         'consumptionDate': ''
-    }],
-    'requestTypeCd': 'RCC'
+    }]
 }
 relationships = ['Heir or Legal Representative', 'Director']
 
@@ -202,26 +201,30 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
 
 
 @pytest.mark.parametrize(
-    'test_status, filing_sub_type, legal_types, nr_number, new_legal_name, expected_code, expected_msg',
+    'test_status, filing_sub_type, legal_types, nr_number, nr_type, new_legal_name, expected_code, expected_msg',
     [
         # full restoration
-        ('SUCCESS_NEW_NR', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
-        ('SUCCESS_NAME_ONLY', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'new name', None, None),
-        ('FAIL_NO_NR_AND_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, HTTPStatus.BAD_REQUEST,
+        ('SUCCESS_NEW_NR', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RCC','new name', None, None),
+        ('SUCCESS_NAME_ONLY', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'RCR', 'new name', None, None),
+        ('FAIL_NO_NR_AND_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'BERE', None, HTTPStatus.BAD_REQUEST,
          'Legal name is missing in nameRequest.'),
-        ('FAIL_NR_AND_NO_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
+        ('FAIL_NR_AND_NO_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RUL', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
+        ('FAIL_NO_NR_TYPE', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', '', 'new name',
+         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used for this transaction type.'),
 
         # limited restoration
-        ('SUCCESS_NEW_NR', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
-        ('SUCCESS_NAME_ONLY', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'new name', None, None),
-        ('FAIL_NO_NR_AND_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, None, HTTPStatus.BAD_REQUEST,
+        ('SUCCESS_NEW_NR', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RCC', 'new name', None, None),
+        ('SUCCESS_NAME_ONLY', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'RCR', 'new name', None, None),
+        ('FAIL_NO_NR_AND_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], None, 'BERE', None, HTTPStatus.BAD_REQUEST,
          'Legal name is missing in nameRequest.'),
-        ('FAIL_NR_AND_NO_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
+        ('FAIL_NR_AND_NO_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RUL', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
+        ('FAIL_NO_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', '', 'new name',
+         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used for this transaction type.'),
     ]
 )
-def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_types, nr_number, new_legal_name,
+def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_types, nr_number, nr_type, new_legal_name,
                         expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
 
@@ -245,6 +248,7 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
         temp_nr_response = copy.deepcopy(nr_response)
         temp_nr_response['legalType'] = legal_type
         temp_nr_response['names'][0]['name'] = new_legal_name
+        temp_nr_response['requestTypeCd'] = nr_type
         mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
 
         mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
