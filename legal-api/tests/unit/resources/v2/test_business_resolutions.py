@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.models import Party, Resolution
-from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests import FROZEN_DATETIME
 from tests.unit.models import factory_business
 from tests.unit.services.utils import create_header

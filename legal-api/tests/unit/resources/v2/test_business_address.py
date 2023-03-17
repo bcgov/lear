@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses../addresses endpoint is working as exp
 import pytest
 from http import HTTPStatus
 
-from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, Office, factory_business
 from tests.unit.services.utils import create_header
 

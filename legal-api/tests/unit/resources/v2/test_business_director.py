@@ -21,7 +21,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.models import Business
-from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
