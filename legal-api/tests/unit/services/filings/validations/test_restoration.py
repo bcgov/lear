@@ -211,7 +211,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
         ('FAIL_NR_AND_NO_NAME', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RUL', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
         ('FAIL_NO_NR_TYPE', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', '', 'new name',
-         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used for this transaction type.'),
+         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
 
         # limited restoration
         ('SUCCESS_NEW_NR', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RCC', 'new name', None, None),
@@ -221,7 +221,7 @@ def test_restoration_court_orders(session, test_status, file_number, expected_co
         ('FAIL_NR_AND_NO_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'RUL', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
         ('FAIL_NO_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', '', 'new name',
-         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used for this transaction type.'),
+         HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
     ]
 )
 def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_types, nr_number, nr_type, new_legal_name,

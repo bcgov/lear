@@ -270,7 +270,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
 
     # ensure NR request type code
     if accepted_request_types and not nr_response_json['requestTypeCd'] in accepted_request_types:
-        msg.append({'error': _('The name type associated with the name request number entered cannot be used for this transaction type.'),
+        msg.append({'error': _('The name type associated with the name request number entered cannot be used.'),
                     'path': nr_number_path})
 
     # ensure business type
