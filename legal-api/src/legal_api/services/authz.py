@@ -57,6 +57,12 @@ def authorized(  # pylint: disable=too-many-return-statements
             or jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 
+    # allow IDIM view access on everything
+    if len(action) == 1 and action[0] == 'view' and jwt.validate_roles(ACCOUNT_IDENTITY):
+        return True
+        
+        
+
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
         # disallow - only staff are allowed

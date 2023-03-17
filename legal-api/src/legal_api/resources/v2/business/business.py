@@ -53,7 +53,7 @@ def get_businesses(identifier: str):
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
     # check authorization
-    if not authorized(identifier, jwt, action=['view']) and not jwt.validate_roles([ACCOUNT_IDENTITY]):
+    if not authorized(identifier, jwt, action=['view']):
         return jsonify({'message':
                         f'You are not authorized to view business {identifier}.'}), \
             HTTPStatus.UNAUTHORIZED

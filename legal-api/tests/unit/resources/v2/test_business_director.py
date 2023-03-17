@@ -28,6 +28,7 @@ from tests.unit.services.utils import create_header
 
 @pytest.mark.parametrize('test_name,role', [
     ('public-user', PUBLIC_USER),
+    ('account-identity', ACCOUNT_IDENTITY),
     ('staff', STAFF_ROLE),
     ('system', SYSTEM_ROLE)
 ])
