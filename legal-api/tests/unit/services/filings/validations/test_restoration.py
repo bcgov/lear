@@ -44,7 +44,8 @@ nr_response = {
         'name': legal_name,
         'state': 'APPROVED',
         'consumptionDate': ''
-    }]
+    }],
+    'requestTypeCd': 'RCC'
 }
 relationships = ['Heir or Legal Representative', 'Director']
 
