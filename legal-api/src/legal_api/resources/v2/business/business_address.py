@@ -21,6 +21,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Address, Business, db
+from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -37,6 +38,12 @@ def get_addresses(identifier, addresses_id=None):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+    # check authorization
+    if not authorized(identifier, jwt, action=['view']):
+        return jsonify({'message':
+                        f'You are not authorized to view addresses for {identifier}.'}), \
+            HTTPStatus.UNAUTHORIZED
 
     address_type = request.args.get('addressType', None)
     if address_type and address_type not in Address.JSON_ADDRESS_TYPES:

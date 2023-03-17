@@ -25,7 +25,7 @@ from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_OR
     FILING_TEMPLATE, INCORPORATION
 
 from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_business, factory_pending_filing
@@ -153,7 +153,13 @@ def test_get_temp_business_info(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
-def test_get_business_info(session, client, jwt):
+@pytest.mark.parametrize('test_name,role,calls_auth', [
+    ('public-user', PUBLIC_USER, True),
+    ('account-identity', ACCOUNT_IDENTITY, False),
+    ('staff', STAFF_ROLE, False),
+    ('system', SYSTEM_ROLE, False)
+])
+def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth):
     """Assert that the business info can be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
@@ -165,12 +171,17 @@ def test_get_business_info(session, client, jwt):
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
+    
+    if calls_auth:
+        # should not call auth for staff/system/account_identity
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
     rv = client.get('/api/v2/businesses/' + identifier,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+                    headers=create_header(jwt, [role], identifier))
 
     print('business json', rv.json)
 
+    assert rv.status_code == HTTPStatus.OK
     assert rv.json['business']['identifier'] == identifier
     assert rv.json['business']['hasCorrections'] == False
 
@@ -397,3 +408,21 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
                      json={},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_get_business_unauthorized(app, session, client, jwt, requests_mock):
+    """Assert that business is not returned for an unauthorized user."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.save()
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json == {'message': f'You are not authorized to view business {identifier}.'}

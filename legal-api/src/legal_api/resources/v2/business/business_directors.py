@@ -19,6 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, PartyRole
+from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -34,6 +35,12 @@ def get_directors(identifier, director_id=None):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+    # check authorization
+    if not authorized(identifier, jwt, action=['view']):
+        return jsonify({'message':
+                        f'You are not authorized to view directors for {identifier}.'}), \
+            HTTPStatus.UNAUTHORIZED
 
     # return the matching director
     if director_id:

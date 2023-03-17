@@ -18,6 +18,8 @@ from flask import jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.models import Business, Resolution
+from legal_api.services import authorized
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -31,12 +33,19 @@ class ResolutionResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier, resolution_id=None):
         """Return a JSON of the resolutions."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view resolutions for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         # return the matching resolution
         if resolution_id:
