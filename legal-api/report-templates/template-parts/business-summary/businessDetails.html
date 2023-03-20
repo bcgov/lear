@@ -1,105 +1,148 @@
 {% if business.epochFilingDate %}
-  <div class="mt-2 section-data">
-      <div>
-          {% if business.legalType == 'CP' %}
-            Due to system limitations resulting from the modernization of data across databases, some information
-            may not be available for cooperative association filings. To request copies of paper documents this summary marks
-            as Not Available, contact BC Registries staff.
-          {% elif business.legalType == 'BEN' %}
-            Due to system limitations resulting from the modernization of data across databases, information on filings
-            made in Corporate Online while the company was a limited or unlimited liability company are not available.
-            To request copies of paper documents this summary marks as Not Available, contact BC Registries staff.
-          {% endif %}
-           <ul class="section-data registry-contact-details">
-               <li class="registry-contact-details-item">
-                   <span>Canada and U.S. Toll Free:</span>
-                   <span>
-                       <a href="tel:+18775261526">1-877-526-1526</a>
-                   </span>
-               </li>
-               <li class="registry-contact-details-item pt-1">
-                   <span>Victoria Office:</span>
-                   <span>
-                       <a href="tel:+12509520568">250-952-0568</a>
-                   </span>
-               </li>
-               <li class="registry-contact-details-item pt-1">
-                   <span>Email:</span>
-                   <span>
-                       <a href="mailto:BCRegistries@gov.bc.ca">BCRegistries@gov.bc.ca</a>
-                   </span>
-               </li>
-            </ul>
-      </div>
-  <div class="separator mt-4 mb-6"></div>
-  </div>
+<div class="mt-2 section-data">
+    <div>
+        {% if business.legalType == 'CP' %}
+        Due to system limitations resulting from the modernization of data across databases, some information
+        may not be available for cooperative association filings. To request copies of paper documents this summary
+        marks as Not Available, contact BC Registries staff.
+        {% elif business.legalType == 'BEN' %}
+        Due to system limitations resulting from the modernization of data across databases, information on filings
+        made in Corporate Online while the company was a limited or unlimited liability company are not available.
+        To request copies of paper documents this summary marks as Not Available, contact BC Registries staff.
+        {% endif %}
+        <ul class="section-data registry-contact-details">
+            <li class="registry-contact-details-item">
+                <span>Canada and U.S. Toll Free:</span>
+                <span>
+                    <a href="tel:+18775261526">1-877-526-1526</a>
+                </span>
+            </li>
+            <li class="registry-contact-details-item pt-1">
+                <span>Victoria Office:</span>
+                <span>
+                    <a href="tel:+12509520568">250-952-0568</a>
+                </span>
+            </li>
+            <li class="registry-contact-details-item pt-1">
+                <span>Email:</span>
+                <span>
+                    <a href="mailto:BCRegistries@gov.bc.ca">BCRegistries@gov.bc.ca</a>
+                </span>
+            </li>
+        </ul>
+    </div>
+    <div class="separator mt-4 mb-6"></div>
+</div>
 {% endif %}
 <div class="mt-2">
-     {% if business.legalType in ['SP', 'GP'] %}
-         <div class="mt-2 section-title">Business Information</div>
-        <div class="mt-4">
-            <span class="section-sub-title">Business Name: </span>
-            <span class="section-data">{{business.legalName}}</span>
-        </div>
-        <div>
-            <span class="section-sub-title">Nature of Business: </span>
-            {% if business.naicsDescription is defined %}
-                <span class="section-data">{{business.naicsDescription}}</span>
-            {% else %}
-                <span class="section-data">Not Available</span>
-            {% endif %}
-        </div>
-        <div>
-            <span class="section-sub-title">Business Start Date: </span>
-            {% if start_date_utc is defined %}
-                <span class="section-data">{{start_date_utc}}</span>
-            {% else %}
-                <span class="section-data">Not Available</span>
-            {% endif %}
-        </div>
-        {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
-            <div>
-                <span class="section-sub-title">Business End Date: </span>
-                {% if formatted_dissolution_date is defined %}
-                    <span class="section-data">{{formatted_dissolution_date}}</span>
-                {% else %}
-                    <span class="section-data">Not Available</span>
-                {% endif %}
-            </div>
+    {% if business.legalType in ['SP', 'GP'] %}
+    <div class="mt-2 section-title">Business Information</div>
+    <div class="mt-4">
+        <span class="section-sub-title">Business Name: </span>
+        <span class="section-data">{{business.legalName}}</span>
+    </div>
+    <div>
+        <span class="section-sub-title">Nature of Business: </span>
+        {% if business.naicsDescription is defined %}
+        <span class="section-data">{{business.naicsDescription}}</span>
+        {% else %}
+        <span class="section-data">Not Available</span>
         {% endif %}
-     {% else %}
-            {% if business.legalType == 'CP' %}
-                <div class="mt-2">
-                    <span class="section-sub-title">Cooperative Type: </span>
-                    <span class="section-data">{{business.coopType}}</span>
-                </div>
-            {% endif %}
+    </div>
+    <div>
+        <span class="section-sub-title">Business Start Date: </span>
+        {% if start_date_utc is defined %}
+        <span class="section-data">{{start_date_utc}}</span>
+        {% else %}
+        <span class="section-data">Not Available</span>
+        {% endif %}
+    </div>
+    {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
+    <div>
+        <span class="section-sub-title">Business End Date: </span>
+        {% if formatted_dissolution_date is defined %}
+        <span class="section-data">{{formatted_dissolution_date}}</span>
+        {% else %}
+        <span class="section-data">Not Available</span>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    {% if business.legalType == 'CP' %}
+    <div class="mt-2">
+        <span class="section-sub-title">Cooperative Type: </span>
+        <span class="section-data">{{business.coopType}}</span>
+    </div>
+    {% endif %}
 
-            <div class="mt-2">
-                <span class="section-sub-title">Last Annual Report: </span>
-                {% if business.last_ar_date is defined %}
-                    <span class="section-data">{{business.last_ar_date}}</span>
-                {% else %}
-                    <span class="section-data">Not Available</span>
-                {% endif %}
-            </div>
-            {% if business.legalType == 'CP' %}
-                <div>
-                    <span class="section-sub-title">Last Annual General Meeting: </span>
-                    {% if business.last_agm_date is defined %}
-                        <span class="section-data">{{business.last_agm_date}}</span>
-                    {% else %}
-                        <span class="section-data">Not Available</span>
-                    {% endif %}
-                </div>
-            {% endif %}
-            <div class = "mt-2">
-                <span class="section-sub-title">In Liquidation: </span>
-                {% if business.state == 'LIQUIDATION' %}
-                    <span class="section-data">Yes</span>
-                {% else %}
-                    <span class="section-data">No</span>
-                {% endif %}
-            </div>
+    <div class="mt-2">
+        <span class="section-sub-title">Last Annual Report: </span>
+        {% if business.last_ar_date is defined %}
+        <span class="section-data">{{business.last_ar_date}}</span>
+        {% else %}
+        <span class="section-data">Not Available</span>
+        {% endif %}
+    </div>
+    {% if business.legalType == 'CP' %}
+    <div>
+        <span class="section-sub-title">Last Annual General Meeting: </span>
+        {% if business.last_agm_date is defined %}
+        <span class="section-data">{{business.last_agm_date}}</span>
+        {% else %}
+        <span class="section-data">Not Available</span>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <span class="section-sub-title">In Liquidation:  
+1            {{business.id}}
+2{{business.last_modified}}
+3{{business.last_ledger_id}}
+4{{business.last_remote_ledger_id}}
+5{{business.last_ledger_timestamp}}
+6{{business.last_ar_date}}
+7{{business.last_agm_date}}
+8{{business.last_coa_date}}
+9{{business.last_cod_date}}
+10{{business.legal_name}}
+11{{business.legal_type}}
+12{{business.founding_date}}
+13{{business.start_date}}
+14{{business.restorationExpiryDate}}
+15{{business.dissolution_date}}
+16{{business.cco_expiry_date}}
+17{{business._identifier}}
+18{{business.tax_id}}
+19{{business.fiscal_year_end_date}}
+20{{business.restriction_ind}}
+21{{business.last_ar_year}}
+22{{business.association_type}}
+23{{business.state}}
+24{{business.state_filing_id}}
+25{{business.admin_freeze}}
+26{{business.submitter_userid}}
+27{{business.submitter}}
+28{{business.send_ar_ind}}
+29{{business.naics_key}}
+30{{business.naics_code}}
+31{{business.naics_description}}
+32{{business.jurisdiction}}
+33{{business.foreign_identifier}}
+34{{business.foreign_legal_name}}
+35{{business.foreign_legal_type}}
+36{{business.foreign_incorporation_date}}
+37{{business.founding_date}}</span>
+        {% if business.state == 'LIQUIDATION' %}
+        <span class="section-data">Yes</span>
+        {% else %}
+        <span class="section-data">No</span>
+        {% endif %}
+    </div>
+    {% if business.restorationExpiryDate %}
+    <div class="mt-2">
+        <span class="section-sub-title">This company is in Limited Restoration with an Expiry Date of: </span>
+        <span class="section-data">{{business.restorationExpiryDate}}</span>
+    </div>
+    {% endif %}
     {% endif %}
 </div>

@@ -215,6 +215,9 @@ class BusinessDocument:
         if epoch_date := business['business'].get('epochFilingDate'):
             business['business']['epochFilingDate'] = LegislationDatetime.\
                 as_legislation_timezone(datetime.fromisoformat(epoch_date)).strftime('%B %-d, %Y')
+        if self._business.restoration_expiry_date:
+            business['business']['restorationExpiryDate'] = LegislationDatetime.\
+                format_as_report_string(self._business.restoration_expiry_date)
         # state change dates
         for filing in business.get('stateFilings', []):
             filing_datetime = datetime.fromisoformat(filing['filingDateTime'])
@@ -252,6 +255,11 @@ class BusinessDocument:
         business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
         if self._business.start_date:
             business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
+        # restorations XXXCRG
+        #  full
+        #  limited
+        #  extension
+        #  conversion
 
     def _set_addresses(self, business: dict):
         """Set business addresses."""
@@ -375,6 +383,11 @@ class BusinessDocument:
                 filing_info['dissolution_date_str'] = \
                     datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
                                                '%Y-%m-%d').date().strftime('%B %-d, %Y')
+        elif filing.filing_type == 'restoration':
+            filing_info['filingName'] = BusinessDocument.\
+                _get_summary_display_name(filing.filing_type,
+                                          filing_meta['restoration']['restorationType'],
+                                          self._business.legal_type)
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -438,7 +451,7 @@ class BusinessDocument:
 
     @staticmethod
     def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
-        if filing_type == 'dissolution':
+        if filing_type == 'dissolution' or filing_type == 'restoration':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
@@ -470,7 +483,44 @@ class BusinessDocument:
             }
         },
         'restorationApplication': 'Restoration Application',
-        'restoration': 'Restoration Application',
+        'restoration': {  # XXXCRG
+            'fullRestoration': {
+                'CP': 'Full Restoration',
+                'BEN': 'Full Restoration',
+                'ULC': 'Full Restoration',
+                'CC': 'Full Restoration',
+                'LLC': 'Full Restoration',
+                'SP': 'Full Restoration',
+                'GP': 'Full Restoration'
+            },
+            'limitedRestoration': {
+                'CP': 'Limited Restoration',
+                'BEN': 'Limited Restoration',
+                'ULC': 'Limited Restoration',
+                'CC': 'Limited Restoration',
+                'LLC': 'Limited Restoration',
+                'SP': 'Limited Restoration',
+                'GP': 'Limited Restoration'
+            },
+            'limitedRestorationExtension': {
+                'CP': 'Extension of Limited Restoration',
+                'BEN': 'Extension of Limited Restoration',
+                'ULC': 'Extension of Limited Restoration',
+                'CC': 'Extension of Limited Restoration',
+                'LLC': 'Extension of Limited Restoration',
+                'SP': 'Extension of Limited Restoration',
+                'GP': 'Extension of Limited Restoration'
+            },
+            'limitedRestorationToFull': {
+                'CP': 'Convert Limited Restoration to Full Restoration',
+                'BEN': 'Convert Limited Restoration to Full Restoration',
+                'ULC': 'Convert Limited Restoration to Full Restoration',
+                'CC': 'Convert Limited Restoration to Full Restoration',
+                'LLC': 'Convert Limited Restoration to Full Restoration',
+                'SP': 'Convert Limited Restoration to Full Restoration',
+                'GP': 'Convert Limited Restoration to Full Restoration'
+            }
+        },
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
         'Involuntary Dissolution': 'Involuntary Dissolution',
