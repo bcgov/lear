@@ -17,14 +17,21 @@
 Test-Suite to ensure that the /businesses../parties endpoint is working as expected.
 """
 import datetime
+import pytest
 from http import HTTPStatus
 
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, Party, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
-def test_get_business_parties_one_party_multiple_roles(session, client, jwt):
+@pytest.mark.parametrize('test_name,role', [
+    ('public-user', PUBLIC_USER),
+    ('account-identity', ACCOUNT_IDENTITY),
+    ('staff', STAFF_ROLE),
+    ('system', SYSTEM_ROLE)
+])
+def test_get_business_parties_one_party_multiple_roles(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business parties are returned."""
     # setup
     identifier = 'CP7654321'
@@ -51,9 +58,12 @@ def test_get_business_parties_one_party_multiple_roles(session, client, jwt):
     business.party_roles.append(party_role_2)
     business.save()
 
+    # mock response from auth to give view access (not needed if staff / system)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    headers=create_header(jwt, [role], identifier)
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
@@ -294,3 +304,21 @@ def test_get_parties_invalid_business(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} not found'}
+
+
+def test_get_parties_unauthorized(app, session, client, jwt, requests_mock):
+    """Assert that parties are not returned for an unauthorized user."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.save()
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/parties',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json == {'message': f'You are not authorized to view parties for {identifier}.'}

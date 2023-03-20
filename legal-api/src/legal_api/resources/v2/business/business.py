@@ -27,9 +27,11 @@ from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services import (  # noqa: I001;
+    ACCOUNT_IDENTITY,
     SYSTEM_ROLE,
     AccountService,
     RegistrationBootstrapService,
+    authorized,
     check_warnings,
 )  # noqa: I001;
 from legal_api.services.authz import get_allowable_actions, get_allowed
@@ -43,12 +45,6 @@ from .bp import bp
 @jwt.requires_auth
 def get_businesses(identifier: str):
     """Return a JSON object with meta information about the Service."""
-    # check authorization
-    # if not authorized(identifier, jwt, action=['view']):
-    #     return jsonify({'message':
-    #                     f'You are not authorized to view business {identifier}.'}), \
-    #         HTTPStatus.UNAUTHORIZED
-
     if identifier.startswith('T'):
         return {'message': babel('No information on temp registrations.')}, 200
 
@@ -56,6 +52,11 @@ def get_businesses(identifier: str):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+    # check authorization
+    if not authorized(identifier, jwt, action=['view']):
+        return jsonify({'message':
+                        f'You are not authorized to view business {identifier}.'}), \
+            HTTPStatus.UNAUTHORIZED
 
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business search update)
@@ -82,7 +83,7 @@ def get_businesses(identifier: str):
 
     q_account = request.args.get('account')
     current_app.logger.info('account info request, for account: %s', q_account)
-    if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, 'account_identity']):
+    if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, ACCOUNT_IDENTITY]):
         account_response = AccountService.get_account_by_affiliated_identifier(identifier)
         current_app.logger.info('VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s',
                                 q_account,

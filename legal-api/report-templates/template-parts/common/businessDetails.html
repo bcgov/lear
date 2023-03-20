@@ -78,7 +78,7 @@
                <div class="pt-2">{{specialResolution.resolutionDate}}</div>
                <div class="pt-2">{{report_date_time}}</div>
             </td>
-         {% elif header.name == 'incorporationApplication' %}
+         {% elif header.name in ['incorporationApplication', 'restoration'] %}
             <td class="col-33">
                {% if header.status == 'COMPLETED' %}
                <div class="bold">Incorporation Number:</div>

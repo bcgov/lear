@@ -18,6 +18,8 @@ from flask import jsonify
 from flask_restx import Resource, cors
 
 from legal_api.models import Business, ShareClass
+from legal_api.services import authorized
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -31,12 +33,19 @@ class ShareClassResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier, share_class_id=None):
         """Return a JSON of the share classes."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view share classes for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         # return the matching share class
         if share_class_id:
