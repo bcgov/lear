@@ -49,6 +49,43 @@ nr_response = {
 }
 relationships = ['Heir or Legal Representative', 'Director']
 
+def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
+                            expected_code, expected_msg):
+    """Assert nr block of filing is validated correctly."""
+
+    expiry_date = LegislationDatetime.now() + relativedelta(months=1)
+    expiry_date_str = expiry_date.strftime(date_format)
+    mocker.patch('legal_api.services.NameXService.validate_nr', return_value=validate_nr_result)
+
+    business = Business(identifier='BC1234567', legal_type=legal_type)
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['restoration']['type'] = filing_sub_type
+    filing['filing']['restoration']['expiry'] = expiry_date_str
+    filing['filing']['restoration']['relationships'] = relationships
+    filing['filing']['restoration']['nameRequest']['legalType'] = legal_type
+    if nr_number:
+        filing['filing']['restoration']['nameRequest']['nrNumber'] = nr_number
+    if new_legal_name:
+        filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
+
+    temp_nr_response = copy.deepcopy(nr_response)
+    temp_nr_response['legalType'] = legal_type
+    temp_nr_response['names'][0]['name'] = new_legal_name
+    if nr_type:
+        temp_nr_response['requestTypeCd'] = nr_type
+    mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
+
+    mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
+    err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
+
 
 class MockResponse:
     """Mock http response."""
@@ -225,37 +262,9 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
                         expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
 
-    expiry_date = LegislationDatetime.now() + relativedelta(months=1)
-    expiry_date_str = expiry_date.strftime(date_format)
-    mocker.patch('legal_api.services.NameXService.validate_nr', return_value=validate_nr_result)
-
     for legal_type in legal_types:
-        business = Business(identifier='BC1234567', legal_type=legal_type)
-        filing = copy.deepcopy(FILING_HEADER)
-        filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
-        filing['filing']['restoration']['type'] = filing_sub_type
-        filing['filing']['restoration']['expiry'] = expiry_date_str
-        filing['filing']['restoration']['relationships'] = relationships
-        filing['filing']['restoration']['nameRequest']['legalType'] = legal_type
-        if nr_number:
-            filing['filing']['restoration']['nameRequest']['nrNumber'] = nr_number
-        if new_legal_name:
-            filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
-
-        temp_nr_response = copy.deepcopy(nr_response)
-        temp_nr_response['legalType'] = legal_type
-        temp_nr_response['names'][0]['name'] = new_legal_name
-        mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
-
-        mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
-        err = validate(business, filing)
-
-        # validate outcomes
-        if expected_code:
-            assert expected_code == err.code
-            assert expected_msg == err.msg[0]['error']
-        else:
-            assert not err
+        execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, None, new_legal_name,
+                                    expected_code, expected_msg)
 
         
 @pytest.mark.parametrize(
@@ -264,13 +273,13 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
         # full restoration
         ('SUCCESS_NR_TYPE', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCC', 'RCR', 'BERE', 'RUL'],
          'new name', None, None),
-        ('FAIL_NR_TYPE', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['', 'RCRC', 'BEREE', 'RULL'],
+        ('FAIL_NR_TYPE', 'fullRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCRC', 'BEREE', 'RULL'],
          'new name', HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
 
         # limited restoration
         ('SUCCESS_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCC', 'RCR', 'BERE', 'RUL'],
          'new name', None, None),
-        ('FAIL_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['', 'RCRC', 'BEREE', 'RULL'],
+        ('FAIL_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCRC', 'BEREE', 'RULL'],
          'new name', HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
     ]
 )
@@ -278,37 +287,8 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
                         expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
 
-    expiry_date = LegislationDatetime.now() + relativedelta(months=1)
-    expiry_date_str = expiry_date.strftime(date_format)
-    mocker.patch('legal_api.services.NameXService.validate_nr', return_value=validate_nr_result)
 
     for legal_type in legal_types:
-        business = Business(identifier='BC1234567', legal_type=legal_type)
-        filing = copy.deepcopy(FILING_HEADER)
-        filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
-        filing['filing']['restoration']['type'] = filing_sub_type
-        filing['filing']['restoration']['expiry'] = expiry_date_str
-        filing['filing']['restoration']['relationships'] = relationships
-        filing['filing']['restoration']['nameRequest']['legalType'] = legal_type
-        if nr_number:
-            filing['filing']['restoration']['nameRequest']['nrNumber'] = nr_number
-        if new_legal_name:
-            filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
-
-        temp_nr_response = copy.deepcopy(nr_response)
-        temp_nr_response['legalType'] = legal_type
-        temp_nr_response['names'][0]['name'] = new_legal_name
-
         for nr_type in nr_types:
-            temp_nr_response['requestTypeCd'] = nr_type
-            mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
-
-            mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
-            err = validate(business, filing)
-
-            # validate outcomes
-            if expected_code:
-                assert expected_code == err.code
-                assert expected_msg == err.msg[0]['error']
-            else:
-                assert not err
+            execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
+                                        expected_code, expected_msg)
