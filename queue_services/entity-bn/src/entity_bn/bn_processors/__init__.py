@@ -51,6 +51,9 @@ document_sub_type = {
 
 def get_business_type_and_sub_type_code(legal_type: str, business_owned: bool, owner_legal_type: str):
     """Get business_type and business_sub_type."""
+    business_type = None
+    business_sub_type = None
+
     if legal_type == 'SP':
         if business_owned:  # Owned by an org
             if owner_legal_type in ['GP', 'LP', 'XP', 'LL', 'XL']:
@@ -72,12 +75,11 @@ def get_business_type_and_sub_type_code(legal_type: str, business_owned: bool, o
         else:  # Owned by an individual
             business_type = '01'  # Sole Proprietorship
             business_sub_type = '01'  # Sole Proprietor
-
-        return (business_type, business_sub_type)
     elif legal_type == 'GP':
-        return ('02', '99')  # Partnership, Business
+        business_type = '02'  # Partnership
+        business_sub_type = '99'  # Business
 
-    return None
+    return business_type, business_sub_type
 
 
 def build_input_xml(template_name, data):
@@ -138,7 +140,7 @@ def get_owners_legal_type(identifier):
             for entity in results:
                 if entity.get('identifier') == identifier:
                     return entity.get('legalType'), None
-            return None, None
+        return None, None
     except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as err:
         logger.error(err, exc_info=True)
         return None, None

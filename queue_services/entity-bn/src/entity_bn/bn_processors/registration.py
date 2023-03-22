@@ -132,7 +132,7 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
         raise err
 
 
-def _inform_cra(business: Business,
+def _inform_cra(business: Business,  # pylint: disable=too-many-locals
                 request_tracker: RequestTracker,
                 business_number: str,
                 skip_build: bool):
@@ -161,7 +161,7 @@ def _inform_cra(business: Business,
                         legal_names, _ = _get_firm_legal_name(owner_business)
                     else:
                         # This should not happen. We migrated all Firms to lear
-                        legal_names = '{Unable to find legal name: business is not in BCROS}'  # TODO: Check
+                        legal_names = '{Unable to find legal name: business is not in BCROS}'
         elif is_corps:
             parties = [party_role.party for party_role in business.party_roles.all()
                        if party_role.role.lower() in (PartyRole.RoleTypes.DIRECTOR.value)]
