@@ -20,19 +20,23 @@ from http import HTTPStatus
 import requests
 from entity_queue_common.service_utils import QueueException, logger
 from flask import current_app
-from legal_api.models import Business, PartyRole, RequestTracker
+from legal_api.models import Business, Party, PartyRole, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_bn.bn_processors import (
     build_input_xml,
-    business_sub_type_code,
-    business_type_code,
+    get_business_type_and_sub_type_code,
+    get_owners_legal_type,
     program_type_code,
     publish_event,
     request_bn_hub,
 )
 from entity_bn.exceptions import BNException, BNRetryExceededException
+
+
+FIRMS = ('SP', 'GP')
+CORPS = ('BEN', 'BC', 'ULC', 'CC')
 
 
 async def process(business: Business,  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
@@ -139,10 +143,32 @@ def _inform_cra(business: Business,
     if skip_build:
         input_xml = request_tracker.request_object
     else:
+        is_firms = business.legal_type in FIRMS
+        is_corps = business.legal_type in CORPS
+
+        owner_legal_type = None
+        business_owned = False  # True when SP is owned by GP
+        legal_names = ''  # Applicable for Firm registration
         founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).strftime('%Y-%m-%d')
-        parties = [party_role.party for party_role in business.party_roles.all()
-                   if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value,
-                                                  PartyRole.RoleTypes.PROPRIETOR.value)]
+        parties = []
+        if is_firms:
+            legal_names, parties = _get_firm_legal_name(business)
+            if business.legal_type == 'SP' and parties[0].party_type == Party.PartyTypes.ORGANIZATION.value:
+                business_owned = True
+                owner_legal_type, owner_business = get_owners_legal_type(parties[0].identifier)
+                if owner_legal_type == 'GP':
+                    if owner_business:
+                        legal_names, _ = _get_firm_legal_name(owner_business)
+                    else:
+                        # This should not happen. We migrated all Firms to lear
+                        legal_names = '{Unable to find legal name: business is not in BCROS}'  # TODO: Check
+        elif is_corps:
+            parties = [party_role.party for party_role in business.party_roles.all()
+                       if party_role.role.lower() in (PartyRole.RoleTypes.DIRECTOR.value)]
+
+        business_type_code, business_sub_type_code = get_business_type_and_sub_type_code(business.legal_type,
+                                                                                         business_owned,
+                                                                                         owner_legal_type)
 
         retry_number = str(request_tracker.retry_number)
         if request_tracker.message_id:
@@ -154,13 +180,16 @@ def _inform_cra(business: Business,
             'userRole': '01' if request_tracker.is_admin else '02',
             'retryNumber': retry_number,
             'programTypeCode': program_type_code[business.legal_type],
-            'businessTypeCode': business_type_code[business.legal_type],
-            'businessSubTypeCode': business_sub_type_code[business.legal_type],
+            'businessTypeCode': business_type_code,
+            'businessSubTypeCode': business_sub_type_code,
             'foundingDate': founding_date,
-            'legalNames': ','.join(party.name for party in parties),
-            'parties': [party.json for party in parties],
+            'legalNames': legal_names,
+            'parties': [party.json for party in parties[:5]],
             'deliveryAddress': business.delivery_address.one_or_none().json,
-            'mailingAddress': business.mailing_address.one_or_none().json
+            'mailingAddress': business.mailing_address.one_or_none().json,
+            'businessOwned': business_owned,
+            'isFirms': is_firms,
+            'isCorps': is_corps
         })
 
         request_tracker.request_object = input_xml
@@ -205,3 +234,14 @@ def _get_program_account(identifier, transaction_id):
     except requests.exceptions.RequestException as err:
         logger.error(err, exc_info=True)
         return None, str(err)
+
+
+def _get_firm_legal_name(business: Business):
+    """Get firm legal name."""
+    parties = [party_role.party for party_role in business.party_roles.all()
+               if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value,
+                                              PartyRole.RoleTypes.PROPRIETOR.value)]
+    legal_names = ','.join(party.name for party in parties[:2])
+    if len(parties) > 2:  # Include only 2 parties in legal name
+        legal_names += ', et al'
+    return legal_names, parties
