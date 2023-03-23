@@ -64,7 +64,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     COLIN_API = f"{os.getenv('COLIN_SVC_URL', '')}{os.getenv('COLIN_SVC_VERSION', '')}"
 
     SEARCH_API = \
-        f"{os.getenv('REGISTRIES_SEARCH_API_INTERNAL_URL', '')}{os.getenv('REGISTRIES_SEARCH_API_VERSION', '')}"
+        f"{os.getenv('REGISTRIES_SEARCH_API_INTERNAL_URL', '')}{os.getenv('REGISTRIES_SEARCH_API_VERSION', '/api/v1')}"
 
     BN_HUB_API_URL = os.getenv('BN_HUB_API_URL', None)
     BN_HUB_CLIENT_ID = os.getenv('BN_HUB_CLIENT_ID', None)
