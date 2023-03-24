@@ -34,7 +34,7 @@ from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-impo
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
     """
-    a shadow of the current filing record with new associations to legacy outputs from COLIN.
+    a shadow of the current filing record that stores basic filing data with new associations to legacy outputs from COLIN.
     """
 
     class Status(str, Enum):
@@ -264,7 +264,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'restoration': 'type'
     }
 
-    __tablename__ = 'filings'
+    __tablename__ = 'shadow_filings'
     # this mapper is used so that new and old versions of the service can be run simultaneously,
     # making rolling upgrades easier
     # This is used by SQLAlchemy to explicitly define which fields we're interested
@@ -282,30 +282,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_filing_date',
             '_filing_json',
             '_filing_type',
-            '_filing_sub_type',
             '_meta_data',
-            '_payment_completion_date',
-            '_payment_status_code',
-            '_payment_token',
             '_source',
-            '_status',
             'business_id',
             'colin_only',
-            'court_order_date',
-            'court_order_effect_of_order',
-            'court_order_file_number',
-            'deletion_locked',
             'effective_date',
-            'order_details',
             'paper_only',
-            'parent_filing_id',
-            'payment_account',
             'submitter_id',
-            'submitter_roles',
-            'tech_correction_json',
             'temp_reg',
-            'transaction_id',
-            'approval_type'
         ]
     }
 
@@ -316,28 +300,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _meta_data = db.Column('meta_data', JSONB)
-    _payment_status_code = db.Column('payment_status_code', db.String(50))
-    _payment_token = db.Column('payment_id', db.String(4096))
-    _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
-    payment_account = db.Column('payment_account', db.String(30))
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    submitter_roles = db.Column('submitter_roles', db.String(200))
-    tech_correction_json = db.Column('tech_correction_json', JSONB)
-    court_order_file_number = db.Column('court_order_file_number', db.String(20))
-    court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
-    court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
-    order_details = db.Column(db.String(2000))
-    deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
-    approval_type = db.Column('approval_type', db.String(15))
     has_legacy_outputs = db.column('has_legacy_outputs', db.boolean, unique=False, default=False)
 
     # # relationships
-    transaction_id = db.Column('transaction_id', db.BigInteger,
-                               db.ForeignKey('transaction.id'))
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
     temp_reg = db.Column('temp_reg', db.String(10),
@@ -350,13 +320,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                                        foreign_keys=[submitter_id])
 
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
-
-    comments = db.relationship('Comment', lazy='dynamic')
-    documents = db.relationship('Document', lazy='dynamic')
-    filing_party_roles = db.relationship('PartyRole', lazy='dynamic')
-
-    parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
-    parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
 
     # properties
     @property
@@ -507,24 +470,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the meta data collected about a filing, stored as JSON."""
         return self._meta_data
 
-    @property
-    def locked(self):
-        """Return the locked state of the filing.
-
-        Once a filing, with valid json has an invoice attached, it can no longer be altered and is locked.
-        Exception to this rule, payment_completion_date requires the filing to be locked.
-        """
-        if self.deletion_locked:
-            return True
-
-        insp = inspect(self)
-        attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
-        # inspect requires the member, and the hybrid decorator doesn't help us here
-        if (self._payment_token and not attr_state.history.added) or self.colin_event_ids:
-            return True
-
-        return False
-
     def set_processed(self, business_type):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
@@ -540,48 +485,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """For AR or COD filings on CP or BEN then the effective date can be before the payment date."""
         return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
                                     Filing.FILINGS['changeOfDirectors'].get('name')) and business_type in {'CP', 'BEN'}
-
-    @staticmethod
-    def _raise_default_lock_exception():
-        raise BusinessException(
-            error='Filings cannot be changed after the invoice is created.',
-            status_code=HTTPStatus.FORBIDDEN
-        )
-
-    @property
-    def is_corrected(self):
-        """Has this filing been corrected."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
-                self.parent_filing.status == Filing.Status.COMPLETED.value
-        ):
-            return True
-        return False
-
-    @property
-    def is_correction_pending(self):
-        """Is there a pending correction for this filing."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
-                self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
-        ):
-            return True
-        return False
-
-    @hybrid_property
-    def comments_count(self):
-        """Return the number of commentson this filing."""
-        return self.comments.count()
-
-    @comments_count.expression
-    def comments_count(self):
-        """Return comments count expression for this filing."""
-        return (select([func.count(Comment.business_id)]).
-                where(Comment.business_id == self.id).
-                label('comments_count')
-                )
 
     # json serializer
     @property
@@ -642,14 +545,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             q.filter(Filing.id == filing_id)
 
         filing = q.one_or_none()
-        return filing
-
-    @staticmethod
-    def get_filing_by_payment_token(token: str):
-        """Return a Filing by it's payment token."""
-        filing = db.session.query(Filing). \
-            filter(Filing.payment_token == token). \
-            one_or_none()
         return filing
 
     @staticmethod
@@ -819,12 +714,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         db.session.delete(self)
         db.session.commit()
 
-    def reset_filing_to_draft(self):
-        """Reset Filing to draft and remove payment token."""
-        self._status = Filing.Status.DRAFT.value
-        self._payment_token = None
-        self.save()
-
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
 
@@ -843,44 +732,3 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
 
         return legal_filings
-
-
-@event.listens_for(Filing, 'before_delete')
-def block_filing_delete_listener_function(mapper, connection, target):  # pylint: disable=unused-argument
-    """Raise an error when a delete is attempted on a Filing."""
-    filing = target
-
-    if filing.locked or filing.deletion_locked:
-        raise BusinessException(
-            error='Deletion not allowed.',
-            status_code=HTTPStatus.FORBIDDEN
-        )
-
-
-@event.listens_for(Filing, 'before_insert')
-@event.listens_for(Filing, 'before_update')
-def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
-    """Set the state of the filing, based upon column values."""
-    filing = target
-
-    # skip this status updater if the flag is set
-    # Scenario: if this is a correction filing, and would have been set to COMPLETE by the entity filer, leave it as is
-    # because it's been set to PENDING_CORRECTION by the entity filer.
-    if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
-        return
-
-    # changes are part of the class and are not externalized
-    if filing.filing_type == 'lear_epoch':
-        filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
-
-    elif filing.transaction_id:
-        filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-
-    elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
-        filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
-
-    elif filing.payment_token:
-        filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-
-    else:
-        filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
