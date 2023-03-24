@@ -21,7 +21,7 @@ from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services import namex
-from legal_api.services.utils import get_str
+from legal_api.services.utils import get_str, get_bool
 
 from .common_validations import (
     validate_court_order,
@@ -147,12 +147,22 @@ def rules_change_validation(filing):
     rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
+    rules_change_in_sr_path: Final = '/filing/alteration/rulesChangeInSR'
+    rules_change_in_sr: Final = get_bool(filing, rules_change_in_sr_path)
+
+    if(rules_file_key and rules_change_in_sr):
+        error_msg = 'Cannot provide both file upload and rules change in SR'
+        msg.append({'error': babel(error_msg),
+                    'path': rules_file_key_path + ' and ' + rules_change_in_sr_path})
+        return msg
+
     if rules_file_key:
         rules_err = validate_pdf(rules_file_key, rules_file_key_path)
         if rules_err:
             msg.extend(rules_err)
+        return msg
 
-    return msg
+    return []
 
 
 def memorandum_change_validation(filing):
