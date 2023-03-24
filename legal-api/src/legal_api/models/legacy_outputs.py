@@ -19,8 +19,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This model manages the data store for COLIN filing outputs used to link outputs colin to filngs in lear.
+"""This model manages the data store for COLIN filing outputs.
 
+Used to link outputs colin to filngs in lear.
 """
 
 from .db import db

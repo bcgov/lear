@@ -18,7 +18,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
 
-from sqlalchemy import desc, event, func, inspect, or_, select
+from sqlalchemy import desc, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -33,8 +33,9 @@ from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-impo
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
-    """
-    a shadow of the current filing record that stores basic filing data with new associations to legacy outputs from COLIN.
+    """a shadow of the current filing record that stores basic filing data.
+
+    Has new associations to legacy outputs from COLIN.
     """
 
     class Status(str, Enum):
@@ -282,6 +283,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_filing_date',
             '_filing_json',
             '_filing_type',
+            '_filing_sub_type',
             '_meta_data',
             '_source',
             'business_id',
