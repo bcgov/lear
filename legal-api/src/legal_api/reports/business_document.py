@@ -11,6 +11,7 @@
 """Produces a PDF output based on templates and JSON messages."""
 import base64
 import json
+import logging
 import os
 from datetime import datetime
 from http import HTTPStatus
@@ -384,6 +385,7 @@ class BusinessDocument:
                     datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
                                                '%Y-%m-%d').date().strftime('%B %-d, %Y')
         elif filing.filing_type == 'restoration':
+            logging.debug(json.dumps(filing_meta))
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type,
                                           filing_meta['restoration']['restorationType'],
