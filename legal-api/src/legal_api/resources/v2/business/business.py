@@ -52,11 +52,11 @@ def get_businesses(identifier: str):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-    # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view business {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    # check authorization -- need to implement workaround for business search users before using this
+    # if not authorized(identifier, jwt, action=['view']):
+    #     return jsonify({'message':
+    #                     f'You are not authorized to view business {identifier}.'}), \
+    #         HTTPStatus.UNAUTHORIZED
 
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business search update)
