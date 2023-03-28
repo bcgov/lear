@@ -28,7 +28,7 @@ def update_aliases(business: Business, aliases) -> Dict:
                 (existing_alias := next((x for x in business.aliases.all() if str(x.id) == alias_id), None)):
             existing_alias.alias = alias['name'].upper()
         else:
-            new_alias = Alias(alias=alias['name'].upper(), type=Alias.AliasType.TRANSLATION.value)
+            new_alias = Alias(alias=alias['name'].upper(), type=alias['type'])
             business.aliases.append(new_alias)
 
     for current_alias in business.aliases.all():

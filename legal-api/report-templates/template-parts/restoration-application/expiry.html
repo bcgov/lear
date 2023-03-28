@@ -1,0 +1,21 @@
+{% if restoration_expiry_date is defined %}
+  <div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">
+      <span>Expiry Date of Limited Restoration</span>
+    </div>
+    <div class="section-data mt-3">
+      The company is in limited restoration with an expiry date of {{restoration_expiry_date}}.
+    </div>
+    <div class="section-data mt-3">
+      The company will be dissolved upon expiry.
+    </div>
+    {% if restoration.type == 'limitedRestoration' %}
+    <div class="section-data mt-3">
+      If the company requires an extension to the limited restoration, please contact BC Registry Services for further
+      instructions prior to the expiry date.
+    </div>
+    {% endif %}
+  </div>
+{% endif %}
+

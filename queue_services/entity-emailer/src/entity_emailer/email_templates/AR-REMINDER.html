@@ -18,7 +18,7 @@
 
           <div class="container">
             <p>
-              You can now file the {{ ar_year }} annual report for the {{ entity_type }} {{ business.legal_name }},
+              You can now file the {{ ar_year }} annual report for the {{ entity_type }} {{ business.legalName }},
               incorporation number {{ business.identifier }}. You have 60 days to file your Annual Report to keep your
               {{ entity_type }} in good standing.
             </p>
@@ -43,7 +43,7 @@
               filing your annual report.
             </p>
 
-            {% if business.legal_type == 'BEN' %}
+            {% if business.legalType == 'BEN' %}
             [[whitespace-16px.html]]
             <p>
               In addition to filing the annual report with the Business Registry, there is a legal requirement for

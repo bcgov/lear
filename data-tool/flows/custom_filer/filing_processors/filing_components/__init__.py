@@ -98,7 +98,6 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             organization_name=party_info['officer'].get('organizationName', '').upper(),
             email=party_info['officer'].get('email'),
             identifier=party_info['officer'].get('identifier'),
-            tax_id=party_info['officer'].get('taxId'),
             party_type=party_info['officer'].get('partyType')
         )
 

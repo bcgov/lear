@@ -37,7 +37,6 @@ from flask import Flask
 from legal_api import db
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
-from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
@@ -46,6 +45,7 @@ from entity_emailer.email_processors import (
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
+    correction_notification,
     dissolution_notification,
     filing_notification,
     mras_notification,
@@ -70,8 +70,7 @@ async def publish_event(payload: dict):
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
     except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
-        capture_message(f'Queue Publish Event Error: email msg={payload}, error={err}', level='error')
-        logger.error('Queue Publish Event Error: email msg=%s', payload, exc_info=True)
+        logger.error('Queue Publish Event Error: err=%s email msg=%s', err, payload, exc_info=True)
 
 
 def send_email(email: dict, token: str):
@@ -151,6 +150,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'changeOfRegistration':
                 email = change_of_registration_notification.process(email_msg['email'], token)
                 send_email(email, token)
+            elif etype == 'correction':
+                email = correction_notification.process(email_msg['email'], token)
+                send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
                     logger.debug('No email to send for: %s', email_msg)
@@ -203,7 +205,6 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             raise err  # we don't want to handle the error, so that the message gets put back on the queue
         except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703;
             # Catch Exception so that any error is still caught and the message is removed from the queue
-            capture_message('Queue Error: ' + json.dumps(email_msg), level='error')
             logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
             error_details = f'QueueException, Exception - {str(err)}'
             tracker_util.mark_tracking_message_as_failed(message_context_properties,

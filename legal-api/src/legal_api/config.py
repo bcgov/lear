@@ -179,6 +179,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     else:
         SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
+    # URLs
+    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://test-auth-url')
+
     # JWT OIDC settings
     # JWT_OIDC_TEST_MODE will set jwt_manager to use
     JWT_OIDC_TEST_MODE = True

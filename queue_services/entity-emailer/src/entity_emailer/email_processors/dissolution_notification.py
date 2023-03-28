@@ -24,7 +24,6 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
-from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import (
     get_filing_info,
@@ -60,7 +59,6 @@ def _get_pdfs(
             )
             if filing_pdf.status_code != HTTPStatus.OK:
                 logger.error('Failed to get pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
@@ -88,7 +86,6 @@ def _get_pdfs(
         )
         if receipt.status_code != HTTPStatus.CREATED:
             logger.error('Failed to get receipt pdf for filing: %s', filing.id)
-            capture_message(f'Email Queue: filing id={filing.id}, error=receipt generation', level='error')
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -108,7 +105,6 @@ def _get_pdfs(
             )
             if filing_pdf.status_code != HTTPStatus.OK:
                 logger.error('Failed to get pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=pdf generation', level='error')
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
@@ -129,8 +125,6 @@ def _get_pdfs(
             )
             if certificate.status_code != HTTPStatus.OK:
                 logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
-                capture_message(f'Email Queue: filing id={filing.id}, error=certificateOfDissolution generation',
-                                level='error')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 pdfs.append(
@@ -152,8 +146,6 @@ def _get_pdfs(
                 )
                 if certified_affidavit.status_code != HTTPStatus.OK:
                     logger.error('Failed to get affidavit pdf for filing: %s', filing.id)
-                    capture_message(f'Email Queue: filing id={filing.id}, error=affidavit generation',
-                                    level='error')
                 else:
                     certificate_encoded = base64.b64encode(certified_affidavit.content)
                     pdfs.append(
@@ -174,8 +166,6 @@ def _get_pdfs(
                 )
                 if special_resolution.status_code != HTTPStatus.OK:
                     logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
-                    capture_message(f'Email Queue: filing id={filing.id}, error=specialResolution generation',
-                                    level='error')
                 else:
                     certificate_encoded = base64.b64encode(special_resolution.content)
                     pdfs.append(

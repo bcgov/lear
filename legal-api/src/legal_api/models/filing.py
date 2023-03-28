@@ -16,7 +16,7 @@ import copy
 from datetime import date, datetime
 from enum import Enum
 from http import HTTPStatus
-from typing import List
+from typing import Final, List
 
 from sqlalchemy import desc, event, func, inspect, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -118,6 +118,32 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             }
         },
         'changeOfName': {'name': 'changeOfName', 'title': 'Change of Name Filing'},
+        'changeOfRegistration': {
+            'name': 'changeOfRegistration',
+            'title': 'Change of Registration',
+            'codes': {
+                'SP': 'FMCHANGE',
+                'GP': 'FMCHANGE'
+            }
+        },
+        'consentContinuationOut': {
+            'name': 'consentContinuationOut',
+            'title': 'Consent Continuation Out',
+            'codes': {
+                'BC': 'CONTO',
+                'BEN': 'CONTO',
+                'ULC': 'CONTO',
+                'CC': 'CONTO'
+            }
+        },
+        'conversion': {
+            'name': 'conversion',
+            'title': 'Conversion Ledger',
+            'codes': {
+                'SP': 'FMCONV',
+                'GP': 'FMCONV'
+            },
+        },
         'correction': {
             'name': 'correction',
             'title': 'Correction',
@@ -166,13 +192,48 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'temporaryCorpTypeCode': 'RTMP'
         },
-        'conversion': {
-            'name': 'conversion',
-            'title': 'Conversion Ledger',
-            'codes': {
-                'SP': 'FMCONV',
-                'GP': 'FMCONV'
+        'restoration': {
+            'name': 'restoration',
+            'fullRestoration': {
+                'name': 'fullRestoration',
+                'title': 'Full Restoration',
+                'codes': {
+                    'BC': 'RESTF',
+                    'BEN': 'RESTF',
+                    'ULC': 'RESTF',
+                    'CC': 'RESTF'
+                }
             },
+            'limitedRestoration': {
+                'name': 'limitedRestoration',
+                'title': 'Limited Restoration',
+                'codes': {
+                    'BC': 'RESTL',
+                    'BEN': 'RESTL',
+                    'ULC': 'RESTL',
+                    'CC': 'RESTL'
+                }
+            },
+            'limitedRestorationExtension': {
+                'name': 'limitedRestorationExtension',
+                'title': 'Limited Restoration Extension',
+                'codes': {
+                    'BC': 'RESXL',
+                    'BEN': 'RESXL',
+                    'ULC': 'RESXL',
+                    'CC': 'RESXL'
+                }
+            },
+            'limitedRestorationToFull': {
+                'name': 'limitedRestorationToFull',
+                'title': 'Limited Restoration To Full',
+                'codes': {
+                    'BC': 'RESXF',
+                    'BEN': 'RESXF',
+                    'ULC': 'RESXF',
+                    'CC': 'RESXF'
+                }
+            }
         },
         'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
                               'codes': {
@@ -187,21 +248,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CC': 'TRANS'
             }
         },
-        'changeOfRegistration': {
-            'name': 'changeOfRegistration',
-            'title': 'Change of Registration',
-            'codes': {
-                'SP': 'FMCHANGE',
-                'GP': 'FMCHANGE'
-            }
-        },
+
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
+        'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
-        'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
-        'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
-        'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'}
+        'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
+        'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'}
+    }
+
+    FILING_SUB_TYPE_KEYS: Final = {
+        # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
+        #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
+        # 'dissolution': 'dissolutionType',
+        'restoration': 'type'
     }
 
     __tablename__ = 'filings'
@@ -222,6 +283,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_filing_date',
             '_filing_json',
             '_filing_type',
+            '_filing_sub_type',
             '_meta_data',
             '_payment_completion_date',
             '_payment_status_code',
@@ -243,7 +305,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'submitter_roles',
             'tech_correction_json',
             'temp_reg',
-            'transaction_id'
+            'transaction_id',
+            'approval_type'
         ]
     }
 
@@ -251,6 +314,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
+    _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _meta_data = db.Column('meta_data', JSONB)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
@@ -269,6 +333,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
     order_details = db.Column(db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
+    approval_type = db.Column('approval_type', db.String(15))
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -314,6 +379,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def filing_type(self):
         """Property containing the filing type."""
         return self._filing_type
+
+    @property
+    def filing_sub_type(self):
+        """Property containing the filing sub type."""
+        return self._filing_sub_type
 
     @hybrid_property
     def payment_status_code(self):
@@ -396,12 +466,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         try:
             self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
             if not self._filing_type:
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
         except Exception as err:
             raise BusinessException(
                 error='No filings found.',
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             ) from err
+
+        self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
         if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
@@ -418,6 +490,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
             self._status = Filing.Status.PENDING.value
         self._filing_json = json_data
+
+    @property
+    def json_legal_type(self):
+        """Return the legal type from a filing_json or None."""
+        return self._filing_json.get('filing', {}).get('business', {}).get('legalType', None)
+
+    @property
+    def json_nr(self):
+        """Return the NR Number from a filing_json or None."""
+        return self._filing_json.get('filing', {})\
+            .get(self.filing_type, {}).get('nameRequest', {}).get('nrNumber', None)
 
     @property
     def meta_data(self):
@@ -606,6 +689,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_incomplete_filings_by_types(business_id: int, filing_types: list):
+        """Return the filings of particular types and statuses."""
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type.in_(filing_types)). \
+            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            order_by(desc(Filing.effective_date)). \
+            all()
+        return filings
+
+    @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
@@ -681,6 +775,30 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if filings:
             return filings[0]
         return None
+
+    @staticmethod
+    def get_filings_sub_type(filing_type: str, filing_json: dict):
+        """Return sub-type from filing json if sub-type exists for filing type."""
+        filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type)
+        if filing_sub_type_key:
+            filing_sub_type = filing_json['filing'][filing_type][filing_sub_type_key]
+            return filing_sub_type
+
+        return None
+
+    @staticmethod
+    def get_fee_code(legal_type: str, filing_type: str, filing_sub_type: str = None):
+        """Return fee code for filing."""
+        filing_dict = Filing.FILINGS.get(filing_type, None)
+
+        if filing_sub_type:
+            fee_code = filing_dict[filing_sub_type]['codes'].get(legal_type, None)
+        else:
+            if fee_code := filing_dict.get('code', None):
+                return fee_code
+            fee_code = filing_dict['codes'].get(legal_type, None)
+
+        return fee_code
 
     def save(self):
         """Save and commit immediately."""

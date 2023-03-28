@@ -24,14 +24,18 @@ from typing import Tuple
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
-    business = (filing.json)['filing'].get('business')
+    if filing.business_id:
+        business = Business.find_by_internal_id(filing.business_id)
+        business_json = business.json()
+    else:
+        business_json = (filing.json)['filing'].get('business')
 
     filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
@@ -45,7 +49,7 @@ def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     am_pm = leg_tmz_effective_date.strftime('%p').lower()
     leg_tmz_effective_date = leg_tmz_effective_date.strftime(f'%B %d, %Y at {hour}:%M {am_pm} Pacific time')
 
-    return filing, business, leg_tmz_filing_date, leg_tmz_effective_date
+    return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
 def get_recipients(option: str, filing_json: dict, token: str = None, filing_type: str = None) -> str:

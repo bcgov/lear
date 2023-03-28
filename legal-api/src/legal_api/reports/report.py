@@ -17,6 +17,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
+from typing import Final
 
 import pycountry
 import requests
@@ -31,7 +32,10 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-class Report:  # pylint: disable=too-few-public-methods
+OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
+
+
+class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     # TODO review pylint warning and alter as required
     """Service to create report outputs."""
 
@@ -140,6 +144,12 @@ class Report:  # pylint: disable=too-few-public-methods
             'incorporation-application/incorporator',
             'incorporation-application/nameRequest',
             'incorporation-application/cooperativeAssociationType',
+            'restoration-application/nameRequest',
+            'restoration-application/legalName',
+            'restoration-application/legalNameDissolution',
+            'restoration-application/approvalType',
+            'restoration-application/applicant',
+            'restoration-application/expiry',
             'registration/nameRequest',
             'registration/addresses',
             'registration/completingParty',
@@ -211,6 +221,10 @@ class Report:  # pylint: disable=too-few-public-methods
                 self._format_change_of_registration_data(filing, 'changeOfRegistration')
             elif self._report_key == 'certificateOfNameChange':
                 self._format_name_change_data(filing)
+            elif self._report_key == 'certificateOfRestoration':
+                self._format_certificate_of_restoration_data(filing)
+            elif self._report_key == 'restoration':
+                self._format_restoration_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -224,8 +238,7 @@ class Report:  # pylint: disable=too-few-public-methods
 
             if self._report_key == 'dissolution':
                 filing['dissolution']['dissolution_date_str'] = \
-                    datetime.utcnow().strptime(filing['dissolution']['dissolutionDate'], '%Y-%m-%d').\
-                    date().strftime('%B %-d, %Y')
+                    datetime.fromisoformat(filing['dissolution']['dissolutionDate']).strftime(OUTPUT_DATE_FORMAT)
                 self._format_directors(filing['dissolution']['parties'])
                 filing['parties'] = filing['dissolution']['parties']
 
@@ -266,6 +279,9 @@ class Report:  # pylint: disable=too-few-public-methods
             current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
             if original_registrar['name'] != current_registrar['name']:
                 filing['currentRegistrarInfo'] = current_registrar
+        elif filing.get('annualReport'):
+            # effective_date in annualReport will be ar_date or agm_date, which could be in past.
+            filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
         else:
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
@@ -299,22 +315,22 @@ class Report:  # pylint: disable=too-few-public-methods
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
         filing['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_date)
-        filing['effective_date'] = effective_date.strftime('%B %-d, %Y')
+        filing['effective_date'] = effective_date.strftime(OUTPUT_DATE_FORMAT)
         # Recognition Date
         if self._business:
             recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
             filing['recognition_date_time'] = LegislationDatetime.format_as_report_string(recognition_datetime)
-            filing['recognition_date_utc'] = recognition_datetime.strftime('%B %-d, %Y')
+            filing['recognition_date_utc'] = recognition_datetime.strftime(OUTPUT_DATE_FORMAT)
             if self._business.start_date:
-                filing['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
+                filing['start_date_utc'] = self._business.start_date.strftime(OUTPUT_DATE_FORMAT)
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
             if agm_date_str:
                 agm_date = datetime.fromisoformat(agm_date_str)
-                filing['agm_date'] = agm_date.strftime('%B %-d, %Y')
+                filing['agm_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
                 # for AR, the effective date is the AGM date
-                filing['effective_date'] = agm_date.strftime('%B %-d, %Y')
+                filing['effective_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
             else:
                 filing['agm_date'] = 'No AGM'
         if filing.get('correction'):
@@ -322,6 +338,7 @@ class Report:  # pylint: disable=too-few-public-methods
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
             filing['original_filing_date_time'] = LegislationDatetime.format_as_report_string(original_filing_datetime)
         filing['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
+        filing['report_date'] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
 
     def _set_directors(self, filing):
         if filing.get('changeOfDirectors'):
@@ -390,7 +407,7 @@ class Report:  # pylint: disable=too-few-public-methods
         else:
             business_json = business.json()
         business_json['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
-        business_json['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        business_json['formatted_founding_date'] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         filing.filing_json['filing']['business'] = business_json
         filing.filing_json['filing']['header']['filingId'] = filing.id
 
@@ -429,7 +446,7 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_directors(filing['registration']['parties'])
 
         start_date = datetime.fromisoformat(filing['registration']['startDate'])
-        filing['registration']['startDate'] = start_date.strftime('%B %-d, %Y')
+        filing['registration']['startDate'] = start_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_name_change_data(self, filing):
         meta_data = self._filing.meta_data or {}
@@ -443,6 +460,54 @@ class Report:  # pylint: disable=too-few-public-methods
             to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
         filing['fromLegalName'] = from_legal_name
         filing['toLegalName'] = to_legal_name
+
+    def _format_certificate_of_restoration_data(self, filing):
+        meta_data = self._filing.meta_data or {}
+        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
+        filing['toLegalName'] = meta_data.get('restoration', {}).get('toLegalName')
+        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
+            filing['restoration_expiry_date'] = datetime.fromisoformat(expiry_date).strftime(OUTPUT_DATE_FORMAT)
+        if self._filing.filing_sub_type == 'limitedRestorationToFull':
+            business_previous_restoration_expiry = \
+                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
+                                                                                       self._business.id,
+                                                                                       is_restoration_expiry_date=True)
+            restoration_expiry_datetime = LegislationDatetime.as_legislation_timezone(
+                business_previous_restoration_expiry.restoration_expiry_date)
+            filing['previous_restoration_expiry_date'] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
+
+        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+        filing['formatted_dissolution_date'] = \
+            LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
+
+    def _format_restoration_data(self, filing):
+        filing['nameRequest'] = filing['restoration'].get('nameRequest')
+        filing['parties'] = filing['restoration'].get('parties')
+        filing['offices'] = filing['restoration']['offices']
+        meta_data = self._filing.meta_data or {}
+        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
+        filing['numberedLegalNameSuffix'] = Business.BUSINESSES[self._business.legal_type]['numberedLegalNameSuffix']
+
+        if relationships := filing['restoration'].get('relationships'):
+            filing['relationshipsDesc'] = ', '.join(relationships)
+
+        approval_type = filing['restoration'].get('approvalType')
+        filing['approvalType'] = approval_type
+        if approval_type == 'courtOrder':
+            filing['courtOrder'] = filing['restoration'].get('courtOrder')
+        else:
+            filing['applicationDate'] = filing['restoration'].get('applicationDate')
+            filing['noticeDate'] = filing['restoration'].get('noticeDate')
+
+        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+        filing['dissolutionLegalName'] = business_dissolution.legal_name
+
+        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
+            expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
+            expiry_date = expiry_date.replace(minute=1)
+            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -651,8 +716,6 @@ class Report:  # pylint: disable=too-few-public-methods
         self._format_party_data(filing, prev_completed_filing)
         self._format_share_class_data(filing, prev_completed_filing)
 
-        filing['provisionsRemoved'] = filing.get('correction').get('provisionsRemoved')
-
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
@@ -821,10 +884,10 @@ class Report:  # pylint: disable=too-few-public-methods
         signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
         if resolution_date_str:
             resolution_date = datetime.fromisoformat(resolution_date_str)
-            filing['specialResolution']['resolutionDate'] = resolution_date.strftime('%B %-d, %Y')
+            filing['specialResolution']['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
         if signing_date_str:
             signing_date = datetime.fromisoformat(signing_date_str)
-            filing['specialResolution']['signingDate'] = signing_date.strftime('%B %-d, %Y')
+            filing['specialResolution']['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
@@ -835,8 +898,12 @@ class Report:  # pylint: disable=too-few-public-methods
         # Get source
         filing['source'] = self._filing.source
         # Appears in the Description section of the PDF Document Properties as Title.
-        filing['meta_title'] = '{} on {}'.format(
-            self._filing.FILINGS[self._filing.filing_type]['title'], filing['filing_date_time'])
+        if not (title := self._filing.FILINGS[self._filing.filing_type].get('title')):
+            if not (self._filing.filing_sub_type and (title := self._filing.FILINGS[self._filing.filing_type]
+                                                      .get(self._filing.filing_sub_type, {})
+                                                      .get('title'))):
+                title = self._filing.filing_type
+        filing['meta_title'] = '{} on {}'.format(title, filing['filing_date_time'])
 
         # Appears in the Description section of the PDF Document Properties as Subject.
         if self._report_key == 'noticeOfArticles':
@@ -963,6 +1030,14 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'GP': {
                 'fileName': 'firmCorrection'
             }
+        },
+        'certificateOfRestoration': {
+            'filingDescription': 'Certificate of Restoration',
+            'fileName': 'certificateOfRestoration'
+        },
+        'restoration': {
+            'filingDescription': 'Restoration Application',
+            'fileName': 'restoration'
         }
     }
 

@@ -29,6 +29,10 @@ def before_breadcrumb(crumb, hint):  # pylint: disable=unused-argument; callback
 
 # Configure Sentry
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+
+# Configure default log level to ERROR
+# Override with envirionment variable if needed
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'ERROR').upper()
 if SENTRY_DSN:
 
     SENTRY_LOGGING = LoggingIntegration(
@@ -41,14 +45,11 @@ if SENTRY_DSN:
     )
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format='%(asctime)s,%(msecs)d-%(name)s-%(levelname)s > %(module)s:%(filename)s:%(lineno)d-%(funcName)s:%(message)s',
     datefmt='%H:%M:%S',
 )
-logging.getLogger('asyncio').setLevel(logging.DEBUG)
-
-if os.getenv('DISABLE_HTTP_ACCESS_LOGS', 'False').lower() == 'true':
-    # This disables the healthz / readyz / meta logging messsages.
-    logging.getLogger('aiohttp.access').setLevel(logging.ERROR)
+logging.getLogger('asyncio').setLevel(LOG_LEVEL)
+logging.getLogger('aiohttp.access').setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('asyncio')

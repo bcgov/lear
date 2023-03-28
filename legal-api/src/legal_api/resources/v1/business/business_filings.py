@@ -44,6 +44,7 @@ from legal_api.services import (
     namex,
     queue,
 )
+from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -67,6 +68,12 @@ class ListFilingResource(Resource):
     def get(identifier, filing_id=None):  # pylint: disable=too-many-return-statements,too-many-branches;
         # fix this while refactoring this whole module
         """Return a JSON object with meta information about the Service."""
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view filings for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
+
         original_filing = str(request.args.get('original', None)).lower() == 'true'
         if identifier.startswith('T'):
             rv = CoreFiling.get(identifier, filing_id)
@@ -119,10 +126,6 @@ class ListFilingResource(Resource):
             if str(request.accept_mimetypes) == 'application/pdf':
                 report_type = request.args.get('type', None)
 
-                if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
-                    # This is required until #5302 ticket implements
-                    rv.storage._filing_json['filing']['correction']['diff'] = rv.json['filing']['correction']['diff']  # pylint: disable=protected-access; # noqa: E501;
-
                 return legal_api.reports.get_pdf(rv.storage, report_type)
             return jsonify(rv.raw if original_filing else rv.json)
 
@@ -154,13 +157,14 @@ class ListFilingResource(Resource):
     def put(identifier, filing_id):  # pylint: disable=too-many-return-statements,too-many-locals
         """Modify an incomplete filing for the business."""
         # basic checks
-        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request)
+        business = Business.find_by_identifier(identifier)
+        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request, business)
         if err_msg:
             return jsonify({'errors': [err_msg, ]}), err_code
         json_input = request.get_json()
 
         # check authorization
-        response, response_code = ListFilingResource._check_authorization(identifier, json_input)
+        response, response_code = ListFilingResource._check_authorization(identifier, json_input, business)
         if response:
             return response, response_code
 
@@ -175,11 +179,11 @@ class ListFilingResource(Resource):
 
         if not draft \
                 and not ListFilingResource._is_historical_colin_filing(json_input) \
-                and not ListFilingResource._is_before_epoch_filing(json_input, Business.find_by_identifier(identifier)):
+                and not ListFilingResource._is_before_epoch_filing(json_input, business):
             if identifier.startswith('T'):
                 business_validate = RegistrationBootstrap.find_by_identifier(identifier)
             else:
-                business_validate = Business.find_by_identifier(identifier)
+                business_validate = business
             err = validate(business_validate, json_input)
             # err_msg, err_code = ListFilingResource._validate_filing_json(request)
             if err or only_validate:
@@ -396,7 +400,7 @@ class ListFilingResource(Resource):
         return None, None
 
     @staticmethod
-    def _put_basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
+    def _put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -409,19 +413,33 @@ class ListFilingResource(Resource):
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
+        filing_type = json_input.get('filing', {}).get('header', {}).get('name')
+        if not filing_type:
+            return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
+
+        if filing_type not in [
+            Filing.FILINGS['incorporationApplication']['name'],
+            Filing.FILINGS['registration']['name']
+        ] and business is None:
+            return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
+
         return None, None
 
     @staticmethod
-    def _check_authorization(identifier, filing_json: str) -> Tuple[dict, int]:
-        action = ['edit']
+    def _check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
         filing_type = filing_json['filing']['header'].get('name')
-        if filing_type == 'courtOrder':
-            action = ['court_order']
-        elif filing_type == 'registrarsNotation':
-            action = ['registrars_notation']
-        elif filing_type == 'registrarsOrder':
-            action = ['registrars_order']
-        if not authorized(identifier, jwt, action=action):
+        filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
+
+        # While filing IA business object will be None. Setting default values in that case.
+        state = business.state if business else Business.State.ACTIVE
+        # for incorporationApplication and registration, get legalType from nameRequest
+        legal_type = business.legal_type if business else \
+            filing_json['filing'][filing_type]['nameRequest'].get('legalType')
+        admin_freeze = business.admin_freeze if business else False
+
+        if (admin_freeze and filing_type != 'adminFreeze') or \
+                not authorized(identifier, jwt, action=['edit']) or \
+                not is_allowed(state, filing_type, legal_type, jwt, filing_sub_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -604,6 +622,7 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _get_filing_types(business: Business, filing_json: dict):
+        # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -653,8 +672,13 @@ class ListFilingResource(Resource):
             })
         else:
             for k in filing_json['filing'].keys():
-                filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+                filing_sub_type = Filing.get_filings_sub_type(k, filing_json)
                 priority = priority_flag
+                if filing_sub_type:
+                    filing_type_code = \
+                        Filing.FILINGS.get(k, {}).get(filing_sub_type, {}).get('codes', {}).get(legal_type)
+                else:
+                    filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
 
                 # check if changeOfDirectors is a free filing
                 if k == 'changeOfDirectors':

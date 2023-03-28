@@ -42,9 +42,6 @@ def test_valid_ia_correction(session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    del f['filing']['correction']['diff']
-    del f['filing']['incorporationApplication']
-
     err = validate(business, f)
 
     if err:
@@ -79,9 +76,6 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     f['filing']['correction']['nameRequest']['legalName'] = new_name
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
-
-    del f['filing']['correction']['diff']
-    del f['filing']['incorporationApplication']
 
     nr_response_json = {
         'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
@@ -159,9 +153,6 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
-
-    del f['filing']['correction']['diff']
-    del f['filing']['incorporationApplication']
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []

@@ -15,6 +15,12 @@
 from enum import Enum
 
 
+class WarningType(str, Enum):
+    """Render an Enum of the Warning Types."""
+
+    MISSING_REQUIRED_BUSINESS_INFO = 'MISSING_REQUIRED_BUSINESS_INFO'
+
+
 class BusinessWarningCodes(str, Enum):
     """Render an Enum of the Business Warning Codes."""
 
@@ -63,7 +69,7 @@ class BusinessWarningCodes(str, Enum):
 
 
 class BusinessWarningReferers(str, Enum):
-    """Enum for for business warning referers."""
+    """Enum for business warning referers."""
 
     BUSINESS_OFFICE = 'BUSINESS_OFFICE'
     BUSINESS_PARTY = 'BUSINESS_PARTY'
@@ -71,7 +77,7 @@ class BusinessWarningReferers(str, Enum):
 
 
 class BusinessWarnings(str, Enum):
-    """Enum for for business warnings."""
+    """Enum for business warnings."""
 
     NO_ADDRESS = 'NO_ADDRESS'
     NO_ADDRESS_STREET = 'NO_ADDRESS_STREET'
@@ -81,7 +87,7 @@ class BusinessWarnings(str, Enum):
     NO_ADDRESS_REGION = 'NO_ADDRESS_REGION'
 
 
-WARNING_MESSAGE_BASE = {'warningType': 'MISSING_REQUIRED_BUSINESS_INFO'}
+WARNING_MESSAGE_BASE = {'warningType': WarningType.MISSING_REQUIRED_BUSINESS_INFO}
 
 
 REFERER_WARNINGS_MAPPING = {

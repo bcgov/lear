@@ -18,7 +18,7 @@ import pytest
 from legal_api.models import Business
 
 from entity_emailer.email_processors import filing_notification
-from tests.unit import prep_incorp_filing, prep_incorporation_correction_filing, prep_maintenance_filing
+from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
 
 @pytest.mark.parametrize('status', [
@@ -28,7 +28,7 @@ from tests.unit import prep_incorp_filing, prep_incorporation_correction_filing,
 def test_incorp_notification(app, session, status):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', status)
+    filing = prep_incorp_filing(session, 'BC1234567', '1', status, 'BC')
     token = 'token'
     # test processor
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -45,7 +45,12 @@ def test_incorp_notification(app, session, status):
         assert email['content']['attachments'] == []
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2] == {'identifier': 'BC1234567'}
+        if status == 'PAID':
+            assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
+        else:
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+
+        assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
         assert mock_get_pdfs.call_args[0][3] == filing
 
 
@@ -69,72 +74,45 @@ def test_numbered_incorp_notification(app, session, legal_type):
         assert Business.BUSINESSES[legal_type]['numberedDescription'] in email['content']['body']
 
 
-@pytest.mark.parametrize(['status', 'has_name_change_with_new_nr'], [
-    ('PAID', True),
-    ('COMPLETED', True),
-    ('COMPLETED', False),
+@pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
+    ('PAID', 'annualReport', None),
+    ('PAID', 'changeOfAddress', None),
+    ('PAID', 'changeOfDirectors', None),
+    ('PAID', 'alteration', None),
+    ('COMPLETED', 'changeOfAddress', None),
+    ('COMPLETED', 'changeOfDirectors', None),
+    ('COMPLETED', 'alteration', None),
+    ('COMPLETED', 'alteration', 'staff')
 ])
-def test_correction_incorporation_notification(app, session, status, has_name_change_with_new_nr):
+def test_maintenance_notification(app, session, mocker, status, filing_type, submitter_role):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    original_filing = prep_incorp_filing(session, 'BC1234567', '1', status)
-    token = 'token'
-    business = Business.find_by_identifier('BC1234567')
-    filing = prep_incorporation_correction_filing(session, business, original_filing.id, '1', status,
-                                                  has_name_change_with_new_nr)
-    # test processor
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
-        if status == 'PAID':
-            assert 'comp_party@email.com' not in email['recipients']
-            assert email['content']['subject'] == 'Confirmation of Correction of Incorporation Application'
-            assert 'Incorporation Application (Corrected)' in email['content']['body']
-        else:
-            assert email['content']['subject'] == \
-                'Incorporation Application Correction Documents from the Business Registry'
-
-        assert 'test@test.com' in email['recipients']
-        assert email['content']['body']
-        if has_name_change_with_new_nr:
-            assert 'Incorporation Certificate (Corrected)' in email['content']['body']
-        else:
-            assert 'Incorporation Certificate (Corrected)' not in email['content']['body']
-        assert email['content']['attachments'] == []
-        assert mock_get_pdfs.call_args[0][0] == status
-        assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2] == {'identifier': 'BC1234567'}
-        assert mock_get_pdfs.call_args[0][3] == filing
-
-
-@pytest.mark.parametrize(['status', 'filing_type'], [
-    ('PAID', 'annualReport'),
-    ('PAID', 'changeOfAddress'),
-    ('PAID', 'changeOfDirectors'),
-    ('PAID', 'alteration'),
-    ('COMPLETED', 'changeOfAddress'),
-    ('COMPLETED', 'changeOfDirectors'),
-    ('COMPLETED', 'alteration')
-])
-def test_maintenance_notification(app, session, status, filing_type):
-    """Assert that the legal name is changed."""
-    # setup filing + business for email
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, submitter_role=submitter_role)
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_user_email_from_auth',
+        return_value='user@email.com')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
                 as mock_get_recipients:
             email = filing_notification.process(
                 {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
 
+            if filing_type == 'alteration':
+                if submitter_role:
+                    assert f'{submitter_role}@email.com' in email['recipients']
+                else:
+                    assert 'user@email.com' in email['recipients']
+
             assert 'test@test.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
             assert mock_get_pdfs.call_args[0][0] == status
             assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2] == \
-                {'identifier': 'BC1234567', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': 'test business'}
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
+            assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
             assert mock_get_pdfs.call_args[0][3] == filing
             assert mock_get_recipients.call_args[0][0] == status
             assert mock_get_recipients.call_args[0][1] == filing.filing_json

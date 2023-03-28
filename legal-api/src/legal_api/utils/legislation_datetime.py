@@ -50,6 +50,15 @@ class LegislationDatetime():
         )
 
     @staticmethod
+    def as_legislation_timezone_from_date_str(date_string: str) -> datetime:
+        """Return a date time object using provided date_string in legislation timezone.
+
+        Note: it is assumed that the date_string provided is already in legislation timezone.
+        """
+        legislation_tz = pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))
+        return datetime.fromisoformat(date_string).replace(tzinfo=legislation_tz)
+
+    @staticmethod
     def as_utc_timezone(date_time: datetime) -> datetime:
         """Return a datetime adjusted to the GMT timezone (aka UTC)."""
         return date_time.astimezone(pytz.timezone('GMT'))

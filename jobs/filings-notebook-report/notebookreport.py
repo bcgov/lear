@@ -4,7 +4,6 @@ import ast
 import fnmatch
 import logging
 import os
-import shutil
 import smtplib
 import sys
 import time
@@ -85,7 +84,7 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
             recipients = os.getenv('BC_STATS_MONTHLY_REPORT_RECIPIENTS', '')
 
         # Add body to email
-        message.attach(MIMEText('Please see attached.', 'plain'))
+        message.attach(MIMEText('Please see the attachment(s).', 'plain'))
 
         # Open file in binary mode
         with open(data_directory+filename, 'rb') as attachment:

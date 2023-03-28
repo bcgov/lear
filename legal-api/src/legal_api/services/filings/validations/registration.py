@@ -44,6 +44,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, 'registration'))
+    msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
@@ -62,6 +63,16 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
     business_type_path = '/filing/registration/businessType'
     if legal_type == Business.LegalTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
         msg.append({'error': 'Business Type is required.', 'path': business_type_path})
+
+    return msg
+
+
+def validate_tax_id(filing: Dict) -> list:
+    """Validate tax id."""
+    msg = []
+    tax_id_path = '/filing/registration/business/taxId'
+    if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == 15:
+        msg.append({'error': 'Can only provide BN9 for SP/GP registration.', 'path': tax_id_path})
 
     return msg
 

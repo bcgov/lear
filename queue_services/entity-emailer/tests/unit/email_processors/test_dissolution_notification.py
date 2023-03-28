@@ -64,8 +64,9 @@ def test_dissolution_notification(app, session, status, legal_type, submitter_ro
                 assert email['content']['attachments'] == []
                 assert mock_get_pdfs.call_args[0][0] == status
                 assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2] == \
-                    {'identifier': 'BC1234567', 'legalName': legal_name, 'legalType': legal_type}
+                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
+                assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
                 assert mock_get_pdfs.call_args[0][3] == filing
 
 
@@ -89,7 +90,7 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                     {'filingId': filing.id, 'type': 'dissolution', 'option': status}, token)
                 if status == 'PAID':
                     assert email['content']['subject'] == legal_name + \
-                           ' - Confirmation of Filing from the Business Registry'
+                        ' - Confirmation of Filing from the Business Registry'
                 else:
                     assert email['content']['subject'] == \
                         legal_name + ' - Dissolution Documents from the Business Registry'
@@ -104,6 +105,7 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 assert email['content']['attachments'] == []
                 assert mock_get_pdfs.call_args[0][0] == status
                 assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2] == \
-                    {'identifier': 'FM1234567', 'legalName': legal_name, 'legalType': legal_type}
+                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'FM1234567'
+                assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
+                assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
                 assert mock_get_pdfs.call_args[0][3] == filing

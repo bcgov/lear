@@ -16,14 +16,21 @@
 
 Test-Suite to ensure that the /businesses../addresses endpoint is working as expected.
 """
+import pytest
 from http import HTTPStatus
 
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, Office, factory_business
 from tests.unit.services.utils import create_header
 
 
-def test_get_business_addresses(session, client, jwt):
+@pytest.mark.parametrize('test_name,role', [
+    ('public-user', PUBLIC_USER),
+    ('account-identity', ACCOUNT_IDENTITY),
+    ('staff', STAFF_ROLE),
+    ('system', SYSTEM_ROLE)
+])
+def test_get_business_addresses(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business addresses are returned."""
     # setup
     identifier = 'CP7654321'
@@ -36,11 +43,15 @@ def test_get_business_addresses(session, client, jwt):
     business.offices.append(office)
     business.save()
 
+    # mock response from auth to give view access (not needed if staff / system)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier, **{'Accept-Version':'v1'})
+                    headers=create_header(jwt, [role], identifier, **{'Accept-Version': 'v1'})
                     )
-    # check
+
+    # check response
     assert rv.status_code == HTTPStatus.OK
     assert 'registeredOffice' in rv.json
     assert 'mailingAddress' in rv.json['registeredOffice']
@@ -196,3 +207,21 @@ def test_get_addresses_invalid_type(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json == {'message': f'{address_type} not a valid address type'}
+
+
+def test_get_addresses_unauthorized(app, session, client, jwt, requests_mock):
+    """Assert that business addresses is not returned for an unauthorized user."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.save()
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/addresses',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json == {'message': f'You are not authorized to view addresses for {identifier}.'}

@@ -92,6 +92,11 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Run checks/updates before adding/changing the share class."""
     share_class = target
 
+    # skip this status updater if the flag is set
+    # Scenario: used for COLIN corp data migration as there is data that do not pass the following checks
+    if hasattr(share_class, 'skip_share_class_listener') and share_class.skip_share_class_listener:
+        return
+
     if share_class.max_share_flag:
         if not share_class.max_shares:
             raise BusinessException(

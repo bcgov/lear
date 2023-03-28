@@ -82,8 +82,11 @@ def company_name_validation(filing):
         nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)
 
+        error_msg = """The name type associated with the name request number entered cannot be used for this
+                       transaction type."""
         if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECV'):
-            msg.append({'error': babel('Alteration only available for Change of Name Name requests.'), 'path': nr_path})
+            msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
+                        'path': nr_path})
 
         if not validation_result['is_consumable']:
             msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})

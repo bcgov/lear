@@ -24,7 +24,6 @@ from flask import current_app
 from jinja2 import Template
 from legal_api.services import NameXService
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sentry_sdk import capture_message
 
 from entity_emailer.email_processors import substitute_template_parts
 
@@ -53,7 +52,6 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
         logger.error('Failed to get nr info for name request: %s', nr_number)
-        capture_message(f'Email Queue: nr_id={nr_number}, error=receipt generation', level='error')
         return {}
 
     nr_data = nr_response.json()

@@ -33,7 +33,7 @@ from stan.aio.client import Client as STAN  # noqa N814; by convention the name 
 from entity_queue_common.service_utils import error_cb, logger, signal_handler
 
 
-async def run(loop, token):  # pylint: disable=too-many-locals
+async def run(loop, token, corp_type_code):  # pylint: disable=too-many-locals
     """Run the main application loop for the service.
 
     This runs the main top level service functions for working with the Queue.
@@ -81,7 +81,9 @@ async def run(loop, token):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        payload = {'paymentToken': {'id': token, 'statusCode': 'COMPLETED'}}
+        payload = {'paymentToken': {'id': token,
+                                    'statusCode': 'COMPLETED',
+                                    'corpTypeCode': corp_type_code}}
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
 
@@ -92,17 +94,19 @@ async def run(loop, token):  # pylint: disable=too-many-locals
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hp:", ["pid=", ])
+        opts, args = getopt.getopt(sys.argv[1:], 'p:c:', ['pid=', 'ct='])
     except getopt.GetoptError:
-        print('q_cli.py -p <payment_invoice_id>')
+        print('q_cli.py -p <payment_invoice_id> -c <corp_type_code>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print('q_cli.py -p <payment_invoice_id>')
+            print('q_cli.py -p <payment_invoice_id> -c <corp_type_code>')
             sys.exit()
         elif opt in ("-p", "--pid"):
             pid = arg
+        elif opt in ("-c", "--ct"):
+            ct = arg
 
-    print('publish:', pid)
+    print('publish:', pid, ct)
     event_loop = asyncio.get_event_loop()
-    event_loop.run_until_complete(run(event_loop, pid))
+    event_loop.run_until_complete(run(event_loop, pid, ct))

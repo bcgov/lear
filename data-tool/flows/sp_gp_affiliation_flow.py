@@ -5,11 +5,8 @@ import prefect
 import requests
 from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
-from prefect import task, Flow, unmapped
-from prefect.client import Client
-from prefect.engine.state import Skipped
-from prefect.executors import LocalDaskExecutor
-from prefect.schedules import IntervalSchedule
+from prefect import task, Flow, unmapped, flow
+from prefect.task_runners import SequentialTaskRunner
 
 from config import get_named_config
 from common.affiliation_queries import get_unaffiliated_firms_query
@@ -18,13 +15,25 @@ from custom_filer.filing_processors.filing_components import business_profile
 from common.affiliation_processing_status_service import AffiliationProcessingStatusService as ProcessingStatusService, \
     ProcessingStatuses
 from common.custom_exceptions import CustomUnsupportedTypeException, CustomException
-from tasks.task_utils import ColinInitTask, LearInitTask
-from sqlalchemy import engine, text
+from sqlalchemy import create_engine, engine, text
+from legal_api.models import db
+from flask import Flask
 
 
-colin_init_task = ColinInitTask(name='init_colin')
-lear_init_task = LearInitTask(name='init_lear', flask_app_name='lear-affiliate', nout=2)
 
+@task(name='init_colin')
+def colin_init(config):
+    engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
+    return engine
+
+
+@task(name='init_lear')
+def lear_init(config):
+    FLASK_APP = Flask('init_lear')
+    FLASK_APP.config.from_object(config)
+    db.init_app(FLASK_APP)
+    FLASK_APP.app_context().push()
+    return FLASK_APP, db
 
 @task
 def get_config():
@@ -34,7 +43,7 @@ def get_config():
 
 @task(name='get_unaffiliated_firms')
 def get_unaffiliated_firms(config, db_engine: engine):
-    logger = prefect.context.get("logger")
+    logger = prefect.get_run_logger()
 
     query = get_unaffiliated_firms_query(config.DATA_LOAD_ENV)
     sql_text = text(query)
@@ -70,7 +79,7 @@ def transform_unaffiliated_firm_data(unaffiliated_firm: dict):
 
 @task(name='affiliate_firm_data')
 def affiliate_firm_data(config, app, colin_db_engine: engine, db_lear, unaffiliated_firm: dict):
-    logger = prefect.context.get("logger")
+    logger = prefect.get_run_logger()
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
 
     with app.app_context():
@@ -128,55 +137,12 @@ def affiliate_firm_data(config, app, colin_db_engine: engine, db_lear, unaffilia
 
 
 
-def skip_if_running_handler(obj, old_state, new_state):  # pylint: disable=unused-argument
-    if new_state.is_running():
-        client = Client()
-        flow_run_query = """
-            query($flow_id: uuid) {
-              flow_run(
-                where: {
-                    _and: [
-                        {flow_id: {_eq: $flow_id}},
-                        {state: {_eq: "Running"}}
-                    ]
-                }
-                limit: 1
-              ) {
-                name
-                state
-                start_time
-              }
-            }
-        """
-        response = client.graphql(
-            query=flow_run_query, variables=dict(flow_id=prefect.context.flow_id)
-        )
-        active_flow_runs = response["data"]["flow_run"]
-        if active_flow_runs:
-            logger = prefect.context.get("logger")
-            message = "Skipping this flow run since there is already a flow run in progress"
-            logger.info(message)
-            print(f'{message}')
-            return Skipped(message)
-    return new_state
-
-
-# Note: uncomment to run flow with prefect server as long running task with multiple runs
-# now = datetime.utcnow()
-# schedule = IntervalSchedule(interval=timedelta(minutes=1), start_date=now)
-#
-# with Flow(name="SP-GP-Affiliation",
-#           schedule=schedule,
-#           executor=LocalDaskExecutor(scheduler="threads"),
-#            state_handlers=[skip_if_running_handler]) as f:
-#           # state_handlers=[]) as f:
-
-with Flow("SP-GP-Affiliation", executor=LocalDaskExecutor(scheduler="threads") ) as f:
-
+@flow(name="SP-GP-Affiliation", task_runner=SequentialTaskRunner())
+def affiliate_flow():
     # setup
     config = get_config()
-    db_colin_engine = colin_init_task(config)
-    FLASK_APP, db_lear = lear_init_task(config)
+    db_colin_engine = colin_init(config)
+    FLASK_APP, db_lear = lear_init(config)
 
     # get list unaffiliated firms
     unaffiliated_firms = get_unaffiliated_firms(config, db_colin_engine)
@@ -185,14 +151,15 @@ with Flow("SP-GP-Affiliation", executor=LocalDaskExecutor(scheduler="threads") )
     cleaned_unaffiliated_firm_data = clean_unaffiliated_firm_data.map(unaffiliated_firms)
 
     # transform unaffiliated firm data into required form
-    transform_unaffiliated_firm_data = transform_unaffiliated_firm_data.map(cleaned_unaffiliated_firm_data)
+    transformed_unaffiliated_firm_data = transform_unaffiliated_firm_data.map(cleaned_unaffiliated_firm_data)
 
     # affiliate firms and push contact info where req'd
     affiliate_firm_data.map(unmapped(config),
                         unmapped(FLASK_APP),
                         unmapped(db_colin_engine),
                         unmapped(db_lear),
-                        transform_unaffiliated_firm_data)
+                        transformed_unaffiliated_firm_data)
 
 
-result = f.run()
+if __name__ == "__main__":
+    affiliate_flow()
