@@ -51,11 +51,10 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC']:
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
-        if not any('incorporationApplication' in x for x in correction_filing.legal_filings()):
-            # set correction filing to PENDING_CORRECTION, for manual intervention
-            # - include flag so that listener in Filing model does not change state automatically to COMPLETE
-            correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
-            setattr(correction_filing, 'skip_status_listener', True)
+        # set correction filing to PENDING_CORRECTION, for manual intervention
+        # - include flag so that listener in Filing model does not change state automatically to COMPLETE
+        correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
+        setattr(correction_filing, 'skip_status_listener', True)
 
     original_filing.save_to_session()
     return correction_filing

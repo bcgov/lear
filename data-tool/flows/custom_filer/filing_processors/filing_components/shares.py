@@ -90,6 +90,8 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         currency=share_class_info.get('currency', None),
         special_rights_flag=share_class_info['hasRightsOrRestrictions']
     )
+    share_class.skip_share_class_listener = True
+
     share_class.series = []
     for series in share_class_info['series']:
         share_series = ShareSeries(
@@ -99,6 +101,7 @@ def create_share_class(share_class_info: dict) -> ShareClass:
             max_shares=series.get('maxNumberOfShares', None),
             special_rights_flag=series['hasRightsOrRestrictions']
         )
+        share_series.skip_share_series_listener = True
         share_class.series.append(share_series)
 
     return share_class

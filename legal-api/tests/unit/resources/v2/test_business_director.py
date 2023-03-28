@@ -17,15 +17,22 @@
 Test-Suite to ensure that the /businesses../directors endpoint is working as expected.
 """
 import datetime
+import pytest
 from http import HTTPStatus
 
 from legal_api.models import Business
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
-def test_get_business_directors(session, client, jwt):
+@pytest.mark.parametrize('test_name,role', [
+    ('public-user', PUBLIC_USER),
+    ('account-identity', ACCOUNT_IDENTITY),
+    ('staff', STAFF_ROLE),
+    ('system', SYSTEM_ROLE)
+])
+def test_get_business_directors(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business directors are returned."""
     # setup
     identifier = 'CP7654321'
@@ -48,10 +55,13 @@ def test_get_business_directors(session, client, jwt):
     )
     business.party_roles.append(party_role)
     business.save()
+    
+    # mock response from auth to give view access (not needed if staff / system)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/directors',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    headers=create_header(jwt, [role], identifier)
                     )
     # check
     assert rv.status_code == HTTPStatus.OK
@@ -271,3 +281,21 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
     assert 'directors' in rv.json
     assert rv.json['directors'][0]['deliveryAddress']['addressCity'] == 'Test Delivery City'
     assert 'mailingAddress' not in rv.json['directors'][0]
+
+
+def test_directors_unauthorized(app, session, client, jwt, requests_mock):
+    """Assert that directors are not returned for an unauthorized user."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.save()
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/directors',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier)
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json == {'message': f'You are not authorized to view directors for {identifier}.'}

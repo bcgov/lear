@@ -41,14 +41,13 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
-        if name_request_json.get('legalName'):
-            from_legal_name = business.legal_name
-            to_legal_name = name_request_json.get('legalName', None)
-            if to_legal_name and from_legal_name != to_legal_name:
-                business.legal_name = to_legal_name
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'fromLegalName': from_legal_name,
-                                             'toLegalName': business.legal_name}}
+        from_legal_name = business.legal_name
+        business_info.set_legal_name(business.identifier, business, name_request_json)
+        if from_legal_name != business.legal_name:
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromLegalName': from_legal_name,
+                                         'toLegalName': business.legal_name}}
+
     # Update Nature of Business
     if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
         to_naics_code = naics.get('naicsCode')
@@ -66,14 +65,15 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
         aliases.update_aliases(business, alias_json)
 
-    # Update business office if present
+    # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(correction_filing, '/correction/offices/businessOffice')
-        for updated_address in business_office_json.values():
-            if updated_address.get('id', None):
-                address = Address.find_by_id(updated_address.get('id'))
-                if address:
-                    update_address(address, updated_address)
+        offices_structure = dpath.util.get(correction_filing, '/correction/offices')
+        for addresses in offices_structure.values():
+            for updated_address in addresses.values():
+                if updated_address.get('id', None):
+                    address = Address.find_by_id(updated_address.get('id'))
+                    if address:
+                        update_address(address, updated_address)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
@@ -95,12 +95,6 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
         shares.update_share_structure_correction(business, share_structure)
-
-    # update provisionsRemoved, if any
-    with suppress(IndexError, KeyError, TypeError):
-        provisions_removed = dpath.util.get(correction_filing, '/correction/provisionsRemoved')
-        if provisions_removed is not None:
-            business.restriction_ind = not provisions_removed
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

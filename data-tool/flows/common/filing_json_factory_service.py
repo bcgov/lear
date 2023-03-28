@@ -1,6 +1,6 @@
 from .filing_base_json import get_base_registration_filing_json, get_base_change_registration_filing_json, \
     get_base_dissolution_filing_json, get_base_conversion_filing_json, get_base_put_back_on_filing_json, \
-    get_base_correction_filing_json
+    get_base_correction_filing_json, get_base_ia_filing_json
 from .filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType, get_effective_date_str
 
@@ -30,7 +30,9 @@ class FilingJsonFactoryService:
     def get_filing_json(self):
         filing_json = None
 
-        if self._target_lear_filing_type == 'registration':
+        if self._target_lear_filing_type == 'incorporationApplication':
+            filing_json = self.get_ia_filing_json()
+        elif self._target_lear_filing_type == 'registration':
             filing_json = self.get_registration_filing_json()
         elif self._target_lear_filing_type == 'changeOfRegistration':
             filing_json = self.get_change_registration_filing_json()
@@ -44,6 +46,23 @@ class FilingJsonFactoryService:
             filing_json = self.get_put_back_on_filing_json()
 
         return filing_json
+
+
+    def get_ia_filing_json(self):
+        result = self.build_ia_filing()
+        return result
+
+
+    def build_ia_filing(self):
+        num_parties = len(self._filing_data['corp_parties'])
+        # num_name_translations = len(self._filing_data['corp_parties'])
+        # filing_root_dict = get_base_ia_filing_json(num_parties, num_name_translations)
+        filing_root_dict = get_base_ia_filing_json(num_parties)
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_ia(filing_root_dict)
+        return filing_root_dict
 
 
     def get_registration_filing_json(self):
@@ -147,6 +166,20 @@ class FilingJsonFactoryService:
         business_dict['legalType'] = self._filing_data['c_corp_type_cd']
         business_dict['identifier'] = self._filing_data['c_corp_num']
         business_dict['foundingDate'] = str(self._filing_data['c_recognition_dts_pacific'])
+
+
+    def populate_ia(self, filing_root_dict: dict):
+        ia_dict = filing_root_dict['filing']['incorporationApplication']
+        ia_dict['businessType'] = self._filing_data['c_corp_type_cd']
+
+        self.populate_filing_business(ia_dict)
+        self.populate_offices(ia_dict)
+        self.populate_parties(ia_dict)
+        self.populate_nr(ia_dict)
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(ia_dict)
+        else:
+            del ia_dict['contactPoint']
 
 
     def populate_registration(self, filing_root_dict: dict):

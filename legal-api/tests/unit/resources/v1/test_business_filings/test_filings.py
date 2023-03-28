@@ -250,7 +250,7 @@ def test_post_filing_no_business(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_post_empty_annual_report_to_a_business(session, client, jwt):
@@ -354,8 +354,8 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     assert not rv.json.get('errors')
 
 
-def test_post_only_validate_error_ar(session, client, jwt):
-    """Assert that a unpaid filing can be posted."""
+def test_validate_filing_json_for_filing_type(session, client, jwt):
+    """Assert that filing type is in filing json."""
     import copy
     identifier = 'CP7654321'
     factory_business(identifier)
@@ -365,12 +365,12 @@ def test_post_only_validate_error_ar(session, client, jwt):
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings?only_validate=true',
                      json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     headers=create_header(jwt, [BASIC_USER], identifier)
                      )
 
-    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
     assert rv.json.get('errors')
-    assert rv.json['errors'][0]['error'] == "'name' is a required property"
+    assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
 
 
 def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
@@ -862,21 +862,15 @@ GENERIC_DELETION_LOCKED_MESSAGE: Final = 'This filing cannot be deleted at this 
 def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, deletion_locked, message):
     """Assert that filing cannot be deleted with deletion_locked flag."""
     identifier = 'BC7654321'
-    factory_business(identifier, entity_type=legal_type.value)
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings?draft=true',
-                     json=ALTERATION_FILING_TEMPLATE,
-                     headers=headers
-                     )
+    business = factory_business(identifier, entity_type=legal_type.value)
+    filing = factory_filing(business, ALTERATION_FILING_TEMPLATE, filing_type='alteration')
 
-    assert rv.status_code == HTTPStatus.CREATED
-    filing_id = rv.json['filing']['header']['filingId']
     if deletion_locked:
-        filing = Filing.find_by_id(filing_id)
         filing.deletion_locked = True
         filing.save()
 
-    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filing_id}', headers=headers)
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.delete(f'/api/v1/businesses/{identifier}/filings/{filing.id}', headers=headers)
     if deletion_locked:
         assert rv.status_code == HTTPStatus.UNAUTHORIZED
         assert rv.json.get('message') == message
@@ -959,7 +953,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'error': 'A valid business and filing are required.'}
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):

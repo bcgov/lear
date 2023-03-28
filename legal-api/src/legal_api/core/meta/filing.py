@@ -66,6 +66,12 @@ class FilingTitles(str, Enum):
 
 
 FILINGS: Final = {
+    'adminFreeze': {
+        'name': 'adminFreeze',
+        'title': 'Admin Freeze',
+        'displayName': 'Admin Freeze',
+        'code': 'NOFEE'
+    },
     'affidavit': {
         'name': 'affidavit',
         'title': 'Affidavit',
@@ -146,6 +152,32 @@ FILINGS: Final = {
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
     },
+    'changeOfRegistration': {
+        'name': 'changeOfRegistration',
+        'title': 'Change of Registration',
+        'displayName': {
+            'SP': 'Change of Registration Application',
+            'GP': 'Change of Registration Application'
+        },
+        'codes': {
+            'SP': 'FMCHANGE',
+            'GP': 'FMCHANGE'
+        },
+        'additional': [
+            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
+        ]
+    },
+    'consentContinuationOut': {
+        'name': 'consentContinuationOut',
+        'title': 'Consent Continuation Out',
+        'displayName': '6-Month Consent to Continue Out',
+        'codes': {
+            'BC': 'CONTO',
+            'BEN': 'CONTO',
+            'ULC': 'CONTO',
+            'CC': 'CONTO'
+        }
+    },
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
@@ -162,15 +194,7 @@ FILINGS: Final = {
     'correction': {
         'name': 'correction',
         'title': 'Correction',
-        'displayName': {
-            'BEN': 'Correction',
-            'BC': 'Correction',
-            'ULC': 'Correction',
-            'CC': 'Correction',
-            'CP': 'Correction',
-            'SP': 'Register Correction Application',
-            'GP': 'Register Correction Application',
-        },
+        'displayName': 'Register Correction Application',
         'codes': {
             'BEN': 'CRCTN',
             'BC': 'CRCTN',
@@ -241,6 +265,12 @@ FILINGS: Final = {
             {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
         ]
     },
+    'putBackOn': {
+        'name': 'putBackOn',
+        'title': 'Put Back On',
+        'displayName': 'Correction - Put Back On',
+        'code': 'NOFEE'
+    },
     'registrarsNotation': {
         'name': 'registrarsNotation',
         'title': 'Registrars Notation',
@@ -265,6 +295,56 @@ FILINGS: Final = {
             'GP': 'FRREG'
         },
     },
+    'restoration': {
+        'name': 'restoration',
+        'additional': [
+            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificateOfRestoration']},
+        ],
+        'fullRestoration': {
+            'name': 'fullRestoration',
+            'title': 'Full Restoration',
+            'displayName': 'Full Restoration Application',
+            'codes': {
+                'BC': 'RESTF',
+                'BEN': 'RESTF',
+                'ULC': 'RESTF',
+                'CC': 'RESTF'
+            }
+        },
+        'limitedRestoration': {
+            'name': 'limitedRestoration',
+            'title': 'Limited Restoration',
+            'displayName': 'Limited Restoration Application',
+            'codes': {
+                'BC': 'RESTL',
+                'BEN': 'RESTL',
+                'ULC': 'RESTL',
+                'CC': 'RESTL'
+            }
+        },
+        'limitedRestorationExtension': {
+            'name': 'limitedRestorationExtension',
+            'title': 'Limited Restoration Extension',
+            'displayName': 'Limited Restoration Extension Application',
+            'codes': {
+                'BC': 'RESXL',
+                'BEN': 'RESXL',
+                'ULC': 'RESXL',
+                'CC': 'RESXL'
+            }
+        },
+        'limitedRestorationToFull': {
+            'name': 'limitedRestorationToFull',
+            'title': 'Limited Restoration To Full',
+            'displayName': 'Conversion to Full Restoration Application',
+            'codes': {
+                'BC': 'RESXF',
+                'BEN': 'RESXF',
+                'ULC': 'RESXF',
+                'CC': 'RESXF'
+            }
+        }
+    },
     'specialResolution': {
         'name': 'specialResolution',
         'title': 'Special Resolution',
@@ -286,27 +366,6 @@ FILINGS: Final = {
         'additional': [
             {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
         ]
-    },
-    'changeOfRegistration': {
-        'name': 'changeOfRegistration',
-        'title': 'Change of Registration',
-        'displayName': {
-            'SP': 'Change of Registration Application',
-            'GP': 'Change of Registration Application'
-        },
-        'codes': {
-            'SP': 'FMCHANGE',
-            'GP': 'FMCHANGE'
-        },
-        'additional': [
-            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
-        ]
-    },
-    'putBackOn': {
-        'name': 'putBackOn',
-        'title': 'Put Back On',
-        'displayName': 'Correction - Put Back On',
-        'code': 'NOFEE'
     }
 }
 
@@ -315,13 +374,15 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(business: Business, filing: FilingStorage, full_name: bool = True) -> Optional[str]:
+    def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
-            return ' '.join(word.capitalize()
-                            for word in
-                            re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
+            if not (filing.filing_sub_type and
+                    (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get('displayName'))):
+                return ' '.join(word.capitalize()
+                                for word in
+                                re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
 
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
@@ -339,12 +400,22 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         elif filing.filing_type in ('correction') and filing.meta_data:
             with suppress(Exception):
-                if business_revision.legal_type not in ['SP', 'GP']:
-                    name = f'{name} - {FilingMeta.display_name(business_revision, filing.children[0], False)}'
+                # Depending on filing_json to get corrected filing until changing the parent_filing logic.
+                # Now staff can correct a filing multiple time and parent_filing in the original filing will be
+                # overriden with the latest correction, which cause loosing the previous correction link.
+                corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+                corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
+                if corrected_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
+                    corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
+                    name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
                 name = 'Administrative Dissolution'
+
+        elif filing.filing_type in ('adminFreeze') and filing.meta_data:
+            if filing.meta_data['adminFreeze'].get('freeze') is False:
+                name = 'Admin Unfreeze'
 
         return name
 
@@ -372,9 +443,19 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfNameChange')
         elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
             outputs.add('certificateOfNameChange')
-        elif filing.filing_type == 'correction':
-            if not filing.meta_data.get('correction', {}).get('toLegalName') and 'certificate' in outputs:
-                # For IA correction, certificate will be populated in get_all_outputs since
-                # legalFilings list contains correction and incorporationApplication
-                # and it should be removed if correction does not contain name change.
-                outputs.remove('certificate')
+
+    @staticmethod
+    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
+        """Return display name for filing."""
+        filing_dict = FILINGS.get(filing_type, None)
+
+        if filing_sub_type:
+            display_name = filing_dict[filing_sub_type]['displayName']
+            if isinstance(display_name, dict):
+                display_name = display_name.get(legal_type)
+        else:
+            display_name = filing_dict['displayName']
+            if isinstance(display_name, dict):
+                display_name = display_name.get(legal_type)
+
+        return display_name

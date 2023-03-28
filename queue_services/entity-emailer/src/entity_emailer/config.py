@@ -60,8 +60,6 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    # monitoring
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
     # urls
     DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
     NOTIFY_API_URL = os.getenv('NOTIFY_API_URL', None)

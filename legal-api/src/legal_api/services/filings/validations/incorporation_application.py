@@ -48,9 +48,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    err = validate_offices(incorporation_json)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_offices(incorporation_json))
 
     err = validate_roles(incorporation_json, legal_type)
     if err:
@@ -82,45 +80,56 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
-    msg.extend(validate_ia_court_order(incorporation_json, legal_type))
+    msg.extend(validate_ia_court_order(incorporation_json))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
 
-def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> Error:
+def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> list:
     """Validate the office addresses of the specified corp filing type."""
     offices_array = filing_json['filing'][filing_type]['offices']
     addresses = offices_array
     msg = []
 
     for item in addresses.keys():
-        for k, v in addresses[item].items():
-            region = v.get('addressRegion')
-            country = v['addressCountry']
+        if item in ('registeredOffice', 'recordsOffice'):
+            msg.extend(_validate_address(addresses, item, filing_type))
+        else:
+            msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
+                        'path': f'/filing/{filing_type}/offices'})
 
-            if region != 'BC':
-                path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
-                    item, k
-                )
-                msg.append({'error': "Address Region must be 'BC'.",
-                            'path': path})
+    return msg
 
-            try:
-                country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                if country != 'CA':
-                    raise LookupError
-            except LookupError:
-                err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
-                    item, k
-                )
-                msg.append({'error': "Address Country must be 'CA'.",
-                            'path': err_path})
-    if msg:
-        return msg
 
-    return None
+def _validate_address(addresses: dict, address_key: str, filing_type: str) -> list:
+    """Validate the addresses of the specified corp filing type."""
+    msg = []
+
+    for k, v in addresses[address_key].items():
+        region = v.get('addressRegion')
+        country = v['addressCountry']
+
+        if region != 'BC':
+            path = f'/filing/{filing_type}/offices/%s/%s/addressRegion' % (
+                address_key, k
+            )
+            msg.append({'error': "Address Region must be 'BC'.",
+                        'path': path})
+
+        try:
+            country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+            if country != 'CA':
+                raise LookupError
+        except LookupError:
+            err_path = f'/filing/{filing_type}/offices/%s/%s/addressCountry' % (
+                address_key, k
+            )
+            msg.append({'error': "Address Country must be 'CA'.",
+                        'path': err_path})
+
+    return msg
 
 
 # pylint: disable=too-many-branches
@@ -384,18 +393,11 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
     return None
 
 
-def validate_ia_court_order(filing: dict, legal_type: str) -> list:
+def validate_ia_court_order(filing: dict) -> list:
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('incorporationApplication', {}).get('courtOrder', None):
         court_order_path: Final = '/filing/incorporationApplication/courtOrder'
-        if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
-            err = validate_court_order(court_order_path, court_order)
-            if err:
-                return err
-        else:
-            return [{
-                'error': f'({legal_type}) incorporationApplication does not support court order.',
-                'path': court_order_path
-            }]
-
+        err = validate_court_order(court_order_path, court_order)
+        if err:
+            return err
     return []

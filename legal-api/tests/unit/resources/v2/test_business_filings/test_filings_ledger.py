@@ -37,6 +37,7 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
+    RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
@@ -148,8 +149,8 @@ def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling'
     return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
 
 
-def ledger_element_setup_filing(business, filing_name, filing_date):
-    filing = copy.deepcopy(FILING_TEMPLATE)
+def ledger_element_setup_filing(business, filing_name, filing_date, filing_dict=None):
+    filing = filing_dict or copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = filing_name
     f = factory_completed_filing(business, filing, filing_date=filing_date)
     return f
@@ -291,6 +292,43 @@ def test_ledger_display_alteration_report(session, client, jwt):
     assert filing_json['displayName'] == 'Alteration'
 
 
+@pytest.mark.parametrize('restoration_type,expected_display_name', [
+    ('fullRestoration', 'Full Restoration Application'),
+    ('limitedRestoration', 'Limited Restoration Application'),
+    ('limitedRestorationExtension', 'Limited Restoration Extension Application'),
+    ('limitedRestorationToFull', 'Conversion to Full Restoration Application'),
+])
+def test_ledger_display_restoration(session, client, jwt, restoration_type, expected_display_name):
+    """Assert that the ledger returns the correct names of the four restoration types."""
+    # setup
+    identifier = 'BC1234567'
+    founding_date = datetime.utcnow()
+    filing_date = founding_date
+    filing_name = 'restoration'
+    business_name = 'Skinners Fine Saves'
+
+    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
+    business.legal_name = business_name
+    business.save()
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing'].pop('business')
+    filing['filing']['header']['name'] = filing_name
+    filing['filing'][filing_name] = copy.deepcopy(RESTORATION)
+    filing['filing']['restoration']['type'] = restoration_type
+
+    factory_completed_filing(business, filing, filing_date=filing_date)
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [UserRoles.system], identifier))
+
+    # validate
+    assert rv.json['filings']
+    assert rv.json['filings'][0]['filingSubType'] == restoration_type
+    assert rv.json['filings'][0]['displayName'] == expected_display_name
+
+
 @pytest.mark.parametrize('test_name,entity_type,expected_display_name', [
     ('CP', Business.LegalTypes.COOP.value, 'Incorporation Application'),
     ('BEN', Business.LegalTypes.BCOMP.value, 'BC Benefit Company Incorporation Application'),
@@ -354,7 +392,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
         if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == 'Correction'
+            assert filing_json['displayName'] == 'Register Correction Application'
         elif filing_json['name'] == 'incorporationApplication':
             assert filing_json['displayName'] == 'BC Benefit Company Incorporation Application'
         else:
@@ -366,7 +404,13 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     business, original = ledger_element_setup_help(identifier, 'annualReport')
-    correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
+    ar_correction = copy.deepcopy(CORRECTION_AR)
+    ar_correction['filing']['correction']['correctedFilingId'] = original.id
+    correction = ledger_element_setup_filing(
+        business,
+        'correction',
+        filing_date=business.founding_date + datedelta.datedelta(months=3),
+        filing_dict=ar_correction)
     original.parent_filing_id = correction.id
     original.save()
 

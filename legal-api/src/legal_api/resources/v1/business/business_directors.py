@@ -19,6 +19,8 @@ from flask import jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.models import Business, PartyRole
+from legal_api.services import authorized
+from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
@@ -32,12 +34,19 @@ class DirectorResource(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_auth
     def get(identifier, director_id=None):
         """Return a JSON of the directors."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+
+        # check authorization
+        if not authorized(identifier, jwt, action=['view']):
+            return jsonify({'message':
+                            f'You are not authorized to view directors for {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
 
         # return the matching director
         if director_id:

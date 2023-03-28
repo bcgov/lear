@@ -58,15 +58,3 @@ def set_legal_name(business: Business, name_request_info: dict):
     """Set the legal_name in the business object."""
     if legal_name := name_request_info.get('legalName', None):
         business.legal_name = legal_name
-
-
-def has_new_nr_for_correction(filing: dict):
-    """Return whether a correction filing has new NR."""
-    new_nr_number = filing.get('filing').get('incorporationApplication').get('nameRequest').get('nrNumber', None)
-    if new_nr_number:
-        corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
-        corrected_filing_json = corrected_filing.filing_json
-        old_nr_number = corrected_filing_json.get('filing').get('incorporationApplication').\
-            get('nameRequest').get('nrNumber', None)
-        return old_nr_number != new_nr_number
-    return False

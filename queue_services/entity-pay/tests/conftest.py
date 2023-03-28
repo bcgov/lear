@@ -26,7 +26,7 @@ from legal_api import db as _db
 from legal_api import jwt as _jwt
 from nats.aio.client import Client as Nats
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
+from sqlalchemy.schema import MetaData
 from stan.aio.client import Client as Stan
 
 from entity_pay.config import get_named_config
@@ -113,9 +113,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         # Clear out any existing tables
         metadata = MetaData(_db.engine)
         metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                _db.engine.execute(DropConstraint(fk.constraint))
         metadata.drop_all()
         _db.drop_all()
 

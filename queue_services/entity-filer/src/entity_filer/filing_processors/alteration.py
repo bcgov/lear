@@ -83,6 +83,12 @@ def process(
         share_structure = dpath.util.get(filing, '/alteration/shareStructure')
         shares.update_share_structure(business, share_structure)
 
+    # update provisionsRemoved, if any
+    with suppress(IndexError, KeyError, TypeError):
+        provisions_removed = dpath.util.get(filing, '/alteration/provisionsRemoved')
+        if bool(provisions_removed):
+            business.restriction_ind = False
+
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')

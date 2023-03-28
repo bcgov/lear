@@ -260,11 +260,6 @@ class ListFilingResource():
         if original_filing:
             return jsonify(rv.redacted(rv.raw, jwt))
 
-        if rv.filing_type == CoreFiling.FilingTypes.CORRECTION.value:
-            if diff := rv.json['filing']['correction'].get('diff'):
-                # This is required until #5302 ticket implements
-                rv.storage._filing_json['filing']['correction']['diff'] = diff  # pylint: disable=protected-access; # noqa: E501;
-
         if str(request.accept_mimetypes) == 'application/pdf':
             report_type = request.args.get('type', None)
             return legal_api.reports.get_pdf(rv.storage, report_type)
@@ -425,7 +420,11 @@ class ListFilingResource():
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
 
-        if json_input['filing']['header']['name'] not in [
+        filing_type = json_input.get('filing', {}).get('header', {}).get('name')
+        if not filing_type:
+            return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
+
+        if filing_type not in [
             Filing.FILINGS['incorporationApplication']['name'],
             Filing.FILINGS['registration']['name']
         ] and business is None:
@@ -434,12 +433,10 @@ class ListFilingResource():
         return None, None
 
     @staticmethod
-    def check_authorization(identifier, filing_json: str, business: Business) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
-        sub_filing_type = None
-        if filing_type == 'restoration':
-            sub_filing_type = filing_json['filing'].get('restoration', {}).get('type')
+        filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
 
         # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
@@ -448,16 +445,9 @@ class ListFilingResource():
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         admin_freeze = business.admin_freeze if business else False
 
-        action = ['edit']
-        if filing_type == 'courtOrder':
-            action = ['court_order']
-        elif filing_type == 'registrarsNotation':
-            action = ['registrars_notation']
-        elif filing_type == 'registrarsOrder':
-            action = ['registrars_order']
         if (admin_freeze and filing_type != 'adminFreeze') or \
-                not authorized(identifier, jwt, action=action) or \
-                not is_allowed(state, filing_type, legal_type, jwt, sub_filing_type):
+                not authorized(identifier, jwt, action=['edit']) or \
+                not is_allowed(state, filing_type, legal_type, jwt, filing_sub_type):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -696,8 +686,13 @@ class ListFilingResource():
             })
         else:
             for k in filing_json['filing'].keys():
-                filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
+                filing_sub_type = Filing.get_filings_sub_type(k, filing_json)
                 priority = priority_flag
+                if filing_sub_type:
+                    filing_type_code = \
+                        Filing.FILINGS.get(k, {}).get(filing_sub_type, {}).get('codes', {}).get(legal_type)
+                else:
+                    filing_type_code = Filing.FILINGS.get(k, {}).get('codes', {}).get(legal_type)
 
                 # check if changeOfDirectors is a free filing
                 if k == 'changeOfDirectors':
@@ -790,10 +785,11 @@ class ListFilingResource():
                                 'country': mailing_address.country}
             },
             'filingInfo': {
+                'filingIdentifier': f'{filing.id}',
                 'filingTypes': filing_types
-            }
+            },
+            'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
-
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
@@ -911,3 +907,16 @@ class ListFilingResource():
                      .get('courtOrder', {})
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
+
+    @staticmethod
+    def details_for_invoice(business_identifier: str, corp_type: str):
+        """Generate details for invoice."""
+        # Avoid temporary identifiers.
+        if not business_identifier or business_identifier.startswith('T'):
+            return []
+        return [
+            {
+                'label': 'Registration Number:' if corp_type in ('SP', 'GP') else 'Incorporation Number:',
+                'value': f'{business_identifier}'
+            }
+        ]

@@ -3,7 +3,6 @@ import prefect
 from legal_api.models import Business, Comment
 from prefect import task, Flow, unmapped, flow, allow_failure
 from prefect.task_runners import ConcurrentTaskRunner, SequentialTaskRunner
-from prefect_dask import DaskTaskRunner
 
 from config import get_named_config
 from common.firm_queries import get_unprocessed_firms_query

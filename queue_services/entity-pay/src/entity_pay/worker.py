@@ -36,7 +36,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from legal_api import db
-from legal_api.models import Filing
+from legal_api.models import CorpType, Filing
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -53,6 +53,16 @@ db.init_app(FLASK_APP)
 def extract_payment_token(msg: nats.aio.client.Msg) -> dict:
     """Return a dict of the json string in the Msg.data."""
     return json.loads(msg.data.decode('utf-8'))
+
+
+def is_processable_message(msg: dict) -> bool:
+    """Return if message is processable."""
+    if not (payment_token := msg.get('paymentToken', None)) or \
+            not (corp_type_code := payment_token.get('corpTypeCode', None)) or \
+            not CorpType.find_by_id(corp_type_code):
+        return False
+
+    return True
 
 
 def get_filing_by_payment_id(payment_id: int) -> Filing:
@@ -74,7 +84,6 @@ async def process_payment(payment_token, flask_app):
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-
         # try to find the filing 5 times before putting back on the queue - in case payment token ends up on the queue
         # before it is assigned to filing.
         counter = 1
@@ -138,20 +147,25 @@ async def process_payment(payment_token, flask_app):
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
-    try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-        payment_token = extract_payment_token(msg)
-        logger.debug('Extracted payment token: %s', payment_token)
-        await process_payment(payment_token, FLASK_APP)
-    except OperationalError as err:
-        logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
-        raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except FilingException:
-        # log to sentry and absorb the error, ie: do NOT raise it, otherwise the message would be put back on the queue
-        if APP_CONFIG.ENVIRONMENT == 'prod':
-            capture_message(f'Queue Error: cannot find filing:{json.dumps(payment_token)}', level='error')
-            logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
-    except (QueueException, Exception):  # pylint: disable=broad-except  # noqa: B902
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message(f'Queue Error: {json.dumps(payment_token)}', level='error')
-        logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)
+    with FLASK_APP.app_context():
+        try:
+            logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+            payment_token = extract_payment_token(msg)
+            logger.debug('Extracted payment token: %s', payment_token)
+            if is_processable_message(payment_token):
+                await process_payment(payment_token, FLASK_APP)
+            else:
+                logger.debug('skipping unprocessable payment token: %s', payment_token)
+        except OperationalError as err:
+            logger.error('Queue Blocked - Database Issue: %s', json.dumps(payment_token), exc_info=True)
+            raise err  # We don't want to handle the error, as a DB down would drain the queue
+        except FilingException:
+            # log to sentry and absorb the error,
+            # ie: do NOT raise it, otherwise the message would be put back on the queue
+            if APP_CONFIG.ENVIRONMENT == 'prod':
+                capture_message(f'Queue Error: cannot find filing:{json.dumps(payment_token)}', level='error')
+                logger.error('Queue Error - cannot find filing: %s', json.dumps(payment_token), exc_info=True)
+        except (QueueException, Exception):  # pylint: disable=broad-except  # noqa: B902
+            # Catch Exception so that any error is still caught and the message is removed from the queue
+            capture_message(f'Queue Error: {json.dumps(payment_token)}', level='error')
+            logger.error('Queue Error: %s', json.dumps(payment_token), exc_info=True)

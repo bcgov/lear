@@ -6,9 +6,15 @@ vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
 -- corporation
 transfer public.corporation from cprd using
-select CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        CORP_FROZEN_TYP_CD as corp_frozen_type_cd,
-       CORP_TYP_CD        as corp_type_cd,
+       case
+           when c.CORP_TYP_CD in ('QA', 'QB', 'QC', 'QD', 'QE') then 'BC'
+           else c.CORP_TYP_CD
+       end CORP_TYPE_CD,
        RECOGNITION_DTS,
        BN_9,
        bn_15,
@@ -22,8 +28,8 @@ select CORP_NUM,
            end               SEND_AR_IND
 from corporation c
 where corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
-  -- and rownum <= 5
+    -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+    -- and rownum <= 5
 order by corp_num;
 
 
@@ -31,7 +37,10 @@ order by corp_num;
 -- event
 transfer public.event from cprd using
 select e.event_id,
-       c.corp_num,
+       case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        e.event_typ_cd as event_type_cd,
        e.event_timestmp as event_timerstamp,
        e.trigger_dts
@@ -41,7 +50,7 @@ where c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
   and event_typ_cd not in ('BNUPD','ADDLEDGR') --not doing anything
   and event_id NOT in (select event_id from filing_user where user_id='BCOMPS')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id desc;
 
@@ -49,7 +58,10 @@ order by e.event_id desc;
 
 -- corp_name
 transfer public.corp_name from cprd using
-select c.corp_num,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        cn.CORP_NAME_TYP_CD,
        cn.start_event_id,
        cn.end_event_id,
@@ -58,15 +70,18 @@ from CORP_NAME cn
    , corporation c
 where cn.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
-  -- and rownum <= 5
+    -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+    -- and rownum <= 5
 order by c.corp_num, start_event_id;
 
 
 
 -- corp_state
 transfer public.corp_state from cprd using
-select c.corp_num,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        cs.STATE_TYP_CD as state_type_cd,
        cs.start_event_id,
        cs.end_event_id
@@ -74,7 +89,7 @@ from CORP_STATE cs
    , corporation c
 where cs.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, start_event_id;
 
@@ -108,7 +123,7 @@ from event e
 where e.event_id = f.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -130,7 +145,7 @@ from event e
 where e.event_id = u.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -138,7 +153,10 @@ order by e.event_id;
 
 -- office
 transfer public.office from cprd using
-select c.corp_num,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        o.office_typ_cd,
        o.start_event_id,
        o.end_event_id,
@@ -148,7 +166,7 @@ from office o
    , corporation c
 where o.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, start_event_id;
 
@@ -171,7 +189,7 @@ from (select a.*
       where x.corp_num = c.corp_num
         and (delivery_addr_id = a.addr_id or mailing_addr_id = a.addr_id)
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select a.*
@@ -181,7 +199,7 @@ from (select a.*
       where x.corp_num = c.corp_num
         and (delivery_addr_id = a.addr_id or mailing_addr_id = a.addr_id)
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select a.*
@@ -193,7 +211,7 @@ from (select a.*
         and e.corp_num = c.corp_num
         and mailing_addr_id = a.addr_id
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select a.*
@@ -205,7 +223,7 @@ from (select a.*
         and e.corp_num = c.corp_num
         and mailing_addr_id = a.addr_id
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select a.*
@@ -217,7 +235,7 @@ from (select a.*
         and e.corp_num = c.corp_num
         and (notify_addr_id = a.addr_id or mailing_addr_id = a.addr_id)
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select a.*
@@ -229,8 +247,8 @@ from (select a.*
         and p.corp_num = c.corp_num
         and x.mailing_addr_id = a.addr_id
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
-        -- and rownum <= 5
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+         -- and rownum <= 5
         )
 order by addr_id;
 
@@ -239,7 +257,10 @@ vset transfer.threads=8
 -- corp_comments
 transfer public.corp_comments from cprd using
 select cc.comment_dts,
-       c.corp_num,
+       case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        cc.comments,
        cc.USER_ID,
        cc.FIRST_NME,
@@ -250,7 +271,7 @@ from corp_comments cc
    , corporation c
 where c.corp_num = cc.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, comment_dts;
 
@@ -268,7 +289,7 @@ from ledger_text l
 where e.event_id = l.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -279,17 +300,20 @@ transfer public.corp_party from cprd using
 select p.corp_party_id,
        p.mailing_addr_id,
        p.delivery_addr_id,
-       c.corp_num,
-       p.party_typ_cd,
+       case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end                     CORP_NUM,
+       nvl(p.party_typ_cd, ' ') as party_typ_cd,
        p.start_event_id,
        p.end_event_id,
        p.prev_party_id,
        p.appointment_dt,
        p.cessation_dt,
-       p.LAST_NME     as last_name,
-       p.MIDDLE_NME   as middle_name,
-       p.FIRST_NME    as first_name,
-       p.BUSINESS_NME as business_name,
+       nvl(p.LAST_NME, ' ')     as last_name,
+       nvl(p.MIDDLE_NME, ' ')   as middle_name,
+       nvl(p.FIRST_NME, ' ')    as first_name,
+       nvl(p.BUSINESS_NME, ' ') as business_name,
        p.BUS_COMPANY_NUM,
        p.CORR_TYP_CD,
        p.OFFICE_NOTIFICATION_DT
@@ -297,7 +321,7 @@ from corp_party p
    , corporation c
 where p.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, corp_party_id;
 
@@ -313,7 +337,7 @@ from CORP_PARTY_RELATIONSHIP cpr,
 where p.corp_num = c.corp_num
   and cpr.corp_party_id = p.corp_party_id
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, corp_party_id;
 
@@ -329,7 +353,7 @@ from OFFICES_HELD oh,
 where p.corp_num = c.corp_num
   and oh.corp_party_id = p.corp_party_id
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, corp_party_id;
 
@@ -349,7 +373,7 @@ from event e
 where e.event_id = cp.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -377,7 +401,7 @@ from event e
 where e.event_id = sp.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -385,7 +409,10 @@ order by e.event_id;
 
 -- corp_flag
 transfer public.corp_flag from cprd using
-select cf.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        cf.CORP_FLAG_TYPE_CD,
        cf.start_event_id,
        cf.end_event_id
@@ -393,7 +420,7 @@ from corp_flag cf
    , corporation c
 where cf.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, cf.start_event_id;
 
@@ -401,7 +428,10 @@ order by c.corp_num, cf.start_event_id;
 
 -- cont_out
 transfer public.CONT_OUT from cprd using
-select co.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        co.CAN_JUR_TYP_CD,
        co.CONT_OUT_DT,
        co.OTHR_JURI_DESC,
@@ -412,7 +442,7 @@ from CONT_OUT co
    , corporation c
 where co.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, co.start_event_id;
 
@@ -438,7 +468,7 @@ from event e
 where e.event_id = ce.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -455,7 +485,7 @@ from event e
 where e.event_id = cl.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -465,7 +495,10 @@ order by e.event_id;
 transfer public.corp_involved_amalgamating from cprd using
 select *
 from (select e.event_id, -- SELECT BY EVENT
-             ci.CORP_NUM,
+             case
+                 when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+                 else c.CORP_NUM
+             end CORP_NUM,
              ci.CORP_INVOLVE_ID,
              ci.CAN_JUR_TYP_CD,
              case ci.ADOPTED_CORP_IND
@@ -483,11 +516,14 @@ from (select e.event_id, -- SELECT BY EVENT
         and c.corp_num = e.corp_num
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
         and event_typ_cd = 'CONVAMAL'
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
       select e.event_id, -- SELECT BY FILING
-             ci.CORP_NUM,
+             case
+                 when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+                 else c.CORP_NUM
+             end CORP_NUM,
              ci.CORP_INVOLVE_ID,
              ci.CAN_JUR_TYP_CD,
              case ci.ADOPTED_CORP_IND
@@ -507,7 +543,7 @@ from (select e.event_id, -- SELECT BY EVENT
         and e.event_id = f.event_id
         and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
         and filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 'AMLHC', 'AMLVC', 'AMLRC')
-        -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
      )
 order by event_id;
@@ -517,7 +553,10 @@ order by event_id;
 -- corp_involved - continue_in_historical_xpro
 transfer public.corp_involved_cont_in from cprd using
 select e.event_id,
-       ci.CORP_NUM
+       case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM
 from event e
    , CORP_INVOLVED ci
    , corporation c
@@ -527,7 +566,7 @@ where e.event_id = ci.event_id
   and e.event_id = f.event_id
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
   and filing_typ_cd in ('CONTI', 'CONTU', 'CONTC')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -535,7 +574,10 @@ order by e.event_id;
 
 -- corp_restriction
 transfer public.CORP_RESTRICTION from cprd using
-select cr.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        case cr.RESTRICTION_IND
            when 'N' then 0
            when 'Y' then 1
@@ -547,7 +589,7 @@ from CORP_RESTRICTION cr
    , corporation c
 where cr.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, cr.start_event_id;
 
@@ -556,7 +598,10 @@ order by c.corp_num, cr.start_event_id;
 -- correction
 transfer public.CORRECTION from cprd using
 select e.event_id,
-       c.CORP_NUM,
+       case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        corr.ASSOCIATED_DOC_DESC
 from event e
    , CORRECTION corr
@@ -564,7 +609,7 @@ from event e
 where e.event_id = corr.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -572,7 +617,10 @@ order by e.event_id;
 
 -- continued_in_from_jurisdiction
 transfer public.jurisdiction from cprd using
-select c.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        j.CAN_JUR_TYP_CD,
        j.XPRO_TYP_CD,
        j.HOME_RECOGN_DT,
@@ -585,7 +633,7 @@ from JURISDICTION j
    , corporation c
 where j.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, j.start_event_id;
 
@@ -593,7 +641,10 @@ order by c.corp_num, j.start_event_id;
 
 -- resolution
 transfer public.RESOLUTION from cprd using
-select c.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        r.RESOLUTION_DT,
        r.RESOLUTION_TYPE_CODE,
        r.start_event_id,
@@ -602,7 +653,7 @@ from RESOLUTION r
    , corporation c
 where r.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, r.start_event_id;
 
@@ -610,14 +661,17 @@ order by c.corp_num, r.start_event_id;
 
 -- share_struct
 transfer public.SHARE_STRUCT from cprd using
-select c.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        ss.start_event_id,
        ss.end_event_id
 from SHARE_STRUCT ss
    , corporation c
 where ss.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, ss.start_event_id;
 
@@ -625,7 +679,10 @@ order by c.corp_num, ss.start_event_id;
 
 --share_struct_cls
 transfer public.SHARE_STRUCT_CLS from cprd using
-select c.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        ssc.SHARE_CLASS_ID,
        ssc.CLASS_NME,
        ssc.CURRENCY_TYP_CD,
@@ -652,7 +709,7 @@ from SHARE_STRUCT_CLS ssc
    , corporation c
 where ssc.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, ssc.start_event_id;
 
@@ -660,7 +717,10 @@ order by c.corp_num, ssc.start_event_id;
 
 --share_series
 transfer public.SHARE_SERIES from cprd using
-select c.CORP_NUM,
+select case
+           when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
+           else c.CORP_NUM
+       end CORP_NUM,
        ss.SHARE_CLASS_ID,
        ss.SERIES_ID,
        case ss.MAX_SHARE_IND
@@ -680,7 +740,7 @@ from SHARE_SERIES ss
    , corporation c
 where ss.corp_num = c.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num, ss.start_event_id;
 
@@ -703,7 +763,7 @@ from event e
 where e.event_id = n.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -726,7 +786,7 @@ from event e
 where e.event_id = nr.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by e.event_id;
 
@@ -750,6 +810,6 @@ from corp_party cp
 where cp.CORP_PARTY_ID = pn.party_id
   and c.corp_num = cp.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-  -- and c.corp_num in ('0764033', '0692536', '0692537', '0692538', '0692540')
+  -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num;

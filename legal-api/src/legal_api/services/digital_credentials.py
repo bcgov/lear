@@ -69,7 +69,7 @@ class DigitalCredentialsService:
 
         if definition:
             if definition.is_deleted:
-                raise Exception('Digital Credentials: business_schema is marked as delete, fix it.')
+                raise Exception('Digital Credentials: business_schema is marked as delete, fix it.')  # noqa: E501; pylint: disable=broad-exception-raised, line-too-long
         else:
             # deactivate any existing schema definition before registering new one
             DCDefinition.deactivate(DCDefinition.CredentialType.business)

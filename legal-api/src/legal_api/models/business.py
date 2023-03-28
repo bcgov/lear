@@ -42,7 +42,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes
+class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
@@ -192,7 +192,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'foreignIdentifier',
             'foreignLegalName',
             'foreignLegalType',
-            'foreignIncorporationDate'
+            'foreignIncorporationDate',
+            'send_ar_ind',
+            'restoration_expiry_date',
+            'cco_expiry_date'
         ]
     }
 
@@ -209,7 +212,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_type = db.Column('legal_type', db.String(10))
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column('start_date', db.DateTime(timezone=True))
+    restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
+    cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True))  # consent continuation out expiry_date
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -221,6 +226,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
+    send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
@@ -351,24 +357,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             self.save()
         return self
 
-    def json(self):
+    def json(self, slim=False):
         """Return the Business as a json object.
 
         None fields are not included.
         """
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        slim_json = self._slim_json()
+        if slim:
+            return slim_json
+
         ar_min_date, ar_max_date = self.get_ar_dates(
             (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
         )
         d = {
+            **slim_json,
             'arMinDate': ar_min_date.isoformat(),
             'arMaxDate': ar_max_date.isoformat(),
-            'adminFreeze': self.admin_freeze or False,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name,
             'foundingDate': self.founding_date.isoformat(),
-            'goodStanding': self.good_standing,
             'hasRestrictions': self.restriction_ind,
-            'identifier': self.identifier,
             'complianceWarnings': self.compliance_warnings,
             'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
@@ -377,16 +383,38 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
             'lastModified': self.last_modified.isoformat(),
-            'legalName': self.legal_name,
-            'legalType': self.legal_type,
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
-            'associationType': self.association_type
+            'associationType': self.association_type,
+            'allowedActions': self.allowable_actions
         }
+        self._extend_json(d)
+
+        return d
+
+    def _slim_json(self):
+        """Return a smaller/faster version of the business json."""
+        d = {
+            'adminFreeze': self.admin_freeze or False,
+            'goodStanding': self.good_standing,
+            'identifier': self.identifier,
+            'legalName': self.legal_name,
+            'legalType': self.legal_type,
+            'state': self.state.name if self.state else Business.State.ACTIVE.name
+        }
+
+        if self.tax_id:
+            d['taxId'] = self.tax_id
+
+        return d
+
+    def _extend_json(self, d):
+        """Include conditional fields to json."""
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
         if self.last_coa_date:
             d['lastAddressChangeDate'] = datetime.date(
@@ -401,8 +429,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
-        if self.tax_id:
-            d['taxId'] = self.tax_id
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
@@ -410,6 +436,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
             d['startDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.start_date)
             ).isoformat()
+
+        if self.restoration_expiry_date:
+            d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
+        if self.cco_expiry_date:
+            d['ccoExpiryDate'] = self.cco_expiry_date.isoformat()
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
@@ -427,7 +458,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
 
         d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
                                   x.status == 'COMPLETED')
-        return d
 
     @property
     def compliance_warnings(self):
@@ -454,6 +484,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes
     def warnings(self, value):
         """Set warnings."""
         self._warnings = value
+
+    @property
+    def allowable_actions(self):
+        """Return warnings."""
+        if not hasattr(self, '_allowable_actions'):
+            return {}
+
+        return self._allowable_actions
+
+    @allowable_actions.setter
+    def allowable_actions(self, value):
+        """Set warnings."""
+        self._allowable_actions = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):

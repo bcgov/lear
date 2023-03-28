@@ -705,13 +705,12 @@ def test_ia_paid(app):
         assert documents[0]['filename'] == 'T12345678 - Incorporation Application (Pending) - 2020-07-14.pdf'
 
 
-
-@pytest.mark.parametrize('status, number_of_docs', 
-    [
-        ('COMPLETED', 3),
-        ('CORRECTED', 3),
-        ('UNKNOWN', 0)
-    ])
+@pytest.mark.parametrize('status, number_of_docs',
+                         [
+                             ('COMPLETED', 3),
+                             ('CORRECTED', 3),
+                             ('UNKNOWN', 0)
+                         ])
 def test_ia_status(session, app, status, number_of_docs):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
     document_meta = DocumentMetaService()
@@ -851,8 +850,8 @@ def test_ia_completed_bcomp_original(session, app):
         assert documents[2]['type'] == 'REPORT'
         assert documents[2]['reportType'] == 'certificate'
         assert documents[2]['filingId'] == original_filing.id
-        assert documents[2]['title'] == 'Certificate (Original)'
-        assert documents[2]['filename'] == 'BC1234567 - Certificate (Original) - 2020-07-14.pdf'
+        assert documents[2]['title'] == 'Certificate'
+        assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
 
 
 def test_correction_ia(session, app):

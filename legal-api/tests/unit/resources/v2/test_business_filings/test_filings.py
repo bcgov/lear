@@ -27,7 +27,7 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from minio.error import S3Error
-from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE
+from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
@@ -308,24 +308,23 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     assert not rv.json.get('errors')
 
 
-# This cannot be validated since the is_allowed function returns UNAUTHORIZED if `name` is empty
-# def test_post_only_validate_error_ar(session, client, jwt):
-#     """Assert that a unpaid filing can be posted."""
-#     import copy
-#     identifier = 'CP7654321'
-#     factory_business(identifier)
+def test_validate_filing_json_for_filing_type(session, client, jwt):
+    """Assert that filing type is in filing json."""
+    import copy
+    identifier = 'CP7654321'
+    factory_business(identifier)
 
-#     ar = copy.deepcopy(ANNUAL_REPORT)
-#     ar['filing']['header'].pop('name')
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['header'].pop('name')
 
-#     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-#                      json=ar,
-#                      headers=create_header(jwt, [STAFF_ROLE], identifier)
-#                      )
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
 
-#     assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-#     assert rv.json.get('errors')
-#     assert rv.json['errors'][0]['error'] == "'name' is a required property"
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
 
 
 def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
@@ -1005,11 +1004,54 @@ DISSOLUTION_FILING = {
     }
 }
 
+# FUTURE: use RESTORATION_FILING from business schema data when restoration filing work has been done
+RESTORATION_FILING = {
+    'filing': {
+        'header': {
+            'name': 'dissolution',
+            'availableOnPaperOnly': False,
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'date': '2020-02-18',
+            'routingSlipNumber': '123456789'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08T00:00:00+00:00',
+            'identifier': 'BC1234567',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
+            'legalName': 'legal name - BC1234567',
+            'legalType': 'BEN'
+        },
+        'restoration': RESTORATION
+    }
+}
 
-def _get_expected_fee_code(free, filing_name, legal_type):
+RESTORATION_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_FULL_FILING['filing']['restoration']['type'] = 'fullRestoration'
+
+RESTORATION_LIMITED_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_LIMITED_FILING['filing']['restoration']['type'] = 'limitedRestoration'
+
+RESTORATION_LIMITED_EXT_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestorationExtension'
+
+RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
+RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
+
+
+def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
+    filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
     if free:
-        return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
+        if filing_sub_type:
+            return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('free', {}).get('codes', {}).get(legal_type)
+        else:
+            return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
+
+    if filing_sub_type:
+        return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('codes', {}).get(legal_type)
 
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
@@ -1045,13 +1087,29 @@ def _get_expected_fee_code(free, filing_name, legal_type):
             False, []),
         ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
             False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
     ]
 )
 def test_get_correct_fee_codes(
         session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
-    expected_fee_code = _get_expected_fee_code(free, filing_name, orig_legal_type)
+    expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
 
     business = None
     if not identifier.startswith('T'):

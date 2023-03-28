@@ -38,7 +38,7 @@ def process(email_msg: dict, token: str) -> dict:
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
-        business=business,
+        business=business.json(),
         ar_fee=ar_fee,
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
