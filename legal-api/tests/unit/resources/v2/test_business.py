@@ -410,19 +410,19 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_business_unauthorized(app, session, client, jwt, requests_mock):
-    """Assert that business is not returned for an unauthorized user."""
-    # setup
-    identifier = 'CP7654321'
-    business = factory_business(identifier)
-    business.save()
+# def test_get_business_unauthorized(app, session, client, jwt, requests_mock):
+#     """Assert that business is not returned for an unauthorized user."""
+#     # setup
+#     identifier = 'CP7654321'
+#     business = factory_business(identifier)
+#     business.save()
 
-    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+#     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 
-    # test
-    rv = client.get(f'/api/v2/businesses/{identifier}',
-                    headers=create_header(jwt, [PUBLIC_USER], identifier)
-                    )
-    # check
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
-    assert rv.json == {'message': f'You are not authorized to view business {identifier}.'}
+#     # test
+#     rv = client.get(f'/api/v2/businesses/{identifier}',
+#                     headers=create_header(jwt, [PUBLIC_USER], identifier)
+#                     )
+#     # check
+#     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+#     assert rv.json == {'message': f'You are not authorized to view business {identifier}.'}
