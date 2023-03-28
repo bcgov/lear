@@ -31,7 +31,6 @@ from legal_api.services import (  # noqa: I001;
     SYSTEM_ROLE,
     AccountService,
     RegistrationBootstrapService,
-    authorized,
     check_warnings,
 )  # noqa: I001;
 from legal_api.services.authz import get_allowable_actions, get_allowed
