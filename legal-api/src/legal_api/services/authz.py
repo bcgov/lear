@@ -188,7 +188,6 @@ ALLOWABLE_FILINGS: Final = {
             #         }
             #     },
             #     'administrativeDissolution': {
-            #         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
             #         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
             #         'blockerChecks': {
             #             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
