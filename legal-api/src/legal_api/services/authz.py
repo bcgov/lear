@@ -43,7 +43,7 @@ class BusinessBlocker(str, Enum):
     # to make it easier to check if a business is blocked.  If there is ever a need to be more granular,
     # the individual checks within DEFAULT could be added as an individual enum item.
     DEFAULT = 'DEFAULT'
-    ADMN_FRZE = 'ADMN_FRZE'
+    BUSINESS_FROZEN = 'BUSINESS_FROZEN'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -463,7 +463,7 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
 def business_blocker_check(business: Business):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
-        BusinessBlocker.ADMN_FRZE: False,
+        BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DEFAULT: False
     }
 
@@ -475,7 +475,7 @@ def business_blocker_check(business: Business):
 
     if business.admin_freeze:
         business_blocker_checks = {
-            BusinessBlocker.ADMN_FRZE: True,
+            BusinessBlocker.BUSINESS_FROZEN: True,
             BusinessBlocker.DEFAULT: True
         }
 
