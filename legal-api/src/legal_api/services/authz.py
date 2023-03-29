@@ -391,7 +391,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         state_filing = Filing.find_by_id(business.state_filing_id)
 
     # doing this check up front to cache result
-    has_business_blocker_dict: dict = business_blocker_check(business)
+    business_blocker_dict: dict = business_blocker_check(business)
     allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -406,7 +406,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
         if allowable_filing_legal_types:
             if legal_type in allowable_filing_legal_types:
-                if has_blocker(business, state_filing, allowable_filing_value, has_business_blocker_dict):
+                if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
                     continue
                 allowable_filing_types \
                     .append({'name': allowable_filing_key,
@@ -416,7 +416,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
             filing_sub_type_items = \
                 filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
             for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-                if has_blocker(business, state_filing, filing_sub_type_item_value, has_business_blocker_dict):
+                if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
                     continue
                 allowable_filing_types \
                     .append({'name': allowable_filing_key,
@@ -431,12 +431,12 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
     return allowable_filing_types
 
 
-def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, has_business_blocker_dict: dict):
+def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
         return False
 
-    if has_business_blocker(blocker_checks, has_business_blocker_dict):
+    if has_business_blocker(blocker_checks, business_blocker_dict):
         return True
 
     if has_blocker_valid_state_filing(state_filing, blocker_checks):
@@ -451,13 +451,13 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     return False
 
 
-def has_business_blocker(blocker_checks: dict, has_business_blocker_dict: dict):
+def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     """Return True if the business has a default blocker."""
     if not (business_blocker_checks := blocker_checks.get('business', [])):
         return False
 
     for business_blocker_check_type in business_blocker_checks:
-        if has_business_blocker_dict[business_blocker_check_type]:
+        if business_blocker_dict[business_blocker_check_type]:
             return True
 
     return False
