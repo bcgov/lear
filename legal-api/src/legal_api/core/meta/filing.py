@@ -217,31 +217,56 @@ FILINGS: Final = {
     },
     'dissolution': {
         'name': 'dissolution',
-        'title': 'Voluntary Dissolution',
-        'displayName': {
-            'CP': 'Voluntary Dissolution',
-            'BC': 'Voluntary Dissolution',
-            'BEN': 'Voluntary Dissolution',
-            'ULC': 'Voluntary Dissolution',
-            'CC': 'Voluntary Dissolution',
-            'LLC': 'Voluntary Dissolution',
-            'SP': 'Statement of Dissolution',
-            'GP': 'Statement of Dissolution'
-        },
-        'codes': {
-            'CP': 'DIS_VOL',
-            'BC': 'DIS_VOL',
-            'BEN': 'DIS_VOL',
-            'ULC': 'DIS_VOL',
-            'CC': 'DIS_VOL',
-            'LLC': 'DIS_VOL',
-            'SP': 'DIS_VOL',
-            'GP': 'DIS_VOL'
-        },
         'additional': [
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
             {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
-        ]
+        ],
+        'voluntaryDissolution': {
+            'title': 'Voluntary Dissolution',
+            'displayName': {
+                'CP': 'Voluntary Dissolution',
+                'BC': 'Voluntary Dissolution',
+                'BEN': 'Voluntary Dissolution',
+                'ULC': 'Voluntary Dissolution',
+                'CC': 'Voluntary Dissolution',
+                'LLC': 'Voluntary Dissolution',
+                'SP': 'Statement of Dissolution',
+                'GP': 'Statement of Dissolution'
+            },
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
+            },
+        },
+        'administrativeDissolution': {
+            'title': 'Administrative Dissolution',
+            'displayName': {
+                'CP': 'Administrative Dissolution',
+                'BC': 'Administrative Dissolution',
+                'BEN': 'Administrative Dissolution',
+                'ULC': 'Administrative Dissolution',
+                'CC': 'Administrative Dissolution',
+                'LLC': 'Administrative Dissolution',
+                'SP': 'Statement of Dissolution',
+                'GP': 'Statement of Dissolution'
+            },
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
+            },
+        }
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',

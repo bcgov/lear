@@ -173,28 +173,21 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'dissolution': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
+                'voluntaryDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'administrativeDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
                 }
             },
-            # 'dissolution': {
-            #     'voluntaryDissolution': {
-            #         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            #         'blockerChecks': {
-            #             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-            #             'business': [BusinessBlocker.DEFAULT]
-            #         }
-            #     },
-            #     'administrativeDissolution': {
-            #         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            #         'blockerChecks': {
-            #             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-            #             'business': [BusinessBlocker.DEFAULT]
-            #         }
-            #     }
-            # },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
@@ -315,29 +308,14 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'dissolution': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'voluntaryDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
             },
-            # 'dissolution': {
-            #     'voluntary': {
-            #         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            #         'blockerChecks': {
-            #             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-            #             'business': [BusinessBlocker.DEFAULT]
-            #         }
-            #     },
-            #     'administrative': {
-            #         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
-            #         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-            #         'blockerChecks': {
-            #             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-            #             'business': [BusinessBlocker.DEFAULT]
-            #         }
-            #     }
-            # },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
@@ -487,13 +465,13 @@ def has_business_blocker_default(blocker_checks: dict, has_default_blocker: dict
 
 def business_blocker_default_check(business: Business):
     """Return True if the business has a default blocker condition."""
-    if not business:
-        return False
-    
     business_blocker_checks: dict = {
         BusinessBlocker.ADMN_FRZE: False,
         BusinessBlocker.DEFAULT: False
     }
+
+    if not business:
+        return business_blocker_checks
 
     if has_blocker_filing(business):
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
