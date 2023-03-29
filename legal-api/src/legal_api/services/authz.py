@@ -154,10 +154,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'conversion': {
-                'legalTypes': ['SP', 'GP'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.ADMN_FRZE]
-                }
+                'legalTypes': ['SP', 'GP']
             },
             'correction': {
                 'legalTypes': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],

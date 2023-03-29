@@ -1024,7 +1024,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
         ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE])),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE])),
+         expected_lookup([FilingKey.ADMN_FRZE, FilingKey.CONV_FIRMS])),
 
         # active business - general user
         ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
