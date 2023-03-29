@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
+    CP_SPECIAL_RESOLUTION_TEMPLATE,
     DISSOLUTION,
     FILING_HEADER,
     INCORPORATION,
@@ -1276,3 +1277,20 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
         assert future_effective_date == valid_date
     else:
         assert 'futureEffectiveDate' not in rv.json['filing']['header']
+
+def test_rules_in_sr(session, requests_mock, client, jwt):
+    """Assert if both rules update in sr, and rules file key is provided"""
+    identifier = 'CP1234567'
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+    sr['filing']['alteration'] = {}
+    sr['filing']['alteration']['rulesFileKey'] = 'some_key'
+    sr['filing']['alteration']['rulesChangeInSR'] = True
+
+    sr['filing']['business']['identifier'] = identifier
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=sr,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )    
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
