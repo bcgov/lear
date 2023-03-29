@@ -226,11 +226,6 @@ MISSING_BUSINESS_INFO_WARNINGS = [{ 'warningType': WarningType.MISSING_REQUIRED_
                                     'code': 'NO_BUSINESS_OFFICE',
                                     'message': 'A business office is required.'}]
 
-EXPECTED_ALLOWABLE_FILING_TYPES = {
-    'STF_DIS': {'dissolution': ['voluntaryDissolution', 'administrativeDissolution']},  # STAFF_ROLE_DISSOLUTION
-    'GNR_DIS': {'dissolution': ['voluntaryDissolution']}  # GENERAL_USER_DISSOLUTION
-}
-
 def expected_lookup(filing_keys: list):
     results = []
     for filing_key in filing_keys:
@@ -386,90 +381,48 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
 
 @pytest.mark.parametrize(
-    'test_name,state,legal_type,username,roles,expected',
+    'test_name,state,legal_types,username,roles,expected',
     [
         # active business
-        ('staff_active_cp', Business.State.ACTIVE, 'CP', 'staff', [STAFF_ROLE],
+        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'incorporationApplication',
+          {'dissolution': ['voluntaryDissolution', 'administrativeDissolution']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
-        ('staff_active_bc', Business.State.ACTIVE, 'BC', 'staff', [STAFF_ROLE],
+        ('staff_active_bc', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-          'correction', 'courtOrder', EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'],'incorporationApplication',
+          'correction', 'courtOrder', {'dissolution': ['voluntaryDissolution', 'administrativeDissolution']},'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_ben', Business.State.ACTIVE, 'BEN', 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-          'correction', 'courtOrder', EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'incorporationApplication',
-          'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_cc', Business.State.ACTIVE, 'CC', 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-          'correction', 'courtOrder', EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'incorporationApplication',
-          'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_ulc', Business.State.ACTIVE, 'ULC', 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-         'correction', 'courtOrder', EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'incorporationApplication',
-         'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_llc', Business.State.ACTIVE, 'LLC', 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'courtOrder', EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'registrarsNotation',
+        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+         ['adminFreeze', 'courtOrder', {'dissolution': ['voluntaryDissolution', 'administrativeDissolution']}, 'registrarsNotation',
           'registrarsOrder', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_sp', Business.State.ACTIVE, 'SP', 'staff', [STAFF_ROLE],
+        ('staff_active_sp', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
-          EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'registrarsNotation', 'registrarsOrder', 'registration']),
-        ('staff_active_gp', Business.State.ACTIVE, 'GP', 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
-          EXPECTED_ALLOWABLE_FILING_TYPES['STF_DIS'], 'registrarsNotation', 'registrarsOrder', 'registration']),
+          {'dissolution': ['voluntaryDissolution', 'administrativeDissolution']}, 'registrarsNotation', 'registrarsOrder', 'registration']),
 
-        ('user_active_cp', Business.State.ACTIVE, 'CP', 'general', [BASIC_USER],
+        ('user_active_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
-          EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'incorporationApplication', 'specialResolution']),
-        ('user_active_bc', Business.State.ACTIVE, 'BC', 'general', [BASIC_USER],
+          {'dissolution': ['voluntaryDissolution']}, 'incorporationApplication', 'specialResolution']),
+        ('user_active_bc', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
-          EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'incorporationApplication', 'transition']),
-        ('user_active_ben', Business.State.ACTIVE, 'BEN', 'general', [BASIC_USER],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
-          EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'incorporationApplication', 'transition']),
-        ('user_active_cc', Business.State.ACTIVE, 'CC', 'general', [BASIC_USER],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
-          EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'incorporationApplication', 'transition']),
-        ('user_active_ulc', Business.State.ACTIVE, 'ULC', 'general', [BASIC_USER],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
-          EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'incorporationApplication', 'transition']),
-        ('user_active_llc', Business.State.ACTIVE, 'LLC', 'general', [BASIC_USER], [EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS']]),
-        ('user_active_sp', Business.State.ACTIVE, 'SP', 'general', [BASIC_USER],
-         ['changeOfRegistration', EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'registration']),
-        ('user_active_gp', Business.State.ACTIVE, 'GP', 'general', [BASIC_USER],
-         ['changeOfRegistration', EXPECTED_ALLOWABLE_FILING_TYPES['GNR_DIS'], 'registration']),
+          {'dissolution': ['voluntaryDissolution']}, 'incorporationApplication', 'transition']),
+        ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
+         [{'dissolution': ['voluntaryDissolution']}]),
 
         # historical business
-        ('staff_historical_cp', Business.State.HISTORICAL, 'CP', 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
-        ('staff_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [STAFF_ROLE],
+        ('staff_historical_bc', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_ulc', Business.State.HISTORICAL, 'ULC', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
-         {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_llc', Business.State.HISTORICAL, 'LLC', 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'registrarsNotation', 'registrarsOrder']),
-        ('staff_historical_sp', Business.State.HISTORICAL, 'SP', 'staff', [STAFF_ROLE],
-         ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
-        ('staff_historical_gp', Business.State.HISTORICAL, 'GP', 'staff', [STAFF_ROLE],
+        ('staff_historical_sp', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
 
-        ('user_historical_bc', Business.State.HISTORICAL, 'BC', 'staff', [BASIC_USER], []),
-        ('user_historical_ben', Business.State.HISTORICAL, 'BEN', 'staff', [BASIC_USER], []),
-        ('user_historical_cc', Business.State.HISTORICAL, 'CC', 'staff', [BASIC_USER], []),
-        ('user_historical_ulc', Business.State.HISTORICAL, 'ULC', 'staff', [BASIC_USER], []),
-        ('user_historical_llc', Business.State.HISTORICAL, 'LLC', 'general', [BASIC_USER], [])
+        ('user_historical_bc', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [BASIC_USER], [])
     ]
 )
-def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, username, roles, expected):
+def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {'Authorization': 'Bearer ' + token}
@@ -479,8 +432,9 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_type, userna
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        filing_types = get_allowed(state, legal_type, jwt)
-        assert filing_types == expected
+        for legal_type in legal_types:
+            filing_types = get_allowed(state, legal_type, jwt)
+            assert filing_types == expected
 
 
 @pytest.mark.parametrize(
