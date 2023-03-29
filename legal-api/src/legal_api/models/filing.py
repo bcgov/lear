@@ -323,7 +323,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'tech_correction_json',
             'temp_reg',
             'transaction_id',
-            'approval_type'
+            'approval_type',
+            'application_date',
+            'notice_date'
         ]
     }
 
@@ -351,6 +353,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     order_details = db.Column(db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
     approval_type = db.Column('approval_type', db.String(15))
+    application_date = db.Column('application_date', db.DateTime(timezone=True))
+    notice_date = db.Column('notice_date', db.DateTime(timezone=True))
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -717,16 +721,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
+    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str, filing_sub_type: str = None):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing._filing_type == filing_type). \
+            filter(Filing._filing_sub_type == filing_sub_type). \
             filter(Filing.business_id == business_id). \
             subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
+            filter(Filing._filing_sub_type == filing_sub_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
 
         return filing.one_or_none()

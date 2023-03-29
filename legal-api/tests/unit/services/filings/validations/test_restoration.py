@@ -14,13 +14,14 @@
 """Test suite to ensure Restoration is validated correctly."""
 import copy
 from datetime import datetime
+from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
 import pytest
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -48,6 +49,14 @@ nr_response = {
     'requestTypeCd': 'RCC'
 }
 relationships = ['Heir or Legal Representative', 'Director']
+
+
+def factory_limited_restoration_filing(approval_type: str = 'courtOrder'):
+    filing = Filing(_filing_type='restoration',
+                    _filing_sub_type='limitedRestoration',
+                    approval_type=approval_type)
+    return filing
+
 
 def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
                             expected_code, expected_msg):
@@ -144,7 +153,9 @@ def test_validate_party(session, test_name, party_role, expected_msg):
 def test_validate_relationship(session, test_status, restoration_type, expected_code, expected_msg):
     """Assert that applicant's relationship is validated."""
     business = Business(identifier='BC1234567', legal_type='BC')
-
+    limited_restoration_filing = None
+    if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+        limited_restoration_filing = factory_limited_restoration_filing()
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
@@ -157,7 +168,9 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
     elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         filing['filing']['restoration']['relationships'] = relationships
 
-    err = validate(business, filing)
+    with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                      return_value=limited_restoration_filing):
+        err = validate(business, filing)
 
     if expected_code:
         assert expected_code == err.code
@@ -175,8 +188,8 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
         ('invalid_lesser', 'limitedRestoration', relativedelta(days=25), False),
         ('missing', 'limitedRestoration', None, False),
 
-        ('greater', 'limitedRestorationExtension', relativedelta(years=2), True),
-        ('invalid_greater', 'limitedRestorationExtension', relativedelta(years=2, days=1), False),
+        ('greater', 'limitedRestorationExtension', relativedelta(years=3), True),
+        ('invalid_greater', 'limitedRestorationExtension', relativedelta(years=3, days=1), False),
         ('lesser', 'limitedRestorationExtension', relativedelta(months=1), True),
         ('invalid_lesser', 'limitedRestorationExtension', relativedelta(days=25), False),
         ('missing', 'limitedRestorationExtension', None, False),
@@ -185,6 +198,9 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):
     """Assert that expiry date is validated."""
     business = Business(identifier='BC1234567', legal_type='BC')
+    limited_restoration_filing = None
+    if restoration_type == 'limitedRestorationExtension':
+        limited_restoration_filing = factory_limited_restoration_filing()
     expiry_date = LegislationDatetime.now()
     if delta_date:
         expiry_date = expiry_date + delta_date
@@ -197,7 +213,9 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['restoration']['type'] = restoration_type
     if delta_date:
         filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
-    err = validate(business, filing)
+    with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                      return_value=limited_restoration_filing):
+        err = validate(business, filing)
 
     if is_valid:
         assert not err
@@ -206,36 +224,159 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
 
 
 @pytest.mark.parametrize(
-    'test_status, file_number, expected_code, expected_msg',
+    'test_status, restoration_types, legal_types, approval_type, limited_restoration_approval_type, expected_code, expected_msg',
     [
-        ('FAIL', None, HTTPStatus.BAD_REQUEST, 'Must provide Court Order Number.'),
-        ('SUCCESS', '12345678901234567890', None, None)
+        ('FAIL', ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull'],
+         ['BC', 'BEN', 'ULC', 'CC'], None, 'courtOrder', HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        ('FAIL', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'courtOrder', 'registrar', HTTPStatus.BAD_REQUEST, 'Must provide approval type with value of registrar.'),
+        ('FAIL', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'registrar', 'courtOrder', HTTPStatus.BAD_REQUEST, 'Must provide approval type with value of courtOrder.'),
+        ('SUCCESS', ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull'],
+         ['BC', 'BEN', 'ULC', 'CC'], 'courtOrder', 'courtOrder', None, None),
+        ('SUCCESS', ['fullRestoration', 'limitedRestoration', 'limitedRestorationExtension', 'limitedRestorationToFull'],
+         ['BC', 'BEN', 'ULC', 'CC'], 'registrar', 'registrar', None, None),
     ]
 )
-def test_restoration_court_orders(session, test_status, file_number, expected_code, expected_msg):
-    """Assert valid court orders."""
-    business = Business(identifier='BC1234567', legal_type='BC')
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
-    filing['filing']['header']['name'] = 'restoration'
-    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
-    filing['filing']['restoration']['relationships'] = relationships
+def test_approval_type(session, test_status, restoration_types, legal_types, approval_type,
+                       limited_restoration_approval_type, expected_code,expected_msg):
+    """Assert approval type is validated."""
 
-    if file_number:
-        court_order = {}
-        court_order['fileNumber'] = file_number
-        filing['filing']['restoration']['courtOrder'] = court_order
-    else:
-        del filing['filing']['restoration']['courtOrder']
+    for restoration_type in restoration_types:
+        limited_restoration_filing = None
+        if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+            limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
+        for legal_type in legal_types:
+            business = Business(identifier='BC1234567', legal_type=legal_type)
+            filing = copy.deepcopy(FILING_HEADER)
+            filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+            filing['filing']['header']['name'] = 'restoration'
+            filing['filing']['restoration']['type'] = restoration_type
+            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            filing['filing']['restoration']['relationships'] = relationships
+            expiry_date = LegislationDatetime.now() + relativedelta(years=2)
+            filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+            filing['filing']['restoration']['approvalType'] = approval_type
+            filing['filing']['restoration']['applicationDate'] = '2023-03-30'
+            filing['filing']['restoration']['noticeDate'] = '2023-03-30'
 
-    err = validate(business, filing)
+            with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                              return_value=limited_restoration_filing):
+                err = validate(business, filing)
 
-    # validate outcomes
-    if test_status == 'FAIL':
-        assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
-    else:
-        assert not err
+            # validate outcomes
+            if test_status == 'FAIL':
+                assert expected_code == err.code
+                if expected_msg:
+                    assert expected_msg == err.msg[0]['error']
+            else:
+                assert not err
+
+
+@pytest.mark.parametrize(
+    'test_status, restoration_types, legal_types, approval_type, limited_restoration_approval_type, file_number, '
+    'expected_code, expected_msg',
+    [
+        ('FAIL', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'courtOrder', None, None,
+         HTTPStatus.BAD_REQUEST, 'Must provide Court Order Number.'),
+        ('FAIL', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'courtOrder', 'courtOrder', None, HTTPStatus.BAD_REQUEST, 'Must provide Court Order Number.'),
+        ('SUCCESS', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'courtOrder', None,
+         '12345678901234567890', None, None),
+        ('SUCCESS', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'courtOrder', 'courtOrder', '12345678901234567890', None, None),
+    ]
+)
+def test_restoration_court_orders(session, test_status, restoration_types, legal_types, approval_type,
+                               limited_restoration_approval_type, file_number, expected_code,expected_msg):
+    """Assert valid values when approval type is 'registrar'."""
+
+    for restoration_type in restoration_types:
+        limited_restoration_filing = None
+        if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+            limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
+        for legal_type in legal_types:
+            business = Business(identifier='BC1234567', legal_type=legal_type)
+            filing = copy.deepcopy(FILING_HEADER)
+            filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+            filing['filing']['header']['name'] = 'restoration'
+            filing['filing']['restoration']['type'] = restoration_type
+            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            filing['filing']['restoration']['relationships'] = relationships
+            expiry_date = LegislationDatetime.now() + relativedelta(years=2)
+            filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+            filing['filing']['restoration']['approvalType'] = approval_type
+            if file_number:
+                court_order = {}
+                court_order['fileNumber'] = file_number
+                filing['filing']['restoration']['courtOrder'] = court_order
+            else:
+                del filing['filing']['restoration']['courtOrder']
+
+            with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                              return_value=limited_restoration_filing):
+                err = validate(business, filing)
+
+            # validate outcomes
+            if test_status == 'FAIL':
+                assert expected_code == err.code
+                assert expected_msg == err.msg[0]['error']
+            else:
+                assert not err
+
+
+@pytest.mark.parametrize(
+    'test_status, restoration_types, legal_types, approval_type, limited_restoration_approval_type, application_date, '
+    'notice_date, expected_code, expected_msg',
+    [
+        ('FAIL', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'registrar', None,
+         None, '2023-03-30', HTTPStatus.BAD_REQUEST, 'Must provide notice of application mailed date.'),
+        ('FAIL', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'registrar', None,
+         '2023-03-30', None, HTTPStatus.BAD_REQUEST, 'Must provide BC Gazette published date.'),
+        ('SUCCESS', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'registrar', None,
+         '2023-03-30', '2023-03-30', None, None),
+        ('SUCCESS', ['fullRestoration', 'limitedRestoration'], ['BC', 'BEN', 'ULC', 'CC'], 'courtOrder', None,
+         None, None, None, None),
+        ('SUCCESS', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'registrar', 'registrar', None, None, None, None),
+        ('SUCCESS', ['limitedRestorationExtension', 'limitedRestorationToFull'], ['BC', 'BEN', 'ULC', 'CC'],
+         'courtOrder', 'courtOrder', None, None, None, None),
+    ]
+)
+def test_restoration_registrar(session, test_status, restoration_types, legal_types, approval_type,
+                       limited_restoration_approval_type, application_date, notice_date, expected_code,expected_msg):
+    """Assert valid values when approval type is 'registrar'."""
+
+    for restoration_type in restoration_types:
+        limited_restoration_filing = None
+        if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+            limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
+        for legal_type in legal_types:
+            business = Business(identifier='BC1234567', legal_type=legal_type)
+            filing = copy.deepcopy(FILING_HEADER)
+            filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+            filing['filing']['header']['name'] = 'restoration'
+            filing['filing']['restoration']['type'] = restoration_type
+            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            filing['filing']['restoration']['relationships'] = relationships
+            expiry_date = LegislationDatetime.now() + relativedelta(years=2)
+            filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+            filing['filing']['restoration']['approvalType'] = approval_type
+            if application_date:
+                filing['filing']['restoration']['applicationDate'] = application_date
+            if notice_date:
+                filing['filing']['restoration']['noticeDate'] = notice_date
+
+            with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                              return_value=limited_restoration_filing):
+                err = validate(business, filing)
+
+            # validate outcomes
+            if test_status == 'FAIL':
+                assert expected_code == err.code
+                assert expected_msg == err.msg[0]['error']
+            else:
+                assert not err
 
 
 @pytest.mark.parametrize(
@@ -266,7 +407,7 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
         execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, None, new_legal_name,
                                     expected_code, expected_msg)
 
-        
+
 @pytest.mark.parametrize(
     'test_status, filing_sub_type, legal_types, nr_number, nr_types, new_legal_name, expected_code, expected_msg',
     [
