@@ -159,16 +159,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'dissolution': {
             'name': 'dissolution',
-            'title': 'Voluntary dissolution',
-            'codes': {
-                'CP': 'DIS_VOL',
-                'BC': 'DIS_VOL',
-                'BEN': 'DIS_VOL',
-                'ULC': 'DIS_VOL',
-                'CC': 'DIS_VOL',
-                'LLC': 'DIS_VOL',
-                'SP': 'DIS_VOL',
-                'GP': 'DIS_VOL'
+            'voluntary': {
+                'name': 'voluntary',
+                'title': 'Voluntary Dissolution',
+                'codes': {
+                    'CP': 'DIS_VOL',
+                    'BC': 'DIS_VOL',
+                    'BEN': 'DIS_VOL',
+                    'ULC': 'DIS_VOL',
+                    'CC': 'DIS_VOL',
+                    'LLC': 'DIS_VOL',
+                    'SP': 'DIS_VOL',
+                    'GP': 'DIS_VOL'
+                }
+            },
+            'administrative': {
+                'name': 'administrative',
+                'title': 'Administrative Dissolution',
+                'codes': {
+                    'CP': 'DIS_ADM',
+                    'BC': 'DIS_ADM',
+                    'BEN': 'DIS_ADM',
+                    'ULC': 'DIS_ADM',
+                    'CC': 'DIS_ADM',
+                    'LLC': 'DIS_ADM',
+                    'SP': 'DIS_ADM',
+                    'GP': 'DIS_ADM'
+                }
             }
         },
         'incorporationApplication': {
@@ -261,7 +278,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     FILING_SUB_TYPE_KEYS: Final = {
         # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
-        # 'dissolution': 'dissolutionType',
+        'dissolution': 'dissolutionType',
         'restoration': 'type'
     }
 

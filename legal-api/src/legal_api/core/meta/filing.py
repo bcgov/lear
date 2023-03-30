@@ -45,6 +45,9 @@ class ReportTitles(str, Enum):
     NOTICE_OF_ARTICLES = 'Notice of Articles'
     AMENDED_REGISTRATION_STATEMENT = 'Amended Registration Statement'
     CORRECTED_REGISTRATION_STATEMENT = 'Corrected Registration Statement'
+    VOLUNTARY_DISSOLUTION = 'Voluntary Dissolution'
+    ADMINISTRATIVE_DISSOLUTION = 'Administrative Dissolution'
+    STATEMENT_DISSOLUTION = 'Statement of Dissolution'
 
 
 class ReportNames(AutoName):
@@ -217,31 +220,56 @@ FILINGS: Final = {
     },
     'dissolution': {
         'name': 'dissolution',
-        'title': 'Voluntary Dissolution',
-        'displayName': {
-            'CP': 'Voluntary Dissolution',
-            'BC': 'Voluntary Dissolution',
-            'BEN': 'Voluntary Dissolution',
-            'ULC': 'Voluntary Dissolution',
-            'CC': 'Voluntary Dissolution',
-            'LLC': 'Voluntary Dissolution',
-            'SP': 'Statement of Dissolution',
-            'GP': 'Statement of Dissolution'
-        },
-        'codes': {
-            'CP': 'DIS_VOL',
-            'BC': 'DIS_VOL',
-            'BEN': 'DIS_VOL',
-            'ULC': 'DIS_VOL',
-            'CC': 'DIS_VOL',
-            'LLC': 'DIS_VOL',
-            'SP': 'DIS_VOL',
-            'GP': 'DIS_VOL'
-        },
         'additional': [
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
             {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
-        ]
+        ],
+        'voluntary': {
+            'title': ReportTitles.VOLUNTARY_DISSOLUTION,
+            'displayName': {
+                'CP': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'BC': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'BEN': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'ULC': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'CC': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'LLC': ReportTitles.VOLUNTARY_DISSOLUTION,
+                'SP': ReportTitles.STATEMENT_DISSOLUTION,
+                'GP': ReportTitles.STATEMENT_DISSOLUTION
+            },
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
+            },
+        },
+        'administrative': {
+            'title': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+            'displayName': {
+                'CP': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'BC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'BEN': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'ULC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'CC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'LLC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+                'SP': ReportTitles.STATEMENT_DISSOLUTION,
+                'GP': ReportTitles.STATEMENT_DISSOLUTION
+            },
+            'codes': {
+                'CP': 'DIS_VOL',
+                'BC': 'DIS_VOL',
+                'BEN': 'DIS_VOL',
+                'ULC': 'DIS_VOL',
+                'CC': 'DIS_VOL',
+                'LLC': 'DIS_VOL',
+                'SP': 'DIS_VOL',
+                'GP': 'DIS_VOL'
+            },
+        }
     },
     'incorporationApplication': {
         'name': 'incorporationApplication',
