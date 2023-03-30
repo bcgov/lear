@@ -305,6 +305,9 @@ class BusinessDocument:
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
                                                                       'voluntaryLiquidation', 'putBackOn']):
+            if filing.filing_sub_type:
+                logging.debug('XXXCRG List of state filings: type=' + filing.filing_type + '; sub_type=' +
+                              filing.filing_sub_type)
             state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -385,11 +388,13 @@ class BusinessDocument:
                     datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
                                                '%Y-%m-%d').date().strftime('%B %-d, %Y')
         elif filing.filing_type == 'restoration':
-            logging.debug(json.dumps(filing_meta))
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type,
-                                          filing_meta['restoration']['restorationType'],
+                                          filing.filing_sub_type,
                                           self._business.legal_type)
+            if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
+                    format_as_report_string(self._business.restoration_expiry_date)
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
