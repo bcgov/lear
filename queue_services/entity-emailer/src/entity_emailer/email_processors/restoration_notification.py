@@ -17,9 +17,6 @@ from __future__ import annotations
 import base64
 import re
 from http import HTTPStatus
-from pathlib import Path
-import json
-import logging
 
 import requests
 from entity_queue_common.service_utils import logger
