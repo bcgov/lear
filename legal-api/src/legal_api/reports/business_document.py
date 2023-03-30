@@ -455,7 +455,7 @@ class BusinessDocument:
 
     @staticmethod
     def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
-        if filing_type == 'dissolution' or filing_type == 'restoration':
+        if filing_type in ['dissolution', 'restoration']:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
