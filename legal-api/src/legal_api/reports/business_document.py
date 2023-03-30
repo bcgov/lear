@@ -31,6 +31,12 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 class BusinessDocument:
     """Service to create business document outputs."""
 
+    # String literals to appease SonarCloud
+    FULL_RESTORATION_STR = 'Full Restoration'
+    LIMITED_RESTORATION_STR = 'Limited Restoration'
+    LIMITED_RESTORATION_EXTENSION_STR = 'Extension of Limited Restoration'
+    LIMITED_RESTORATION_TO_FULL_STR = 'Convert Limited Restoration to Full Restoration'
+
     def __init__(self, business, document_key):
         """Create the Report instance."""
         self._business = business
@@ -483,40 +489,40 @@ class BusinessDocument:
         'restorationApplication': 'Restoration Application',
         'restoration': { 
             'fullRestoration': {
-                'CP': 'Full Restoration',
-                'BEN': 'Full Restoration',
-                'ULC': 'Full Restoration',
-                'CC': 'Full Restoration',
-                'LLC': 'Full Restoration',
-                'SP': 'Full Restoration',
-                'GP': 'Full Restoration'
+                'CP': FULL_RESTORATION_STR,
+                'BEN': FULL_RESTORATION_STR,
+                'ULC': FULL_RESTORATION_STR,
+                'CC': FULL_RESTORATION_STR,
+                'LLC': FULL_RESTORATION_STR,
+                'SP': FULL_RESTORATION_STR,
+                'GP': FULL_RESTORATION_STR
             },
             'limitedRestoration': {
-                'CP': 'Limited Restoration',
-                'BEN': 'Limited Restoration',
-                'ULC': 'Limited Restoration',
-                'CC': 'Limited Restoration',
-                'LLC': 'Limited Restoration',
-                'SP': 'Limited Restoration',
-                'GP': 'Limited Restoration'
+                'CP': LIMITED_RESTORATION_STR,
+                'BEN': LIMITED_RESTORATION_STR,
+                'ULC': LIMITED_RESTORATION_STR,
+                'CC': LIMITED_RESTORATION_STR,
+                'LLC': LIMITED_RESTORATION_STR,
+                'SP': LIMITED_RESTORATION_STR,
+                'GP': LIMITED_RESTORATION_STR
             },
             'limitedRestorationExtension': {
-                'CP': 'Extension of Limited Restoration',
-                'BEN': 'Extension of Limited Restoration',
-                'ULC': 'Extension of Limited Restoration',
-                'CC': 'Extension of Limited Restoration',
-                'LLC': 'Extension of Limited Restoration',
-                'SP': 'Extension of Limited Restoration',
-                'GP': 'Extension of Limited Restoration'
+                'CP': LIMITED_RESTORATION_EXTENSION_STR,
+                'BEN': LIMITED_RESTORATION_EXTENSION_STR,
+                'ULC': LIMITED_RESTORATION_EXTENSION_STR,
+                'CC': LIMITED_RESTORATION_EXTENSION_STR,
+                'LLC': LIMITED_RESTORATION_EXTENSION_STR,
+                'SP': LIMITED_RESTORATION_EXTENSION_STR,
+                'GP': LIMITED_RESTORATION_EXTENSION_STR
             },
             'limitedRestorationToFull': {
-                'CP': 'Convert Limited Restoration to Full Restoration',
-                'BEN': 'Convert Limited Restoration to Full Restoration',
-                'ULC': 'Convert Limited Restoration to Full Restoration',
-                'CC': 'Convert Limited Restoration to Full Restoration',
-                'LLC': 'Convert Limited Restoration to Full Restoration',
-                'SP': 'Convert Limited Restoration to Full Restoration',
-                'GP': 'Convert Limited Restoration to Full Restoration'
+                'CP': LIMITED_RESTORATION_TO_FULL_STR,
+                'BEN': LIMITED_RESTORATION_TO_FULL_STR,
+                'ULC': LIMITED_RESTORATION_TO_FULL_STR,
+                'CC': LIMITED_RESTORATION_TO_FULL_STR,
+                'LLC': LIMITED_RESTORATION_TO_FULL_STR,
+                'SP': LIMITED_RESTORATION_TO_FULL_STR,
+                'GP': LIMITED_RESTORATION_TO_FULL_STR
             }
         },
         'dissolved': 'Involuntary Dissolution',
