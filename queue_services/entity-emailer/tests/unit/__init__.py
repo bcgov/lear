@@ -235,9 +235,6 @@ def prep_restoration_filing(session, identifier, payment_id, option, legal_type,
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'restoration'
-    # if submitter_role:
-    #     filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
     filing_template['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing_template['filing']['restoration']['type'] = r_type
     filing_template['filing']['business'] = {

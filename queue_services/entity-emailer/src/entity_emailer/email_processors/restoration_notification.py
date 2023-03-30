@@ -24,7 +24,7 @@ import logging
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from jinja2 import Environment, BaseLoader, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from legal_api.models import Business, CorpType, Filing
 
 from entity_emailer.email_processors import get_filing_info

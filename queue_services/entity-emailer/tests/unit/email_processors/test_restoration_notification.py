@@ -58,7 +58,7 @@ def test_completed_extended_restoration_notification(app, session):
         }, token)
         email = email_dict['content']['body']
         assert 'You have successfully extended the period of restoration with the BC Business' in email
-        
+
 
 def test_paid_restoration_notification(app, session):
     # setup filing + business for email
