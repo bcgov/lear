@@ -224,7 +224,7 @@ FILINGS: Final = {
             {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
             {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
         ],
-        'voluntaryDissolution': {
+        'voluntary': {
             'title': ReportTitles.VOLUNTARY_DISSOLUTION,
             'displayName': {
                 'CP': ReportTitles.VOLUNTARY_DISSOLUTION,
@@ -247,7 +247,7 @@ FILINGS: Final = {
                 'GP': 'DIS_VOL'
             },
         },
-        'administrativeDissolution': {
+        'administrative': {
             'title': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
             'displayName': {
                 'CP': ReportTitles.ADMINISTRATIVE_DISSOLUTION,

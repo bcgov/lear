@@ -651,7 +651,8 @@ class ListFilingResource():
         elif any(filing_type in x for x in ['dissolution']):
             dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
             if dissolution_type == 'voluntary':
-                filing_type_code = Filing.FILINGS.get('dissolution', {}).get('codes', {}).get(legal_type)
+                filing_type_code = Filing.FILINGS.get('dissolution', {}).get(dissolution_type).get('codes', {}) \
+                    .get(legal_type)
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),

@@ -982,7 +982,7 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
-DISSOLUTION_FILING = {
+DISSOLUTION_VOLUNTARY_FILING = {
     'filing': {
         'header': {
             'name': 'dissolution',
@@ -1004,6 +1004,7 @@ DISSOLUTION_FILING = {
         'dissolution': DISSOLUTION
     }
 }
+DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'voluntary'
 
 # FUTURE: use RESTORATION_FILING from business schema data when restoration filing work has been done
 RESTORATION_FILING = {
@@ -1078,15 +1079,15 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True, []),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
          Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
-        ('CP1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
+        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
             ['AFDVT', 'SPRLN']),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
             False, []),
         ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
         ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
@@ -1292,5 +1293,5 @@ def test_rules_in_sr(session, requests_mock, client, jwt):
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=sr,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )    
+                     )
     assert rv.status_code == HTTPStatus.BAD_REQUEST

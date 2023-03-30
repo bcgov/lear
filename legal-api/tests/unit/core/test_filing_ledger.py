@@ -36,6 +36,9 @@ def load_ledger(business, founding_date):
         if filing_meta['name'] == 'restoration':
             filing['filing']['restoration'] = {}
             filing['filing']['restoration']['type'] = 'fullRestoration'
+        elif filing_meta['name'] == 'dissolution':
+            filing['filing']['dissolution'] = {}
+            filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()
@@ -92,6 +95,8 @@ def test_common_ledger_items(session):
     assert common_ledger_items['documentsLink'] is None
 
     filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['dissolution'] = {}
+    filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
