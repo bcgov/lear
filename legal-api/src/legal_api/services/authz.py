@@ -170,14 +170,14 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'dissolution': {
-                'voluntaryDissolution': {
+                'voluntary': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
-                'administrativeDissolution': {
+                'administrative': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
@@ -305,7 +305,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'dissolution': {
-                'voluntaryDissolution': {
+                'voluntary': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],

@@ -1022,7 +1022,7 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
-DISSOLUTION_FILING = {
+DISSOLUTION_VOLUNTARY_FILING = {
     'filing': {
         'header': {
             'name': 'dissolution',
@@ -1044,12 +1044,20 @@ DISSOLUTION_FILING = {
         'dissolution': DISSOLUTION
     }
 }
+DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'voluntary'
 
 
-def _get_expected_fee_code(free, filing_name, legal_type):
+def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
+    filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
     if free:
-        return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
+        if filing_sub_type:
+            return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('free', {}).get('codes', {}).get(legal_type)
+        else:
+            return Filing.FILINGS[filing_name].get('free', {}).get('codes', {}).get(legal_type)
+
+    if filing_sub_type:
+        return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('codes', {}).get(legal_type)
 
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
@@ -1075,15 +1083,15 @@ def _get_expected_fee_code(free, filing_name, legal_type):
         ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True, []),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
          Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
-        ('CP1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
+        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
             ['AFDVT', 'SPRLN']),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
             False, []),
     ]
 )
@@ -1091,7 +1099,7 @@ def test_get_correct_fee_codes(
         session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
-    expected_fee_code = _get_expected_fee_code(free, filing_name, orig_legal_type)
+    expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
 
     business = None
     if not identifier.startswith('T'):

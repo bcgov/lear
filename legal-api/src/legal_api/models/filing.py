@@ -159,8 +159,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'dissolution': {
             'name': 'dissolution',
-            'voluntaryDissolution': {
-                'name': 'voluntaryDissolution',
+            'voluntary': {
+                'name': 'voluntary',
                 'title': 'Voluntary Dissolution',
                 'codes': {
                     'CP': 'DIS_VOL',
@@ -173,8 +173,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'GP': 'DIS_VOL'
                 }
             },
-            'administrativeDissolution': {
-                'name': 'administrativeDissolution',
+            'administrative': {
+                'name': 'administrative',
                 'title': 'Administrative Dissolution',
                 'codes': {
                     'CP': 'DIS_ADM',
@@ -278,7 +278,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     FILING_SUB_TYPE_KEYS: Final = {
         # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
-        # 'dissolution': 'dissolutionType',
+        'dissolution': 'dissolutionType',
         'restoration': 'type'
     }
 
