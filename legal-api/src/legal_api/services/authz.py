@@ -43,6 +43,7 @@ class BusinessBlocker(str, Enum):
     # to make it easier to check if a business is blocked.  If there is ever a need to be more granular,
     # the individual checks within DEFAULT could be added as an individual enum item.
     DEFAULT = 'DEFAULT'
+    BUSINESS_FROZEN = 'BUSINESS_FROZEN'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -164,12 +165,24 @@ ALLOWABLE_FILINGS: Final = {
             },
             'courtOrder': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             },
             'dissolution': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
+                'voluntaryDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'administrativeDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
                 }
             },
             'incorporationApplication': {
@@ -183,17 +196,26 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'registrarsOrder': {
-                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC']
+                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
             },
             'specialResolution': {
-                'legalTypes': ['CP']
+                'legalTypes': ['CP'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             },
             'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             },
             'restoration': {
                 'limitedRestorationExtension': {
@@ -283,11 +305,13 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'dissolution': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'voluntaryDissolution': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
             },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
@@ -298,10 +322,16 @@ ALLOWABLE_FILINGS: Final = {
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
             },
             'specialResolution': {
-                'legalTypes': ['CP']
+                'legalTypes': ['CP'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             },
             'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT]
+                }
             }
         },
         Business.State.HISTORICAL: {}
@@ -358,7 +388,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         state_filing = Filing.find_by_id(business.state_filing_id)
 
     # doing this check up front to cache result
-    has_blocker_default = business_blocker_default_check(business)
+    business_blocker_dict: dict = business_blocker_check(business)
     allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -373,7 +403,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
         if allowable_filing_legal_types:
             if legal_type in allowable_filing_legal_types:
-                if has_blocker(business, state_filing, allowable_filing_value, has_blocker_default):
+                if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
                     continue
                 allowable_filing_types \
                     .append({'name': allowable_filing_key,
@@ -383,7 +413,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
             filing_sub_type_items = \
                 filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
             for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-                if has_blocker(business, state_filing, filing_sub_type_item_value, has_blocker_default):
+                if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
                     continue
                 allowable_filing_types \
                     .append({'name': allowable_filing_key,
@@ -398,12 +428,12 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
     return allowable_filing_types
 
 
-def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, has_default_blocker: bool):
+def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
         return False
 
-    if has_business_blocker_default(blocker_checks, has_default_blocker):
+    if has_business_blocker(blocker_checks, business_blocker_dict):
         return True
 
     if has_blocker_valid_state_filing(state_filing, blocker_checks):
@@ -418,29 +448,38 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     return False
 
 
-def has_business_blocker_default(blocker_checks: dict, has_default_blocker: bool):
+def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     """Return True if the business has a default blocker."""
     if not (business_blocker_checks := blocker_checks.get('business', [])):
         return False
 
-    if BusinessBlocker.DEFAULT not in business_blocker_checks:
-        return False
-
-    return has_default_blocker
-
-
-def business_blocker_default_check(business: Business):
-    """Return True if the business has a default blocker condition."""
-    if not business:
-        return False
-
-    if has_blocker_filing(business):
-        return True
-
-    if business.admin_freeze:
-        return True
+    for business_blocker_check_type in business_blocker_checks:
+        if business_blocker_dict[business_blocker_check_type]:
+            return True
 
     return False
+
+
+def business_blocker_check(business: Business):
+    """Return True if the business has a default blocker condition."""
+    business_blocker_checks: dict = {
+        BusinessBlocker.BUSINESS_FROZEN: False,
+        BusinessBlocker.DEFAULT: False
+    }
+
+    if not business:
+        return business_blocker_checks
+
+    if has_blocker_filing(business):
+        business_blocker_checks[BusinessBlocker.DEFAULT] = True
+
+    if business.admin_freeze:
+        business_blocker_checks = {
+            BusinessBlocker.BUSINESS_FROZEN: True,
+            BusinessBlocker.DEFAULT: True
+        }
+
+    return business_blocker_checks
 
 
 def has_blocker_filing(business: Business):
