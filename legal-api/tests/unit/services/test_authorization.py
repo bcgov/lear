@@ -407,6 +407,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           {'dissolution': ['voluntaryDissolution']}, 'incorporationApplication', 'transition']),
         ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
          [{'dissolution': ['voluntaryDissolution']}]),
+        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+         ['changeOfRegistration', {'dissolution': ['voluntaryDissolution']}, 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
