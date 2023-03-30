@@ -11,7 +11,6 @@
 """Produces a PDF output based on templates and JSON messages."""
 import base64
 import json
-import logging
 import os
 from datetime import datetime
 from http import HTTPStatus
@@ -256,11 +255,6 @@ class BusinessDocument:
         business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
         if self._business.start_date:
             business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
-        # restorations XXXCRG
-        #  full
-        #  limited
-        #  extension
-        #  conversion
 
     def _set_addresses(self, business: dict):
         """Set business addresses."""
@@ -305,9 +299,6 @@ class BusinessDocument:
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
                                                                       'voluntaryLiquidation', 'putBackOn']):
-            if filing.filing_sub_type:
-                logging.debug('XXXCRG List of state filings: type=' + filing.filing_type + '; sub_type=' +
-                              filing.filing_sub_type)
             state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -490,7 +481,7 @@ class BusinessDocument:
             }
         },
         'restorationApplication': 'Restoration Application',
-        'restoration': {  # XXXCRG
+        'restoration': { 
             'fullRestoration': {
                 'CP': 'Full Restoration',
                 'BEN': 'Full Restoration',
