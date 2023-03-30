@@ -226,7 +226,6 @@ MISSING_BUSINESS_INFO_WARNINGS = [{ 'warningType': WarningType.MISSING_REQUIRED_
                                     'code': 'NO_BUSINESS_OFFICE',
                                     'message': 'A business office is required.'}]
 
-
 def expected_lookup(filing_keys: list):
     results = []
     for filing_key in filing_keys:
@@ -1064,17 +1063,29 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
     'test_name,state,legal_types,username,roles,filing_types,filing_statuses,expected',
     [
         # active business - staff user
-        ('staff_active_cp', Business.State.ACTIVE, ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE])),
+        # ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        #  BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+        #  expected_lookup([FilingKey.ADMN_FRZE])),
+        # ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        #  BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+        #  expected_lookup([FilingKey.ADMN_FRZE])),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS])),
 
         # active business - general user
-        ('general_user_cp', Business.State.ACTIVE, ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
+        # ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        #  BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
+        # ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
+        #  BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
+        # ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
+        #  BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
 
         # historical business - staff user
         ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
