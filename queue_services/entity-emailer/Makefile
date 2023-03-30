@@ -54,6 +54,7 @@ install: clean ## Install python virtrual environment
 install-dev: ## Install local application
 	. venv/bin/activate ; \
 	pip install -Ur requirements/dev.txt; \
+	pip install -Ur requirements/bcregistry-libraries.txt
 	pip install -e .
 
 #################################################################################
