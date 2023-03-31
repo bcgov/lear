@@ -19,12 +19,14 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
+from legal_api.models import Business, Filing, PartyRole
 from legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003;
+
+APPROVAL_TYPE_PATH = '/filing/restoration/approvalType'
 
 
 def validate(business: Business, restoration: Dict) -> Optional[Error]:
@@ -35,8 +37,13 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     msg = []
 
     restoration_type = get_str(restoration, '/filing/restoration/type')
+    limited_restoration = None
+    if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+        limited_restoration = Filing.get_a_businesses_most_recent_filing_of_a_type(business.id,
+                                                                                   'restoration',
+                                                                                   'limitedRestoration')
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
-        msg.extend(validate_expiry_date(restoration))
+        msg.extend(validate_expiry_date(restoration, restoration_type))
     elif restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         msg.extend(validate_relationship(restoration))
 
@@ -48,27 +55,31 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
         if not name_request.get('legalName', None):
             msg.append({'error': 'Legal name is missing in nameRequest.',
                         'path': '/filing/restoration/nameRequest/legalName'})
+
     msg.extend(validate_party(restoration))
     msg.extend(validate_offices(restoration, filing_type))
-
-    msg.extend(validate_restoration_court_order(restoration, restoration_type))
+    msg.extend(validate_approval_type(restoration, restoration_type, limited_restoration))
+    msg.extend(validate_restoration_court_order(restoration, restoration_type, limited_restoration))
+    msg.extend(validate_restoration_registrar(restoration, restoration_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
 
-def validate_expiry_date(filing: Dict) -> list:
+def validate_expiry_date(filing: Dict, restoration_type: str) -> list:
     """Validate expiry date."""
-    # Between 1 month and 2 years in the future
+    # Between 1 month and 2 years in the future for limited restoration
+    # Between 1 month and 3 years in the future for limited restoration extension
     msg = []
     expiry_date_path = '/filing/restoration/expiry'
     if expiry_date := get_date(filing, expiry_date_path):
         now = LegislationDatetime.now().date()
-        greater = now + relativedelta(years=2)
+        max_expiry_years = 2 if restoration_type == 'limitedRestoration' else 3
+        greater = now + relativedelta(years=max_expiry_years)
         lesser = now + relativedelta(months=1)
         if expiry_date < lesser or expiry_date > greater:
-            msg.append({'error': 'Expiry Date must be between 1 month and 2 years in the future.',
+            msg.append({'error': f'Expiry Date must be between 1 month and {max_expiry_years} years in the future.',
                         'path': expiry_date_path})
     else:
         msg.append({'error': 'Expiry Date is required.', 'path': expiry_date_path})
@@ -102,7 +113,18 @@ def validate_party(filing: Dict) -> list:
     return msg
 
 
-def validate_restoration_court_order(filing: dict, restoration_type: str) -> list:
+def validate_approval_type(filing: dict, restoration_type: str, limited_restoration: Filing) -> list:
+    """Validate approval type."""
+    msg = []
+    approval_type = get_str(filing, APPROVAL_TYPE_PATH)
+    if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull') and \
+            limited_restoration.approval_type != approval_type:
+        msg.append({'error': f'Must provide approval type with value of {limited_restoration.approval_type}.',
+                    'path': APPROVAL_TYPE_PATH})
+    return msg
+
+
+def validate_restoration_court_order(filing: dict, restoration_type: str, limited_restoration: Filing) -> list:
     """Validate court order."""
     msg = []
     if court_order := filing.get('filing', {}).get('restoration', {}).get('courtOrder', None):
@@ -110,7 +132,30 @@ def validate_restoration_court_order(filing: dict, restoration_type: str) -> lis
         if err := validate_court_order(court_order_path, court_order):
             msg.extend(err)
     elif restoration_type in ('fullRestoration', 'limitedRestoration') and \
-            get_str(filing, '/filing/restoration/approvalType') == 'courtOrder':
+            get_str(filing, APPROVAL_TYPE_PATH) == 'courtOrder':
         msg.append({'error': 'Must provide Court Order Number.', 'path': '/filing/restoration/courtOrder/fileNumber'})
+    elif restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull') and \
+            limited_restoration.approval_type == 'courtOrder' and \
+            not court_order:
+        msg.append({'error': 'Must provide Court Order Number.', 'path': '/filing/restoration/courtOrder/fileNumber'})
+
+    return msg
+
+
+def validate_restoration_registrar(filing: dict, restoration_type: str) -> list:
+    """Validate fields for when approval type is 'registrar'.
+
+    Application and notice date validation is only required for fullRestoration & limitedRestoration
+    """
+    msg = []
+    if get_str(filing, APPROVAL_TYPE_PATH) == 'registrar' and \
+            restoration_type in ('fullRestoration', 'limitedRestoration'):
+        application_date = filing.get('filing', {}).get('restoration', {}).get('applicationDate', None)
+        if not application_date:
+            msg.append({'error': 'Must provide notice of application mailed date.',
+                        'path': '/filing/restoration/applicationDate'})
+        notice_date = filing.get('filing', {}).get('restoration', {}).get('noticeDate', None)
+        if not notice_date:
+            msg.append({'error': 'Must provide BC Gazette published date.', 'path': '/filing/restoration/noticeDate'})
 
     return msg
