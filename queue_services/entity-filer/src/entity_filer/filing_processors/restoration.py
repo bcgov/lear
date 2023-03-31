@@ -23,7 +23,7 @@ from legal_api.models import Business, Filing, PartyRole
 from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, name_request
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
@@ -66,14 +66,25 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     update_offices(business, restoration_filing['offices'])
 
+    if name_translations := restoration_filing.get('nameTranslations'):
+        aliases.update_aliases(business, name_translations)
+
     parties = restoration_filing['parties']
     _update_parties(business, parties, filing_rec)
 
     filing_rec.approval_type = restoration_filing.get('approvalType')
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
-        filings.update_filing_court_order(filing_rec, court_order_json)
-
+    if filing_rec.approval_type == 'courtOrder':
+        with suppress(IndexError, KeyError, TypeError):
+            court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
+            filings.update_filing_court_order(filing_rec, court_order_json)
+    elif filing_rec.approval_type == 'registrar':
+        application_date = restoration_filing.get('applicateDate')
+        notice_date = restoration_filing.get('noticeDate')
+        if application_date and notice_date:
+            application_date_formatted = datetime.fromisoformat(application_date) + timedelta(hours=8)
+            notice_date_formatted = datetime.fromisoformat(notice_date) + timedelta(hours=8)
+            filing_rec.applicate_date = application_date_formatted #wait for argus
+            filing_rec.notice_date = notice_date_formatted #wait for argus
 
 def _update_parties(business: Business, parties: dict, filing_rec: Filing):
     """Create applicant party and cease custodian if exist."""
