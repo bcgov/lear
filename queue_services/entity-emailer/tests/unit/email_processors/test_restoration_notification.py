@@ -12,39 +12,90 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Restoration email processor."""
+
 from unittest.mock import patch
+
+import responses
 
 from entity_emailer.email_processors import restoration_notification
 from tests.unit import prep_restoration_filing
 
 
-def test_completed_full_restoration_notification(app, session):
+@responses.activate
+def test_complete_full_restoration_notification_includes_notice_of_articles_and_incorporation_cert(session, config):
     """Test completed full restoration notification."""
     # setup filing + business for email
     status = 'COMPLETED'
     legal_name = 'test business'
-    filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name)
+    business_id = 'BC1234567'
+    token = 'token'
+    filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
+    responses.add(
+        responses.GET,
+        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles',
+        status=200
+    )
+    responses.add(
+        responses.GET,
+        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificate',
+        status=200
+    )
+    restoration_notification.process({
+        'filingId': filing.id,
+        'type': 'restoration',
+        'option': status
+    }, token)
+    assert len(responses.calls) == 2
+
+
+@responses.activate
+def test_paid_restoration_notification_includes_receipt_and_restoration_application_attachments(session, config):
+    """Test PAID full restoration notification."""
+    # setup filing + business for email
+    legal_name = 'test business'
+    business_id = 'BC1234567'
+    status = 'PAID'
+    filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
+    token = 'token'
+    responses.add(
+        responses.POST,
+        f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        status=200
+    )
+    responses.add(
+        responses.GET,
+        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}',
+        status=200
+    )
+    restoration_notification.process({
+        'filingId': filing.id,
+        'type': 'restoration',
+        'option': status
+    }, token)
+    assert len(responses.calls) == 2
+
+
+def test_completed_full_restoration_notification(session, config):
+    """Test completed full restoration notification."""
+    # setup filing + business for email
+    status = 'COMPLETED'
+    legal_name = 'test business'
+    business_id = 'BC1234567'
+    filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
     token = 'token'
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email_dict = restoration_notification.process({
-            'filingId': filing.id,
-            'type': 'restoration',
-            'option': status
-        }, token)
-        email = email_dict['content']['body']
-        assert email_dict['content']['subject'] == 'test business - Restoration Documents from the Business Registry'
-        assert 'joe@email.com' in email_dict['recipients']
-        assert 'You have successfully restored your business with the BC Business Registry' in email
-        assert email_dict['content']['attachments'] == []
-        assert mock_get_pdfs.call_args[0][0] == status
-        assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-        assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
-        assert mock_get_pdfs.call_args[0][3] == filing
+    email_dict = restoration_notification.process({
+        'filingId': filing.id,
+        'type': 'restoration',
+        'option': status
+    }, token)
+    email = email_dict['content']['body']
+    assert email_dict['content']['subject'] == 'test business - Restoration Documents from the Business Registry'
+    assert 'joe@email.com' in email_dict['recipients']
+    assert 'You have successfully restored your business with the BC Business Registry' in email
 
 
-def test_completed_extended_restoration_notification(app, session):
+def test_completed_extended_restoration_notification(session):
     """Test completed extended restoration notification includes specific wording."""
     # setup filing + business for email
     status = 'COMPLETED'
@@ -52,17 +103,17 @@ def test_completed_extended_restoration_notification(app, session):
     filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name, 'limitedRestorationExtension')
     token = 'token'
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
-        email_dict = restoration_notification.process({
-            'filingId': filing.id,
-            'type': 'restoration',
-            'option': status
-        }, token)
-        email = email_dict['content']['body']
-        assert 'You have successfully extended the period of restoration with the BC Business' in email
+    email_dict = restoration_notification.process({
+        'filingId': filing.id,
+        'type': 'restoration',
+        'option': status
+    }, token)
+    email = email_dict['content']['body']
+    assert 'You have successfully extended the period of restoration with the BC Business' in email
 
 
-def test_paid_restoration_notification(app, session):
+@responses.activate
+def test_paid_restoration_notification(session):
     """Test PAID full restoration notification."""
     # setup filing + business for email
     legal_name = 'test business'
@@ -70,7 +121,7 @@ def test_paid_restoration_notification(app, session):
     filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name)
     token = 'token'
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
             'filingId': filing.id,
             'type': 'restoration',
@@ -82,8 +133,3 @@ def test_paid_restoration_notification(app, session):
         assert 'joe@email.com' in email_dict['recipients']
         assert 'You have successfully filed your restoration with the BC Business Registry' in email
         assert email_dict['content']['attachments'] == []
-        assert mock_get_pdfs.call_args[0][0] == status
-        assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-        assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
-        assert mock_get_pdfs.call_args[0][3] == filing

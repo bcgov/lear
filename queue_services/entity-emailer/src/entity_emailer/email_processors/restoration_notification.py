@@ -44,6 +44,23 @@ def _get_pdfs(
     }
 
     if status == Filing.Status.PAID.value:
+        filing_pdf = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+            headers=headers
+        )
+        if filing_pdf.status_code != HTTPStatus.OK:
+            logger.error('Failed to get pdf for filing: %s', filing.id)
+        else:
+            filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+            pdfs.append(
+                {
+                    'fileName': 'Restoration Application.pdf',
+                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
         name_request = filing.json['filing']['restoration']['nameRequest']
         corp_name = name_request.get('legalName')
         business_data = Business.find_by_internal_id(filing.business_id)
@@ -72,18 +89,39 @@ def _get_pdfs(
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+        # add notice of articles
+        noa = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=noticeOfArticles',
             headers=headers
         )
-        if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
+        if noa.status_code != HTTPStatus.OK:
+            logger.error('Failed to get noa pdf for filing: %s', filing.id)
         else:
-            filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+            noa_encoded = base64.b64encode(noa.content)
             pdfs.append(
                 {
-                    'fileName': 'Statement of Registration.pdf',
-                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                    'fileName': 'Notice of Articles.pdf',
+                    'fileBytes': noa_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
+        # add certificate of incorporation
+        certificate = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certificate',
+            headers=headers
+        )
+        if certificate.status_code != HTTPStatus.OK:
+            logger.error('Failed to get certificate pdf for filing: %s', filing.id)
+        else:
+            certificate_encoded = base64.b64encode(certificate.content)
+            pdfs.append(
+                {
+                    'fileName': 'Incorporation Certificate.pdf',
+                    'fileBytes': certificate_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
                 }

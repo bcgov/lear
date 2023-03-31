@@ -1,14 +1,17 @@
 # Everything the developer needs outside of the production requirements
 
 # Testing
+dpath
 freezegun
+pyhamcrest
 pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
+pyyaml==6.0
 requests
-pyhamcrest
-dpath
+responses==0.23.1
+types-PyYAML==6.0.12.9
 
 # Lint and code style
 pydocstyle<4
