@@ -725,15 +725,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing._filing_type == filing_type). \
-            filter(Filing._filing_sub_type == filing_sub_type). \
-            filter(Filing.business_id == business_id). \
-            subquery()
+            filter(Filing.business_id == business_id)
+        if filing_sub_type:
+            max_filing = max_filing.filter(Filing._filing_sub_type == filing_sub_type)
+        max_filing = max_filing.subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
-            filter(Filing._filing_sub_type == filing_sub_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
+        if filing_sub_type:
+            filing = filing.filter(Filing._filing_sub_type == filing_sub_type)
 
         return filing.one_or_none()
 
