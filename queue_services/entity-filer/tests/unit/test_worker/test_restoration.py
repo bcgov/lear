@@ -187,12 +187,13 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
     else:
         assert final_filing.court_order_file_number is None
 
+
 @pytest.mark.parametrize('approval_type', [
     ('registrar'),
     ('courtOrder')
 ])
 async def test_restoration_registrar(app, session, mocker, approval_type):
-    """Assert the worker process the court order correctly."""
+    """Assert the worker process the registrar correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
@@ -226,6 +227,33 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     else:
         assert final_filing.application_date is None
         assert final_filing.notice_date is None
+
+
+async def test_restoration_name_translations(app, session, mocker):
+    """Assert the worker process the name translations correctly."""
+    identifier = 'BC1234567'
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+    business.save()
+    business_id = business.id
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+
+    _mock_out(mocker)
+
+    await process_filing(filing_msg, app)
+    
+    #Check outcome
+    print('dio')
+    print(business.aliases)
+    assert filing['filing']['restoration']['nameTranslations'] == [{'name': 'ABCD Ltd.'}]
+    assert business.aliases is not None
+
 
 async def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""

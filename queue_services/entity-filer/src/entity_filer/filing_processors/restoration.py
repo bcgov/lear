@@ -23,7 +23,8 @@ from legal_api.models import Business, Filing, PartyRole
 from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
@@ -64,10 +65,10 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     business.dissolution_date = None
     business.state_filing_id = filing_rec.id
 
-    update_offices(business, restoration_filing['offices'])
-
     if name_translations := restoration_filing.get('nameTranslations'):
-        aliases.update_aliases(business, name_translations)
+        update_aliases(business, name_translations)
+
+    update_offices(business, restoration_filing['offices'])
 
     parties = restoration_filing['parties']
     _update_parties(business, parties, filing_rec)
@@ -83,6 +84,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         if application_date and notice_date:
             filing_rec.application_date = datetime.fromisoformat(application_date) + timedelta(hours=8)
             filing_rec.notice_date = datetime.fromisoformat(notice_date) + timedelta(hours=8)
+
 
 def _update_parties(business: Business, parties: dict, filing_rec: Filing):
     """Create applicant party and cease custodian if exist."""
