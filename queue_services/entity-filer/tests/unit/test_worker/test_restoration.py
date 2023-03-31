@@ -201,11 +201,11 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['approvalType'] = approval_type
-    filing['filing']['restoration']['applicationDate'] = '2023-03-30'
-    filing['filing']['restoration']['noticeDate'] = '2023-03-30'
+    filing['filing']['restoration']['applicationDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime('%Y-%m-%d')
+    filing['filing']['restoration']['noticeDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime('%Y-%m-%d')
     
     if approval_type == 'courtOrder':
-        del filing['filing']['restoration']['applicateDate']
+        del filing['filing']['restoration']['applicationDate']
         del filing['filing']['restoration']['noticeDate']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -221,8 +221,8 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing['filing']['restoration']['approvalType'] == final_filing.approval_type
     if approval_type == 'registrar':
-        assert filing['filing']['restoration']['applicationDate'] == final_filing.application_date
-        assert filing['filing']['restoration']['noticeDate'] == final_filing.notice_date
+        assert filing['filing']['restoration']['applicationDate'] == (final_filing.application_date).strftime('%Y-%m-%d')
+        assert filing['filing']['restoration']['noticeDate'] == (final_filing.notice_date).strftime('%Y-%m-%d')
     else:
         assert final_filing.application_date is None
         assert final_filing.notice_date is None

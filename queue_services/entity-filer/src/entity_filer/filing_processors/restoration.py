@@ -78,7 +78,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
             court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
             filings.update_filing_court_order(filing_rec, court_order_json)
     elif filing_rec.approval_type == 'registrar':
-        application_date = restoration_filing.get('applicateDate')
+        application_date = restoration_filing.get('applicationDate')
         notice_date = restoration_filing.get('noticeDate')
         if application_date and notice_date:
             filing_rec.application_date = datetime.fromisoformat(application_date) + timedelta(hours=8)
