@@ -19,8 +19,9 @@ from tests.unit import prep_restoration_filing
 
 
 def test_completed_full_restoration_notification(app, session):
+    """Test completed full restoration notification."""
     # setup filing + business for email
-    status = "COMPLETED"
+    status = 'COMPLETED'
     legal_name = 'test business'
     filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name)
     token = 'token'
@@ -44,13 +45,14 @@ def test_completed_full_restoration_notification(app, session):
 
 
 def test_completed_extended_restoration_notification(app, session):
+    """Test completed extended restoration notification includes specific wording."""
     # setup filing + business for email
-    status = "COMPLETED"
+    status = 'COMPLETED'
     legal_name = 'test business'
     filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name, 'limitedRestorationExtension')
     token = 'token'
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
             'filingId': filing.id,
             'type': 'restoration',
@@ -61,9 +63,10 @@ def test_completed_extended_restoration_notification(app, session):
 
 
 def test_paid_restoration_notification(app, session):
+    """Test PAID full restoration notification."""
     # setup filing + business for email
     legal_name = 'test business'
-    status = "PAID"
+    status = 'PAID'
     filing = prep_restoration_filing(session, 'BC1234567', '1', status, 'BC', legal_name)
     token = 'token'
     # test processor

@@ -109,7 +109,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # create the jinja environment
     jinja_env = Environment(
-        loader=FileSystemLoader(current_app.config.get("TEMPLATE_PATH")),
+        loader=FileSystemLoader(current_app.config.get('TEMPLATE_PATH')),
         autoescape=True
     )
     # look for a template in this format RES-fullRestoration-PAID.html

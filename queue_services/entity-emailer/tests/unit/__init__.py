@@ -17,7 +17,6 @@ import json
 from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
-import logging
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
@@ -221,8 +220,10 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
     return filing
 
 
-def prep_restoration_filing(session, identifier, payment_id, option, legal_type, legal_name, r_type = 'fullRestoration'):
+def prep_restoration_filing(session, identifier, payment_id, option, legal_type, legal_name, r_type='fullRestoration'):
     """Return a new restoration filing prepped for email notification.
+
+    @param r_type:
     @param session:
     @param identifier:
     @param payment_id:
