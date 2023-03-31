@@ -33,7 +33,7 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
     REGISTRATION,
-    RESTORATION
+    RESTORATION,
 )
 from sqlalchemy_continuum import versioning_manager
 
