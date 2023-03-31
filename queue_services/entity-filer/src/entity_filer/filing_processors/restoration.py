@@ -81,10 +81,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         application_date = restoration_filing.get('applicateDate')
         notice_date = restoration_filing.get('noticeDate')
         if application_date and notice_date:
-            application_date_formatted = datetime.fromisoformat(application_date) + timedelta(hours=8)
-            notice_date_formatted = datetime.fromisoformat(notice_date) + timedelta(hours=8)
-            filing_rec.applicate_date = application_date_formatted #wait for argus
-            filing_rec.notice_date = notice_date_formatted #wait for argus
+            filing_rec.application_date = datetime.fromisoformat(application_date) + timedelta(hours=8)
+            filing_rec.notice_date = datetime.fromisoformat(notice_date) + timedelta(hours=8)
 
 def _update_parties(business: Business, parties: dict, filing_rec: Filing):
     """Create applicant party and cease custodian if exist."""
