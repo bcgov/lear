@@ -304,8 +304,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _meta_data = db.Column('meta_data', JSONB)
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
-    paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
-    colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     has_legacy_outputs = db.column('has_legacy_outputs', db.boolean, unique=False, default=False)
 
