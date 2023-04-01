@@ -10,8 +10,7 @@ pytest-asyncio
 pytest-mock
 pyyaml==6.0
 requests
-responses==0.23.1
-types-PyYAML==6.0.12.9
+requests-mock
 
 # Lint and code style
 pydocstyle<4

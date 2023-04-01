@@ -91,8 +91,8 @@ def _get_pdfs(
     elif status == Filing.Status.COMPLETED.value:
         # add notice of articles
         noa = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=noticeOfArticles',
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+            params={"type": "noticeOfArticles"},
             headers=headers
         )
         if noa.status_code != HTTPStatus.OK:

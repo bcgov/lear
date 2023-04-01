@@ -15,13 +15,13 @@
 
 from unittest.mock import patch
 
-import responses
+import requests_mock
+import base64
 
 from entity_emailer.email_processors import restoration_notification
 from tests.unit import prep_restoration_filing
 
 
-@responses.activate
 def test_complete_full_restoration_notification_includes_notice_of_articles_and_incorporation_cert(session, config):
     """Test completed full restoration notification."""
     # setup filing + business for email
@@ -30,25 +30,26 @@ def test_complete_full_restoration_notification_includes_notice_of_articles_and_
     business_id = 'BC1234567'
     token = 'token'
     filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
-    responses.add(
-        responses.GET,
-        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles',
-        status=200
-    )
-    responses.add(
-        responses.GET,
-        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificate',
-        status=200
-    )
-    restoration_notification.process({
-        'filingId': filing.id,
-        'type': 'restoration',
-        'option': status
-    }, token)
-    assert len(responses.calls) == 2
+    print(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles')
+    with requests_mock.Mocker() as m:
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles',
+              content=b'pdf_content_1', status_code=200)
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificate',
+              content=b'pdf_content_2')
+        output = restoration_notification.process({
+            'filingId': filing.id,
+            'type': 'restoration',
+            'option': status
+        }, token)
+        assert 'content' in output
+        assert 'attachments' in output['content']
+        assert len(output['content']['attachments']) == 2
+        assert output['content']['attachments'][0]['fileName'] == 'Notice of Articles.pdf'
+        assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+        assert output['content']['attachments'][1]['fileName'] == 'Incorporation Certificate.pdf'
+        assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
-@responses.activate
 def test_paid_restoration_notification_includes_receipt_and_restoration_application_attachments(session, config):
     """Test PAID full restoration notification."""
     # setup filing + business for email
@@ -57,22 +58,23 @@ def test_paid_restoration_notification_includes_receipt_and_restoration_applicat
     status = 'PAID'
     filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
     token = 'token'
-    responses.add(
-        responses.POST,
-        f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-        status=200
-    )
-    responses.add(
-        responses.GET,
-        f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}',
-        status=200
-    )
-    restoration_notification.process({
-        'filingId': filing.id,
-        'type': 'restoration',
-        'option': status
-    }, token)
-    assert len(responses.calls) == 2
+    with requests_mock.Mocker() as m:
+        m.post(f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+               content=b'pdf_content_1', status_code=201)
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}',
+              content=b'pdf_content_2', status_code=200)
+        output = restoration_notification.process({
+            'filingId': filing.id,
+            'type': 'restoration',
+            'option': status
+        }, token)
+        assert 'content' in output
+        assert 'attachments' in output['content']
+        assert len(output['content']['attachments']) == 2
+        assert output['content']['attachments'][0]['fileName'] == 'Restoration Application.pdf'
+        assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+        assert output['content']['attachments'][1]['fileName'] == 'Receipt.pdf'
+        assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_1'
 
 
 def test_completed_full_restoration_notification(session, config):
@@ -112,7 +114,6 @@ def test_completed_extended_restoration_notification(session):
     assert 'You have successfully extended the period of restoration with the BC Business' in email
 
 
-@responses.activate
 def test_paid_restoration_notification(session):
     """Test PAID full restoration notification."""
     # setup filing + business for email
