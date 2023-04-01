@@ -8,7 +8,6 @@ pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
-pyyaml==6.0
 requests
 requests-mock
 
