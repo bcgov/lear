@@ -199,7 +199,7 @@ class BusinessDocument:
         business['entityShortDescription'] = description.get(self._business.legal_type, 'Corporation')
         business['entityInformalDescription'] = business['entityShortDescription'].lower()
 
-    def _set_dates(self, business: dict):
+    def _set_dates(self, business: dict):  # pylint: disable=too-many-branches
         """Set the business json with formatted dates."""
         # business dates
         if self._business.last_ar_date:
@@ -215,6 +215,9 @@ class BusinessDocument:
         if epoch_date := business['business'].get('epochFilingDate'):
             business['business']['epochFilingDate'] = LegislationDatetime.\
                 as_legislation_timezone(datetime.fromisoformat(epoch_date)).strftime('%B %-d, %Y')
+        if self._business.restoration_expiry_date:
+            business['business']['restorationExpiryDate'] = LegislationDatetime.\
+                format_as_report_string(self._business.restoration_expiry_date)
         # state change dates
         for filing in business.get('stateFilings', []):
             filing_datetime = datetime.fromisoformat(filing['filingDateTime'])
@@ -375,6 +378,14 @@ class BusinessDocument:
                 filing_info['dissolution_date_str'] = \
                     datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
                                                '%Y-%m-%d').date().strftime('%B %-d, %Y')
+        elif filing.filing_type == 'restoration':
+            filing_info['filingName'] = BusinessDocument.\
+                _get_summary_display_name(filing.filing_type,
+                                          filing.filing_sub_type,
+                                          self._business.legal_type)
+            if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
+                    format_as_report_string(self._business.restoration_expiry_date)
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -440,6 +451,8 @@ class BusinessDocument:
     def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
         if filing_type == 'dissolution':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
+        elif filing_type == 'restoration':
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
@@ -470,7 +483,12 @@ class BusinessDocument:
             }
         },
         'restorationApplication': 'Restoration Application',
-        'restoration': 'Restoration Application',
+        'restoration': {
+            'fullRestoration': 'Full Restoration',
+            'limitedRestoration': 'Limited Restoration',
+            'limitedRestorationExtension': 'Extension of Limited Restoration',
+            'limitedRestorationToFull': 'Convert Limited Restoration to Full Restoration'
+        },
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
         'Involuntary Dissolution': 'Involuntary Dissolution',
