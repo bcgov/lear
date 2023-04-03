@@ -16,30 +16,17 @@
 The Business class and Schema are held in this module
 """
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final
 
-import datedelta
-from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime, timezone
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.datetime import datetime
 
 from .db import db  # noqa: I001
-from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
-
-
-from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .filing import Filing  # noqa: F401 I001 pylint: disable=unused-import;
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods

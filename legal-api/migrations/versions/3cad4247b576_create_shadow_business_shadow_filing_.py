@@ -28,7 +28,7 @@ def upgrade():
         sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
         sa.ForeignKeyConstraint(['temp_reg'], ['registration_bootstrap.identifier'],),
         sa.ForeignKeyConstraint(['submitter_id'], ['users.id']),
-        sa.ForeignKeyConstraint(['soclin_event_id'], ['colin_event_id.colin_event_id']),
+        sa.ForeignKeyConstraint(['colin_event_id'], ['colin_event_id.colin_event_id']),
         sa.PrimaryKeyConstraint('id')
     )
 
