@@ -13,10 +13,10 @@
 # limitations under the License.
 """The Unit Tests for the Restoration email processor."""
 
+import base64
 from unittest.mock import patch
 
 import requests_mock
-import base64
 
 from entity_emailer.email_processors import restoration_notification
 from tests.unit import prep_restoration_filing
@@ -27,13 +27,13 @@ def test_complete_full_restoration_notification_includes_notice_of_articles_and_
     # setup filing + business for email
     status = 'COMPLETED'
     legal_name = 'test business'
-    business_id = 'BC1234567'
+    bus_id = 'BC1234567'
     token = 'token'
-    filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
+    filing = prep_restoration_filing(session, bus_id, '1', status, 'BC', legal_name)
     with requests_mock.Mocker() as m:
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{bus_id}/filings/{filing.id}?type=noticeOfArticles',
               content=b'pdf_content_1', status_code=200)
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificateOfRestoration',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{bus_id}/filings/{filing.id}?type=certificateOfRestoration',
               content=b'pdf_content_2')
         output = restoration_notification.process({
             'filingId': filing.id,
