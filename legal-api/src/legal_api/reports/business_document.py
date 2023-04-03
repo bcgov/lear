@@ -31,12 +31,6 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 class BusinessDocument:
     """Service to create business document outputs."""
 
-    # String literals to appease SonarCloud
-    FULL_RESTORATION_STR = 'Full Restoration'
-    LIMITED_RESTORATION_STR = 'Limited Restoration'
-    LIMITED_RESTORATION_EXTENSION_STR = 'Extension of Limited Restoration'
-    LIMITED_RESTORATION_TO_FULL_STR = 'Convert Limited Restoration to Full Restoration'
-
     def __init__(self, business, document_key):
         """Create the Report instance."""
         self._business = business
@@ -205,7 +199,7 @@ class BusinessDocument:
         business['entityShortDescription'] = description.get(self._business.legal_type, 'Corporation')
         business['entityInformalDescription'] = business['entityShortDescription'].lower()
 
-    def _set_dates(self, business: dict):
+    def _set_dates(self, business: dict): # pylint: disable=too-many-branches
         """Set the business json with formatted dates."""
         # business dates
         if self._business.last_ar_date:
@@ -455,8 +449,10 @@ class BusinessDocument:
 
     @staticmethod
     def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
-        if filing_type in ['dissolution', 'restoration']:
+        if filing_type == 'dissolution':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
+        elif filing_type == 'restoration':
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
@@ -488,42 +484,10 @@ class BusinessDocument:
         },
         'restorationApplication': 'Restoration Application',
         'restoration': { 
-            'fullRestoration': {
-                'CP': FULL_RESTORATION_STR,
-                'BEN': FULL_RESTORATION_STR,
-                'ULC': FULL_RESTORATION_STR,
-                'CC': FULL_RESTORATION_STR,
-                'LLC': FULL_RESTORATION_STR,
-                'SP': FULL_RESTORATION_STR,
-                'GP': FULL_RESTORATION_STR
-            },
-            'limitedRestoration': {
-                'CP': LIMITED_RESTORATION_STR,
-                'BEN': LIMITED_RESTORATION_STR,
-                'ULC': LIMITED_RESTORATION_STR,
-                'CC': LIMITED_RESTORATION_STR,
-                'LLC': LIMITED_RESTORATION_STR,
-                'SP': LIMITED_RESTORATION_STR,
-                'GP': LIMITED_RESTORATION_STR
-            },
-            'limitedRestorationExtension': {
-                'CP': LIMITED_RESTORATION_EXTENSION_STR,
-                'BEN': LIMITED_RESTORATION_EXTENSION_STR,
-                'ULC': LIMITED_RESTORATION_EXTENSION_STR,
-                'CC': LIMITED_RESTORATION_EXTENSION_STR,
-                'LLC': LIMITED_RESTORATION_EXTENSION_STR,
-                'SP': LIMITED_RESTORATION_EXTENSION_STR,
-                'GP': LIMITED_RESTORATION_EXTENSION_STR
-            },
-            'limitedRestorationToFull': {
-                'CP': LIMITED_RESTORATION_TO_FULL_STR,
-                'BEN': LIMITED_RESTORATION_TO_FULL_STR,
-                'ULC': LIMITED_RESTORATION_TO_FULL_STR,
-                'CC': LIMITED_RESTORATION_TO_FULL_STR,
-                'LLC': LIMITED_RESTORATION_TO_FULL_STR,
-                'SP': LIMITED_RESTORATION_TO_FULL_STR,
-                'GP': LIMITED_RESTORATION_TO_FULL_STR
-            }
+            'fullRestoration': 'Full Restoration',
+            'limitedRestoration': 'Limited Restoration',
+            'limitedRestorationExtension': 'Extension of Limited Restoration',
+            'limitedRestorationToFull': 'Convert Limited Restoration to Full Restoration'
         },
         'dissolved': 'Involuntary Dissolution',
         'voluntaryDissolution': 'Voluntary Dissolution',
