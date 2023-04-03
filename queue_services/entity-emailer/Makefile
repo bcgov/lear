@@ -51,9 +51,10 @@ install: clean ## Install python virtrual environment
 	pip install pip==20.1.1 ;\
 	pip install -Ur requirements.txt
 
-install-dev: ## Install local application
+install-dev: ## Install application for local development
 	. venv/bin/activate ; \
 	pip install -Ur requirements/dev.txt; \
+	pip install -Ur requirements/prod.txt; \
 	pip install -e .
 
 #################################################################################

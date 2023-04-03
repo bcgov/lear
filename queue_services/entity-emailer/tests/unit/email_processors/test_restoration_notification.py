@@ -30,11 +30,10 @@ def test_complete_full_restoration_notification_includes_notice_of_articles_and_
     business_id = 'BC1234567'
     token = 'token'
     filing = prep_restoration_filing(session, business_id, '1', status, 'BC', legal_name)
-    print(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles')
     with requests_mock.Mocker() as m:
         m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=noticeOfArticles',
               content=b'pdf_content_1', status_code=200)
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificate',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{business_id}/filings/{filing.id}?type=certificateOfRestoration',
               content=b'pdf_content_2')
         output = restoration_notification.process({
             'filingId': filing.id,
@@ -46,7 +45,7 @@ def test_complete_full_restoration_notification_includes_notice_of_articles_and_
         assert len(output['content']['attachments']) == 2
         assert output['content']['attachments'][0]['fileName'] == 'Notice of Articles.pdf'
         assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
-        assert output['content']['attachments'][1]['fileName'] == 'Incorporation Certificate.pdf'
+        assert output['content']['attachments'][1]['fileName'] == 'Certificate of Restoration.pdf'
         assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
