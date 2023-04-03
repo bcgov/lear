@@ -92,7 +92,7 @@ def _get_pdfs(
         # add notice of articles
         noa = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            params={"type": "noticeOfArticles"},
+            params={'type': 'noticeOfArticles'},
             headers=headers
         )
         if noa.status_code != HTTPStatus.OK:
@@ -111,7 +111,7 @@ def _get_pdfs(
         # add certificate of incorporation
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certificate',
+            '?type=certificateOfRestoration',
             headers=headers
         )
         if certificate.status_code != HTTPStatus.OK:
@@ -120,7 +120,7 @@ def _get_pdfs(
             certificate_encoded = base64.b64encode(certificate.content)
             pdfs.append(
                 {
-                    'fileName': 'Incorporation Certificate.pdf',
+                    'fileName': 'Certificate of Restoration.pdf',
                     'fileBytes': certificate_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
