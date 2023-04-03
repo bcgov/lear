@@ -179,7 +179,10 @@ def factory_business_mailing_address(business):
     return business
 
 
-def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type=None):
+def factory_filing(business, data_dict,
+                   filing_date=FROZEN_DATETIME,
+                   filing_type=None,
+                   filing_sub_type=None):
     """Create a filing."""
     filing = Filing()
     filing.business_id = business.id
@@ -187,6 +190,8 @@ def factory_filing(business, data_dict, filing_date=FROZEN_DATETIME, filing_type
     filing.filing_json = data_dict
     if filing_type:
         filing._filing_type = filing_type
+    if filing_sub_type:
+        filing._filing_sub_type = filing_sub_type
     try:
         filing.save()
     except Exception as err:

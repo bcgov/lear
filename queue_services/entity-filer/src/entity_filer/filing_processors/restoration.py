@@ -24,6 +24,7 @@ from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
@@ -64,15 +65,25 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     business.dissolution_date = None
     business.state_filing_id = filing_rec.id
 
+    if name_translations := restoration_filing.get('nameTranslations'):
+        update_aliases(business, name_translations)
+
     update_offices(business, restoration_filing['offices'])
 
     parties = restoration_filing['parties']
     _update_parties(business, parties, filing_rec)
 
     filing_rec.approval_type = restoration_filing.get('approvalType')
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
-        filings.update_filing_court_order(filing_rec, court_order_json)
+    if filing_rec.approval_type == 'courtOrder':
+        with suppress(IndexError, KeyError, TypeError):
+            court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
+            filings.update_filing_court_order(filing_rec, court_order_json)
+    elif filing_rec.approval_type == 'registrar':
+        application_date = restoration_filing.get('applicationDate')
+        notice_date = restoration_filing.get('noticeDate')
+        if application_date and notice_date:
+            filing_rec.application_date = datetime.fromisoformat(application_date) + timedelta(hours=8)
+            filing_rec.notice_date = datetime.fromisoformat(notice_date) + timedelta(hours=8)
 
 
 def _update_parties(business: Business, parties: dict, filing_rec: Filing):

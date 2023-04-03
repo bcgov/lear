@@ -29,6 +29,7 @@ from tests.unit import create_business, create_filing
 
 legal_name = 'old name'
 legal_type = 'BC'
+date_format = '%Y-%m-%d'
 
 
 @pytest.mark.parametrize('restoration_type', [
@@ -49,7 +50,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    expiry_date = (LegislationDatetime.now() + relativedelta(months=1)).strftime('%Y-%m-%d')
+    expiry_date = (LegislationDatetime.now() + relativedelta(months=1)).strftime(date_format)
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         filing['filing']['restoration']['expiry'] = expiry_date
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -186,6 +187,71 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
         assert filing['filing']['restoration']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
     else:
         assert final_filing.court_order_file_number is None
+
+
+@pytest.mark.parametrize('approval_type', [
+    ('registrar'),
+    ('courtOrder')
+])
+async def test_restoration_registrar(app, session, mocker, approval_type):
+    """Assert the worker process the registrar correctly."""
+    identifier = 'BC1234567'
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+    business.save()
+    business_id = business.id
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['approvalType'] = approval_type
+    filing['filing']['restoration']['applicationDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
+    filing['filing']['restoration']['noticeDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
+    
+    if approval_type == 'courtOrder':
+        del filing['filing']['restoration']['applicationDate']
+        del filing['filing']['restoration']['noticeDate']
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+
+    _mock_out(mocker)
+
+    await process_filing(filing_msg, app)
+
+    # Check outcome
+    final_filing = Filing.find_by_id(filing_id)
+    assert filing['filing']['restoration']['approvalType'] == final_filing.approval_type
+    if approval_type == 'registrar':
+        assert filing['filing']['restoration']['applicationDate'] == (final_filing.application_date).strftime(date_format)
+        assert filing['filing']['restoration']['noticeDate'] == (final_filing.notice_date).strftime(date_format)
+    else:
+        assert final_filing.application_date is None
+        assert final_filing.notice_date is None
+
+
+async def test_restoration_name_translations(app, session, mocker):
+    """Assert the worker process the name translations correctly."""
+    identifier = 'BC1234567'
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+    business.save()
+    business_id = business.id
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+
+    _mock_out(mocker)
+
+    await process_filing(filing_msg, app)
+    
+    #Check outcome
+    assert filing['filing']['restoration']['nameTranslations'] == [{'name': 'ABCD Ltd.'}]
+    assert business.aliases is not None
 
 
 async def test_update_party(app, session, mocker):
