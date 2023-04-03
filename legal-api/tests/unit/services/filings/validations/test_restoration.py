@@ -62,6 +62,10 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
                             expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
 
+    limited_restoration_filing = None
+    if filing_sub_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
+        limited_restoration_filing = factory_limited_restoration_filing('courtOrder')
+
     expiry_date = LegislationDatetime.now() + relativedelta(months=1)
     expiry_date_str = expiry_date.strftime(date_format)
     mocker.patch('legal_api.services.NameXService.validate_nr', return_value=validate_nr_result)
@@ -72,11 +76,14 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
     filing['filing']['restoration']['type'] = filing_sub_type
     filing['filing']['restoration']['expiry'] = expiry_date_str
     filing['filing']['restoration']['relationships'] = relationships
-    filing['filing']['restoration']['nameRequest']['legalType'] = legal_type
-    if nr_number:
-        filing['filing']['restoration']['nameRequest']['nrNumber'] = nr_number
-    if new_legal_name:
-        filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
+    if not nr_number and not new_legal_name:
+        del filing['filing']['restoration']['nameRequest']
+    else:
+        filing['filing']['restoration']['nameRequest']['legalType'] = legal_type
+        if nr_number:
+            filing['filing']['restoration']['nameRequest']['nrNumber'] = nr_number
+        if new_legal_name:
+            filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
 
     temp_nr_response = copy.deepcopy(nr_response)
     temp_nr_response['legalType'] = legal_type
@@ -86,7 +93,9 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
     mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
 
     mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
-    err = validate(business, filing)
+    with patch.object(Filing, 'get_a_businesses_most_recent_filing_of_a_type',
+                      return_value=limited_restoration_filing):
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code:
@@ -397,6 +406,17 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
          'Legal name is missing in nameRequest.'),
         ('FAIL_NR_AND_NO_NAME', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
          HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
+
+        # limited restoration extension
+        ('SUCCESS_NO_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], None, None, None, None),
+
+        # convert to full restoration
+        ('SUCCESS_NEW_NR', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
+        ('SUCCESS_NAME_ONLY', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], None, 'new name', None, None),
+        ('FAIL_NO_NR_AND_NAME', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], None, None, HTTPStatus.BAD_REQUEST,
+         'Legal name is missing in nameRequest.'),
+        ('FAIL_NR_AND_NO_NAME', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', None,
+         HTTPStatus.BAD_REQUEST, 'Legal name is missing in nameRequest.'),
     ]
 )
 def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_types, nr_number, new_legal_name,
@@ -421,6 +441,16 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
         ('SUCCESS_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCC', 'RCR', 'BERE', 'RUL'],
          'new name', None, None),
         ('FAIL_NR_TYPE', 'limitedRestoration', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCRC', 'BEREE', 'RULL'],
+         'new name', HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
+
+        # limited restoration extension
+        ('SUCCESS_NO_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], None,
+         ['RCC', 'RCR', 'BERE', 'RUL', 'RCRC', 'BEREE', 'RULL'], None, None, None),
+
+        # convert to full restoration
+        ('SUCCESS_NR_TYPE', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCC', 'RCR', 'BERE', 'RUL'],
+         'new name', None, None),
+        ('FAIL_NR_TYPE', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCRC', 'BEREE', 'RULL'],
          'new name', HTTPStatus.BAD_REQUEST, 'The name type associated with the name request number entered cannot be used.'),
     ]
 )
