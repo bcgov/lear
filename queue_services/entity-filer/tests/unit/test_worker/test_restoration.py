@@ -29,6 +29,7 @@ from tests.unit import create_business, create_filing
 
 legal_name = 'old name'
 legal_type = 'BC'
+date_format = '%Y-%m-%d'
 
 
 @pytest.mark.parametrize('restoration_type', [
@@ -49,7 +50,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    expiry_date = (LegislationDatetime.now() + relativedelta(months=1)).strftime('%Y-%m-%d')
+    expiry_date = (LegislationDatetime.now() + relativedelta(months=1)).strftime(date_format)
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         filing['filing']['restoration']['expiry'] = expiry_date
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -202,8 +203,8 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['approvalType'] = approval_type
-    filing['filing']['restoration']['applicationDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime('%Y-%m-%d')
-    filing['filing']['restoration']['noticeDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime('%Y-%m-%d')
+    filing['filing']['restoration']['applicationDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
+    filing['filing']['restoration']['noticeDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
     
     if approval_type == 'courtOrder':
         del filing['filing']['restoration']['applicationDate']
@@ -222,8 +223,8 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing['filing']['restoration']['approvalType'] == final_filing.approval_type
     if approval_type == 'registrar':
-        assert filing['filing']['restoration']['applicationDate'] == (final_filing.application_date).strftime('%Y-%m-%d')
-        assert filing['filing']['restoration']['noticeDate'] == (final_filing.notice_date).strftime('%Y-%m-%d')
+        assert filing['filing']['restoration']['applicationDate'] == (final_filing.application_date).strftime(date_format)
+        assert filing['filing']['restoration']['noticeDate'] == (final_filing.notice_date).strftime(date_format)
     else:
         assert final_filing.application_date is None
         assert final_filing.notice_date is None
@@ -249,8 +250,6 @@ async def test_restoration_name_translations(app, session, mocker):
     await process_filing(filing_msg, app)
     
     #Check outcome
-    print('dio')
-    print(business.aliases)
     assert filing['filing']['restoration']['nameTranslations'] == [{'name': 'ABCD Ltd.'}]
     assert business.aliases is not None
 
