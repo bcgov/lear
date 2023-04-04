@@ -27,7 +27,7 @@ from legal_api.models import Business, CorpType, Filing
 from entity_emailer.email_processors import get_filing_info
 
 
-def _get_pdfs(
+def _get_completed_pdfs(
         status: str,
         token: str,
         business: dict,
@@ -43,90 +43,108 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
 
-    if status == Filing.Status.PAID.value:
-        filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
+    # add notice of articles
+    noa = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+        params={'type': 'noticeOfArticles'},
+        headers=headers
+    )
+    if noa.status_code != HTTPStatus.OK:
+        logger.error('Failed to get noa pdf for filing: %s', filing.id)
+    else:
+        noa_encoded = base64.b64encode(noa.content)
+        pdfs.append(
+            {
+                'fileName': 'Notice of Articles.pdf',
+                'fileBytes': noa_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': attach_order
+            }
         )
-        if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
-        else:
-            filing_pdf_encoded = base64.b64encode(filing_pdf.content)
-            pdfs.append(
-                {
-                    'fileName': 'Restoration Application.pdf',
-                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
-        name_request = filing.json['filing']['restoration']['nameRequest']
-        corp_name = name_request.get('legalName')
-        business_data = Business.find_by_internal_id(filing.business_id)
-        receipt = requests.post(
-            f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-            json={
-                'corpName': corp_name,
-                'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
-            },
-            headers=headers
+        attach_order += 1
+    # add certificate of restoration
+    certificate = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+        '?type=certificateOfRestoration',
+        headers=headers
+    )
+    if certificate.status_code != HTTPStatus.OK:
+        logger.error('Failed to get certificate pdf for filing: %s', filing.id)
+    else:
+        certificate_encoded = base64.b64encode(certificate.content)
+        pdfs.append(
+            {
+                'fileName': 'Certificate of Restoration.pdf',
+                'fileBytes': certificate_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': attach_order
+            }
         )
-        if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
-        else:
-            receipt_encoded = base64.b64encode(receipt.content)
-            pdfs.append(
-                {
-                    'fileName': 'Receipt.pdf',
-                    'fileBytes': receipt_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
-    elif status == Filing.Status.COMPLETED.value:
-        # add notice of articles
-        noa = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            params={'type': 'noticeOfArticles'},
-            headers=headers
+        attach_order += 1
+
+    return pdfs
+
+
+def _get_paid_pdfs(
+        status: str,
+        token: str,
+        business: dict,
+        filing: Filing,
+        filing_date_time: str,
+        effective_date: str) -> list:
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
+    """Get the pdfs for the restoration output."""
+    pdfs = []
+    attach_order = 1
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    filing_pdf = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+        headers=headers
+    )
+    if filing_pdf.status_code != HTTPStatus.OK:
+        logger.error('Failed to get pdf for filing: %s', filing.id)
+    else:
+        filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+        pdfs.append(
+            {
+                'fileName': 'Restoration Application.pdf',
+                'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': attach_order
+            }
         )
-        if noa.status_code != HTTPStatus.OK:
-            logger.error('Failed to get noa pdf for filing: %s', filing.id)
-        else:
-            noa_encoded = base64.b64encode(noa.content)
-            pdfs.append(
-                {
-                    'fileName': 'Notice of Articles.pdf',
-                    'fileBytes': noa_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
-        # add certificate of restoration
-        certificate = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certificateOfRestoration',
-            headers=headers
+        attach_order += 1
+    name_request = filing.json['filing']['restoration']['nameRequest']
+    corp_name = name_request.get('legalName')
+    business_data = Business.find_by_internal_id(filing.business_id)
+    receipt = requests.post(
+        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        json={
+            'corpName': corp_name,
+            'filingDateTime': filing_date_time,
+            'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
+            'filingIdentifier': str(filing.id),
+            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+        },
+        headers=headers
+    )
+    if receipt.status_code != HTTPStatus.CREATED:
+        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+    else:
+        receipt_encoded = base64.b64encode(receipt.content)
+        pdfs.append(
+            {
+                'fileName': 'Receipt.pdf',
+                'fileBytes': receipt_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': attach_order
+            }
         )
-        if certificate.status_code != HTTPStatus.OK:
-            logger.error('Failed to get certificate pdf for filing: %s', filing.id)
-        else:
-            certificate_encoded = base64.b64encode(certificate.content)
-            pdfs.append(
-                {
-                    'fileName': 'Certificate of Restoration.pdf',
-                    'fileBytes': certificate_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
+        attach_order += 1
 
     return pdfs
 
@@ -172,7 +190,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    if status == Filing.Status.PAID.value:
+        pdfs = _get_paid_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    if status == Filing.Status.COMPLETED.value:
+        pdfs = _get_completed_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     recipients = []

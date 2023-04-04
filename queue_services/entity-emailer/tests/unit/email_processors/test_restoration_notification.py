@@ -81,7 +81,7 @@ def test_completed_full_restoration_notification(session, config):
     status = 'COMPLETED'
     filing = prep_restoration_filing(BUS_ID, '1', 'BC', LEGAL_NAME)
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
+    with patch.object(restoration_notification, '_get_completed_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
             'filingId': filing.id,
             'type': 'restoration',
@@ -98,7 +98,7 @@ def test_completed_extended_restoration_notification(session, config):
     # setup filing + business for email
     status = 'COMPLETED'
     filing = prep_restoration_filing(BUS_ID, '1', 'BC', LEGAL_NAME, 'limitedRestorationExtension')
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
+    with patch.object(restoration_notification, '_get_completed_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
             'filingId': filing.id,
             'type': 'restoration',
@@ -114,7 +114,7 @@ def test_paid_restoration_notification(session):
     status = 'PAID'
     filing = prep_restoration_filing('BC1234567', '1', 'BC', LEGAL_NAME)
     # test processor
-    with patch.object(restoration_notification, '_get_pdfs', return_value=[]):
+    with patch.object(restoration_notification, '_get_paid_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
             'filingId': filing.id,
             'type': 'restoration',
