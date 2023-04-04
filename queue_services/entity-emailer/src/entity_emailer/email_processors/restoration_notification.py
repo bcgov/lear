@@ -108,7 +108,7 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
-        # add certificate of incorporation
+        # add certificate of restoration
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
             '?type=certificateOfRestoration',
