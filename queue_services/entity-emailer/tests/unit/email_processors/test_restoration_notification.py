@@ -21,6 +21,7 @@ import requests_mock
 from entity_emailer.email_processors import restoration_notification
 from tests.unit import prep_restoration_filing
 
+
 LEGAL_NAME = 'test business'
 BUS_ID = 'BC1234567'
 TOKEN = 'token'
