@@ -220,17 +220,14 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
     return filing
 
 
-def prep_restoration_filing(session, identifier, payment_id, option, legal_type, legal_name, r_type='fullRestoration'):
+def prep_restoration_filing(identifier, payment_id, legal_type, legal_name, r_type='fullRestoration'):
     """Return a new restoration filing prepped for email notification.
 
     @param r_type:
-    @param session:
     @param identifier:
     @param payment_id:
-    @param option:
     @param legal_type:
     @param legal_name:
-    @param submitter_role:
     @return:
     """
     business = create_business(identifier, legal_type, legal_name)
