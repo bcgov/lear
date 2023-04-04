@@ -28,12 +28,9 @@ from entity_emailer.email_processors import get_filing_info
 
 
 def _get_completed_pdfs(
-        status: str,
         token: str,
         business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+        filing: Filing) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the restoration output."""
     pdfs = []
@@ -86,7 +83,6 @@ def _get_completed_pdfs(
 
 
 def _get_paid_pdfs(
-        status: str,
         token: str,
         business: dict,
         filing: Filing,
@@ -191,9 +187,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get attachments
     if status == Filing.Status.PAID.value:
-        pdfs = _get_paid_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+        pdfs = _get_paid_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     if status == Filing.Status.COMPLETED.value:
-        pdfs = _get_completed_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+        pdfs = _get_completed_pdfs(token, business, filing)
 
     # get recipients
     recipients = []
