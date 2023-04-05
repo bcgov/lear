@@ -19,37 +19,45 @@ depends_on = None
 def upgrade():
     op.create_table('shadow_filings', 
         sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column('filing_date', sa.DateTime(timezone=True)),
+        sa.Column('filing_type', sa.String(30)),
+        sa.Column('filing_sub_type', sa.String(30)),
+        sa.Column('filing_json', sa.JSON),
+        sa.Column('meta_data', sa.JSON),
+        sa.Column('status', sa.String(20), default='DRAFT'),
+        sa.Column('source', sa.String(15), default='LEAR'),
         sa.Column('business_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.Column('submitter_id', sa.Integer(), autoincrement=False, nullable=True),
         sa.Column('effective_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
         sa.Column('has_legacy_outputs', sa.Boolean(), nullable=True),
-        sa.Column('temp_reg', sa.String(10), nullable=True),
         sa.Column('colin_event_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
-        sa.ForeignKeyConstraint(['temp_reg'], ['registration_bootstrap.identifier'],),
-        sa.ForeignKeyConstraint(['submitter_id'], ['users.id']),
+        sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
         sa.ForeignKeyConstraint(['colin_event_id'], ['colin_event_id.colin_event_id']),
         sa.PrimaryKeyConstraint('id')
     )
 
-    op.create_table('shadow_business', 
+    op.create_table('shadow_businesses', 
         sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
-        sa.Column('last_ledger_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.Column('last_remote_ledger_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.Column('last_ledger_timestamp', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+        sa.Column('identifier', sa.String(10)),
+        sa.Column('legal_type', sa.String(10)),
         sa.Column('legal_name', sa.String(1000), nullable=True),
         sa.Column('founding_date', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('state', sa.Enum),
         sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
         sa.ForeignKeyConstraint(['state_filing_id'], ['filing.id']), # not entirely sure this is the right relationship
         sa.PrimaryKeyConstraint('id')
     )
 
+    op.create_index(op.f('ix_shadow_business_identifier'), 'shadow_businesses', ['identifier'], unique=False)
+    op.create_index(op.f('ix_shadow_business_legal_name'), 'shadow_businesses', ['legal_name'], unique=False)
+
     op.create_table('legacy_outputs',
         sa.Column('colin_event_id', sa.Integer(), autoincrement=False, nullable=False),
         sa.Column('legacy_output_id', sa.Integer(), autoincrement=False, nullable=False),
         sa.Column('filing_id', sa.Integer(), autoincrement=False, nullable=True),
+        sa.Column('type', sa.String(30), nullable=True),
         sa.ForeignKeyConstraint(['filing_id'], ['filing.id'])
     )
+
 
 def downgrade():
     op.drop_table('shadow_filings')

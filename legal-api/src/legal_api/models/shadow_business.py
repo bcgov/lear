@@ -15,9 +15,11 @@
 
 The Business class and Schema are held in this module
 """
+
 from enum import Enum, auto
 from typing import Final
 
+import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -29,7 +31,7 @@ from .db import db  # noqa: I001
 from .filing import Filing  # noqa: F401 I001 pylint: disable=unused-import;
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
@@ -145,26 +147,26 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     }
 
     __versioned__ = {}
-    __tablename__ = 'businesses'
+    __tablename__ = 'shadow_businesses'
     __mapper_args__ = {
         'include_properties': [
             'id',
             'founding_date',
             'identifier',
-            'last_ledger_id',
-            'last_ledger_timestamp',
-            'last_remote_ledger_id',
             'legal_name',
+            'legal_type',
+            'state',
             'state_filing_id',
         ]
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_ledger_id = db.Column('last_ledger_id', db.Integer)
-    last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
-    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
+    _identifier = db.Column('identifier', db.String(10), index=True)
+    legal_type = db.Column('legal_type', db.String(10))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
+    state_filing_id = db.Column('state_filing_id', db.Integer)
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -177,11 +179,42 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     @identifier.setter
     def identifier(self, value: str):
         """Set the business identifier."""
-        if Business.validate_identifier(value):
+        if ShadowBusiness.validate_identifier(value):
             self._identifier = value
         else:
             raise BusinessException('invalid-identifier-format', 406)
+        
+    def get_ar_dates(self, next_ar_year):
+        """Get ar min and max date for the specific year."""
+        ar_min_date = datetime(next_ar_year, 1, 1).date()
+        ar_max_date = datetime(next_ar_year, 12, 31).date()
 
+        if self.legal_type == self.LegalTypes.COOP.value:
+            # This could extend by moving it into a table with start and end date against each year when extension
+            # is required. We need more discussion to understand different scenario's which can come across in future.
+            if next_ar_year == 2020:
+                # For year 2020, set the max date as October 31th next year (COVID extension).
+                ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
+            else:
+                # If this is a CO-OP, set the max date as April 30th next year.
+                ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
+        elif self.legal_type in [self.LegalTypes.BCOMP.value,
+                                 self.LegalTypes.COMP.value,
+                                 self.LegalTypes.BC_ULC_COMPANY.value,
+                                 self.LegalTypes.BC_CCC.value]:
+            # For BCOMP min date is next anniversary date.
+            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
+            ar_max_date = ar_min_date + datedelta.datedelta(days=60)
+
+        if ar_max_date > datetime.utcnow().date():
+            ar_max_date = datetime.utcnow().date()
+
+        return ar_min_date, ar_max_date
+
+    def is_firm(self):
+        """Return if is firm, otherwise false."""
+        return self.legal_type in (self.LegalTypes.SOLE_PROP, self.LegalTypes.PARTNERSHIP)
+    
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
         """Given a legal_name, this will return an Active Business."""
@@ -215,12 +248,23 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     @classmethod
     def get_filing_by_id(cls, business_identifier: int, filing_id: str):
         """Return the filings for a specific business and filing_id."""
-        filing = db.session.query(Business, Filing). \
-            filter(Business.id == Filing.business_id). \
-            filter(Business.identifier == business_identifier). \
+        filing = db.session.query(ShadowBusiness, Filing). \
+            filter(ShadowBusiness.id == Filing.business_id). \
+            filter(ShadowBusiness.identifier == business_identifier). \
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
+    
+    @classmethod
+    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+        """Return the next value from the sequence."""
+        sequence_mapping = {
+            'CP': 'business_identifier_coop',
+            'FM': 'business_identifier_sp_gp',
+        }
+        if sequence_name := sequence_mapping.get(business_type, None):
+            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+        return None
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
@@ -255,10 +299,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
 
 ASSOCIATION_TYPE_DESC: Final = {
-    Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
-    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
-    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative',
+    ShadowBusiness.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
+    ShadowBusiness.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
+    ShadowBusiness.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative',
 
-    Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
-    Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
+    ShadowBusiness.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
+    ShadowBusiness.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
 }

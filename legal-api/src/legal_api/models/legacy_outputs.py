@@ -1,11 +1,3 @@
-# stucture:
-# 3 columns
-# Table Name: Legacy_outputs
-# Colin_event_id: primary key, integer
-# Filing_id: foregin key, integer
-# output_id: integer
-# output_id is the key used to go into doc store and grab legacy outputs
-
 # Copyright © 2019 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +26,8 @@ class LegacyOutputs(db.Model):  # pylint: disable=too-few-public-methods
 
     colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    legacy_output_id = db.column('legacy_output_id', db.integer, unique=True,)
+    legacy_output_key = db.Column('legacy_output_id', db.Integer, unique=True)
+    type = db.Column('type', db.String(15))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -58,8 +51,8 @@ class LegacyOutputs(db.Model):  # pylint: disable=too-few-public-methods
         return colin_event_id_obj
 
     @staticmethod
-    def get_by_legacy_output_id(output_id):
+    def get_by_legacy_output_key(output_id):
         """Get the LegacyOutputs obj with the given legacy_output_id."""
-        legacy_output_id_obj =\
-            db.session.query(LegacyOutputs).filter(LegacyOutputs.legacy_output_id == output_id).one_or_none()
-        return legacy_output_id_obj
+        legacy_output_key_obj =\
+            db.session.query(LegacyOutputs).filter(LegacyOutputs.legacy_output_key == output_id).one_or_none()
+        return legacy_output_key_obj

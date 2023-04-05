@@ -31,7 +31,7 @@ from .db import db  # noqa: I001
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
 
-class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
     """a shadow of the current filing record that stores basic filing data.
 
@@ -279,7 +279,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     __mapper_args__ = {
         'include_properties': [
             'id',
-            '_completion_date',
             '_filing_date',
             '_filing_json',
             '_filing_type',
@@ -290,13 +289,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'colin_only',
             'effective_date',
             'paper_only',
-            'submitter_id',
-            'temp_reg',
         ]
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
     _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_sub_type = db.Column('filing_sub_type', db.String(30))
@@ -305,28 +301,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    has_legacy_outputs = db.column('has_legacy_outputs', db.boolean, unique=False, default=False)
+    has_legacy_outputs = db.Column('has_legacy_outputs', db.Boolean, unique=False, default=False)
 
     # # relationships
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
-    temp_reg = db.Column('temp_reg', db.String(10),
-                         db.ForeignKey('registration_bootstrap.identifier'))
-    submitter_id = db.Column('submitter_id', db.Integer,
-                             db.ForeignKey('users.id'))
-
-    filing_submitter = db.relationship('User',
-                                       backref=backref('filing_submitter', uselist=False),
-                                       foreign_keys=[submitter_id])
-
-    colin_event_ids = db.relationship('ColinEventId', lazy='select')
+    colin_event_id = db.Column('colin_event_id', db.Integer, db.ForeignKey('colin_event_id.colin_event_id'))
 
     # properties
-    @property
-    def completion_date(self):
-        """Property containing the filing type."""
-        return self._completion_date
-
     @hybrid_property
     def filing_date(self):
         """Property containing the date a filing was submitted."""
@@ -370,34 +352,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self._raise_default_lock_exception()
         self._payment_token = token
 
-    @hybrid_property
-    def payment_completion_date(self):
-        """Property containing the date the payment cleared."""
-        return self._payment_completion_date
-
-    @payment_completion_date.setter
-    def payment_completion_date(self, value: datetime):
-
-        if self.locked or \
-                (self._payment_token and self._filing_json):
-            self._payment_completion_date = value
-            # if self.effective_date is None or \
-            #         self.effective_date <= self._payment_completion_date:
-            #     self._status = Filing.Status.COMPLETED.value
-        else:
-            raise BusinessException(
-                error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
-                status_code=HTTPStatus.FORBIDDEN
-            )
-
     @property
     def status(self):
         """Property containing the filing status."""
         # pylint: disable=W0212; prevent infinite loop
-        if self._status == Filing.Status.COMPLETED \
+        if self._status == ShadowFiling.Status.COMPLETED \
             and self.parent_filing_id \
-                and self.parent_filing._status == Filing.Status.COMPLETED:
-            return Filing.Status.CORRECTED.value
+                and self.parent_filing._status == ShadowFiling.Status.COMPLETED:
+            return ShadowFiling.Status.CORRECTED.value
         return self._status
 
     @hybrid_property
@@ -451,7 +413,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
                 )
 
-            self._status = Filing.Status.PENDING.value
+            self._status = ShadowFiling.Status.PENDING.value
         self._filing_json = json_data
 
     @property
@@ -470,22 +432,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the meta data collected about a filing, stored as JSON."""
         return self._meta_data
 
-    def set_processed(self, business_type):
-        """Assign the completion and effective dates, unless they are already set."""
-        if not self._completion_date:
-            self._completion_date = datetime.utcnow()
-        if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
-                self.effective_date is None or (
-                    self.payment_completion_date
-                    and self.effective_date < self.payment_completion_date
-                )):  # pylint: disable=W0143; hybrid property
-            self.effective_date = self.payment_completion_date
-
-    def effective_date_can_be_before_payment_completion_date(self, business_type):
-        """For AR or COD filings on CP or BEN then the effective date can be before the payment date."""
-        return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
-                                    Filing.FILINGS['changeOfDirectors'].get('name')) and business_type in {'CP', 'BEN'}
-
     # json serializer
     @property
     def json(self):
@@ -498,31 +444,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['status'] = self.status
             json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
             json_submission['filing']['header']['inColinOnly'] = self.colin_only
-            json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
             if self.effective_date:  # pylint: disable=using-constant-test
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
-            if self._payment_status_code:
-                json_submission['filing']['header']['paymentStatusCode'] = self.payment_status_code
-            if self._payment_token:
-                json_submission['filing']['header']['paymentToken'] = self.payment_token
-            if self.submitter_id:
-                json_submission['filing']['header']['submitter'] = self.filing_submitter.username
-            if self.payment_account:
-                json_submission['filing']['header']['paymentAccount'] = self.payment_account
 
             # add colin_event_ids
             json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
 
-            # add comments
-            json_submission['filing']['header']['comments'] = [comment.json for comment in self.comments]
-
             # add affected filings list
             json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
-
-            # add corrected flags
-            json_submission['filing']['header']['isCorrected'] = self.is_corrected
-            json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
             return json_submission
         except Exception as err:  # noqa: B901, E722
@@ -539,10 +469,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a Filing by it's payment token."""
-        q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
+        q = db.session.query(ShadowFiling).filter(ShadowFiling.temp_reg == temp_reg_id)
 
         if filing_id:
-            q.filter(Filing.id == filing_id)
+            q.filter(ShadowFiling.id == filing_id)
 
         filing = q.one_or_none()
         return filing
@@ -550,81 +480,81 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
-        query = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._status.in_(status)). \
-            order_by(Filing._filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
+        query = db.session.query(ShadowFiling). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._status.in_(status)). \
+            order_by(ShadowFiling._filing_date.desc(), ShadowFiling.effective_date.desc())  # pylint: disable=no-member;
         # member provided via SQLAlchemy
 
         if after_date:
-            query = query.filter(Filing._filing_date >= after_date)
+            query = query.filter(ShadowFiling._filing_date >= after_date)
 
         return query.all()
 
     @staticmethod
     def get_filings_by_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
-        filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.filing_date)). \
+        filings = db.session.query(ShadowFiling). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._filing_type == filing_type). \
+            filter(ShadowFiling._status != ShadowFiling.Status.COMPLETED.value). \
+            order_by(desc(ShadowFiling.filing_date)). \
             all()
         return filings
 
     @staticmethod
     def get_filings_by_types(business_id: int, filing_types):
         """Return the filings of a particular type."""
-        filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type.in_(filing_types)). \
-            filter(Filing._status == Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.effective_date)). \
+        filings = db.session.query(ShadowFiling). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._filing_type.in_(filing_types)). \
+            filter(ShadowFiling._status == ShadowFiling.Status.COMPLETED.value). \
+            order_by(desc(ShadowFiling.effective_date)). \
             all()
         return filings
 
     @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list):
         """Return the filings of particular types and statuses."""
-        filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type.in_(filing_types)). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.effective_date)). \
+        filings = db.session.query(ShadowFiling). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._filing_type.in_(filing_types)). \
+            filter(ShadowFiling._status != ShadowFiling.Status.COMPLETED.value). \
+            order_by(desc(ShadowFiling.effective_date)). \
             all()
         return filings
 
     @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str):
         """Return the filings of a particular type."""
-        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing.business_id == business_id). \
+        max_filing = db.session.query(db.func.max(ShadowFiling._filing_date).label('last_filing_date')).\
+            filter(ShadowFiling._filing_type == filing_type). \
+            filter(ShadowFiling.business_id == business_id). \
             subquery()
 
-        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+        filing = ShadowFiling.query.join(max_filing, ShadowFiling._filing_date == max_filing.c.last_filing_date). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._filing_type == filing_type). \
+            filter(ShadowFiling._status == ShadowFiling.Status.COMPLETED.value)
 
         return filing.one_or_none()
 
     @staticmethod
     def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
         """Return the most recent filing containing the legal_filing type."""
-        query = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
-            filter(Filing.business_id == business_id).\
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+        query = db.session.query(db.func.max(ShadowFiling._filing_date).label('last_filing_date')).\
+            filter(ShadowFiling.business_id == business_id).\
+            filter(ShadowFiling._status == ShadowFiling.Status.COMPLETED.value)
         if filing_type:
-            expr = Filing._filing_json[('filing', filing_type)]
-            query = query.filter(or_(Filing._filing_type == filing_type,
+            expr = ShadowFiling._filing_json[('filing', filing_type)]
+            query = query.filter(or_(ShadowFiling._filing_type == filing_type,
                                      expr.label('legal_filing_type').isnot(None)))
         max_filing = query.subquery()
 
-        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
-            filter(Filing.business_id == business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value). \
-            order_by(Filing.id.desc())
+        filing = ShadowFiling.query.join(max_filing, ShadowFiling._filing_date == max_filing.c.last_filing_date). \
+            filter(ShadowFiling.business_id == business_id). \
+            filter(ShadowFiling._status == ShadowFiling.Status.COMPLETED.value). \
+            order_by(ShadowFiling.id.desc())
 
         # As the JSON query is new for most, leaving the debug stmnt
         # that dumps the query for easier debugging.
@@ -640,33 +570,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        filings = db.session.query(Filing).join(Business). \
+        filings = db.session.query(ShadowFiling).join(Business). \
             filter(
                 ~Business.legal_type.in_([
                     Business.LegalTypes.SOLE_PROP.value,
                     Business.LegalTypes.PARTNERSHIP.value]),
-                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                Filing._status == Filing.Status.COMPLETED.value,
-                Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(Filing.filing_date).all()
+                ShadowFiling.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                ShadowFiling._status == ShadowFiling.Status.COMPLETED.value,
+                ShadowFiling.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
+            ).order_by(ShadowFiling.filing_date).all()
         return filings
 
     @staticmethod
     def get_all_filings_by_status(status):
         """Return all filings based on status."""
-        filings = db.session.query(Filing). \
-            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
+        filings = db.session.query(ShadowFiling). \
+            filter(ShadowFiling._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
         return filings
 
     @staticmethod
     def get_previous_completed_filing(filing):
         """Return the previous completed filing."""
-        filings = db.session.query(Filing). \
-            filter(Filing.business_id == filing.business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value). \
-            filter(Filing.id < filing.id). \
-            filter(Filing.effective_date < filing.effective_date). \
-            order_by(Filing.effective_date.desc()).all()
+        filings = db.session.query(ShadowFiling). \
+            filter(ShadowFiling.business_id == filing.business_id). \
+            filter(ShadowFiling._status == ShadowFiling.Status.COMPLETED.value). \
+            filter(ShadowFiling.id < filing.id). \
+            filter(ShadowFiling.effective_date < filing.effective_date). \
+            order_by(ShadowFiling.effective_date.desc()).all()
         if filings:
             return filings[0]
         return None
@@ -674,7 +604,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
         """Return sub-type from filing json if sub-type exists for filing type."""
-        filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type)
+        filing_sub_type_key = ShadowFiling.FILING_SUB_TYPE_KEYS.get(filing_type)
         if filing_sub_type_key:
             filing_sub_type = filing_json['filing'][filing_type][filing_sub_type_key]
             return filing_sub_type
@@ -684,7 +614,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_fee_code(legal_type: str, filing_type: str, filing_sub_type: str = None):
         """Return fee code for filing."""
-        filing_dict = Filing.FILINGS.get(filing_type, None)
+        filing_dict = ShadowFiling.FILINGS.get(filing_type, None)
 
         if filing_sub_type:
             fee_code = filing_dict[filing_sub_type]['codes'].get(legal_type, None)
@@ -727,7 +657,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         legal_filings = []
         filing = self.filing_json
         for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
-            if Filing.FILINGS.get(k, None):
+            if ShadowFiling.FILINGS.get(k, None):
                 legal_filings.append(
                     {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
 

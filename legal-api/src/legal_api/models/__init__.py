@@ -35,10 +35,14 @@ from .resolution import Resolution
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
+from .shadow_filing import ShadowFiling
+from .legacy_outputs import LegacyOutputs
+from .shadow_business import ShadowBusiness
 
 
 __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType',
            'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'Document', 'DocumentType',
            'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
-           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement', 'ShadowFiling',
+           'LegacyOutputs', 'ShadowBusiness')
