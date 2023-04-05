@@ -14,6 +14,7 @@
 """The Unit Tests for the Restoration email processor."""
 
 import base64
+import pytest
 from unittest.mock import patch
 
 import requests_mock
@@ -109,11 +110,20 @@ def test_completed_extended_restoration_notification(session, config):
         assert 'You have successfully extended the period of restoration with the BC Business' in email
 
 
-def test_paid_restoration_notification(session):
-    """Test PAID full restoration notification."""
+@pytest.mark.parametrize(
+    'restoration_type, attachment_name',
+    [
+        ('fullRestoration', 'Full Restoration Application'),
+        ('limitedRestoration', 'Limited Restoration Application'),
+        ('limitedRestorationExtension', 'Limited Restoration Extension Application'),
+        ('limitedRestorationToFull', 'Conversion to Full Restoration Application'),
+    ]
+)
+def test_paid_full_restoration_notification(session, restoration_type, attachment_name):
+    """Test PAID restoration notification."""
     # setup filing + business for email
     status = 'PAID'
-    filing = prep_restoration_filing('BC1234567', '1', 'BC', LEGAL_NAME)
+    filing = prep_restoration_filing('BC1234567', '1', 'BC', LEGAL_NAME, restoration_type)
     # test processor
     with patch.object(restoration_notification, '_get_paid_pdfs', return_value=[]):
         email_dict = restoration_notification.process({
@@ -127,3 +137,4 @@ def test_paid_restoration_notification(session):
         assert EXPECTED_EMAIL in email_dict['recipients']
         assert 'You have successfully filed your restoration with the BC Business Registry' in email
         assert email_dict['content']['attachments'] == []
+        assert attachment_name in email
