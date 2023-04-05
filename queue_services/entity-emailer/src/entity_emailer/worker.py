@@ -52,6 +52,7 @@ from entity_emailer.email_processors import (
     name_request,
     nr_notification,
     registration_notification,
+    restoration_notification,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -147,6 +148,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'registration':
                 email = registration_notification.process(email_msg['email'], token)
                 send_email(email, token)
+            elif etype == 'restoration':
+                email_object = restoration_notification.process(email_msg['email'], token)
+                send_email(email_object, token)
             elif etype == 'changeOfRegistration':
                 email = change_of_registration_notification.process(email_msg['email'], token)
                 send_email(email, token)

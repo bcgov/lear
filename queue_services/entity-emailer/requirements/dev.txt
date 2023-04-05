@@ -1,14 +1,15 @@
 # Everything the developer needs outside of the production requirements
 
 # Testing
+dpath
 freezegun
+pyhamcrest
 pytest
 pytest-aiohttp
 pytest-asyncio
 pytest-mock
 requests
-pyhamcrest
-dpath
+requests-mock
 
 # Lint and code style
 pydocstyle<4

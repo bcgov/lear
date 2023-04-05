@@ -33,6 +33,7 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
     REGISTRATION,
+    RESTORATION,
 )
 from sqlalchemy_continuum import versioning_manager
 
@@ -214,6 +215,40 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
     filing.submitter_id = user.id
     if submitter_role:
         filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_restoration_filing(identifier, payment_id, legal_type, legal_name, r_type='fullRestoration'):
+    """Return a new restoration filing prepped for email notification.
+
+    @param r_type:
+    @param identifier:
+    @param payment_id:
+    @param legal_type:
+    @param legal_name:
+    @return:
+    """
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'restoration'
+    filing_template['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing_template['filing']['restoration']['type'] = r_type
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
 
     filing.save()
     return filing
