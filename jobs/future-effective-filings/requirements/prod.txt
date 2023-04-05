@@ -10,4 +10,4 @@ sentry-sdk[flask]
 python-dateutil
 asyncio-nats-client
 asyncio-nats-streaming
-Werkzeug<1
+Werkzeug<3
