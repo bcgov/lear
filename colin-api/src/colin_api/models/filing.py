@@ -1277,7 +1277,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         business_dict = business.as_dict()
         if parties := filing.body.get('parties', None):
-            Party.end_current(cursor, filing.event_id, corp_num, 'Director') # Cannot compare, user can change names
+            Party.end_current(cursor, filing.event_id, corp_num, 'Director')  # Cannot compare, user can change names
             for party in parties:
                 cls._create_party_roles(cursor=cursor,
                                         party=party,
