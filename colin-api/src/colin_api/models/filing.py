@@ -1185,7 +1185,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # end old
             CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
 
-        if not name:
+        if not name and filing.filing_type != 'correction':
             name = filing.body.get('nameRequest', {}).get('legalName', None)
 
         corp_name_obj = CorpName()
@@ -1248,21 +1248,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     # pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks;
     def _process_correction(cls, cursor, business: Business, filing: Filing, corp_num: str):
         """Process correction."""
-        corrected_event_id = filing.body['correctedFilingColinId']
-        # for each:
-        # get older values by old event id, if no end event id then correct it, else raise sentry error
-        for change in filing.body.get('diff'):
-            if f"/filing/{filing.body['correctedFilingType']}/nameRequest" in change['path']:
-                old_corp_name = CorpName.get_by_event(
-                    cursor=cursor,
-                    corp_num=corp_num,
-                    event_id=corrected_event_id
-                )[0]
-                if old_corp_name.end_event_id:
-                    raise GenericException(
-                        error=f'Manual intervention needed for correction due to comp name:{corp_num}',
-                        status_code=HTTPStatus.NOT_IMPLEMENTED
-                    )
+        # get older values, if no end event id then correct it, else raise sentry error
+        if name_request := filing.body.get('nameRequest'):
+            new_legal_name = name_request.get('legalName')
+            
+            corp_names = CorpName.get_current(cursor=cursor, corp_num=corp_num)
+            old_corp_name = None
+            for name_obj in corp_names:
+                if name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
+                    old_corp_name = name_obj
+                    break
+
+            if old_corp_name.corp_name != new_legal_name:              
                 # end old corp name
                 CorpName.end_name(
                     cursor=cursor,
@@ -1271,116 +1268,28 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     corp_name=old_corp_name.corp_name,
                     type_code=old_corp_name.type_code
                 )
-                # create new corp name from NR in diff
-                name = change['newValue']['nameRequest'].get('legalName', None)
+                # create new corp name from NR
+                # If numbered set name to None, _create_corp_name will populate it.
+                name = None if new_legal_name.startswith(corp_num) else new_legal_name
                 cls._create_corp_name(cursor, filing, corp_num, name)
 
-            elif fnmatch.fnmatch(change['path'],
-                                 f"/filing/{filing.body['correctedFilingType']}/nameTranslations/*/name"):
-                if change['oldValue']:
-                    old_translations = CorpName.get_by_event(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=corrected_event_id,
-                        type_code=CorpName.TypeCodes.TRANSLATION.value
-                    )
-                    for old_translation in old_translations:
-                        if change['oldValue'].upper() == old_translation.corp_name.upper() and \
-                                old_translation.end_event_id:
-                            raise GenericException(
-                                error='Manual intervention needed for correction due to name translation:'
-                                f'{corp_num}',
-                                status_code=HTTPStatus.NOT_IMPLEMENTED
-                            )
-                    CorpName.end_name(
-                        cursor=cursor,
-                        event_id=filing.event_id,
-                        corp_num=corp_num,
-                        corp_name=change['oldValue'],
-                        type_code=CorpName.TypeCodes.TRANSLATION.value
-                    )
-                if change['newValue']:
-                    CorpName.create_translations(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=filing.event_id,
-                        translations=[{'name': change['newValue']}],
-                        old_translations=[]
-                    )
-            elif f"/filing/{filing.body['correctedFilingType']}/offices" in change['path']:
-                old_offices = Office.get_by_event(cursor=cursor, event_id=corrected_event_id)
-                for office in old_offices:
-                    if office.office_type in change['path']:
-                        if office.end_event_id:
-                            raise GenericException(
-                                error=f'Manual intervention needed for correction due to office:{corp_num}',
-                                status_code=HTTPStatus.NOT_IMPLEMENTED
-                            )
-                        Office.create_new_office(
-                            cursor=cursor,
-                            addresses=change['newValue'],
-                            event_id=filing.event_id,
-                            corp_num=corp_num,
-                            office_type=office.office_type
-                        )
-            elif f"/filing/{filing.body['correctedFilingType']}/parties" in change['path']:
-                if not change['oldValue']:
-                    # this is a new director
-                    cls._create_party_roles(
-                        cursor=cursor,
-                        party=change['newValue'],
-                        business=business,
-                        event_id=filing.event_id,
-                        corrected_id=corrected_event_id
-                    )
-                else:
-                    # correcting existing director
-                    old_parties = Party.get_by_event(
-                        cursor=cursor,
-                        corp_num=corp_num,
-                        event_id=corrected_event_id,
-                        role_type=''
-                    )
-                    for old_party in old_parties:
-                        if Party.compare_parties(party=old_party, officer_json=change['oldValue']['officer']):
-                            if old_party.end_event_id:
-                                raise GenericException(
-                                    error='Manual intervention needed for correction due to party member:'
-                                    f'{corp_num}',
-                                    status_code=HTTPStatus.NOT_IMPLEMENTED
-                                )
-                            if change.get('newValue'):
-                                change['newValue']['prev_id'] = old_party.corp_party_id
-                            Party.end_director_by_name(
-                                cursor=cursor,
-                                director=change['oldValue'],
-                                event_id=filing.event_id,
-                                corp_num=corp_num
-                            )
-                            if change['newValue']:
-                                cls._create_party_roles(
-                                    cursor=cursor,
-                                    party=change['newValue'],
-                                    business=business,
-                                    event_id=filing.event_id,
-                                    corrected_id=corrected_event_id
-                                )
-                            break
-            elif f"/filing/{filing.body['correctedFilingType']}/shareStructure" in change['path']:
-                old_share_structure = ShareObject.get_all(
-                    cursor=cursor,
-                    corp_num=corp_num,
-                    event_id=corrected_event_id
-                )
-                if old_share_structure.end_event_id:
-                    raise GenericException(
-                        error=f'Manual intervention needed for correction due to share structure:{corp_num}',
-                        status_code=HTTPStatus.NOT_IMPLEMENTED
-                    )
-                ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-                ShareObject.create_share_structure(
-                    cursor=cursor,
-                    corp_num=corp_num,
-                    event_id=filing.event_id,
-                    shares_list=change['newValue'].get('shareClasses', [])
-                )
+        cls._process_name_translations(cursor, filing, corp_num)
+        cls._process_office(cursor, filing)
+        
+        business_dict = business.as_dict()
+        if parties := filing.body.get('parties', None):
+            Party.end_current(cursor, filing.event_id, corp_num, 'Director') # Cannot compare, user can change names
+            for party in parties:
+                cls._create_party_roles(cursor=cursor,
+                                        party=party,
+                                        business=business_dict,
+                                        event_id=filing.event_id)
+                        
+        if share_structure := filing.body.get('shareStructure', None):            
+            ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+            ShareObject.create_share_structure(
+                cursor=cursor,
+                corp_num=corp_num,
+                event_id=filing.event_id,
+                shares_list=share_structure.get('shareClasses', [])
+            )
