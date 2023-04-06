@@ -1245,7 +1245,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks;
-    def _process_correction(cls, cursor, business: Business, filing: Filing, corp_num: str):
+    def _process_correction(cls, cursor, business: dict, filing: Filing, corp_num: str):
         """Process correction."""
         # get older values, if no end event id then correct it, else raise sentry error
         if name_request := filing.body.get('nameRequest'):
@@ -1275,13 +1275,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         cls._process_name_translations(cursor, filing, corp_num)
         cls._process_office(cursor, filing)
 
-        business_dict = business.as_dict()
         if parties := filing.body.get('parties', None):
             Party.end_current(cursor, filing.event_id, corp_num, 'Director')  # Cannot compare, user can change names
             for party in parties:
                 cls._create_party_roles(cursor=cursor,
                                         party=party,
-                                        business=business_dict,
+                                        business=business,
                                         event_id=filing.event_id)
 
         if share_structure := filing.body.get('shareStructure', None):
