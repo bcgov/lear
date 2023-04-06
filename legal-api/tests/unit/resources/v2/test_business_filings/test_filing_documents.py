@@ -155,7 +155,9 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                     ]
-                    }
+                    },
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
       },
      HTTPStatus.OK, '2017-10-01'
      ),
@@ -163,7 +165,7 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'legalFilings': [
-                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ]
                     }
       },
