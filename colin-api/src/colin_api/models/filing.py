@@ -18,7 +18,6 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 import datetime
-import fnmatch
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, List, Optional
@@ -1251,7 +1250,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # get older values, if no end event id then correct it, else raise sentry error
         if name_request := filing.body.get('nameRequest'):
             new_legal_name = name_request.get('legalName')
-            
+
             corp_names = CorpName.get_current(cursor=cursor, corp_num=corp_num)
             old_corp_name = None
             for name_obj in corp_names:
@@ -1259,7 +1258,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     old_corp_name = name_obj
                     break
 
-            if old_corp_name.corp_name != new_legal_name:              
+            if old_corp_name.corp_name != new_legal_name:
                 # end old corp name
                 CorpName.end_name(
                     cursor=cursor,
@@ -1275,7 +1274,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         cls._process_name_translations(cursor, filing, corp_num)
         cls._process_office(cursor, filing)
-        
+
         business_dict = business.as_dict()
         if parties := filing.body.get('parties', None):
             Party.end_current(cursor, filing.event_id, corp_num, 'Director') # Cannot compare, user can change names
@@ -1284,8 +1283,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                         party=party,
                                         business=business_dict,
                                         event_id=filing.event_id)
-                        
-        if share_structure := filing.body.get('shareStructure', None):            
+
+        if share_structure := filing.body.get('shareStructure', None):
             ShareObject.end_share_structure(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
             ShareObject.create_share_structure(
                 cursor=cursor,
