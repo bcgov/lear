@@ -259,15 +259,18 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return parties_list
 
     @classmethod
-    def end_current(cls, cursor, event_id: int, corp_num: str):
+    def end_current(cls, cursor, event_id: int, corp_num: str, role_type: str = None):
         """Set all end_event_ids for current parties."""
         try:
+            query = """update corp_party
+                    set end_event_id=:event_id
+                    where corp_num=:corp_num and end_event_id is null
+                    """
+            if role_type:
+                query += f" and party_typ_cd='{Party.role_types[role_type]}'"
+
             cursor.execute(
-                """
-                update corp_party
-                set end_event_id=:event_id
-                where corp_num=:corp_num and end_event_id is null
-                """,
+                query,
                 event_id=event_id,
                 corp_num=corp_num
             )
