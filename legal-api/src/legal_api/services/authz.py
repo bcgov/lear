@@ -505,12 +505,6 @@ def has_blocker_filing(business: Business):
     return any(blocker_filing_matches)
 
 
-def has_pending_filings(business: Business):
-    """Return True if there are any pending filings."""
-    result = len(Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])) > 0
-    return result
-
-
 def has_blocker_valid_state_filing(state_filing: Filing, blocker_checks: dict):
     """Check if there is a required state filing that business does not have."""
     if not (state_filing_types := blocker_checks.get('validStateFilings', [])):
