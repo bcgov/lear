@@ -25,7 +25,7 @@ class LegacyOutputs(db.Model):  # pylint: disable=too-few-public-methods
     __tablename__ = 'legacy_outputs'
 
     colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('shadow_filings.id'))
     legacy_output_key = db.Column('legacy_output_id', db.Integer, unique=True)
     type = db.Column('type', db.String(15))
 

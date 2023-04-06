@@ -17,7 +17,7 @@ The Business class and Schema are held in this module
 """
 
 from enum import Enum, auto
-from typing import Final
+from typing import Final, Optional
 
 import datedelta
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -168,9 +168,6 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
 
-    # relationships
-    filings = db.relationship('Filing', lazy='dynamic')
-
     @hybrid_property
     def identifier(self):
         """Return the unique business identifier."""
@@ -183,7 +180,7 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
             self._identifier = value
         else:
             raise BusinessException('invalid-identifier-format', 406)
-        
+
     def get_ar_dates(self, next_ar_year):
         """Get ar min and max date for the specific year."""
         ar_min_date = datetime(next_ar_year, 1, 1).date()
@@ -214,7 +211,7 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
     def is_firm(self):
         """Return if is firm, otherwise false."""
         return self.legal_type in (self.LegalTypes.SOLE_PROP, self.LegalTypes.PARTNERSHIP)
-    
+
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
         """Given a legal_name, this will return an Active Business."""
@@ -254,7 +251,7 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
-    
+
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""

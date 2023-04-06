@@ -21,7 +21,6 @@ from typing import Final, List
 from sqlalchemy import desc, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
@@ -302,11 +301,11 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     has_legacy_outputs = db.Column('has_legacy_outputs', db.Boolean, unique=False, default=False)
+    colin_event_id = db.Column('colin_event_id', db.Integer, db.ForeignKey('legacy_outputs.colin_event_id'))
 
-    # # relationships
+    # relationships
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
-    colin_event_id = db.Column('colin_event_id', db.Integer, db.ForeignKey('colin_event_id.colin_event_id'))
 
     # properties
     @hybrid_property

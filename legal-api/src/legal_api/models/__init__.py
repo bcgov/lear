@@ -25,6 +25,7 @@ from .dc_definition import DCDefinition
 from .dc_issued_credential import DCIssuedCredential
 from .document import Document, DocumentType
 from .filing import Filing
+from .legacy_outputs import LegacyOutputs
 from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
 from .office import Office, OfficeType
@@ -32,17 +33,16 @@ from .party_role import Party, PartyRole
 from .registration_bootstrap import RegistrationBootstrap
 from .request_tracker import RequestTracker
 from .resolution import Resolution
+from .shadow_business import ShadowBusiness
+from .shadow_filing import ShadowFiling
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
-from .shadow_filing import ShadowFiling
-from .legacy_outputs import LegacyOutputs
-from .shadow_business import ShadowBusiness
 
 
 __all__ = ('db',
            'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType',
            'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'Document', 'DocumentType',
            'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
-           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement', 'ShadowFiling',
-           'LegacyOutputs', 'ShadowBusiness')
+           'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement',
+           'ShadowFiling', 'LegacyOutputs', 'ShadowBusiness')

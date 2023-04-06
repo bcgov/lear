@@ -30,8 +30,8 @@ def upgrade():
         sa.Column('effective_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
         sa.Column('has_legacy_outputs', sa.Boolean(), nullable=True),
         sa.Column('colin_event_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
-        sa.ForeignKeyConstraint(['colin_event_id'], ['colin_event_id.colin_event_id']),
+        sa.ForeignKeyConstraint(['business_id'], ['shadow_businesses.id']),
+        sa.ForeignKeyConstraint(['colin_event_id'], ['legacy_outputs.colin_event_id']),
         sa.PrimaryKeyConstraint('id')
     )
 
@@ -43,7 +43,7 @@ def upgrade():
         sa.Column('founding_date', sa.DateTime(timezone=True), nullable=True),
         sa.Column('state', sa.Enum),
         sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
-        sa.ForeignKeyConstraint(['state_filing_id'], ['filing.id']), # not entirely sure this is the right relationship
+        sa.ForeignKeyConstraint(['state_filing_id'], ['shadow_filings.id']), 
         sa.PrimaryKeyConstraint('id')
     )
 
