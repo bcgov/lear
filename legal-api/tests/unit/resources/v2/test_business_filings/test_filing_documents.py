@@ -157,7 +157,7 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     ]
                     },
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum'
       },
      HTTPStatus.OK, '2017-10-01'
      ),
@@ -167,7 +167,9 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ]
-                    }
+                    },
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum'
       },
      HTTPStatus.OK, '2017-10-01'
      ),
@@ -177,7 +179,9 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     'legalFilings': [
                         {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                    ]
+                    ],
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum'
                     }
       },
      HTTPStatus.OK, '2017-10-01'
