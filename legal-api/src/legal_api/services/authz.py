@@ -237,6 +237,9 @@ ALLOWABLE_FILINGS: Final = {
             }
         },
         Business.State.HISTORICAL: {
+            'alteration': {
+                'legalTypes': ['BC', 'BEN', 'ULC', 'CC']
+            },
             'courtOrder': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
             },
