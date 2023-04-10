@@ -18,13 +18,11 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
 
+from legal_api.exceptions import BusinessException
+from legal_api.models.legacy_outputs import LegacyOutputs
 from sqlalchemy import desc, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-
-from legal_api.exceptions import BusinessException
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.schemas import rsbc_schemas
 
 from .db import db  # noqa: I001
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
@@ -302,22 +300,17 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
     has_legacy_outputs = db.Column('has_legacy_outputs', db.Boolean, unique=False, default=False)
     colin_event_id = db.Column('colin_event_id', db.Integer, db.ForeignKey('legacy_outputs.colin_event_id'))
+    locked = db.Column('locked', db.Boolean)
 
     # relationships
     business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'))
+                            db.ForeignKey('shadow_businesses.id'))
 
     # properties
     @hybrid_property
     def filing_date(self):
         """Property containing the date a filing was submitted."""
         return self._filing_date
-
-    @filing_date.setter
-    def filing_date(self, value: datetime):
-        if self.locked:
-            self._raise_default_lock_exception()
-        self._filing_date = value
 
     @property
     def filing_type(self):
@@ -329,35 +322,11 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         """Property containing the filing sub type."""
         return self._filing_sub_type
 
-    @hybrid_property
-    def payment_status_code(self):
-        """Property containing the payment error type."""
-        return self._payment_status_code
-
-    @payment_status_code.setter
-    def payment_status_code(self, error_type: str):
-        if self.locked:
-            self._raise_default_lock_exception()
-        self._payment_status_code = error_type
-
-    @hybrid_property
-    def payment_token(self):
-        """Property containing the payment token."""
-        return self._payment_token
-
-    @payment_token.setter
-    def payment_token(self, token: int):
-        if self.locked:
-            self._raise_default_lock_exception()
-        self._payment_token = token
-
     @property
     def status(self):
         """Property containing the filing status."""
         # pylint: disable=W0212; prevent infinite loop
-        if self._status == ShadowFiling.Status.COMPLETED \
-            and self.parent_filing_id \
-                and self.parent_filing._status == ShadowFiling.Status.COMPLETED:
+        if self._status == ShadowFiling.Status.COMPLETED:
             return ShadowFiling.Status.CORRECTED.value
         return self._status
 
@@ -384,9 +353,6 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     @filing_json.setter
     def filing_json(self, json_data: dict):
         """Property containing the filings data."""
-        if self.locked:
-            self._raise_default_lock_exception()
-
         try:
             self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
             if not self._filing_type:
@@ -398,33 +364,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
             ) from err
 
         self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
-
-        if self._payment_token:
-            valid, err = rsbc_schemas.validate(json_data, 'filing')
-            if not valid:
-                self._filing_type = None
-                self._payment_token = None
-                errors = []
-                for error in err:
-                    errors.append({'path': '/'.join(error.path), 'error': error.message})
-                raise BusinessException(
-                    error=f'{errors}',
-                    status_code=HTTPStatus.UNPROCESSABLE_ENTITY
-                )
-
-            self._status = ShadowFiling.Status.PENDING.value
         self._filing_json = json_data
 
     @property
     def json_legal_type(self):
         """Return the legal type from a filing_json or None."""
         return self._filing_json.get('filing', {}).get('business', {}).get('legalType', None)
-
-    @property
-    def json_nr(self):
-        """Return the NR Number from a filing_json or None."""
-        return self._filing_json.get('filing', {})\
-            .get(self.filing_type, {}).get('nameRequest', {}).get('nrNumber', None)
 
     @property
     def meta_data(self):
@@ -441,17 +386,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
             json_submission['filing']['header']['status'] = self.status
-            json_submission['filing']['header']['availableOnPaperOnly'] = self.paper_only
-            json_submission['filing']['header']['inColinOnly'] = self.colin_only
 
             if self.effective_date:  # pylint: disable=using-constant-test
                 json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
 
             # add colin_event_ids
-            json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
-
-            # add affected filings list
-            json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
+            json_submission['filing']['header']['colinIds'] = LegacyOutputs.get_by_filing_id(self.id)
 
             return json_submission
         except Exception as err:  # noqa: B901, E722
@@ -463,17 +403,6 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         filing = None
         if filing_id:
             filing = cls.query.filter_by(id=filing_id).one_or_none()
-        return filing
-
-    @staticmethod
-    def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
-        """Return a Filing by it's payment token."""
-        q = db.session.query(ShadowFiling).filter(ShadowFiling.temp_reg == temp_reg_id)
-
-        if filing_id:
-            q.filter(ShadowFiling.id == filing_id)
-
-        filing = q.one_or_none()
         return filing
 
     @staticmethod
@@ -568,12 +497,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        filings = db.session.query(ShadowFiling).join(Business). \
+        from .shadow_business import ShadowBusiness   # noqa: F401; pylint: disable=import-outside-toplevel
+        filings = db.session.query(ShadowFiling).join(ShadowBusiness). \
             filter(
-                ~Business.legal_type.in_([
-                    Business.LegalTypes.SOLE_PROP.value,
-                    Business.LegalTypes.PARTNERSHIP.value]),
+                ~ShadowBusiness.legal_type.in_([
+                    ShadowBusiness.LegalTypes.SOLE_PROP.value,
+                    ShadowBusiness.LegalTypes.PARTNERSHIP.value]),
                 ShadowFiling.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 ShadowFiling._status == ShadowFiling.Status.COMPLETED.value,
                 ShadowFiling.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
@@ -632,16 +561,6 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     def save_to_session(self):
         """Save toThe session, do not commit immediately."""
         db.session.add(self)
-
-    def delete(self):
-        """Raise an error if the filing is locked."""
-        if self.locked:
-            raise BusinessException(
-                error='Deletion not allowed.',
-                status_code=HTTPStatus.FORBIDDEN
-            )
-        db.session.delete(self)
-        db.session.commit()
 
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.

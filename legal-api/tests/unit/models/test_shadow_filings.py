@@ -34,33 +34,17 @@ from registry_schemas.example_data import (
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import ShadowFiling, User
+from legal_api.models.shadow_filing import ShadowFiling
+from legal_api.models import User
 from tests.unit.models import (
     factory_business,
+    factory_shadow_filing,
     factory_user,
 )
 from tests import FROZEN_DATETIME
 
-def factory_shadow_filing(business, data_dict,
-                   filing_date=FROZEN_DATETIME,
-                   filing_type=None,
-                   filing_sub_type=None):
-    """Create a filing."""
-    filing = ShadowFiling()
-    filing.business_id = business.id
-    filing.filing_date = filing_date
-    filing.filing_json = data_dict
-    if filing_type:
-        filing._filing_type = filing_type
-    if filing_sub_type:
-        filing._filing_sub_type = filing_sub_type
-    try:
-        filing.save()
-    except Exception as err:
-        print(err)
-    return filing
 
-def test_minimal_filing_json(session):
+def test_minimal_shadow_filing_json(session):
     """Assert that a minimal filing can be created."""
     b = factory_business('CP1234567')
 
@@ -76,7 +60,7 @@ def test_minimal_filing_json(session):
     assert filing.id is not None
 
 
-def test_filing_json(session):
+def test_shadow_filing_json(session):
     """Assert that an AR filing can be saved."""
     import copy
     b = factory_business('CP1234567')
@@ -91,7 +75,7 @@ def test_filing_json(session):
     assert filing.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
 
 
-def test_filing_missing_name(session):
+def test_shadow_filing_missing_name(session):
     """Assert that an AR filing can be saved."""
     import copy
     identifier = 'CP7654321'
@@ -106,7 +90,7 @@ def test_filing_missing_name(session):
     assert excinfo.value.error == 'No filings found.'
 
 
-def test_filing_dump_json(session):
+def test_shadow_filing_dump_json(session):
     """Assert the filing json serialization works correctly."""
     import copy
     identifier = 'CP7654321'
@@ -144,11 +128,9 @@ def test_filing_dump_json(session):
         filings.json()
 
 
-def test_filing_save_to_session(session):
+def test_shadow_filing_save_to_session(session):
     """Assert that the filing is saved to the session but not committed."""
     from sqlalchemy.orm.session import Session
-    # b = factory_business('CP1234567')
-    # filing = factory_shadow_filing(b, ANNUAL_REPORT)
 
     filing = ShadowFiling()
 
@@ -162,7 +144,7 @@ def test_filing_save_to_session(session):
     assert Session.object_session(filing)
 
 
-def test_get_filings_by_status(session):
+def test_get_shadow_filings_by_status(session):
     """Assert that a filing can be retrieved by status."""
     business = factory_business('CP1234567')
     filing = ShadowFiling()
@@ -176,7 +158,7 @@ def test_get_filings_by_status(session):
     assert rv[0].status == ShadowFiling.Status.COMPLETED.value
 
 
-def test_get_filings_by_status__default_order(session):
+def test_get_shadow_filings_by_status__default_order(session):
     """Assert that a filing can be retrieved.
 
     by status and is returned in the default order.
@@ -219,7 +201,7 @@ def test_get_filings_by_status__default_order(session):
         file_counter -= 1
 
 
-def test_get_most_recent_filing_by_legal_type_in_json(session):
+def test_get_most_recent_shadow_filing_by_legal_type_in_json(session):
     """Assert that the most recent legal filing can be retrieved."""
     business = factory_business('CP1234567')
 
@@ -245,14 +227,12 @@ def test_get_most_recent_filing_by_legal_type_in_json(session):
     assert f.id == filing.id
 
 
-def test_get_most_recent_filing_by_legal_type_db_field(session):
+def test_get_most_recent_shadow_filing_by_legal_type_db_field(session):
     """Assert that the most recent legal filing can be retrieved.
 
     Create 3 filings, find the 2 one by the type only.
     """
     business = factory_business('CP1234567')
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
 
     # filing 1
     effective_date = '2001-07-01T00:00:00+00:00'
@@ -305,7 +285,7 @@ TEST_FILING_GO_LIVE_DATE = [
 
 
 @pytest.mark.parametrize('test_type,days,expected,status', TEST_FILING_GO_LIVE_DATE)
-def test_get_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
+def test_get_shadow_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
     """Assert that a filing can be retrieved by status."""
     import copy
     business = factory_business('CP1234567')
@@ -327,17 +307,17 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
         assert rv[0].status == status
 
 
-def test_get_internal_filings(session, client, jwt):
+def test_get_internal_shadow_filings(session, client, jwt):
     """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
     from legal_api.models import ShadowFiling
-    from legal_api.models.colin_event_id import ColinEventId
-    from tests.unit.models import factory_completed_filing
+    from legal_api.models.legacy_outputs import LegacyOutputs
+    from tests.unit.models import factory_completed_shadow_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    filing = factory_completed_filing(b, ANNUAL_REPORT)
+    filing = factory_completed_shadow_filing(b, ANNUAL_REPORT)
     assert filing.status == ShadowFiling.Status.COMPLETED.value
-    colin_event_id = ColinEventId()
+    colin_event_id = LegacyOutputs()
     colin_event_id.colin_event_id = 12346
     filing.colin_event_ids.append(colin_event_id)
     filing.save()
@@ -361,10 +341,10 @@ def test_get_internal_filings(session, client, jwt):
     assert len(filings) == 0
 
 
-def test_get_a_businesses_most_recent_filing_of_a_type(session):
+def test_get_a_businesses_most_recent_shadow_filing_of_a_type(session):
     """Assert that the most recent completed filing of a specified type is returned."""
     from legal_api.models import ShadowFiling
-    from tests.unit.models import factory_completed_filing
+    from tests.unit.models import factory_completed_shadow_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -375,7 +355,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
         filing_date = base_ar_date + datedelta.datedelta(years=i)
         ar['filing']['annualReport']['annualGeneralMeetingDate'] = \
             filing_date.date().isoformat()
-        filing = factory_completed_filing(b, ar, filing_date)
+        filing = factory_completed_shadow_filing(b, ar, filing_date)
         filings.append(filing)
     # test
     filing = ShadowFiling.get_a_businesses_most_recent_filing_of_a_type(b.id, ShadowFiling.FILINGS['annualReport']['name'])
@@ -384,7 +364,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
     assert filings[4] == filing
 
 
-def test_save_filing_with_colin_id(session):
+def test_save_shadow_filing_with_colin_id(session):
     """Assert that saving a filing from the coops-updater-job user is set to paid and source is colin."""
     from legal_api.models import ShadowFiling
     # setup
@@ -398,7 +378,7 @@ def test_save_filing_with_colin_id(session):
     assert filing.status == ShadowFiling.Status.PAID.value
 
 
-def test_save_filing_colin_only(session):
+def test_save_shadow_filing_colin_only(session):
     """Assert that the in colin only flag is retrieved and saved."""
     from legal_api.models import ShadowFiling
     # setup

@@ -19,13 +19,12 @@ The Business class and Schema are held in this module
 from enum import Enum, auto
 from typing import Final, Optional
 
-import datedelta
-from sqlalchemy.exc import OperationalError, ResourceClosedError
-from sqlalchemy.ext.hybrid import hybrid_property
-
+from flask import current_app
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
+from sqlalchemy.exc import OperationalError, ResourceClosedError
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from .db import db  # noqa: I001
 from .filing import Filing  # noqa: F401 I001 pylint: disable=unused-import;
@@ -166,7 +165,7 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
-    state_filing_id = db.Column('state_filing_id', db.Integer)
+    state_filing_id = db.Column('state_filing_id', db.Integer, db.ForeignKey('shadow_filings.id'))
 
     @hybrid_property
     def identifier(self):
@@ -181,32 +180,53 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
         else:
             raise BusinessException('invalid-identifier-format', 406)
 
-    def get_ar_dates(self, next_ar_year):
-        """Get ar min and max date for the specific year."""
-        ar_min_date = datetime(next_ar_year, 1, 1).date()
-        ar_max_date = datetime(next_ar_year, 12, 31).date()
+    def save(self):
+        """Render a Business to the local cache."""
+        db.session.add(self)
+        db.session.commit()
 
-        if self.legal_type == self.LegalTypes.COOP.value:
-            # This could extend by moving it into a table with start and end date against each year when extension
-            # is required. We need more discussion to understand different scenario's which can come across in future.
-            if next_ar_year == 2020:
-                # For year 2020, set the max date as October 31th next year (COVID extension).
-                ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
-            else:
-                # If this is a CO-OP, set the max date as April 30th next year.
-                ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-        elif self.legal_type in [self.LegalTypes.BCOMP.value,
-                                 self.LegalTypes.COMP.value,
-                                 self.LegalTypes.BC_ULC_COMPANY.value,
-                                 self.LegalTypes.BC_CCC.value]:
-            # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
-            ar_max_date = ar_min_date + datedelta.datedelta(days=60)
+    def json(self, slim=False):
+        """Return the Business as a json object.
 
-        if ar_max_date > datetime.utcnow().date():
-            ar_max_date = datetime.utcnow().date()
+        None fields are not included.
+        """
+        slim_json = self._slim_json()
+        if slim:
+            return slim_json
 
-        return ar_min_date, ar_max_date
+        d = {
+            **slim_json,
+            'foundingDate': self.founding_date.isoformat(),
+        }
+        self._extend_json(d)
+
+        return d
+
+    def _slim_json(self):
+        """Return a smaller/faster version of the business json."""
+        d = {
+            'identifier': self.identifier,
+            'legalName': self.legal_name,
+            'legalType': self.legal_type,
+            'state': self.state.name if self.state else ShadowBusiness.State.ACTIVE.name
+        }
+
+        return d
+
+    def _extend_json(self, d):
+        """Include conditional fields to json."""
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+
+        if self.state_filing_id:
+            d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+
+        filings = self.filings.all()
+
+        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
+                                  x.status == 'COMPLETED')
+
+        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
+                                  x.status == 'COMPLETED')
 
     def is_firm(self):
         """Return if is firm, otherwise false."""
@@ -218,8 +238,7 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
         business = None
         if legal_name:
             try:
-                business = cls.query.filter_by(legal_name=legal_name).\
-                    filter_by(dissolution_date=None).one_or_none()
+                business = cls.query.filter_by(legal_name=legal_name)
             except (OperationalError, ResourceClosedError):
                 # TODO: This usually means a misconfigured database.
                 # This is not a business error if the cache is unavailable.

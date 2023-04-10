@@ -27,9 +27,12 @@ from legal_api.models import (
     Business,
     Comment,
     Filing,
+    LegacyOutputs,
     Office,
     Party,
     PartyRole,
+    ShadowFiling,
+    ShadowBusiness,
     ShareClass,
     ShareSeries,
     User,
@@ -198,6 +201,26 @@ def factory_filing(business, data_dict,
         print(err)
     return filing
 
+def factory_shadow_filing(business, data_dict,
+                   filing_date=FROZEN_DATETIME,
+                   filing_type=None,
+                   filing_sub_type=None,
+                   id=1):
+    """Create a filing."""
+    filing = ShadowFiling()
+    filing.id = id
+    filing.business_id = business.id
+    filing.filing_date = filing_date
+    filing.filing_json = data_dict
+    if filing_type:
+        filing._filing_type = filing_type
+    if filing_sub_type:
+        filing._filing_sub_type = filing_sub_type
+    try:
+        filing.save()
+    except Exception as err:
+        print(err)
+    return filing
 
 def factory_incorporation_filing(business, data_dict, filing_date=FROZEN_DATETIME, effective_date=FROZEN_DATETIME):
     """Create a filing."""
@@ -244,6 +267,32 @@ def factory_completed_filing(business,
             colin_event.colin_event_id = colin_id
             colin_event.filing_id = filing.id
             colin_event.save()
+        filing.save()
+    return filing
+
+def factory_completed_shadow_filing(business,
+                             data_dict,
+                             filing_date=FROZEN_DATETIME,
+                             colin_id=None,
+                             filing_type=None,
+                             filing_sub_type=None):
+    """Create a completed filing."""
+    with freeze_time(filing_date):
+
+        filing = ShadowFiling()
+        filing.business_id = business.id
+        filing.filing_date = filing_date
+        filing.filing_json = data_dict
+        if filing_type:
+            filing._filing_type = filing_type
+        if filing_sub_type:
+            filing._filing_sub_type = filing_sub_type
+        filing.save()
+        if colin_id:
+            output = LegacyOutputs()
+            output.colin_event_id = colin_id
+            output.filing_id = filing.id
+            output.save()
         filing.save()
     return filing
 

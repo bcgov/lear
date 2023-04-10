@@ -14,36 +14,49 @@
 
 import pytest
 
-from legal_api.models import legacy_outputs
+from legal_api.models.legacy_outputs import LegacyOutputs
+from tests.unit.models import (
+    factory_business,
+    factory_shadow_filing
+)
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+)
 
-def factory_output(colin_event_id: int = 1, filing_id: int = 2, output_key: int = 3):
+def factory_output(colin_event_id, filing_id: int = None, output_key: int = None, type: str = 'test'):
     """Return a valid legacy outputs object."""
-    return legacy_outputs(colin_event_id=colin_event_id,
+    output = LegacyOutputs(colin_event_id=colin_event_id,
                           filing_id=filing_id,
-                          legacy_output_key=output_key)
+                          legacy_output_key=output_key,
+                          type=type)
+    return output
 
 def test_legacy_ouptuts_save(session):
     """Assert that an output is stored correctly"""
-    mock_outputs = factory_output()
+    mock_outputs = factory_output(1)
     mock_outputs.save()
 
-    assert mock_outputs.colin_event_id == 1
-    assert mock_outputs.filing_id == 2
-    assert mock_outputs.legacy_output_key == 3
+    assert mock_outputs.colin_event_id is not None
+    assert mock_outputs.filing_id is None
+    assert mock_outputs.legacy_output_key is None
+    assert mock_outputs.type is not None
 
 def test_get_by_filing_id(session):
     """Assert that searching for an output by filing_id correctly."""
-    mock_output_table = factory_output(filing_id=1)
+    b = factory_business('CP1234567')
+    filing = factory_shadow_filing(business=b, id=2, data_dict=None)
+    mock_output_table = factory_output(colin_event_id=1, filing_id=2)
+    mock_output_table.save()
     
     session.add(mock_output_table)
     session.commit()
 
     # finding output succeeds
-    output = mock_output_table.get_by_filing_id(1)
+    output = mock_output_table.get_by_filing_id(2)
     assert output is not None
 
     # finding output fails
-    output = mock_output_table.get_by_filing_id(2)
+    output = mock_output_table.get_by_filing_id(3)
     assert output is None
 
 def test_get_by_colin_id(session):
