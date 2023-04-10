@@ -114,7 +114,7 @@ ALLOWABLE_FILINGS: Final = {
     'staff': {
         Business.State.ACTIVE: {
             'adminFreeze': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
             'alteration': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
@@ -164,21 +164,21 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'courtOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
                 'blockerChecks': {
                     'business': [BusinessBlocker.DEFAULT]
                 }
             },
             'dissolution': {
                 'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
                 'administrative': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
@@ -196,7 +196,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'registrarsOrder': {
-                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
                 'blockerChecks': {
                     'business': [BusinessBlocker.DEFAULT]
                 }
@@ -219,7 +219,7 @@ ALLOWABLE_FILINGS: Final = {
             },
             'restoration': {
                 'limitedRestorationExtension': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'validStateFilings': ['restoration.limitedRestoration',
                                               'restoration.limitedRestorationExtension'],
@@ -227,7 +227,7 @@ ALLOWABLE_FILINGS: Final = {
                     }
                 },
                 'limitedRestorationToFull': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'validStateFilings': ['restoration.limitedRestoration',
                                               'restoration.limitedRestorationExtension'],
@@ -241,7 +241,7 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC']
             },
             'courtOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
             'putBackOn': {
                 'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
@@ -251,10 +251,10 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'registrarsNotation': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC']
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'registrarsOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC']
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'restoration': {
                 'fullRestoration': {
@@ -309,7 +309,7 @@ ALLOWABLE_FILINGS: Final = {
             },
             'dissolution': {
                 'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
