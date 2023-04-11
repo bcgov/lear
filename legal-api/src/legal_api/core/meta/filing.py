@@ -351,7 +351,10 @@ FILINGS: Final = {
         'displayName': 'Special Resolution',
         'codes': {
             'CP': 'SPRLN'
-        }
+        },
+        'additional': [
+            {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
+        ]
     },
     'transition': {
         'name': 'transition',

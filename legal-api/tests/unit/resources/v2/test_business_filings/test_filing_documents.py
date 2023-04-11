@@ -151,31 +151,40 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      ),
     ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+     {'documents': {
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                    ]
+                    ],
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     }
       },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+     {'documents': {
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                    ]
+                    ],
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
                     }
       },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+     {'documents': {
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'legalFilings': [
                         {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-                    ]
+                    ],
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     }
       },
      HTTPStatus.OK, '2017-10-01'
@@ -384,17 +393,21 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
      'dissolution', DISSOLUTION, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED,
      {
          'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+            'affidavit':
+                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
+             'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
              'certificateOfDissolution':
              f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
-                 'affidavit':
-                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
-                     {'specialResolution':
-                      f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
-                 ]
-         }
+
+            'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
+            'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+            'legalFilings': [
+                {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
+                {'specialResolution':
+                f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
+            ],
+            'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
+         },
      },
      HTTPStatus.OK, '2017-10-01'
      ),
