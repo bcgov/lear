@@ -45,6 +45,7 @@ class BusinessBlocker(str, Enum):
     DEFAULT = 'DEFAULT'
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
     DRAFT_PENDING = 'DRAFT_PENDING'
+    GOOD_STANDING = 'GOOD_STANDING'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -172,7 +173,7 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.GOOD_STANDING]
                     }
                 },
                 'administrative': {
@@ -188,7 +189,7 @@ ALLOWABLE_FILINGS: Final = {
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
             },
             'registrarsNotation': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC']
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'registrarsOrder': {
                 'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
@@ -226,9 +227,6 @@ ALLOWABLE_FILINGS: Final = {
             }
         },
         Business.State.HISTORICAL: {
-            'alteration': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC']
-            },
             'courtOrder': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
@@ -236,7 +234,7 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
                 'blockerChecks': {
                     # FUTURE add outstanding filings to invalidStateFilings when implemented
-                    'invalidStateFilings': ['continuationIn', 'continuationOut']
+                    'validStateFilings': ['putBackOn']
                 }
             },
             'registrarsNotation': {
@@ -298,10 +296,10 @@ ALLOWABLE_FILINGS: Final = {
             },
             'dissolution': {
                 'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.GOOD_STANDING]
                     }
                 },
             },
@@ -452,9 +450,10 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
 def business_blocker_check(business: Business):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
-        BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DEFAULT: False,
-        BusinessBlocker.DRAFT_PENDING: False
+        BusinessBlocker.BUSINESS_FROZEN: False,
+        BusinessBlocker.DRAFT_PENDING: False,
+        BusinessBlocker.GOOD_STANDING: False
     }
 
     if not business:
@@ -467,6 +466,9 @@ def business_blocker_check(business: Business):
     if business.admin_freeze:
         business_blocker_checks[BusinessBlocker.BUSINESS_FROZEN] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
+
+    if business.good_standing:
+        business_blocker_checks[BusinessBlocker.GOOD_STANDING] = True
 
     return business_blocker_checks
 
