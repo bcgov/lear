@@ -44,6 +44,7 @@ class BusinessBlocker(str, Enum):
     # the individual checks within DEFAULT could be added as an individual enum item.
     DEFAULT = 'DEFAULT'
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
+    DRAFT_PENDING = 'DRAFT_PENDING'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -164,10 +165,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'courtOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'dissolution': {
                 'voluntary': {
@@ -181,7 +179,7 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DRAFT_PENDING]
                     }
                 }
             },
@@ -190,16 +188,10 @@ ALLOWABLE_FILINGS: Final = {
                 'businessExists': False  # only show filing when providing allowable filings not specific to a business
             },
             'registrarsNotation': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC']
             },
             'registrarsOrder': {
-                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
@@ -212,10 +204,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
             },
             'restoration': {
                 'limitedRestorationExtension': {
@@ -247,7 +236,7 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
                 'blockerChecks': {
                     # FUTURE add outstanding filings to invalidStateFilings when implemented
-                    'invalidStateFilings': []
+                    'invalidStateFilings': ['continuationIn', 'continuationOut']
                 }
             },
             'registrarsNotation': {
@@ -331,10 +320,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
             }
         },
         Business.State.HISTORICAL: {}
@@ -467,20 +453,20 @@ def business_blocker_check(business: Business):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.BUSINESS_FROZEN: False,
-        BusinessBlocker.DEFAULT: False
+        BusinessBlocker.DEFAULT: False,
+        BusinessBlocker.DRAFT_PENDING: False
     }
 
     if not business:
         return business_blocker_checks
 
     if has_blocker_filing(business):
+        business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
     if business.admin_freeze:
-        business_blocker_checks = {
-            BusinessBlocker.BUSINESS_FROZEN: True,
-            BusinessBlocker.DEFAULT: True
-        }
+        business_blocker_checks[BusinessBlocker.BUSINESS_FROZEN] = True
+        business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
     return business_blocker_checks
 
