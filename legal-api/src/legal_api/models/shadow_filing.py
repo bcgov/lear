@@ -308,9 +308,13 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
 
     # properties
     @hybrid_property
-    def filing_date(self):
+    def shadow_filing_date(self):
         """Property containing the date a filing was submitted."""
         return self._filing_date
+
+    @shadow_filing_date.setter
+    def shadow_filing_date(self, value: datetime):
+        self._filing_date = value
 
     @property
     def filing_type(self):
@@ -331,12 +335,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         return self._status
 
     @hybrid_property
-    def source(self):
+    def shadow_source(self):
         """Property containing the filing source."""
         return self._source
 
-    @source.setter
-    def source(self, source: str):
+    @shadow_source.setter
+    def shadow_source(self, source: str):
         """Property containing the filing source."""
         if source not in [x.value for x in self.Source]:
             raise BusinessException(
@@ -346,12 +350,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         self._source = source
 
     @hybrid_property
-    def filing_json(self):
+    def shadow_filing_json(self):
         """Property containing the filings data."""
         return self._filing_json
 
-    @filing_json.setter
-    def filing_json(self, json_data: dict):
+    @shadow_filing_json.setter
+    def shadow_filing_json(self, json_data: dict):
         """Property containing the filings data."""
         try:
             self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
@@ -372,6 +376,12 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         return self._filing_json.get('filing', {}).get('business', {}).get('legalType', None)
 
     @property
+    def json_nr(self):
+        """Return the NR Number from a filing_json or None."""
+        return self._filing_json.get('filing', {})\
+            .get(self.filing_type, {}).get('nameRequest', {}).get('nrNumber', None)
+
+    @property
     def meta_data(self):
         """Return the meta data collected about a filing, stored as JSON."""
         return self._meta_data
@@ -381,7 +391,7 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
     def json(self):
         """Return a json representation of this object."""
         try:
-            json_submission = copy.deepcopy(self.filing_json)
+            json_submission = copy.deepcopy(self.shadow_filing_json)
             json_submission['filing']['header']['date'] = self._filing_date.isoformat()
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
@@ -426,7 +436,7 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
             filter(ShadowFiling.business_id == business_id). \
             filter(ShadowFiling._filing_type == filing_type). \
             filter(ShadowFiling._status != ShadowFiling.Status.COMPLETED.value). \
-            order_by(desc(ShadowFiling.filing_date)). \
+            order_by(desc(ShadowFiling.shadow_filing_date)). \
             all()
         return filings
 
@@ -506,7 +516,7 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
                 ShadowFiling.colin_event_id == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 ShadowFiling._status == ShadowFiling.Status.COMPLETED.value,
                 ShadowFiling.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(ShadowFiling.filing_date).all()
+            ).order_by(ShadowFiling.shadow_filing_date).all()
         return filings
 
     @staticmethod
@@ -559,8 +569,13 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
         db.session.commit()
 
     def save_to_session(self):
-        """Save toThe session, do not commit immediately."""
+        """Save to The session, do not commit immediately."""
         db.session.add(self)
+
+    def delete(self):
+        """Remove shadow filing from session."""
+        db.session.delete(self)
+        db.session.commit()
 
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
@@ -569,11 +584,11 @@ class ShadowFiling(db.Model):  # pylint: disable=too-many-instance-attributes,to
             List: or None of the Legal Filing JSON segments.
             }
         """
-        if not self.filing_json:
+        if not self.shadow_filing_json:
             return None
 
         legal_filings = []
-        filing = self.filing_json
+        filing = self.shadow_filing_json
         for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
             if ShadowFiling.FILINGS.get(k, None):
                 legal_filings.append(

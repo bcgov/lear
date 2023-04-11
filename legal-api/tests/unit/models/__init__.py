@@ -160,6 +160,21 @@ def factory_business(identifier,
     business.save()
     return business
 
+def factory_shadow_business(identifier,
+                     founding_date=EPOCH_DATETIME,
+                     entity_type=ShadowBusiness.LegalTypes.COOP.value,
+                     state=ShadowBusiness.State.ACTIVE,
+                     id=1):
+    """Create a shadow business entity."""
+    business = ShadowBusiness(legal_name=f'legal_name-{identifier}',
+                        founding_date=founding_date,
+                        identifier=identifier,
+                        legal_type=entity_type,
+                        state=state,
+                        id=id)
+
+    business.save()
+    return business
 
 def factory_business_mailing_address(business):
     """Create a business entity."""
@@ -206,12 +221,12 @@ def factory_shadow_filing(business, data_dict,
                    filing_type=None,
                    filing_sub_type=None,
                    id=1):
-    """Create a filing."""
+    """Create a shadow filing."""
     filing = ShadowFiling()
     filing.id = id
     filing.business_id = business.id
-    filing.filing_date = filing_date
-    filing.filing_json = data_dict
+    filing.shadow_filing_date = filing_date
+    filing.shadow_filing_json = data_dict
     if filing_type:
         filing._filing_type = filing_type
     if filing_sub_type:

@@ -16,11 +16,8 @@ import pytest
 
 from legal_api.models.legacy_outputs import LegacyOutputs
 from tests.unit.models import (
-    factory_business,
+    factory_shadow_business,
     factory_shadow_filing
-)
-from registry_schemas.example_data import (
-    ANNUAL_REPORT,
 )
 
 def factory_output(colin_event_id, filing_id: int = None, output_key: int = None, type: str = 'test'):
@@ -43,7 +40,7 @@ def test_legacy_ouptuts_save(session):
 
 def test_get_by_filing_id(session):
     """Assert that searching for an output by filing_id correctly."""
-    b = factory_business('CP1234567')
+    b = factory_shadow_business(identifier='CP1234567', id=60)
     filing = factory_shadow_filing(business=b, id=2, data_dict=None)
     mock_output_table = factory_output(colin_event_id=1, filing_id=2)
     mock_output_table.save()

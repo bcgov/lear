@@ -181,8 +181,13 @@ class ShadowBusiness(db.Model):  # pylint: disable=too-many-instance-attributes,
             raise BusinessException('invalid-identifier-format', 406)
 
     def save(self):
-        """Render a Business to the local cache."""
+        """Save a Business to session and commit immediately."""
         db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Remove a shadow business from the session."""
+        db.session.delete(self)
         db.session.commit()
 
     def json(self, slim=False):

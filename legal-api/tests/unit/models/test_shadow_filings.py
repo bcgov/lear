@@ -41,7 +41,6 @@ from tests.unit.models import (
     factory_shadow_filing,
     factory_user,
 )
-from tests import FROZEN_DATETIME
 
 
 def test_minimal_shadow_filing_json(session):

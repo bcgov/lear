@@ -24,14 +24,6 @@ from legal_api.exceptions import BusinessException
 from legal_api.models.shadow_business import ShadowBusiness
 
 
-def factory_business(designation: str = '001'):
-    """Return a valid Business object stamped with the supplied designation."""
-    return ShadowBusiness(legal_name=f'legal_name-{designation}',
-                    founding_date=datetime.utcfromtimestamp(0),
-                    identifier='CP1234567',
-                    state=ShadowBusiness.State.ACTIVE)
-
-
 def test_business_identifier(session):
     """Assert that setting the business identifier must be in a valid format."""
     from tests.conftest import not_raises
