@@ -448,31 +448,33 @@ class BusinessDocument:
         corp_type = CorpType.find_by_id(legal_type)
         return corp_type.full_desc if corp_type else ''
 
+    voluntary_dissolution = 'Voluntary Dissolution'
+    administrative_dissolution = 'Administrative Dissolution'
     FILING_SUMMARY_DISPLAY_NAME = {
         'dissolution': {
             'voluntary': {
-                'CP': 'Voluntary Dissolution',
-                'BEN': 'Voluntary Dissolution',
-                'ULC': 'Voluntary Dissolution',
-                'CC': 'Voluntary Dissolution',
-                'LLC': 'Voluntary Dissolution',
+                'CP': voluntary_dissolution,
+                'BEN': voluntary_dissolution,
+                'ULC': voluntary_dissolution,
+                'CC': voluntary_dissolution,
+                'LLC': voluntary_dissolution,
                 'SP': 'Dissolution Application',
                 'GP': 'Dissolution Application'
             },
             'administrative': {
-                'CP': 'Administrative Dissolution',
-                'BEN': 'Administrative Dissolution',
-                'ULC': 'Administrative Dissolution',
-                'CC': 'Administrative Dissolution',
-                'LLC': 'Administrative Dissolution',
-                'SP': 'Administrative Dissolution',
-                'GP': 'Administrative Dissolution'
+                'CP': administrative_dissolution,
+                'BEN': administrative_dissolution,
+                'ULC': administrative_dissolution,
+                'CC': administrative_dissolution,
+                'LLC': administrative_dissolution,
+                'SP': administrative_dissolution,
+                'GP': administrative_dissolution
             }
         },
         'restorationApplication': 'Restoration Application',
         'restoration': 'Restoration Application',
         'dissolved': 'Involuntary Dissolution',
-        'voluntaryDissolution': 'Voluntary Dissolution',
+        'voluntaryDissolution': voluntary_dissolution,
         'Involuntary Dissolution': 'Involuntary Dissolution',
         'voluntaryLiquidation': 'Voluntary Liquidation',
         'putBackOn': 'Correction - Put Back On'
