@@ -45,7 +45,7 @@ class BusinessBlocker(str, Enum):
     DEFAULT = 'DEFAULT'
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
     DRAFT_PENDING = 'DRAFT_PENDING'
-    GOOD_STANDING = 'GOOD_STANDING'
+    NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -172,14 +172,12 @@ ALLOWABLE_FILINGS: Final = {
                 'voluntary': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.GOOD_STANDING]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
                 'administrative': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DRAFT_PENDING]
                     }
                 }
@@ -234,7 +232,7 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
                 'blockerChecks': {
                     # FUTURE add outstanding filings to invalidStateFilings when implemented
-                    'validStateFilings': ['putBackOn']
+                    'validStateFilings': ['dissolution.administrative']
                 }
             },
             'registrarsNotation': {
@@ -298,8 +296,7 @@ ALLOWABLE_FILINGS: Final = {
                 'voluntary': {
                     'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.GOOD_STANDING]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
             },
@@ -453,7 +450,7 @@ def business_blocker_check(business: Business):
         BusinessBlocker.DEFAULT: False,
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
-        BusinessBlocker.GOOD_STANDING: False
+        BusinessBlocker.NOT_IN_GOOD_STANDING: False
     }
 
     if not business:
@@ -467,8 +464,8 @@ def business_blocker_check(business: Business):
         business_blocker_checks[BusinessBlocker.BUSINESS_FROZEN] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
-    if business.good_standing:
-        business_blocker_checks[BusinessBlocker.GOOD_STANDING] = True
+    if not business.good_standing:
+        business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
 
     return business_blocker_checks
 
