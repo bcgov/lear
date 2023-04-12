@@ -231,7 +231,6 @@ ALLOWABLE_FILINGS: Final = {
             'putBackOn': {
                 'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
                 'blockerChecks': {
-                    # FUTURE add outstanding filings to invalidStateFilings when implemented
                     'validStateFilings': ['dissolution.administrative']
                 }
             },
@@ -245,14 +244,12 @@ ALLOWABLE_FILINGS: Final = {
                 'fullRestoration': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        # FUTURE add outstanding filings to invalidStateFilings when implemented
                         'invalidStateFilings': ['continuationIn', 'continuationOut']
                     }
                 },
                 'limitedRestoration': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        # FUTURE add outstanding filings to invalidStateFilings when implemented
                         'invalidStateFilings': ['continuationIn', 'continuationOut']
                     }
                 }
