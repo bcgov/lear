@@ -206,13 +206,16 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
 )
 def test_validate_expiry_date(session, test_name, restoration_type, delta_date, is_valid):
     """Assert that expiry date is validated."""
-    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
     limited_restoration_filing = None
+    expiry_date = LegislationDatetime.now()
+    restoration_expiry_date = None
     if restoration_type == 'limitedRestorationExtension':
         limited_restoration_filing = factory_limited_restoration_filing()
-    expiry_date = LegislationDatetime.now()
+        restoration_expiry_date = LegislationDatetime.now() + relativedelta(months=4)
+        expiry_date = restoration_expiry_date
     if delta_date:
         expiry_date = expiry_date + delta_date
+    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=restoration_expiry_date)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
