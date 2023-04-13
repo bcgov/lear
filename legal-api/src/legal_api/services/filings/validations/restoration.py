@@ -77,8 +77,7 @@ def validate_expiry_date(business: Business, filing: Dict, restoration_type: str
         max_expiry_years = 2
         now = LegislationDatetime.now().date()
         if restoration_type == 'limitedRestorationExtension':
-            now = LegislationDatetime.as_legislation_timezone(business.restoration_expiry_date).date()
-        
+            now = LegislationDatetime.as_legislation_timezone(business.restoration_expiry_date).date()        
         greater = now + relativedelta(years=max_expiry_years)
         lesser = now + relativedelta(months=1)
         if expiry_date < lesser or expiry_date > greater:
