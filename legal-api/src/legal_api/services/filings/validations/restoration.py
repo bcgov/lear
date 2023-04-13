@@ -43,7 +43,7 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
                                                                                    'restoration',
                                                                                    'limitedRestoration')
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
-        msg.extend(validate_expiry_date(restoration, restoration_type))
+        msg.extend(validate_expiry_date(business, restoration, restoration_type))
     elif restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         msg.extend(validate_relationship(restoration))
 
@@ -68,15 +68,16 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     return None
 
 
-def validate_expiry_date(filing: Dict, restoration_type: str) -> list:
+def validate_expiry_date(business: Business, filing: Dict, restoration_type: str) -> list:
     """Validate expiry date."""
-    # Between 1 month and 2 years in the future for limited restoration
-    # Between 1 month and 3 years in the future for limited restoration extension
     msg = []
     expiry_date_path = '/filing/restoration/expiry'
+
     if expiry_date := get_date(filing, expiry_date_path):
+        max_expiry_years = 2
         now = LegislationDatetime.now().date()
-        max_expiry_years = 2 if restoration_type == 'limitedRestoration' else 3
+        if restoration_type == 'limitedRestorationExtension':
+            now = LegislationDatetime.as_legislation_timezone(business.restoration_expiry_date).date()
         greater = now + relativedelta(years=max_expiry_years)
         lesser = now + relativedelta(months=1)
         if expiry_date < lesser or expiry_date > greater:
