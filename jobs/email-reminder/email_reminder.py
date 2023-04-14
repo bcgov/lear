@@ -30,7 +30,6 @@ from sqlalchemy.sql.expression import text  # noqa: I001
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
-
 # noqa: I003
 
 setup_logging(
