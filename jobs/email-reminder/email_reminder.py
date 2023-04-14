@@ -127,9 +127,10 @@ def get_businesses(legal_types: list):
         " END  + interval '1 year' <= CURRENT_DATE")
     return db.session.query(Business).filter(
         Business.legal_type.in_(legal_types),
-        Business.send_ar_ind == True,  # noqa E712
+        Business.send_ar_ind == True,  # pylint: disable=singleton-comparison; # noqa: E712;
         Business.state == Business.State.ACTIVE,
-        Business.restoration_expiry_date == None,  # noqa: E711; Will have a value for limitedRestoration (Extension)
+        # restoration_expiry_date will have a value for limitedRestoration and limitedRestorationExtension
+        Business.restoration_expiry_date == None,  # pylint: disable=singleton-comparison; # noqa: E711;
         where_clause
     ).order_by(Business.id).paginate(per_page=20)
 
