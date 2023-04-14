@@ -171,6 +171,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'last_agm_date',
             'last_ar_date',
             'last_ar_year',
+            'last_ar_reminder_year',
             'last_coa_date',
             'last_cod_date',
             'last_ledger_id',
@@ -220,6 +221,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
+    last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)
     association_type = db.Column('association_type', db.String(50))
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
