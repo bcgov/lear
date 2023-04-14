@@ -497,8 +497,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if approval_type == 'courtOrder':
             filing['courtOrder'] = filing['restoration'].get('courtOrder')
         else:
-            filing['applicationDate'] = filing['restoration'].get('applicationDate')
-            filing['noticeDate'] = filing['restoration'].get('noticeDate')
+            filing['applicationDate'] = filing['restoration'].get('applicationDate', 'Not Applicable')
+            filing['noticeDate'] = filing['restoration'].get('noticeDate', 'Not Applicable')
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
             self._filing.transaction_id, self._business.id, is_dissolution_date=True)
