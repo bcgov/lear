@@ -30,7 +30,6 @@ from sqlalchemy.sql.expression import text  # noqa: I001
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
-
 # noqa: I003
 
 setup_logging(
@@ -121,12 +120,17 @@ def get_ar_fee(app: Flask, legal_type: str, token: str) -> str:
 def get_businesses(legal_types: list):
     """Get businesses to send AR reminder today."""
     where_clause = text(
-        'CASE WHEN last_ar_year IS NULL' +
-        ' THEN date(founding_date) ELSE' +
-        ' date(founding_date) + MAKE_INTERVAL(YEARS := last_ar_year - EXTRACT(YEAR FROM founding_date)::INTEGER)' +
-        " END  + interval '1 year'= CURRENT_DATE")
+        'CASE WHEN last_ar_reminder_year IS NULL THEN date(founding_date)' +
+        ' ELSE date(founding_date)' +
+        ' + MAKE_INTERVAL(YEARS := last_ar_reminder_year - EXTRACT(YEAR FROM founding_date)::INTEGER)' +
+        " END  + interval '1 year' <= CURRENT_DATE")
     return db.session.query(Business).filter(
-        Business.legal_type.in_(legal_types), where_clause
+        Business.legal_type.in_(legal_types),
+        Business.send_ar_ind == True,  # pylint: disable=singleton-comparison; # noqa: E712;
+        Business.state == Business.State.ACTIVE,
+        # restoration_expiry_date will have a value for limitedRestoration and limitedRestorationExtension
+        Business.restoration_expiry_date == None,  # pylint: disable=singleton-comparison; # noqa: E711;
+        where_clause
     ).order_by(Business.id).paginate(per_page=20)
 
 
@@ -154,10 +158,13 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
         while pagination.items:
             app.logger.debug('Processing businesses to send AR reminder')
             for business in pagination.items:
-                ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+                ar_year = (business.last_ar_reminder_year
+                           if business.last_ar_reminder_year else business.founding_date.year) + 1
 
                 await send_email(business.id, ar_fees[business.legal_type], str(ar_year), app, qsm)
                 app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+                business.last_ar_reminder_year = ar_year
+                business.save()
 
             if pagination.next_num:
                 pagination = pagination.next()
