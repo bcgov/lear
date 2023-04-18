@@ -1065,6 +1065,18 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
 
+def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_fee_code: str):
+    """Assert fee codes."""
+    fee_codes = ListFilingResource._get_filing_types(business, filing_json)
+    assert fee_codes
+    if len(fee_codes) == 1:
+        fee_code = fee_codes[0]['filingTypeCode']
+        assert fee_code == expected_fee_code
+    else:
+        assert len(multiple_fee_codes) == len(fee_codes)
+    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
+
+
 @pytest.mark.parametrize(
     'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes',
     [
@@ -1135,17 +1147,7 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    def fee_code_asserts():
-        fee_codes = ListFilingResource._get_filing_types(business, filing)
-        assert fee_codes
-        if len(fee_codes) == 1:
-            fee_code = fee_codes[0]['filingTypeCode']
-            assert fee_code == expected_fee_code
-        else:
-            assert len(multiple_fee_codes) == len(fee_codes)
-        assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
-
-    fee_code_asserts()
+    _fee_code_asserts(business, filing, multiple_fee_codes, expected_fee_code)
 
 
 @integration_payment
