@@ -468,6 +468,7 @@ class BusinessDocument:
         'dissolution': {
             'voluntary': {
                 'CP': 'Voluntary Dissolution',
+                'BC': 'Voluntary Dissolution',
                 'BEN': 'Voluntary Dissolution',
                 'ULC': 'Voluntary Dissolution',
                 'CC': 'Voluntary Dissolution',
@@ -477,6 +478,7 @@ class BusinessDocument:
             },
             'administrative': {
                 'CP': 'Administrative Dissolution',
+                'BC': 'Administrative Dissolution',
                 'BEN': 'Administrative Dissolution',
                 'ULC': 'Administrative Dissolution',
                 'CC': 'Administrative Dissolution',
