@@ -56,6 +56,10 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
             if not name_request.get('legalName', None):
                 msg.append({'error': 'Legal name is missing in nameRequest.',
                             'path': '/filing/restoration/nameRequest/legalName'})
+    elif restoration_type == 'limitedRestorationExtension' and (
+            name_request := restoration.get('filing', {}).get('restoration', {}).get('nameRequest', None)):
+        msg.append({'error': 'Cannot change name while extending limited restoration.',
+                    'path': '/filing/restoration/nameRequest'})
 
     msg.extend(validate_party(restoration))
     msg.extend(validate_offices(restoration, filing_type))
