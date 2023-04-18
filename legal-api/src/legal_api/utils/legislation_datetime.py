@@ -75,6 +75,33 @@ class LegislationDatetime():
         return date_time_str
 
     @staticmethod
+    def format_as_report_string_with_custom_time(date_time: datetime,
+                                                 custom_hour: int,
+                                                 custom_minute: int,
+                                                 custom_second: int,
+                                                 custom_microsecond: int) -> str:
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        # ensure is set to correct timezone
+        date_time = LegislationDatetime.as_legislation_timezone(date_time)
+        date_time = date_time.replace(hour=custom_hour,
+                                      minute=custom_minute,
+                                      second=custom_second,
+                                      microsecond=custom_microsecond)
+
+        hour = date_time.strftime('%I').lstrip('0')
+        # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
+        am_pm = date_time.strftime('%p').lower()
+        date_time_str = date_time.strftime(f'%B %-d, %Y at {hour}:%M {am_pm} Pacific time')
+        return date_time_str
+
+    @staticmethod
+    def format_as_report_expiry_string(date_time: datetime) -> str:
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        # ensure is set to correct timezone
+        date_time_str = LegislationDatetime.format_as_report_string_with_custom_time(date_time, 0, 1, 0, 0)
+        return date_time_str
+
+    @staticmethod
     def format_as_legislation_date(date_string: str) -> str:
         """Return the date in legislation timezone as a string."""
         date_time = datetime.fromisoformat(date_string)
