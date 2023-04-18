@@ -59,7 +59,7 @@ def factory_limited_restoration_filing(approval_type: str = 'courtOrder'):
 
 
 def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
-                            expected_code, expected_msg):
+                                expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
 
     limited_restoration_filing = None
@@ -169,7 +169,10 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['type'] = restoration_type
-    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+    if restoration_type == 'limitedRestorationExtension':
+        del filing['filing']['restoration']['nameRequest']
+    else:
+        filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         expiry_date = LegislationDatetime.now() + relativedelta(months=1)
@@ -220,7 +223,10 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+    if restoration_type == 'limitedRestorationExtension':
+        del filing['filing']['restoration']['nameRequest']
+    else:
+        filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     filing['filing']['restoration']['type'] = restoration_type
     if delta_date:
@@ -251,7 +257,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     ]
 )
 def test_approval_type(session, test_status, restoration_types, legal_types, approval_type,
-                       limited_restoration_approval_type, expected_code,expected_msg):
+                       limited_restoration_approval_type, expected_code, expected_msg):
     """Assert approval type is validated."""
 
     for restoration_type in restoration_types:
@@ -264,7 +270,10 @@ def test_approval_type(session, test_status, restoration_types, legal_types, app
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
-            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            if restoration_type == 'limitedRestorationExtension':
+                del filing['filing']['restoration']['nameRequest']
+            else:
+                filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
             filing['filing']['restoration']['relationships'] = relationships
             expiry_date = LegislationDatetime.now() + relativedelta(years=2)
             filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
@@ -300,7 +309,7 @@ def test_approval_type(session, test_status, restoration_types, legal_types, app
     ]
 )
 def test_restoration_court_orders(session, test_status, restoration_types, legal_types, approval_type,
-                               limited_restoration_approval_type, file_number, expected_code,expected_msg):
+                                  limited_restoration_approval_type, file_number, expected_code, expected_msg):
     """Assert valid values when approval type is 'registrar'."""
 
     for restoration_type in restoration_types:
@@ -313,7 +322,10 @@ def test_restoration_court_orders(session, test_status, restoration_types, legal
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
-            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            if restoration_type == 'limitedRestorationExtension':
+                del filing['filing']['restoration']['nameRequest']
+            else:
+                filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
             filing['filing']['restoration']['relationships'] = relationships
             expiry_date = LegislationDatetime.now() + relativedelta(years=2)
             filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
@@ -356,7 +368,7 @@ def test_restoration_court_orders(session, test_status, restoration_types, legal
     ]
 )
 def test_restoration_registrar(session, test_status, restoration_types, legal_types, approval_type,
-                       limited_restoration_approval_type, application_date, notice_date, expected_code,expected_msg):
+                               limited_restoration_approval_type, application_date, notice_date, expected_code, expected_msg):
     """Assert valid values when approval type is 'registrar'."""
 
     for restoration_type in restoration_types:
@@ -369,7 +381,10 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
-            filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+            if restoration_type == 'limitedRestorationExtension':
+                del filing['filing']['restoration']['nameRequest']
+            else:
+                filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
             filing['filing']['restoration']['relationships'] = relationships
             expiry_date = LegislationDatetime.now() + relativedelta(years=2)
             filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
@@ -412,6 +427,8 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
 
         # limited restoration extension
         ('SUCCESS_NO_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], None, None, None, None),
+        ('FAIL_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name',
+         HTTPStatus.BAD_REQUEST, 'Cannot change name while extending limited restoration.'),
 
         # convert to full restoration
         ('SUCCESS_NEW_NR', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', 'new name', None, None),
@@ -449,7 +466,9 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
         # limited restoration extension
         ('SUCCESS_NO_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], None,
          ['RCC', 'RCR', 'BERE', 'RUL', 'RCRC', 'BEREE', 'RULL'], None, None, None),
-
+        ('FAIL_NR', 'limitedRestorationExtension', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567',
+         ['RCC', 'RCR', 'BERE', 'RUL', 'RCRC', 'BEREE', 'RULL'], 'new name',
+         HTTPStatus.BAD_REQUEST, 'Cannot change name while extending limited restoration.'),
         # convert to full restoration
         ('SUCCESS_NR_TYPE', 'limitedRestorationToFull', ['BC', 'BEN', 'ULC', 'CC'], 'NR 1234567', ['RCC', 'RCR', 'BERE', 'RUL'],
          'new name', None, None),
@@ -458,9 +477,8 @@ def test_restoration_nr(session, mocker, test_status, filing_sub_type, legal_typ
     ]
 )
 def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, legal_types, nr_number, nr_types, new_legal_name,
-                        expected_code, expected_msg):
+                             expected_code, expected_msg):
     """Assert nr block of filing is validated correctly."""
-
 
     for legal_type in legal_types:
         for nr_type in nr_types:
