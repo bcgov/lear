@@ -1135,14 +1135,17 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    fee_codes = ListFilingResource._get_filing_types(business, filing)
-    assert fee_codes
-    if len(fee_codes) == 1:
-        fee_code = fee_codes[0]['filingTypeCode']
-        assert fee_code == expected_fee_code
-    else:
-        assert len(multiple_fee_codes) == len(fee_codes)
-    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
+    def fee_code_asserts():
+        fee_codes = ListFilingResource._get_filing_types(business, filing)
+        assert fee_codes
+        if len(fee_codes) == 1:
+            fee_code = fee_codes[0]['filingTypeCode']
+            assert fee_code == expected_fee_code
+        else:
+            assert len(multiple_fee_codes) == len(fee_codes)
+        assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
+
+    fee_code_asserts()
 
 
 @integration_payment
