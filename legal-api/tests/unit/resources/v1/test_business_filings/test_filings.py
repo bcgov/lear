@@ -1066,7 +1066,7 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 
 
 @pytest.mark.parametrize(
-    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes',
+    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes',
     [
         ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
             Business.LegalTypes.BCOMP.value, False, []),
@@ -1103,7 +1103,7 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     ]
 )
 def test_get_correct_fee_codes(
-        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
+        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
     expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
@@ -1141,8 +1141,8 @@ def test_get_correct_fee_codes(
         fee_code = fee_codes[0]['filingTypeCode']
         assert fee_code == expected_fee_code
     else:
-        assert len(additional_fee_codes) == len(fee_codes)
-    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in additional_fee_codes)
+        assert len(multiple_fee_codes) == len(fee_codes)
+    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
 
 
 @integration_payment
