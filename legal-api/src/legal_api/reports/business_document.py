@@ -255,6 +255,11 @@ class BusinessDocument:
         business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
         if self._business.start_date:
             business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
+        if self._business.restoration_expiry_date:
+            formatted_restoration_expiry_date = \
+                LegislationDatetime.format_as_report_expiry_string(self._business.restoration_expiry_date)
+            business['formatted_restoration_expiry_date'] = formatted_restoration_expiry_date
+
 
     def _set_addresses(self, business: dict):
         """Set business addresses."""
