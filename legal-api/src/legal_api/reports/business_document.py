@@ -24,7 +24,6 @@ from legal_api.models import Alias, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -385,10 +384,11 @@ class BusinessDocument:
                                           filing.filing_sub_type,
                                           self._business.legal_type)
             if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
-                versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id, self._business)
-                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
-                    format_as_report_string(versioned_business.restoration_expiry_date)
+                expiry_date = filing_meta['restoration']['expiry']
+                expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
+                expiry_date = expiry_date.replace(minute=1)
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
+
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
