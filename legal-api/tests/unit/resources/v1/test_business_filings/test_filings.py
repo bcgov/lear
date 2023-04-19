@@ -1109,7 +1109,7 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
             False, []),
         ('CP1234567', SPECIAL_RESOLUTION_NO_CON_FILING, 'specialResolution', Business.LegalTypes.COOP.value, None, False,
-         ['SPRLN']),
+         []),
         ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
          None, False, ['SPRLN', 'OTCON']),
     ]
