@@ -35,11 +35,4 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     with suppress(IndexError, KeyError, TypeError):
         filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
                                    **{'expiry': datetime.now() + relativedelta(months=6)}}
-
-    if file_key := filing['consentContinuationOut'].get('fileKey'):
-        document = Document()
-        document.type = DocumentType.COURT_ORDER.value
-        document.file_key = file_key
-        document.business_id = business.id
-        document.filing_id = cco_filing.id
-        business.documents.append(document)
+        
