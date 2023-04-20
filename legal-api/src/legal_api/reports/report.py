@@ -132,6 +132,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'correction/businessDetails',
             'correction/addresses',
             'correction/directors',
+            'correction/legalNameChange',
             'change-of-registration/legal-name',
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
