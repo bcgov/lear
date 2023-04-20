@@ -389,10 +389,11 @@ class BusinessDocument:
                                           filing.filing_sub_type,
                                           self._business.legal_type)
             if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
-                versioned_business = \
-                    VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id, self._business)
-                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
-                    format_as_report_string(versioned_business.restoration_expiry_date)
+                expiry_date = filing_meta['restoration']['expiry']
+                expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
+                expiry_date = expiry_date.replace(minute=1)
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
+
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -472,6 +473,7 @@ class BusinessDocument:
         'dissolution': {
             'voluntary': {
                 'CP': 'Voluntary Dissolution',
+                'BC': 'Voluntary Dissolution',
                 'BEN': 'Voluntary Dissolution',
                 'ULC': 'Voluntary Dissolution',
                 'CC': 'Voluntary Dissolution',
@@ -481,6 +483,7 @@ class BusinessDocument:
             },
             'administrative': {
                 'CP': 'Administrative Dissolution',
+                'BC': 'Administrative Dissolution',
                 'BEN': 'Administrative Dissolution',
                 'ULC': 'Administrative Dissolution',
                 'CC': 'Administrative Dissolution',

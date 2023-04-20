@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
+    CP_SPECIAL_RESOLUTION_TEMPLATE,
     DISSOLUTION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
@@ -1046,6 +1047,8 @@ DISSOLUTION_VOLUNTARY_FILING = {
 }
 DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'voluntary'
 
+SPECIAL_RESOLUTION_NO_CON_FILING = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
@@ -1062,8 +1065,20 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
 
+def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_fee_code: str):
+    """Assert fee codes."""
+    fee_codes = ListFilingResource._get_filing_types(business, filing_json)
+    assert fee_codes
+    if len(fee_codes) == 1:
+        fee_code = fee_codes[0]['filingTypeCode']
+        assert fee_code == expected_fee_code
+    else:
+        assert len(multiple_fee_codes) == len(fee_codes)
+    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in multiple_fee_codes)
+
+
 @pytest.mark.parametrize(
-    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes',
+    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes',
     [
         ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
             Business.LegalTypes.BCOMP.value, False, []),
@@ -1086,17 +1101,21 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
         ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
-            ['AFDVT', 'SPRLN']),
+            ['AFDVT', 'SPRLN', 'DIS_VOL']),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
             False, []),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
             False, []),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
             False, []),
+        ('CP1234567', SPECIAL_RESOLUTION_NO_CON_FILING, 'specialResolution', Business.LegalTypes.COOP.value, None, False,
+         []),
+        ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
+         None, False, ['SPRLN', 'OTCON']),
     ]
 )
 def test_get_correct_fee_codes(
-        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes):
+        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
     expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
@@ -1128,15 +1147,7 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    # get fee code
-    fee_code = ListFilingResource._get_filing_types(business, filing)[0]['filingTypeCode']
-
-    # verify fee code
-    assert fee_code == expected_fee_code
-
-    assert all(elem in
-               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
-               for elem in additional_fee_codes)
+    _fee_code_asserts(business, filing, multiple_fee_codes, expected_fee_code)
 
 
 @integration_payment

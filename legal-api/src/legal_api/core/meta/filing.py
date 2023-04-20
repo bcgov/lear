@@ -151,6 +151,9 @@ FILINGS: Final = {
         'name': 'changeOfName',
         'title': 'Change of Name Filing',
         'displayName': 'Legal Name Change',
+        'codes': {
+            'CP': 'OTCON'
+        },
         'additional': [
             {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
         ]
