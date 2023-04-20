@@ -99,7 +99,7 @@ class LegislationDatetime():
 
     @staticmethod
     def format_as_report_expiry_string(date_time: datetime) -> str:
-        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`).
+        """Return a datetime string in this format (eg: `August 5, 2021 at 12:01 am Pacific time`).
 
         It will have an extra minute to satisfy the business requirement of one minute after
         midnight for expiry times.
