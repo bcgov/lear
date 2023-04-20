@@ -525,6 +525,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         legal_type = filing.get('business', {}).get('legalType', None)
         if legal_type is None:
             legal_type = filing.get('registration', {}).get('nameRequest', {}).get('legalType', None)
+        if legal_type is None:
+            legal_type = filing.get('incorporationApplication', {}).get('nameRequest').get('legalType', None)
         return legal_type
 
     @property
