@@ -80,7 +80,10 @@ class LegislationDatetime():
                                                  custom_minute: int,
                                                  custom_second: int,
                                                  custom_microsecond: int) -> str:
-        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`).
+
+        It also accepts new H:M:S.ms values.
+        """
         # ensure is set to correct timezone
         date_time = LegislationDatetime.as_legislation_timezone(date_time)
         date_time = date_time.replace(hour=custom_hour,
@@ -96,7 +99,11 @@ class LegislationDatetime():
 
     @staticmethod
     def format_as_report_expiry_string(date_time: datetime) -> str:
-        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`).
+        
+        It will have an extra minute to satisfy the business requirement of one minute after
+        midnight for expiry times.
+        """
         # ensure is set to correct timezone
         date_time_str = LegislationDatetime.format_as_report_string_with_custom_time(date_time, 0, 1, 0, 0)
         return date_time_str
