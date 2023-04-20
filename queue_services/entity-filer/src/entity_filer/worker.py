@@ -66,6 +66,7 @@ from entity_filer.filing_processors import (
     restoration,
     special_resolution,
     transition,
+    consent_continuation_out,
 )
 from entity_filer.filing_processors.filing_components import name_request
 
@@ -229,8 +230,11 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('adminFreeze'):
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
 
-                if filing.get('specialResolution'):
+                elif filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
+                
+                if filing.get('consentContinuationOut'):
+                    consent_continuation_out.process(business, filing_submission, filing, filing_meta)
 
             filing_submission.transaction_id = transaction.id
 
