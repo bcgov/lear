@@ -28,6 +28,7 @@ async def test_worker_consent_continuation_out(app, session):
     """Assert that the court order object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
+    filing_type = 'consentContinuationOut'
 
     filing = copy.deepcopy(CONSENT_CONTINUATION_OUT)
     filing['filing']['business']['identifier'] = identifier
@@ -42,8 +43,8 @@ async def test_worker_consent_continuation_out(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing['filing']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing['filing']['orderDetails'] == final_filing.order_details
+    assert filing['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == final_filing.filing_type.court_order_file_number
+    assert filing['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == final_filing.filing_type.court_order_effect_of_order
+    assert filing['filing']['consentContinuationOut']['orderDetails'] == final_filing.order_details
     assert final_filing.meta_data.consentContinuationOut == {'expiry': datetime.now() + relativedelta(months=6)}
     assert final_filing.meta_data.legalFilings == ['consentContinuationOut']
