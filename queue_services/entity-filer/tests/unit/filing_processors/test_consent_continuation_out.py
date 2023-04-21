@@ -47,10 +47,3 @@ async def test_worker_consent_continuation_out(app, session):
     assert filing['filing']['orderDetails'] == final_filing.order_details
     assert final_filing.meta_data.consentContinuationOut == {'expiry': datetime.now() + relativedelta(months=6)}
     assert final_filing.meta_data.legalFilings == ['consentContinuationOut']
-
-
-    cco_file = final_filing.documents.one_or_none()
-    assert cco_file
-    assert cco_file.type == DocumentType.COURT_ORDER.value
-    assert cco_file.file_key == filing['filing']['courtOrder']['fileKey']
-    

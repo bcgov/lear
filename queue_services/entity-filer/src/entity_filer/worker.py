@@ -230,11 +230,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('adminFreeze'):
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
 
-                elif filing.get('specialResolution'):
+                elif filing.get('consentContinuationOut'):
+                    consent_continuation_out.process(business, filing_submission, filing, filing_meta)
+
+                if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
                 
-                if filing.get('consentContinuationOut'):
-                    consent_continuation_out.process(business, filing_submission, filing, filing_meta)
+                
 
             filing_submission.transaction_id = transaction.id
 

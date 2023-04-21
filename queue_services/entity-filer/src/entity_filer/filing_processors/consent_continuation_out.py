@@ -15,18 +15,26 @@
 from contextlib import suppress
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from typing import Dict
+from typing import Dict, Final
 
-from legal_api.models import Business, Document, DocumentType, Filing
+from legal_api.models import Business, Filing
+from legal_api.services.filings.validations.common_validations import validate_court_order
 
 from entity_filer.filing_meta import FilingMeta
 
 
 def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
-    cco_filing.court_order_file_number = filing['courtOrder'].get('fileNumber')
-    cco_filing.court_order_effect_of_order = filing['courtOrder'].get('effectOfOrder')
-    cco_filing.order_details = filing['orderDetails']
+
+    filing_type = 'consentContinuationOut'
+    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
+        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
+        err = validate_court_order(court_order_path, court_order)
+
+        cco_filing[filing_type].order_details = filing[filing_type]['orderDetails']
+        if not err:
+            cco_filing[filing_type].court_order_file_number = court_order.get('fileNumber')
+            cco_filing[filing_type].court_order_effect_of_order = court_order.get('effectOfOrder')
 
     business.cco_expiry_date = datetime.now() + relativedelta(months=6)
 
