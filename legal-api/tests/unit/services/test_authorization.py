@@ -395,17 +395,18 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
+          {'dissolution': ['voluntary', 'administrative']},
           'registrarsNotation', 'registrarsOrder', 'registration']),
 
         ('user_active_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'specialResolution']),
-        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition']),
         ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
-         ['changeOfRegistration', 'registration']),
+        ('user_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+         ['changeOfRegistration', {'dissolution': ['voluntary']}, 'registration']),
 
         # historical business
         ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -478,7 +479,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
         ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
-        
+
         ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestorationExtension',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestorationToFull',
@@ -739,6 +740,8 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_fi
                           FilingKey.CONV_FIRMS,
                           FilingKey.CORRCTN_FIRMS,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS_FIRMS,
+                          FilingKey.ADM_DISS_FIRMS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
@@ -756,7 +759,8 @@ def test_is_allowed(monkeypatch, app, jwt, test_name, state, filing_type, sub_fi
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
+         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
         ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -874,6 +878,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                            FilingKey.CONV_FIRMS,
                            FilingKey.CORRCTN_FIRMS,
                            FilingKey.COURT_ORDER,
+                           FilingKey.VOL_DISS_FIRMS,
+                           FilingKey.ADM_DISS_FIRMS,
                            FilingKey.REGISTRARS_NOTATION,
                            FilingKey.REGISTRARS_ORDER])),
 
@@ -891,7 +897,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
+         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
         ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -959,6 +966,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
                           FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS_FIRMS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
@@ -1362,6 +1370,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.CONV_FIRMS,
                           FilingKey.CORRCTN_FIRMS,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS_FIRMS,
+                          FilingKey.ADM_DISS_FIRMS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
@@ -1386,7 +1396,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'], []),
         ('general_user_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['putBackOn', None], [None, None],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
+         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
         ('staff_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
