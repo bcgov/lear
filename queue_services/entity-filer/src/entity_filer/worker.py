@@ -235,8 +235,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
-                
-                
 
             filing_submission.transaction_id = transaction.id
 

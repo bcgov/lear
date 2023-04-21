@@ -14,9 +14,9 @@
 """File processing rules and actions for the court order filing."""
 from contextlib import suppress
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from typing import Dict, Final
 
+from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
 from legal_api.services.filings.validations.common_validations import validate_court_order
 
