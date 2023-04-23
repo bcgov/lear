@@ -25,7 +25,6 @@ from entity_filer.filing_meta import FilingMeta
 
 def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
-
     filing_type = 'consentContinuationOut'
     if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
         court_order_path: Final = f'/filing/{filing_type}/courtOrder'
@@ -42,5 +41,4 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
 
     with suppress(IndexError, KeyError, TypeError):
         filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
-                                   **{'expiry': datetime.now() + relativedelta(months=6)}}
-        
+                                              **{'expiry': datetime.now() + relativedelta(months=6)}}

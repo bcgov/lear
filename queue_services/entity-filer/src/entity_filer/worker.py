@@ -54,6 +54,7 @@ from entity_filer.filing_processors import (
     change_of_directors,
     change_of_name,
     change_of_registration,
+    consent_continuation_out,
     conversion,
     correction,
     court_order,
@@ -66,7 +67,6 @@ from entity_filer.filing_processors import (
     restoration,
     special_resolution,
     transition,
-    consent_continuation_out,
 )
 from entity_filer.filing_processors.filing_components import name_request
 
