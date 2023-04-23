@@ -30,10 +30,10 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
         court_order_path: Final = f'/filing/{filing_type}/courtOrder'
         err = validate_court_order(court_order_path, court_order)
 
-        cco_filing[filing_type].order_details = filing[filing_type]['orderDetails']
+        cco_filing.order_details = filing[filing_type]['orderDetails']
         if not err:
-            cco_filing[filing_type].court_order_file_number = court_order.get('fileNumber')
-            cco_filing[filing_type].court_order_effect_of_order = court_order.get('effectOfOrder')
+            cco_filing.court_order_file_number = court_order.get('fileNumber')
+            cco_filing.court_order_effect_of_order = court_order.get('effectOfOrder')
 
     business.cco_expiry_date = datetime.now() + relativedelta(months=6)
 

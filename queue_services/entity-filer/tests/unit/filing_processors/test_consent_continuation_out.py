@@ -17,7 +17,7 @@ import random
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from legal_api.models import DocumentType, Filing
+from legal_api.models import Filing
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT
 
 from entity_filer.worker import process_filing
@@ -43,8 +43,8 @@ async def test_worker_consent_continuation_out(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == final_filing.filing_type.court_order_file_number
-    assert filing['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == final_filing.filing_type.court_order_effect_of_order
+    assert filing['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
+    assert filing['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
     assert filing['filing']['consentContinuationOut']['orderDetails'] == final_filing.order_details
     assert final_filing.meta_data.consentContinuationOut == {'expiry': datetime.now() + relativedelta(months=6)}
     assert final_filing.meta_data.legalFilings == ['consentContinuationOut']
