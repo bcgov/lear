@@ -14,26 +14,24 @@
 """File processing rules and actions for the court order filing."""
 from contextlib import suppress
 from datetime import datetime
-from typing import Dict, Final
+from typing import Dict
+
+import dpath
 
 from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
 from legal_api.services.filings.validations.common_validations import validate_court_order
 
 from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.filing_components import filings
 
 
 def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
-    filing_type = 'consentContinuationOut'
-    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
-        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
-        err = validate_court_order(court_order_path, court_order)
-
-        cco_filing.order_details = filing[filing_type]['orderDetails']
-        if not err:
-            cco_filing.court_order_file_number = court_order.get('fileNumber')
-            cco_filing.court_order_effect_of_order = court_order.get('effectOfOrder')
+    # update court order, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_order_json = dpath.util.get(filing, '/consentContinuationOut/courtOrder')
+        filings.update_filing_court_order(cco_filing, court_order_json)
 
     business.cco_expiry_date = datetime.now() + relativedelta(months=6)
 

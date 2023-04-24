@@ -25,7 +25,7 @@ from tests.unit import create_business, create_filing
 
 
 async def test_worker_consent_continuation_out(app, session):
-    """Assert that the court order object is correctly populated to model objects."""
+    """Assert that the consent continuation out object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='CP')
 
