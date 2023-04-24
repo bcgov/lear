@@ -27,17 +27,11 @@ from tests.unit import create_business, create_filing
 async def test_worker_consent_continuation_out(app, session):
     """Assert that the court order object is correctly populated to model objects."""
     identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC')
+    business = create_business(identifier, legal_type='CP')
 
-    CONSENT_CONTINUATION_OUT_FILING_TEMPLATE = {
-        'filing': {
-            **FILING_TEMPLATE['filing'],
-            'consentContinuationOut': CONSENT_CONTINUATION_OUT
-        }
-    }
-
-    filing = copy.deepcopy(CONSENT_CONTINUATION_OUT_FILING_TEMPLATE)
+    filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
+    filing['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
