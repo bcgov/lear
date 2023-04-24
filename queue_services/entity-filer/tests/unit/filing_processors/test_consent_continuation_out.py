@@ -31,6 +31,7 @@ async def test_worker_consent_continuation_out(app, session):
 
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
+    filing['filing']['header']['name'] = 'consentContinuationOut'
     filing['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
