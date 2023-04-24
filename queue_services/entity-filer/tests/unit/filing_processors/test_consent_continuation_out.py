@@ -18,7 +18,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from legal_api.models import Filing
-from registry_schemas.example_data import CONSENT_CONTINUATION_OUT
+from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
 from tests.unit import create_business, create_filing
@@ -28,9 +28,15 @@ async def test_worker_consent_continuation_out(app, session):
     """Assert that the court order object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
-    filing_type = 'consentContinuationOut'
 
-    filing = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+    CONSENT_CONTINUATION_OUT_FILING_TEMPLATE = {
+        'filing': {
+            **FILING_TEMPLATE['filing'],
+            'consentContinuationOut': CONSENT_CONTINUATION_OUT
+        }
+    }
+
+    filing = copy.deepcopy(CONSENT_CONTINUATION_OUT_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
