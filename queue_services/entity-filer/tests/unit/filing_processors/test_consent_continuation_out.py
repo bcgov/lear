@@ -21,6 +21,8 @@ from legal_api.models import Filing
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
 from entity_filer.worker import process_filing
+from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors import consent_continuation_out
 from tests.unit import create_business, create_filing
 
 
@@ -29,23 +31,22 @@ async def test_worker_consent_continuation_out(app, session):
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='CP')
 
-    filing = copy.deepcopy(FILING_TEMPLATE)
-    filing['filing']['business']['identifier'] = identifier
-    filing['filing']['header']['name'] = 'consentContinuationOut'
-    filing['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
+    filing_json = copy.deepcopy(FILING_TEMPLATE)
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['header']['name'] = 'consentContinuationOut'
+    filing_json['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+    cco_filing = create_filing(payment_id, filing_json, business_id=business.id)
 
-    filing_msg = {'filing': {'id': filing_id}}
-
+    filing_meta = FilingMeta()
+    
     # Test
-    await process_filing(filing_msg, app)
+    consent_continuation_out.process(business, cco_filing, filing_json['filing'], filing_meta)
+    print(filing_meta)
 
     # Check outcome
-    final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing['filing']['consentContinuationOut']['orderDetails'] == final_filing.order_details
-    assert final_filing.meta_data.consentContinuationOut == {'expiry': datetime.now() + relativedelta(months=6)}
-    assert final_filing.meta_data.legalFilings == ['consentContinuationOut']
+    assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
+    assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == cco_filing.court_order_effect_of_order
+    assert filing_json['filing']['consentContinuationOut']['details'] == cco_filing.order_details
+    assert filing_meta.consentContinuationOut['expiry'].date() == (datetime.now() + relativedelta(months=6)).date()

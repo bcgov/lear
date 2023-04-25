@@ -31,7 +31,9 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(filing, '/consentContinuationOut/courtOrder')
-        filings.update_filing_court_order(cco_filing, court_order_json)
+        cco_filing.court_order_file_number = court_order_json.get('fileNumber')
+        cco_filing.court_order_effect_of_order = court_order_json.get('effectOfOrder')
+        cco_filing.order_details = filing['consentContinuationOut'].get('details')
 
     business.cco_expiry_date = datetime.now() + relativedelta(months=6)
 
