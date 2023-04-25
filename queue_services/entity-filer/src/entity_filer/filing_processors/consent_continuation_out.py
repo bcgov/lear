@@ -17,7 +17,6 @@ from datetime import datetime
 from typing import Dict
 
 import dpath
-
 from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
 
