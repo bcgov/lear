@@ -439,7 +439,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 # overriden with the latest correction, which cause loosing the previous correction link.
                 corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
                 corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
-                if corrected_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
+                if corrected_filing_type in ['annualReport']:
                     corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
                     name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
 
