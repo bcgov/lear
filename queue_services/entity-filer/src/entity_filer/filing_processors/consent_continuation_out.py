@@ -37,4 +37,4 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
 
     filing_meta.consentContinuationOut = {}
     filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
-                                          **{'expiry': (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).isoformat()}}
+                                          **{'expiry': datetime.now() + relativedelta(months=6) + timedelta(hours=8)}}
