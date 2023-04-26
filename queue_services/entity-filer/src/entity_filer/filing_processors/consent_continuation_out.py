@@ -17,9 +17,11 @@ from datetime import timedelta
 from typing import Dict
 
 import dpath
+import pytz
 from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
@@ -33,8 +35,18 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
     cco_filing.order_details = filing['consentContinuationOut'].get('details')
-    business.cco_expiry_date = (datetime.now() + relativedelta(months=6)).isoformat()
+    expiry_date = get_expiry_date()
+    business.cco_expiry_date = expiry_date
 
     filing_meta.consentContinuationOut = {}
     filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
-                                          **{'expiry': datetime.now() + relativedelta(months=6) + timedelta(hours=8)}}
+                                          **{'expiry': expiry_date.isoformat()}}
+
+def get_expiry_date():
+    legislation_date_now = LegislationDatetime.now().date()
+    expiry_date = datetime.combine(legislation_date_now,
+                                   datetime.min.time(),
+                                   tzinfo=pytz.timezone("UTC")) \
+                           + relativedelta(months=6) \
+                           + timedelta(hours=8)
+    return expiry_date

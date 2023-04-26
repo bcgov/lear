@@ -14,8 +14,12 @@
 """The Unit Tests for the Consent Continuation Out filing."""
 import copy
 import random
+import pytz
+
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from legal_api.models import Filing
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
@@ -41,9 +45,18 @@ async def test_worker_consent_continuation_out(app, session):
     
     # Test
     consent_continuation_out.process(business, cco_filing, filing_json['filing'], filing_meta)
+    business.save()
 
     # Check outcome
-    assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
-    assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == cco_filing.court_order_effect_of_order
-    assert filing_json['filing']['consentContinuationOut']['details'] == cco_filing.order_details
-    assert filing_meta.consentContinuationOut['expiry'].date() == (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).date()
+    final_filing = Filing.find_by_id(cco_filing.id)
+
+    assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
+    assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
+    assert filing_json['filing']['consentContinuationOut']['details'] == final_filing.order_details
+    expiry_date = datetime.combine(LegislationDatetime.now(),
+                                   datetime.min.time(),
+                                   tzinfo=pytz.timezone("UTC")) \
+                  + relativedelta(months=6) \
+                  + timedelta(hours=8)
+    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']) == expiry_date
+    assert business.cco_expiry_date == expiry_date
