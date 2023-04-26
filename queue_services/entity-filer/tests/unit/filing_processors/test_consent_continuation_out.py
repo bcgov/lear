@@ -1,4 +1,4 @@
-# Copyright © 2021 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the Court Order filing."""
+"""The Unit Tests for the Consent Continuation Out filing."""
 import copy
 import random
 from datetime import datetime
@@ -49,4 +49,4 @@ async def test_worker_consent_continuation_out(app, session):
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == cco_filing.court_order_effect_of_order
     assert filing_json['filing']['consentContinuationOut']['details'] == cco_filing.order_details
-    assert filing_meta.consentContinuationOut['expiry'].date() == (datetime.now() + relativedelta(months=6)).date()
+    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']).date() == (datetime.now() + relativedelta(months=6)).date()
