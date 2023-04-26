@@ -43,7 +43,6 @@ async def test_worker_consent_continuation_out(app, session):
     
     # Test
     consent_continuation_out.process(business, cco_filing, filing_json['filing'], filing_meta)
-    print(filing_meta)
 
     # Check outcome
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
