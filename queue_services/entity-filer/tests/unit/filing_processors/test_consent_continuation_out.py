@@ -46,4 +46,4 @@ async def test_worker_consent_continuation_out(app, session):
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == cco_filing.court_order_effect_of_order
     assert filing_json['filing']['consentContinuationOut']['details'] == cco_filing.order_details
-    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']).date() == (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).date()
+    assert filing_meta.consentContinuationOut['expiry'].date() == (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).date()
