@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for the consent continuation out filing."""
 from contextlib import suppress
+from datetime import timedelta
 from typing import Dict
 
 import dpath
@@ -36,4 +37,4 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
 
     filing_meta.consentContinuationOut = {}
     filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
-                                          **{'expiry': (datetime.now() + relativedelta(months=6)).isoformat()}}
+                                          **{'expiry': (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).isoformat()}}

@@ -14,13 +14,11 @@
 """The Unit Tests for the Consent Continuation Out filing."""
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-from legal_api.models import Filing
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
-from entity_filer.worker import process_filing
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import consent_continuation_out
 from tests.unit import create_business, create_filing
@@ -48,4 +46,4 @@ async def test_worker_consent_continuation_out(app, session):
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['fileNumber'] == cco_filing.court_order_file_number
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == cco_filing.court_order_effect_of_order
     assert filing_json['filing']['consentContinuationOut']['details'] == cco_filing.order_details
-    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']).date() == (datetime.now() + relativedelta(months=6)).date()
+    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']).date() == (datetime.now() + relativedelta(months=6) + timedelta(hours=8)).date()
