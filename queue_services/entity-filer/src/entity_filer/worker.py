@@ -54,6 +54,7 @@ from entity_filer.filing_processors import (
     change_of_directors,
     change_of_name,
     change_of_registration,
+    consent_continuation_out,
     conversion,
     correction,
     court_order,
@@ -228,6 +229,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('adminFreeze'):
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
+
+                elif filing.get('consentContinuationOut'):
+                    consent_continuation_out.process(business, filing_submission, filing, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
