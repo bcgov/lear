@@ -43,6 +43,7 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
                                           **{'expiry': expiry_date.isoformat()}}
 
 def get_expiry_date():
+    """Set up date as UTC + 8hrs."""
     legislation_date_now = LegislationDatetime.now().date()
     expiry_date = datetime.combine(legislation_date_now,
                                    datetime.min.time(),
