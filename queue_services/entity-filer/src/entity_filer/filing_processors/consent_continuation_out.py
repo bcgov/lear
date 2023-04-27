@@ -42,12 +42,11 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
                                           **{'expiry': expiry_date.isoformat()}}
 
+
 def get_expiry_date():
     """Set up date as UTC + 8hrs."""
     legislation_date_now = LegislationDatetime.now().date()
     expiry_date = datetime.combine(legislation_date_now,
                                    datetime.min.time(),
-                                   tzinfo=pytz.timezone("UTC")) \
-                           + relativedelta(months=6) \
-                           + timedelta(hours=8)
+                                   tzinfo=pytz.timezone('UTC')) + relativedelta(months=6) + timedelta(hours=8)
     return expiry_date
