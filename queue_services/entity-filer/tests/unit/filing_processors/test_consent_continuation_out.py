@@ -42,7 +42,7 @@ async def test_worker_consent_continuation_out(app, session):
     cco_filing = create_filing(payment_id, filing_json, business_id=business.id)
 
     filing_meta = FilingMeta()
-    
+
     # Test
     consent_continuation_out.process(business, cco_filing, filing_json['filing'], filing_meta)
     business.save()
