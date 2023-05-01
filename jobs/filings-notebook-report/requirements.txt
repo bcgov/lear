@@ -20,7 +20,7 @@ six
 pyrsistent==0.16.0
 zipp==3.1.0
 
-Flask==1.1.4
+Flask==2.3.2
 MarkupSafe==2.0.1
 aws-sam-cli==1.37.0
 pytest
