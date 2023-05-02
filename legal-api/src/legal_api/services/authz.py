@@ -336,7 +336,7 @@ def is_allowed(business: Business,
         filing = Filing.find_by_id(filing_id)
         if filing.status != Filing.Status.DRAFT.value:
             return False
-        
+
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt)
 
     for allowable_filing in allowable_filings:
