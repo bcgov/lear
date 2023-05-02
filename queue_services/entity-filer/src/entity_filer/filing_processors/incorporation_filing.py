@@ -80,6 +80,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         document = Document()
         document.type = DocumentType.COOP_RULES.value
         document.file_key = rules_file_key
+        document.file_name = cooperative_obj.get('rulesFileName', 'rules.pdf')
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)
@@ -92,6 +93,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value
         document.file_key = memorandum_file_key
+        document.file_name = cooperative_obj.get('memorandumFileName', 'memorandum.pdf')
         document.business_id = business.id
         document.filing_id = filing.id
         business.documents.append(document)

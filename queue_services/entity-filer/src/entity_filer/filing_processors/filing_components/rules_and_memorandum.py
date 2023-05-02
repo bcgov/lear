@@ -27,22 +27,24 @@ from entity_filer.utils import replace_file_with_certified_copy
 def update_rules(
     business: Business,
     filing: Filing,
-    rules_file_key: String
+    file_key: String,
+    file_name: String
 ) -> Optional[List]:
-    """Updtes rules if any.
+    """Updates rules if any.
 
     Assumption: rules file key and name have already been validated
     """
-    if not business or not rules_file_key:
+    if not business or not file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
 
-    rules_file = MinioService.get_file(rules_file_key)
-    replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
+    rules_file = MinioService.get_file(file_key)
+    replace_file_with_certified_copy(rules_file.data, business, file_key, business.founding_date)
 
     document = Document()
     document.type = DocumentType.COOP_RULES.value
-    document.file_key = rules_file_key
+    document.file_key = file_key
+    document.file_name = file_name
     document.business_id = business.id
     document.filing_id = filing.id
     business.documents.append(document)
@@ -53,23 +55,25 @@ def update_rules(
 def update_memorandum(
     business: Business,
     filing: Filing,
-    memorandum_file_key: String
+    file_key: String,
+    file_name: String
 ) -> Optional[List]:
-    """Updtes memorandum if any.
+    """Updates memorandum if any.
 
     Assumption: memorandum file key and name have already been validated
     """
-    if not business or not memorandum_file_key:
+    if not business or not file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
 
     # create certified copy for memorandum document
-    memorandum_file = MinioService.get_file(memorandum_file_key)
-    replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
+    memorandum_file = MinioService.get_file(file_key)
+    replace_file_with_certified_copy(memorandum_file.data, business, file_key, business.founding_date)
 
     document = Document()
     document.type = DocumentType.COOP_MEMORANDUM.value
-    document.file_key = memorandum_file_key
+    document.file_key = file_key
+    document.file_name = file_name
     document.business_id = business.id
     document.filing_id = filing.id
     business.documents.append(document)
