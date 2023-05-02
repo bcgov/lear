@@ -324,23 +324,26 @@ ALLOWABLE_FILINGS: Final = {
 
 
 # pylint: disable=(too-many-arguments,too-many-locals
-def is_allowed(state: Business.State,
+def is_allowed(business: Business,
+               state: Business.State,
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
-               sub_filing_type: str = None):
+               sub_filing_type: str = None,
+               filing_id: int = None):
     """Is allowed to do filing."""
-    user_role = 'general'
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
-        user_role = 'staff'
+    allowable_filings = get_allowed_filings(business, state, legal_type, jwt)
 
-    allowable_filing = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {}).get(filing_type, {})
-    allowable_filing_legal_types = allowable_filing.get('legalTypes', [])
+    for allowable_filing in allowable_filings:
+        if allowable_filing['name'] == filing_type:
+            if not sub_filing_type:
+                return True
+            elif allowable_filing['type'] == sub_filing_type:
+                return True
+            else:
+                return False
 
-    if allowable_filing and sub_filing_type:
-        allowable_filing_legal_types = allowable_filing.get(sub_filing_type, {}).get('legalTypes', [])
-
-    return legal_type in allowable_filing_legal_types
+    return False
 
 
 def get_allowable_actions(jwt: JwtManager, business: Business):
