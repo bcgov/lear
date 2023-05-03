@@ -332,12 +332,14 @@ def is_allowed(business: Business,
                sub_filing_type: str = None,
                filing_id: int = None):
     """Is allowed to do filing."""
+    is_ignore_draft_blockers = False
+
     if filing_id:
         filing = Filing.find_by_id(filing_id)
-        if filing.status != Filing.Status.DRAFT.value:
-            return False
+        if filing.status == Filing.Status.DRAFT.value:
+            is_ignore_draft_blockers = True
 
-    allowable_filings = get_allowed_filings(business, state, legal_type, jwt)
+    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
         if allowable_filing['name'] == filing_type:
@@ -345,8 +347,6 @@ def is_allowed(business: Business,
                 return True
             elif allowable_filing['type'] == sub_filing_type:
                 return True
-            else:
-                return False
 
     return False
 
@@ -365,7 +365,11 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
     return result
 
 
-def get_allowed_filings(business: Business, state: Business.State, legal_type: str, jwt: JwtManager):
+def get_allowed_filings(business: Business,
+                        state: Business.State,
+                        legal_type: str,
+                        jwt: JwtManager,
+                        is_ignore_draft_blockers: bool = False):
     """Get allowed type of filing types for the current user."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -380,7 +384,7 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         state_filing = Filing.find_by_id(business.state_filing_id)
 
     # doing this check up front to cache result
-    business_blocker_dict: dict = business_blocker_check(business)
+    business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
     allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -452,7 +456,7 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     return False
 
 
-def business_blocker_check(business: Business):
+def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = False):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.DEFAULT: False,
@@ -464,7 +468,7 @@ def business_blocker_check(business: Business):
     if not business:
         return business_blocker_checks
 
-    if has_blocker_filing(business):
+    if has_blocker_filing(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
@@ -478,17 +482,18 @@ def business_blocker_check(business: Business):
     return business_blocker_checks
 
 
-def has_blocker_filing(business: Business):
+def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = False):
     """Check if there are any incomplete states filings. This is a blocker because it needs to be completed first."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
     from legal_api.core.filing import Filing as CoreFiling
 
-    filing_statuses = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
+    filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value,
                        Filing.Status.PAID.value]
+    if not is_ignore_draft_blockers:
+        filing_statuses.append(Filing.Status.DRAFT.value)
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True
