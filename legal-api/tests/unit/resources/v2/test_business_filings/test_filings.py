@@ -247,6 +247,7 @@ def test_post_allowed_historical(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.CREATED
 
+
 def test_special_resolution_sanitation(session, client, jwt):
     """Assert that script tags can't be passed into special resolution resolution field."""
     identifier = 'BC7654399'
@@ -270,6 +271,7 @@ def test_special_resolution_sanitation(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
 
+
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
@@ -283,6 +285,7 @@ def test_post_draft_ar(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert not rv.json['filing']['header'].get('paymentToken')
     assert rv.json['filing']['header']['filingId']
+
 
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
@@ -1300,14 +1303,23 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     else:
         assert 'futureEffectiveDate' not in rv.json['filing']['header']
 
-def test_rules_in_sr(session, requests_mock, client, jwt):
+
+def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     """Assert if both rules update in sr, and rules file key is provided"""
+    mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
+                 return_value=[])
+
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
     sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+    del sr['filing']['changeOfName']
     sr['filing']['alteration'] = {}
     sr['filing']['alteration']['rulesFileKey'] = 'some_key'
-    sr['filing']['alteration']['rulesChangeInSR'] = True
+    sr['filing']['alteration']['business'] = {
+        'legalType': 'CP'
+    }
+    sr['filing']['alteration']['rulesInResolution'] = True
 
     sr['filing']['business']['identifier'] = identifier
 
@@ -1316,3 +1328,19 @@ def test_rules_in_sr(session, requests_mock, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    error = 'Cannot provide both file upload and rules change in SR'
+    assert rv.json.get('errors')[0].get('error') == error
+
+    sr['filing']['alteration']['memorandumFileKey'] = 'some_key'
+    sr['filing']['alteration']['memorandumInResolution'] = True
+    sr['filing']['alteration']['rulesInResolution'] = False
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=sr,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    error = 'Cannot provide both file upload and memorandum change in SR'
+    assert rv.json.get('errors')[0].get('error') == error
