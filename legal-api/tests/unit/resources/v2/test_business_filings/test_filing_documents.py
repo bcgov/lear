@@ -141,6 +141,9 @@ ALTERATION_WITHOUT_NR = copy.deepcopy(ALTERATION)
 del ALTERATION_WITHOUT_NR['nameRequest']['nrNumber']
 del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
 
+ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION = copy.deepcopy(ALTERATION)
+ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['memorandumInResolution'] = True
+ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
     ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
@@ -168,6 +171,19 @@ del ALTERATION_WITHOUT_NR['nameRequest']['legalName']
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
+                    ],
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('special_res_rules_memorandum_included_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+     'specialResolution', SPECIAL_RESOLUTION, 'alteration', ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION, Filing.Status.COMPLETED,
+     {'documents': {
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'legalFilings': [
+                        {'alteration': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/alteration'},
+                        {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ],
                     'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
                     }

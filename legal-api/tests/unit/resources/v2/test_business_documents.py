@@ -19,14 +19,15 @@ Test-Suite to ensure that the /businesses../summary endpoint works as expected.
 import copy
 from flask import current_app
 from http import HTTPStatus
+from legal_api.models.business import Business
 
 
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.models.document import Document, DocumentType
 from tests import integration_reports
-from tests.unit.models import Address, PartyRole, factory_business, factory_party_role, factory_incorporation_filing
+from tests.unit.models import factory_business, factory_completed_filing, factory_incorporation_filing
 from tests.unit.services.utils import create_header
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import ALTERATION, FILING_HEADER, INCORPORATION_FILING_TEMPLATE
 
 
 @integration_reports
@@ -85,9 +86,9 @@ def test_get_document_invalid_authorization(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
+
 def test_get_coop_business_documents(session, client, jwt):
     """Assert that business documents have rules and memorandum."""
-        # setup
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
@@ -108,15 +109,15 @@ def test_get_coop_business_documents(session, client, jwt):
     document_rules.save()
     assert document_rules.id
 
-    doccument_memorandum = Document()
-    doccument_memorandum.type = DocumentType.COOP_MEMORANDUM.value
-    doccument_memorandum.file_key = 'cooperative_memorandum.pdf'
-    doccument_memorandum.file_name = 'coops_memorandum.pdf'
-    doccument_memorandum.content_type = 'pdf'
-    doccument_memorandum.business_id = business.id
-    doccument_memorandum.filing_id = filing.id
-    doccument_memorandum.save()
-    assert doccument_memorandum.id
+    document_memorandum = Document()
+    document_memorandum.type = DocumentType.COOP_MEMORANDUM.value
+    document_memorandum.file_key = 'cooperative_memorandum.pdf'
+    document_memorandum.file_name = 'coops_memorandum.pdf'
+    document_memorandum.content_type = 'pdf'
+    document_memorandum.business_id = business.id
+    document_memorandum.filing_id = filing.id
+    document_memorandum.save()
+    assert document_memorandum.id
 
     rv = client.get(f'/api/v2/businesses/{identifier}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -126,3 +127,32 @@ def test_get_coop_business_documents(session, client, jwt):
     assert docs_json['documents']
     assert docs_json['documents']['certifiedRules']
     assert docs_json['documents']['certifiedMemorandum']
+    assert docs_json['documentsInfo']['certifiedRules']['uploaded']
+    assert docs_json['documentsInfo']['certifiedRules']['key']
+    assert docs_json['documentsInfo']['certifiedRules']['name']
+    assert docs_json['documentsInfo']['certifiedMemorandum']['uploaded']
+    assert docs_json['documentsInfo']['certifiedMemorandum']['key']
+    assert docs_json['documentsInfo']['certifiedMemorandum']['name']
+
+    # Testing scenario where we have a special resolution with the memorandum included in the resolution.
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'specialResolution'
+    filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    filing['filing']['alteration']['memorandumInResolution'] = True
+    filing['filing']['alteration']['rulesInResolution'] = True
+    factory_completed_filing(business, filing)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    assert rv.status_code == HTTPStatus.OK
+    docs_json = rv.json
+    assert docs_json['documents']
+    assert 'certifiedMemorandum' not in docs_json['documents']
+    assert 'certifiedRules' not in docs_json['documents']
+    assert docs_json['documentsInfo']['certifiedRules']['uploaded']
+    assert docs_json['documentsInfo']['certifiedMemorandum']['uploaded']
+    assert 'key' not in docs_json['documentsInfo']['certifiedRules']
+    assert 'name' not in docs_json['documentsInfo']['certifiedRules']
+    assert 'key' not in docs_json['documentsInfo']['certifiedMemorandum']
+    assert 'name' not in docs_json['documentsInfo']['certifiedMemorandum']

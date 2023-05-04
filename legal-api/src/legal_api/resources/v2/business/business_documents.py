@@ -24,6 +24,7 @@ from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized
 from legal_api.services.business import validate_document_request
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
@@ -76,41 +77,65 @@ def _get_document_list(business):
         documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
     if business.legal_type == Business.LegalTypes.COOP.value:
-        coop_documents = _get_coop_documents_list(business)
-        for coop_doc_key, coop_doc_value in coop_documents.items():
-            documents['documents'][coop_doc_key] = coop_doc_value
+        documents['documentsInfo'] = {}
+        coop_documents, coop_info = _get_coop_documents_and_info(business)
+        for k, v in coop_documents.items():
+            documents['documents'][k] = v
+        for k, v in coop_info.items():
+            documents['documentsInfo'][k] = v
 
     return jsonify(documents), HTTPStatus.OK
 
 
-def _get_coop_documents_list(business):
-    """Get certified memorandum and rules for coop."""
-    coop_documents = {}
+# This is used as part of entity snapshot in business-edit-ui.
+def _get_coop_documents_and_info(business):
+    """Get certified memorandum and rules documents + info for coop."""
+    documents, info = {}, {}
 
     if not business:
-        return coop_documents
+        return documents, info
 
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
     base_url = base_url[:base_url.find('/api')]
     business_id = business.id
     business_identifier = business.identifier
 
-    coop_rules_document = Document.find_by_business_id_and_type(business_id, DocumentType.COOP_RULES.value)
+    sr_filing = Filing.get_filings_by_types(business_id, ['specialResolution'])
+    if sr_filing and sr_filing[0].filing_json['filing']['alteration'].get('rulesInResolution') is True:
+        info['certifiedRules'] = {
+            'uploaded': sr_filing[0].filing_date.isoformat()
+        }
+    elif rules_document := Document.find_by_business_id_and_type(business_id, DocumentType.COOP_RULES.value):
+        rules_filing = Filing.find_by_id(rules_document.filing_id)
+        rules_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+                                                         'filing_id': rules_filing.id,
+                                                         'legal_filing_name': None})
+        documents['certifiedRules'] = f'{base_url}{rules_doc_url}/certifiedRules'
+        filing_date_str = LegislationDatetime.format_as_legislation_date(rules_filing.filing_date.isoformat())
+        file_name = f'{business.identifier} - Certified Rules - {filing_date_str}.pdf'
+        info['certifiedRules'] = {
+            'key': rules_document.file_key,
+            'name': file_name,
+            'uploaded': rules_filing.filing_date.isoformat()
+        }
 
-    if coop_rules_document:
-        coop_rules_filing = Filing.find_by_id(coop_rules_document.filing_id)
-        coop_rules_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
-                                                              'filing_id': coop_rules_filing.id,
+    if sr_filing and sr_filing[0].filing_json['filing']['alteration'].get('memorandumInResolution') is True:
+        info['certifiedMemorandum'] = {
+            'uploaded': sr_filing[0].filing_date.isoformat()
+        }
+    elif memorandum_document := Document.find_by_business_id_and_type(
+            business_id, DocumentType.COOP_MEMORANDUM.value):
+        memorandum_filing = Filing.find_by_id(memorandum_document.filing_id)
+        memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+                                                              'filing_id': memorandum_filing.id,
                                                               'legal_filing_name': None})
-        coop_documents['certifiedRules'] = f'{base_url}{coop_rules_doc_url}/certifiedRules'
+        documents['certifiedMemorandum'] = f'{base_url}{memorandum_doc_url}/certifiedMemorandum'
+        filing_date_str = LegislationDatetime.format_as_legislation_date(memorandum_filing.filing_date.isoformat())
+        file_name = f'{business.identifier} - Certified Memorandum - {filing_date_str}.pdf'
+        info['certifiedMemorandum'] = {
+            'key': memorandum_document.file_key,
+            'name': file_name,
+            'uploaded': memorandum_filing.filing_date.isoformat()
+        }
 
-    coop_memorandum_document = Document.find_by_business_id_and_type(business_id, DocumentType.COOP_MEMORANDUM.value)
-
-    if coop_memorandum_document:
-        coop_memorandum_filing = Filing.find_by_id(coop_memorandum_document.filing_id)
-        coop_memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
-                                                                   'filing_id': coop_memorandum_filing.id,
-                                                                   'legal_filing_name': None})
-        coop_documents['certifiedMemorandum'] = f'{base_url}{coop_memorandum_doc_url}/certifiedMemorandum'
-
-    return coop_documents
+    return documents, info
