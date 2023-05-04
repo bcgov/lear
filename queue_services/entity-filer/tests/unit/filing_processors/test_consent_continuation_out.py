@@ -58,5 +58,5 @@ async def test_worker_consent_continuation_out(app, session):
                                    tzinfo=pytz.timezone("UTC")) \
                   + relativedelta(months=6) \
                   + timedelta(hours=8)
-    assert datetime.fromisoformat(filing_meta.consentContinuationOut['expiry']) == expiry_date
+    assert datetime.fromisoformat(filing_meta.consent_continuation_out['expiry']) == expiry_date
     assert business.cco_expiry_date == expiry_date
