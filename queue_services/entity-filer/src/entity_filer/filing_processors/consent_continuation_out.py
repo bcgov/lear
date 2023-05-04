@@ -38,9 +38,9 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     expiry_date = get_expiry_date()
     business.cco_expiry_date = expiry_date
 
-    filing_meta.consentContinuationOut = {}
-    filing_meta.consentContinuationOut = {**filing_meta.consentContinuationOut,
-                                          **{'expiry': expiry_date.isoformat()}}
+    filing_meta.consent_continuation_out = {}
+    filing_meta.consent_continuation_out = {**filing_meta.consent_continuation_out,
+                                            **{'expiry': expiry_date.isoformat()}}
 
 
 def get_expiry_date():
