@@ -103,6 +103,7 @@ def _get_coop_documents_and_info(business):
     sr_filing = Filing.get_filings_by_types(business_id, ['specialResolution'])
     if sr_filing and sr_filing[0].filing_json['filing'].get('alteration', {}).get('rulesInResolution') is True:
         info['certifiedRules'] = {
+            'includedInResolution': True,
             'uploaded': sr_filing[0].filing_date.isoformat()
         }
     elif rules_document := Document.find_by_business_id_and_type(business_id, DocumentType.COOP_RULES.value):
@@ -121,6 +122,7 @@ def _get_coop_documents_and_info(business):
 
     if sr_filing and sr_filing[0].filing_json['filing'].get('alteration', {}).get('memorandumInResolution') is True:
         info['certifiedMemorandum'] = {
+            'includedInResolution': True,
             'uploaded': sr_filing[0].filing_date.isoformat()
         }
     elif memorandum_document := Document.find_by_business_id_and_type(
