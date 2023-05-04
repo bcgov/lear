@@ -336,7 +336,7 @@ def is_allowed(business: Business,
 
     if filing_id:
         filing = Filing.find_by_id(filing_id)
-        if filing.status == Filing.Status.DRAFT.value:
+        if filing and filing.status == Filing.Status.DRAFT.value:
             is_ignore_draft_blockers = True
 
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)

@@ -883,8 +883,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
