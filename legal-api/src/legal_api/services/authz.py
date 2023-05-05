@@ -389,34 +389,38 @@ def get_allowed_filings(business: Business,
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
-        if (bool(business) ^ allowable_filing_value.get('businessExists', True)):
+        if bool(business) ^ allowable_filing_value.get('businessExists', True):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
+
         if allowable_filing_legal_types:
-            if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
-                continue
-            if legal_type in allowable_filing_legal_types:
-                allowable_filing_types \
-                    .append({'name': allowable_filing_key,
-                             'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
-                             'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)})
+            is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
+            is_include_legal_type = legal_type in allowable_filing_legal_types
+            is_allowable = not is_blocker and is_include_legal_type
+            allowable_filing_type = {'name': allowable_filing_key,
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
+                                     'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)}
+            allowable_filing_types = add_allowable_filing_type(is_allowable,
+                                                               allowable_filing_types,
+                                                               allowable_filing_type)
             continue
 
         filing_sub_type_items = \
             filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
-                continue
-            allowable_filing_types \
-                .append({'name': allowable_filing_key,
-                            'type': filing_sub_type_item_key,
-                            'displayName': FilingMeta.get_display_name(legal_type,
-                                                                    allowable_filing_key,
-                                                                    filing_sub_type_item_key),
-                            'feeCode': Filing.get_fee_code(legal_type,
-                                                        allowable_filing_key,
-                                                        filing_sub_type_item_key)})
+            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            allowable_filing_sub_type = {'name': allowable_filing_key,
+                                         'type': filing_sub_type_item_key,
+                                         'displayName': FilingMeta.get_display_name(legal_type,
+                                                                                    allowable_filing_key,
+                                                                                    filing_sub_type_item_key),
+                                         'feeCode': Filing.get_fee_code(legal_type,
+                                                                        allowable_filing_key,
+                                                                        filing_sub_type_item_key)}
+            allowable_filing_types = add_allowable_filing_type(is_allowable,
+                                                               allowable_filing_types,
+                                                               allowable_filing_sub_type)
 
     return allowable_filing_types
 
@@ -597,3 +601,13 @@ def get_account_by_affiliated_identifier(token, identifier: str):
     except Exception:  # noqa B902; pylint: disable=W0703;
         current_app.logger.error('Failed to get response')
         return None
+
+
+def add_allowable_filing_type(is_allowable: bool = False,
+                              allowable_filing_types: list = None,
+                              allowable_filing_type: dict = None):
+    """Append allowable filing type."""
+    if is_allowable:
+        allowable_filing_types.append(allowable_filing_type)
+
+    return allowable_filing_types
