@@ -22,7 +22,7 @@ from .namex import NameXService
 
 
 class DocumentMetaService():
-    """Provides service for document meta data."""
+    """Provides service for document meta data - Note: Only used in V1 endpoints."""
 
     NOTICE_OF_ARTICLES = 'Notice of Articles'
 

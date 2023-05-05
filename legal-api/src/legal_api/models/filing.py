@@ -698,8 +698,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return query.all()
 
     @staticmethod
-    def get_filings_by_type(business_id: int, filing_type: str):
-        """Return the filings of a particular type."""
+    def get_incomplete_filings_by_type(business_id: int, filing_type: str):
+        """Return the incomplete filings of a particular type."""
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
@@ -710,7 +710,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @staticmethod
     def get_filings_by_types(business_id: int, filing_types):
-        """Return the filings of a particular type."""
+        """Return the completed filings of a particular type."""
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
