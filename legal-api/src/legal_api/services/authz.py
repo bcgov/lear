@@ -343,9 +343,7 @@ def is_allowed(business: Business,
 
     for allowable_filing in allowable_filings:
         if allowable_filing['name'] == filing_type:
-            if not sub_filing_type:
-                return True
-            elif allowable_filing['type'] == sub_filing_type:
+            if not sub_filing_type or allowable_filing['type'] == sub_filing_type:
                 return True
 
     return False
@@ -390,36 +388,35 @@ def get_allowed_filings(business: Business,
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
-        if not business and allowable_filing_value.get('businessExists', True):
-            continue
         # skip if this filing does not need to be returned for existing businesses
-        if business and not allowable_filing_value.get('businessExists', True):
+        if (bool(business) ^ allowable_filing_value.get('businessExists', True)):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
         if allowable_filing_legal_types:
+            if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
+                continue
             if legal_type in allowable_filing_legal_types:
-                if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
-                    continue
                 allowable_filing_types \
                     .append({'name': allowable_filing_key,
                              'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
                              'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)})
-        else:
-            filing_sub_type_items = \
-                filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
-            for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-                if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
-                    continue
-                allowable_filing_types \
-                    .append({'name': allowable_filing_key,
-                             'type': filing_sub_type_item_key,
-                             'displayName': FilingMeta.get_display_name(legal_type,
-                                                                        allowable_filing_key,
-                                                                        filing_sub_type_item_key),
-                             'feeCode': Filing.get_fee_code(legal_type,
-                                                            allowable_filing_key,
-                                                            filing_sub_type_item_key)})
+            continue
+
+        filing_sub_type_items = \
+            filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+        for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
+            if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
+                continue
+            allowable_filing_types \
+                .append({'name': allowable_filing_key,
+                            'type': filing_sub_type_item_key,
+                            'displayName': FilingMeta.get_display_name(legal_type,
+                                                                    allowable_filing_key,
+                                                                    filing_sub_type_item_key),
+                            'feeCode': Filing.get_fee_code(legal_type,
+                                                        allowable_filing_key,
+                                                        filing_sub_type_item_key)})
 
     return allowable_filing_types
 
