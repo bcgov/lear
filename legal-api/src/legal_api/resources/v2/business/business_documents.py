@@ -97,14 +97,17 @@ def _get_coop_documents_and_info(business):
 
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
     base_url = base_url[:base_url.find('/api')]
-    business_id, business_identifier = business.id, business.identifier
 
     info['certifiedRules'], info['certifiedMemorandum'] = {}, {}
 
-    sr_filing = Filing.get_filings_by_types(business_id, ['specialResolution'])
-    if rules_document := Document.find_by_business_id_and_type(business_id, DocumentType.COOP_RULES.value):
+    sr_filings = Filing.get_filings_by_types(business.id, ['specialResolution'])
+    sr_rules_resolution = [sr for sr in sr_filings
+                           if sr.filing_json['filing'].get('alteration', {}).get('rulesInResolution') is True]
+    sr_memorandum_resolution = [sr for sr in sr_filings
+                                if sr.filing_json['filing'].get('alteration', {}).get('memorandumInResolution') is True]
+    if rules_document := Document.find_by_business_id_and_type(business.id, DocumentType.COOP_RULES.value):
         rules_filing = Filing.find_by_id(rules_document.filing_id)
-        rules_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+        rules_doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
                                                          'filing_id': rules_filing.id,
                                                          'legal_filing_name': None})
         documents['certifiedRules'] = f'{base_url}{rules_doc_url}/certifiedRules'
@@ -115,14 +118,14 @@ def _get_coop_documents_and_info(business):
             'name': file_name,
             'uploaded': rules_filing.filing_date.isoformat()
         }
-    if sr_filing and sr_filing[0].filing_json['filing'].get('alteration', {}).get('rulesInResolution') is True:
+    if sr_rules_resolution:
         info['certifiedRules']['includedInResolution'] = True
-        info['certifiedRules']['updated'] = sr_filing[0].filing_date.isoformat()
+        info['certifiedRules']['includedInResolutionDate'] = sr_rules_resolution[0].filing_date.isoformat()
 
     if memorandum_document := Document.find_by_business_id_and_type(
-            business_id, DocumentType.COOP_MEMORANDUM.value):
+            business.id, DocumentType.COOP_MEMORANDUM.value):
         memorandum_filing = Filing.find_by_id(memorandum_document.filing_id)
-        memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business_identifier,
+        memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
                                                               'filing_id': memorandum_filing.id,
                                                               'legal_filing_name': None})
         documents['certifiedMemorandum'] = f'{base_url}{memorandum_doc_url}/certifiedMemorandum'
@@ -133,8 +136,8 @@ def _get_coop_documents_and_info(business):
             'name': file_name,
             'uploaded': memorandum_filing.filing_date.isoformat()
         }
-    if sr_filing and sr_filing[0].filing_json['filing'].get('alteration', {}).get('memorandumInResolution') is True:
+    if sr_memorandum_resolution:
         info['certifiedMemorandum']['includedInResolution'] = True
-        info['certifiedMemorandum']['updated'] = sr_filing[0].filing_date.isoformat()
+        info['certifiedMemorandum']['includedInResolutionDate'] = sr_memorandum_resolution[0].filing_date.isoformat()
 
     return documents, info
