@@ -72,10 +72,13 @@ class Filing:
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'
+        COURTORDER = 'courtOrder'
         DISSOLUTION = 'dissolution'
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         PUTBACKON = 'putBackOn'
+        REGISTRARSNOTATION = 'registrarsNotation'
+        REGISTRARSORDER = 'registrarsOrder'
         REGISTRATION = 'registration'
         RESTORATION = 'restoration'
         RESTORATIONAPPLICATION = 'restorationApplication'
@@ -424,11 +427,11 @@ class Filing:
     def get_document_list(business, filing, request) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
-            'conversion',
-            'courtOrder',
-            'putBackOn',
-            'registrarsNotation',
-            'registrarsOrder'
+            Filing.FilingTypes.CONVERSION.value,
+            Filing.FilingTypes.COURTORDER.value,
+            Filing.FilingTypes.PUTBACKON.value,
+            Filing.FilingTypes.REGISTRARSNOTATION.value,
+            Filing.FilingTypes.REGISTRARSORDER.value,
         ]
 
         if not filing \
@@ -463,11 +466,17 @@ class Filing:
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
-        if filing.status in (
-            Filing.Status.PAID,
-        ) and not (filing.filing_type in (Filing.FilingTypes.REGISTRATION.value) or
-                   (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and business.legal_type in
-                   [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value])):
+        no_legal_filings_in_paid_status = [
+            Filing.FilingTypes.REGISTRATION.value,
+            Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
+        ]
+        if filing.status == Filing.Status.PAID and \
+            not (filing.filing_type in no_legal_filings_in_paid_status
+                 or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
+                     business.legal_type in [
+                         Business.LegalTypes.SOLE_PROP.value,
+                         Business.LegalTypes.PARTNERSHIP.value])
+                 ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
             return documents
@@ -484,8 +493,12 @@ class Filing:
                     # suppress change of name output for MVP since the design is outdated.
                     legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
 
-                documents['documents']['legalFilings'] = \
-                    [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
+                no_legal_filings = [
+                    Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
+                ]
+                if filing.filing_type not in no_legal_filings:
+                    documents['documents']['legalFilings'] = \
+                        [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
 
                 # get extra outputs
                 if filing.storage.transaction_id and \
