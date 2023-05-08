@@ -424,7 +424,7 @@ class Filing:
         ledger_filing['data']['order'] = court_order_data
 
     @staticmethod
-    def get_document_list(business, filing, request) -> Optional[dict]:
+    def get_document_list(business, filing, request) -> Optional[dict]:  # pylint: disable=too-many-locals
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
