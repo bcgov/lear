@@ -27,6 +27,7 @@ from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
+from html_sanitizer import Sanitizer  # noqa: I001;
 from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
@@ -595,11 +596,22 @@ class ListFilingResource():
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
+            filing.filing_json = ListFilingResource.sanitize_html_fields(filing.filing_json)
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
         return business or bootstrap, filing, None, None
+
+    @staticmethod
+    def sanitize_html_fields(filing_json):
+        """Sanitize HTML fields to prevent XSS."""
+        # Need to sanitize as this can be HTML, which provides an easy way to inject JS scripts etc.
+        # We have are using v-sanitize on the frontend, for fields that the user controls.
+        # https://www.stackhawk.com/blog/vue-xss-guide-examples-and-prevention/
+        if resolution_content := filing_json['filing'].get('specialResolution', {}).get('resolution', None):
+            filing_json['filing']['specialResolution']['resolution'] = Sanitizer().sanitize(resolution_content)
+        return filing_json
 
     @staticmethod
     def validate_filing_json(client_request: LocalProxy) -> Tuple[dict, int]:

@@ -150,7 +150,7 @@ def rules_change_validation(filing):
     rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
-    rules_change_in_sr_path: Final = '/filing/alteration/rulesChangeInSR'
+    rules_change_in_sr_path: Final = '/filing/alteration/rulesInResolution'
     rules_change_in_sr: Final = get_bool(filing, rules_change_in_sr_path)
 
     if rules_file_key and rules_change_in_sr:
@@ -173,6 +173,15 @@ def memorandum_change_validation(filing):
     msg = []
     memorandum_file_key_path: Final = '/filing/alteration/memorandumFileKey'
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
+
+    memorandum_change_in_sr_path: Final = '/filing/alteration/memorandumInResolution'
+    memorandum_change_in_sr: Final = get_bool(filing, memorandum_change_in_sr_path)
+
+    if memorandum_file_key and memorandum_change_in_sr:
+        error_msg = 'Cannot provide both file upload and memorandum change in SR'
+        msg.append({'error': babel(error_msg),
+                    'path': memorandum_file_key + ' and ' + memorandum_change_in_sr_path})
+        return msg
 
     if memorandum_file_key:
         memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
