@@ -19,7 +19,7 @@ Test-Suite to ensure that the Authorization Service is working as expected.
 import random
 
 import copy
-
+from datetime import datetime as _datetime
 from enum import Enum
 from http import HTTPStatus
 
@@ -472,10 +472,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], False),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', 'administrative',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
@@ -542,7 +542,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
-         ['CP', 'BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], False),
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'general', [BASIC_USER], True),
 
         ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], False),
@@ -717,6 +717,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -730,6 +731,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -751,12 +753,14 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
@@ -855,6 +859,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                            FilingKey.COD_CP,
                            FilingKey.CORRCTN,
                            FilingKey.COURT_ORDER,
+                           FilingKey.VOL_DISS,
                            FilingKey.ADM_DISS,
                            FilingKey.REGISTRARS_NOTATION,
                            FilingKey.REGISTRARS_ORDER,
@@ -868,6 +873,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -889,12 +895,14 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
@@ -1227,6 +1235,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1240,6 +1249,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1257,12 +1267,14 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
@@ -1324,6 +1336,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1339,6 +1352,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1355,6 +1369,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1383,6 +1398,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
@@ -1391,6 +1407,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc_unaffected', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
@@ -1511,7 +1528,8 @@ def create_business(legal_type, state):
     identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
     business = factory_business(identifier=identifier,
                                 entity_type=legal_type,
-                                state=state)
+                                state=state,
+                                founding_date=_datetime.now())
     return business
 
 
