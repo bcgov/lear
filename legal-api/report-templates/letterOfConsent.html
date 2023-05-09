@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Letter Under Seal</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/style.html]]
+    [[common/styleLetterOverride.html]]
+  </head>
+  <body>
+    <div class="header-logo">
+      [[logo.html]]
+    </div>
+    <div class="letter-copy">
+      <div>{{ report_date }}</div>
+      <div class="mt-12">{{ business.legalName }}</div>
+      {% set office = offices.registeredOffice %}
+      <div>{{ office.mailingAddress.streetAddress }}</div>
+      <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+      <div>
+        {{ office.mailingAddress.addressCity }}
+        {{ office.mailingAddress.addressRegion }}
+        &nbsp;{{ office.mailingAddress.postalCode }}
+      </div>
+      <div class="mt-7">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+      <div class="mt-5">
+        The above company was authorized on {{effective_date}} to continue out of British Columbia, 
+        under section 308 of the Business Corporations Act, to the jurisdiction of Canada.
+      </div>
+      <div class="mt-5">
+        Section 311(1) states that "Promptly after the date on which a company is continued into another jurisdiction,
+        the continued corporation must file with the registrar a copy of any record issued to it by the other
+        jurisdiction to effect or confirm the continuation." Please forward a copy of this record in order to remove
+        the above company from the companies registered in British Columbia.
+      </div>
+      <div class="mt-5">
+        This consent is <span class="bold">valid for six months, ending {{ cco_expiry_date }}.</span>
+      </div>
+      <p class="mt-5">Yours truly,</p>
+      <div class="registrar-info">
+        <div>[[common/certificateRegistrarSignature.html]]</div>
+        <div>
+          <div class="registrar-name">{{ registrarInfo.name }}</div>
+          <div class="registrar-title">{{ registrarInfo.title }}</div>
+        </div>
+      </div>
+    </div>
+    [[common/footerMOCS.html]]
+  </body>
+</html>
