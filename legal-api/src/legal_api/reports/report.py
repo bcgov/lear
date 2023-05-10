@@ -126,7 +126,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/shareStructure',
             'common/correctedOnCertificate',
             'common/style',
+            'common/styleLetterOverride',
             'common/businessDetails',
+            'common/footerMOCS',
             'common/directors',
             'common/completingParty',
             'correction/businessDetails',
@@ -226,6 +228,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_certificate_of_restoration_data(filing)
             elif self._report_key == 'restoration':
                 self._format_restoration_data(filing)
+            elif self._report_key == 'letterOfConsent':
+                self._format_consent_continuation_out_data(filing)
             else:
                 # set registered office address from either the COA filing or status quo data in AR filing
                 with suppress(KeyError):
@@ -334,6 +338,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing['effective_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
             else:
                 filing['agm_date'] = 'No AGM'
+        elif self._filing.filing_type == 'consentContinuationOut':
+            versioned_business = VersionedBusinessDetailsService.\
+                get_business_revision_obj(self._filing.transaction_id, self._business)
+            filing['cco_expiry_date'] = versioned_business.cco_expiry_date.strftime(OUTPUT_DATE_FORMAT)
+
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
@@ -509,6 +518,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
             expiry_date = expiry_date.replace(minute=1)
             filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
+
+    def _format_consent_continuation_out_data(self, filing):
+        filing['offices'] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+
+        with suppress(KeyError):
+            self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
+        with suppress(KeyError):
+            self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -1039,6 +1057,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'restoration': {
             'filingDescription': 'Restoration Application',
             'fileName': 'restoration'
+        },
+        'letterOfConsent': {
+            'filingDescription': 'Letter Of Consent',
+            'fileName': 'letterOfConsent'
         }
     }
 

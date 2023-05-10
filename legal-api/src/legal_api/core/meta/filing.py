@@ -182,7 +182,10 @@ FILINGS: Final = {
             'BEN': 'CONTO',
             'ULC': 'CONTO',
             'CC': 'CONTO'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
+        ]
     },
     'conversion': {
         'name': 'conversion',
@@ -475,8 +478,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == 'alteration':
             if filing.meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
-        elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
-            outputs.add('certificateOfNameChange')
+        elif filing.filing_type == 'specialResolution':
+            if 'changeOfName' in filing.meta_data.get('legalFilings', []):
+                outputs.add('certificateOfNameChange')
+            if 'alteration' in filing.meta_data.get('legalFilings', []):
+                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
+                    outputs.remove('certifiedMemorandum')
+                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
+                    outputs.remove('certifiedRules')
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:

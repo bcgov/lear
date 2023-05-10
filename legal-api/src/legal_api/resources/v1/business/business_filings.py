@@ -164,7 +164,7 @@ class ListFilingResource(Resource):
         json_input = request.get_json()
 
         # check authorization
-        response, response_code = ListFilingResource._check_authorization(identifier, json_input, business)
+        response, response_code = ListFilingResource._check_authorization(identifier, json_input, business, filing_id)
         if response:
             return response, response_code
 
@@ -426,7 +426,9 @@ class ListFilingResource(Resource):
         return None, None
 
     @staticmethod
-    def _check_authorization(identifier, filing_json: dict, business: Business) -> Tuple[dict, int]:
+    def _check_authorization(identifier, filing_json: dict,
+                             business: Business,
+                             filing_id: int = None) -> Tuple[dict, int]:
         filing_type = filing_json['filing']['header'].get('name')
         filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
 
@@ -435,11 +437,9 @@ class ListFilingResource(Resource):
         # for incorporationApplication and registration, get legalType from nameRequest
         legal_type = business.legal_type if business else \
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-        admin_freeze = business.admin_freeze if business else False
 
-        if (admin_freeze and filing_type != 'adminFreeze') or \
-                not authorized(identifier, jwt, action=['edit']) or \
-                not is_allowed(state, filing_type, legal_type, jwt, filing_sub_type):
+        if not authorized(identifier, jwt, action=['edit']) or \
+                not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing_id):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED

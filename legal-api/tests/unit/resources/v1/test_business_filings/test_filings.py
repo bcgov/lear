@@ -40,7 +40,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
-    TRANSITION_FILING_TEMPLATE,
+    TRANSITION_FILING_TEMPLATE
 )
 
 from legal_api.models import Business, RegistrationBootstrap
@@ -922,7 +922,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_filing(business, ar)
+    filings = factory_completed_filing(business, ar)
 
     rv = client.put(f'/api/v1/businesses/{identifier}/filings/{filings.id+1}',
                     json=ar,
@@ -930,7 +930,6 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):

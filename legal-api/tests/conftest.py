@@ -136,6 +136,12 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
                 print('DROP TYPE %s ' % enum_name)
         sess.commit()
 
+        # For those who have local databases on bare metal in local time.
+        # Otherwise some of the returns will come back in local time and unit tests will fail.
+        # The current DEV database uses UTC.
+        sess.execute("SET TIME ZONE 'UTC';")
+        sess.commit()
+
         # ############################################
         # There are 2 approaches, an empty database, or the same one that the app will use
         #     create the tables

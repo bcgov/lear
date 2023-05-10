@@ -9,6 +9,11 @@
     <CCRAHeader>
       <userApplication>BI</userApplication>
       <userRole>{{userRole}}</userRole>
+      {% if businessNumber is not none %}
+      <userCredentials>
+        <businessRegistrationNumber>{{businessNumber}}</businessRegistrationNumber>
+      </userCredentials>
+      {% endif %}
     </CCRAHeader>
   </header>
   <body>

@@ -51,11 +51,12 @@ pytz==2021.1
 requests==2.25.1
 rsa==4.7.2
 semver==2.13.0
-sentry-sdk==1.0.0
+sentry-sdk==1.20.0
 six==1.15.0
 strict-rfc3339==0.7
-urllib3==1.26.4
+urllib3==1.26.11
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
+html-sanitizer==1.9.3
 git+https://github.com/bcgov/business-schemas.git@2.18.5#egg=registry_schemas
