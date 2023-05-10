@@ -136,10 +136,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'consentContinuationOut',
             'title': 'Consent Continuation Out',
             'codes': {
-                'BC': 'CONTO',
-                'BEN': 'CONTO',
-                'ULC': 'CONTO',
-                'CC': 'CONTO'
+                'BC': 'COUTI',
+                'BEN': 'COUTI',
+                'ULC': 'COUTI',
+                'CC': 'COUTI'
             }
         },
         'conversion': {
