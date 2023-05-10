@@ -69,9 +69,10 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def get_colin_events(application: Flask = None):
+def check_for_manual_filings(application: Flask = None, token: dict = None):
     # pylint: disable=redefined-outer-name, disable=too-many-branches
     """Check for colin filings in oracle."""
+    id_list = []
     colin_events = None
     legal_url = application.config['LEGAL_URL']
     colin_url = application.config['COLIN_URL']
@@ -120,29 +121,24 @@ def get_colin_events(application: Flask = None):
             #       ]
             # }
 
-    return colin_events['events'] if colin_events else []
+            # for each event_id: if not in legal db table then add event_id to list
+            for info in colin_events['events']:
+                # check that event is associated with one of the coops loaded into legal db
+                response = requests.get(
+                    f'{legal_url}/{info["corp_num"]}',
+                    headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                )
+                if response.status_code == 200:
+                    # check legal table
+                    response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}')
+                    if response.status_code == 404:
+                        id_list.append(info)
+                    elif response.status_code != 200:
+                        application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
+                else:
+                    application.logger.error('No ids returned from colin_last_update table in legal db.')
 
-
-def check_for_manual_filings(colin_events, token):
-    """Check for filings."""
-    legal_url = application.config['LEGAL_URL']
-
-    # for each event_id: if not in legal db table then add event_id to list
-    for info in colin_events:
-        # check that event is associated with one of the coops loaded into legal db
-        response = requests.get(
-            f'{legal_url}/{info["corp_num"]}',
-            headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
-        )
-        if response.status_code == 200:
-            # check legal table
-            response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}')
-            if response.status_code == 404:
-                yield info
-            elif response.status_code != 200:
-                application.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
-        else:
-            application.logger.error('No ids returned from colin_last_update table in legal db.')
+    return id_list
 
 
 def append_corp_num_prefixes(events, corp_num_prefix):
@@ -185,35 +181,38 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
         token = AccountService.get_bearer_token()
 
         # check if there are filings to send to legal
-        colin_events = get_colin_events(application)
+        manual_filings_info = check_for_manual_filings(application, token)
         max_event_id = 0
 
-        for event_info in check_for_manual_filings(colin_events, token):
-            # Make sure this coop has no outstanding filings that failed to be applied.
-            # This ensures we don't apply filings out of order when one fails.
-            if event_info['corp_num'] not in corps_with_failed_filing:
-                filing = get_filing(event_info, application)
+        if len(manual_filings_info) > 0:
+            for event_info in manual_filings_info:
+                # Make sure this coop has no outstanding filings that failed to be applied.
+                # This ensures we don't apply filings out of order when one fails.
+                if event_info['corp_num'] not in corps_with_failed_filing:
+                    filing = get_filing(event_info, application)
 
-                # call legal api with filing
-                application.logger.debug(f'sending filing with event info: {event_info} to legal api.')
-                response = requests.post(
-                    f'{application.config["LEGAL_URL"]}/{event_info["corp_num"]}/filings',
-                    json=filing,
-                    headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
-                )
-                if response.status_code != 201:
-                    if not first_failed_id:
-                        first_failed_id = event_info['event_id']
-                    failed_filing_events.append(event_info)
-                    corps_with_failed_filing.append(event_info['corp_num'])
-                    application.logger.error(f'Legal failed to create filing for {event_info["corp_num"]}')
+                    # call legal api with filing
+                    application.logger.debug(f'sending filing with event info: {event_info} to legal api.')
+                    response = requests.post(
+                        f'{application.config["LEGAL_URL"]}/{event_info["corp_num"]}/filings',
+                        json=filing,
+                        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                    )
+                    if response.status_code != 201:
+                        if not first_failed_id:
+                            first_failed_id = event_info['event_id']
+                        failed_filing_events.append(event_info)
+                        corps_with_failed_filing.append(event_info['corp_num'])
+                        application.logger.error(f'Legal failed to create filing for {event_info["corp_num"]}')
+                    else:
+                        # update max_event_id entered
+                        successful_filings += 1
+                        if int(event_info['event_id']) > max_event_id:
+                            max_event_id = int(event_info['event_id'])
                 else:
-                    # update max_event_id entered
-                    successful_filings += 1
-                    if int(event_info['event_id']) > max_event_id:
-                        max_event_id = int(event_info['event_id'])
-            else:
-                skipped_filings.append(event_info)
+                    skipped_filings.append(event_info)
+        else:
+            application.logger.debug('0 filings updated in legal db.')
 
         application.logger.debug(f'successful filings: {successful_filings}')
         application.logger.debug(f'skipped filings due to related erred filings: {len(skipped_filings)}')
