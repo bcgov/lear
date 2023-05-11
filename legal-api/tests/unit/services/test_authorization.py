@@ -158,7 +158,7 @@ EXPECTED_DATA = {
     FilingKey.REGISTRARS_ORDER: {'displayName': "Registrar's Order", 'feeCode': 'NOFEE', 'name': 'registrarsOrder'},
     FilingKey.SPECIAL_RESOLUTION: {'displayName': 'Special Resolution', 'feeCode': 'SPRLN', 'name': 'specialResolution'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
-    FilingKey.CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'COUTI',
+    FilingKey.CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                  'name': 'consentContinuationOut'},
     FilingKey.TRANSITION: {'displayName': 'Transition Application', 'feeCode': 'TRANS', 'name': 'transition'},
     FilingKey.IA_CP: {'displayName': 'Incorporation Application', 'feeCode': 'OTINC',

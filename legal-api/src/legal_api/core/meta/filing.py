@@ -178,6 +178,20 @@ FILINGS: Final = {
         'title': 'Consent Continuation Out',
         'displayName': '6-Month Consent to Continue Out',
         'codes': {
+            'BC': 'CONTO',
+            'BEN': 'CONTO',
+            'ULC': 'CONTO',
+            'CC': 'CONTO'
+        },
+        'additional': [
+            {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
+        ]
+    },
+    'continuationOut': {
+        'name': 'continuationOut',
+        'title': 'Continuation Out',
+        'displayName': 'Instrument of Continuation Out',
+        'codes': {
             'BC': 'COUTI',
             'BEN': 'COUTI',
             'ULC': 'COUTI',

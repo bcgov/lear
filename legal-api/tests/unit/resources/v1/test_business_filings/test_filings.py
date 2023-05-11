@@ -1049,6 +1049,29 @@ DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'volu
 SPECIAL_RESOLUTION_NO_CON_FILING = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 
+CONTINUATION_OUT_FILING = {
+    'filing': {
+        'header': {
+            'name': 'dissolution',
+            'availableOnPaperOnly': False,
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'date': '2020-02-18',
+            'routingSlipNumber': '123456789'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08T00:00:00+00:00',
+            'identifier': 'BC1234567',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
+            'legalName': 'legal name - BC1234567',
+            'legalType': 'BEN'
+        },
+        'continuationOut': {}
+    }
+}
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1111,6 +1134,10 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
          []),
         ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
          None, False, ['SPRLN', 'OTCON']),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.COMP.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(

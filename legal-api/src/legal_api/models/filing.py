@@ -136,6 +136,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'consentContinuationOut',
             'title': 'Consent Continuation Out',
             'codes': {
+                'BC': 'CONTO',
+                'BEN': 'CONTO',
+                'ULC': 'CONTO',
+                'CC': 'CONTO'
+            }
+        },
+        'continuationOut': {
+            'name': 'continuationOut',
+            'title': 'Continuation Out',
+            'codes': {
                 'BC': 'COUTI',
                 'BEN': 'COUTI',
                 'ULC': 'COUTI',

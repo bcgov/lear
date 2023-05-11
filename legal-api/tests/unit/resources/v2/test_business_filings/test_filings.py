@@ -1065,6 +1065,29 @@ RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestor
 RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
 
+CONTINUATION_OUT_FILING = {
+    'filing': {
+        'header': {
+            'name': 'dissolution',
+            'availableOnPaperOnly': False,
+            'certifiedBy': 'full name',
+            'email': 'no_one@never.get',
+            'date': '2020-02-18',
+            'routingSlipNumber': '123456789'
+        },
+        'business': {
+            'cacheId': 1,
+            'foundingDate': '2007-04-08T00:00:00+00:00',
+            'identifier': 'BC1234567',
+            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
+            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
+            'legalName': 'legal name - BC1234567',
+            'legalType': 'BEN'
+        },
+        'continuationOut': {}
+    }
+}
+
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
@@ -1128,6 +1151,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.COMP.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(
