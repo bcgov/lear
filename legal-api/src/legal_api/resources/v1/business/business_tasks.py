@@ -138,7 +138,7 @@ class TaskListResource(Resource):
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
         # Checking for pending ar
-        annual_report_filings = Filing.get_filings_by_type(business.id, 'annualReport')
+        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, 'annualReport')
         if annual_report_filings:
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)

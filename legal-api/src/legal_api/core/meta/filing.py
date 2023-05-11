@@ -182,7 +182,10 @@ FILINGS: Final = {
             'BEN': 'CONTO',
             'ULC': 'CONTO',
             'CC': 'CONTO'
-        }
+        },
+        'additional': [
+            {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
+        ]
     },
     'conversion': {
         'name': 'conversion',
@@ -439,7 +442,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 # overriden with the latest correction, which cause loosing the previous correction link.
                 corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
                 corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
-                if corrected_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
+                if corrected_filing_type in ['annualReport']:
                     corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
                     name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
 
@@ -475,8 +478,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == 'alteration':
             if filing.meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
-        elif filing.filing_type == 'specialResolution' and 'changeOfName' in filing.meta_data.get('legalFilings', []):
-            outputs.add('certificateOfNameChange')
+        elif filing.filing_type == 'specialResolution':
+            if 'changeOfName' in filing.meta_data.get('legalFilings', []):
+                outputs.add('certificateOfNameChange')
+            if 'alteration' in filing.meta_data.get('legalFilings', []):
+                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
+                    outputs.remove('certifiedMemorandum')
+                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
+                    outputs.remove('certifiedRules')
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:

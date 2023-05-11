@@ -30,11 +30,8 @@ def validate(business: Business, filing_json: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
 
-    resolution_path = '/filing/specialResolution/resolution'
-    resolution_name = get_str(filing_json, resolution_path)
-    if not resolution_name:
-        msg.append({'error': _('Resolution must be provided.'),
-                    'path': resolution_path})
+    err = validate_resolution_content(filing_json)
+    msg.extend(err)
 
     err = validate_resolution_date(business, filing_json)
     msg.extend(err)
@@ -48,6 +45,23 @@ def validate(business: Business, filing_json: Dict) -> Error:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def validate_resolution_content(filing_json):
+    """Validate resolution content."""
+    msg = []
+    resolution_path = '/filing/specialResolution/resolution'
+    resolution_content = get_str(filing_json, resolution_path)
+
+    if not resolution_content:
+        msg.append({'error': _('Resolution must be provided.'),
+                    'path': resolution_path})
+        return msg
+
+    if len(resolution_content) > 2097152:
+        msg.append({'error': _('Resolution must be 2MB or less.'),
+                    'path': resolution_path})
+    return msg
 
 
 def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[list]:

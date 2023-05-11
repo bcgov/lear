@@ -32,6 +32,8 @@ from . import create_utc_future_date_str
          HTTPStatus.BAD_REQUEST, 'Resolution must be provided.'),
         ('MISSING - resolution date', 'some resolution', 'CP1234567', None, '2021-01-10', 'jane', 'doe', '2010-01-10',
          HTTPStatus.BAD_REQUEST, 'Resolution date is required.'),
+        ('INVALID - resolution > 2MB', 'x' * (2097152 + 1), 'CP1234567', '2009-01-10', '2021-01-10', 'jane',
+         'doe', '2010-01-10', HTTPStatus.BAD_REQUEST, 'Resolution must be 2MB or less.'),
         ('INVALID - resolution date < incorp date', 'some resolution', 'CP1234567', '2009-01-10', '2021-01-10', 'jane',
          'doe', '2010-01-10', HTTPStatus.BAD_REQUEST, 'Resolution date cannot be earlier than the incorporation date.'),
         ('INVALID - resolution date is future date', 'some resolution', 'CP1234567',
@@ -52,7 +54,7 @@ from . import create_utc_future_date_str
          '2010-01-10', HTTPStatus.BAD_REQUEST, 'Signatory given name is required.'),
         ('MISSING - signatory last name', 'some resolution', 'CP1234567', '2021-01-10', '2021-01-10', 'jane', None,
          '2010-01-10', HTTPStatus.BAD_REQUEST, 'Signatory family name is required.'),
-    ]
+    ], ids=lambda param: repr(param)[:75].replace("'", '')
 )
 def test_validate(session, test_name, resolution, identifier, resolution_date, signing_date, signatory_given_name,
                   signatory_family_name, business_founding_date, expected_code, expected_msg):

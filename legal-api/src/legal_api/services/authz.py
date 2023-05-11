@@ -170,14 +170,16 @@ ALLOWABLE_FILINGS: Final = {
             },
             'dissolution': {
                 'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                     'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
                 'administrative': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                     'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DRAFT_PENDING]
                     }
                 }
@@ -291,8 +293,9 @@ ALLOWABLE_FILINGS: Final = {
             },
             'dissolution': {
                 'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC'],
+                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                     'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
@@ -321,23 +324,29 @@ ALLOWABLE_FILINGS: Final = {
 
 
 # pylint: disable=(too-many-arguments,too-many-locals
-def is_allowed(state: Business.State,
+def is_allowed(business: Business,
+               state: Business.State,
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
-               sub_filing_type: str = None):
+               sub_filing_type: str = None,
+               filing_id: int = None):
     """Is allowed to do filing."""
-    user_role = 'general'
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
-        user_role = 'staff'
+    is_ignore_draft_blockers = False
 
-    allowable_filing = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {}).get(filing_type, {})
-    allowable_filing_legal_types = allowable_filing.get('legalTypes', [])
+    if filing_id:
+        filing = Filing.find_by_id(filing_id)
+        if filing and filing.status == Filing.Status.DRAFT.value:
+            is_ignore_draft_blockers = True
 
-    if allowable_filing and sub_filing_type:
-        allowable_filing_legal_types = allowable_filing.get(sub_filing_type, {}).get('legalTypes', [])
+    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
-    return legal_type in allowable_filing_legal_types
+    for allowable_filing in allowable_filings:
+        if allowable_filing['name'] == filing_type:
+            if not sub_filing_type or allowable_filing['type'] == sub_filing_type:
+                return True
+
+    return False
 
 
 def get_allowable_actions(jwt: JwtManager, business: Business):
@@ -354,7 +363,11 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
     return result
 
 
-def get_allowed_filings(business: Business, state: Business.State, legal_type: str, jwt: JwtManager):
+def get_allowed_filings(business: Business,
+                        state: Business.State,
+                        legal_type: str,
+                        jwt: JwtManager,
+                        is_ignore_draft_blockers: bool = False):
     """Get allowed type of filing types for the current user."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -369,42 +382,45 @@ def get_allowed_filings(business: Business, state: Business.State, legal_type: s
         state_filing = Filing.find_by_id(business.state_filing_id)
 
     # doing this check up front to cache result
-    business_blocker_dict: dict = business_blocker_check(business)
+    business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
     allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
-        if not business and allowable_filing_value.get('businessExists', True):
-            continue
         # skip if this filing does not need to be returned for existing businesses
-        if business and not allowable_filing_value.get('businessExists', True):
+        if bool(business) ^ allowable_filing_value.get('businessExists', True):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
+
         if allowable_filing_legal_types:
-            if legal_type in allowable_filing_legal_types:
-                if has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict):
-                    continue
-                allowable_filing_types \
-                    .append({'name': allowable_filing_key,
-                             'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
-                             'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)})
-        else:
-            filing_sub_type_items = \
-                filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
-            for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-                if has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict):
-                    continue
-                allowable_filing_types \
-                    .append({'name': allowable_filing_key,
-                             'type': filing_sub_type_item_key,
-                             'displayName': FilingMeta.get_display_name(legal_type,
+            is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
+            is_include_legal_type = legal_type in allowable_filing_legal_types
+            is_allowable = not is_blocker and is_include_legal_type
+            allowable_filing_type = {'name': allowable_filing_key,
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
+                                     'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)}
+            allowable_filing_types = add_allowable_filing_type(is_allowable,
+                                                               allowable_filing_types,
+                                                               allowable_filing_type)
+            continue
+
+        filing_sub_type_items = \
+            filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+        for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
+            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            allowable_filing_sub_type = {'name': allowable_filing_key,
+                                         'type': filing_sub_type_item_key,
+                                         'displayName': FilingMeta.get_display_name(legal_type,
+                                                                                    allowable_filing_key,
+                                                                                    filing_sub_type_item_key),
+                                         'feeCode': Filing.get_fee_code(legal_type,
                                                                         allowable_filing_key,
-                                                                        filing_sub_type_item_key),
-                             'feeCode': Filing.get_fee_code(legal_type,
-                                                            allowable_filing_key,
-                                                            filing_sub_type_item_key)})
+                                                                        filing_sub_type_item_key)}
+            allowable_filing_types = add_allowable_filing_type(is_allowable,
+                                                               allowable_filing_types,
+                                                               allowable_filing_sub_type)
 
     return allowable_filing_types
 
@@ -441,7 +457,7 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     return False
 
 
-def business_blocker_check(business: Business):
+def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = False):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.DEFAULT: False,
@@ -453,7 +469,7 @@ def business_blocker_check(business: Business):
     if not business:
         return business_blocker_checks
 
-    if has_blocker_filing(business):
+    if has_blocker_filing(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
@@ -467,17 +483,18 @@ def business_blocker_check(business: Business):
     return business_blocker_checks
 
 
-def has_blocker_filing(business: Business):
+def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = False):
     """Check if there are any incomplete states filings. This is a blocker because it needs to be completed first."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
     from legal_api.core.filing import Filing as CoreFiling
 
-    filing_statuses = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
+    filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value,
                        Filing.Status.PAID.value]
+    if not is_ignore_draft_blockers:
+        filing_statuses.append(Filing.Status.DRAFT.value)
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True
@@ -584,3 +601,13 @@ def get_account_by_affiliated_identifier(token, identifier: str):
     except Exception:  # noqa B902; pylint: disable=W0703;
         current_app.logger.error('Failed to get response')
         return None
+
+
+def add_allowable_filing_type(is_allowable: bool = False,
+                              allowable_filing_types: list = None,
+                              allowable_filing_type: dict = None):
+    """Append allowable filing type."""
+    if is_allowable:
+        allowable_filing_types.append(allowable_filing_type)
+
+    return allowable_filing_types

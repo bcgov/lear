@@ -82,8 +82,6 @@ class Flags():
 
             app.extensions['featureflags'] = client
 
-            app.teardown_appcontext(self.teardown)
-
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
         client = current_app.extensions['featureflags']
