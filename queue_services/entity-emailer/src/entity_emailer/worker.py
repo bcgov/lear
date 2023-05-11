@@ -45,6 +45,7 @@ from entity_emailer.email_processors import (
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
+    consent_continuation_out_notification,
     correction_notification,
     dissolution_notification,
     filing_notification,
@@ -53,7 +54,6 @@ from entity_emailer.email_processors import (
     nr_notification,
     registration_notification,
     restoration_notification,
-    consent_continuation_out_notification
 )
 
 from .message_tracker import tracker as tracker_util
