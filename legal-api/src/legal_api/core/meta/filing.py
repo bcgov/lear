@@ -196,10 +196,7 @@ FILINGS: Final = {
             'BEN': 'COUTI',
             'ULC': 'COUTI',
             'CC': 'COUTI'
-        },
-        'additional': [
-            {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
-        ]
+        }
     },
     'conversion': {
         'name': 'conversion',
