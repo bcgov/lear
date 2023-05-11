@@ -15,7 +15,7 @@
 """This provides the service for filings documents meta data."""
 from enum import Enum
 
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .namex import NameXService
@@ -44,8 +44,8 @@ class DocumentMetaService():
     def __init__(self):
         """Create the document meta instance."""
         # init global attributes
-        self._business_identifier = None
-        self._legal_type = None
+        self._legal_entity_identifier = None
+        self._entity_type = None
         self._filing_status = None
         self._filing_id = None
         self._filing_date = None
@@ -56,16 +56,16 @@ class DocumentMetaService():
         if not (business_identifier := filing.get('filing', {}).get('business', {}).get('identifier')):
             return []
 
-        self._business_identifier = business_identifier
+        self._legal_entity_identifier = business_identifier
         # if this is a temp registration then there is no business, so get legal type from filing
-        if self._business_identifier.startswith('T'):
+        if self._legal_entity_identifier.startswith('T'):
             filing_type = filing['filing']['header']['name']
-            self._legal_type = filing['filing'][filing_type]['nameRequest']['legalType']
+            self._entity_type = filing['filing'][filing_type]['nameRequest']['legalType']
         else:
-            business = Business.find_by_identifier(self._business_identifier)
-            if not business:
+            legal_entity = LegalEntity.find_by_identifier(self._legal_entity_identifier)
+            if not legal_entity:
                 return []  # business not found
-            self._legal_type = business.legal_type
+            self._entity_type = legal_entity.entity_type
 
         self._filing_status = filing['filing']['header']['status']
         is_paper_only = filing['filing']['header'].get('availableOnPaperOnly', False)
@@ -295,9 +295,9 @@ class DocumentMetaService():
                 )
             )
             name_request = filing.get('filing', {}).get('alteration', {}).get('nameRequest', None)
-            business = filing.get('filing', {}).get('business', {})
+            legal_entity = filing.get('filing', {}).get('business', {})
             if name_request and 'legalName' in name_request and \
-                    name_request['legalName'] != business.get('legalName', None):
+                    name_request['legalName'] != legal_entity.get('legalName', None):
                 reports.append(
                     self.create_report_object(
                         'Change of Name Certificate',
@@ -389,16 +389,16 @@ class DocumentMetaService():
     def get_general_filename(self, name: str):
         """Return a general filename string."""
         filing_date_str = LegislationDatetime.format_as_legislation_date(self._filing_date)
-        file_name = f'{self._business_identifier} - {name} - {filing_date_str}.pdf'
+        file_name = f'{self._legal_entity_identifier} - {name} - {filing_date_str}.pdf'
         return file_name
 
     def is_bcomp(self):
         """Return True if this entity is a BCOMP."""
-        return self._legal_type == Business.LegalTypes.BCOMP.value
+        return self._entity_type == LegalEntity.EntityTypes.BCOMP.value
 
     def is_coop(self):
         """Return True if this entity is a COOP."""
-        return self._legal_type == Business.LegalTypes.COOP.value
+        return self._entity_type == LegalEntity.EntityTypes.COOP.value
 
     def is_paid(self):
         """Return True if this filing is PAID."""

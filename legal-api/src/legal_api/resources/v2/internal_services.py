@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, Filing, User, UserRoles
+from legal_api.models import Filing, LegalEntity, User, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services import publish_event
 from legal_api.utils.auth import jwt
@@ -38,21 +38,21 @@ def update_bn_move():
             not (old_bn := json_input.get('oldBn')) or not (new_bn := json_input.get('newBn')):
         return ({'message': 'No oldBn or newBn in body of post.'}, HTTPStatus.BAD_REQUEST)
 
-    business = Business.find_by_tax_id(old_bn)
-    if business:
-        business.tax_id = new_bn
-        business.save()
+    legal_entity = LegalEntity.find_by_tax_id(old_bn)
+    if legal_entity:
+        legal_entity.tax_id = new_bn
+        legal_entity.save()
 
-        response, response_code = create_registrars_notation_filing(business, user, old_bn)
+        response, response_code = create_registrars_notation_filing(legal_entity, user, old_bn)
         if response and (response_code != HTTPStatus.CREATED):
             current_app.logger.error('Unable to complete payment for registrars notation (bn move)')
             current_app.logger.error('%s, %s', response, response_code)
 
-        publish_event(business,
+        publish_event(legal_entity,
                       'bc.registry.bnmove',
                       {'oldBn': old_bn, 'newBn': new_bn},
                       current_app.config.get('NATS_EMAILER_SUBJECT'))
-        publish_event(business,
+        publish_event(legal_entity,
                       'bc.registry.business.bn',
                       {},
                       current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'))
@@ -61,10 +61,10 @@ def update_bn_move():
     return jsonify({'message': 'Successfully updated tax id.'}), HTTPStatus.OK
 
 
-def create_registrars_notation_filing(business: Business, user: User, old_bn: str):
+def create_registrars_notation_filing(legal_entity: LegalEntity, user: User, old_bn: str):
     """Create registrars notation filing while updating tax_id (BN Move)."""
     filing = Filing()
-    filing.business_id = business.id
+    filing.legal_entity_id = legal_entity.id
     filing.submitter_id = user.id
     filing.filing_json = {
         'filing': {
@@ -74,11 +74,11 @@ def create_registrars_notation_filing(business: Business, user: User, old_bn: st
                 'certifiedBy': 'system'
             },
             'business': {
-                'identifier': business.identifier,
-                'legalType': business.legal_type
+                'identifier': legal_entity.identifier,
+                'legalType': legal_entity.entity_type
             },
             'registrarsNotation': {
-                'orderDetails': f'Business Number changed from {old_bn} to {business.tax_id}' +
+                'orderDetails': f'Business Number changed from {old_bn} to {legal_entity.tax_id }' +
                                 ' based on a request from the CRA.'
             }
         }
@@ -88,4 +88,4 @@ def create_registrars_notation_filing(business: Business, user: User, old_bn: st
     filing.effective_date = datetime.utcnow()
     filing.save()
 
-    return ListFilingResource.complete_filing(business, filing, False, None)
+    return ListFilingResource.complete_filing(legal_entity, filing, False, None)

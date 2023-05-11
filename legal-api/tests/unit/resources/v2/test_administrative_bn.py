@@ -20,17 +20,17 @@ Test-Suite to ensure that the /admin/bn endpoint is working as expected.
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import LegalEntity, UserRoles
 from legal_api.resources.v2 import administrative_bn
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
 def test_create_bn_request(session, client, jwt):
     """Create a new BN request."""
     identifier = 'FM0000001'
-    factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
+    factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
     with patch.object(administrative_bn, 'publish_entity_event'):
         rv = client.post(f'/api/v2/admin/bn/{identifier}',

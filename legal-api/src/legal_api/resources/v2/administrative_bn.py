@@ -19,7 +19,7 @@ from flask import Blueprint, current_app
 from flask_cors import cross_origin
 from sentry_sdk import capture_message
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import LegalEntity, UserRoles
 from legal_api.services import queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
@@ -34,15 +34,15 @@ bp = Blueprint('ADMINISTRATIVE_BN', __name__, url_prefix='/api/v2/admin/bn')
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def create_bn_request(identifier: str, business_number: str = None):
     """Create a bn request."""
-    business = Business.find_by_identifier(identifier)
-    if business is None:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if legal_entity is None:
         return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
-    publish_entity_event(business, request_name='BN15', business_number=business_number)
+    publish_entity_event(legal_entity, request_name='BN15', business_number=business_number)
     return {'message': 'BN request queued.'}, HTTPStatus.CREATED
 
 
-def publish_entity_event(business: Business,
+def publish_entity_event(legal_entity: LegalEntity,
                          request_name: str = None,
                          message_id: str = None,
                          business_number: str = None):
@@ -51,22 +51,23 @@ def publish_entity_event(business: Business,
         payload = {
             'specversion': '1.x-wip',
             'type': 'bc.registry.admin.bn',
-            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
+            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', legal_entity.identifier]),
             'id': message_id or str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
-            'identifier': business.identifier,
+            'identifier': legal_entity.identifier,
             'data': {
                 'header': {
                     'request': request_name,
                     'businessNumber': business_number
                 },
-                'business': {'identifier': business.identifier}
+                'business': {'identifier': legal_entity.identifier}
             }
         }
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-        capture_message('Queue Publish Admin Event Error: business.id=' + str(business.id) + str(err), level='error')
-        current_app.logger.error('Queue Publish Event Error: business.id=%s', business.id, exc_info=True)
+        capture_message('Queue Publish Admin Event Error: legal_entity.id=' + str(legal_entity.id) + str(err),
+                        level='error')
+        current_app.logger.error('Queue Publish Event Error: legal_entity.id=%s', legal_entity.id, exc_info=True)
         raise err

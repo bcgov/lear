@@ -29,13 +29,13 @@ from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, ANNUAL_REP
     CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN
 
 from legal_api.models import Filing
-from legal_api.models.business import Business
+from legal_api.models.legal_entity import LegalEntity
 
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, authorized, get_allowed, is_allowed, \
     get_allowed_filings, get_allowable_actions
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
-from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_filing, factory_incomplete_statuses, factory_completed_filing
 
 from .utils import helper_create_jwt
 
@@ -381,47 +381,47 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
 
 @pytest.mark.parametrize(
-    'test_name,state,legal_types,username,roles,expected',
+    'test_name,state,entity_types,username,roles,expected',
     [
         # active business
-        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
-        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
           'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
-        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']},
           'registrarsNotation', 'registrarsOrder', 'registration']),
 
-        ('user_active_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('user_active_cp', LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'specialResolution']),
-        ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('user_active_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition']),
-        ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('user_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('user_active_llc', LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('user_active_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['changeOfRegistration', {'dissolution': ['voluntary']}, 'registration']),
 
         # historical business
-        ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
-        ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
 
-        ('user_historical', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [BASIC_USER], [])
+        ('user_historical', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [BASIC_USER], [])
     ]
 )
-def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, username, roles, expected):
+def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {'Authorization': 'Bearer ' + token}
@@ -431,8 +431,8 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        for legal_type in legal_types:
-            filing_types = get_allowed(state, legal_type, jwt)
+        for entity_type in entity_types:
+            filing_types = get_allowed(state, entity_type, jwt)
             assert filing_types == expected
 
 
@@ -440,252 +440,252 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
     'test_name,state,filing_type,sub_filing_type,legal_types,username,roles,expected',
     [
         # active business
-        ('staff_active_allowed', Business.State.ACTIVE, 'alteration', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'alteration', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'alteration', None,
          ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'annualReport', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'annualReport', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'annualReport', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'annualReport', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfAddress', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'changeOfAddress', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'changeOfAddress', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'changeOfAddress', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfDirectors', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'changeOfDirectors', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'changeOfDirectors', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'changeOfDirectors', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'correction', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'correction', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'correction', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'correction', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'courtOrder', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'courtOrder', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'courtOrder', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'courtOrder', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'dissolution', 'voluntary',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'dissolution', 'administrative',
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'dissolution', 'administrative',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestorationExtension',
+        ('staff_active', LegalEntity.State.ACTIVE, 'restoration', 'limitedRestorationExtension',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], False),
-        ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestorationToFull',
+        ('staff_active', LegalEntity.State.ACTIVE, 'restoration', 'limitedRestorationToFull',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
+        ('staff_active', LegalEntity.State.ACTIVE, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
-        ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
+        ('staff_active', LegalEntity.State.ACTIVE, 'restoration', 'limitedRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'specialResolution', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'specialResolution', None, ['CP'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', LegalEntity.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'transition', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'transition', None,
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
-        ('staff_active', Business.State.ACTIVE, 'transition', None,
+        ('staff_active', LegalEntity.State.ACTIVE, 'transition', None,
          ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsNotation', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'registrarsOrder', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'registrarsOrder', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'registration', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'registration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
+        ('staff_active_allowed', LegalEntity.State.ACTIVE, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
 
 
-        ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'alteration', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'alteration', None,
          ['CP', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'annualReport', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'annualReport', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'annualReport', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'annualReport', None,
          ['LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfAddress', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'changeOfAddress', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'changeOfAddress', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'changeOfAddress', None,
          ['LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfDirectors', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'changeOfDirectors', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'changeOfDirectors', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'changeOfDirectors', None,
          ['LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'correction', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'courtOrder', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'dissolution', 'voluntary',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'general', [BASIC_USER], True),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'incorporationApplication', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'registration', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'registration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], True),
 
-        ('user_active', Business.State.ACTIVE, 'restoration', 'fullRestoration',
+        ('user_active', LegalEntity.State.ACTIVE, 'restoration', 'fullRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
+        ('user_active', LegalEntity.State.ACTIVE, 'restoration', 'limitedRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'specialResolution', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'specialResolution', None, ['CP'], 'general', [BASIC_USER], True),
+        ('user_active', LegalEntity.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE, 'transition', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'transition', None,
          ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], True),
-        ('user_active', Business.State.ACTIVE, 'transition', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'transition', None,
          ['CP', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'registrarsNotation', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'registrarsOrder', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_active', Business.State.ACTIVE, 'consentContinuationOut', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [BASIC_USER], False),
 
 
         # historical business
-        ('staff_historical', Business.State.HISTORICAL, 'alteration', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'alteration', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'annualReport', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'annualReport', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'changeOfAddress', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'changeOfAddress', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'changeOfDirectors', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'changeOfDirectors', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'correction', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'courtOrder', None,
+        ('staff_historical_allowed', LegalEntity.State.HISTORICAL, 'courtOrder', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_historical', Business.State.HISTORICAL, 'dissolution', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'dissolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
+        ('staff_historical_allowed', LegalEntity.State.HISTORICAL, 'restoration', 'fullRestoration',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
+        ('staff_historical_allowed', LegalEntity.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_historical', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'restoration', 'fullRestoration',
          ['CP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['CP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'specialResolution', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'specialResolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'transition', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'transition', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsNotation', None,
+        ('staff_historical_allowed', LegalEntity.State.HISTORICAL, 'registrarsNotation', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_historical_allowed', Business.State.HISTORICAL, 'registrarsOrder', None,
+        ('staff_historical_allowed', LegalEntity.State.HISTORICAL, 'registrarsOrder', None,
          ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_historical', Business.State.HISTORICAL, 'registration', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'registration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_historical', Business.State.HISTORICAL, 'consentContinuationOut', None,
+        ('staff_historical', LegalEntity.State.HISTORICAL, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
 
 
-        ('user_historical', Business.State.HISTORICAL, 'alteration', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'alteration', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'annualReport', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'annualReport', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'changeOfAddress', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'changeOfAddress', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'changeOfDirectors', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'changeOfDirectors', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'correction', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'correction', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'courtOrder', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'dissolution', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'dissolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP', 'SP', 'GP'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'incorporationApplication', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'restoration', 'fullRestoration',
+        ('user_historical', LegalEntity.State.HISTORICAL, 'restoration', 'fullRestoration',
          ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'restoration', 'limitedRestoration',
+        ('user_historical', LegalEntity.State.HISTORICAL, 'restoration', 'limitedRestoration',
          ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'specialResolution', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'specialResolution', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'transition', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'transition', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'registrarsNotation', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'registrarsNotation', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'registrarsOrder', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'registrarsOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'registration', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'registration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], False),
 
-        ('user_historical', Business.State.HISTORICAL, 'consentContinuationOut', None,
+        ('user_historical', LegalEntity.State.HISTORICAL, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [BASIC_USER], False),
     ]
 )
@@ -710,7 +710,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
     'test_name,business_exists,state,legal_types,username,roles,expected',
     [
         # active business - staff user
-        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
@@ -722,7 +722,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -736,8 +736,8 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.CONV_FIRMS,
@@ -749,47 +749,47 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
-        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
-        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
-        ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username,
@@ -805,10 +805,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         for legal_type in legal_types:
-            business = None
+            legal_entity =None
             if business_exists:
-                business = create_business(legal_type, state)
-            result = get_allowable_actions(jwt, business)
+                legal_entity =create_business(legal_type, state)
+            result = get_allowable_actions(jwt, legal_entity)
             assert result
             assert result['filing']['filingSubmissionLink']
             assert result['filing']['filingTypes'] == expected
@@ -818,41 +818,41 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
     'test_name,business_exists,state,legal_types,username,roles,expected',
     [
         # no business - staff user
-        ('staff_no_business_cp', False, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_cp', False, LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.IA_CP])),
-        ('staff_no_business_bc', False, Business.State.ACTIVE, ['BC'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_bc', False, LegalEntity.State.ACTIVE, ['BC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.IA_BC])),
-        ('staff_no_business_ben', False, Business.State.ACTIVE, ['BEN'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_ben', False, LegalEntity.State.ACTIVE, ['BEN'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.IA_BEN])),
-        ('staff_no_business_cc', False, Business.State.ACTIVE, ['CC'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_cc', False, LegalEntity.State.ACTIVE, ['CC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.IA_CC])),
-        ('staff_no_business_ulc', False, Business.State.ACTIVE, ['ULC'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_ulc', False, LegalEntity.State.ACTIVE, ['ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.IA_ULC])),
-        ('staff_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_llc', False, LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_no_business_sp', False, LegalEntity.State.ACTIVE, ['SP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.REG_SP])),
-        ('staff_no_business_gp', False, Business.State.ACTIVE, ['GP'], 'staff', [STAFF_ROLE],
+        ('staff_no_business_gp', False, LegalEntity.State.ACTIVE, ['GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.REG_GP])),
 
         # no business - general user
-        ('general_user_no_business_cp', False, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_no_business_cp', False, LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.IA_CP])),
-        ('general_user_no_business_bc', False, Business.State.ACTIVE, ['BC'], 'general', [BASIC_USER],
+        ('general_user_no_business_bc', False, LegalEntity.State.ACTIVE, ['BC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.IA_BC])),
-        ('general_user_no_business_ben', False, Business.State.ACTIVE, ['BEN'], 'general', [BASIC_USER],
+        ('general_user_no_business_ben', False, LegalEntity.State.ACTIVE, ['BEN'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.IA_BEN])),
-        ('general_user_no_business_cc', False, Business.State.ACTIVE, ['CC'], 'general', [BASIC_USER],
+        ('general_user_no_business_cc', False, LegalEntity.State.ACTIVE, ['CC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.IA_CC])),
-        ('general_user_no_business_ulc', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER],
+        ('general_user_no_business_ulc', False, LegalEntity.State.ACTIVE, ['ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.IA_ULC])),
-        ('general_user_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
+        ('general_user_no_business_llc', False, LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_no_business_sp', False, LegalEntity.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.REG_SP])),
-        ('general_user_no_business_gp', False, Business.State.ACTIVE, ['GP'], 'general', [BASIC_USER],
+        ('general_user_no_business_gp', False, LegalEntity.State.ACTIVE, ['GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.REG_GP])),
 
         # active business - staff user
-        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
           expected_lookup([FilingKey.ADMN_FRZE,
                            FilingKey.AR_CP,
                            FilingKey.COA_CP,
@@ -864,7 +864,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                            FilingKey.REGISTRARS_NOTATION,
                            FilingKey.REGISTRARS_ORDER,
                            FilingKey.SPECIAL_RESOLUTION])),
-        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -878,8 +878,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
           expected_lookup([FilingKey.ADMN_FRZE,
                            FilingKey.CHANGE_OF_REGISTRATION,
                            FilingKey.CONV_FIRMS,
@@ -891,47 +891,47 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                            FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
-        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
-        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
-        ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected):
@@ -946,10 +946,10 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         for legal_type in legal_types:
-            business = None
+            legal_entity =None
             if business_exists:
-                business = create_business(legal_type, state)
-            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                legal_entity =create_business(legal_type, state)
+            filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -957,21 +957,21 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
     'test_name,business_exists,state,legal_types,username,roles,expected',
     [
         # active business - staff user
-        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
                           FilingKey.COURT_ORDER,
@@ -980,35 +980,35 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
-        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_cp', True, LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_corps', True, LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.TRANSITION])),
-        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
 
         # historical business - staff user
-        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
         expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
-        ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_cp', True, LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', True, LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt, test_name, business_exists, state,
@@ -1024,14 +1024,14 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         for legal_type in legal_types:
-            business = None
+            legal_entity =None
             if business_exists:
                 identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
-                business = factory_business(identifier=identifier,
+                legal_entity =factory_legal_entity(identifier=identifier,
                                             entity_type=legal_type,
                                             state=state,
                                             admin_freeze=True)
-            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -1039,20 +1039,20 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
     'test_name,state,legal_types,username,roles,filing_statuses,expected',
     [
         # active business - staff user
-        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
+        ('staff_active_cp', LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES, []),
-        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
+        ('staff_active_llc', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES, []),
+        ('staff_active_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
                           FilingKey.COURT_ORDER,
@@ -1060,41 +1060,41 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
-        ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_cp', LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
+        ('general_user_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES, expected_lookup([FilingKey.TRANSITION])),
-        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
-        ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES,
+        ('general_user_llc', LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
+        ('general_user_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES,
          []),
 
         # historical business - staff user
-        ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
+        ('staff_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES, []),
-        ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
+        ('general_user_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES, []),
-        ('general_user_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], BLOCKER_FILING_STATUSES, []),
-        ('general_user_historical_llc', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
+        ('general_user_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES, []),
-        ('general_user_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES, []),
     ]
 )
@@ -1116,11 +1116,11 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
 
         for legal_type in legal_types:
             for filing_status in filing_statuses:
-                business = create_business(legal_type, state)
-                create_incomplete_filing(business=business,
+                legal_entity =create_business(legal_type, state)
+                create_incomplete_filing(legal_entity=legal_entity,
                                          filing_name='unknownFiling',
                                          filing_status=filing_status)
-                filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
                 assert filing_types == expected
 
 
@@ -1128,22 +1128,22 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
     'test_name,state,legal_types,username,roles,filing_types,filing_statuses,expected',
     [
         # active business - staff user
-        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
@@ -1152,44 +1152,44 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp', LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, expected_lookup([FilingKey.TRANSITION])),
-        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
+        ('general_user_llc', LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
          BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
+        ('general_user_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_TYPES,
          BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
 
         # historical business - staff user
-        ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
+        ('general_user_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('general_user_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('general_user_historical_llc', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
+        ('general_user_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ('general_user_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
     ]
 )
@@ -1213,14 +1213,14 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
         for legal_type in legal_types:
             for filing_status in filing_statuses:
                 for filing_type in filing_types:
-                    business = create_business(legal_type, state)
+                    legal_entity =create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
-                    create_incomplete_filing(business=business,
+                    create_incomplete_filing(legal_entity=legal_entity,
                                                       filing_name=filing_type,
                                                       filing_status=filing_status,
                                                       filing_dict=filing_dict,
                                                       filing_type=filing_type)
-                    allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                    allowed_filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
                     assert allowed_filing_types == expected
 
 
@@ -1228,7 +1228,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
     'test_name,state,legal_types,username,roles,expected',
     [
         # active business - staff user
-        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
@@ -1240,7 +1240,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -1254,8 +1254,8 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
                           FilingKey.COURT_ORDER,
@@ -1263,45 +1263,45 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp', LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_corps', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
-        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_llc', LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
 
         # historical business - staff user
-        ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
-        ('general_user_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_cp', LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, state, legal_types, username, roles, expected):
@@ -1315,10 +1315,10 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
-            business = create_business(legal_type, state)
-            if legal_type in ('SP', 'GP') and state == Business.State.ACTIVE:
-                business.warnings = MISSING_BUSINESS_INFO_WARNINGS
-            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            legal_entity =create_business(legal_type, state)
+            if legal_type in ('SP', 'GP') and state == LegalEntity.State.ACTIVE:
+                legal_entity.warnings = MISSING_BUSINESS_INFO_WARNINGS
+            filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -1327,7 +1327,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
     'test_name,state,legal_types,username,roles,state_filing_types,state_filing_sub_types,expected',
     [
         # active business - staff user
-        ('staff_active_cp_unaffected', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp_unaffected', LegalEntity.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -1342,7 +1342,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
 
-        ('staff_active_corps_valid_state_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+        ('staff_active_corps_valid_state_filing_success', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
@@ -1359,7 +1359,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.TRANSITION,
                           FilingKey.RESTRN_LTD_EXT_CORPS,
                           FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
-        ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+        ('staff_active_corps_valid_state_filing_fail', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
@@ -1374,12 +1374,12 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc_valid_state_filing_success', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc_valid_state_filing_success', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'], []),
-        ('staff_active_llc_valid_state_filing_fail', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc_valid_state_filing_fail', LegalEntity.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          [None, 'restoration'], [None, 'fullRestoration'], []),
 
-        ('staff_active_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_firms_unaffected', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['putBackOn', None], [None, None],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -1392,7 +1392,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp_unaffected', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp_unaffected', LegalEntity.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.AR_CP,
@@ -1400,7 +1400,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.COD_CP,
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+        ('general_user_corps_unaffected', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.ALTERATION,
@@ -1409,53 +1409,53 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.COD_CORPS,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
-        ('general_user_llc_unaffected', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
+        ('general_user_llc_unaffected', LegalEntity.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'], []),
-        ('general_user_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_firms_unaffected', LegalEntity.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['putBackOn', None], [None, None],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
 
         # historical business - staff user
-        ('staff_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp_unaffected', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          ['dissolution', None], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_cp_invalid_state_filing_fail', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp_invalid_state_filing_fail', LegalEntity.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
          ['continuationIn'], [None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps_unaffected', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps_unaffected', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['dissolution', None], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_corps_invalid_state_filing_fail', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'],
+        ('staff_historical_corps_invalid_state_filing_fail', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'],
          'staff', [STAFF_ROLE], ['continuationIn'], [None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_llc_unaffected', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc_unaffected', LegalEntity.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
          ['dissolution', None], [None, None], []),
-        ('staff_historical_firms_unaffected', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_firms_unaffected', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['dissolution', None], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
+        ('general_user_historical_cp_unaffected', LegalEntity.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
          ['dissolution', 'continuationIn', None], [None, None, None], []),
-        ('general_user_historical_corps_unaffected', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+        ('general_user_historical_corps_unaffected', LegalEntity.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], ['dissolution', 'continuationIn', None], [None, None, None], []),
-        ('general_user_historical_llc_unaffected', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
+        ('general_user_historical_llc_unaffected', LegalEntity.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
          ['dissolution', None], [None, None], []),
-        ('general_user_historical_firms_unaffected', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_historical_firms_unaffected', LegalEntity.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
          ['dissolution', None], [None, None], [])
     ]
 )
@@ -1480,23 +1480,23 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
 
         for legal_type in legal_types:
             for idx, state_filing_type in enumerate(state_filing_types):
-                business = create_business(legal_type, state)
+                legal_entity =create_business(legal_type, state)
                 state_filing_sub_type = state_filing_sub_types[idx]
                 if state_filing_type:
-                    state_filing = create_state_filing(business, state_filing_type, state_filing_sub_type)
-                    business.state_filing_id = state_filing.id
-                    business.save()
-                allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                    state_filing = create_state_filing(legal_entity, state_filing_type, state_filing_sub_type)
+                    legal_entity.state_filing_id = state_filing.id
+                    legal_entity.save()
+                allowed_filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
                 assert allowed_filing_types == expected
 
 
 @pytest.mark.parametrize(
     'test_name,state,filing_type,sub_filing_type,legal_types,username,roles,filing_status,expected',
     [
-        ('user_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+        ('user_active_allowed', LegalEntity.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], Filing.Status.DRAFT.value, True),
 
-        ('user_active', Business.State.ACTIVE, 'changeOfRegistration', None,
+        ('user_active', LegalEntity.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], Filing.Status.PENDING.value, False),
     ]
 )
@@ -1512,28 +1512,28 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
-            business = create_business(legal_type, state)
+            legal_entity = create_business(legal_type, state)
             filing_dict = FILING_DATA.get(filing_type, None)
-            filing = create_incomplete_filing(business=business,
+            filing = create_incomplete_filing(legal_entity=legal_entity,
                                               filing_name=filing_type,
                                               filing_status=filing_status,
                                               filing_dict=filing_dict,
                                               filing_type=filing_type)
-            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
+            filing_types = is_allowed(legal_entity, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
             assert filing_types == expected
 
 
 def create_business(legal_type, state):
     """Create a business."""
     identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
-    business = factory_business(identifier=identifier,
+    legal_entity =factory_legal_entity(identifier=identifier,
                                 entity_type=legal_type,
                                 state=state,
                                 founding_date=_datetime.now())
-    return business
+    return legal_entity
 
 
-def create_incomplete_filing(business,
+def create_incomplete_filing(legal_entity,
                              filing_name,
                              filing_status,
                              filing_dict:dict=copy.deepcopy(ANNUAL_REPORT),
@@ -1542,14 +1542,14 @@ def create_incomplete_filing(business,
     filing_dict['filing']['header']['name'] = filing_name
     if filing_dict:
         filing_dict = copy.deepcopy(filing_dict)
-    filing = factory_filing(business=business, data_dict=filing_dict)
+    filing = factory_filing(legal_entity=legal_entity, data_dict=filing_dict)
     filing.skip_status_listener = True
     filing._status = filing_status
     filing._filing_type = filing_type
     return filing
 
 
-def create_state_filing(business, filing_type, filing_sub_type=None):
+def create_state_filing(legal_entity, filing_type, filing_sub_type=None):
     """Create a state filing."""
     filing_key = filing_type
     if filing_sub_type:
@@ -1559,7 +1559,7 @@ def create_state_filing(business, filing_type, filing_sub_type=None):
     if filing_sub_type:
         filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, None)
         filing_dict['filing'][filing_type][filing_sub_type_key] = filing_sub_type
-    state_filing = factory_completed_filing(business=business,
+    state_filing = factory_completed_filing(legal_entity=legal_entity,
                                             data_dict=filing_dict,
                                             filing_type=filing_type,
                                             filing_sub_type=filing_sub_type)

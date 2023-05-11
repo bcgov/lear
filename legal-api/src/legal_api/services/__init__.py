@@ -17,7 +17,7 @@ import uuid
 from flask import current_app
 from sentry_sdk import capture_message
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.utils.datetime import datetime
 
 from .authz import (
@@ -50,21 +50,21 @@ namex = NameXService()  # pylint: disable=invalid-name; shared variables are low
 digital_credentials = DigitalCredentialsService()
 
 
-def publish_event(business: Business, event_type: str, data: dict, subject: str, message_id: str = None):
+def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subject: str, message_id: str = None):
     """Publish the event message onto the given NATS subject."""
     try:
         payload = {
             'specversion': '1.x-wip',
             'type': event_type,
-            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
+            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', legal_entity.identifier]),
             'id': message_id or str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
-            'identifier': business.identifier,
+            'identifier': legal_entity.identifier,
             'data': data
         }
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        capture_message(f'Legal-api queue publish {subject} error: business.id=' + str(business.id) + str(err),
+        capture_message(f'Legal-api queue publish {subject} error: legal_entity.id=' + str(legal_entity.id) + str(err),
                         level='error')
-        current_app.logger.error('Queue Publish %s Error: business.id=%s', subject, business.id, exc_info=True)
+        current_app.logger.error('Queue Publish %s Error: legal_entity.id=%s', subject, legal_entity.id, exc_info=True)

@@ -252,7 +252,7 @@ class AccountService:
 
     @classmethod
     def get_account_by_affiliated_identifier(cls, identifier: str):
-        """Return the account affiliated to the business."""
+        """Return the account affiliated to the LegalEntity."""
         token = cls.get_bearer_token()
         auth_url = current_app.config.get('AUTH_SVC_URL')
         url = f'{auth_url}/orgs?affiliation={identifier}'

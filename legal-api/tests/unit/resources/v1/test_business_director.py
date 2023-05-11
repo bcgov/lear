@@ -19,9 +19,9 @@ Test-Suite to ensure that the /businesses../directors endpoint is working as exp
 import datetime
 from http import HTTPStatus
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity, EntityRole
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Address, PartyRole, factory_business, factory_party_role
+from tests.unit.models import Address, PartyRole, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -29,7 +29,7 @@ def test_get_business_directors(session, client, jwt):
     """Assert that business directors are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     director_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
     officer = {
         'firstName': 'Michael',
@@ -44,10 +44,10 @@ def test_get_business_directors(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',
@@ -63,7 +63,7 @@ def test_bcorp_get_business_directors(session, client, jwt):
     """Assert that business directors are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier, datetime.datetime.now(), None, Business.LegalTypes.BCOMP.value)
+    legal_entity =factory_legal_entity(identifier, datetime.datetime.now(), None, LegalEntity.EntityTypes.BCOMP.value)
     director_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     director_mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
     officer = {
@@ -79,10 +79,10 @@ def test_bcorp_get_business_directors(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',
@@ -98,7 +98,7 @@ def test_get_business_no_directors(session, client, jwt):
     """Assert that business directors are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',
@@ -113,7 +113,7 @@ def test_get_business_ceased_directors(session, client, jwt):
     """Assert that business directors are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -127,10 +127,10 @@ def test_get_business_ceased_directors(session, client, jwt):
         officer,
         datetime.datetime(2012, 5, 17),
         datetime.datetime(2013, 5, 17),
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',
@@ -145,7 +145,7 @@ def test_get_business_director_by_id(session, client, jwt):
     """Assert that business director is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -159,10 +159,10 @@ def test_get_business_director_by_id(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors/{party_role.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -175,9 +175,9 @@ def test_get_business_director_by_invalid_id(session, client, jwt):
     """Assert that business directors are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     director_id = 5000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors/{director_id}',
@@ -206,7 +206,7 @@ def test_directors_mailing_address(session, client, jwt):
     """Assert that bcorp directors have a mailing and delivery address."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier, datetime.datetime(2017, 4, 17), None, Business.LegalTypes.BCOMP.value)
+    legal_entity =factory_legal_entity(identifier, datetime.datetime(2017, 4, 17), None, LegalEntity.EntityTypes.BCOMP.value)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
     officer = {
@@ -222,10 +222,10 @@ def test_directors_mailing_address(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',
@@ -242,7 +242,7 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
     """Assert that coop directors have a mailing and delivery address."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     officer = {
         'firstName': 'Michael',
@@ -257,10 +257,10 @@ def test_directors_coop_no_mailing_address(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/directors',

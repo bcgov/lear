@@ -20,7 +20,7 @@ import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -67,13 +67,13 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
 
-    if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
-                      Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
+    if legal_type in [LegalEntity.EntityTypes.BCOMP.value, LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+                      LegalEntity.EntityTypes.COMP.value, LegalEntity.EntityTypes.BC_CCC.value]:
         err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
         if err:
             msg.extend(err)
 
-    elif legal_type == Business.LegalTypes.COOP.value:
+    elif legal_type == LegalEntity.EntityTypes.COOP.value:
         msg.extend(validate_cooperative_documents(incorporation_json))
 
     err = validate_incorporation_effective_date(incorporation_json)
@@ -136,10 +136,10 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
 def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
-        Business.LegalTypes.BCOMP.value: 1,
-        Business.LegalTypes.COMP.value: 1,
-        Business.LegalTypes.BC_ULC_COMPANY.value: 1,
-        Business.LegalTypes.BC_CCC.value: 3
+        LegalEntity.EntityTypes.BCOMP.value: 1,
+        LegalEntity.EntityTypes.COMP.value: 1,
+        LegalEntity.EntityTypes.BC_ULC_COMPANY.value: 1,
+        LegalEntity.EntityTypes.BC_CCC.value: 3
     }
     parties_array = filing_dict['filing'][filing_type]['parties']
     msg = []
@@ -171,7 +171,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
         err_path = f'/filing/{filing_type}/parties/roles'
         msg.append({'error': 'Should not provide completing party when correction type is STAFF', 'path': err_path})
 
-    if legal_type == Business.LegalTypes.COOP.value:
+    if legal_type == LegalEntity.EntityTypes.COOP.value:
         if incorporator_count > 0:
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Incorporator is an invalid party role', 'path': err_path})
@@ -243,7 +243,7 @@ def validate_parties_mailing_address(incorporation_json: dict, legal_type: str,
                 if ma_country == 'CA':
                     country_ca_party_ma_count += 1
 
-    if legal_type == Business.LegalTypes.COOP.value:
+    if legal_type == LegalEntity.EntityTypes.COOP.value:
         if bc_party_ma_count < 1:
             err_path = f'/filing/{filing_type}/parties/mailingAddress'
             msg.append({'error': 'Must have minimum of one BC mailing address', 'path': err_path})
@@ -377,7 +377,7 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
     # ensure business type is BCOMP
     path = '/filing/incorporationApplication/nameRequest/legalType'
     legal_type = get_str(filing, path)
-    if legal_type != Business.LegalTypes.BCOMP.value:
+    if legal_type != LegalEntity.EntityTypes.BCOMP.value:
         msg.append({'error': babel('Correction of Name Request is not vaild for this type.'), 'path': path})
 
     # ensure NR request has the same legal name

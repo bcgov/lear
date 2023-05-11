@@ -40,7 +40,7 @@ class Comment(db.Model):
     timestamp = db.Column('timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
     staff_id = db.Column('staff_id', db.Integer, db.ForeignKey('users.id'), index=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
@@ -59,7 +59,7 @@ class Comment(db.Model):
                 'submitterDisplayName': user.display_name if user else None,
                 'comment': self.comment,
                 'filingId': self.filing_id,
-                'businessId': self.business_id,
+                'businessId': self.legal_entity_id,
                 'timestamp': self.timestamp.isoformat()
             }
         }

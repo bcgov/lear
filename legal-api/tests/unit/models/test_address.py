@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Address Model is working as expected.
 """
 from legal_api.models import Address, Office
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_address_json(session):
@@ -66,7 +66,7 @@ def test_address_save(session):
 def test_mailing_address_save_to_business(session):
     """Assert that the address saves correctly."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     address = Address(
         city='Test City',
@@ -78,8 +78,8 @@ def test_mailing_address_save_to_business(session):
     )
     office = Office(office_type='registeredOffice')
     office.addresses.append(address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
-    mailing = business.mailing_address.one_or_none()
+    mailing = legal_entity.office_mailing_address.one_or_none()
     assert mailing.id

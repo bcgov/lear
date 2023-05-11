@@ -23,14 +23,14 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_get_current_registrar(session):
     """Assert that the current registrar is returned."""
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
     filing.filing_data = ANNUAL_REPORT
     filing.save()
@@ -45,9 +45,9 @@ def test_get_current_registrar(session):
 
 def test_get_registrar_for_a_filing(session):
     """Assert that the registrar effective on that date is returned."""
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime(2012, 6, 6)
     filing.effective_date = datetime.datetime(2012, 6, 6)
     filing.filing_data = ANNUAL_REPORT

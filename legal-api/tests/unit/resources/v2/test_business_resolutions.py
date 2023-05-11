@@ -19,10 +19,10 @@ Test-Suite to ensure that the /businesses../resolutions endpoint is working as e
 import pytest
 from http import HTTPStatus
 
-from legal_api.models import Party, Resolution
+from legal_api.models import Party, Resolution, LegalEntity
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests import FROZEN_DATETIME
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
@@ -36,16 +36,18 @@ def test_get_business_resolutions(app, session, client, jwt, requests_mock, test
     """Assert that business resolutions are returned."""
     identifier = 'CP1234567'
     resolution_text = 'bla bla'
-    business = factory_business(identifier)
-    signing_party = Party(first_name='signing', last_name='party')
+    legal_entity =factory_legal_entity(identifier)
+    signing_party = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value,
+                                first_name='signing',
+                                last_name='party')
     resolution = Resolution(resolution_date=FROZEN_DATETIME,
                             resolution_type=Resolution.ResolutionType.SPECIAL.value,
                             signing_date=FROZEN_DATETIME,
                             resolution=resolution_text)
 
-    resolution.party = signing_party
-    business.resolutions = [resolution]
-    business.save()
+    resolution.signing_legal_entity = signing_party
+    legal_entity.resolutions = [resolution]
+    legal_entity.save()
 
     # mock response from auth to give view access (not needed if staff / system)
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
@@ -63,8 +65,8 @@ def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock
     """Assert that share classes are not returned for an unauthorized user."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    business.save()
+    legal_entity =factory_legal_entity(identifier)
+    legal_entity.save()
 
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 

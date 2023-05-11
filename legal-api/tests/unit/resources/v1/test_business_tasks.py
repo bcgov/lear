@@ -25,10 +25,10 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
-from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
+from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
 
 
@@ -82,7 +82,7 @@ AR_FILING_PREVIOUS_YEAR = {
 def test_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the year after incorporation is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier, founding_date=datetime(2017, 2, 1))  # incorporation in 2017
+    factory_legal_entity(identifier, founding_date=datetime(2017, 2, 1))  # incorporation in 2017
 
     # To-do are all years from the year after incorporation until this year
     this_year = datetime.now().year
@@ -97,7 +97,7 @@ def test_get_tasks_next_year(session, client, jwt):
     """Assert that one todo item is returned in the calendar year following incorporation."""
     identifier = 'CP7654321'
     founding_date = datetime.today() + datedelta.datedelta(days=1) - datedelta.datedelta(years=1)
-    factory_business(identifier, founding_date=founding_date)  # incorporation 1 year - 1 day ago
+    factory_legal_entity(identifier, founding_date=founding_date)  # incorporation 1 year - 1 day ago
 
     # To-do are all years from the year after incorporation until this year
 
@@ -109,7 +109,7 @@ def test_get_tasks_next_year(session, client, jwt):
 def test_bcorps_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier, datetime.now(), None, Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier, datetime.now(), None, LegalEntity.EntityTypes.BCOMP.value)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -121,9 +121,9 @@ def test_bcorps_get_tasks_no_filings(session, client, jwt):
 def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     """Assert the correct number of todo items are returned when there is an AR filing pending."""
     identifier = 'CP7654321'
-    business = factory_business(
-        identifier, datetime.today() - datedelta.datedelta(years=3), None, Business.LegalTypes.BCOMP.value)
-    factory_business_mailing_address(business)
+    legal_entity =factory_legal_entity(
+        identifier, datetime.today() - datedelta.datedelta(years=3), None, LegalEntity.EntityTypes.BCOMP.value)
+    factory_legal_entity_mailing_address(legal_entity)
     rv = client.get(
         f'/api/v1/businesses/{identifier}/tasks',
         headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -142,7 +142,7 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
     assert rv.status_code < 500
 
     filing['filing']['annualReport']['annualReportDate'] = str((datetime.today() - datedelta.datedelta(years=2)).date())
-    filing['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['business']['legalType'] = LegalEntity.EntityTypes.BCOMP.value
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -158,7 +158,7 @@ def test_bcorps_get_tasks_pending_filings(session, client, jwt):
 def test_get_tasks_current_year_filing_exists(session, client, jwt):
     """Assert that only the filing for the current year is returned when only current year filing exists."""
     identifier = 'CP7654321'
-    b = factory_business(identifier=identifier, last_ar_date=datetime(2018, 8, 13))
+    b = factory_legal_entity(identifier=identifier, last_ar_date=datetime(2018, 8, 13))
     filings = factory_filing(b, AR_FILING_CURRENT_YEAR, datetime(2019, 8, 5, 7, 7, 58, 272362), 'annualReport')
 
     print('test_get_all_business_filings - filing:', filings)
@@ -172,7 +172,7 @@ def test_get_tasks_current_year_filing_exists(session, client, jwt):
 def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier, last_ar_date=datetime(2018, 3, 3))
+    b = factory_legal_entity(identifier, last_ar_date=datetime(2018, 3, 3))
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
 
     print('test_get_all_business_filings - filing:', filings)
@@ -186,7 +186,7 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date=datetime(2018, 3, 3))
+    b = factory_legal_entity(identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date=datetime(2018, 3, 3))
     filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
     print('test_get_all_business_filings - filing:', filings)
 
@@ -210,11 +210,11 @@ def test_get_empty_tasks_with_invalid_business(session, client, jwt):
 def test_get_tasks_error_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
     from legal_api.models import Filing
-    from tests.unit.models import AR_FILING, factory_business_mailing_address
+    from tests.unit.models import AR_FILING, factory_legal_entity_mailing_address
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier, last_ar_date=datetime(2019, 8, 13))
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, last_ar_date=datetime(2019, 8, 13))
+    factory_legal_entity_mailing_address(b)
     filing = factory_pending_filing(b, AR_FILING, datetime(2019, 8, 5, 7, 7, 58, 272362))
     filing.save()
     assert filing.status == Filing.Status.PENDING.value
@@ -234,7 +234,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     from registry_schemas.example_data import CORRECTION_AR
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier, last_ar_date=datetime(2016, 8, 13))
+    b = factory_legal_entity(identifier, last_ar_date=datetime(2016, 8, 13))
     filing = factory_pending_filing(b, CORRECTION_AR)
     filing.save()
     filing._status = Filing.Status.PENDING_CORRECTION.value
@@ -253,21 +253,21 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
 
 @freeze_time("Jul 2nd, 2022")
 @pytest.mark.parametrize('test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length', [
-    ('BCOMP first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BCOMP.value, 1),
-    ('BCOMP no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BCOMP.value, 0),
-    ('BCOMP 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BCOMP.value, 3),
-    ('BCOMP current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BCOMP.value, 0),
-    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),    
-    ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
-    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),    
+    ('BCOMP first AR to be issued', 'BC1234567', '2021-07-02', None, LegalEntity.EntityTypes.BCOMP.value, 1),
+    ('BCOMP no AR due yet', 'BC1234567', '2021-07-03', None, LegalEntity.EntityTypes.BCOMP.value, 0),
+    ('BCOMP 3 ARs overdue', 'BC1234567', '2019-05-15', None, LegalEntity.EntityTypes.BCOMP.value, 3),
+    ('BCOMP current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', LegalEntity.EntityTypes.BCOMP.value, 0),
+    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, LegalEntity.EntityTypes.COOP.value, 1),
+    ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', LegalEntity.EntityTypes.COOP.value, 1),
+    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, LegalEntity.EntityTypes.COOP.value, 3),
 ])
 def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
     from legal_api.resources.v1.business import TaskListResource
     previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
-    business = factory_business(
+    legal_entity =factory_legal_entity(
         identifier, founding_date, previous_ar_datetime, legal_type)
-    tasks = TaskListResource.construct_task_list(business)
+    tasks = TaskListResource.construct_task_list(legal_entity)
     assert len(tasks) == tasks_length
 
     # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late

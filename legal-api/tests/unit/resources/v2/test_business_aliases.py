@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses../aliases endpoint is working as expec
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import Alias, factory_business
+from tests.unit.models import Alias, factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
@@ -27,16 +27,16 @@ def test_get_business_aliases(session, client, jwt):
     """Assert that business aliases are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias1 = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias2 = Alias(
         alias='DEF Ltd.',
         type='DBA',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias1.save()
     alias2.save()
@@ -55,7 +55,7 @@ def test_get_business_no_aliases(session, client, jwt):
     """Assert that business aliases are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/aliases',
@@ -70,16 +70,16 @@ def test_get_business_alias_by_id(session, client, jwt):
     """Assert that business alias is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias1 = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias2 = Alias(
         alias='DEF Ltd.',
         type='DBA',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias1.save()
     alias2.save()
@@ -96,9 +96,9 @@ def test_get_business_alias_by_invalid_id(session, client, jwt):
     """Assert that business alias is not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias_id = 5000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/aliases/{alias_id}',
@@ -114,16 +114,16 @@ def test_get_business_alias_by_type(session, client, jwt):
     # setup
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias1 = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias2 = Alias(
         alias='DEF Ltd.',
         type='DBA',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias1.save()
     alias2.save()
@@ -143,16 +143,16 @@ def test_get_business_alias_by_invalid_type(session, client, jwt):
     """Assert that business aliases are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias1 = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias2 = Alias(
         alias='DEF Ltd.',
         type='DBA',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias1.save()
     alias2.save()

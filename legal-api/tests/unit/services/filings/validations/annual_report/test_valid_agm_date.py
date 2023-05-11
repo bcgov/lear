@@ -21,7 +21,7 @@ from hypothesis import given
 from hypothesis.strategies import dates, just, text
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.annual_report import validate_agm_year
 
 
@@ -55,9 +55,9 @@ def check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submi
     """Assert that the AGM date for the filing is valid, or that valid warnings are returned."""
     # setup
     identifier = 'CP1234567'
-    business = Business(identifier=identifier,
+    legal_entity =LegalEntity(identifier=identifier,
                         last_ledger_timestamp=datetime(last_agm_date.year, last_agm_date.month, last_agm_date.day))
-    business.last_agm_date = last_agm_date
+    legal_entity.last_agm_date = last_agm_date
 
     current_ar = copy.deepcopy(ANNUAL_REPORT)
     current_ar['filing']['business']['identifier'] = identifier
@@ -70,7 +70,7 @@ def check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submi
 
     # Test it
     with app.app_context():
-        err = validate_agm_year(business=business,
+        err = validate_agm_year(legal_entity=legal_entity,
                                 annual_report=current_ar)
     # Validate the outcome
     if expected_msg:  # examples check

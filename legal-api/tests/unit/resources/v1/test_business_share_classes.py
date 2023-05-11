@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses../share-classes endpoint is working as
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import factory_business, factory_share_class
+from tests.unit.models import factory_legal_entity, factory_share_class
 from tests.unit.services.utils import create_header
 
 
@@ -41,7 +41,7 @@ def test_get_business_no_share_classes(session, client, jwt):
     """Assert that business share classes are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/share-classes',
@@ -70,9 +70,9 @@ def test_get_business_share_class_by_invalid_id(session, client, jwt):
     """Assert that business share class is not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class_id = 10000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/share-classes/{share_class_id}',

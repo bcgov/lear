@@ -36,7 +36,7 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
     type = db.Column('type', db.String(20), default=AliasType.TRANSLATION, nullable=False)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -62,10 +62,10 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
         return alias
 
     @classmethod
-    def find_by_type(cls, business_id: int, alias_type: str):
+    def find_by_type(cls, legal_entity_id: int, alias_type: str):
         """Return the aliases matching the type."""
         aliases = db.session.query(Alias). \
-            filter(Alias.business_id == business_id). \
+            filter(Alias.legal_entity_id == legal_entity_id). \
             filter(Alias.type == alias_type). \
             all()
         return aliases
