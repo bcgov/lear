@@ -29,16 +29,9 @@ import json
 import os
 from http import HTTPStatus
 
-import nats
 import requests
-from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import EmailException, QueueException, logger
-from flask import Flask
-from legal_api import db
-from legal_api.models import Filing
-from legal_api.services.bootstrap import AccountService
-from sqlalchemy.exc import OperationalError
 
+import nats
 from entity_emailer import config
 from entity_emailer.email_processors import (
     affiliation_notification,
@@ -55,6 +48,13 @@ from entity_emailer.email_processors import (
     registration_notification,
     restoration_notification,
 )
+from entity_queue_common.service import QueueServiceManager
+from entity_queue_common.service_utils import EmailException, QueueException, logger
+from flask import Flask
+from legal_api import db
+from legal_api.models import Filing
+from legal_api.services.bootstrap import AccountService
+from sqlalchemy.exc import OperationalError
 
 from .message_tracker import tracker as tracker_util
 
