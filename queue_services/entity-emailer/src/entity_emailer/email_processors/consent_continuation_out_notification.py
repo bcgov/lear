@@ -51,7 +51,7 @@ def _get_pdfs(
     if status == Filing.Status.COMPLETED.value:
         # add filing pdf
         filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
             '?type=letterOfConsent', headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
