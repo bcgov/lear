@@ -1068,7 +1068,7 @@ RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRe
 CONTINUATION_OUT_FILING = {
     'filing': {
         'header': {
-            'name': 'dissolution',
+            'name': 'continuationOut',
             'availableOnPaperOnly': False,
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',

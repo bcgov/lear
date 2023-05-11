@@ -1052,7 +1052,7 @@ del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 CONTINUATION_OUT_FILING = {
     'filing': {
         'header': {
-            'name': 'dissolution',
+            'name': 'continuationOut',
             'availableOnPaperOnly': False,
             'certifiedBy': 'full name',
             'email': 'no_one@never.get',
