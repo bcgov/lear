@@ -20,12 +20,16 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from jinja2 import Template
-
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 from entity_queue_common.service_utils import logger
 from flask import current_app
+from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
+
+from entity_emailer.email_processors import (
+    get_filing_info,
+    get_recipient_from_auth,
+    substitute_template_parts,
+)
 
 
 def _get_pdfs(
