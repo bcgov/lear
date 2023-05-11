@@ -40,7 +40,7 @@ def _get_pdfs(
         filing_date_time: str,
         effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
-    """Get the pdfs for the incorporation output."""
+    """Get the pdfs for the Consent Continuation Out output."""
     pdfs = []
     attach_order = 1
     headers = {
@@ -52,7 +52,7 @@ def _get_pdfs(
         # add filing pdf
         filing_pdf = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
+            '?type=letterOfConsent', headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
             logger.error('Failed to get pdf for filing: %s', filing.id)
