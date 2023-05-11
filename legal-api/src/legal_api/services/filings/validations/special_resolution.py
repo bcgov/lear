@@ -18,22 +18,22 @@ from typing import Dict, Optional
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.utils.datetime import datetime
 
 from ...utils import get_date, get_str
 
 
-def validate(business: Business, filing_json: Dict) -> Error:
+def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
     """Validate the Special Resolution filing."""
-    if not business or not filing_json:
+    if not legal_entity or not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
 
     err = validate_resolution_content(filing_json)
     msg.extend(err)
 
-    err = validate_resolution_date(business, filing_json)
+    err = validate_resolution_date(legal_entity, filing_json)
     msg.extend(err)
 
     err = validate_signing_date(filing_json)
@@ -64,7 +64,7 @@ def validate_resolution_content(filing_json):
     return msg
 
 
-def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[list]:
+def validate_resolution_date(legal_entity: LegalEntity, filing_json: Dict) -> Optional[list]:
     """Validate resolution date."""
     msg = []
     resolution_date_path = '/filing/specialResolution/resolutionDate'
@@ -74,7 +74,7 @@ def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[
         msg.append({'error': _('Resolution date is required.'), 'path': resolution_date_path})
         return msg
 
-    if resolution_date < business.founding_date.date():
+    if resolution_date < legal_entity.founding_date.date():
         msg.append({'error': _('Resolution date cannot be earlier than the incorporation date.'),
                     'path': resolution_date_path})
         return msg

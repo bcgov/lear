@@ -61,10 +61,10 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
-        business = None
+        legal_entity = None
         if identifier:
-            business = cls.query.filter_by(identifier=identifier).one_or_none()
-        return business
+            legal_entity = cls.query.filter_by(identifier=identifier).one_or_none()
+        return legal_entity
 
     def save(self):
         """Render a Business to the local cache."""

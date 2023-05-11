@@ -26,7 +26,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from legal_api.exceptions import BusinessException
 from legal_api.models import Comment
 from tests import EPOCH_DATETIME
-from tests.unit.models import factory_business, factory_comment, factory_filing
+from tests.unit.models import factory_legal_entity, factory_comment, factory_filing
 
 
 def test_minimal_comment(session):
@@ -66,7 +66,7 @@ def test_comment_delete_is_blocked(session):
 def test_filing_comment_dump_json(session):
     """Assert the comment json serialization works correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f, 'a comment')
 

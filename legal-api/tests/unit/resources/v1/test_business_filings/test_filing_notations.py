@@ -26,10 +26,10 @@ from registry_schemas.example_data import (
     REGISTRARS_ORDER_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
-from tests.unit.models import factory_business, factory_business_mailing_address
+from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address
 from tests.unit.services.utils import create_header
 
 
@@ -37,8 +37,8 @@ from tests.unit.services.utils import create_header
 def test_filing_court_order(client, jwt, session):
     """Assert that a valid court order filing can be posted."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
@@ -58,8 +58,8 @@ def test_filing_court_order(client, jwt, session):
 def test_filing_court_order_validation(client, jwt, session):
     """Assert that a court order filing can be validated."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
@@ -102,8 +102,8 @@ def test_filing_court_order_validation(client, jwt, session):
 def test_filing_registrars_notation(client, jwt, session):
     """Assert that a valid registrars notation filing can be posted."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
@@ -133,8 +133,8 @@ def test_filing_registrars_notation(client, jwt, session):
 def test_filing_registrars_notation_validation(client, jwt, session):
     """Assert that a registrars notation filing can be validated."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
@@ -174,8 +174,8 @@ def test_filing_registrars_notation_validation(client, jwt, session):
 def test_filing_registrars_order(client, jwt, session):
     """Assert that a valid registrars order filing can be posted."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
@@ -205,8 +205,8 @@ def test_filing_registrars_order(client, jwt, session):
 def test_filing_registrars_order_validation(client, jwt, session):
     """Assert that a registrars order filing can be validated."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier

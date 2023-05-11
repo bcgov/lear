@@ -21,13 +21,13 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings import validate
 
 from . import lists_are_equal
 
 
-# from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing
+# from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address, factory_filing
 @pytest.mark.parametrize(
     'test_name, now, ar_date, agm_date, expected_code, expected_msg',
     [('SUCCESS', date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
@@ -38,8 +38,8 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
     # setup
     identifier = 'CP1234567'
     founding_date = ar_date - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-    business.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
+    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
+    legal_entity.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['business']['identifier'] = identifier
@@ -48,7 +48,7 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
 
     # perform test
     with freeze_time(now):
-        err = validate(business, ar)
+        err = validate(legal_entity, ar)
 
     # validate outcomes
     assert not err
@@ -91,8 +91,8 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
-    business.founding_date = founding_date
+    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
+    legal_entity.founding_date = founding_date
 
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.isoformat()
@@ -106,7 +106,7 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
     office['mailingAddress']['addressCountry'] = mailing_country
     # perform test
     with freeze_time(now):
-        err = validate(business, f)
+        err = validate(legal_entity, f)
 
     # validate outcomes
     if expected_code:

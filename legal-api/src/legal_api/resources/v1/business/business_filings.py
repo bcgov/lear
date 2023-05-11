@@ -18,19 +18,19 @@ Provides all the search and retrieval from the business entity datastore.
 from http import HTTPStatus
 from typing import Tuple, Union
 
-import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
-from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_jwt_oidc import JwtManager
 from flask_restx import Resource, cors
 from werkzeug.local import LocalProxy
 
+import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
+from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import Address, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -113,9 +113,9 @@ class ListFilingResource(Resource):
 
             return jsonify(filing_json)
 
-        business = Business.find_by_identifier(identifier)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
 
-        if not business:
+        if not legal_entity:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         if filing_id:
@@ -135,7 +135,7 @@ class ListFilingResource(Resource):
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
-        filings = CoreFiling.get_filings_by_status(business.id,
+        filings = CoreFiling.get_filings_by_status(legal_entity.id,
                                                    [Filing.Status.COMPLETED.value, Filing.Status.PAID.value])
         for filing in filings:
             filing_json = filing.raw
@@ -148,23 +148,26 @@ class ListFilingResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def post(identifier, filing_id=None):
-        """Create a new filing for the business."""
+        """Create a new filing for the LegalEntity."""
         return ListFilingResource.put(identifier, filing_id)
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def put(identifier, filing_id):  # pylint: disable=too-many-return-statements,too-many-locals
-        """Modify an incomplete filing for the business."""
+        """Modify an incomplete filing for the LegalEntity."""
         # basic checks
-        business = Business.find_by_identifier(identifier)
-        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request, business)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
+        err_msg, err_code = ListFilingResource._put_basic_checks(identifier, filing_id, request, legal_entity)
         if err_msg:
             return jsonify({'errors': [err_msg, ]}), err_code
         json_input = request.get_json()
 
         # check authorization
-        response, response_code = ListFilingResource._check_authorization(identifier, json_input, business, filing_id)
+        response, response_code = ListFilingResource._check_authorization(identifier,
+                                                                          json_input,
+                                                                          legal_entity,
+                                                                          filing_id)
         if response:
             return response, response_code
 
@@ -179,11 +182,11 @@ class ListFilingResource(Resource):
 
         if not draft \
                 and not ListFilingResource._is_historical_colin_filing(json_input) \
-                and not ListFilingResource._is_before_epoch_filing(json_input, business):
+                and not ListFilingResource._is_before_epoch_filing(json_input, legal_entity):
             if identifier.startswith('T'):
                 business_validate = RegistrationBootstrap.find_by_identifier(identifier)
             else:
-                business_validate = business
+                business_validate = legal_entity
             err = validate(business_validate, json_input)
             # err_msg, err_code = ListFilingResource._validate_filing_json(request)
             if err or only_validate:
@@ -195,7 +198,10 @@ class ListFilingResource(Resource):
         # save filing, if it's draft only then bail
         user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
         try:
-            business, filing, err_msg, err_code = ListFilingResource._save_filing(request, identifier, user, filing_id)
+            legal_entity, filing, err_msg, err_code = ListFilingResource._save_filing(request,
+                                                                                      identifier,
+                                                                                      user,
+                                                                                      filing_id)
             if err_msg or draft:
                 reply = filing.json if filing else json_input
                 reply['errors'] = [err_msg, ]
@@ -205,7 +211,7 @@ class ListFilingResource(Resource):
             print(err)
 
         # complete filing
-        response, response_code = ListFilingResource.complete_filing(business, filing, draft, payment_account_id)
+        response, response_code = ListFilingResource.complete_filing(legal_entity, filing, draft, payment_account_id)
         if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
             return response, response_code
 
@@ -220,7 +226,7 @@ class ListFilingResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def delete(identifier, filing_id=None):  # pylint: disable=too-many-branches
-        """Delete a filing from the business."""
+        """Delete a filing from the LegalEntity."""
         if not filing_id:
             return ({'message':
                      _('No filing id provided for:') + identifier},
@@ -235,7 +241,7 @@ class ListFilingResource(Resource):
         if identifier.startswith('T'):
             filing = Filing.get_temp_reg_filing(identifier, filing_id)
         else:
-            filing = Business.get_filing_by_id(identifier, filing_id)
+            filing = LegalEntity.get_filing_by_id(identifier, filing_id)
 
         if not filing:
             return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
@@ -289,11 +295,11 @@ class ListFilingResource(Resource):
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):
-        business = Business.find_by_identifier(identifier)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
         if (filing.status == Filing.Status.DRAFT.value and
                 filing.filing_type == 'alteration' and
-                business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
-                                                            Business.UNLIMITED_COMPANIES)]):
+                legal_entity.entity_type in [lt.value for lt in (LegalEntity.LIMITED_COMPANIES +
+                                                                 LegalEntity.UNLIMITED_COMPANIES)]):
             response = jsonify({
                 'message': _('You must complete this alteration filing to become a BC Benefit Company.')
             }), HTTPStatus.UNAUTHORIZED
@@ -327,7 +333,7 @@ class ListFilingResource(Resource):
 
             filing = q.one_or_none()
         else:
-            filing = Business.get_filing_by_id(identifier, filing_id)
+            filing = LegalEntity.get_filing_by_id(identifier, filing_id)
 
         if not filing:
             return jsonify({'message': ('Filing Not Found.')}), \
@@ -369,14 +375,14 @@ class ListFilingResource(Resource):
                     namex.update_nr_as_future_effective(nr_response.json(), effective_date)
 
     @staticmethod
-    def complete_filing(business, filing, draft, payment_account_id) -> Tuple[dict, int]:
+    def complete_filing(legal_entity, filing, draft, payment_account_id) -> Tuple[dict, int]:
         """Complete the filing, either to COLIN or by getting an invoice.
 
         Used for encapsulation of common functionality used in Filing and Business endpoints.
         """
         # if filing is from COLIN, place on queue and return
         if filing.source == Filing.Source.COLIN.value:
-            err_msg, err_code = ListFilingResource._process_colin_filing(business.identifier, filing, business)
+            err_msg, err_code = ListFilingResource._process_colin_filing(legal_entity.identifier, filing, legal_entity)
             return jsonify(err_msg), err_code
 
         # create invoice
@@ -384,8 +390,8 @@ class ListFilingResource(Resource):
             # Check if this is an nr and update as needed
             ListFilingResource._check_and_update_nr(filing)
 
-            filing_types = ListFilingResource._get_filing_types(business, filing.filing_json)
-            pay_msg, pay_code = ListFilingResource._create_invoice(business,
+            filing_types = ListFilingResource._get_filing_types(legal_entity, filing.filing_json)
+            pay_msg, pay_code = ListFilingResource._create_invoice(legal_entity,
                                                                    filing,
                                                                    filing_types,
                                                                    jwt,
@@ -394,13 +400,13 @@ class ListFilingResource(Resource):
                 reply = filing.json
                 reply['errors'] = [pay_msg, ]
                 return jsonify(reply), pay_code
-            ListFilingResource._set_effective_date(business, filing)
+            ListFilingResource._set_effective_date(legal_entity, filing)
             return pay_msg, pay_code
 
         return None, None
 
     @staticmethod
-    def _put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
+    def _put_basic_checks(identifier, filing_id, client_request, legal_entity) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -420,26 +426,26 @@ class ListFilingResource(Resource):
         if filing_type not in [
             Filing.FILINGS['incorporationApplication']['name'],
             Filing.FILINGS['registration']['name']
-        ] and business is None:
+        ] and legal_entity is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         return None, None
 
     @staticmethod
     def _check_authorization(identifier, filing_json: dict,
-                             business: Business,
+                             legal_entity: LegalEntity,
                              filing_id: int = None) -> Tuple[dict, int]:
         filing_type = filing_json['filing']['header'].get('name')
         filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
 
         # While filing IA business object will be None. Setting default values in that case.
-        state = business.state if business else Business.State.ACTIVE
+        state = legal_entity.state if legal_entity else LegalEntity.State.ACTIVE
         # for incorporationApplication and registration, get legalType from nameRequest
-        legal_type = business.legal_type if business else \
+        legal_type = legal_entity.entity_type if legal_entity else \
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
 
         if not authorized(identifier, jwt, action=['edit']) or \
-                not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing_id):
+                not is_allowed(legal_entity, state, filing_type, legal_type, jwt, filing_sub_type, filing_id):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -447,12 +453,12 @@ class ListFilingResource(Resource):
         return None, None
 
     @staticmethod
-    def _is_before_epoch_filing(filing_json: str, business: Business):
-        if not business or not filing_json:
+    def _is_before_epoch_filing(filing_json: str, legal_entity: LegalEntity):
+        if not legal_entity or not filing_json:
             return False
-        epoch_filing = Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+        epoch_filing = Filing.get_filings_by_status(legal_entity_id=legal_entity.id, status=[Filing.Status.EPOCH.value])
         if len(epoch_filing) != 1:
-            current_app.logger.error('Business:%s either none or too many epoch filings', business.identifier)
+            current_app.logger.error('Business:%s either none or too many epoch filings', legal_entity.identifier)
             return False
         filing_date = datetime.datetime.fromisoformat(
             filing_json['filing']['header']['date']).replace(tzinfo=datetime.timezone.utc)
@@ -468,17 +474,17 @@ class ListFilingResource(Resource):
         return False
 
     @staticmethod
-    def _process_colin_filing(identifier: str, filing: Filing, business: Business) -> Tuple[dict, int]:
+    def _process_colin_filing(identifier: str, filing: Filing, legal_entity: LegalEntity) -> Tuple[dict, int]:
         try:
             if not filing.colin_event_ids:
                 raise KeyError
 
             if (epoch_filing :=
-                    Filing.get_filings_by_status(business_id=business.id, status=[Filing.Status.EPOCH.value])
+                    Filing.get_filings_by_status(legal_entity_id=legal_entity.id, status=[Filing.Status.EPOCH.value])
                 ) and \
-                    ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
+                    ListFilingResource._is_before_epoch_filing(filing.filing_json, legal_entity):
                 filing.transaction_id = epoch_filing[0].transaction_id
-                filing.set_processed(business.legal_type)
+                filing.set_processed(legal_entity.entity_type)
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
@@ -497,13 +503,13 @@ class ListFilingResource(Resource):
     def _save_filing(client_request: LocalProxy,  # pylint: disable=too-many-return-statements,too-many-branches
                      business_identifier: str,
                      user: User,
-                     filing_id: int) -> Tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
+                     filing_id: int) -> Tuple[Union[LegalEntity, RegistrationBootstrap], Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
 
         Returns: {
-            Business: business model object found for the identifier provided
+            legal_entity: LegalEntity model object found for the identifier provided
             Filing: filing model object for the submitted filing
             dict: a dict of errors
             int: the HTTPStatus error code
@@ -520,7 +526,7 @@ class ListFilingResource(Resource):
         if business_identifier.startswith('T'):
             # bootstrap filing
             bootstrap = RegistrationBootstrap.find_by_identifier(business_identifier)
-            business = None
+            legal_entity = None
             if not bootstrap:
                 return None, None, {'message':
                                     f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
@@ -542,15 +548,15 @@ class ListFilingResource(Resource):
 
         else:
             # regular filing for a business
-            business = Business.find_by_identifier(business_identifier)
-            if not business:
+            legal_entity = LegalEntity.find_by_identifier(business_identifier)
+            if not legal_entity:
                 return None, None, {'message':
                                     f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
 
             if client_request.method == 'PUT':
-                rv = db.session.query(Business, Filing). \
-                    filter(Business.id == Filing.business_id). \
-                    filter(Business.identifier == business_identifier). \
+                rv = db.session.query(LegalEntity, Filing). \
+                    filter(LegalEntity.id == Filing.legal_entity_id). \
+                    filter(legal_entity.identifier == business_identifier). \
                     filter(Filing.id == filing_id). \
                     one_or_none()
                 if not rv:
@@ -559,7 +565,7 @@ class ListFilingResource(Resource):
                 filing = rv[1]
             else:
                 filing = Filing()
-                filing.business_id = business.id
+                filing.legal_entity_id = legal_entity.id
 
         try:
             filing.submitter_id = user.id
@@ -574,7 +580,7 @@ class ListFilingResource(Resource):
                         filing.colin_event_ids.append(colin_event_id)
                 except KeyError:
                     current_app.logger.error('Business:%s missing filing/header values, unable to save',
-                                             business.identifier)
+                                             legal_entity.identifier)
                     return None, None, {'message': 'missing filing/header values'}, HTTPStatus.BAD_REQUEST
             else:
                 filing.filing_date = datetime.datetime.utcnow()
@@ -588,7 +594,7 @@ class ListFilingResource(Resource):
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
-        return business or bootstrap, filing, None, None
+        return legal_entity or bootstrap, filing, None, None
 
     @staticmethod
     def _validate_filing_json(client_request: LocalProxy) -> Tuple[dict, int]:
@@ -610,7 +616,7 @@ class ListFilingResource(Resource):
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def _get_legal_type(filing_type: str, filing_json: dict, business: Business):
+    def _get_legal_type(filing_type: str, filing_json: dict, legal_entity: LegalEntity):
         """Get the legal type from a filing."""
         if filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
@@ -618,10 +624,10 @@ class ListFilingResource(Resource):
         ):
             return filing_json['filing'][filing_type]['nameRequest']['legalType']
 
-        return business.legal_type
+        return legal_entity.entity_type
 
     @staticmethod
-    def _get_filing_types(business: Business, filing_json: dict):
+    def _get_filing_types(legal_entity: LegalEntity, filing_json: dict):
         # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
@@ -632,7 +638,7 @@ class ListFilingResource(Resource):
         filing_types = []
         priority_flag = filing_json['filing']['header'].get('priority', False)
         filing_type = filing_json['filing']['header'].get('name', None)
-        legal_type = ListFilingResource._get_legal_type(filing_type, filing_json, business)
+        legal_type = ListFilingResource._get_legal_type(filing_type, filing_json, legal_entity)
 
         if any('correction' in x for x in filing_json['filing'].keys()):
             filing_type_code = Filing.FILINGS.get('correction', {}).get('codes', {}).get(legal_type)
@@ -650,16 +656,16 @@ class ListFilingResource(Resource):
                 'priority': priority_flag,
                 'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
             })
-            if legal_type == Business.LegalTypes.COOP.value:
+            if legal_type == LegalEntity.EntityTypes.COOP.value:
                 filing_type_code =\
-                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(LegalEntity.EntityTypes.COOP.value)
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'priority': priority_flag,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
                 })
                 filing_type_code =\
-                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(LegalEntity.EntityTypes.COOP.value)
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'waiveFees': filing_json['filing']['header'].get('waiveFees', False)
@@ -709,8 +715,9 @@ class ListFilingResource(Resource):
                     })
         return filing_types
 
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     @staticmethod
-    def _create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def _create_invoice(legal_entity: LegalEntity,
                         filing: Filing,
                         filing_types: list,
                         user_jwt: JwtManager,
@@ -738,23 +745,23 @@ class ListFilingResource(Resource):
                     filing.json['filing']['registration']['offices']['businessOffice']['mailingAddress'])
 
             corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
-                'legalType', Business.LegalTypes.BCOMP.value)
+                'legalType', LegalEntity.EntityTypes.BCOMP.value)
 
             try:
-                business.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
+                legal_entity.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
-                business.legal_name = business.identifier
+                legal_entity.legal_name = legal_entity.identifier
 
         else:
-            mailing_address = business.mailing_address.one_or_none()
-            corp_type = business.legal_type if business.legal_type else \
+            mailing_address = legal_entity.office_mailing_address.one_or_none()
+            corp_type = legal_entity.entity_type if legal_entity.entity_type else \
                 filing.json['filing']['business'].get('legalType')
 
         payload = {
             'businessInfo': {
-                'businessIdentifier': f'{business.identifier}',
+                'businessIdentifier': f'{legal_entity.identifier}',
                 'corpType': f'{corp_type}',
-                'businessName': f'{business.legal_name}',
+                'businessName': f'{legal_entity.legal_name}',
                 'contactInfo': {'city': mailing_address.city,
                                 'postalCode': mailing_address.postal_code,
                                 'province': mailing_address.region,
@@ -800,7 +807,8 @@ class ListFilingResource(Resource):
                                headers=headers,
                                timeout=20.0)
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
-            current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
+            current_app.logger.error(f'Payment connection failure for {legal_entity.identifier}: filing:{filing.id}',
+                                     err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
@@ -824,7 +832,7 @@ class ListFilingResource(Resource):
         return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
     @staticmethod
-    def _set_effective_date(business: Business, filing: Filing):
+    def _set_effective_date(legal_entity: LegalEntity, filing: Filing):
         filing_type = filing.filing_json['filing']['header']['name']
         if filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
@@ -835,7 +843,7 @@ class ListFilingResource(Resource):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)
                 filing.save()
 
-        elif business.legal_type != Business.LegalTypes.COOP.value:
+        elif legal_entity.entity_type != LegalEntity.EntityTypes.COOP.value:
             if filing_type == 'changeOfAddress':
                 effective_date = LegislationDatetime.tomorrow_midnight()
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
@@ -870,15 +878,16 @@ class InternalFilings(Resource):
             pending_filings = Filing.get_completed_filings_for_colin()
             for filing in pending_filings:
                 filing_json = filing.filing_json
-                business = Business.find_by_internal_id(filing.business_id)
+                legal_entity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
                 if filing_json and filing.filing_type != 'lear_epoch' and \
-                        (filing.filing_type != 'correction' or business.legal_type != business.LegalTypes.COOP.value):
+                        (filing.filing_type != 'correction' or
+                         legal_entity.entity_type != LegalEntity.EntityTypes.COOP.value):
                     filing_json['filingId'] = filing.id
                     filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                     if not filing_json['filing'].get('business'):
-                        filing_json['filing']['business'] = business.json()
+                        filing_json['filing']['business'] = legal_entity.json()
                     elif not filing_json['filing']['business'].get('legalName'):
-                        filing_json['filing']['business']['legalName'] = business.legal_name
+                        filing_json['filing']['business']['legalName'] = legal_entity.legal_name
                     if filing.filing_type == 'correction':
                         colin_ids = \
                             ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])

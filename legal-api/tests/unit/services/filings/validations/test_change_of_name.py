@@ -20,9 +20,9 @@ import pytest
 from registry_schemas.example_data import CHANGE_OF_NAME, FILING_HEADER
 
 from legal_api.services import NameXService
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.change_of_name import validate
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 class MockResponse:
     def __init__(self, json_data, status_code):
@@ -43,7 +43,7 @@ class MockResponse:
 def test_validate(session, test_name, resolution, identifier, expected_code):
     """Assert that a CoN can be validated."""
     # setup
-    business = Business(identifier=identifier)
+    legal_entity =LegalEntity(identifier=identifier)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['changeOfName'] = copy.deepcopy(CHANGE_OF_NAME)
@@ -53,7 +53,7 @@ def test_validate(session, test_name, resolution, identifier, expected_code):
         del filing['filing']['changeOfName']['legalName']
 
     # perform test
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     # validate outcomes
     if expected_code:
@@ -66,13 +66,13 @@ TEST_DATA = [
     (True, 'wrong_name-CP1234568', 'CP', 'XCLP', False, 1),
     (False, 'legal_name-CP1234568', 'CP', 'XCLP', True, 1)
 ]
-@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', TEST_DATA)
-def test_validate_nr(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
+@pytest.mark.parametrize('use_nr, new_name, entity_type, nr_type, should_pass, num_errors', TEST_DATA)
+def test_validate_nr(session, use_nr, new_name, entity_type, nr_type, should_pass, num_errors):
     """Assert that a CoN can be validated."""
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     CHANGE_OF_NAME = {
         'legalName': 'My New Entity Name',
@@ -103,10 +103,10 @@ def test_validate_nr(session, use_nr, new_name, legal_type, nr_type, should_pass
         nr_response = MockResponse(nr_json, 200)
 
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-            err = validate(business, filing)
+            err = validate(legal_entity, filing)
     else:
         del filing['filing']['changeOfName']['nameRequest']
-        err = validate(business, filing)
+        err = validate(legal_entity, filing)
 
     if err:
         print(err.msg)

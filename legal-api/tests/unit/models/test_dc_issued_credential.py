@@ -19,7 +19,7 @@ Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 
 from legal_api.models import DCIssuedCredential
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
 
@@ -56,13 +56,13 @@ def test_find_by(session):
     assert res[0].id == issued_credential.id
 
 
-def create_dc_issued_credential(business=None):
+def create_dc_issued_credential(legal_entity=None):
     """Create new dc_issued_credential object."""
-    if not business:
+    if not legal_entity:
         identifier = 'FM1234567'
-        business = factory_business(identifier)
+        legal_entity =factory_legal_entity(identifier)
     definition = create_dc_definition()
-    connection = create_dc_connection(business, is_active=True)
+    connection = create_dc_connection(legal_entity, is_active=True)
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,

@@ -23,13 +23,13 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import ShareClass, ShareSeries
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_valid_share_series_save(session):
     """Assert that a valid share series can be saved."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -39,7 +39,7 @@ def test_valid_share_series_save(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_series_1 = ShareSeries(
         name='Share Series 1',
@@ -65,7 +65,7 @@ def test_valid_share_series_save(session):
 def test_share_series_json(session):
     """Assert the json format of share series."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -75,7 +75,7 @@ def test_share_series_json(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_series_1 = ShareSeries(
         name='Share Series 1',
@@ -114,7 +114,7 @@ def test_share_series_json(session):
 def test_invalid_share_quantity(session):
     """Assert that model validates share series share quantity."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -124,7 +124,7 @@ def test_invalid_share_quantity(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_series_1 = ShareSeries(
         name='Share Series 1',
@@ -148,7 +148,7 @@ def test_invalid_share_quantity(session):
 def test_validate_share_quantity_not_exceed_class_value(session):
     """Assert that model validates share series share quantity."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -158,7 +158,7 @@ def test_validate_share_quantity_not_exceed_class_value(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_series_1 = ShareSeries(
         name='Share Series 1',
@@ -182,7 +182,7 @@ def test_validate_share_quantity_not_exceed_class_value(session):
 def test_share_quantity_when_no_max_share_for_parent(session):
     """Assert that model validates share series share quantity."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -192,7 +192,7 @@ def test_share_quantity_when_no_max_share_for_parent(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_series_1 = ShareSeries(
         name='Share Series 1',

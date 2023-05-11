@@ -43,15 +43,15 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.core import Filing, FilingMeta, FILINGS
-from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
+from legal_api.models import LegalEntity, Comment, Filing as FilingStorage, UserRoles
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
 from tests.unit.core.test_filing_ledger import load_ledger
 from tests.unit.models import (  # noqa:E501,I001
-    factory_business,
-    factory_business_mailing_address,
+    factory_legal_entity,
+    factory_legal_entity_mailing_address,
     factory_completed_filing,
     factory_filing,
     factory_user,
@@ -63,7 +63,7 @@ def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -88,7 +88,7 @@ def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
     identifier = 'CP7654321'
 
     # create business
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
 
     # add 3 filings, add a year onto the AGM date
     for i in range(0, 3):
@@ -108,8 +108,8 @@ def test_ledger_search(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(FILINGS.keys()))
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
-    num_of_files = load_ledger(business, founding_date)
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+    num_of_files = load_ledger(legal_entity, founding_date)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
@@ -142,17 +142,17 @@ def test_ledger_search(session, client, jwt):
 #  Check elements of the ledger search
 ###
 
-def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling') -> Tuple[Business, FilingStorage]:
+def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling') -> Tuple[LegalEntity, FilingStorage]:
     """Render common setup for the element tests."""
     founding_date = datetime.utcnow()
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
-    return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+    return legal_entity, ledger_element_setup_filing(legal_entity, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
 
 
-def ledger_element_setup_filing(business, filing_name, filing_date, filing_dict=None):
+def ledger_element_setup_filing(legal_entity, filing_name, filing_date, filing_dict=None):
     filing = filing_dict or copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = filing_name
-    f = factory_completed_filing(business, filing, filing_date=filing_date)
+    f = factory_completed_filing(legal_entity, filing, filing_date=filing_date)
     return f
 
 
@@ -161,7 +161,7 @@ def test_ledger_comment_count(session, client, jwt):
     # setup
     identifier = 'BC1234567'
     number_of_comments = 10
-    business, filing_storage = ledger_element_setup_help(identifier)
+    _, filing_storage = ledger_element_setup_help(identifier)
     for c in range(number_of_comments):
         comment = Comment()
         comment.comment = f'this comment {c}'
@@ -195,7 +195,7 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
     """Assert that the ledger returns court_order values."""
     # setup
     identifier = 'BC1234567'
-    business, filing_storage = ledger_element_setup_help(identifier)
+    _, filing_storage = ledger_element_setup_help(identifier)
 
     filing_storage.court_order_file_number = file_number
     filing_storage.court_order_date = order_date
@@ -230,7 +230,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     }}
     meta_data = {**{'applicationDate': today}, **annual_report_meta}
 
-    business, filing_storage = ledger_element_setup_help(identifier, 'annualReport')
+    _, filing_storage = ledger_element_setup_help(identifier, 'annualReport')
     filing_storage._meta_data = meta_data
     filing_storage.save()
 
@@ -251,7 +251,7 @@ def test_ledger_display_unknown_name(session, client, jwt):
     identifier = 'BC1234567'
     meta_data = {'applicationDate': None}
 
-    business, filing_storage = ledger_element_setup_help(identifier, 'someAncientNamedReport')
+    _, filing_storage = ledger_element_setup_help(identifier, 'someAncientNamedReport')
     filing_storage._meta_data = meta_data
     filing_storage.save()
 
@@ -277,7 +277,7 @@ def test_ledger_display_alteration_report(session, client, jwt):
     }}
     meta_data = {**{'applicationDate': today}, **alteration_meta}
 
-    business, filing_storage = ledger_element_setup_help(identifier, 'alteration')
+    _, filing_storage = ledger_element_setup_help(identifier, 'alteration')
     filing_storage._meta_data = meta_data
     filing_storage.save()
 
@@ -307,9 +307,9 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     filing_name = 'restoration'
     business_name = 'Skinners Fine Saves'
 
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
-    business.legal_name = business_name
-    business.save()
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
+    legal_entity.legal_name = business_name
+    legal_entity.save()
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'].pop('business')
@@ -317,7 +317,7 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     filing['filing'][filing_name] = copy.deepcopy(RESTORATION)
     filing['filing']['restoration']['type'] = restoration_type
 
-    factory_completed_filing(business, filing, filing_date=filing_date)
+    factory_completed_filing(legal_entity, filing, filing_date=filing_date)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
@@ -330,11 +330,11 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
 
 
 @pytest.mark.parametrize('test_name,entity_type,expected_display_name', [
-    ('CP', Business.LegalTypes.COOP.value, 'Incorporation Application'),
-    ('BEN', Business.LegalTypes.BCOMP.value, 'BC Benefit Company Incorporation Application'),
-    ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC Unlimited Liability Company Incorporation Application'),
-    ('CC', Business.LegalTypes.BC_CCC.value, 'BC Community Contribution Company Incorporation Application'),
-    ('BC', Business.LegalTypes.COMP.value, 'BC Limited Company Incorporation Application'),
+    ('CP', LegalEntity.EntityTypes.COOP.value, 'Incorporation Application'),
+    ('BEN', LegalEntity.EntityTypes.BCOMP.value, 'BC Benefit Company Incorporation Application'),
+    ('ULC', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC Unlimited Liability Company Incorporation Application'),
+    ('CC', LegalEntity.EntityTypes.BC_CCC.value, 'BC Community Contribution Company Incorporation Application'),
+    ('BC', LegalEntity.EntityTypes.COMP.value, 'BC Limited Company Incorporation Application'),
 ])
 def test_ledger_display_incorporation(session, client, jwt, test_name, entity_type, expected_display_name):
     """Assert that the ledger returns the correct number of comments."""
@@ -346,9 +346,9 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
     filing_name = 'incorporationApplication'
     business_name = 'The Truffle House'
 
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-    business.legal_name = business_name
-    business.save()
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
+    legal_entity.legal_name = business_name
+    legal_entity.save()
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'].pop('business')
@@ -358,7 +358,7 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
     filing['filing'][filing_name]['nameRequest']['legalType'] = entity_type
     filing['filing'][filing_name]['legalName'] = business_name
 
-    f = factory_completed_filing(business, filing, filing_date=filing_date)
+    f = factory_completed_filing(legal_entity, filing, filing_date=filing_date)
     today = filing_date.isoformat()
     ia_meta = {'legalFilings': [filing_name, ],
                filing_name: {'nrNumber': nr_number,
@@ -379,8 +379,8 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
-    business, original = ledger_element_setup_help(identifier, 'incorporationApplication')
-    correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
+    legal_entity, original = ledger_element_setup_help(identifier, 'incorporationApplication')
+    correction = ledger_element_setup_filing(legal_entity, 'correction', filing_date=legal_entity.founding_date + datedelta.datedelta(months=3))
     original.parent_filing_id = correction.id
     original.save()
 
@@ -403,13 +403,13 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
-    business, original = ledger_element_setup_help(identifier, 'annualReport')
+    legal_entity, original = ledger_element_setup_help(identifier, 'annualReport')
     ar_correction = copy.deepcopy(CORRECTION_AR)
     ar_correction['filing']['correction']['correctedFilingId'] = original.id
     correction = ledger_element_setup_filing(
-        business,
+        legal_entity,
         'correction',
-        filing_date=business.founding_date + datedelta.datedelta(months=3),
+        filing_date=legal_entity.founding_date + datedelta.datedelta(months=3),
         filing_dict=ar_correction)
     original.parent_filing_id = correction.id
     original.save()
@@ -455,11 +455,11 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
         identifier = 'BC1234567'
         founding_date = datetime.utcnow()
         business_name = 'The Truffle House'
-        entity_type = Business.LegalTypes.BCOMP.value
+        entity_type = LegalEntity.EntityTypes.BCOMP.value
 
-        business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-        business.legal_name = business_name
-        business.save()
+        legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
+        legal_entity.legal_name = business_name
+        legal_entity.save()
 
         filing_name = 'specialResolution'
         filing_date = founding_date
@@ -473,7 +473,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
                     'resolution': 'Year challenge is hitting oppo for the win.'
                 }}}
         user = factory_user(username, firstname, lastname)
-        new_filing = factory_completed_filing(business, filing_submission, filing_date=filing_date)
+        new_filing = factory_completed_filing(legal_entity, filing_submission, filing_date=filing_date)
         new_filing.submitter_id = user.id
         new_filing.submitter_roles = submitter_role
         setattr(new_filing, 'skip_status_listener', True)  # skip status listener

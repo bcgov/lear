@@ -112,10 +112,10 @@ class MockResponse:
         return self.json_data
 
 
-def _mock_nr_response(legal_type):
+def _mock_nr_response(entity_type):
     return MockResponse({
         'state': 'APPROVED',
-        'legalType': legal_type,
+        'legalType': entity_type,
         'expirationDate': '',
         'names': [{
             'name': REGISTRATION['nameRequest']['legalName'],
@@ -177,8 +177,8 @@ def test_business_type_required(session):
     filing = copy.deepcopy(SP_REGISTRATION)
     del filing['filing']['registration']['businessType']
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 
@@ -198,8 +198,8 @@ def test_validate_tax_id(session, test_name, tax_id, expected):
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['business']['taxId'] = tax_id
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 
@@ -214,8 +214,8 @@ def test_naics_invalid(session):
     """Assert that naics is invalid."""
     filing = copy.deepcopy(SP_REGISTRATION)
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value={}):
             err = validate(None, filing)
 
@@ -235,8 +235,8 @@ def test_invalid_party(session, test_name, filing, expected_msg):
     """Assert that party is invalid."""
     filing['filing']['registration']['parties'] = []
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 
@@ -257,8 +257,8 @@ def test_invalid_business_address(session, test_name, filing):
     filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = 'invalid'
     filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = 'invalid'
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 
@@ -286,8 +286,8 @@ def test_validate_start_date(session, test_name, delta_date, is_valid):
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 
@@ -313,8 +313,8 @@ def test_registration_court_orders(session, test_status, file_number, effect_of_
         court_order['fileNumber'] = file_number
     filing['filing']['registration']['courtOrder'] = court_order
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+    entity_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(entity_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(None, filing)
 

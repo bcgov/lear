@@ -19,7 +19,7 @@ from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services import namex
 from legal_api.services.utils import get_bool, get_str
 
@@ -31,9 +31,9 @@ from .common_validations import (
 )
 
 
-def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
+def validate(legal_entity: LegalEntity, filing: Dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
-    if not business or not filing:
+    if not legal_entity or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
@@ -109,11 +109,11 @@ def company_name_validation(filing):
         # ensure legalType is valid
         legal_type_path: Final = '/filing/business/legalType'
         if get_str(filing, legal_type_path) not in \
-                (Business.LegalTypes.BC_ULC_COMPANY.value,
-                 Business.LegalTypes.BC_CCC.value,
-                 Business.LegalTypes.COMP.value,
-                 Business.LegalTypes.BCOMP.value,
-                 Business.LegalTypes.COOP.value):
+                (LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+                 LegalEntity.EntityTypes.BC_CCC.value,
+                 LegalEntity.EntityTypes.COMP.value,
+                 LegalEntity.EntityTypes.BCOMP.value,
+                 LegalEntity.EntityTypes.COOP.value):
             msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
 
         # ensure company is named if being altered to numbered
@@ -130,11 +130,11 @@ def type_change_validation(filing):
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
     # you must alter to a bc benefit company or a COOP
-    if get_str(filing, legal_type_path) not in (Business.LegalTypes.BCOMP.value,
-                                                Business.LegalTypes.COOP.value,
-                                                Business.LegalTypes.BC_ULC_COMPANY.value,
-                                                Business.LegalTypes.COMP.value,
-                                                Business.LegalTypes.BC_CCC.value):
+    if get_str(filing, legal_type_path) not in (LegalEntity.EntityTypes.BCOMP.value,
+                                                LegalEntity.EntityTypes.COOP.value,
+                                                LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+                                                LegalEntity.EntityTypes.COMP.value,
+                                                LegalEntity.EntityTypes.BC_CCC.value):
         error_msg = """Your business type has not been updated to a BC Benefit Company,
                        BC Unlimited Liability Company, BC Community Contribution Company,
                        BC Limited Company or BC Cooperative Association."""

@@ -19,11 +19,11 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from freezegun import freeze_time
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.annual_report import validate_ar_year
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 @pytest.mark.parametrize('test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg', [
@@ -58,12 +58,12 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
     """Assert that ARs filing/annualReport/annualReportDate is valid."""
     # setup
     identifier = 'CP1234567'
-    business = Business(identifier=identifier, last_ledger_timestamp=previous_ar_date)
-    business.founding_date = datetime.fromisoformat(founding_date)
+    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=previous_ar_date)
+    legal_entity.founding_date = datetime.fromisoformat(founding_date)
 
     if previous_ar_date:
-        business.last_ar_date = datetime.fromisoformat(previous_ar_date)
-        business.last_ar_year = datetime.fromisoformat(previous_ar_date).year
+        legal_entity.last_ar_date = datetime.fromisoformat(previous_ar_date)
+        legal_entity.last_ar_year = datetime.fromisoformat(previous_ar_date).year
 
     previous_ar = copy.deepcopy(ANNUAL_REPORT)
     current_ar = copy.deepcopy(previous_ar)
@@ -72,7 +72,7 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
 
     # Test it
     with app.app_context():
-        err = validate_ar_year(business=business,
+        err = validate_ar_year(legal_entity=legal_entity,
                                current_annual_report=current_ar)
     # Validate the outcome
     if not expected_code and not err:
@@ -83,71 +83,71 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
 
 
 @pytest.mark.parametrize(
-    'test_name, founding_date, previous_ar_date, legal_type, expected_ar_min_date,' +
+    'test_name, founding_date, previous_ar_date, entity_type, expected_ar_min_date,' +
     'expected_ar_max_date, previous_ar_year, next_year, today',
     [
-        ('BEN first AR', '2011-06-29', None, Business.LegalTypes.BCOMP.value,
+        ('BEN first AR', '2011-06-29', None, LegalEntity.EntityTypes.BCOMP.value,
          '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('BEN last AR filed', '1900-07-01', '2011-07-03', Business.LegalTypes.BCOMP.value,
+        ('BEN last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BCOMP.value,
          '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('BEN max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', Business.LegalTypes.BCOMP.value,
+        ('BEN max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.BCOMP.value,
          '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('BEN 2021', '1900-06-01', '2020-07-03', Business.LegalTypes.BCOMP.value,
+        ('BEN 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BCOMP.value,
          '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
 
-        ('BC first AR', '2011-06-29', None, Business.LegalTypes.COMP.value,
+        ('BC first AR', '2011-06-29', None, LegalEntity.EntityTypes.COMP.value,
          '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('BC last AR filed', '1900-07-01', '2011-07-03', Business.LegalTypes.COMP.value,
+        ('BC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.COMP.value,
          '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('BC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', Business.LegalTypes.COMP.value,
+        ('BC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.COMP.value,
          '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('BC 2021', '1900-06-01', '2020-07-03', Business.LegalTypes.COMP.value,
+        ('BC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.COMP.value,
          '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
 
-        ('ULC first AR', '2011-06-29', None, Business.LegalTypes.BC_ULC_COMPANY.value,
+        ('ULC first AR', '2011-06-29', None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
          '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('ULC last AR filed', '1900-07-01', '2011-07-03', Business.LegalTypes.BC_ULC_COMPANY.value,
+        ('ULC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
          '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
         ('ULC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03',
-         Business.LegalTypes.BC_ULC_COMPANY.value, '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('ULC 2021', '1900-06-01', '2020-07-03', Business.LegalTypes.BC_ULC_COMPANY.value,
+         LegalEntity.EntityTypes.BC_ULC_COMPANY.value, '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
+        ('ULC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
          '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
 
-        ('CC first AR', '2011-06-29', None, Business.LegalTypes.BC_CCC.value,
+        ('CC first AR', '2011-06-29', None, LegalEntity.EntityTypes.BC_CCC.value,
          '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('CC last AR filed', '1900-07-01', '2011-07-03', Business.LegalTypes.BC_CCC.value,
+        ('CC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BC_CCC.value,
          '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('CC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', Business.LegalTypes.BC_CCC.value,
+        ('CC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.BC_CCC.value,
          '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('CC 2021', '1900-06-01', '2020-07-03', Business.LegalTypes.BC_CCC.value,
+        ('CC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BC_CCC.value,
          '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
 
-        ('COOP first AR', '2011-01-01', None, Business.LegalTypes.COOP.value,
+        ('COOP first AR', '2011-01-01', None, LegalEntity.EntityTypes.COOP.value,
          '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'),
-        ('COOP founded in the end of the year', '2011-12-31', None, Business.LegalTypes.COOP.value,
+        ('COOP founded in the end of the year', '2011-12-31', None, LegalEntity.EntityTypes.COOP.value,
          '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'),
-        ('COOP AR for 2021', '1900-07-01', '2020-07-03', Business.LegalTypes.COOP.value,
+        ('COOP AR for 2021', '1900-07-01', '2020-07-03', LegalEntity.EntityTypes.COOP.value,
          '2021-01-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-        ('COOP AR for 2020 (covid extension)', '1900-07-01', '2019-07-03', Business.LegalTypes.COOP.value,
+        ('COOP AR for 2020 (covid extension)', '1900-07-01', '2019-07-03', LegalEntity.EntityTypes.COOP.value,
          '2020-01-01', '2021-10-31', 2019, 2020, '2022-07-14'),
         ('COOP AR for 2020 (covid extension, max date equals today = 2021-07-14)', '1900-07-01', '2019-07-03',
-         Business.LegalTypes.COOP.value, '2020-01-01', '2021-07-14', 2019, 2020, '2021-07-14'),
-        ('COOP founded in 2019 (covid extension)', '2019-07-01', None, Business.LegalTypes.COOP.value,
+         LegalEntity.EntityTypes.COOP.value, '2020-01-01', '2021-07-14', 2019, 2020, '2021-07-14'),
+        ('COOP founded in 2019 (covid extension)', '2019-07-01', None, LegalEntity.EntityTypes.COOP.value,
          '2020-01-01', '2021-10-31', None, 2020, '2022-07-14'),
     ])
 def test_ar_dates(
-        app, session, test_name, founding_date, previous_ar_date, legal_type, expected_ar_min_date,
+        app, session, test_name, founding_date, previous_ar_date, entity_type, expected_ar_min_date,
         expected_ar_max_date, previous_ar_year, next_year, today):
     """Assert min and max dates for Annual Report are correct."""
     now = datetime.fromisoformat(today)
     with freeze_time(now):
         # setup
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
-        business = factory_business('CP1234567',
+        legal_entity =factory_legal_entity('CP1234567',
                                     datetime.fromisoformat(founding_date),
                                     previous_ar_datetime,
-                                    legal_type)
-        ar_min_date, ar_max_date = business.get_ar_dates(next_year)
+                                    entity_type)
+        ar_min_date, ar_max_date = legal_entity.get_ar_dates(next_year)
 
         assert ar_min_date.isoformat() == expected_ar_min_date
         assert ar_max_date.isoformat() == expected_ar_max_date

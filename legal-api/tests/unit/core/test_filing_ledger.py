@@ -20,14 +20,14 @@ import pytest
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Comment, Filing, UserRoles
+from legal_api.models import LegalEntity, Comment, Filing, UserRoles
 from legal_api.models.user import UserRoles
 from legal_api.utils.datetime import datetime
-from tests.unit.models import factory_business, factory_completed_filing, factory_user
+from tests.unit.models import factory_legal_entity, factory_completed_filing, factory_user
 from tests.unit.services.utils import helper_create_jwt
 
 
-def load_ledger(business, founding_date):
+def load_ledger(legal_entity, founding_date):
     """Create a ledger of all filing types."""
     i = 0
     for k, filing_meta in Filing.FILINGS.items():
@@ -39,7 +39,7 @@ def load_ledger(business, founding_date):
         elif filing_meta['name'] == 'dissolution':
             filing['filing']['dissolution'] = {}
             filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
-        f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
+        f = factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()
             comment.comment = f'this comment {c}'
@@ -54,11 +54,11 @@ def test_simple_ledger_search(session):
     # setup
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
-    num_of_files = load_ledger(business, founding_date)
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+    num_of_files = load_ledger(legal_entity, founding_date)
 
     # test
-    ledger = CoreFiling.ledger(business.id)
+    ledger = CoreFiling.ledger(legal_entity.id)
 
     # Did we get the full set
     assert len(ledger) == num_of_files
@@ -85,12 +85,12 @@ def test_common_ledger_items(session):
     """Assert that common ledger items works as expected."""
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
-    business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None,
-                                entity_type=Business.LegalTypes.BCOMP.value)
+    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None,
+                                entity_type=LegalEntity.EntityTypes.BCOMP.value)
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'Involuntary Dissolution'
     completed_filing = \
-        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+        factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
     assert common_ledger_items['documentsLink'] is None
 
@@ -98,6 +98,6 @@ def test_common_ledger_items(session):
     filing['filing']['dissolution'] = {}
     filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
     completed_filing = \
-        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+        factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
     assert common_ledger_items['documentsLink'] is not None

@@ -20,16 +20,16 @@ import pycountry
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
+from legal_api.models import Address, LegalEntity, PartyRole
 
 from .common_validations import validate_court_order, validate_pdf
 from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-CORP_TYPES: Final = [Business.LegalTypes.COMP.value,
-                     Business.LegalTypes.BCOMP.value,
-                     Business.LegalTypes.BC_CCC.value,
-                     Business.LegalTypes.BC_ULC_COMPANY.value]
+CORP_TYPES: Final = [LegalEntity.EntityTypes.COMP.value,
+                     LegalEntity.EntityTypes.BCOMP.value,
+                     LegalEntity.EntityTypes.BC_CCC.value,
+                     LegalEntity.EntityTypes.BC_ULC_COMPANY.value]
 
 
 class DissolutionTypes(str, Enum):
@@ -61,9 +61,9 @@ DISSOLUTION_MAPPING = {
 }
 
 
-def validate(business: Business, dissolution: Dict) -> Optional[Error]:
+def validate(legal_entity: LegalEntity, dissolution: Dict) -> Optional[Error]:
     """Validate the dissolution filing."""
-    if not business or not dissolution:
+    if not legal_entity or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     legal_type = get_str(dissolution, '/filing/business/legalType')
@@ -118,11 +118,10 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     dissolution_type = get_str(filing_json, dissolution_type_path)
     if dissolution_type:
         # pylint: disable=too-many-boolean-expressions
-        if (legal_type == Business.LegalTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
-                or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']) \
-                or (legal_type in (
-                Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value) and dissolution_type not in
-                    DISSOLUTION_MAPPING['FIRMS']):
+        if (legal_type == LegalEntity.EntityTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING['COOP']) \
+            or (legal_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING['CORP']) \
+            or (legal_type in (LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value)
+                and dissolution_type not in DISSOLUTION_MAPPING['FIRMS']):
             msg.append({'error': _('Invalid Dissolution type.'), 'path': dissolution_type_path})
             return msg
     else:
@@ -145,7 +144,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
     dissolution_stmt_type_path = '/filing/dissolution/dissolutionStatementType'
     dissolution_stmt_type = get_str(filing_json, dissolution_stmt_type_path)
 
-    if legal_type == Business.LegalTypes.COOP.value:
+    if legal_type == LegalEntity.EntityTypes.COOP.value:
         if not dissolution_stmt_type:
             msg.append({'error': _('Dissolution statement type must be provided.'),
                         'path': dissolution_stmt_type_path})
@@ -169,7 +168,7 @@ def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optio
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         return None
 
-    if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+    if legal_type in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
         return None
 
     parties_json = filing_json['filing']['dissolution']['parties']
@@ -186,7 +185,7 @@ def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optio
     else:
         msg.append({'error': 'Dissolution party is required.', 'path': party_path})
 
-    if legal_type == Business.LegalTypes.COOP.value and address_in_ca == 0:
+    if legal_type == LegalEntity.EntityTypes.COOP.value and address_in_ca == 0:
         msg.append({'error': 'Address must be in Canada.', 'path': party_path})
     elif legal_type in CORP_TYPES and address_in_bc == 0:
         msg.append({'error': 'Address must be in BC.', 'path': party_path})
@@ -241,7 +240,7 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
         return None
 
-    if legal_type == Business.LegalTypes.COOP.value:
+    if legal_type == LegalEntity.EntityTypes.COOP.value:
         affidavit_file_key_path = '/filing/dissolution/affidavitFileKey'
         affidavit_file_key = get_str(filing_json, affidavit_file_key_path)
 

@@ -18,7 +18,7 @@ from http import HTTPStatus
 from registry_schemas.example_data import CHANGE_OF_ADDRESS, CORRECTION_COA, FILING_TEMPLATE
 
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 
 
 def test_valid_coa_correction(session):
@@ -26,11 +26,11 @@ def test_valid_coa_correction(session):
     # setup
     identifier = 'CP1234567'
     name = 'changeOfAddress'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
     coa['filing']['header']['name'] = name
     coa['filing'][name] = CHANGE_OF_ADDRESS
-    corrected_filing = factory_completed_filing(business, coa)
+    corrected_filing = factory_completed_filing(legal_entity, coa)
 
     f = copy.deepcopy(CORRECTION_COA)
     f['filing']['header']['identifier'] = identifier
@@ -38,7 +38,7 @@ def test_valid_coa_correction(session):
     f['filing'][name]['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
     f['filing'][name]['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 
@@ -51,11 +51,11 @@ def test_fail_coa_correction(session):
     # setup
     identifier = 'CP1234567'
     name = 'changeOfAddress'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
     coa['filing']['header']['name'] = name
     coa['filing'][name] = CHANGE_OF_ADDRESS
-    corrected_filing = factory_completed_filing(business, coa)
+    corrected_filing = factory_completed_filing(legal_entity, coa)
 
     f = copy.deepcopy(CORRECTION_COA)
     f['filing']['header']['identifier'] = identifier
@@ -63,7 +63,7 @@ def test_fail_coa_correction(session):
     f['filing'][name]['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'DANG'
     f['filing'][name]['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'NABBIT'
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 

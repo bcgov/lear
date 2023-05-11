@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from tests.unit.models import factory_business, factory_share_class
+from tests.unit.models import factory_legal_entity, factory_share_class
 from tests.unit.services.utils import create_header
 
 
@@ -51,7 +51,7 @@ def test_get_business_no_share_classes(session, client, jwt):
     """Assert that business share classes are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/share-classes',
@@ -80,9 +80,9 @@ def test_get_business_share_class_by_invalid_id(session, client, jwt):
     """Assert that business share class is not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class_id = 10000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/share-classes/{share_class_id}',
@@ -111,8 +111,8 @@ def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock
     """Assert that share classes are not returned for an unauthorized user."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    business.save()
+    legal_entity =factory_legal_entity(identifier)
+    legal_entity.save()
 
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 

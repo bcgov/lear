@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_restx import Resource, cors
 
-from legal_api.models import Business, PartyRole
+from legal_api.models import EntityRole, LegalEntity
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
@@ -37,9 +37,9 @@ class DirectorResource(Resource):
     @jwt.requires_auth
     def get(identifier, director_id=None):
         """Return a JSON of the directors."""
-        business = Business.find_by_identifier(identifier)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
 
-        if not business:
+        if not legal_entity:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
         # check authorization
@@ -50,7 +50,7 @@ class DirectorResource(Resource):
 
         # return the matching director
         if director_id:
-            director, msg, code = DirectorResource._get_director(business, director_id)
+            director, msg, code = DirectorResource._get_director(legal_entity, director_id)
             return jsonify(director or msg), code
 
         # return all active directors as of date query param
@@ -58,25 +58,25 @@ class DirectorResource(Resource):
             if request.args.get('date') else datetime.utcnow().date()
 
         party_list = []
-        active_directors = PartyRole.get_active_directors(business.id, end_date)
+        active_directors = EntityRole.get_active_directors(legal_entity.id, end_date)
         for director in active_directors:
             director_json = director.json
-            if business.legal_type == Business.LegalTypes.COOP.value:
+            if legal_entity.entity_type == LegalEntity.EntityTypes.COOP.value:
                 del director_json['mailingAddress']
             party_list.append(director_json)
 
         return jsonify(directors=party_list)
 
     @staticmethod
-    def _get_director(business, director_id=None):
+    def _get_director(legal_entity, director_id=None):
         # find by ID
         director = None
         if director_id:
-            rv = PartyRole.find_by_internal_id(internal_id=director_id)
+            rv = EntityRole.find_by_internal_id(internal_id=director_id)
             if rv:
                 director = {'director': rv.json}
 
         if not director:
-            return None, {'message': f'{business.identifier} director not found'}, HTTPStatus.NOT_FOUND
+            return None, {'message': f'{legal_entity.identifier} director not found'}, HTTPStatus.NOT_FOUND
 
         return director, None, HTTPStatus.OK

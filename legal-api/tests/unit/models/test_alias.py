@@ -18,17 +18,17 @@ Test-Suite to ensure that the Alias Model is working as expected.
 """
 
 from legal_api.models import Alias
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_valid_alias_save(session):
     """Assert that a valid alias can be saved."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias.save()
     assert alias.id
@@ -37,11 +37,11 @@ def test_valid_alias_save(session):
 def test_alias_json(session):
     """Assert the json format of alias."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias.save()
     alias_json = {
@@ -55,11 +55,11 @@ def test_alias_json(session):
 def test_find_alias_by_id(session):
     """Assert that the method returns correct value."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias.save()
 
@@ -72,21 +72,21 @@ def test_find_alias_by_id(session):
 def test_find_alias_by_business_and_type(session):
     """Assert that the method returns correct value."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     alias1 = Alias(
         alias='ABC Ltd.',
         type='TRANSLATION',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias2 = Alias(
         alias='DEF Ltd.',
         type='DBA',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     alias1.save()
     alias2.save()
 
-    res = Alias.find_by_type(business.id, 'TRANSLATION')
+    res = Alias.find_by_type(legal_entity.id, 'TRANSLATION')
 
     assert res
     assert len(res) == 1

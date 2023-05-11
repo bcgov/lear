@@ -17,19 +17,19 @@ from unittest.mock import patch
 import pytest
 from http import HTTPStatus
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import LegalEntity, UserRoles
 from legal_api.resources.v2 import internal_services
 from legal_api.resources.v2.internal_services import ListFilingResource
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
 def test_update_bn_move(session, client, jwt):
     """Assert that the endpoint updates tax_id."""
     identifier = 'FM0000001'
-    business = factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
-    business.tax_id = '993775204BC0001'
-    business.save()
+    legal_entity =factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+    legal_entity.tax_id = '993775204BC0001'
+    legal_entity.save()
 
     new_bn = '993777399BC0001'
     with patch.object(internal_services, 'publish_event'):
@@ -38,11 +38,11 @@ def test_update_bn_move(session, client, jwt):
             rv = client.post('/api/v2/internal/bnmove',
                              headers=create_header(jwt, [UserRoles.system], identifier),
                              json={
-                                 'oldBn': business.tax_id,
+                                 'oldBn': legal_entity.tax_id,
                                  'newBn': new_bn
                              })
             assert rv.status_code == HTTPStatus.OK
-            assert Business.find_by_tax_id(new_bn)
+            assert LegalEntity.find_by_tax_id(new_bn)
 
 
 @pytest.mark.parametrize('data', [

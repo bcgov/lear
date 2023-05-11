@@ -23,13 +23,15 @@ from flask import g, jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, User, db
+from legal_api.models import Comment, LegalEntity, User, db
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
+
+
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
@@ -45,12 +47,13 @@ class BusinessCommentResource(Resource):
     def get(identifier, comment_id=None):
         """Return a JSON object with meta information about the Service."""
         # basic checks
-        business = Business.find_by_identifier(identifier)
-        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, business, request)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
+        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, legal_entity, request)
         if err_msg:
             return jsonify(err_msg), err_code
 
-        comments = db.session.query(Comment).filter(Comment.business_id == business.id, Comment.filing_id.is_(None))
+        comments = db.session.query(Comment).filter(Comment.legal_entity_id == legal_entity.id,
+                                                    Comment.filing_id.is_(None))
 
         if comment_id:
             comment = comments.filter(Comment.id == comment_id).one_or_none()
@@ -69,10 +72,10 @@ class BusinessCommentResource(Resource):
     @cors.crossdomain(origin='*')
     @jwt.requires_auth
     def post(identifier):
-        """Create a new comment for the business."""
+        """Create a new comment for the LegalEntity."""
         # basic checks
-        business = Business.find_by_identifier(identifier)
-        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, business, request)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
+        err_msg, err_code = BusinessCommentResource._basic_checks(identifier, legal_entity, request)
         if err_msg:
             return jsonify(err_msg), err_code
 
@@ -96,7 +99,7 @@ class BusinessCommentResource(Resource):
             comment = Comment()
             comment.comment = json_input['comment']['comment']
             comment.staff_id = user.id
-            comment.business_id = business.id
+            comment.legal_entity_id = legal_entity.id
             comment.timestamp = datetime.datetime.utcnow()
             comment.save()
         except BusinessException as err:
@@ -108,14 +111,14 @@ class BusinessCommentResource(Resource):
         return jsonify(comment.json), HTTPStatus.CREATED
 
     @staticmethod
-    def _basic_checks(identifier: str, business: Business, client_request) -> Tuple[dict, int]:
+    def _basic_checks(identifier: str, legal_entity: LegalEntity, client_request) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if client_request.method == 'POST' and not json_input:
             return ({'message': f'No comment json data in body of post for {identifier}.'},
                     HTTPStatus.BAD_REQUEST)
 
-        if not business:
+        if not legal_entity:
             return ({'message': f'{identifier} not found'}, HTTPStatus.NOT_FOUND)
 
         return (None, None)

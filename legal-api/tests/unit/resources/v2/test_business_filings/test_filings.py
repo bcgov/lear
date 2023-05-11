@@ -45,7 +45,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE
 )
 
-from legal_api.models import Business, Filing, RegistrationBootstrap, UserRoles
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, UserRoles
 from legal_api.resources.v1.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
@@ -53,8 +53,8 @@ from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
 from tests.unit.models import (  # noqa:E501,I001
-    factory_business,
-    factory_business_mailing_address,
+    factory_legal_entity,
+    factory_legal_entity_mailing_address,
     factory_completed_filing,
     factory_filing,
     factory_pending_filing,
@@ -95,7 +95,7 @@ def test_get_temp_business_filing(session, client, jwt):
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
@@ -109,7 +109,7 @@ def test_get_one_business_filing_by_id(session, client, jwt):
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
     """Assert that the raw json originally submitted is returned."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}?original=true',
@@ -123,7 +123,7 @@ def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
 def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     print('test_get_one_business_filing - filing:', filings)
@@ -151,7 +151,7 @@ def test_get_empty_filings_with_invalid_business(session, client, jwt):
 def test_post_fail_if_given_filing_id(session, client, jwt):
     """Assert that a filing cannot be created against a given filing_id."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
@@ -180,7 +180,7 @@ def test_post_filing_no_business(session, client, jwt):
 def test_post_empty_annual_report_to_a_business(session, client, jwt):
     """Assert that an empty filing cannot be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=None,
@@ -199,7 +199,7 @@ def test_post_empty_annual_report_to_a_business(session, client, jwt):
 def test_post_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=ANNUAL_REPORT,
@@ -212,7 +212,7 @@ def test_post_authorized_draft_ar(session, client, jwt):
 def test_post_not_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=ANNUAL_REPORT,
@@ -225,7 +225,7 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
 def test_post_not_allowed_historical(session, client, jwt):
     """Assert that a filing is not allowed for historical business."""
     identifier = 'CP7654321'
-    factory_business(identifier, state=Business.State.HISTORICAL)
+    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ANNUAL_REPORT,
@@ -238,7 +238,7 @@ def test_post_not_allowed_historical(session, client, jwt):
 def test_post_allowed_historical(session, client, jwt):
     """Assert that a filing is allowed for historical business."""
     identifier = 'BC7654321'
-    factory_business(identifier, state=Business.State.HISTORICAL)
+    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=COURT_ORDER_FILING_TEMPLATE,
@@ -251,7 +251,7 @@ def test_post_allowed_historical(session, client, jwt):
 def test_special_resolution_sanitation(session, client, jwt):
     """Assert that script tags can't be passed into special resolution resolution field."""
     identifier = 'BC7654399'
-    factory_business(identifier, state=Business.State.ACTIVE)
+    factory_legal_entity(identifier, state=LegalEntity.State.ACTIVE)
 
     data = copy.deepcopy(FILING_HEADER)
     data['filing']['header']['name'] = 'specialResolution'
@@ -275,7 +275,7 @@ def test_special_resolution_sanitation(session, client, jwt):
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=ANNUAL_REPORT,
@@ -290,7 +290,7 @@ def test_post_draft_ar(session, client, jwt):
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier,
+    factory_legal_entity(identifier,
                      founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
@@ -313,7 +313,7 @@ def test_post_only_validate_ar(session, client, jwt):
 def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier,
+    factory_legal_entity(identifier,
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date(),
                      founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
                      )
@@ -337,7 +337,7 @@ def test_validate_filing_json_for_filing_type(session, client, jwt):
     """Assert that filing type is in filing json."""
     import copy
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header'].pop('name')
@@ -356,7 +356,7 @@ def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     import copy
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
@@ -384,7 +384,7 @@ def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
 def test_post_validate_ar_valid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    factory_business(identifier,
+    factory_legal_entity(identifier,
                      founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                      last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
@@ -410,10 +410,10 @@ def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
@@ -441,10 +441,10 @@ def test_payment_header(session, client, jwt):
     from legal_api.models import Filing
     identifier = 'CP7654321'
     payment_account = '12345'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     data = copy.deepcopy(FILING_HEADER)
     data['filing']['header']['name'] = 'specialResolution'
     data['filing']['specialResolution'] = SPECIAL_RESOLUTION
@@ -469,10 +469,10 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
@@ -507,10 +507,10 @@ def test_post_valid_ar_with_routing_slip(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
     from legal_api.models import Filing
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
@@ -536,11 +536,11 @@ def test_post_valid_ar_with_routing_slip(session, client, jwt):
 def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
     if annual_report_date > datetime.utcnow().date():
@@ -548,7 +548,7 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
-    ar['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    ar['filing']['business']['legalType'] = LegalEntity.EntityTypes.COOP.value
 
     old_svc = current_app.config.get('PAYMENT_SVC_URL')
     current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
@@ -568,10 +568,10 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
 def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, jwt):
     """Assert that cancel payment failure returns error."""
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
@@ -607,15 +607,15 @@ def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, 
 def test_update_annual_report_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header']['date'] = (datetime.utcnow().date() - datedelta.MONTH).isoformat()
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    filings = factory_filing(business, ar)
+    filings = factory_filing(legal_entity, ar)
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
@@ -637,10 +637,10 @@ def test_update_annual_report_to_a_business(session, client, jwt):
 def test_payment_failed(session, client, jwt):
     """Assert that a failed call to a BCOL payment returns an error code and message."""
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
@@ -664,7 +664,7 @@ def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
     ar = copy.deepcopy(ANNUAL_REPORT)
 
@@ -683,7 +683,7 @@ def test_update_draft_ar(session, client, jwt):
 def test_delete_filing_in_draft(session, client, jwt):
     """Assert that a draft filing can be deleted."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
     headers = create_header(jwt, [STAFF_ROLE], identifier)
 
@@ -715,7 +715,7 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
     memorandum_file_key = _upload_file(letter, invalid=False)
     filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
     filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
-    filing = factory_filing(Business(), filing_json, filing_type='incorporationApplication')
+    filing = factory_filing(LegalEntity(), filing_json, filing_type='incorporationApplication')
     filing.temp_reg = identifier
     filing.save()
 
@@ -740,7 +740,7 @@ def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, 
     """Assert that a draft filing can be deleted."""
     identifier = 'CP7654321'
 
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = 'dissolution'
     filing_json['filing']['business']['legalType'] = 'CP'
@@ -762,15 +762,15 @@ def test_delete_filing_block_completed(session, client, jwt):
     """Assert that a completed filing cannot be deleted."""
     import copy
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(business, ar)
+    filings = factory_completed_filing(legal_entity, ar)
 
     rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
                        headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -802,7 +802,7 @@ def test_delete_filing_missing_filing_id(client, jwt):
 def test_delete_filing_not_authorized(session, client, jwt):
     """Assert that a users is authorized to delete a filing."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
     headers = create_header(jwt, ['BAD ROLE'], identifier)
 
@@ -818,31 +818,31 @@ GENERIC_DELETION_LOCKED_MESSAGE: Final = 'This filing cannot be deleted at this 
 @pytest.mark.parametrize(
     'legal_type,deletion_locked,message',
     [
-        (Business.LegalTypes.COMP, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.BC_ULC_COMPANY, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.ULC_CO_1897, False, None),
-        (Business.LegalTypes.COOP, True, GENERIC_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.COOP, False, None),
-        (Business.LegalTypes.BCOMP, True, GENERIC_DELETION_LOCKED_MESSAGE),
-        (Business.LegalTypes.BCOMP, False, None),
+        (LegalEntity.EntityTypes.COMP, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.BC_ULC_COMPANY, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CONTINUE_IN, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1860, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1862, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1878, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1890, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1897, True, ULC_LTD_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.ULC_CO_1897, False, None),
+        (LegalEntity.EntityTypes.COOP, True, GENERIC_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.COOP, False, None),
+        (LegalEntity.EntityTypes.BCOMP, True, GENERIC_DELETION_LOCKED_MESSAGE),
+        (LegalEntity.EntityTypes.BCOMP, False, None),
     ])
 def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, deletion_locked, message):
     """Assert that filing cannot be deleted with deletion_locked flag."""
     identifier = 'BC7654321'
-    business = factory_business(identifier, entity_type=legal_type.value)
-    filing = factory_filing(business, ALTERATION_FILING_TEMPLATE, filing_type='alteration')
+    legal_entity =factory_legal_entity(identifier, entity_type=legal_type.value)
+    filing = factory_filing(legal_entity, ALTERATION_FILING_TEMPLATE, filing_type='alteration')
 
     if deletion_locked:
         filing.deletion_locked = True
@@ -861,11 +861,11 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
     if annual_report_date > datetime.utcnow().date():
@@ -873,7 +873,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(business, ar)
+    filings = factory_completed_filing(legal_entity, ar)
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -888,11 +888,11 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                 last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
     if annual_report_date > datetime.utcnow().date():
@@ -900,7 +900,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(business, ar)
+    filings = factory_completed_filing(legal_entity, ar)
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
                     json=ar,
@@ -908,21 +908,22 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     """Assert that updating to a non-existant business fails."""
     import copy
     identifier = 'CP7654321'
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
                                 )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(business, ar)
+    filings = factory_completed_filing(legal_entity, ar)
     identifier = 'CP0000001'
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
@@ -937,7 +938,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     """Assert that updating a filing with no JSON body fails."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
@@ -957,11 +958,11 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
 def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
     identifier = 'CP7654399'
-    b = business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
                                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
                                     )
-    factory_business_mailing_address(business)
+    factory_legal_entity_mailing_address(legal_entity)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
     if annual_report_date > datetime.utcnow().date():
@@ -983,8 +984,8 @@ def test_file_ar_no_agm_coop(session, client, jwt):
 def test_file_ar_no_agm_bcorp(session, client, jwt):
     """Assert that filing AR as BCORP with no AGM date succeeds."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+    factory_legal_entity_mailing_address(b)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
@@ -1000,8 +1001,8 @@ def test_file_ar_no_agm_bcorp(session, client, jwt):
 def test_calc_annual_report_date(session, client, jwt):
     """Assert that nextAnnualReport is the anniversary of the business recognition."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+    factory_legal_entity_mailing_address(b)
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
@@ -1084,50 +1085,50 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 @pytest.mark.parametrize(
     'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, additional_fee_codes',
     [
-        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True, []),
-        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True, []),
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', LegalEntity.EntityTypes.COMP.value,
+            LegalEntity.EntityTypes.BCOMP.value, False, []),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', LegalEntity.EntityTypes.BCOMP.value,
+            LegalEntity.EntityTypes.COMP.value, False, []),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', LegalEntity.EntityTypes.BCOMP.value, None, True, []),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', LegalEntity.EntityTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', LegalEntity.EntityTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', LegalEntity.EntityTypes.COOP.value, None, False, []),
+        ('CP1234567', CORRECTION_AR, 'correction', LegalEntity.EntityTypes.COOP.value, None, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', LegalEntity.EntityTypes.COOP.value, None, True, []),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
-         Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
-        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
+         LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.COOP.value, None, False,
             ['AFDVT', 'SPRLN']),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.BC_CCC.value, None,
             False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', LegalEntity.EntityTypes.LIMITED_CO.value, None,
             False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', LegalEntity.EntityTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', LegalEntity.EntityTypes.BC_CCC.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BCOMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', LegalEntity.EntityTypes.COMP.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', LegalEntity.EntityTypes.BC_CCC.value, None, False, []),
     ]
 )
 def test_get_correct_fee_codes(
@@ -1136,9 +1137,9 @@ def test_get_correct_fee_codes(
     # setup
     expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
 
-    business = None
+    legal_entity =None
     if not identifier.startswith('T'):
-        business = factory_business(identifier=identifier, entity_type=orig_legal_type)
+        legal_entity =factory_legal_entity(identifier=identifier, entity_type=orig_legal_type)
     # set filing
     filing = copy.deepcopy(base_filing)
     filing['filing']['business']['identifier'] = identifier
@@ -1163,13 +1164,13 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
     # get fee code
-    fee_code = ListFilingResource._get_filing_types(business, filing)[0]['filingTypeCode']
+    fee_code = ListFilingResource._get_filing_types(legal_entity, filing)[0]['filingTypeCode']
 
     # verify fee code
     assert fee_code == expected_fee_code
 
     assert all(elem in
-               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
+               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(legal_entity, filing))
                for elem in additional_fee_codes)
 
 
@@ -1182,8 +1183,8 @@ def test_coa_future_effective(session, client, jwt):
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None)
+    factory_legal_entity_mailing_address(b)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=coa,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -1192,8 +1193,8 @@ def test_coa_future_effective(session, client, jwt):
     # assert 'effectiveDate' not in rv.json['filing']['header']
 
     identifier = 'CP7654321'
-    bc = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
-    factory_business_mailing_address(bc)
+    bc = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
+    factory_legal_entity_mailing_address(bc)
     coa['filing']['business']['identifier'] = identifier
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
@@ -1237,10 +1238,10 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
                     'resolution': 'Year challenge is hitting oppo for the win.'
                 }}}
         user = factory_user(username)
-        business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+        legal_entity =factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
         filing.json = filing_submission
         filing.save()
-        filing._storage.business_id = business.id
+        filing._storage.legal_entity_id = legal_entity.id
         filing._storage.submitter_id = user.id
         filing._storage.submitter_roles = submitter_role
         filing.save()
@@ -1258,11 +1259,11 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 @pytest.mark.parametrize(
     'test_name, legal_type, identifier, future_effective_date_expected',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
-        ('CP', Business.LegalTypes.COOP.value, 'CP1234567', False),
+        ('BEN', LegalEntity.EntityTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', LegalEntity.EntityTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', LegalEntity.EntityTypes.COMP.value, 'BC1111114', True),
+        ('CP', LegalEntity.EntityTypes.COOP.value, 'CP1234567', False),
     ]
 )
 def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identifier, future_effective_date_expected):
@@ -1273,8 +1274,8 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
 
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
+    factory_legal_entity_mailing_address(b)
     coa['filing']['business']['identifier'] = identifier
 
     requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
@@ -1309,8 +1310,8 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
                  return_value=[])
 
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, Business.LegalTypes.COOP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, LegalEntity.EntityTypes.COOP.value)
+    factory_legal_entity_mailing_address(b)
     sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
     del sr['filing']['changeOfName']
     sr['filing']['alteration'] = {}

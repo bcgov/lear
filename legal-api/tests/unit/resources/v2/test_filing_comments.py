@@ -25,7 +25,7 @@ from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 from legal_api.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils import datetime
-from tests.unit.models import factory_business, factory_comment, factory_filing
+from tests.unit.models import factory_legal_entity, factory_comment, factory_filing
 from tests.unit.services.utils import create_header
 
 
@@ -38,7 +38,7 @@ del SAMPLE_JSON_DATA['comment']['submitterDisplayName']
 def test_get_all_filing_comments_no_results(session, client, jwt):
     """Assert that endpoint returns no-results correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{f.id}/comments',
@@ -51,7 +51,7 @@ def test_get_all_filing_comments_no_results(session, client, jwt):
 def test_get_all_filing_comments_only_one(session, client, jwt):
     """Assert that a list of comments with a single comment is returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
     factory_comment(b, f)
 
@@ -65,7 +65,7 @@ def test_get_all_filing_comments_only_one(session, client, jwt):
 def test_get_all_business_filings_multiple(session, client, jwt):
     """Assert that multiple filings are returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
     factory_comment(b, f)
     factory_comment(b, f, 'other text')
@@ -80,7 +80,7 @@ def test_get_all_business_filings_multiple(session, client, jwt):
 def test_get_one_filing_comment_by_id(session, client, jwt):
     """Assert that a single comment is returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f, 'some specific text')
 
@@ -94,7 +94,7 @@ def test_get_one_filing_comment_by_id(session, client, jwt):
 def test_comment_json_output(session, client, jwt):
     """Assert the json output of a comment is correctly formatted."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
     u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     u.save()
@@ -114,8 +114,8 @@ def test_comment_json_output(session, client, jwt):
 
 def test_get_comments_mismatch_business_filing_error(session, client, jwt):
     """Assert that error is returned when filing isn't owned by business."""
-    b1 = factory_business('CP1111111')
-    b2 = factory_business('CP2222222')
+    b1 = factory_legal_entity('CP1111111')
+    b2 = factory_legal_entity('CP2222222')
     f = factory_filing(b2, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/{b1.identifier}/filings/{f.id}/comments',
@@ -127,7 +127,7 @@ def test_get_comments_mismatch_business_filing_error(session, client, jwt):
 
 def test_get_comments_invalid_business_error(session, client, jwt):
     """Assert that error is returned when business doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/CP2222222/filings/{f.id}/comments',
@@ -139,7 +139,7 @@ def test_get_comments_invalid_business_error(session, client, jwt):
 
 def test_get_comments_invalid_filing_error(session, client, jwt):
     """Assert that error is returned when filing doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     rv = client.get(f'/api/v2/businesses/{b.identifier}/filings/1/comments',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -150,7 +150,7 @@ def test_get_comments_invalid_filing_error(session, client, jwt):
 
 def test_get_comment_invalid_commentid_error(session, client, jwt):
     """Assert that error is returned when comment ID doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v2/businesses/{b.identifier}/filings/{f.id}/comments/1',
@@ -162,7 +162,7 @@ def test_get_comment_invalid_commentid_error(session, client, jwt):
 
 def test_post_comment(session, client, jwt):
     """Assert that a simple post of a comment succeeds."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -177,7 +177,7 @@ def test_post_comment(session, client, jwt):
 
 def test_post_comment_missing_filingid_error(session, client, jwt):
     """Assert that the post fails when missing filing ID in json (null and missing)."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     # test null filing ID
@@ -203,7 +203,7 @@ def test_post_comment_missing_filingid_error(session, client, jwt):
 
 def test_post_comment_missing_text_error(session, client, jwt):
     """Assert that the post fails when missing comment text in json (null and missing)."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     # test null comment text
@@ -229,7 +229,7 @@ def test_post_comment_missing_text_error(session, client, jwt):
 
 def test_post_comment_basic_user_error(session, client, jwt):
     """Assert that the post fails when sent from Basic (non-staff) user."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -243,8 +243,8 @@ def test_post_comment_basic_user_error(session, client, jwt):
 
 def test_post_comment_mismatch_business_filing_error(session, client, jwt):
     """Assert that error is returned when filing isn't owned by business."""
-    b = factory_business('CP1111111')
-    b2 = factory_business('CP2222222')
+    b = factory_legal_entity('CP1111111')
+    b2 = factory_legal_entity('CP2222222')
     f = factory_filing(b, ANNUAL_REPORT)
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -260,7 +260,7 @@ def test_post_comment_mismatch_business_filing_error(session, client, jwt):
 
 def test_post_comment_invalid_business_error(session, client, jwt):
     """Assert that error is returned when business doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -276,7 +276,7 @@ def test_post_comment_invalid_business_error(session, client, jwt):
 
 def test_post_comment_invalid_filing_error(session, client, jwt):
     """Assert that error is returned when filing doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
     json_data['comment']['filingId'] = 2
@@ -291,9 +291,9 @@ def test_post_comment_invalid_filing_error(session, client, jwt):
 
 def test_post_comment_mismatch_filingid_error(session, client, jwt):
     """Assert that error is returned when filing ID in URL doesn't match filing ID in json."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
-    b2 = factory_business('CP2222222')
+    b2 = factory_legal_entity('CP2222222')
     f2 = factory_filing(b2, ANNUAL_REPORT)
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -308,7 +308,7 @@ def test_post_comment_mismatch_filingid_error(session, client, jwt):
 
 def test_put_comment_error(session, client, jwt):
     """Assert that the PUT endpoint isn't allowed."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f)
 
@@ -326,7 +326,7 @@ def test_put_comment_error(session, client, jwt):
 
 def test_delete_comment_error(session, client, jwt):
     """Assert that the DELETE endpoint isn't allowed."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f)
 
@@ -338,7 +338,7 @@ def test_delete_comment_error(session, client, jwt):
 
 def test_comments_in_filing_response(session, client, jwt):
     """Assert that the list of comments is the filing GET response."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
     factory_comment(b, f, 'comment 1')
     factory_comment(b, f, 'comment 2')

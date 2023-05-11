@@ -22,10 +22,10 @@ from http import HTTPStatus
 
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_namerequests, integration_payment
-from tests.unit.models import factory_business, factory_business_mailing_address
+from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address
 from tests.unit.services.utils import create_header
 
 
@@ -34,13 +34,13 @@ from tests.unit.services.utils import create_header
 def test_alteration_success_bc_to_ben(client, jwt, session):
     """Assert that a valid BC to BEN alteration can be posted."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
-    filing['filing']['business']['legalType'] = Business.LegalTypes.COMP.value
-    filing['filing']['alteration']['business']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['business']['legalType'] = LegalEntity.EntityTypes.COMP.value
+    filing['filing']['alteration']['business']['legalType'] = LegalEntity.EntityTypes.BCOMP.value
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,
@@ -59,13 +59,13 @@ def test_alteration_success_bc_to_ben(client, jwt, session):
 def test_alteration_success_ben_to_bc(client, jwt, session):
     """Assert that a valid BEN to BC alteration can be posted."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.BCOMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.BCOMP.value)
+    factory_legal_entity_mailing_address(b)
 
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing['filing']['business']['identifier'] = identifier
-    filing['filing']['business']['legalType'] = Business.LegalTypes.BCOMP.value
-    filing['filing']['alteration']['business']['legalType'] = Business.LegalTypes.COMP.value
+    filing['filing']['business']['legalType'] = LegalEntity.EntityTypes.BCOMP.value
+    filing['filing']['alteration']['business']['legalType'] = LegalEntity.EntityTypes.COMP.value
 
     rv = client.post(f'/api/v1/businesses/{identifier}/filings',
                      json=filing,

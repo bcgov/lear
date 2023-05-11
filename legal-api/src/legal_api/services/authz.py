@@ -24,7 +24,7 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -114,7 +114,7 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
 
 ALLOWABLE_FILINGS: Final = {
     'staff': {
-        Business.State.ACTIVE: {
+        LegalEntity.State.ACTIVE: {
             'adminFreeze': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
@@ -226,7 +226,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             }
         },
-        Business.State.HISTORICAL: {
+        LegalEntity.State.HISTORICAL: {
             'courtOrder': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
@@ -259,7 +259,7 @@ ALLOWABLE_FILINGS: Final = {
         }
     },
     'general': {
-        Business.State.ACTIVE: {
+        LegalEntity.State.ACTIVE: {
             'alteration': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
@@ -318,14 +318,14 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
             }
         },
-        Business.State.HISTORICAL: {}
+        LegalEntity.State.HISTORICAL: {}
     }
 }
 
 
 # pylint: disable=(too-many-arguments,too-many-locals
-def is_allowed(business: Business,
-               state: Business.State,
+def is_allowed(legal_entity: LegalEntity,
+               state: LegalEntity.State,
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
@@ -339,7 +339,7 @@ def is_allowed(business: Business,
         if filing and filing.status == Filing.Status.DRAFT.value:
             is_ignore_draft_blockers = True
 
-    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
+    allowable_filings = get_allowed_filings(legal_entity, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
         if allowable_filing['name'] == filing_type:
@@ -349,11 +349,11 @@ def is_allowed(business: Business,
     return False
 
 
-def get_allowable_actions(jwt: JwtManager, business: Business):
+def get_allowable_actions(jwt: JwtManager, legal_entity: LegalEntity):
     """Get allowable actions."""
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
-    filing_submission_url = urljoin(base_url, f'{business.identifier}/filings')
+    allowed_filings = get_allowed_filings(legal_entity, legal_entity.state, legal_entity.entity_type, jwt)
+    filing_submission_url = urljoin(base_url, f'{legal_entity.identifier}/filings')
     result = {
         'filing': {
             'filingSubmissionLink': filing_submission_url,
@@ -363,8 +363,8 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
     return result
 
 
-def get_allowed_filings(business: Business,
-                        state: Business.State,
+def get_allowed_filings(legal_entity: LegalEntity,
+                        state: LegalEntity.State,
                         legal_type: str,
                         jwt: JwtManager,
                         is_ignore_draft_blockers: bool = False):
@@ -378,24 +378,24 @@ def get_allowed_filings(business: Business,
         user_role = 'staff'
 
     state_filing = None
-    if business and business.state_filing_id:
-        state_filing = Filing.find_by_id(business.state_filing_id)
+    if legal_entity and legal_entity.state_filing_id:
+        state_filing = Filing.find_by_id(legal_entity.state_filing_id)
 
     # doing this check up front to cache result
-    business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
+    business_blocker_dict: dict = business_blocker_check(legal_entity, is_ignore_draft_blockers)
     allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
-        if bool(business) ^ allowable_filing_value.get('businessExists', True):
+        if bool(legal_entity) ^ allowable_filing_value.get('businessExists', True):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
 
         if allowable_filing_legal_types:
-            is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
+            is_blocker = has_blocker(legal_entity, state_filing, allowable_filing_value, business_blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
             allowable_filing_type = {'name': allowable_filing_key,
@@ -409,7 +409,10 @@ def get_allowed_filings(business: Business,
         filing_sub_type_items = \
             filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            is_allowable = not has_blocker(legal_entity,
+                                           state_filing,
+                                           filing_sub_type_item_value,
+                                           business_blocker_dict)
             allowable_filing_sub_type = {'name': allowable_filing_key,
                                          'type': filing_sub_type_item_key,
                                          'displayName': FilingMeta.get_display_name(legal_type,
@@ -425,7 +428,7 @@ def get_allowed_filings(business: Business,
     return allowable_filing_types
 
 
-def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
+def has_blocker(legal_entity: LegalEntity, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
         return False
@@ -439,7 +442,7 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
-    if has_blocker_warning_filing(business.warnings, blocker_checks):
+    if has_blocker_warning_filing(legal_entity.warnings, blocker_checks):
         return True
 
     return False
@@ -457,7 +460,7 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     return False
 
 
-def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = False):
+def business_blocker_check(legal_entity: LegalEntity, is_ignore_draft_blockers: bool = False):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.DEFAULT: False,
@@ -466,24 +469,24 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.NOT_IN_GOOD_STANDING: False
     }
 
-    if not business:
+    if not legal_entity:
         return business_blocker_checks
 
-    if has_blocker_filing(business, is_ignore_draft_blockers):
+    if has_blocker_filing(legal_entity, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
-    if business.admin_freeze:
+    if legal_entity.admin_freeze:
         business_blocker_checks[BusinessBlocker.BUSINESS_FROZEN] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
-    if not business.good_standing:
+    if not legal_entity.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
 
     return business_blocker_checks
 
 
-def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = False):
+def has_blocker_filing(legal_entity: LegalEntity, is_ignore_draft_blockers: bool = False):
     """Check if there are any incomplete states filings. This is a blocker because it needs to be completed first."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -495,12 +498,12 @@ def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = Fals
                        Filing.Status.PAID.value]
     if not is_ignore_draft_blockers:
         filing_statuses.append(Filing.Status.DRAFT.value)
-    blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
+    blocker_filing_matches = Filing.get_filings_by_status(legal_entity.id, filing_statuses)
     if any(blocker_filing_matches):
         return True
 
     filing_types = [CoreFiling.FilingTypes.ALTERATION.value, CoreFiling.FilingTypes.CORRECTION.value]
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, filing_types)
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(legal_entity.id, filing_types)
     return any(blocker_filing_matches)
 
 
@@ -564,7 +567,7 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     return warning_matches
 
 
-def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
+def get_allowed(state: LegalEntity.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     user_role = 'general'
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
@@ -587,7 +590,7 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
 
 
 def get_account_by_affiliated_identifier(token, identifier: str):
-    """Return the account affiliated to the business."""
+    """Return the account affiliated to the LegalEntity."""
     auth_url = current_app.config.get('AUTH_SVC_URL')
     url = f'{auth_url}/orgs?affiliation={identifier}'
 

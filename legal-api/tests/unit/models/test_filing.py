@@ -39,12 +39,12 @@ from sqlalchemy.exc import DataError
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, User
+from legal_api.models import Filing, LegalEntity, User
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (
-    factory_business,
-    factory_business_mailing_address,
+    factory_legal_entity,
+    factory_legal_entity_mailing_address,
     factory_completed_filing,
     factory_filing,
     factory_user,
@@ -53,12 +53,12 @@ from tests.unit.models import (
 
 def test_minimal_filing_json(session):
     """Assert that a minimal filing can be created."""
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
 
     data = {'filing': 'not a real filing, fail validation'}
 
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
     filing.filing_data = json.dumps(data)
     filing.save()
@@ -71,10 +71,10 @@ def test_filing_orm_delete_allowed_for_in_progress_filing(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
 
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
     filing.filing_json = ANNUAL_REPORT
     filing.save()
@@ -88,10 +88,10 @@ def test_filing_orm_delete_blocked_if_invoiced(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
 
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = 'a token'
@@ -112,10 +112,10 @@ def test_filing_orm_delete_blocked_if_completed(session):
     uow = versioning_manager.unit_of_work(session)
     transaction = uow.create_transaction(session)
 
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
 
     filing = Filing()
-    filing.business_id = b.id
+    filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = 'a token'
@@ -134,7 +134,7 @@ def test_filing_orm_delete_blocked_if_completed(session):
 def test_filing_json(session):
     """Assert that an AR filing can be saved."""
     import copy
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
     filing = factory_filing(b, ANNUAL_REPORT)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -150,7 +150,7 @@ def test_filing_missing_name(session):
     """Assert that an AR filing can be saved."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['header'].pop('name', None)
 
@@ -165,7 +165,7 @@ def test_filing_dump_json(session):
     """Assert the filing json serialization works correctly."""
     import copy
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
 
     # Check base JSON
     filings = factory_filing(b, ANNUAL_REPORT)
@@ -202,7 +202,7 @@ def test_filing_dump_json(session):
 def test_filing_save_to_session(session):
     """Assert that the filing is saved to the session but not committed."""
     from sqlalchemy.orm.session import Session
-    # b = factory_business('CP1234567')
+    # b = factory_legal_entity('CP1234567')
     # filing = factory_filing(b, ANNUAL_REPORT)
 
     filing = Filing()
@@ -334,17 +334,17 @@ def test_get_filings_by_status(session):
     """Assert that a filing can be retrieved by status."""
     uow = versioning_manager.unit_of_work(session)
     transaction = uow.create_transaction(session)
-    business = factory_business('CP1234567')
+    legal_entity =factory_legal_entity('CP1234567')
     payment_token = '1000'
     filing = Filing()
-    filing.business_id = business.id
+    filing.legal_entity_id = legal_entity.id
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = payment_token
     filing.transaction_id = transaction.id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 
-    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
 
     assert rv
     assert rv[0].status == Filing.Status.COMPLETED.value
@@ -360,7 +360,7 @@ def test_get_filings_by_status__default_order(session):
     base_filing = copy.deepcopy(FILING_HEADER)
     base_filing['specialResolution'] = SPECIAL_RESOLUTION
     uow = versioning_manager.unit_of_work(session)
-    business = factory_business('CP1234567')
+    legal_entity =factory_legal_entity('CP1234567')
 
     completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 
@@ -376,7 +376,7 @@ def test_get_filings_by_status__default_order(session):
             base_filing['filing']['header']['effectiveDate'] = effective_date
             filing = Filing()
             filing._filing_date = completion_date
-            filing.business_id = business.id
+            filing.legal_entity_id = legal_entity.id
             filing.filing_json = base_filing
             filing.effective_date = datetime.datetime.fromisoformat(effective_date)
             filing.payment_token = payment_token
@@ -388,7 +388,7 @@ def test_get_filings_by_status__default_order(session):
             file_counter += 1
 
     # test
-    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
 
     # check
     assert rv
@@ -398,9 +398,9 @@ def test_get_filings_by_status__default_order(session):
         file_counter -= 1
 
 
-def test_get_most_recent_filing_by_legal_type_in_json(session):
+def test_get_most_recent_filing_by_entity_type_in_json(session):
     """Assert that the most recent legal filing can be retrieved."""
-    business = factory_business('CP1234567')
+    legal_entity =factory_legal_entity('CP1234567')
     uow = versioning_manager.unit_of_work(session)
     transaction = uow.create_transaction(session)
 
@@ -415,7 +415,7 @@ def test_get_most_recent_filing_by_legal_type_in_json(session):
         base_filing['filing']['header']['effectiveDate'] = effective_date
         filing = Filing()
         filing._filing_date = completion_date
-        filing.business_id = business.id
+        filing.legal_entity_id = legal_entity.id
         filing.filing_json = base_filing
         filing.effective_date = datetime.datetime.fromisoformat(effective_date)
         filing.payment_token = 'token'
@@ -423,18 +423,18 @@ def test_get_most_recent_filing_by_legal_type_in_json(session):
         filing.payment_completion_date = completion_date
         filing.save()
 
-    f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
+    f = Filing.get_most_recent_legal_filing(legal_entity.id, 'changeOfDirectors')
     assert f.effective_date == datetime.datetime.fromisoformat(effective_date)
     assert f.filing_type == 'annualReport'
     assert f.id == filing.id
 
 
-def test_get_most_recent_filing_by_legal_type_db_field(session):
+def test_get_most_recent_filing_by_entity_type_db_field(session):
     """Assert that the most recent legal filing can be retrieved.
 
     Create 3 filings, find the 2 one by the type only.
     """
-    business = factory_business('CP1234567')
+    legal_entity =factory_legal_entity('CP1234567')
     uow = versioning_manager.unit_of_work(session)
     transaction = uow.create_transaction(session)
 
@@ -445,7 +445,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     base_filing['filing']['header']['effectiveDate'] = effective_date
     filing1 = Filing()
     filing1._filing_date = completion_date
-    filing1.business_id = business.id
+    filing1.legal_entity_id = legal_entity.id
     filing1.filing_json = base_filing
     filing1.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing1.payment_token = 'token'
@@ -462,7 +462,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     base_filing['filing']['header']['availableOnPaperOnly'] = True
     filing2 = Filing()
     filing2._filing_date = completion_date
-    filing2.business_id = business.id
+    filing2.legal_entity_id = legal_entity.id
     filing2.filing_json = base_filing
     filing2.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing2.payment_token = 'token'
@@ -477,7 +477,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     base_filing['filing']['header']['effectiveDate'] = effective_date
     filing3 = Filing()
     filing3._filing_date = completion_date
-    filing3.business_id = business.id
+    filing3.legal_entity_id = legal_entity.id
     filing3.filing_json = base_filing
     filing3.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing3.payment_token = 'token'
@@ -485,7 +485,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing3.payment_completion_date = completion_date
     filing3.save()
 
-    f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
+    f = Filing.get_most_recent_legal_filing(legal_entity.id, 'changeOfDirectors')
     assert f.filing_type == 'changeOfDirectors'
     assert f.id == filing2.id
 
@@ -503,7 +503,7 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     import copy
     uow = versioning_manager.unit_of_work(session)
     transaction = uow.create_transaction(session)
-    business = factory_business('CP1234567')
+    legal_entity =factory_legal_entity('CP1234567')
     payment_token = '1000'
     ar = copy.deepcopy(ANNUAL_REPORT)
 
@@ -512,14 +512,14 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
 
     filing = Filing()
     filing.filing_date = filing_date
-    filing.business_id = business.id
+    filing.legal_entity_id = legal_entity.id
     filing.filing_json = ar
     filing.payment_token = payment_token
     filing.transaction_id = transaction.id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 
-    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value], go_live_date)
+    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value], go_live_date)
 
     assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
     if rv:
@@ -533,7 +533,7 @@ def test_get_internal_filings(session, client, jwt):
     from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filing = factory_completed_filing(b, ANNUAL_REPORT)
     assert filing.status == Filing.Status.COMPLETED.value
     colin_event_id = ColinEventId()
@@ -566,7 +566,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
     from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     ar = copy.deepcopy(ANNUAL_REPORT)
     base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=datetime.timezone.utc)
     filings = []
@@ -633,7 +633,7 @@ def test_is_corrected_filing(session):
     filing1.filing_json = ANNUAL_REPORT
     filing1.save()
 
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
     filing2 = factory_completed_filing(b, CORRECTION_AR)
 
     filing1.parent_filing = filing2
@@ -658,7 +658,7 @@ def test_is_pending_correction_filing(session):
     filing1.filing_json = ANNUAL_REPORT
     filing1.save()
 
-    b = factory_business('CP1234567')
+    b = factory_legal_entity('CP1234567')
     filing2 = factory_completed_filing(b, CORRECTION_AR)
     filing2._status = 'PENDING_CORRECTION'
     setattr(filing2, 'skip_status_listener', True)
@@ -700,8 +700,8 @@ def test_linked_not_correction(session):
 def test_alteration_filing_with_court_order(session):
     """Assert that an alteration filing with court order can be created."""
     identifier = 'BC1156638'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
     filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
     filing.court_order_file_number = COURT_ORDER['fileNumber']
     filing.court_order_date = COURT_ORDER['orderDate']
@@ -736,8 +736,8 @@ def test_alteration_filing_with_court_order(session):
 def test_validate_invalid_court_orders(session, invalid_court_order):
     """Assert not valid court orders."""
     identifier = 'BC1156677'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
     filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
     filing.court_order_file_number = invalid_court_order['fileNumber']
     filing.court_order_date = invalid_court_order['orderDate']
