@@ -1493,11 +1493,25 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
 @pytest.mark.parametrize(
     'test_name,state,filing_type,sub_filing_type,legal_types,username,roles,filing_status,expected',
     [
+        ('staff_user_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'general', [STAFF_ROLE], Filing.Status.DRAFT.value, True),
+        ('staff_user_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BEN', 'BC', 'ULC', 'CC'], 'general', [STAFF_ROLE], Filing.Status.DRAFT.value, True),
+
+        ('staff_user_active', Business.State.ACTIVE, 'changeOfRegistration', None,
+         ['SP', 'GP'], 'general', [STAFF_ROLE], Filing.Status.PENDING.value, False),
+        ('staff_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BEN', 'BC', 'ULC', 'CC'], 'general', [STAFF_ROLE], Filing.Status.PENDING.value, False),
+
         ('user_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], Filing.Status.DRAFT.value, True),
+        ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BEN', 'BC', 'ULC', 'CC'], 'general', [BASIC_USER], Filing.Status.DRAFT.value, True),
 
         ('user_active', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'general', [BASIC_USER], Filing.Status.PENDING.value, False),
+        ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
+         ['BEN', 'BC', 'ULC', 'CC'], 'general', [BASIC_USER], Filing.Status.PENDING.value, False),
     ]
 )
 def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_name, state, filing_type, sub_filing_type,
