@@ -1005,53 +1005,13 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
-DISSOLUTION_VOLUNTARY_FILING = {
-    'filing': {
-        'header': {
-            'name': 'dissolution',
-            'availableOnPaperOnly': False,
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
-            'date': '2020-02-18',
-            'routingSlipNumber': '123456789'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': 'BC1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
-            'legalName': 'legal name - BC1234567',
-            'legalType': 'BEN'
-        },
-        'dissolution': DISSOLUTION
-    }
-}
+DISSOLUTION_VOLUNTARY_FILING = copy.deepcopy(FILING_HEADER)
+DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution'] = DISSOLUTION
 DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'voluntary'
 
 # FUTURE: use RESTORATION_FILING from business schema data when restoration filing work has been done
-RESTORATION_FILING = {
-    'filing': {
-        'header': {
-            'name': 'dissolution',
-            'availableOnPaperOnly': False,
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
-            'date': '2020-02-18',
-            'routingSlipNumber': '123456789'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': 'BC1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
-            'legalName': 'legal name - BC1234567',
-            'legalType': 'BEN'
-        },
-        'restoration': RESTORATION
-    }
-}
+RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
+RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 RESTORATION_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_FULL_FILING['filing']['restoration']['type'] = 'fullRestoration'
@@ -1065,29 +1025,8 @@ RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestor
 RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
 
-CONTINUATION_OUT_FILING = {
-    'filing': {
-        'header': {
-            'name': 'continuationOut',
-            'availableOnPaperOnly': False,
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
-            'date': '2020-02-18',
-            'routingSlipNumber': '123456789'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': 'BC1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
-            'legalName': 'legal name - BC1234567',
-            'legalType': 'BEN'
-        },
-        'continuationOut': {}
-    }
-}
-
+CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
+CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
