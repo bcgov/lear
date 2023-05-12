@@ -500,7 +500,8 @@ def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = Fals
         return True
 
     filing_types = [CoreFiling.FilingTypes.ALTERATION.value, CoreFiling.FilingTypes.CORRECTION.value]
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, filing_types)
+    excluded_statuses = [Filing.Status.DRAFT.value] if is_ignore_draft_blockers else []
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, filing_types, excluded_statuses)
     return any(blocker_filing_matches)
 
 
