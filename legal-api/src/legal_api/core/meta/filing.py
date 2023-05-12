@@ -190,7 +190,7 @@ FILINGS: Final = {
     'continuationOut': {
         'name': 'continuationOut',
         'title': 'Continuation Out',
-        'displayName': 'Instrument of Continuation Out',
+        'displayName': 'Continuation Out',
         'codes': {
             'BC': 'COUTI',
             'BEN': 'COUTI',

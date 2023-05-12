@@ -1138,6 +1138,8 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
             Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value,
             Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.BC_CCC.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(
