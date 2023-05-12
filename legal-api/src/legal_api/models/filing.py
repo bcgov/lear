@@ -18,7 +18,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
 
-from sqlalchemy import desc, event, func, inspect, or_, select
+from sqlalchemy import desc, event, func, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -28,6 +28,8 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
 from .db import db  # noqa: I001
+
+
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
 
@@ -720,12 +722,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_incomplete_filings_by_types(business_id: int, filing_types: list):
-        """Return the filings of particular types and statuses."""
+    def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
+        """Return the filings of particular types and statuses.
+
+        excluded_statuses is a list of filing statuses that will be excluded from the query for incomplete filings
+        """
+        excluded_statuses = [] if excluded_statuses is None else excluded_statuses
+
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_(excluded_statuses))). \
             order_by(desc(Filing.effective_date)). \
             all()
         return filings
