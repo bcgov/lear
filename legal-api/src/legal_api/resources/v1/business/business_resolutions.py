@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_restx import Resource, cors
 
-from legal_api.models import Business, Resolution
+from legal_api.models import LegalEntity, Resolution
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
@@ -36,9 +36,9 @@ class ResolutionResource(Resource):
     @jwt.requires_auth
     def get(identifier, resolution_id=None):
         """Return a JSON of the resolutions."""
-        business = Business.find_by_identifier(identifier)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
 
-        if not business:
+        if not legal_entity:
             return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
         # check authorization
@@ -49,16 +49,16 @@ class ResolutionResource(Resource):
 
         # return the matching resolution
         if resolution_id:
-            resolution, msg, code = ResolutionResource._get_resolution(business, resolution_id)
+            resolution, msg, code = ResolutionResource._get_resolution(legal_entity, resolution_id)
             return jsonify(resolution or msg), code
 
         resolution_list = []
 
         resolution_type = request.args.get('type')
         if resolution_type:
-            resolutions = Resolution.find_by_type(business.id, resolution_type.upper())
+            resolutions = Resolution.find_by_type(legal_entity.id, resolution_type.upper())
         else:
-            resolutions = business.resolutions.all()
+            resolutions = legal_entity.resolutions.all()
 
         for resolution in resolutions:
             resolution_json = resolution.json
@@ -67,7 +67,7 @@ class ResolutionResource(Resource):
         return jsonify(resolutions=resolution_list)
 
     @staticmethod
-    def _get_resolution(business, resolution_id=None):
+    def _get_resolution(legal_entity, resolution_id=None):
         # find by ID
         resolution = None
         if resolution_id:
@@ -76,6 +76,6 @@ class ResolutionResource(Resource):
                 resolution = {'resolution': rv.json}
 
         if not resolution:
-            return None, {'message': f'{business.identifier} resolution not found'}, HTTPStatus.NOT_FOUND
+            return None, {'message': f'{legal_entity.identifier} resolution not found'}, HTTPStatus.NOT_FOUND
 
         return resolution, None, HTTPStatus.OK

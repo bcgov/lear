@@ -20,23 +20,23 @@ import pytest
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import Business, RequestTracker, UserRoles
+from legal_api.models import LegalEntity, RequestTracker, UserRoles
 from legal_api.resources.v2 import request_tracker
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
 def test_get_bn_request_trackers(session, client, jwt):
     """Get all BN request."""
     identifier = 'FM0000001'
-    business = factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
+    legal_entity =factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
     request_tracker = RequestTracker(
         request_type=RequestTracker.RequestType.INFORM_CRA,
         retry_number=-1,
         service_name=RequestTracker.ServiceName.BN_HUB,
-        business_id=business.id,
+        legal_entity_id=legal_entity.id,
         request_object='<SBNCreateProgramAccountRequest></SBNCreateProgramAccountRequest>'
     )
     request_tracker.save()
@@ -55,13 +55,13 @@ def test_get_bn_request_trackers(session, client, jwt):
 def test_get_request_tracker(session, client, jwt):
     """Get request tracker."""
     identifier = 'FM0000001'
-    business = factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
+    legal_entity =factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
     request_tracker = RequestTracker(
         request_type=RequestTracker.RequestType.INFORM_CRA,
         retry_number=-1,
         service_name=RequestTracker.ServiceName.BN_HUB,
-        business_id=business.id,
+        legal_entity_id=legal_entity.id,
         request_object='<SBNCreateProgramAccountRequest></SBNCreateProgramAccountRequest>',
         response_object='<SBNAcknowledgement></SBNAcknowledgement>'
     )
@@ -91,7 +91,7 @@ def test_get_request_tracker(session, client, jwt):
 def test_resubmit_bn_request(session, client, jwt, request_type, request_xml):
     """Get all BN request."""
     identifier = 'FM0000001'
-    business = factory_business(identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
+    legal_entity =factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
     json_data = {
         'requestType': request_type.name,
         'request': request_xml
@@ -103,7 +103,7 @@ def test_resubmit_bn_request(session, client, jwt, request_type, request_xml):
 
         assert rv.status_code == HTTPStatus.OK
 
-        request_trackers = RequestTracker.find_by(business.id,
+        request_trackers = RequestTracker.find_by(legal_entity.id,
                                                   RequestTracker.ServiceName.BN_HUB,
                                                   request_type=request_type)
         assert request_trackers[0].request_object == request_xml

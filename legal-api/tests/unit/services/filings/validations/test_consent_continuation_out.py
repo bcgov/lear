@@ -19,7 +19,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OUT
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 
@@ -36,22 +36,22 @@ legal_name = 'Test name request'
 )
 def test_consent_continuation_out_active_and_good_standing(session, test_name, expected_code):
     """Assert Consent Continuation Out can be filed."""
-    business = Business(
+    legal_entity =LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
     if test_name == 'FAIL_NOT_ACTIVE':
-        business.state = Business.State.HISTORICAL
+        legal_entity.state = LegalEntity.State.HISTORICAL
     elif test_name == 'FAIL_NOT_IN_GOOD_STANDING':
-        business.founding_date = datetime.utcnow() - datedelta.datedelta(years=2)
+        legal_entity.founding_date = datetime.utcnow() - datedelta.datedelta(years=2)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'consentContinuationOut'
 
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     # validate outcomes
     if test_name != 'SUCCESS':
@@ -70,10 +70,10 @@ def test_consent_continuation_out_active_and_good_standing(session, test_name, e
 )
 def test_consent_continuation_out_court_order(session, test_status, file_number, expected_code):
     """Assert valid court order."""
-    business = Business(
+    legal_entity =LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
@@ -87,7 +87,7 @@ def test_consent_continuation_out_court_order(session, test_status, file_number,
     else:
         del filing['filing']['consentContinuationOut']['courtOrder']['fileNumber']
 
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     # validate outcomes
     if test_status == 'FAIL':

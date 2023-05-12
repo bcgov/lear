@@ -30,7 +30,7 @@ from registry_schemas.example_data import (
 
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from tests import integration_reports
-from tests.unit.models import factory_business, factory_filing, factory_incorporation_filing  # noqa:E501,I001
+from tests.unit.models import factory_legal_entity, factory_filing, factory_incorporation_filing  # noqa:E501,I001
 from tests.unit.services.utils import create_header
 
 from .gold_files import matches_sent_snapshot, retrieve_name
@@ -44,7 +44,7 @@ CONTENT_TYPE_APPLICATION_JSON = 'application/json'
 def test_get_annual_report_pdf_error_on_multiple(session, client, jwt, role):
     """Assert that the businesses AR can be returned as a PDF."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     factory_filing(b, ANNUAL_REPORT)
 
     rv = client.get(f'/api/v1/businesses/{identifier}/filings',
@@ -63,7 +63,7 @@ def test_get_annual_report_pdf_error_on_multiple(session, client, jwt, role):
 def test_get_pdf_error_missing_template(session, client, jwt):
     """Assert that the businesses AR can be returned as a PDF."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
 
     unknown_filing = copy.deepcopy(ANNUAL_REPORT)
     unknown_filing['filing']['header']['name'] = 'unknownFiling'
@@ -102,7 +102,7 @@ def test_get_filing_submission_pdf(requests_mock, session, client, jwt, role, fi
     """Assert that the businesses AR can be returned as a PDF."""
     from flask import current_app
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     filings = factory_filing(b, filing_submission)
 
     print('test_get_all_business_filings - filing:', filings)
@@ -141,7 +141,7 @@ def test_get_incorporation_reports(requests_mock, session, client, jwt, role, re
     """Assert that the businesses AR can be returned as a PDF."""
     from flask import current_app
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
 
     effective_date = INCORPORATION_APPLICATION['filing']['header']['effectiveDate']
     filings = factory_incorporation_filing(b, INCORPORATION_APPLICATION, effective_date, effective_date)

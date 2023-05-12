@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Business checks for firms."""
-from legal_api.models import Address, Business, Filing, Office, Party, PartyRole
+from legal_api.models import Address, EntityRole, Filing, LegalEntity, Office
 
 from . import (get_address_business_warning,  # noqa: I001
                BusinessWarnings,              # noqa: I001
@@ -23,23 +23,23 @@ from . import (get_address_business_warning,  # noqa: I001
 from . import WARNING_MESSAGE_BASE
 
 
-def check_business(business: Business) -> list:
+def check_business(legal_entity: LegalEntity) -> list:
     """Check for missing business data."""
     result = []
 
-    legal_type = business.legal_type
+    legal_type = legal_entity.entity_type
 
-    result.extend(check_office(business))
-    result.extend(check_parties(legal_type, business))
-    result.extend(check_start_date(business))
+    result.extend(check_office(legal_entity))
+    result.extend(check_parties(legal_type, legal_entity))
+    result.extend(check_start_date(legal_entity))
 
     return result
 
 
-def check_start_date(business: Business) -> list:
+def check_start_date(legal_entity: LegalEntity) -> list:
     """Check for business start date."""
     result = []
-    if not business.start_date:
+    if not legal_entity.start_date:
         result.append({
             **WARNING_MESSAGE_BASE,
             'code': BusinessWarningCodes.NO_START_DATE,
@@ -48,11 +48,11 @@ def check_start_date(business: Business) -> list:
     return result
 
 
-def check_office(business: Business) -> list:
+def check_office(legal_entity: LegalEntity) -> list:
     """Check for missing office data."""
     result = []
 
-    business_office = business.offices \
+    business_office = legal_entity.offices \
         .filter(Office.office_type == 'businessOffice') \
         .one_or_none()
 
@@ -75,46 +75,46 @@ def check_office(business: Business) -> list:
     return result
 
 
-def check_parties(legal_type: str, business: Business) -> list:
+def check_parties(legal_type: str, legal_entity: LegalEntity) -> list:
     """Check for missing parties data."""
     result = []
 
-    firm_party_roles = business.party_roles.filter(PartyRole.cessation_date.is_(None))
-    result.extend(check_firm_parties(legal_type, firm_party_roles))
+    firm_entity_roles = legal_entity.entity_roles.filter(EntityRole.cessation_date.is_(None)).all()
+    result.extend(check_firm_parties(legal_type, firm_entity_roles))
 
     completing_party_filing = Filing \
-        .get_most_recent_legal_filing(business.id, 'conversion')
+        .get_most_recent_legal_filing(legal_entity.id, 'conversion')
 
     if not completing_party_filing:
         completing_party_filing = Filing \
-            .get_most_recent_legal_filing(business.id, 'registration')
+            .get_most_recent_legal_filing(legal_entity.id, 'registration')
 
     result.extend(check_completing_party_for_filing(completing_party_filing))
     return result
 
 
-def check_firm_parties(legal_type: str, party_roles: list) -> list:
+def check_firm_parties(legal_type: str, entity_roles: list) -> list:
     """Check for missing firm parties data."""
     result = []
 
-    proprietor_parties = []
-    partner_parties = []
+    proprietor_count = 0
+    partner_count = 0
 
-    for party_role in party_roles:
-        if party_role.role == PartyRole.RoleTypes.PROPRIETOR.value:
-            proprietor_parties.append(party_role.party)
-            result.extend(check_firm_party(legal_type, party_role))
-        if party_role.role == PartyRole.RoleTypes.PARTNER.value:
-            partner_parties.append(party_role.party)
-            result.extend(check_firm_party(legal_type, party_role))
+    for entity_role in entity_roles:
+        if entity_role.role_type == EntityRole.RoleTypes.proprietor:
+            proprietor_count += 1
+            result.extend(check_firm_party(legal_type, entity_role))
+        if entity_role.role_type == EntityRole.RoleTypes.partner:
+            partner_count += 1
+            result.extend(check_firm_party(legal_type, entity_role))
 
-    if legal_type == Business.LegalTypes.SOLE_PROP.value and not proprietor_parties:
+    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and proprietor_count == 0:
         result.append({
             **WARNING_MESSAGE_BASE,
             'code': BusinessWarningCodes.NO_PROPRIETOR,
             'message': 'A proprietor is required.',
         })
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and len(partner_parties) < 2:
+    elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value and partner_count < 2:
         result.append({
             **WARNING_MESSAGE_BASE,
             'code': BusinessWarningCodes.NO_PARTNER,
@@ -136,8 +136,8 @@ def check_completing_party_for_filing(filing: Filing) -> list:
         })
         return result
 
-    completing_party_role = filing.filing_party_roles \
-        .filter(PartyRole.role == PartyRole.RoleTypes.COMPLETING_PARTY.value) \
+    completing_party_role = filing.filing_entity_roles \
+        .filter(EntityRole.role_type == EntityRole.RoleTypes.completing_party) \
         .one_or_none()
 
     if not completing_party_role:
@@ -153,25 +153,36 @@ def check_completing_party_for_filing(filing: Filing) -> list:
 
 
 # pylint: disable=too-many-branches;
-def check_firm_party(legal_type: str, party_role: PartyRole):
+def check_firm_party(legal_type: str, entity_role: EntityRole):
     """Check for missing firm party data."""
     result = []
-
-    party = party_role.party
-    role = party_role.role.replace('_', ' ').title()
+    role = entity_role.role_type.replace('_', ' ').title()
     no_person_name_check_warning = False
     no_org_name_warning = False
 
-    if party.party_type == Party.PartyTypes.PERSON.value:
-        if not party.first_name and not party.last_name:
-            no_person_name_check_warning = True
-        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY))
-    elif party.party_type == Party.PartyTypes.ORGANIZATION.value:
-        if not party.organization_name:
+    if entity_role.is_related_colin_entity:
+        colin_entity = entity_role.related_colin_entity
+        if not colin_entity.organization_name:
             no_org_name_warning = True
-        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY))
+        result.extend(check_address(colin_entity.mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.BUSINESS_PARTY))
+    elif entity_role.is_related_person:
+        legal_entity = entity_role.related_entity
+        if not legal_entity.first_name and not legal_entity.last_name:
+            no_person_name_check_warning = True
+        result.extend(check_address(legal_entity.entity_mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.BUSINESS_PARTY))
+    elif entity_role.is_related_organization:
+        legal_entity = entity_role.related_entity
+        if not legal_entity.legal_name:
+            no_org_name_warning = True
+        result.extend(check_address(legal_entity.entity_mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.BUSINESS_PARTY))
 
-    if legal_type == Business.LegalTypes.SOLE_PROP.value:
+    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value:
         if no_person_name_check_warning:
             result.append({
                 **WARNING_MESSAGE_BASE,
@@ -184,7 +195,7 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
                 'code': BusinessWarningCodes.NO_PROPRIETOR_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
+    elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value:
         if no_person_name_check_warning:
             result.append({
                 **WARNING_MESSAGE_BASE,
@@ -201,29 +212,45 @@ def check_firm_party(legal_type: str, party_role: PartyRole):
     return result
 
 
-def check_completing_party(party_role: PartyRole):
+def check_completing_party(entity_role: EntityRole):
     """Check for missing completing party data."""
     result = []
 
-    party = party_role.party
-    role = party_role.role.replace('_', ' ').title()
+    role = entity_role.role_type.replace('_', ' ').title()
 
-    if party.party_type == Party.PartyTypes.PERSON.value:
-        if not party.first_name and not party.last_name:
-            result.append({
-                **WARNING_MESSAGE_BASE,
-                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_PERSON_NAME,
-                'message': f'{role} name is required.',
-            })
-        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.COMPLETING_PARTY))
-    elif party.party_type == Party.PartyTypes.ORGANIZATION.value:
-        if not party.organization_name:
+    if entity_role.is_filing_colin_entity:
+        colin_entity = entity_role.related_colin_entity
+        if not colin_entity.organization_name:
             result.append({
                 **WARNING_MESSAGE_BASE,
                 'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_NAME,
                 'message': f'{role} organization name is required.',
             })
-        result.extend(check_address(party.mailing_address, Address.MAILING, BusinessWarningReferers.COMPLETING_PARTY))
+        result.extend(check_address(colin_entity.mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.COMPLETING_PARTY))
+    elif entity_role.is_filing_related_person:
+        legal_entity = entity_role.legal_entity
+        if not legal_entity.first_name and not legal_entity.last_name:
+            result.append({
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_PERSON_NAME,
+                'message': f'{role} name is required.',
+            })
+        result.extend(check_address(legal_entity.entity_mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.COMPLETING_PARTY))
+    elif entity_role.is_filing_related_organization:
+        legal_entity = entity_role.legal_entity
+        if not legal_entity.legal_name:
+            result.append({
+                **WARNING_MESSAGE_BASE,
+                'code': BusinessWarningCodes.NO_COMPLETING_PARTY_ORG_NAME,
+                'message': f'{role} organization name is required.',
+            })
+        result.extend(check_address(legal_entity.entity_mailing_address,
+                                    Address.MAILING,
+                                    BusinessWarningReferers.COMPLETING_PARTY))
 
     return result
 

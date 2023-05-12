@@ -29,9 +29,9 @@ def test_business_next_identifier(session, business_type, expected):
     identifier = BusinessIdentifier.next_identifier(business_type)
 
     if expected:
-        legal_type = identifier[:re.search(r"\d", identifier).start()]
-        assert legal_type in BusinessType
-        assert identifier[identifier.find(legal_type) + len(legal_type):].isdigit()
+        entity_type = identifier[:re.search(r"\d", identifier).start()]
+        assert entity_type in BusinessType
+        assert identifier[identifier.find(entity_type) + len(entity_type):].isdigit()
     else:
         assert identifier is None
 

@@ -23,13 +23,13 @@ import pytest
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import ShareClass
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_valid_share_class_save(session):
     """Assert that a valid share class can be saved."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -39,7 +39,7 @@ def test_valid_share_class_save(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_class.save()
     assert share_class.id
@@ -48,7 +48,7 @@ def test_valid_share_class_save(session):
 def test_share_class_json(session):
     """Assert the json format of share class."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -58,7 +58,7 @@ def test_share_class_json(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_class.save()
     share_class_json = {
@@ -79,7 +79,7 @@ def test_share_class_json(session):
 def test_invalid_share_quantity(session):
     """Assert that model validates share class share quantity."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -89,7 +89,7 @@ def test_invalid_share_quantity(session):
         par_value=0.852,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     with pytest.raises(BusinessException) as share_class_error:
         share_class.save()
@@ -103,7 +103,7 @@ def test_invalid_share_quantity(session):
 def test_invalid_par_value(session):
     """Assert that model validates share class par value."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -113,7 +113,7 @@ def test_invalid_par_value(session):
         par_value=None,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     with pytest.raises(BusinessException) as share_class_error:
         share_class.save()
@@ -127,7 +127,7 @@ def test_invalid_par_value(session):
 def test_share_class_currency(session):
     """Assert that model validates currency."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -137,7 +137,7 @@ def test_share_class_currency(session):
         par_value=0.875,
         currency=None,
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     with pytest.raises(BusinessException) as share_class_error:
         share_class.save()
@@ -151,7 +151,7 @@ def test_share_class_currency(session):
 def test_find_by_share_class_id(session):
     """Assert that the method returns correct value."""
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -161,7 +161,7 @@ def test_find_by_share_class_id(session):
         par_value=0.875,
         currency='CAD',
         special_rights_flag=False,
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     share_class.save()
 

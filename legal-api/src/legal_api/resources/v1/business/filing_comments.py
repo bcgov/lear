@@ -23,7 +23,7 @@ from flask import g, jsonify, request
 from flask_restx import Resource, cors
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, Filing, User, db
+from legal_api.models import Comment, Filing, LegalEntity, User, db
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
@@ -120,14 +120,14 @@ class CommentResource(Resource):
             return ({'message': f'No filing json data in body of post for {identifier}.'},
                     HTTPStatus.BAD_REQUEST)
 
-        business = Business.find_by_identifier(identifier)
+        legal_entity = LegalEntity.find_by_identifier(identifier)
         filing = Filing.find_by_id(filing_id)
 
-        if not business:
+        if not legal_entity:
             return ({'message': f'{identifier} not found'}, HTTPStatus.NOT_FOUND)
 
         # check that filing belongs to this business
-        if not filing or filing.business_id != business.id:
+        if not filing or filing.legal_entity_id != legal_entity.id:
             return ({'message': f'Filing {filing_id} not found'}, HTTPStatus.NOT_FOUND)
 
         return (None, None)

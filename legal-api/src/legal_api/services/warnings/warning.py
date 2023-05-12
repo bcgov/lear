@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service to check warnings for a business."""
-from legal_api.models import Business
+"""Service to check warnings for a LegalEntity."""
+from legal_api.models import LegalEntity
 
 from .business import check_business
 
 
-def check_warnings(business: Business) -> list:
-    """Check warnings for a business."""
+def check_warnings(legal_entity: LegalEntity) -> list:
+    """Check warnings for a LegalEntity."""
     result = []
 
     # Currently only checks for missing business info warnings but in future other warning checks can be included
-    # e.g. compliance checks - result.extend(check_compliance(business))
-    result.extend(check_business(business))
+    # e.g. compliance checks - result.extend(check_compliance(legal_entity))
+    result.extend(check_business(legal_entity))
 
     return result

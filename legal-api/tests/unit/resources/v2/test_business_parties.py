@@ -21,7 +21,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from tests.unit.models import Address, Party, PartyRole, factory_business, factory_party_role
+from tests.unit.models import Address, EntityRole, LegalEntity, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -35,28 +35,29 @@ def test_get_business_parties_one_party_multiple_roles(app, session, client, jwt
     """Assert that business parties are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    officer = Party(
+    legal_entity =factory_legal_entity(identifier)
+    officer = LegalEntity(
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name='Connor',
         last_name='Horton',
         middle_initial=''
     )
     officer.save()
-    party_role_1 = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
+    party_role_1 = EntityRole(
+        role_type=EntityRole.RoleTypes.director,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party_id=officer.id
+        related_entity_id=officer.id
     )
-    party_role_2 = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
+    party_role_2 = EntityRole(
+        role_type=EntityRole.RoleTypes.custodian,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party_id=officer.id
+        related_entity_id=officer.id
     )
-    business.party_roles.append(party_role_1)
-    business.party_roles.append(party_role_2)
-    business.save()
+    legal_entity.entity_roles.append(party_role_1)
+    legal_entity.entity_roles.append(party_role_2)
+    legal_entity.save()
 
     # mock response from auth to give view access (not needed if staff / system)
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
@@ -76,33 +77,35 @@ def test_get_business_parties_multiple_parties(session, client, jwt):
     """Assert that business parties are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    officer_1 = Party(
+    legal_entity =factory_legal_entity(identifier)
+    officer_1 = LegalEntity(
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name='Connor',
         last_name='Horton',
         middle_initial=''
     )
-    party_role_1 = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
+    party_role_1 = EntityRole(
+        role_type=EntityRole.RoleTypes.director,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party=officer_1
+        related_entity=officer_1
     )
-    officer_2 = Party(
+    officer_2 = LegalEntity(
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name='Abraham',
         last_name='Mason',
         middle_initial=''
     )
 
-    party_role_2 = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
+    party_role_2 = EntityRole(
+        role_type=EntityRole.RoleTypes.custodian,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party=officer_2
+        related_entity=officer_2
     )
-    business.party_roles.append(party_role_1)
-    business.party_roles.append(party_role_2)
-    business.save()
+    legal_entity.entity_roles.append(party_role_1)
+    legal_entity.entity_roles.append(party_role_2)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties',
@@ -120,7 +123,7 @@ def test_get_business_parties_by_role(session, client, jwt):
     """Assert that business parties are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     party_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
     officer_1 = {
         'firstName': 'Michael',
@@ -135,7 +138,7 @@ def test_get_business_parties_by_role(session, client, jwt):
         officer_1,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
     officer_2 = {
         'firstName': 'Connor',
@@ -150,11 +153,11 @@ def test_get_business_parties_by_role(session, client, jwt):
         officer_2,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.CUSTODIAN
+        EntityRole.RoleTypes.custodian
     )
-    business.party_roles.append(party_role_1)
-    business.party_roles.append(party_role_2)
-    business.save()
+    legal_entity.entity_roles.append(party_role_1)
+    legal_entity.entity_roles.append(party_role_2)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties?role=Custodian',
@@ -170,7 +173,7 @@ def test_get_business_parties_by_invalid_role(session, client, jwt):
     """Assert that business parties are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     party_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
     officer = {
         'firstName': 'Michael',
@@ -185,10 +188,10 @@ def test_get_business_parties_by_invalid_role(session, client, jwt):
         officer,
         datetime.datetime(2017, 5, 17),
         None,
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role_1)
-    business.save()
+    legal_entity.entity_roles.append(party_role_1)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties?role=test',
@@ -203,7 +206,7 @@ def test_get_business_no_parties(session, client, jwt):
     """Assert that business parties are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties',
@@ -218,7 +221,7 @@ def test_get_business_ceased_parties(session, client, jwt):
     """Assert that business parties are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     officer = {
         'firstName': 'Michael',
         'lastName': 'Crane',
@@ -232,10 +235,10 @@ def test_get_business_ceased_parties(session, client, jwt):
         officer,
         datetime.datetime(2012, 5, 17),
         datetime.datetime(2013, 5, 17),
-        PartyRole.RoleTypes.DIRECTOR
+        EntityRole.RoleTypes.director
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties',
@@ -250,21 +253,22 @@ def test_get_business_party_by_id(session, client, jwt):
     """Assert that business party is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    officer = Party(
+    legal_entity =factory_legal_entity(identifier)
+    officer = LegalEntity(
         first_name='Connor',
         last_name='Horton',
-        middle_initial=''
+        middle_initial='',
+        entity_type=LegalEntity.EntityTypes.PERSON.value
     )
     officer.save()
-    party_role = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
+    party_role = EntityRole(
+        role_type=EntityRole.RoleTypes.director,
         appointment_date=datetime.datetime(2017, 5, 17),
         cessation_date=None,
-        party_id=officer.id
+        related_entity_id=officer.id,
     )
-    business.party_roles.append(party_role)
-    business.save()
+    legal_entity.entity_roles.append(party_role)
+    legal_entity.save()
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties/{officer.id}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -279,9 +283,9 @@ def test_get_business_party_by_invalid_id(session, client, jwt):
     """Assert that business party is not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     party_id = 5000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties/{party_id}',
@@ -310,8 +314,8 @@ def test_get_parties_unauthorized(app, session, client, jwt, requests_mock):
     """Assert that parties are not returned for an unauthorized user."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    business.save()
+    legal_entity =factory_legal_entity(identifier)
+    legal_entity.save()
 
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 

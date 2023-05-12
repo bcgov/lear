@@ -18,7 +18,7 @@ import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.change_of_directors import validate_effective_date
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -31,7 +31,7 @@ def common_setup(identifier: str, date_time: datetime):
     filing_date = date_time - datedelta.DAY
     effective_date = as_effective_date(filing_date)
 
-    business = Business(identifier=identifier,
+    legal_entity =LegalEntity(identifier=identifier,
                         founding_date=founding_date)
 
     f = copy.deepcopy(FILING_HEADER)
@@ -43,7 +43,7 @@ def common_setup(identifier: str, date_time: datetime):
     cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
     f['filing']['changeOfDirectors'] = cod
 
-    return business, f
+    return legal_entity, f
 
 
 def test_effective_date_sanity_check(session):
@@ -51,10 +51,10 @@ def test_effective_date_sanity_check(session):
     # setup
     identifier = 'CP1234567'
     now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    business, filing = common_setup(identifier, now)
+    legal_entity, filing = common_setup(identifier, now)
 
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert not err
 
 
@@ -63,14 +63,14 @@ def test_validate_effective_date_not_in_future(session):
     # setup
     identifier = 'CP1234567'
     now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    business, filing = common_setup(identifier, now)
+    legal_entity, filing = common_setup(identifier, now)
 
     # The effective date _cannot_ be in the future.
     tomorrow = datetime(2001, 8, 6, 12, 0, 0, 0, tzinfo=timezone.utc)
     effective_date = as_effective_date(tomorrow)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert err
 
     # The effective date _can_ be today.
@@ -78,7 +78,7 @@ def test_validate_effective_date_not_in_future(session):
     effective_date = as_effective_date(today)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert not err
 
     # The effective date _can_ be in the past.
@@ -86,7 +86,7 @@ def test_validate_effective_date_not_in_future(session):
     effective_date = as_effective_date(yesterday)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert not err
 
 
@@ -95,14 +95,14 @@ def test_validate_effective_date_not_before_founding(session):
     # setup
     identifier = 'CP1234567'
     now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    business, filing = common_setup(identifier, now)
+    legal_entity, filing = common_setup(identifier, now)
 
     # The effective date _cannot_ be before their Incorporation Date.
     before = datetime(2000, 8, 4, 12, 0, 0, 0, tzinfo=timezone.utc)
     effective_date = as_effective_date(before)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert err
 
     # The effective date _can_ be on their Incorporation Date.
@@ -110,7 +110,7 @@ def test_validate_effective_date_not_before_founding(session):
     effective_date = as_effective_date(on)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert not err
 
     # The effective date _can_ be after their Incorporation Date.
@@ -118,7 +118,7 @@ def test_validate_effective_date_not_before_founding(session):
     effective_date = as_effective_date(after)
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing)
+        err = validate_effective_date(legal_entity, filing)
     assert not err
 
 
@@ -127,9 +127,9 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     # setup
     identifier = 'CP1234567'
     founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    business = Business(identifier=identifier,
+    legal_entity =LegalEntity(identifier=identifier,
                         founding_date=founding_date)
-    business.save()
+    legal_entity.save()
     now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
 
     # create the previous COD filing
@@ -137,7 +137,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     filing_cod['filing']['header']['name'] = 'changeOfDirectors'
     filing_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     filing_date = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    factory_completed_filing(business=business,
+    factory_completed_filing(legal_entity=legal_entity,
                              data_dict=filing_cod,
                              filing_date=filing_date)
 
@@ -146,7 +146,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     effective_date = as_effective_date(before)
     filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_cod)
+        err = validate_effective_date(legal_entity, filing_cod)
     assert err
 
     # The effective date _can_ be on the same date as the previous COD.
@@ -154,7 +154,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     effective_date = as_effective_date(on)
     filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_cod)
+        err = validate_effective_date(legal_entity, filing_cod)
     assert not err
 
     # The effective date _can_ be after the previous COD.
@@ -162,7 +162,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     effective_date = as_effective_date(after)
     filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_cod)
+        err = validate_effective_date(legal_entity, filing_cod)
     assert not err
 
 
@@ -171,16 +171,16 @@ def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa:
     # setup
     identifier = 'CP1234567'
     founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    business = Business(identifier=identifier,
+    legal_entity =LegalEntity(identifier=identifier,
                         founding_date=founding_date)
-    business.save()
+    legal_entity.save()
     now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
 
     # create the previous AR filing
     filing_ar = copy.deepcopy(ANNUAL_REPORT)
     filing_ar['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     filing_date = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
-    factory_completed_filing(business=business,
+    factory_completed_filing(legal_entity=legal_entity,
                              data_dict=filing_ar,
                              filing_date=filing_date)
 
@@ -189,7 +189,7 @@ def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa:
     effective_date = as_effective_date(before)
     filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_ar)
+        err = validate_effective_date(legal_entity, filing_ar)
     assert err
 
     # The effective date _can_ be on the same date as the previous AR.
@@ -197,7 +197,7 @@ def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa:
     effective_date = as_effective_date(on)
     filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_ar)
+        err = validate_effective_date(legal_entity, filing_ar)
     assert not err
 
     # The effective date _can_ be after the previous AR.
@@ -205,7 +205,7 @@ def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa:
     effective_date = as_effective_date(after)
     filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
-        err = validate_effective_date(business, filing_ar)
+        err = validate_effective_date(legal_entity, filing_ar)
     assert not err
 
 

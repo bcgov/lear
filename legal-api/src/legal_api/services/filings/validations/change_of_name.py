@@ -18,15 +18,15 @@ from typing import Dict, Final
 from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services import namex
 
 from ...utils import get_str
 
 
-def validate(business: Business, filing: Dict) -> Error:
+def validate(legal_entity: LegalEntity, filing: Dict) -> Error:
     """Validate the Change of Name filing."""
-    if not business or not filing:
+    if not legal_entity or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
     legal_name_path = '/filing/changeOfName/legalName'

@@ -21,7 +21,7 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.services.filings.validations.admin_freeze import validate
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -35,7 +35,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 )
 def test_admin_freeze(session, freeze, identifier, expected_code):
     """Assert valid admin freeze."""
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['business']['identifier'] = identifier
@@ -44,7 +44,7 @@ def test_admin_freeze(session, freeze, identifier, expected_code):
     if not freeze:
         filing_json['filing']['adminFreeze']['freeze'] = False
 
-    err = validate(business, filing_json)
+    err = validate(legal_entity, filing_json)
 
     if expected_code:
         assert err.code == expected_code

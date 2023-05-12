@@ -24,7 +24,7 @@ from legal_api.services.authz import BASIC_USER
 from legal_api.models import DCDefinition
 from legal_api.services.digital_credentials import DigitalCredentialsService
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
 from tests.unit.models.test_dc_issued_credential import create_dc_issued_credential
@@ -38,7 +38,7 @@ def test_create_invitation(session, client, jwt):  # pylint:disable=unused-argum
     """Assert create invitation endpoint returns invitation_url."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     connection_id = '0d94e18b-3a52-4122-8adf-33e2ccff681f'
     invitation_url = """http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
@@ -58,8 +58,8 @@ def test_get_connection_not_found(session, client, jwt):  # pylint:disable=unuse
     """Assert get connection endpoint returns not found when there is no active connection."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    create_dc_connection(business)
+    legal_entity =factory_legal_entity(identifier)
+    create_dc_connection(legal_entity)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connection',
                     headers=headers, content_type=content_type)
@@ -71,9 +71,9 @@ def test_get_connection(session, client, jwt):  # pylint:disable=unused-argument
     """Assert get connection endpoint returns connection json."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
-    connection = create_dc_connection(business, is_active=True)
+    connection = create_dc_connection(legal_entity, is_active=True)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connection',
                     headers=headers, content_type=content_type)
@@ -88,10 +88,10 @@ def test_send_credential(session, client, jwt):  # pylint:disable=unused-argumen
     """Assert Issue credentials to the connection."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     create_dc_definition()
-    create_dc_connection(business, is_active=True)
+    create_dc_connection(legal_entity, is_active=True)
 
     with patch.object(DigitalCredentialsService, 'issue_credential', return_value={
             'credential_exchange_id': '3fa85f64-5717-4562-b3fc-2c963f66afa6'}):
@@ -106,14 +106,14 @@ def test_get_issued_credentials(session, client, jwt):  # pylint:disable=unused-
     """Assert Get all issued credentials json."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
-    issued_credential = create_dc_issued_credential(business=business)
+    issued_credential = create_dc_issued_credential(legal_entity=legal_entity)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('issuedCredentials')) == 1
-    assert rv.json.get('issuedCredentials')[0].get('legalName') == business.legal_name
+    assert rv.json.get('issuedCredentials')[0].get('legalName') == legal_entity.legal_name
     assert rv.json.get('issuedCredentials')[0].get('credentialType') == DCDefinition.CredentialType.business.name
     assert rv.json.get('issuedCredentials')[0].get('credentialId') == issued_credential.credential_id
     assert not rv.json.get('issuedCredentials')[0].get('isIssued')
@@ -125,9 +125,9 @@ def test_webhook_connections_notification(session, client, jwt):  # pylint:disab
     """Assert webhook connection notification endpoint when connection to active."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
-    connection = create_dc_connection(business)
+    connection = create_dc_connection(legal_entity)
 
     json_data = {
         'connection_id': connection.connection_id,
@@ -149,9 +149,9 @@ def test_webhook_issue_credential_notification(session, client, jwt):  # pylint:
     """Assert webhook issue_credential notification endpoint when credential issued."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
-    issued_credential = create_dc_issued_credential(business=business)
+    issued_credential = create_dc_issued_credential(legal_entity=legal_entity)
 
     json_data = {
         'credential_exchange_id': issued_credential.credential_exchange_id,

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License
-"""Filings are legal documents that alter the state of a business."""
+"""Filings are legal documents that alter the state of a LegalEntity."""
 import copy
 from datetime import date, datetime
 from enum import Enum
@@ -37,7 +37,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     # allowing the model to be deep.
     """Immutable filing record.
 
-    Manages the filing ledger for the associated business.
+    Manages the filing ledger for the associated LegalEntity.
     """
 
     class Status(str, Enum):
@@ -325,7 +325,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_payment_token',
             '_source',
             '_status',
-            'business_id',
+            'legal_entity_id',
             'colin_only',
             'court_order_date',
             'court_order_effect_of_order',
@@ -377,8 +377,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
                                db.ForeignKey('transaction.id'))
-    business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'))
+    legal_entity_id = db.Column('legal_entity_id', db.Integer,
+                                db.ForeignKey('legal_entities.id'))
     temp_reg = db.Column('temp_reg', db.String(10),
                          db.ForeignKey('registration_bootstrap.identifier'))
     submitter_id = db.Column('submitter_id', db.Integer,
@@ -392,7 +392,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
-    filing_party_roles = db.relationship('PartyRole', lazy='dynamic')
+    filing_entity_roles = db.relationship('EntityRole', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
@@ -621,8 +621,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @comments_count.expression
     def comments_count(self):
         """Return comments count expression for this filing."""
-        return (select([func.count(Comment.business_id)]).
-                where(Comment.business_id == self.id).
+        return (select([func.count(Comment.legal_entity_id)]).
+                where(Comment.legal_entity_id == self.id).
                 label('comments_count')
                 )
 
@@ -696,10 +696,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
+    def get_filings_by_status(legal_entity_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._status.in_(status)). \
             order_by(Filing._filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
         # member provided via SQLAlchemy
@@ -710,10 +710,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return query.all()
 
     @staticmethod
-    def get_incomplete_filings_by_type(business_id: int, filing_type: str):
+    def get_incomplete_filings_by_type(legal_entity_id: int, filing_type: str):
         """Return the incomplete filings of a particular type."""
         filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._filing_type == filing_type). \
             filter(Filing._status != Filing.Status.COMPLETED.value). \
             order_by(desc(Filing.filing_date)). \
@@ -721,10 +721,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_filings_by_types(business_id: int, filing_types):
+    def get_filings_by_types(legal_entity_id: int, filing_types):
         """Return the completed filings of a particular type."""
         filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
             order_by(desc(Filing.effective_date)). \
@@ -732,7 +732,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
+    def get_incomplete_filings_by_types(legal_entity_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
         excluded_statuses is a list of filing statuses that will be excluded from the query for incomplete filings
@@ -740,7 +740,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_statuses = [] if excluded_statuses is None else excluded_statuses
 
         filings = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status != Filing.Status.COMPLETED.value). \
             filter(not_(Filing._status.in_(excluded_statuses))). \
@@ -774,17 +774,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str, filing_sub_type: str = None):
+    def get_a_businesses_most_recent_filing_of_a_type(legal_entity_id: int,
+                                                      filing_type: str,
+                                                      filing_sub_type: str = None):
         """Return the filings of a particular type."""
         max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
             filter(Filing._filing_type == filing_type). \
-            filter(Filing.business_id == business_id)
+            filter(Filing.legal_entity_id == legal_entity_id)
         if filing_sub_type:
             max_filing = max_filing.filter(Filing._filing_sub_type == filing_sub_type)
         max_filing = max_filing.subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._filing_type == filing_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
         if filing_sub_type:
@@ -793,10 +795,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.one_or_none()
 
     @staticmethod
-    def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
+    def get_most_recent_legal_filing(legal_entity_id: str, filing_type: str = None):
         """Return the most recent filing containing the legal_filing type."""
         query = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
-            filter(Filing.business_id == business_id).\
+            filter(Filing.legal_entity_id == legal_entity_id).\
             filter(Filing._status == Filing.Status.COMPLETED.value)
         if filing_type:
             expr = Filing._filing_json[('filing', filing_type)]
@@ -805,7 +807,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         max_filing = query.subquery()
 
         filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
             order_by(Filing.id.desc())
 
@@ -822,12 +824,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        filings = db.session.query(Filing).join(Business). \
+        from .legal_entity import LegalEntity  # noqa: F401; pylint: disable=import-outside-toplevel
+        filings = db.session.query(Filing).join(LegalEntity). \
             filter(
-                ~Business.legal_type.in_([
-                    Business.LegalTypes.SOLE_PROP.value,
-                    Business.LegalTypes.PARTNERSHIP.value]),
+                ~LegalEntity.entity_type.in_([
+                    LegalEntity.EntityTypes.SOLE_PROP.value,
+                    LegalEntity.EntityTypes.PARTNERSHIP.value]),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
@@ -845,7 +847,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_previous_completed_filing(filing):
         """Return the previous completed filing."""
         filings = db.session.query(Filing). \
-            filter(Filing.business_id == filing.business_id). \
+            filter(Filing.legal_entity_id == filing.legal_entity_id). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
             filter(Filing.id < filing.id). \
             filter(Filing.effective_date < filing.effective_date). \
