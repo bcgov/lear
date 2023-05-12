@@ -20,7 +20,7 @@ from legal_api.reports.business_document import BusinessDocument  # noqa:I001
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
-from tests.unit.models import factory_business, factory_business_mailing_address
+from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address
 
 
 @pytest.mark.parametrize(
@@ -48,9 +48,9 @@ def test_get_json(session, app, jwt, identifier, entity_type, document_name):
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
     with request_ctx:
-        business = factory_business(identifier=identifier, entity_type=entity_type)
-        factory_business_mailing_address(business)
-        report = BusinessDocument(business, document_name)
+        legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+        factory_legal_entity_mailing_address(legal_entity)
+        report = BusinessDocument(legal_entity, document_name)
         json_resp = report.get_json()
         assert json_resp
         assert json_resp[1] == HTTPStatus.OK
@@ -92,9 +92,9 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
     with request_ctx:
-        business = factory_business(identifier=identifier, entity_type=entity_type)
-        factory_business_mailing_address(business)
-        report = BusinessDocument(business, document_name)
+        legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+        factory_legal_entity_mailing_address(legal_entity)
+        report = BusinessDocument(legal_entity, document_name)
         filename = report._get_report_filename()
         assert filename
         template = report._get_template()

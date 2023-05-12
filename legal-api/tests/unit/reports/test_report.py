@@ -40,7 +40,7 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.models import db  # noqa:I001
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from tests.unit.models import factory_business, factory_completed_filing  # noqa:E501,I001
+from tests.unit.models import factory_legal_entity, factory_completed_filing  # noqa:E501,I001
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):
@@ -54,19 +54,19 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
     filing_json['filing']['business']['legalType'] = entity_type
     filing_json['filing']['header']['name'] = filing_type
 
-    business = factory_business(identifier=identifier, entity_type=entity_type)
+    legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
     if report_type == 'correction':
         original_filing_json = copy.deepcopy(filing_json)
         original_filing_json['filing']['header']['name'] = filing_json['filing']['correction']['correctedFilingType']
         del original_filing_json['filing']['correction']
-        original_filing = factory_completed_filing(business, original_filing_json)
+        original_filing = factory_completed_filing(legal_entity, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
     if report_type == 'specialResolution' and filing_type != 'specialResolution':
         filing_json['specialResolution'] = SPECIAL_RESOLUTION
-    filing = factory_completed_filing(business, filing_json)
+    filing = factory_completed_filing(legal_entity, filing_json)
 
     report = Report(filing)
-    report._business = business
+    report._legal_entity =legal_entity
     report._report_key = report_type
     if report._report_key == 'correction':
         report._report_key = report._filing.filing_json['filing']['correction']['correctedFilingType']
@@ -76,7 +76,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
 
 def populate_business_info_to_filing(report):
     """Assert _populate_business_info_to_filing works as expected."""
-    report._populate_business_info_to_filing(report._filing, report._business)
+    report._populate_business_info_to_filing(report._filing, report._legal_entity)
     filing_json = report._filing.filing_json
     assert filing_json['filing']['business']['formatted_founding_date_time']
     assert filing_json['filing']['business']['formatted_founding_date']
@@ -136,7 +136,7 @@ def set_addresses(report):
             report._set_addresses(filing_json['filing'])
 
     assert filing_json['filing'].get('registeredOfficeAddress')
-    if report._business.legal_type == 'BEN' and report._report_key == 'changeOfAddress':
+    if report._legal_entity.entity_type == 'BEN' and report._report_key == 'changeOfAddress':
         assert filing_json['filing'].get('recordsOfficeAddress')
 
 
@@ -194,7 +194,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     if report_type in ['annualReport', 'changeOfAddress']:
         set_addresses(report)
 
-    if report._business.legal_type != 'CP':
+    if report._legal_entity.entity_type != 'CP':
         set_tax_id(report)
 
     filename = report._get_report_filename()
@@ -212,12 +212,12 @@ def test_alteration_name_change(session):
     report_type = 'certificateOfNameChange'
 
     # An existing business
-    business = factory_business(identifier=identifier, entity_type=entity_type)
+    legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
 
     # changes its name to a named company
-    named_company_filing = filing_named_company(business, ALTERATION_FILING_TEMPLATE, named_company_name)
-    update_business_legal_name(business, named_company_name)
-    named_company_report = create_alteration_report(named_company_filing, business, report_type)
+    named_company_filing = filing_named_company(legal_entity, ALTERATION_FILING_TEMPLATE, named_company_name)
+    update_business_legal_name(legal_entity, named_company_name)
+    named_company_report = create_alteration_report(named_company_filing, legal_entity, report_type)
     named_company_report_filename = named_company_report._get_report_filename()
     assert named_company_report_filename
     named_company_report_template = named_company_report._get_template()
@@ -226,14 +226,14 @@ def test_alteration_name_change(session):
     assert named_company_report_template_data['toLegalName'] == named_company_name
 
     # changes its name to a numbered company
-    numbered_company_filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
-    update_business_legal_name(business, numbered_company_name)
+    numbered_company_filing = filing_numbered_company(legal_entity, ALTERATION_FILING_TEMPLATE, numbered_company_name)
+    update_business_legal_name(legal_entity, numbered_company_name)
 
     # new legal_name can be retrieved from the versioned business (numbered company case)
     business_revision = \
-        VersionedBusinessDetailsService.get_business_revision_after_filing(numbered_company_filing.id, business.id)
+        VersionedBusinessDetailsService.get_business_revision_after_filing(numbered_company_filing.id, legal_entity.id)
     assert business_revision['legalName'] == numbered_company_name
-    numbered_company_report = create_alteration_report(numbered_company_filing, business, report_type)
+    numbered_company_report = create_alteration_report(numbered_company_filing, legal_entity, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
     assert numbered_company_filename
     numbered_company_template = numbered_company_report._get_template()
@@ -242,22 +242,22 @@ def test_alteration_name_change(session):
     assert numbered_company_template_data['toLegalName'] == numbered_company_name
 
 
-def update_business_legal_name(business, legal_name):
+def update_business_legal_name(legal_entity, legal_name):
     """Update business legal name."""
     uow = versioning_manager.unit_of_work(db.session)
     uow.create_transaction(db.session)
-    business.legal_name = legal_name
-    business.save()
+    legal_entity.legal_name = legal_name
+    legal_entity.save()
 
 
-def filing_named_company(business, template, legal_name):
+def filing_named_company(legal_entity, template, legal_name):
     """Create a filing for a name change with for named company."""
     filing_json = copy.deepcopy(template)
     filing_json['filing']['alteration']['nameRequest']['legalName'] = legal_name
-    filing = factory_completed_filing(business, filing_json)
+    filing = factory_completed_filing(legal_entity, filing_json)
     filing._meta_data = {
         'alteration': {
-            'fromLegalName': business.legal_name,
+            'fromLegalName': legal_entity.legal_name,
             'toLegalName': legal_name
         }
     }
@@ -265,15 +265,15 @@ def filing_named_company(business, template, legal_name):
     return filing
 
 
-def filing_numbered_company(business, template, legal_name):
+def filing_numbered_company(legal_entity, template, legal_name):
     """Create a filing for a name change with for numbered company."""
     filing_json = copy.deepcopy(template)
     del filing_json['filing']['alteration']['nameRequest']['legalName']
     del filing_json['filing']['alteration']['nameRequest']['nrNumber']
-    filing = factory_completed_filing(business, filing_json)
+    filing = factory_completed_filing(legal_entity, filing_json)
     filing._meta_data = {
         'alteration': {
-            'fromLegalName': business.legal_name,
+            'fromLegalName': legal_entity.legal_name,
             'toLegalName': legal_name
         }
     }
@@ -284,7 +284,7 @@ def filing_numbered_company(business, template, legal_name):
 def create_alteration_report(filing, business, report_type):
     """Create a report for alteration."""
     report = Report(filing)
-    report._business = business
+    report._legal_entity =business
     report._report_key = report_type
     populate_business_info_to_filing(report)
     set_dates(report)

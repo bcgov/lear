@@ -33,14 +33,14 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     # [init / invitation / request / response / active / error / inactive]
     connection_state = db.Column('connection_state', db.String(50))
 
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
 
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
             'id': self.id,
-            'businessId': self.business_id,
+            'businessId': self.legal_entity_id,
             'connectionId': self.connection_id,
             'invitationUrl': self.invitation_url,
             'isActive': self.is_active,
@@ -70,26 +70,26 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_connection
 
     @classmethod
-    def find_active_by(cls, business_id: str) -> DCConnection:
-        """Return the active digital credential connection matching the business_id."""
+    def find_active_by(cls, legal_entity_id: str) -> DCConnection:
+        """Return the active digital credential connection matching the legal_entity_id."""
         dc_connection = None
-        if business_id:
+        if legal_entity_id:
             dc_connection = (
               cls.query
-                 .filter(DCConnection.business_id == business_id)
+                 .filter(DCConnection.legal_entity_id == legal_entity_id)
                  .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
                  .one_or_none())
         return dc_connection
 
     @classmethod
     def find_by(cls,
-                business_id: int = None,
+                legal_entity_id: int = None,
                 connection_state: str = None) -> List[DCConnection]:
         """Return the digital credential connection matching the filter."""
         query = db.session.query(DCConnection)
 
-        if business_id:
-            query = query.filter(DCConnection.business_id == business_id)
+        if legal_entity_id:
+            query = query.filter(DCConnection.legal_entity_id == legal_entity_id)
 
         if connection_state:
             query = query.filter(DCConnection.connection_state == connection_state)

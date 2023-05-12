@@ -58,7 +58,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     message_id = db.Column('message_id', db.String(60))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     @property
@@ -88,7 +88,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
-                business_id: int,
+                legal_entity_id: int,
                 service_name: ServiceName,
                 request_type: RequestType = None,
                 filing_id: int = None,
@@ -96,7 +96,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
                 message_id: str = None) -> List[RequestTracker]:
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
-            filter(RequestTracker.business_id == business_id). \
+            filter(RequestTracker.legal_entity_id == legal_entity_id). \
             filter(RequestTracker.service_name == service_name)
 
         if request_type:

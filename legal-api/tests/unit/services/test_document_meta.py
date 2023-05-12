@@ -26,9 +26,9 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, Filing
+from legal_api.models import Filing, LegalEntity
 from legal_api.services import DocumentMetaService
-from tests.unit.models import factory_business, factory_filing
+from tests.unit.models import factory_legal_entity, factory_filing
 
 
 FILING_DATE = '2020-07-14'
@@ -43,7 +43,7 @@ CON_TITLE = 'Legal Name Change'
 def test_business_not_found(session, app):
     """Assert that no documents are returned when the filing's business is not found."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -62,14 +62,14 @@ def test_business_not_found(session, app):
         }
         assert len(document_meta.get_documents(filing)) == 0
         # also verify document class properties:
-        assert document_meta._business_identifier == 'BC7654321'
-        assert document_meta._legal_type is None
+        assert document_meta._legal_entity_identifier == 'BC7654321'
+        assert document_meta._entity_type is None
 
 
 def test_wrong_filing_status(session, app):
     """Assert that no documents are returned for a non- PAID and COMPLETED filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -88,14 +88,14 @@ def test_wrong_filing_status(session, app):
         }
         assert len(document_meta.get_documents(filing)) == 0
         # also verify document class properties:
-        assert document_meta._business_identifier == 'BC1234567'
-        assert document_meta._legal_type == Business.LegalTypes.BCOMP.value
+        assert document_meta._legal_entity_identifier == 'BC1234567'
+        assert document_meta._entity_type == LegalEntity.EntityTypes.BCOMP.value
 
 
 def test_available_on_paper_only(session, app):
     """Assert that no documents are returned for a paper-only filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -118,7 +118,7 @@ def test_available_on_paper_only(session, app):
 def test_available_in_colin_only(session, app):
     """Assert that no documents are returned for a colin-only filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -141,7 +141,7 @@ def test_available_in_colin_only(session, app):
 def test_coa_paid(session, app):
     """Assert that an Address Change document is returned for a PAID COA filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -171,7 +171,7 @@ def test_coa_paid(session, app):
 def test_coa_completed_bc(session, app):
     """Assert that Address Change + NOA documents are returned for a COMPLETED BCOMP COA filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -207,7 +207,7 @@ def test_coa_completed_bc(session, app):
 def test_coa_completed_cp(session, app):
     """Assert that an Address Change document is returned for a COMPLETED COOP COA filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='CP1234567', entity_type='CP')
+    factory_legal_entity(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -237,7 +237,7 @@ def test_coa_completed_cp(session, app):
 def test_ar(session, app):
     """Assert that an Annual Report document is returned for an AR filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -268,7 +268,7 @@ def test_ar(session, app):
 def test_cod_paid(session, app):
     """Assert that a Director Change document is returned for a PAID COD filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -299,7 +299,7 @@ def test_cod_paid(session, app):
 def test_cod_completed_bc(session, app):
     """Assert that Director Change + NOA documents are returned for a COMPLETED BCOMP COD filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -335,7 +335,7 @@ def test_cod_completed_bc(session, app):
 def test_cod_completed_cp(session, app):
     """Assert that a Director Change document is returned for a COMPLETED COOP COD filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='CP1234567', entity_type='CP')
+    factory_legal_entity(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -365,7 +365,7 @@ def test_cod_completed_cp(session, app):
 def test_con_paid(session, app):
     """Assert that a Legal Name Change document is returned for a PAID CON filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -396,7 +396,7 @@ def test_con_paid(session, app):
 def test_con_completed_bc(session, app):
     """Assert that Legal Name Change + NOA documents are returned for a COMPLETED BCOMP CON filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -432,7 +432,7 @@ def test_con_completed_bc(session, app):
 def test_con_completed_cp(session, app):
     """Assert that a Legal Name Change document is returned for a COMPLETED COOP CON filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='CP1234567', entity_type='CP')
+    factory_legal_entity(identifier='CP1234567', entity_type='CP')
     with app.app_context():
         filing = {
             'filing': {
@@ -462,7 +462,7 @@ def test_con_completed_cp(session, app):
 def test_special_resolution_paid(session, app):
     """Assert that no documents are returned for a PAID Special Resolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -486,7 +486,7 @@ def test_special_resolution_paid(session, app):
 def test_special_resolution_completed(session, app):
     """Assert that a Special Resolution document is returned for a COMPLETED Special Resolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -516,7 +516,7 @@ def test_special_resolution_completed(session, app):
 def test_voluntary_dissolution_paid(session, app):
     """Assert that no documents are returned for a PAID Voluntary Dissolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -540,7 +540,7 @@ def test_voluntary_dissolution_paid(session, app):
 def test_voluntary_dissolution_completed(session, app):
     """Assert that a Voluntary Dissolution document is returned for a COMPLETED Voluntary Dissolution filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -570,7 +570,7 @@ def test_voluntary_dissolution_completed(session, app):
 def test_correction(session, app):
     """Assert that no documents are returned for a Correction filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -610,7 +610,7 @@ def test_correction(session, app):
 def test_alteration(status, filing_id, business_identifier, expected_number, alteration_json, session, app):
     """Assert that the correct number of documents are returned for alterations in 3 scenarios."""
     document_meta = DocumentMetaService()
-    factory_business(identifier=business_identifier, entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier=business_identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -656,7 +656,7 @@ def test_ia_fed(app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value
                     }
                 }
             }
@@ -691,7 +691,7 @@ def test_ia_paid(app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value
                     }
                 }
             }
@@ -732,7 +732,7 @@ def test_ia_status(session, app, status, number_of_docs):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value
                     }
                 }
             }
@@ -765,7 +765,7 @@ def test_ia_status(session, app, status, number_of_docs):
 def test_ia_completed_bcomp(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = {
             'filing': {
@@ -810,7 +810,7 @@ def test_ia_completed_bcomp(session, app):
 def test_ia_completed_bcomp_original(session, app):
     """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
     document_meta = DocumentMetaService()
-    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
         CORRECTION_INCORPORATION['filing']['correction']['correctedFilingId'] = original_filing.id
@@ -858,7 +858,7 @@ def test_ia_completed_bcomp_original(session, app):
 def test_correction_ia(session, app):
     """Assert that IA + NOA documents are returned for a Correction filing without name change."""
     document_meta = DocumentMetaService()
-    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
         filing = {
@@ -879,7 +879,7 @@ def test_correction_ia(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value
                     }
                 }
             }
@@ -905,7 +905,7 @@ def test_correction_ia(session, app):
 def test_correction_ia_with_cert_nr_change(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
-    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     initial_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     initial_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
     initial_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'New Name'
@@ -930,7 +930,7 @@ def test_correction_ia_with_cert_nr_change(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value,
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value,
                         'nrNumber': 'NR 3456789'
                     }
                 }
@@ -962,7 +962,7 @@ def test_correction_ia_with_cert_nr_change(session, app):
 def test_correction_ia_with_cert_name_correction(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
-    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
     original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -987,7 +987,7 @@ def test_correction_ia_with_cert_name_correction(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value,
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value,
                         'nrNumber': 'NR 1234567',
                         'legalName': 'abc.'
                     }
@@ -1020,7 +1020,7 @@ def test_correction_ia_with_cert_name_correction(session, app):
 def test_correction_ia_with_named_to_numbered(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
     document_meta = DocumentMetaService()
-    b = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
     original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -1045,7 +1045,7 @@ def test_correction_ia_with_named_to_numbered(session, app):
                 },
                 'incorporationApplication': {
                     'nameRequest': {
-                        'legalType': Business.LegalTypes.BCOMP.value
+                        'legalType': LegalEntity.EntityTypes.BCOMP.value
                     }
                 }
             }
@@ -1076,7 +1076,7 @@ def test_correction_ia_with_named_to_numbered(session, app):
 def test_transition_bcomp_paid(session, app):
     """Assert that Transition Application document is returned for a filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
         filing['filing']['header']['date'] = FILING_DATE
@@ -1098,7 +1098,7 @@ def test_transition_bcomp_paid(session, app):
 def test_transition_bcomp_completed(session, app):
     """Assert that Transition Application + NOA documents are returned for a filing."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.BCOMP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
     with app.app_context():
         filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
         filing['filing']['header']['date'] = FILING_DATE
@@ -1125,7 +1125,7 @@ def test_transition_bcomp_completed(session, app):
 def test_ia_completed_coop(session, app):
     """Assert that documents are returned for a COMPLETED IA filing when business is a COOP."""
     document_meta = DocumentMetaService()
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COOP.value)
+    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.COOP.value)
     with app.app_context():
         filing = {
             'filing': {

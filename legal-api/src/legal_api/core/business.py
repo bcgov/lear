@@ -20,7 +20,7 @@ import re
 from enum import Enum, EnumMeta
 from typing import Final, Optional
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 
 class BaseMeta(EnumMeta):
@@ -75,7 +75,7 @@ class BusinessIdentifier():
     def next_identifier(business_type: BusinessType) -> Optional[str]:
         """Get the next identifier."""
         if not (business_type in BusinessType and
-                (sequence_val := Business.get_next_value_from_sequence(business_type))):
+                (sequence_val := LegalEntity.get_next_value_from_sequence(business_type))):
             return None
 
         return f'{business_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}'

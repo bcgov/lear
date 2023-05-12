@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from tests.unit.models import Address, Office, factory_business
+from tests.unit.models import Address, Office, factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
@@ -34,14 +34,14 @@ def test_get_business_addresses(app, session, client, jwt, requests_mock, test_n
     """Assert that business addresses are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
     delivery_address = Address(city='Test Delivery City', address_type=Address.DELIVERY)
     office = Office(office_type='registeredOffice')
     office.addresses.append(mailing_address)
     office.addresses.append(delivery_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
     # mock response from auth to give view access (not needed if staff / system)
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
@@ -62,7 +62,7 @@ def test_get_business_no_addresses(session, client, jwt):
     """Assert that business addresses are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses',
@@ -70,20 +70,20 @@ def test_get_business_no_addresses(session, client, jwt):
                     )
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{business.identifier} address not found'}
+    assert rv.json == {'message': f'{legal_entity.identifier} address not found'}
 
 
 def test_get_business_addresses_by_id(session, client, jwt):
     """Assert that business address is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING,
-                              business_id=business.id)
+                              legal_entity_id=legal_entity.id)
     office = Office(office_type='registeredOffice')
     office.addresses.append(mailing_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses/{mailing_address.id}',
@@ -98,11 +98,11 @@ def test_get_business_addresses_by_invalid_id(session, client, jwt):
     """Assert that business addresses are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     address_id = 1000
     # mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING)
-    # business.mailing_address.append(mailing_address)
-    business.save()
+    # legal_entity.mailing_address.append(mailing_address)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses/{address_id}',
@@ -117,13 +117,13 @@ def test_get_business_mailing_addresses_by_type(session, client, jwt):
     """Assert that business address type is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     mailing_address = Address(city='Test Mailing City', address_type=Address.MAILING,
-                              business_id=business.id)
+                              legal_entity_id=legal_entity.id)
     office = Office(office_type='registeredOffice')
     office.addresses.append(mailing_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses?addressType={Address.JSON_MAILING}',
@@ -138,14 +138,14 @@ def test_get_business_delivery_addresses_by_type_missing_address(session, client
     """Assert that business addresses are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     delivery_address = Address(city='Test Delivery City',
                                address_type=Address.DELIVERY,
-                               business_id=business.id)
+                               legal_entity_id=legal_entity.id)
     office = Office(office_type='registeredOffice')
     office.addresses.append(delivery_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses?addressType={Address.JSON_MAILING}',
@@ -160,14 +160,14 @@ def test_get_business_delivery_addresses_by_type(session, client, jwt):
     """Assert that business address type is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     delivery_address = Address(city='Test Delivery City',
                                address_type=Address.DELIVERY,
-                               business_id=business.id)
+                               legal_entity_id=legal_entity.id)
     office = Office(office_type='registeredOffice')
     office.addresses.append(delivery_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses?addressType={Address.JSON_DELIVERY}',
@@ -197,8 +197,8 @@ def test_get_addresses_invalid_type(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     address_type = 'INVALID_TYPE'
-    business = factory_business(identifier)
-    business.save()
+    legal_entity =factory_legal_entity(identifier)
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/addresses?addressType={address_type}',
@@ -213,8 +213,8 @@ def test_get_addresses_unauthorized(app, session, client, jwt, requests_mock):
     """Assert that business addresses is not returned for an unauthorized user."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    business.save()
+    legal_entity =factory_legal_entity(identifier)
+    legal_entity.save()
 
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 

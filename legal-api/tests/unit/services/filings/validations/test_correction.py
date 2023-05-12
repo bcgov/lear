@@ -18,21 +18,21 @@ from http import HTTPStatus
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing, factory_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing, factory_filing
 
 
 def test_valid_correction(session):
     """Test that a valid correction passes validation."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_completed_filing(business, ANNUAL_REPORT)
+    legal_entity =factory_legal_entity(identifier)
+    corrected_filing = factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 
@@ -44,15 +44,15 @@ def test_correction__does_not_own_corrected_filing(session):
     """Check that a business cannot correct a different business' filing."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
-    business2 = factory_business('CP1111111')
+    legal_entity =factory_legal_entity(identifier)
+    business2 = factory_legal_entity('CP1111111')
     corrected_filing = factory_completed_filing(business2, ANNUAL_REPORT)
 
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 
@@ -65,13 +65,13 @@ def test_correction__corrected_filing_does_not_exist(session):
     """Check that a correction fails on a filing that does not exist."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = 1
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 
@@ -84,14 +84,14 @@ def test_correction__corrected_filing_is_not_complete(session):
     """Check that a correction fails on a filing that is not complete."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_filing(business, ANNUAL_REPORT)
+    legal_entity =factory_legal_entity(identifier)
+    corrected_filing = factory_filing(legal_entity, ANNUAL_REPORT)
 
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
     if err:
         print(err.msg)
 

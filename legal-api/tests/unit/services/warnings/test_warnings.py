@@ -22,12 +22,12 @@ from legal_api.services.warnings.business.business_checks import firms
 from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles, \
     create_business, factory_address, create_filing
 
-from legal_api.models import Address, Business, Office, PartyRole
+from legal_api.models import Address, LegalEntity, Office, PartyRole
 
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier, has_office, num_persons_roles, num_org_roles, filing_types, filing_has_completing_party, person_cessation_dates, org_cessation_dates, expected_code, expected_msg',
+    'test_name, entity_type, identifier, has_office, num_persons_roles, num_org_roles, filing_types, filing_has_completing_party, person_cessation_dates, org_cessation_dates, expected_code, expected_msg',
     [
         # SP tests
         ('SUCCESS', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [None], None, None),
@@ -61,14 +61,14 @@ from legal_api.models import Address, Business, Office, PartyRole
         ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
         ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [True, True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
     ])
-def test_check_warnings(session, test_name, legal_type, identifier, has_office, num_persons_roles:int,
+def test_check_warnings(session, test_name, entity_type, identifier, has_office, num_persons_roles:int,
                         num_org_roles:int, filing_types: list, filing_has_completing_party: list,
                         person_cessation_dates: list, org_cessation_dates:list, expected_code, expected_msg):
     """Assert that warnings check functions properly."""
 
-    business = None
+    legal_entity =None
 
-    create_business(legal_type=legal_type,
+    create_business(entity_type=entity_type,
                     identifier=identifier,
                     create_office=has_office,
                     create_office_mailing_address=has_office,
@@ -81,13 +81,13 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
                     person_cessation_dates=person_cessation_dates,
                     org_cessation_dates=org_cessation_dates)
 
-    business = Business.find_by_identifier(identifier)
-    assert business
-    assert business.legal_type == legal_type
-    assert business.identifier == identifier
+    legal_entity =LegalEntity.find_by_identifier(identifier)
+    assert legal_entity
+    assert legal_entity.entity_type == entity_type
+    assert legal_entity.identifier == identifier
 
     with patch.object(firms, 'check_address', return_value=[]):
-        result = check_warnings(business)
+        result = check_warnings(legal_entity)
 
     if expected_code:
         assert len(result) == 1

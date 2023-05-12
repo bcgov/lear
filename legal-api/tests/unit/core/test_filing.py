@@ -20,7 +20,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
 from legal_api.models.user import UserRoles
-from tests.unit.models import factory_business, factory_completed_filing, factory_user
+from tests.unit.models import factory_legal_entity, factory_completed_filing, factory_user
 from legal_api.utils.datetime import datetime, timezone
 
 
@@ -34,10 +34,10 @@ def test_filing_raw():
 def test_filing_type(session):
     """Assert that filing_type is empty on a new filing."""
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    factory_completed_filing(business, ANNUAL_REPORT)
+    legal_entity =factory_legal_entity(identifier)
+    factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
-    filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
+    filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
     assert filings[0].filing_type == 'annualReport'
 
 
@@ -66,7 +66,7 @@ def test_technical_filing_json_draft(session):
     technical filings should bypass all checks.
 
     danger Will Robinson
-    
+
     This builds on test_filing_json_draft, so if that is broken, this wont work either.
     """
     # setup
@@ -104,10 +104,10 @@ def test_technical_filing_json_draft(session):
 def test_filing_json_completed(session):
     """Assert that the json field gets the completed filing correctly."""
     identifier = 'CP7654321'
-    business = factory_business(identifier)
-    factory_completed_filing(business, ANNUAL_REPORT)
+    legal_entity =factory_legal_entity(identifier)
+    factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
-    filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
     filing = filings[0]
 
     assert filing.json
@@ -163,7 +163,7 @@ def test_set_effective(session):
     with freeze_time(now):
 
         payment_date  = now + datedelta.DAY
-        legal_type = 'SP'
+        entity_type = 'SP'
 
         filing = Filing()
         filing_type = 'annualReport'
@@ -177,7 +177,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
 
-        filing.storage.set_processed(legal_type)
+        filing.storage.set_processed(entity_type)
 
         # assert that the effective date is the payment date
         assert filing._storage.effective_date
@@ -190,7 +190,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = alt_payment_date
         filing._storage.save()
 
-        filing.storage.set_processed(legal_type)
+        filing.storage.set_processed(entity_type)
 
         # assert that the effective date is the future date
         assert filing._storage.effective_date
@@ -203,8 +203,8 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
 
-        legal_type = 'CP'
-        filing.storage.set_processed(legal_type)
+        entity_type = 'CP'
+        filing.storage.set_processed(entity_type)
 
         # assert that the effective date is unchanged by payment date
         assert filing._storage.effective_date

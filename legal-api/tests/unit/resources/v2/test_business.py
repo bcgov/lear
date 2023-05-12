@@ -24,17 +24,17 @@ import registry_schemas
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_ORDER_FILING_TEMPLATE, FILING_HEADER,\
     FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
-from tests.unit.models import factory_business, factory_pending_filing
+from tests.unit.models import factory_legal_entity, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
 
 
-def factory_business_model(legal_name,
+def factory_legal_entity_model(legal_name,
                            identifier,
                            founding_date,
                            last_ledger_timestamp,
@@ -42,10 +42,10 @@ def factory_business_model(legal_name,
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None,
-                           legal_type=None):
+                           entity_type=None):
     """Return a valid Business object stamped with the supplied designation."""
-    from legal_api.models import Business as BusinessModel
-    b = BusinessModel(legal_name=legal_name,
+    from legal_api.models import LegalEntity as LegalEntityModel
+    b = LegalEntityModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
                       last_ledger_timestamp=last_ledger_timestamp,
@@ -54,8 +54,8 @@ def factory_business_model(legal_name,
                       dissolution_date=dissolution_date,
                       tax_id=tax_id
                       )
-    if legal_type:
-        b.legal_type = legal_type
+    if entity_type:
+        b.entity_type = entity_type
     b.save()
     return b
 
@@ -163,7 +163,7 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     """Assert that the business info can be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
-    factory_business_model(legal_name=legal_name,
+    factory_legal_entity_model(legal_name=legal_name,
                            identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -171,7 +171,7 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
-    
+
     if calls_auth:
         # should not call auth for staff/system/account_identity
         requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
@@ -194,7 +194,7 @@ def test_get_business_with_correction_filings(session, client, jwt):
     """Assert that the business info sets hasCorrections property."""
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
-    business = factory_business_model(legal_name=legal_name,
+    legal_entity =factory_legal_entity_model(legal_name=legal_name,
                                       identifier=identifier,
                                       founding_date=datetime.utcfromtimestamp(0),
                                       last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -203,14 +203,14 @@ def test_get_business_with_correction_filings(session, client, jwt):
                                       tax_id=None,
                                       dissolution_date=None)
 
-    corrected_filing = factory_completed_filing(business, ANNUAL_REPORT)
+    corrected_filing = factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
     f = copy.deepcopy(CORRECTION_AR)
-    f['filing']['header']['identifier'] = business.identifier
+    f['filing']['header']['identifier'] = legal_entity.identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    factory_completed_filing(business, f)
+    factory_completed_filing(legal_entity, f)
 
-    rv = client.get('/api/v2/businesses/' + business.identifier,
+    rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.json['business']['identifier'] == identifier
@@ -221,7 +221,7 @@ def test_get_business_info_dissolution(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP1234567'
     legal_name = identifier + ' legal name'
-    factory_business_model(legal_name=legal_name,
+    factory_legal_entity_model(legal_name=legal_name,
                            identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -240,7 +240,7 @@ def test_get_business_info_dissolution(session, client, jwt):
 
 def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
-    factory_business_model(legal_name='legal_name',
+    factory_legal_entity_model(legal_name='legal_name',
                            identifier='CP7654321',
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -259,7 +259,7 @@ def test_get_business_info_missing_business(session, client, jwt):
 def test_get_business_with_allowed_filings(session, client, jwt):
     """Assert that the allowed filings are returned with business."""
     identifier = 'CP0000001'
-    factory_business(identifier, state=Business.State.HISTORICAL)
+    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
     rv = client.get(f'/api/v2/businesses/{identifier}?allowed_filings=true',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
@@ -282,9 +282,9 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
     """Assert that SP/GPs with missing business info is populating warnings list."""
 
     if has_missing_business_info:
-        business = factory_business(entity_type=legal_type, identifier=identifier)
+        legal_entity =factory_legal_entity(entity_type=legal_type, identifier=identifier)
     else:
-        business = create_business(legal_type=legal_type,
+        legal_entity =create_business(entity_type=legal_type,
                                    identifier=identifier,
                                    create_office=True,
                                    create_office_mailing_address=True,
@@ -295,8 +295,8 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
                                    filing_has_completing_party=[True],
                                    create_completing_party_address=[True]
                                    )
-    business.start_date = datetime.utcnow().date()
-    business.save()
+    legal_entity.start_date = datetime.utcnow().date()
+    legal_entity.save()
     session.commit()
     rv = client.get(f'/api/v2/businesses/{identifier}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
@@ -320,7 +320,7 @@ def test_get_business_with_court_orders(session, client, jwt):
     """Assert that the business info sets hasCourtOrders property."""
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
-    business = factory_business_model(legal_name=legal_name,
+    legal_entity =factory_legal_entity_model(legal_name=legal_name,
                                       identifier=identifier,
                                       founding_date=datetime.utcfromtimestamp(0),
                                       last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -329,9 +329,9 @@ def test_get_business_with_court_orders(session, client, jwt):
                                       tax_id=None,
                                       dissolution_date=None)
 
-    factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+    factory_completed_filing(legal_entity, COURT_ORDER_FILING_TEMPLATE)
 
-    rv = client.get('/api/v2/businesses/' + business.identifier,
+    rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.json['business']['identifier'] == identifier
@@ -343,18 +343,18 @@ def test_post_affiliated_businesses(session, client, jwt):
     # setup
     identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq', 'Tb31yQIuBz']
     businesses = [
-        (identifiers[0], Business.LegalTypes.COOP.value, None),
-        (identifiers[1], Business.LegalTypes.BCOMP.value, '123456789BC0001')]
+        (identifiers[0], LegalEntity.EntityTypes.COOP.value, None),
+        (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, '123456789BC0001')]
     draft_businesses = [
-        (identifiers[2], Business.LegalTypes.BCOMP.value, None),
-        (identifiers[3], Business.LegalTypes.SOLE_PROP.value, 'NR 1234567'),
-        (identifiers[4], Business.LegalTypes.BCOMP.value, None)]
+        (identifiers[2], LegalEntity.EntityTypes.BCOMP.value, None),
+        (identifiers[3], LegalEntity.EntityTypes.SOLE_PROP.value, 'NR 1234567'),
+        (identifiers[4], LegalEntity.EntityTypes.BCOMP.value, None)]
 
     # NB: these are real businesses now so temp should not get returned
     old_draft_businesses = [identifiers[4]]
 
     for business in businesses:
-        factory_business_model(legal_name=business[0] + 'name',
+        factory_legal_entity_model(legal_name=business[0] + 'name',
                                identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
                                founding_date=datetime.utcfromtimestamp(0),
                                last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -362,10 +362,10 @@ def test_post_affiliated_businesses(session, client, jwt):
                                fiscal_year_end_date=None,
                                tax_id=business[2],
                                dissolution_date=None,
-                               legal_type=business[1])
+                               entity_type=business[1])
 
     for draft_business in draft_businesses:
-        filing_name = 'incorporationApplication' if draft_business[1] == Business.LegalTypes.BCOMP.value else 'registration'
+        filing_name = 'incorporationApplication' if draft_business[1] == LegalEntity.EntityTypes.BCOMP.value else 'registration'
         temp_reg = RegistrationBootstrap()
         temp_reg._identifier = draft_business[0]
         temp_reg.save()
@@ -381,8 +381,8 @@ def test_post_affiliated_businesses(session, client, jwt):
         filing.temp_reg = draft_business[0]
         if draft_business[0] in old_draft_businesses:
             # adding a business id informs the search that it is associated with a completed business
-            business = Business.find_by_identifier(identifiers[0])
-            filing.business_id = business.id
+            legal_entity =LegalEntity.find_by_identifier(identifiers[0])
+            filing.legal_entity_id = legal_entity.id
         filing.save()
 
     rv = client.post('/api/v2/businesses/search',
@@ -414,8 +414,8 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
 #     """Assert that business is not returned for an unauthorized user."""
 #     # setup
 #     identifier = 'CP7654321'
-#     business = factory_business(identifier)
-#     business.save()
+#     legal_entity =factory_legal_entity(identifier)
+#     legal_entity.save()
 
 #     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 

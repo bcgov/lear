@@ -45,7 +45,7 @@ class Document(db.Model):
     file_key = Column('file_key', String(100), nullable=False)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     def save(self):
@@ -59,8 +59,8 @@ class Document(db.Model):
         return cls.query.filter_by(id=document_id).one_or_none()
 
     @classmethod
-    def find_by_business_id_and_type(cls, business_id: int, document_type: String):
+    def find_by_legal_entity_id_and_type(cls, legal_entity_id: int, document_type: String):
         """Return the document matching the business id and type."""
         return cls.query.filter_by(
-            business_id=business_id, type=document_type
+            legal_entity_id=legal_entity_id, type=document_type
         ).order_by(desc(Document.id)).limit(1).one_or_none()

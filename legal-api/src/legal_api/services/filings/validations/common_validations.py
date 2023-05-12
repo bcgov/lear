@@ -20,7 +20,7 @@ import PyPDF2
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services import MinioService, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -204,7 +204,8 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
     officer = party['officer']
     party_type = officer['partyType']
 
-    if party_type == 'person' and legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value]:
+    if party_type == 'person' and legal_type in [LegalEntity.EntityTypes.BCOMP.value,
+                                                 LegalEntity.EntityTypes.COOP.value]:
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
@@ -241,10 +242,10 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     nr_number = get_str(filing_json, nr_number_path)
     legal_name = get_str(filing_json, legal_name_path)
 
-    valid_numbered_legal_type = [Business.LegalTypes.BCOMP.value,
-                                 Business.LegalTypes.COMP.value,
-                                 Business.LegalTypes.BC_CCC.value,
-                                 Business.LegalTypes.BC_ULC_COMPANY.value]
+    valid_numbered_legal_type = [LegalEntity.EntityTypes.BCOMP.value,
+                                 LegalEntity.EntityTypes.COMP.value,
+                                 LegalEntity.EntityTypes.BC_CCC.value,
+                                 LegalEntity.EntityTypes.BC_ULC_COMPANY.value]
     if not nr_number and not legal_name:
         if legal_type in valid_numbered_legal_type:
             return []  # It's numbered company

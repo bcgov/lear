@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service to check compliancy for a business."""
-from legal_api.models import Business
+"""Service to check compliancy for a LegalEntity."""
+from legal_api.models import LegalEntity
 from .firms import check_business as firms_check  # noqa: I003
 
 
-def check_business(business: any) -> list:
+def check_business(legal_entity: any) -> list:
     """Check business for warnings."""
     result = []
 
-    if business.legal_type in \
-            (Business.LegalTypes.SOLE_PROP.value,
-             Business.LegalTypes.PARTNERSHIP.value):
-        result = firms_check(business)
+    if legal_entity.entity_type in \
+            (LegalEntity.EntityTypes.SOLE_PROP.value,
+             LegalEntity.EntityTypes.PARTNERSHIP.value):
+        result = firms_check(legal_entity)
 
     return result

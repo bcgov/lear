@@ -51,15 +51,15 @@ from registry_schemas.example_data import (
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
 
 from legal_api.core import Filing, FilingMeta, FILINGS
-from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
+from legal_api.models import LegalEntity, Comment, Filing as FilingStorage, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
 from tests.unit.core.test_filing_ledger import load_ledger
 from tests.unit.models import (  # noqa:E501,I001
-    factory_business,
-    factory_business_mailing_address,
+    factory_legal_entity,
+    factory_legal_entity_mailing_address,
     factory_completed_filing,
     factory_filing,
     factory_user,
@@ -72,38 +72,38 @@ ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
 
 def basic_test_helper():
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
     filing_date = datetime.utcnow()
-    filing = factory_completed_filing(business, filing_json, filing_date=filing_date)
+    filing = factory_completed_filing(legal_entity, filing_json, filing_date=filing_date)
 
-    return business, filing
+    return legal_entity, filing
 
 
 def test_not_authorized(session, client, jwt):
     """Assert the the call fails for unauthorized access."""
-    business, filing = basic_test_helper()
+    legal_entity, filing = basic_test_helper()
 
     MISSING_ROLES = ['SOME RANDO ROLE', ]
 
-    rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
-                    headers=create_header(jwt, MISSING_ROLES, business.identifier))
+    rv = client.get(f'/api/v2/businesses/{legal_entity.identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, MISSING_ROLES, legal_entity.identifier))
 
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
     assert rv.json.get('message')
-    assert business.identifier in rv.json.get('message')
+    assert legal_entity.identifier in rv.json.get('message')
 
 
 def test_missing_business(session, client, jwt):
     """Assert the the call fails for missing business."""
-    business, filing = basic_test_helper()
+    legal_entity, filing = basic_test_helper()
 
     not_the_business_identifier = 'ABC123'
 
     rv = client.get(f'/api/v2/businesses/{not_the_business_identifier}/filings/{filing.id}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE, ], business.identifier))
+                    headers=create_header(jwt, [STAFF_ROLE, ], legal_entity.identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json.get('message')
@@ -112,12 +112,12 @@ def test_missing_business(session, client, jwt):
 
 def test_missing_filing(session, client, jwt):
     """Assert the the call fails for missing business."""
-    business, filing = basic_test_helper()
+    legal_entity, filing = basic_test_helper()
 
     wrong_filing_number = 999999999
 
-    rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{wrong_filing_number}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE, ], business.identifier))
+    rv = client.get(f'/api/v2/businesses/{legal_entity.identifier}/filings/{wrong_filing_number}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE, ], legal_entity.identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json.get('message')
@@ -126,15 +126,15 @@ def test_missing_filing(session, client, jwt):
 
 def test_unpaid_filing(session, client, jwt):
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
     filing_date = datetime.utcnow()
-    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing = factory_filing(legal_entity, filing_json, filing_date=filing_date)
 
-    rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE], business.identifier))
+    rv = client.get(f'/api/v2/businesses/{legal_entity.identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], legal_entity.identifier))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {}
@@ -151,13 +151,13 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['memorandumInResolution'] = True
 ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
-    ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_paper', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND, None
      ),
-    ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_pending', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND, None
      ),
-    ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_paid', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
      {'documents': {
                     'legalFilings': [
@@ -168,7 +168,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
@@ -182,7 +182,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('special_res_rules_memorandum_included_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_rules_memorandum_included_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, 'alteration', ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION, Filing.Status.COMPLETED,
      {'documents': {
                     'legalFilings': [
@@ -194,7 +194,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('specres_court_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
      {'documents': {
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
@@ -209,7 +209,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('special_res_correction', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
         'certificateOfNameChange': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfNameChange',
@@ -223,7 +223,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_ia_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
@@ -237,7 +237,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_ia_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
@@ -249,7 +249,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_ia_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
@@ -260,7 +260,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_correction_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -270,7 +270,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('bc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_correction_completed', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -280,7 +280,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ccc_correction_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('ccc_correction_completed', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -290,7 +290,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ulc_correction_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_correction_completed', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -300,7 +300,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_correction_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'correction', CORRECTION_INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -310,7 +310,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ben_alteration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_alteration_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -320,7 +320,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('bc_alteration_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_alteration_completed', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -330,7 +330,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('cc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_alteration_completed', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -340,7 +340,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ulc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_alteration_completed', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -350,7 +350,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ben_alteration_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_alteration_with_nr_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'alteration', ALTERATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'certificateOfNameChange': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfNameChange',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
@@ -361,7 +361,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ben_changeOfDirector', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_changeOfDirector', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -371,7 +371,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('bc_changeOfDirector', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_changeOfDirector', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -382,7 +382,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('cc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_changeOfDirector', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -393,7 +393,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ulc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_changeOfDirector', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -404,7 +404,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('cp_correction_ar', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_correction_ar', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'correction', CORRECTION_AR, None, None, Filing.Status.COMPLETED,
      {'documents': {'legalFilings': [
          {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
@@ -413,7 +413,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, None
      ),
-    ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_changeOfDirector', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'legalFilings': [
@@ -423,7 +423,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, None
      ),
-    ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_dissolution_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'dissolution', DISSOLUTION, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED,
      {
          'documents': {
@@ -444,7 +444,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cp_dissolution_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_dissolution_paid', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
      {
          'documents': {
@@ -648,12 +648,12 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('sp_ia_completed', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
+    ('sp_ia_completed', 'FM7654321', LegalEntity.EntityTypes.SOLE_PROP.value,
      'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
      {'documents': {}},
      HTTPStatus.OK, None
      ),
-    ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value,
+    ('gp_ia_completed', 'FM7654321', LegalEntity.EntityTypes.PARTNERSHIP.value,
      'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
      {'documents': {}},
      HTTPStatus.OK, None
@@ -700,7 +700,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_ia_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_ia_paid', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -711,7 +711,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_ia_completed', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
@@ -724,7 +724,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cc_ia_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_ia_paid', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -735,7 +735,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_ia_completed', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
@@ -748,7 +748,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('bc_ia_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_ia_paid', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -759,7 +759,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_ia_completed', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
@@ -772,7 +772,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('bc_annual_report_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_annual_report_completed', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -783,7 +783,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ccc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('ccc_annual_report_completed', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -794,7 +794,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_annual_report_completed', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -805,7 +805,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cp_annual_report_completed', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_annual_report_completed', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -816,7 +816,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_annual_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_annual_report_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -828,7 +828,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      HTTPStatus.OK, '2017-10-01'
      ),
 
-    ('bc_annual_report_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_annual_report_paid', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -839,7 +839,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ccc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('ccc_annual_report_paid', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -850,7 +850,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_annual_report_paid', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -861,7 +861,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cp_annual_report_paid', 'CP7654321', Business.LegalTypes.COOP.value,
+    ('cp_annual_report_paid', 'CP7654321', LegalEntity.EntityTypes.COOP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -872,7 +872,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_annual_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_annual_report_paid', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -883,7 +883,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_changeOfAddress', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_changeOfAddress', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -893,7 +893,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('bc_changeOfAddress', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_changeOfAddress', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -904,7 +904,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('cc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_changeOfAddress', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -915,7 +915,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('ulc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_changeOfAddress', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
      {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
@@ -926,7 +926,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, None
      ),
-    ('bc_restoration_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_restoration_completed', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
@@ -939,7 +939,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('bc_restoration_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_restoration_paid', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -950,7 +950,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_restoration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_restoration_completed', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
@@ -963,7 +963,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ben_restoration_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('ben_restoration_paid', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value,
      'restoration', RESTORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -974,7 +974,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_restoration_completed', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
@@ -987,7 +987,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_restoration_paid', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'restoration', RESTORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -998,7 +998,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_restoration_completed', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
@@ -1011,7 +1011,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('cc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_restoration_paid', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'restoration', RESTORATION, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                     'legalFilings': [
@@ -1022,7 +1022,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
       },
      HTTPStatus.OK, '2017-10-01'
      ),
-    
+
     ('bc_continuationOut_complete', 'BC7654321', Business.LegalTypes.COMP.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
      {'documents': {
@@ -1097,7 +1097,7 @@ def test_document_list_for_various_filing_states(session, client, jwt,
     """Test document list based on filing states."""
     # Setup
     # identifier = 'CP7654321'
-    business = factory_business(identifier, entity_type=entity_type)
+    legal_entity =factory_legal_entity(identifier, entity_type=entity_type)
 
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = filing_name_1
@@ -1110,7 +1110,7 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         filing_json['filing'][filing_name_2] = legal_filing_2
 
     filing_date = datetime.utcnow()
-    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing = factory_filing(legal_entity, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
     filing._payment_completion_date = payment_completion_date
@@ -1124,7 +1124,7 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         if filing_name_1 == 'alteration' and \
                 (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
             meta_data['alteration'] = {}
-            meta_data['alteration']['fromLegalName'] = business.legal_name
+            meta_data['alteration']['fromLegalName'] = legal_entity.legal_name
             meta_data['alteration']['toLegalName'] = legal_name
 
         # usually done by the filer.
@@ -1137,8 +1137,8 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         filing._meta_data = meta_data
         filing.save()
 
-    rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
-                    headers=create_header(jwt, [STAFF_ROLE], business.identifier))
+    rv = client.get(f'/api/v2/businesses/{legal_entity.identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], legal_entity.identifier))
 
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
@@ -1154,7 +1154,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
 
     # Setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     filing_name = 'incorporationApplication'
     payment_id = '12345'
 
@@ -1164,7 +1164,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
     filing_json['filing'].pop('business')
 
     filing_date = datetime.utcnow()
-    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing = factory_filing(legal_entity, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
     filing._payment_token = payment_id
@@ -1178,7 +1178,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
 
     token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='username')
 
-    content, status_code = _get_receipt(business, filing_core, token)
+    content, status_code = _get_receipt(legal_entity, filing_core, token)
 
     assert status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
@@ -1190,7 +1190,7 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
 
     # Setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     filing_name = 'incorporationApplication'
     payment_id = '12345'
 
@@ -1200,7 +1200,7 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     filing_json['filing'].pop('business')
 
     filing_date = datetime.utcnow()
-    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing = factory_filing(legal_entity, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
     filing._payment_token = payment_id

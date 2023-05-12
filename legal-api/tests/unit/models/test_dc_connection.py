@@ -19,22 +19,22 @@ Test-Suite to ensure that the DCConnection Model is working as expected.
 
 from legal_api.models import DCConnection
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 
 
 def test_valid_dc_connection_save(session):
     """Assert that a valid dc_connection can be saved."""
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    connection = create_dc_connection(business)
+    legal_entity =factory_legal_entity(identifier)
+    connection = create_dc_connection(legal_entity)
     assert connection.id
 
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    connection = create_dc_connection(business)
+    legal_entity =factory_legal_entity(identifier)
+    connection = create_dc_connection(legal_entity)
 
     res = DCConnection.find_by_id(connection.id)
 
@@ -45,8 +45,8 @@ def test_find_by_id(session):
 def test_find_dc_connection_by_connection_id(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    connection = create_dc_connection(business)
+    legal_entity =factory_legal_entity(identifier)
+    connection = create_dc_connection(legal_entity)
 
     res = DCConnection.find_by_connection_id(connection.connection_id)
 
@@ -57,10 +57,10 @@ def test_find_dc_connection_by_connection_id(session):
 def test_find_active_by(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    create_dc_connection(business, is_active=True)
+    legal_entity =factory_legal_entity(identifier)
+    create_dc_connection(legal_entity, is_active=True)
 
-    res = DCConnection.find_active_by(business.id)
+    res = DCConnection.find_active_by(legal_entity.id)
 
     assert res
     assert res.connection_state == 'active'
@@ -69,16 +69,16 @@ def test_find_active_by(session):
 def test_find_by(session):
     """Assert that the method returns correct value."""
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    connection = create_dc_connection(business)
+    legal_entity =factory_legal_entity(identifier)
+    connection = create_dc_connection(legal_entity)
 
-    res = DCConnection.find_by(business_id=business.id, connection_state='invitation')
+    res = DCConnection.find_by(legal_entity_id=legal_entity.id, connection_state='invitation')
 
     assert len(res) == 1
     assert res[0].id == connection.id
 
 
-def create_dc_connection(business, is_active=False):
+def create_dc_connection(legal_entity, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
         connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
@@ -88,7 +88,7 @@ LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFy
 iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
         is_active=is_active,
         connection_state='active' if is_active else 'invitation',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     connection.save()
     return connection

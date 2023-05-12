@@ -23,22 +23,22 @@ import datedelta
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
 
 
-def factory_business(designation: str = '001'):
+def factory_legal_entity(designation: str = '001'):
     """Return a valid Business object stamped with the supplied designation."""
-    return Business(legal_name=f'legal_name-{designation}',
+    return LegalEntity(legal_name=f'legal_name-{designation}',
                     founding_date=datetime.utcfromtimestamp(0),
                     last_ledger_timestamp=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
                     identifier='CP1234567',
                     tax_id=f'BN0000{designation}',
                     fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
-                    state=Business.State.ACTIVE)
+                    state=LegalEntity.State.ACTIVE)
 
 
 def test_business_identifier(session):
@@ -46,7 +46,7 @@ def test_business_identifier(session):
     from tests.conftest import not_raises
     valid_identifier = 'CP1234567'
     invalid_identifier = '1234567'
-    b = Business()
+    b = LegalEntity()
 
     with not_raises(BusinessException):
         b.identifier = valid_identifier
@@ -56,17 +56,18 @@ def test_business_identifier(session):
 
 
 TEST_IDENTIFIER_DATA = [
-    ('CP1234567', True),
-    ('CP0000000', False),
-    ('CP000000A', False),
-    ('AB0000001', False),
+    ('CP1234567', 'CP', True),
+    ('CP0000000', 'CP', False),
+    ('CP000000A', 'CP', False),
+    ('AB0000001', 'BC', False),
+    (None, 'person', True),
 ]
 
 
-@pytest.mark.parametrize('identifier,expected', TEST_IDENTIFIER_DATA)
-def test_business_validate_identifier(identifier, expected):
+@pytest.mark.parametrize('identifier,entity_type,expected', TEST_IDENTIFIER_DATA)
+def test_business_validate_identifier(entity_type, identifier, expected):
     """Assert that the identifier is validated correctly."""
-    assert Business.validate_identifier(identifier) is expected
+    assert LegalEntity.validate_identifier(entity_type, identifier) is expected
 
 
 def test_business(session):
@@ -74,63 +75,63 @@ def test_business(session):
 
     Start with a blank database.
     """
-    business = factory_business('001')
-    business.save()
+    legal_entity =factory_legal_entity('001')
+    legal_entity.save()
 
-    assert business.id is not None
-    assert business.state == Business.State.ACTIVE
-    assert business.admin_freeze is False
+    assert legal_entity.id is not None
+    assert legal_entity.state == LegalEntity.State.ACTIVE
+    assert legal_entity.admin_freeze is False
 
 
 def test_business_find_by_legal_name_pass(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    session.add(business)
+    session.add(legal_entity)
     session.commit()
 
-    b = Business.find_by_legal_name('legal_name-001')
+    b = LegalEntity.find_by_legal_name('legal_name-001')
     assert b is not None
 
 
 def test_business_find_by_legal_name_fail(session):
     """Assert that the business can not be found, once it is disolved."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    session.add(business)
+    session.add(legal_entity)
     session.commit()
 
     # business is dissolved, it should not be found by name search
-    b = Business.find_by_legal_name('legal_name-001')
+    b = LegalEntity.find_by_legal_name('legal_name-001')
     assert b is None
 
 
 def test_business_find_by_legal_name_missing(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    session.add(business)
+    session.add(legal_entity)
     session.commit()
 
-    b = Business.find_by_legal_name()
+    b = LegalEntity.find_by_legal_name()
     assert b is None
 
 
@@ -138,57 +139,57 @@ def test_business_find_by_legal_name_no_database_connection(app_request):
     """Assert that None is return even if the database connection does not exist."""
     app_request.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://does:not@exist:5432/nada'
     with app_request.app_context():
-        b = Business.find_by_legal_name('failure to find')
+        b = LegalEntity.find_by_legal_name('failure to find')
         assert b is None
 
 
 def test_delete_business_with_dissolution(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    business.save()
+    legal_entity.save()
 
-    b = business.delete()
+    b = legal_entity.delete()
 
-    assert b.id == business.id
+    assert b.id == legal_entity.id
 
 
 def test_delete_business_active(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id='XX',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    business.save()
+    legal_entity.save()
 
-    b = business.delete()
+    b = legal_entity.delete()
 
-    assert b.id == business.id
+    assert b.id == legal_entity.id
 
 
 def test_business_find_by_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    business.save()
+    legal_entity.save()
 
-    b = Business.find_by_identifier('CP1234567')
+    b = LegalEntity.find_by_identifier('CP1234567')
 
     assert b is not None
 
@@ -196,56 +197,56 @@ def test_business_find_by_identifier(session):
 def test_business_find_by_identifier_no_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
-    business.save()
+    legal_entity.save()
 
-    b = Business.find_by_identifier()
+    b = LegalEntity.find_by_identifier()
 
     assert b is None
 
 
 TEST_GOOD_STANDING_DATA = [
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, True, False),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False, True),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, False),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, True)
+    (datetime.now() - datedelta.datedelta(months=6), LegalEntity.EntityTypes.COMP, LegalEntity.State.ACTIVE.value, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), LegalEntity.EntityTypes.COMP, LegalEntity.State.ACTIVE.value, True, False),
+    (datetime.now() - datedelta.datedelta(months=6), LegalEntity.EntityTypes.COMP, LegalEntity.State.HISTORICAL.value, False, True),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), LegalEntity.EntityTypes.COMP, LegalEntity.State.ACTIVE.value, False, False),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), LegalEntity.EntityTypes.SOLE_PROP, LegalEntity.State.ACTIVE.value, False, True),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), LegalEntity.EntityTypes.PARTNERSHIP, LegalEntity.State.ACTIVE.value, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), LegalEntity.EntityTypes.SOLE_PROP, LegalEntity.State.ACTIVE.value, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), LegalEntity.EntityTypes.PARTNERSHIP, LegalEntity.State.ACTIVE.value, False, True)
 ]
 
 
-@pytest.mark.parametrize('last_ar_date, legal_type, state, limited_restoration, expected', TEST_GOOD_STANDING_DATA)
-def test_good_standing(session, last_ar_date, legal_type, state, limited_restoration, expected):
+@pytest.mark.parametrize('last_ar_date, entity_type, state, limited_restoration, expected', TEST_GOOD_STANDING_DATA)
+def test_good_standing(session, last_ar_date, entity_type, state, limited_restoration, expected):
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
-                        legal_type=legal_type,
+                        entity_type=entity_type,
                         state=state,
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
                         last_ar_date=last_ar_date,
                         restoration_expiry_date=datetime.utcnow() if limited_restoration else None)
-    business.save()
+    legal_entity.save()
 
-    assert business.good_standing is expected
+    assert legal_entity.good_standing is expected
 
 
 def test_business_json(session):
     """Assert that the business model is saved correctly."""
-    business = Business(legal_name='legal_name',
-                        legal_type='CP',
+    legal_entity =LegalEntity(legal_name='legal_name',
+                        entity_type='CP',
                         founding_date=EPOCH_DATETIME,
                         start_date=datetime(2021, 8, 5, 8, 7, 58, 272362),
                         last_ledger_timestamp=EPOCH_DATETIME,
@@ -256,7 +257,7 @@ def test_business_json(session):
                         restriction_ind=True,
                         association_type='CP',
                         # NB: default not intitialized since bus not committed before check
-                        state=Business.State.ACTIVE,
+                        state=LegalEntity.State.ACTIVE,
                         tax_id='123456789'
                         )
     # basic json
@@ -268,15 +269,15 @@ def test_business_json(session):
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'legalName': 'legal_name',
-        'legalType': Business.LegalTypes.COOP.value,
-        'state': Business.State.ACTIVE.name,
+        'legalType': LegalEntity.EntityTypes.COOP.value,
+        'state': LegalEntity.State.ACTIVE.name,
         'taxId': '123456789'
     }
 
-    assert business.json(slim=True) == d_slim
+    assert legal_entity.json(slim=True) == d_slim
 
     # remove taxId to test it doesn't show up again until the final test
-    business.tax_id = None
+    legal_entity.tax_id = None
     d_slim.pop('taxId')
 
     d = {
@@ -304,38 +305,38 @@ def test_business_json(session):
         'allowedActions': {}
     }
 
-    assert business.json() == d
+    assert legal_entity.json() == d
 
     # include dissolutionDate
-    business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(business.dissolution_date)
-    business_json = business.json()
+    legal_entity.dissolution_date = EPOCH_DATETIME
+    d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(legal_entity.dissolution_date)
+    business_json = legal_entity.json()
     assert business_json == d
     dissolution_date_str = business_json['dissolutionDate']
     dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
     assert dissolution_date_format_correct
 
-    business.dissolution_date = None
+    legal_entity.dissolution_date = None
     d.pop('dissolutionDate')
 
     # include fiscalYearEndDate
-    business.fiscal_year_end_date = EPOCH_DATETIME
-    d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
-    assert business.json() == d
-    business.fiscal_year_end_date = None
+    legal_entity.fiscal_year_end_date = EPOCH_DATETIME
+    d['fiscalYearEndDate'] = datetime.date(legal_entity.fiscal_year_end_date).isoformat()
+    assert legal_entity.json() == d
+    legal_entity.fiscal_year_end_date = None
     d.pop('fiscalYearEndDate')
 
     # include taxId
-    business.tax_id = '123456789'
-    d['taxId'] = business.tax_id
-    assert business.json() == d
+    legal_entity.tax_id = '123456789'
+    d['taxId'] = legal_entity.tax_id
+    assert legal_entity.json() == d
 
 
 def test_business_relationships_json(session):
     """Assert that the business model is saved correctly."""
     from legal_api.models import Address, Office
 
-    business = Business(legal_name='legal_name',
+    legal_entity =LegalEntity(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
@@ -343,20 +344,20 @@ def test_business_relationships_json(session):
 
     office = Office(office_type='registeredOffice')
     mailing_address = Address(city='Test City', address_type=Address.MAILING,
-                              business_id=business.id)
+                              legal_entity_id=legal_entity.id)
     office.addresses.append(mailing_address)
-    business.offices.append(office)
-    business.save()
+    legal_entity.offices.append(office)
+    legal_entity.save()
 
-    assert business.mailing_address.one_or_none()
+    assert legal_entity.office_mailing_address.one_or_none()
 
     delivery_address = Address(city='Test City',
                                address_type=Address.DELIVERY,
-                               business_id=business.id)
+                               legal_entity_id=legal_entity.id)
     office.addresses.append(delivery_address)
-    business.save()
+    legal_entity.save()
 
-    assert business.delivery_address.one_or_none()
+    assert legal_entity.office_delivery_address.one_or_none()
 
 
 @pytest.mark.parametrize('business_type,expected', [
@@ -365,41 +366,41 @@ def test_business_relationships_json(session):
 ])
 def test_get_next_value_from_sequence(session, business_type, expected):
     """Assert that the sequence value is generated successfully."""
-    from legal_api.models import Business
+    from legal_api.models import LegalEntity
 
     if expected:
-        first_val = Business.get_next_value_from_sequence(business_type)
+        first_val = LegalEntity.get_next_value_from_sequence(business_type)
         assert first_val
 
-        next_val = Business.get_next_value_from_sequence(business_type)
+        next_val = LegalEntity.get_next_value_from_sequence(business_type)
         assert next_val
         assert next_val == first_val + 1
 
     else:
-        assert not Business.get_next_value_from_sequence(business_type)
+        assert not LegalEntity.get_next_value_from_sequence(business_type)
 
 
 def test_continued_in_business(session):
     """Assert that the continued corp is saved successfully."""
-    business = Business(
+    legal_entity =LegalEntity(
         legal_name='Test - Legal Name',
-        legal_type='BC',
+        entity_type='BC',
         founding_date=datetime.utcfromtimestamp(0),
         last_ledger_timestamp=datetime.utcfromtimestamp(0),
         dissolution_date=None,
         identifier='BC1234567',
-        state=Business.State.ACTIVE,
+        state=LegalEntity.State.ACTIVE,
         jurisdiction='CA',
         foreign_identifier='C1234567',
         foreign_legal_name='Prev Legal Name',
         foreign_legal_type='BEN',
         foreign_incorporation_date=datetime.utcfromtimestamp(0),
     )
-    business.save()
-    business_json = business.json()
-    assert business_json['jurisdiction'] == business.jurisdiction
-    assert business_json['foreignIdentifier'] == business.foreign_identifier
-    assert business_json['foreignLegalName'] == business.foreign_legal_name
-    assert business_json['foreignLegalType'] == business.foreign_legal_type
+    legal_entity.save()
+    business_json = legal_entity.json()
+    assert business_json['jurisdiction'] == legal_entity.jurisdiction
+    assert business_json['foreignIdentifier'] == legal_entity.foreign_identifier
+    assert business_json['foreignLegalName'] == legal_entity.foreign_legal_name
+    assert business_json['foreignLegalType'] == legal_entity.foreign_legal_type
     assert business_json['foreignIncorporationDate'] == \
-        LegislationDatetime.format_as_legislation_date(business.foreign_incorporation_date)
+        LegislationDatetime.format_as_legislation_date(legal_entity.foreign_incorporation_date)

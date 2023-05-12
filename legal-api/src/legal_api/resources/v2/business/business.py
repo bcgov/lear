@@ -24,7 +24,7 @@ from flask_cors import cross_origin
 from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, db
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
@@ -47,9 +47,9 @@ def get_businesses(identifier: str):
     if identifier.startswith('T'):
         return {'message': babel('No information on temp registrations.')}, 200
 
-    business = Business.find_by_identifier(identifier)
+    legal_entity = LegalEntity.find_by_identifier(identifier)
 
-    if not business:
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
     # check authorization -- need to implement workaround for business search users before using this
     # if not authorized(identifier, jwt, action=['view']):
@@ -60,25 +60,25 @@ def get_businesses(identifier: str):
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business search update)
     if str(request.args.get('slim', None)).lower() == 'true':
-        return jsonify(business=business.json(slim=True))
+        return jsonify(business=legal_entity.json(slim=True))
 
-    warnings = check_warnings(business)
-    # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
-    business.compliance_warnings = warnings
-    business.warnings = warnings
+    warnings = check_warnings(legal_entity)
+    # # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
+    legal_entity.compliance_warnings = warnings
+    legal_entity.warnings = warnings
 
-    allowable_actions = get_allowable_actions(jwt, business)
-    business.allowable_actions = allowable_actions
+    allowable_actions = get_allowable_actions(jwt, legal_entity)
+    legal_entity.allowable_actions = allowable_actions
 
-    business_json = business.json()
-    recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
+    business_json = legal_entity.json()
+    recent_filing_json = CoreFiling.get_most_recent_filing_json(legal_entity.id, None, jwt)
     if recent_filing_json:
         business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
         business_json['lastModified'] = recent_filing_json['filing']['header']['date']
 
     allowed_filings = str(request.args.get('allowed_filings', None)).lower() == 'true'
     if allowed_filings:
-        business_json['allowedFilings'] = get_allowed(business.state, business.legal_type, jwt)
+        business_json['allowedFilings'] = get_allowed(legal_entity.state, legal_entity.entity_type, jwt)
 
     q_account = request.args.get('account')
     current_app.logger.info('account info request, for account: %s', q_account)
@@ -153,11 +153,11 @@ def search_businesses():
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
         # base business query
-        bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
+        bus_query = db.session.query(LegalEntity).filter(LegalEntity._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         draft_query = db.session.query(Filing).filter(
-            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
+            and_(Filing.temp_reg.in_(identifiers), Filing.legal_entity_id.is_(None)))
 
         # parse results
         bus_results = [x.json(slim=True) for x in bus_query.all()]

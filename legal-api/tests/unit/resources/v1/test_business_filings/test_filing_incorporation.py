@@ -21,7 +21,7 @@ from http import HTTPStatus
 
 from registry_schemas.example_data import FILING_TEMPLATE, INCORPORATION
 
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
 from tests import integration_affiliation, integration_payment
 from tests.unit.services.utils import create_header
@@ -41,7 +41,7 @@ def setup_bootstrap_ia_minimal(jwt, session, client, account_id):
                   },
                   'incorporationApplication': {
                       'nameRequest': {
-                          'legalType': Business.LegalTypes.BCOMP.value
+                          'legalType': LegalEntity.EntityTypes.BCOMP.value
                       }
                   }
               }
