@@ -1022,7 +1022,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
 
                 # Freeze entity for Alteration
-                if filing.filing_type == 'alteration':
+                if filing.filing_type == 'alteration' or (
+                        filing.filing_type == 'incorporationApplication' and
+                        business['business']['legalType'] == Business.LearBusinessTypes.BCOMP.value):
                     Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id

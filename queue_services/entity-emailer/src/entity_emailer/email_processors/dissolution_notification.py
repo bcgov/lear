@@ -41,7 +41,7 @@ def _get_pdfs(
         filing_date_time: str,
         effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
-    """Get the pdfs for the incorporation output."""
+    """Get the pdfs for the dissolution output."""
     pdfs = []
     attach_order = 1
     headers = {
