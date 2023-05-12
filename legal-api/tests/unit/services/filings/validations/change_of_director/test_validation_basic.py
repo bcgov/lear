@@ -21,7 +21,7 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings import validate
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -51,7 +51,7 @@ def test_validate_cod_basic(session, test_name, now,
     # setup
     identifier = 'CP1234567'
     founding_date = now - datedelta.YEAR
-    business = Business(identifier=identifier,
+    legal_entity =LegalEntity(identifier=identifier,
                         last_ledger_timestamp=founding_date,
                         founding_date=founding_date)
 
@@ -75,7 +75,7 @@ def test_validate_cod_basic(session, test_name, now,
 
     # perform test
     with freeze_time(now):
-        err = validate(business, f)
+        err = validate(legal_entity, f)
         if err:
             print(err.msg)
 

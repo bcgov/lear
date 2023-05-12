@@ -17,8 +17,8 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final, MutableMapping, Optional
 
-from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
+from legal_api.models import LegalEntity
 from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
 
 
@@ -422,7 +422,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
+    def display_name(legal_entity: LegalEntity, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
@@ -432,14 +432,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                                 for word in
                                 re.sub(r'([A-Z])', r':\1', filing.filing_type).split(':'))
 
-        business_revision = business
+        business_revision = legal_entity
         # retrieve business revision at time of filing so legal type is correct when returned for display name
         if filing.transaction_id and \
-                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business)):
+                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, legal_entity)):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):
-            name = names.get(business_revision.legal_type)
+            name = names.get(business_revision.entity_type)
         else:
             name = names
 
@@ -499,17 +499,17 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     outputs.remove('certifiedRules')
 
     @staticmethod
-    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
+    def get_display_name(entity_type: str, filing_type: str, filing_sub_type: str = None) -> str:
         """Return display name for filing."""
         filing_dict = FILINGS.get(filing_type, None)
 
         if filing_sub_type:
             display_name = filing_dict[filing_sub_type]['displayName']
             if isinstance(display_name, dict):
-                display_name = display_name.get(legal_type)
+                display_name = display_name.get(entity_type)
         else:
             display_name = filing_dict['displayName']
             if isinstance(display_name, dict):
-                display_name = display_name.get(legal_type)
+                display_name = display_name.get(entity_type)
 
         return display_name

@@ -25,7 +25,7 @@ from registry_schemas.example_data import COMMENT_BUSINESS
 from legal_api.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils import datetime
-from tests.unit.models import factory_business, factory_business_comment
+from tests.unit.models import factory_legal_entity, factory_legal_entity_comment
 from tests.unit.services.utils import create_header
 
 
@@ -37,7 +37,7 @@ del SAMPLE_JSON_DATA['comment']['timestamp']
 def test_get_all_business_comments_no_results(session, client, jwt):
     """Assert that endpoint returns no-results correctly."""
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/comments',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -49,8 +49,8 @@ def test_get_all_business_comments_no_results(session, client, jwt):
 def test_get_all_business_comments_only_one(session, client, jwt):
     """Assert that a list of comments with a single comment is returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_comment(b)
+    b = factory_legal_entity(identifier)
+    factory_legal_entity_comment(b)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/comments',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -62,9 +62,9 @@ def test_get_all_business_comments_only_one(session, client, jwt):
 def test_get_all_business_comments_multiple(session, client, jwt):
     """Assert that multiple comments are returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    factory_business_comment(b)
-    factory_business_comment(b, 'other text')
+    b = factory_legal_entity(identifier)
+    factory_legal_entity_comment(b)
+    factory_legal_entity_comment(b, 'other text')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/comments',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -76,8 +76,8 @@ def test_get_all_business_comments_multiple(session, client, jwt):
 def test_get_one_business_comment_by_id(session, client, jwt):
     """Assert that a single comment is returned correctly."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
-    c = factory_business_comment(b, 'some specific text')
+    b = factory_legal_entity(identifier)
+    c = factory_legal_entity_comment(b, 'some specific text')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/comments/{c.id}',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -89,13 +89,13 @@ def test_get_one_business_comment_by_id(session, client, jwt):
 def test_business_comment_json_output(session, client, jwt):
     """Assert the json output of a comment is correctly formatted."""
     identifier = 'CP7654321'
-    b = factory_business(identifier)
+    b = factory_legal_entity(identifier)
     u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     u.save()
 
     now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
     with freeze_time(now):
-        factory_business_comment(b, 'some specific text', u)
+        factory_legal_entity_comment(b, 'some specific text', u)
 
         rv = client.get(f'/api/v2/businesses/{identifier}/comments',
                         headers=create_header(jwt, [STAFF_ROLE]))
@@ -108,7 +108,7 @@ def test_business_comment_json_output(session, client, jwt):
 
 def test_get_comments_invalid_business_error(session, client, jwt):
     """Assert that error is returned when business doesn't exist."""
-    factory_business('CP1111111')
+    factory_legal_entity('CP1111111')
 
     rv = client.get('/api/v2/businesses/CP2222222/comments',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -119,7 +119,7 @@ def test_get_comments_invalid_business_error(session, client, jwt):
 
 def test_get_business_comment_invalid_commentid_error(session, client, jwt):
     """Assert that error is returned when comment ID doesn't exist."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     rv = client.get(f'/api/v2/businesses/{b.identifier}/comments/1',
                     headers=create_header(jwt, [STAFF_ROLE]))
@@ -130,7 +130,7 @@ def test_get_business_comment_invalid_commentid_error(session, client, jwt):
 
 def test_post_business_comment(session, client, jwt):
     """Assert that a simple post of a comment succeeds."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
     json_data['comment']['businessId'] = b.identifier
@@ -144,7 +144,7 @@ def test_post_business_comment(session, client, jwt):
 
 def test_post_comment_missing_business_id_error(session, client, jwt):
     """Assert that the post fails when missing filing ID in json (null and missing)."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     # test null business ID
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -169,7 +169,7 @@ def test_post_comment_missing_business_id_error(session, client, jwt):
 
 def test_post_business_comment_missing_text_error(session, client, jwt):
     """Assert that the post fails when business missing comment text in json (null and missing)."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     # test null comment text
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
@@ -194,7 +194,7 @@ def test_post_business_comment_missing_text_error(session, client, jwt):
 
 def test_post_business_comment_basic_user_error(session, client, jwt):
     """Assert that the post fails when sent from Basic (non-staff) user."""
-    b = factory_business('CP1111111')
+    b = factory_legal_entity('CP1111111')
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
 
@@ -207,7 +207,7 @@ def test_post_business_comment_basic_user_error(session, client, jwt):
 
 def test_post_comment_invalid_business_error(session, client, jwt):
     """Assert that error is returned when business doesn't exist."""
-    factory_business('CP1111111')
+    factory_legal_entity('CP1111111')
 
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
 

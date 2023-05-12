@@ -23,7 +23,7 @@ from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORAT
 from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings import validate
 from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
 
@@ -41,7 +41,7 @@ identifier = 'NR 1234567'
 legal_name = 'Test 1234567'
 now = date(2020, 9, 17)
 founding_date = now - datedelta.YEAR
-business = Business(identifier=identifier)
+legal_entity =LegalEntity(identifier=identifier)
 effective_date = '2020-09-18T00:00:00+00:00'
 court_order_date = '2020-09-17T00:00:00+00:00'
 incorporation_application_name = 'incorporationApplication'
@@ -58,13 +58,13 @@ nr_response = {
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
+    'test_name, entity_type, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
     [
-        ('SUCCESS', Business.LegalTypes.BCOMP.value, 'BC', 'CA', 'BC', 'CA', None, None),
-        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'BC', 'CA', None, None),
-        ('SUCCESS', Business.LegalTypes.BC_CCC.value, 'BC', 'CA', 'BC', 'CA', None, None),
-        ('SUCCESS', Business.LegalTypes.COMP.value, 'BC', 'CA', 'BC', 'CA', None, None),
-        ('FAIL_NOT_BC_DELIVERY_REGION', Business.LegalTypes.BCOMP.value, 'AB', 'CA', 'BC', 'CA',
+        ('SUCCESS', LegalEntity.EntityTypes.BCOMP.value, 'BC', 'CA', 'BC', 'CA', None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'BC', 'CA', None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.BC_CCC.value, 'BC', 'CA', 'BC', 'CA', None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.COMP.value, 'BC', 'CA', 'BC', 'CA', None, None),
+        ('FAIL_NOT_BC_DELIVERY_REGION', LegalEntity.EntityTypes.BCOMP.value, 'AB', 'CA', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path':
@@ -73,7 +73,7 @@ nr_response = {
                     'path':
                     '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_BC_DELIVERY_REGION', Business.LegalTypes.BC_ULC_COMPANY.value, 'AB', 'CA', 'BC', 'CA',
+        ('FAIL_NOT_BC_DELIVERY_REGION', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'AB', 'CA', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path':
@@ -82,7 +82,7 @@ nr_response = {
                     'path':
                     '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_BC_DELIVERY_REGION', Business.LegalTypes.COMP.value, 'AB', 'CA', 'BC', 'CA',
+        ('FAIL_NOT_BC_DELIVERY_REGION', LegalEntity.EntityTypes.COMP.value, 'AB', 'CA', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path':
@@ -91,7 +91,7 @@ nr_response = {
                     'path':
                     '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_BC_DELIVERY_REGION', Business.LegalTypes.BC_CCC.value, 'AB', 'CA', 'BC', 'CA',
+        ('FAIL_NOT_BC_DELIVERY_REGION', LegalEntity.EntityTypes.BC_CCC.value, 'AB', 'CA', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path':
@@ -100,7 +100,7 @@ nr_response = {
                     'path':
                     '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_BC_MAILING_REGION', Business.LegalTypes.BCOMP.value, 'BC', 'CA', 'AB', 'CA',
+        ('FAIL_NOT_BC_MAILING_REGION', LegalEntity.EntityTypes.BCOMP.value, 'BC', 'CA', 'AB', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path':
@@ -109,7 +109,7 @@ nr_response = {
                  'path':
                  '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_BC_MAILING_REGION', Business.LegalTypes.BCOMP.value, 'BC', 'CA', 'AB', 'CA',
+        ('FAIL_NOT_BC_MAILING_REGION', LegalEntity.EntityTypes.BCOMP.value, 'BC', 'CA', 'AB', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Region must be 'BC'.",
               'path':
@@ -118,7 +118,7 @@ nr_response = {
               'path':
                   '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'}
          ]),
-        ('FAIL_NOT_BC_MAILING_REGION', Business.LegalTypes.COMP.value, 'BC', 'CA', 'AB', 'CA',
+        ('FAIL_NOT_BC_MAILING_REGION', LegalEntity.EntityTypes.COMP.value, 'BC', 'CA', 'AB', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Region must be 'BC'.",
               'path':
@@ -127,7 +127,7 @@ nr_response = {
               'path':
                   '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'}
          ]),
-        ('FAIL_NOT_BC_MAILING_REGION', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'AB', 'CA',
+        ('FAIL_NOT_BC_MAILING_REGION', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'AB', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Region must be 'BC'.",
               'path':
@@ -136,7 +136,7 @@ nr_response = {
               'path':
                   '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'}
          ]),
-        ('FAIL_ALL_ADDRESS_REGIONS', Business.LegalTypes.BC_CCC.value, 'WA', 'CA', 'WA', 'CA',
+        ('FAIL_ALL_ADDRESS_REGIONS', LegalEntity.EntityTypes.BC_CCC.value, 'WA', 'CA', 'WA', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressRegion'},
@@ -147,63 +147,63 @@ nr_response = {
                 {'error': "Address Region must be 'BC'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressRegion'}
             ]),
-        ('FAIL_NOT_DELIVERY_COUNTRY', Business.LegalTypes.BCOMP.value, 'BC', 'NZ', 'BC', 'CA',
+        ('FAIL_NOT_DELIVERY_COUNTRY', LegalEntity.EntityTypes.BCOMP.value, 'BC', 'NZ', 'BC', 'CA',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressCountry'}
             ]),
-        ('FAIL_NOT_DELIVERY_COUNTRY', Business.LegalTypes.COMP.value, 'BC', 'NZ', 'BC', 'CA',
+        ('FAIL_NOT_DELIVERY_COUNTRY', LegalEntity.EntityTypes.COMP.value, 'BC', 'NZ', 'BC', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'},
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressCountry'}
          ]),
-        ('FAIL_NOT_DELIVERY_COUNTRY', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC', 'NZ', 'BC', 'CA',
+        ('FAIL_NOT_DELIVERY_COUNTRY', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC', 'NZ', 'BC', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'},
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressCountry'}
          ]),
-        ('FAIL_NOT_DELIVERY_COUNTRY', Business.LegalTypes.BC_CCC.value, 'BC', 'NZ', 'BC', 'CA',
+        ('FAIL_NOT_DELIVERY_COUNTRY', LegalEntity.EntityTypes.BC_CCC.value, 'BC', 'NZ', 'BC', 'CA',
          HTTPStatus.BAD_REQUEST, [
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'},
              {'error': "Address Country must be 'CA'.",
               'path': '/filing/incorporationApplication/offices/recordsOffice/deliveryAddress/addressCountry'}
          ]),
-        ('FAIL_NOT_MAILING_COUNTRY', Business.LegalTypes.BCOMP.value, 'BC', 'CA', 'BC', 'NZ',
+        ('FAIL_NOT_MAILING_COUNTRY', LegalEntity.EntityTypes.BCOMP.value, 'BC', 'CA', 'BC', 'NZ',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
             ]),
-        ('FAIL_NOT_MAILING_COUNTRY', Business.LegalTypes.COMP.value, 'BC', 'CA', 'BC', 'NZ',
+        ('FAIL_NOT_MAILING_COUNTRY', LegalEntity.EntityTypes.COMP.value, 'BC', 'CA', 'BC', 'NZ',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
             ]),
-        ('FAIL_NOT_MAILING_COUNTRY', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'BC', 'NZ',
+        ('FAIL_NOT_MAILING_COUNTRY', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 'BC', 'CA', 'BC', 'NZ',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
             ]),
-        ('FAIL_NOT_MAILING_COUNTRY', Business.LegalTypes.BC_CCC.value, 'BC', 'CA', 'BC', 'NZ',
+        ('FAIL_NOT_MAILING_COUNTRY', LegalEntity.EntityTypes.BC_CCC.value, 'BC', 'CA', 'BC', 'NZ',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'},
                 {'error': "Address Country must be 'CA'.",
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
             ]),
-        ('FAIL_ALL_ADDRESS', Business.LegalTypes.BCOMP.value, 'AB', 'NZ', 'AB', 'NZ',
+        ('FAIL_ALL_ADDRESS', LegalEntity.EntityTypes.BCOMP.value, 'AB', 'NZ', 'AB', 'NZ',
             HTTPStatus.BAD_REQUEST, [
                 {'error': "Address Region must be 'BC'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressRegion'},
@@ -223,7 +223,7 @@ nr_response = {
                  'path': '/filing/incorporationApplication/offices/recordsOffice/mailingAddress/addressCountry'}
             ])
     ])
-def test_validate_incorporation_addresses_basic(session, mocker, test_name, legal_type, delivery_region,
+def test_validate_incorporation_addresses_basic(session, mocker, test_name, entity_type, delivery_region,
                                                 delivery_country, mailing_region, mailing_country, expected_code,
                                                 expected_msg):
     """Assert that incorporation offices can be validated."""
@@ -235,7 +235,7 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
-    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = entity_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
     filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
 
@@ -259,7 +259,7 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
 
     # perform test
     with freeze_time(now):
-        err = validate(business, filing_json)
+        err = validate(legal_entity, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -270,38 +270,38 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, expected_code, expected_msg',
+    'test_name, entity_type, expected_code, expected_msg',
     [
-        ('SUCCESS', Business.LegalTypes.BCOMP.value, None, None),
-        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, None, None),
-        ('SUCCESS', Business.LegalTypes.BC_CCC.value, None, None),
-        ('SUCCESS', Business.LegalTypes.COMP.value, None, None),
-        ('FAIL_LEGAL_NAME_MISMATCH', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
+        ('SUCCESS', LegalEntity.EntityTypes.BCOMP.value, None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.BC_CCC.value, None, None),
+        ('SUCCESS', LegalEntity.EntityTypes.COMP.value, None, None),
+        ('FAIL_LEGAL_NAME_MISMATCH', LegalEntity.EntityTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal name is not same as the business legal name.',
            'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
-        ('FAIL_LEGAL_NAME_MISMATCH', Business.LegalTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_NAME_MISMATCH', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal name is not same as the business legal name.',
            'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
-        ('FAIL_LEGAL_NAME_MISMATCH', Business.LegalTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_NAME_MISMATCH', LegalEntity.EntityTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal name is not same as the business legal name.',
            'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
-        ('FAIL_LEGAL_NAME_MISMATCH', Business.LegalTypes.COMP.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_NAME_MISMATCH', LegalEntity.EntityTypes.COMP.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal name is not same as the business legal name.',
           'path': '/filing/incorporationApplication/nameRequest/legalName'}]),
-        ('FAIL_LEGAL_TYPE_MISMATCH', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_TYPE_MISMATCH', LegalEntity.EntityTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}]),
-        ('FAIL_LEGAL_TYPE_MISMATCH', Business.LegalTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_TYPE_MISMATCH', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}]),
-        ('FAIL_LEGAL_TYPE_MISMATCH', Business.LegalTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_TYPE_MISMATCH', LegalEntity.EntityTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}]),
-        ('FAIL_LEGAL_TYPE_MISMATCH', Business.LegalTypes.COMP.value, HTTPStatus.BAD_REQUEST,
+        ('FAIL_LEGAL_TYPE_MISMATCH', LegalEntity.EntityTypes.COMP.value, HTTPStatus.BAD_REQUEST,
          [{'error': 'Name Request legal type is not same as the business legal type.',
            'path': '/filing/incorporationApplication/nameRequest/legalType'}])
     ])
-def test_validate_name_request(session, mocker, test_name, legal_type, expected_code, expected_msg):
+def test_validate_name_request(session, mocker, test_name, entity_type, expected_code, expected_msg):
     """Assert that incorporation name request can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
@@ -311,22 +311,22 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
-    curr_legal_type = legal_type if test_name not in ['FAIL_LEGAL_TYPE_MISMATCH'] else 'CCC'
-    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = curr_legal_type
+    curr_entity_type = entity_type if test_name not in ['FAIL_LEGAL_TYPE_MISMATCH'] else 'CCC'
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = curr_entity_type
     if test_name not in ['FAIL_LEGAL_NAME_MISMATCH']:
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = legal_name
     else:
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = 'company name'
     filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
     nr_response_copy = copy.deepcopy(nr_response)
-    nr_response_copy['legalType'] = legal_type
+    nr_response_copy['legalType'] = entity_type
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
                  return_value=[])
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response_copy)):
         with freeze_time(now):
-            err = validate(business, filing_json)
+            err = validate(legal_entity, filing_json)
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
@@ -525,7 +525,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
                  return_value=[])
 
     # perform test
-    err = validate(business, filing_json)
+    err = validate(legal_entity, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -1256,7 +1256,7 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
 
     # perform test
     with freeze_time(now):
-        err = validate(business, filing_json)
+        err = validate(legal_entity, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -1302,7 +1302,7 @@ def test_validate_incorporation_effective_date(session, mocker, test_name, effec
 
     # perform test
     with freeze_time(now):
-        err = validate(business, filing_json)
+        err = validate(legal_entity, filing_json)
 
     # validate outcomes
     if expected_code:
@@ -1386,7 +1386,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
                  return_value=[])
 
     # perform test
-    err = validate(business, filing_json)
+    err = validate(legal_entity, filing_json)
 
     # validate outcomes
     if expected_code:

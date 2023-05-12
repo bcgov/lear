@@ -17,13 +17,13 @@ from http import HTTPStatus
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 
 document_rule_set = {
     'cstat': {
         'legal_types': ['CP', 'BC', 'BEN'],
-        'status': Business.State.ACTIVE
+        'status': LegalEntity.State.ACTIVE
     },
     'cogs': {
         'legal_types': ['CP', 'BC', 'BEN'],
@@ -36,19 +36,19 @@ document_rule_set = {
 }
 
 
-def validate_document_request(document_type, business: Business):
+def validate_document_request(document_type, legal_entity: LegalEntity):
     """Validate the business document request."""
     errors = []
     # basic checks
     if document_rules := document_rule_set.get(document_type, None):
         allowed_legal_types = document_rules.get('legal_types', None)
-        if allowed_legal_types and business.legal_type not in allowed_legal_types:
+        if allowed_legal_types and legal_entity.entity_type not in allowed_legal_types:
             errors.append({'error': babel('Specified document type is not valid for the entity.')})
         status = document_rules.get('status', None)
-        if status and business.state != status:
+        if status and legal_entity.state != status:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
         good_standing = document_rules.get('goodStanding', None)
-        if good_standing and not business.good_standing:
+        if good_standing and not legal_entity.good_standing:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
     if errors:
         return Error(HTTPStatus.BAD_REQUEST, errors)

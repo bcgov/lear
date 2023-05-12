@@ -41,7 +41,7 @@ class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
     special_rights_flag = db.Column('special_rights_flag', db.Boolean, unique=False, default=False)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
 
     # Relationships
     series = db.relationship('ShareSeries',

@@ -19,7 +19,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, SPECIAL_RESOLUTION
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.special_resolution import validate
 from . import create_utc_future_date_str
 
@@ -60,8 +60,8 @@ def test_validate(session, test_name, resolution, identifier, resolution_date, s
                   signatory_family_name, business_founding_date, expected_code, expected_msg):
     """Assert that a SR can be validated."""
     # setup
-    business = Business(identifier=identifier)
-    business.founding_date = datetime.strptime(business_founding_date, '%Y-%m-%d')
+    legal_entity =LegalEntity(identifier=identifier)
+    legal_entity.founding_date = datetime.strptime(business_founding_date, '%Y-%m-%d')
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
@@ -91,7 +91,7 @@ def test_validate(session, test_name, resolution, identifier, resolution_date, s
         del filing['filing']['specialResolution']['signatory']['familyName']
 
     # perform test
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     # validate outcomes
     if expected_code or expected_msg:

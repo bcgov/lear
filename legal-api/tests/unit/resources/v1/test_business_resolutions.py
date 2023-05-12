@@ -20,7 +20,7 @@ from http import HTTPStatus
 
 from legal_api.models import Resolution
 from legal_api.services.authz import STAFF_ROLE
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
@@ -28,16 +28,16 @@ def test_get_business_resolutions(session, client, jwt):
     """Assert that business resolutions are returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     resolution_1 = Resolution(
         resolution_date='2020-02-02',
         resolution_type='ORDINARY',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_2 = Resolution(
         resolution_date='2020-03-03',
         resolution_type='SPECIAL',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_1.save()
     resolution_2.save()
@@ -56,7 +56,7 @@ def test_get_business_no_resolutions(session, client, jwt):
     """Assert that business resolutions are not returned."""
     # setup
     identifier = 'CP7654321'
-    factory_business(identifier)
+    factory_legal_entity(identifier)
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/resolutions',
@@ -71,16 +71,16 @@ def test_get_business_resolution_by_id(session, client, jwt):
     """Assert that business resolution is returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     resolution_1 = Resolution(
         resolution_date='2020-02-02',
         resolution_type='ORDINARY',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_2 = Resolution(
         resolution_date='2020-03-03',
         resolution_type='SPECIAL',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_1.save()
     resolution_2.save()
@@ -97,9 +97,9 @@ def test_get_business_resolution_by_invalid_id(session, client, jwt):
     """Assert that business resolution is not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     resolution_id = 5000
-    business.save()
+    legal_entity.save()
 
     # test
     rv = client.get(f'/api/v1/businesses/{identifier}/resolutions/{resolution_id}',
@@ -115,16 +115,16 @@ def test_get_business_resolution_by_type(session, client, jwt):
     # setup
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     resolution_1 = Resolution(
         resolution_date='2020-02-02',
         resolution_type='ORDINARY',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_2 = Resolution(
         resolution_date='2020-03-03',
         resolution_type='SPECIAL',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_1.save()
     resolution_2.save()
@@ -144,16 +144,16 @@ def test_get_business_resolution_by_invalid_type(session, client, jwt):
     """Assert that business resolutions are not returned."""
     # setup
     identifier = 'CP7654321'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
     resolution_1 = Resolution(
         resolution_date='2020-02-02',
         resolution_type='ORDINARY',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_2 = Resolution(
         resolution_date='2020-03-03',
         resolution_type='SPECIAL',
-        business_id=business.id
+        legal_entity_id=legal_entity.id
     )
     resolution_1.save()
     resolution_2.save()

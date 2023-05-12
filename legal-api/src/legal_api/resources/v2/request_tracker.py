@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, RequestTracker, UserRoles
+from legal_api.models import LegalEntity, RequestTracker, UserRoles
 from legal_api.resources.v2.administrative_bn import publish_entity_event
 from legal_api.utils.auth import jwt
 
@@ -31,11 +31,11 @@ bp = Blueprint('REQUEST_TRACKER', __name__, url_prefix='/api/v2/requestTracker')
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def get_bn_request_trackers(identifier: str):
     """Return a list of request trackers."""
-    business = Business.find_by_identifier(identifier)
-    if business is None:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if legal_entity is None:
         return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
-    request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB)
+    request_trackers = RequestTracker.find_by(legal_entity.id, RequestTracker.ServiceName.BN_HUB)
     return jsonify({
         'requestTrackers': [
             request_tracker.json
@@ -50,8 +50,8 @@ def get_bn_request_trackers(identifier: str):
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def resubmit_bn_request(identifier: str):
     """Resubmit BN request."""
-    business = Business.find_by_identifier(identifier)
-    if business is None:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if legal_entity is None:
         return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
     message_id = str(uuid.uuid4())
@@ -63,7 +63,7 @@ def resubmit_bn_request(identifier: str):
         request_type=request_type,
         retry_number=-1,
         service_name=RequestTracker.ServiceName.BN_HUB,
-        business_id=business.id,
+        legal_entity_id=legal_entity.id,
         is_admin=True,
         message_id=message_id,
         request_object=request_object
@@ -71,7 +71,7 @@ def resubmit_bn_request(identifier: str):
     request_tracker.save()
 
     publish_entity_event(
-        business,
+        legal_entity,
         request_name=f'RESUBMIT_{request_type.name}',
         message_id=message_id
     )

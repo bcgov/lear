@@ -22,7 +22,7 @@ from registry_schemas.example_data import CORRECTION_REGISTRATION, CHANGE_OF_REG
 
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 from tests.unit import MockResponse
 
 CHANGE_OF_REGISTRATION_APPLICATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
@@ -78,8 +78,8 @@ def test_valid_firms_correction(session, test_name, filing):
     """Test that a valid Firms correction passes validation."""
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+    legal_entity =factory_legal_entity(identifier)
+    corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
 
@@ -90,7 +90,7 @@ def test_valid_firms_correction(session, test_name, filing):
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+            err = validate(legal_entity, f)
 
             if err:
                 print(err.msg)
@@ -110,8 +110,8 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     """Test that a invalid Firms correction fails validation."""
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+    legal_entity =factory_legal_entity(identifier)
+    corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
 
@@ -123,7 +123,7 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+            err = validate(legal_entity, f)
 
             if err:
                 print(err.msg)
@@ -177,9 +177,9 @@ def test_firms_correction_naics(session, test_name, filing, existing_naics_code,
     """Test that NAICS code and description are correctly validated."""
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier=identifier, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
+    legal_entity =factory_legal_entity(identifier=identifier, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
 
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+    corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
     f['filing']['header']['identifier'] = identifier
@@ -197,7 +197,7 @@ def test_firms_correction_naics(session, test_name, filing, existing_naics_code,
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+            err = validate(legal_entity, f)
 
             if err:
                 print(err.msg)

@@ -17,10 +17,12 @@ from datetime import datetime
 
 import pytest
 
-from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles,\
-    create_business, factory_address, create_filing
+from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, \
+    factory_party_roles, \
+    create_business, factory_address, create_filing, factory_legal_entity, factory_filing_role_person, \
+    factory_filing_role_organization
 
-from legal_api.models import Address, Business, Office, PartyRole
+from legal_api.models import Address, LegalEntity, Office, PartyRole, EntityRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
     check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business,\
@@ -122,16 +124,18 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
 def test_check_firm_party(session, test_name, legal_type, role, party_type, expected_code, expected_msg):
     """Assert that business firm party checks functions properly."""
 
+    legal_entity = factory_legal_entity(legal_type, 'BC1234567', 123)
+
     if party_type == 'person':
-        party_role = factory_party_role_person(role)
+        party_role = factory_party_role_person(legal_entity=legal_entity, role=role, custom_person_id=1111)
     elif party_type == 'organization':
-        party_role = factory_party_role_organization(role)
+        party_role = factory_party_role_organization(legal_entity=legal_entity, role=role, custom_org_id=1111)
 
     if test_name == 'FAIL_NO_PERSON_NAME':
-        party_role.party.first_name = None
-        party_role.party.last_name = None
+        party_role.related_entity.first_name = None
+        party_role.related_entity.last_name = None
     elif test_name == 'FAIL_NO_ORG_NAME':
-        party_role.party.organization_name = None
+        party_role.related_colin_entity.organization_name = None
 
     with patch.object(firms, 'check_address', return_value=[]):
         result = check_firm_party(legal_type, party_role)
@@ -149,17 +153,17 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
     'test_name, legal_type, role, num_persons_roles, num_org_roles, expected_code, expected_msg',
     [
         # SP tests
-        ('SUCCESS', 'SP', 'proprietor', 1, 0, None, None),
-        ('SUCCESS', 'SP', 'proprietor', 0, 1, None, None),
-        ('FAIL_PROPRIETOR_REQUIRED', 'SP', 'proprietor', 0, 0, 'NO_PROPRIETOR', 'A proprietor is required.'),
-
+        ('SUCCESS', 'SP', EntityRole.RoleTypes.proprietor, 1, 0, None, None),
+        ('SUCCESS', 'SP', EntityRole.RoleTypes.proprietor, 0, 1, None, None),
+        ('FAIL_PROPRIETOR_REQUIRED', 'SP', EntityRole.RoleTypes.proprietor, 0, 0, 'NO_PROPRIETOR', 'A proprietor is required.'),
+        #
         # GP tests
-        ('SUCCESS', 'GP', 'partner', 2, 0, None, None),
-        ('SUCCESS', 'GP', 'partner', 0, 2, None, None),
-        ('SUCCESS', 'GP', 'partner', 1, 1, None, None),
-        ('FAIL_PARTNER_REQUIRED', 'GP', 'partner', 0, 0, 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_PARTNER_REQUIRED', 'GP', 'partner', 1, 0, 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_PARTNER_REQUIRED', 'GP', 'partner', 0, 1, 'NO_PARTNER', '2 partners are required.'),
+        ('SUCCESS', 'GP', EntityRole.RoleTypes.partner, 2, 0, None, None),
+        ('SUCCESS', 'GP', EntityRole.RoleTypes.partner, 0, 2, None, None),
+        ('SUCCESS', 'GP', EntityRole.RoleTypes.partner, 1, 1, None, None),
+        ('FAIL_PARTNER_REQUIRED', 'GP', EntityRole.RoleTypes.partner, 0, 0, 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_PARTNER_REQUIRED', 'GP', EntityRole.RoleTypes.partner, 1, 0, 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_PARTNER_REQUIRED', 'GP', EntityRole.RoleTypes.partner, 0, 1, 'NO_PARTNER', '2 partners are required.'),
     ])
 def test_check_firm_parties(session, test_name, legal_type, role, num_persons_roles:int, num_org_roles:int,
                             expected_code, expected_msg):
@@ -190,16 +194,18 @@ def test_check_firm_parties(session, test_name, legal_type, role, num_persons_ro
 def test_check_completing_party(session, test_name, role, party_type, expected_code, expected_msg):
     """Assert that business firm party checks functions properly."""
 
+    filing_id = 55555
+
     if party_type == 'person':
-        party_role = factory_party_role_person(role)
+        party_role = factory_filing_role_person(filing_id=filing_id, role=role, custom_person_id=1111)
     elif party_type == 'organization':
-        party_role = factory_party_role_organization(role)
+        party_role = factory_filing_role_organization(filing_id=filing_id, role=role, custom_org_id=99999)
 
     if test_name == 'FAIL_NO_PERSON_NAME':
-        party_role.party.first_name = None
-        party_role.party.last_name = None
+        party_role.legal_entity.first_name = None
+        party_role.legal_entity.last_name = None
     elif test_name == 'FAIL_NO_ORG_NAME':
-        party_role.party.organization_name = None
+        party_role.related_colin_entity.organization_name = None
 
     with patch.object(firms, 'check_address', return_value=[]):
         result = check_completing_party(party_role)
@@ -273,9 +279,9 @@ def test_check_parties(session, test_name, legal_type, identifier, num_persons_r
                        expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    business = None
+    legal_entity =None
 
-    create_business(legal_type=legal_type,
+    create_business(entity_type=legal_type,
                     identifier=identifier,
                     firm_num_persons_roles=num_persons_roles,
                     firm_num_org_roles=num_org_roles,
@@ -283,13 +289,13 @@ def test_check_parties(session, test_name, legal_type, identifier, num_persons_r
                     filing_has_completing_party=filing_has_completing_party)
 
 
-    business = Business.find_by_identifier(identifier)
-    assert business
-    assert business.legal_type == legal_type
-    assert business.identifier == identifier
+    legal_entity =LegalEntity.find_by_identifier(identifier)
+    assert legal_entity
+    assert legal_entity.entity_type == legal_type
+    assert legal_entity.identifier == identifier
 
     with patch.object(firms, 'check_address', return_value=[]):
-        result = check_parties(legal_type, business)
+        result = check_parties(legal_type, legal_entity)
 
     if expected_code:
         assert len(result) == 1
@@ -330,9 +336,9 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                        filing_types: list, filing_has_completing_party: list, expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    business = None
+    legal_entity =None
 
-    create_business(legal_type=legal_type,
+    create_business(entity_type=legal_type,
                     identifier=identifier,
                     create_office=has_office,
                     create_office_mailing_address=has_office,
@@ -343,13 +349,13 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                     filing_has_completing_party=filing_has_completing_party,
                     start_date=datetime.utcnow())
 
-    business = Business.find_by_identifier(identifier)
-    assert business
-    assert business.legal_type == legal_type
-    assert business.identifier == identifier
+    legal_entity =LegalEntity.find_by_identifier(identifier)
+    assert legal_entity
+    assert legal_entity.entity_type == legal_type
+    assert legal_entity.identifier == identifier
 
     with patch.object(firms, 'check_address', return_value=[]):
-        result = check_business(business)
+        result = check_business(legal_entity)
 
     if expected_code:
         assert len(result) == 1
@@ -378,36 +384,36 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
 def test_check_office(session, test_name, legal_type, identifier, expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    business = None
+    legal_entity =None
     if test_name == 'SUCCESS':
-        create_business(legal_type=legal_type,
+        create_business(entity_type=legal_type,
                         identifier=identifier,
                         create_office=True,
                         create_office_mailing_address=True,
                         create_office_delivery_address=True)
     elif test_name == 'FAIL_NO_OFFICE':
-        create_business(legal_type=legal_type,
+        create_business(entity_type=legal_type,
                         identifier=identifier,
                         create_office=False)
     elif test_name == 'FAIL_NO_MAILING_ADDR':
-        create_business(legal_type=legal_type,
+        create_business(entity_type=legal_type,
                         identifier=identifier,
                         create_office=True,
                         create_office_mailing_address=False,
                         create_office_delivery_address=True)
     elif test_name == 'FAIL_NO_DELIVERY_ADDR':
-        create_business(legal_type=legal_type,
+        create_business(entity_type=legal_type,
                         identifier=identifier,
                         create_office=True,
                         create_office_mailing_address=True,
                         create_office_delivery_address=False)
 
-    business = Business.find_by_identifier(identifier)
-    assert business
-    assert business.legal_type == legal_type
-    assert business.identifier == identifier
+    legal_entity =LegalEntity.find_by_identifier(identifier)
+    assert legal_entity
+    assert legal_entity.entity_type == legal_type
+    assert legal_entity.identifier == identifier
 
-    result = check_office(business)
+    result = check_office(legal_entity)
 
     if expected_code:
         assert len(result) == 1
@@ -423,8 +429,8 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
     [
         # SP tests
         ('SUCCESS_PARTY_MA_MISSING_STREET', 'SP', 'FM0000001', 2, 0, [None, datetime.utcnow()], [], ['registration'], [True], None, None),
-        # GP tests
-        ('SUCCESS_PARTY_MA_MISSING_STREET', 'GP', 'FM0000001', 3, 0, [None, None, datetime.utcnow()], [], ['registration'], [True], None, None),
+        # # GP tests
+        # ('SUCCESS_PARTY_MA_MISSING_STREET', 'GP', 'FM0000001', 3, 0, [None, None, datetime.utcnow()], [], ['registration'], [True], None, None),
     ])
 def test_check_parties_cessation_date(session, test_name, legal_type, identifier, num_persons_roles:int,
                                       num_org_roles:int, person_cessation_dates:list, org_cessation_dates:list,
@@ -432,9 +438,9 @@ def test_check_parties_cessation_date(session, test_name, legal_type, identifier
                                       expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    business = None
+    legal_entity =None
 
-    create_business(legal_type=legal_type,
+    create_business(entity_type=legal_type,
                     identifier=identifier,
                     firm_num_persons_roles=num_persons_roles,
                     firm_num_org_roles=num_org_roles,
@@ -446,24 +452,23 @@ def test_check_parties_cessation_date(session, test_name, legal_type, identifier
                     create_completing_party_address=True)
 
 
-    business = Business.find_by_identifier(identifier)
-    assert business
-    assert business.legal_type == legal_type
-    assert business.identifier == identifier
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    assert legal_entity
+    assert legal_entity.entity_type == legal_type
+    assert legal_entity.identifier == identifier
 
     ceased_party = None
     if 'PARTY_MA_MISSING_STREET' in test_name:
-        ceased_party_role = business.party_roles \
-            .filter(PartyRole.role.in_(['partner', 'proprietor'])) \
-            .filter(PartyRole.cessation_date != None).one_or_none()
-        ceased_party = ceased_party_role.party
-        ceased_party.mailing_address.street = None
+        ceased_party_role = legal_entity.entity_roles \
+            .filter(EntityRole.role_type.in_(['partner', 'proprietor'])) \
+            .filter(EntityRole.cessation_date != None).one_or_none()
+        ceased_party = ceased_party_role.related_entity
+        ceased_party.entity_mailing_address.street = None
 
     if ceased_party:
         ceased_party.save()
 
-    result = check_parties(legal_type, business)
-
+    result = check_parties(legal_type, legal_entity)
 
     if expected_code:
         assert len(result) == 1

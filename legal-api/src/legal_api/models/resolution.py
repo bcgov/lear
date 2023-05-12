@@ -35,15 +35,19 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
     resolution_date = db.Column('resolution_date', db.Date, nullable=False)
     resolution_type = db.Column('type', db.String(20), default=ResolutionType.SPECIAL, nullable=False)
     resolution_sub_type = db.Column('sub_type', db.String(20))
-    signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
     signing_date = db.Column('signing_date', db.Date)
     resolution = db.Column(db.Text)
 
+    # parent keys
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
+    signing_legal_entity_id = db.Column('signing_legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+
     # relationships
     party = db.relationship('Party')
-
-    # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    signing_legal_entity = db.relationship('LegalEntity',
+                                           back_populates='resolution_signing_legal_entity',
+                                           foreign_keys=[signing_legal_entity_id])
 
     def save(self):
         """Save the object to the database immediately."""
@@ -64,12 +68,12 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
             resolution_json['subType'] = self.resolution_sub_type
         if self.signing_date:
             resolution_json['signingDate'] = self.signing_date.isoformat()
-        if self.signing_party_id:
+        if self.signing_legal_entity_id:
             resolution_json['signatory'] = {}
-            resolution_json['signatory']['givenName'] = self.party.first_name
-            resolution_json['signatory']['familyName'] = self.party.last_name
-            if self.party.middle_initial:
-                resolution_json['signatory']['additionalName'] = self.party.middle_initial
+            resolution_json['signatory']['givenName'] = self.signing_legal_entity.first_name
+            resolution_json['signatory']['familyName'] = self.signing_legal_entity.last_name
+            if self.signing_legal_entity.middle_initial:
+                resolution_json['signatory']['additionalName'] = self.signing_legal_entity.middle_initial
         return resolution_json
 
     @classmethod
@@ -81,10 +85,10 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
         return resolution
 
     @classmethod
-    def find_by_type(cls, business_id: int, resolution_type: str):
+    def find_by_type(cls, legal_entity_id: int, resolution_type: str):
         """Return the resolutions matching the type."""
         resolutions = db.session.query(Resolution). \
-            filter(Resolution.business_id == business_id). \
+            filter(Resolution.legal_entity_id == legal_entity_id). \
             filter(Resolution.resolution_type == resolution_type). \
             all()
         return resolutions

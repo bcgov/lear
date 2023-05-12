@@ -15,13 +15,13 @@
 import datedelta
 import pytest
 from legal_api.services.business import validate_document_request
-from legal_api.models import Business
-from tests.unit.models import factory_business
+from legal_api.models import LegalEntity
+from tests.unit.models import factory_legal_entity
 from datetime import datetime
 
 
 @pytest.mark.parametrize(
-    'test_status, document_type, legal_type, identifier, expected_msg',
+    'test_status, document_type, entity_type, identifier, expected_msg',
     [
         ('FAIL', 'cstat', 'SP', 'FM1234567', 'Specified document type is not valid for the entity.'),
         ('FAIL', 'cstat', 'GP', 'FM1234567', 'Specified document type is not valid for the entity.'),
@@ -32,18 +32,18 @@ from datetime import datetime
         ('SUCCESS', 'cstat', 'BC', 'BC1234567', None)
     ]
 )
-def test_document_legal_type(session, test_status, document_type, legal_type, identifier, expected_msg):
+def test_document_entity_type(session, test_status, document_type, entity_type, identifier, expected_msg):
     """Assert valid document legal type."""
-    business = factory_business(identifier,
+    legal_entity =factory_legal_entity(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR),
                                 last_ar_date=datetime.utcnow(),
-                                entity_type=legal_type
+                                entity_type=entity_type,
                                 )
     if test_status == 'HISTORICAL':
-        business.dissolution_date = datetime.utcnow()
-        business.state = Business.State.HISTORICAL
-        business.save()
-    err = validate_document_request(document_type, business)
+        legal_entity.dissolution_date = datetime.utcnow()
+        legal_entity.state = LegalEntity.State.HISTORICAL
+        legal_entity.save()
+    err = validate_document_request(document_type, legal_entity)
 
     # validate outcomes
     if test_status in ['FAIL', 'HISTORICAL']:

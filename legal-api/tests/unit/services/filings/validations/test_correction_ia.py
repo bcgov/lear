@@ -23,7 +23,7 @@ from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATIO
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 from tests.unit.services.filings.validations import lists_are_equal
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -34,15 +34,15 @@ def test_valid_ia_correction(session):
     """Test that a valid IA without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    corrected_filing = factory_completed_filing(legal_entity, INCORPORATION_APPLICATION)
 
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    err = validate(business, f)
+    err = validate(legal_entity, f)
 
     if err:
         print(err.msg)
@@ -51,22 +51,22 @@ def test_valid_ia_correction(session):
     assert None is err
 
 
-@pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
+@pytest.mark.parametrize('new_name, entity_type, nr_entity_type, nr_type, err_msg', [
     ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
     ('legal_name-BC1234567_Changed', 'BEN', 'CP', 'BECV',
      'Name Request legal type is not same as the business legal type.'),
     ('nr_not_approved', 'BEN', 'CP', 'BECV', 'Name Request is not approved.')
 ])
-def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+def test_nr_correction(session, new_name, entity_type, nr_entity_type, nr_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
 
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    corrected_filing = factory_completed_filing(legal_entity, INCORPORATION_APPLICATION)
 
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
@@ -74,13 +74,13 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
 
     f['filing']['correction']['nameRequest']['nrNumber'] = identifier
     f['filing']['correction']['nameRequest']['legalName'] = new_name
-    f['filing']['correction']['nameRequest']['legalType'] = legal_type
-    f['filing']['business']['legalType'] = legal_type
+    f['filing']['correction']['nameRequest']['legalType'] = entity_type
+    f['filing']['business']['legalType'] = entity_type
 
     nr_response_json = {
         'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
         'expirationDate': '',
-        'legalType': nr_legal_type,
+        'legalType': nr_entity_type,
         'names': [{
             'name': new_name,
             'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
@@ -90,7 +90,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     nr_response = MockResponse(nr_response_json)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        err = validate(business, f)
+        err = validate(legal_entity, f)
         if err:
             print(err.msg)
 
@@ -102,7 +102,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
         assert err.msg[0]['error'] == err_msg
 
 
-@pytest.mark.parametrize('test_name, legal_type, correction_type, err_msg', [
+@pytest.mark.parametrize('test_name, entity_type, correction_type, err_msg', [
     ('valid_parties', 'BEN', 'CLIENT', None),
     ('valid_parties', 'BC', 'CLIENT', None),
     ('valid_parties', 'ULC', 'CLIENT', None),
@@ -133,16 +133,16 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     ('no_roles', 'CC', 'STAFF',
      [{'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_correction(session, test_name, legal_type, correction_type, err_msg):
+def test_parties_correction(session, test_name, entity_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    legal_entity =factory_legal_entity(identifier)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
 
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    corrected_filing = factory_completed_filing(legal_entity, INCORPORATION_APPLICATION)
 
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
@@ -151,13 +151,13 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
 
     f['filing']['correction']['nameRequest']['nrNumber'] = identifier
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
-    f['filing']['correction']['nameRequest']['legalType'] = legal_type
-    f['filing']['business']['legalType'] = legal_type
+    f['filing']['correction']['nameRequest']['legalType'] = entity_type
+    f['filing']['business']['legalType'] = entity_type
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
     elif test_name == 'valid_parties':
-        if legal_type == 'CC':
+        if entity_type == 'CC':
             director = copy.deepcopy(f['filing']['correction']['parties'][0])
             del director['roles'][0]  # completing party
             f['filing']['correction']['parties'].append(director)
@@ -169,7 +169,7 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     nr_response_json = {
         'state': 'APPROVED',
         'expirationDate': '',
-        'legalType': legal_type,
+        'legalType': entity_type,
         'names': [{
             'name': 'test',
             'state': 'APPROVED',
@@ -179,7 +179,7 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     nr_response = MockResponse(nr_response_json)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        err = validate(business, f)
+        err = validate(legal_entity, f)
         if err:
             print(err.msg)
 

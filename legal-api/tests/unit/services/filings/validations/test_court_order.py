@@ -21,7 +21,7 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.services.filings.validations.court_order import validate
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -37,13 +37,13 @@ from tests.unit.services.filings.validations import lists_are_equal
 )
 def test_court_orders(session, test_status, expected_code, expected_msg):
     """Assert valid court order."""
-    business = factory_business('BC1234567')
+    legal_entity =factory_legal_entity('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
     del filing['filing']['courtOrder']['fileKey']
     if test_status == 'FAIL':
         del filing['filing']['courtOrder']['orderDetails']
         filing['filing']['courtOrder']['effectOfOrder'] = 'invalid'
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     if expected_code:
         assert err.code == expected_code
@@ -66,7 +66,7 @@ file_key_path = '/filing/courtOrder/fileKey'
     ])
 def test_court_order_file(session, minio_server, test_name, expected_code, expected_msg):
     """Assert valid court order."""
-    business = factory_business('BC1234567')
+    legal_entity =factory_legal_entity('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
 
     if test_name == 'SUCCESS':
@@ -74,7 +74,7 @@ def test_court_order_file(session, minio_server, test_name, expected_code, expec
     elif test_name == 'FAIL_INVALID_FILE_KEY_SIZE':
         filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=True)
 
-    err = validate(business, filing)
+    err = validate(legal_entity, filing)
 
     if expected_code:
         assert err.code == expected_code

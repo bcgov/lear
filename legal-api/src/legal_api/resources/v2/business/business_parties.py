@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyRole
+from legal_api.models import EntityRole, LegalEntity
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -31,9 +31,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_parties(identifier, party_id=None):
     """Return a JSON of the parties."""
-    business = Business.find_by_identifier(identifier)
+    legal_entity = LegalEntity.find_by_identifier(identifier)
 
-    if not business:
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -43,24 +43,24 @@ def get_parties(identifier, party_id=None):
             HTTPStatus.UNAUTHORIZED
 
     if party_id:
-        party_roles = PartyRole.get_party_roles_by_party_id(business.id, party_id)
+        party_roles = EntityRole.get_entity_roles_by_party_id(legal_entity.id, party_id)
         if not party_roles:
             return jsonify({'message': f'Party {party_id} not found'}), HTTPStatus.NOT_FOUND
     else:
         end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date() \
             if request.args.get('date') else datetime.utcnow().date()
-        party_roles = PartyRole.get_party_roles(business.id, end_date, request.args.get('role'))
+        party_roles = EntityRole.get_entity_roles(legal_entity.id, end_date, request.args.get('role'))
 
     party_role_dict = {}
     party_list = []
     for party_role in party_roles:
         party_role_json = party_role.json
-        party_role_dict.setdefault(party_role.party_id, []).append(
+        party_role_dict.setdefault(party_role.related_entity_id, []).append(
               {'roleType': party_role_json['role'].replace('_', ' ').title(),
                'appointmentDate': party_role_json['appointmentDate'],
                'cessationDate': party_role_json['cessationDate']})
     for key, value in party_role_dict.items():
-        party = [x for x in party_roles if x.party_id == key][0]
+        party = [x for x in party_roles if x.related_entity_id == key][0]
         party_json = party.json
         del party_json['role']
         del party_json['appointmentDate']

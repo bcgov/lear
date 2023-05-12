@@ -19,7 +19,7 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
+from legal_api.models import DCConnection, DCDefinition, DCIssuedCredential, LegalEntity
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
 
@@ -34,16 +34,16 @@ bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCr
 @jwt.requires_auth
 def create_invitation(identifier):
     """Create a new connection invitation."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    active_connection = DCConnection.find_active_by(business_id=business.id)
+    active_connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if active_connection:
         return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
 
     # check whether this business has an existing connection which is not active
-    connections = DCConnection.find_by(business_id=business.id, connection_state='invitation')
+    connections = DCConnection.find_by(legal_entity_id=legal_entity.id, connection_state='invitation')
     if connections:
         connection = connections[0]
     else:
@@ -56,7 +56,7 @@ def create_invitation(identifier):
             invitation_url=invitation['invitation_url'],
             is_active=False,
             connection_state='invitation',
-            business_id=business.id
+            legal_entity_id=legal_entity.id
         )
         connection.save()
 
@@ -67,12 +67,12 @@ def create_invitation(identifier):
 @cross_origin(origin='*')
 @jwt.requires_auth
 def get_active_connection(identifier):
-    """Get active connection for this business."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    """Get active connection for this LegalEntity."""
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
+    connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if not connection:
         return jsonify({'message': 'No active connection found.'}), HTTPStatus.NOT_FOUND
 
@@ -84,11 +84,11 @@ def get_active_connection(identifier):
 @jwt.requires_auth
 def get_issued_credentials(identifier):
     """Get all issued credentials."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
+    connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if not connection:
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
@@ -100,7 +100,7 @@ def get_issued_credentials(identifier):
     for issued_credential in issued_credentials:
         definition = DCDefinition.find_by_id(issued_credential.dc_definition_id)
         response.append({
-            'legalName': business.legal_name,
+            'legalName': legal_entity.legal_name,
             'credentialType': definition.credential_type.name,
             'isIssued': issued_credential.is_issued,
             'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
@@ -114,11 +114,11 @@ def get_issued_credentials(identifier):
 @jwt.requires_auth
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    legal_entity = LegalEntity.find_by_identifier(identifier)
+    if not legal_entity:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
+    connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType[credential_type])
 
     issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id,
@@ -129,7 +129,7 @@ def send_credential(identifier, credential_type):
     response = digital_credentials.issue_credential(
         connection_id=connection.connection_id,
         definition=definition,
-        data=_get_data_for_credential(definition.credential_type, business)
+        data=_get_data_for_credential(definition.credential_type, legal_entity)
     )
     if not response:
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
@@ -144,20 +144,20 @@ def send_credential(identifier, credential_type):
     return jsonify({'message': 'Issue Credential is initiated.'}), HTTPStatus.OK
 
 
-def _get_data_for_credential(credential_type: DCDefinition.CredentialType, business: Business):
+def _get_data_for_credential(credential_type: DCDefinition.CredentialType, legal_entity: LegalEntity):
     if credential_type == DCDefinition.CredentialType.business:
         return [
             {
                 'name': 'legalName',
-                'value': business.legal_name
+                'value': legal_entity.legal_name
             },
             {
                 'name': 'foundingDate',
-                'value': business.founding_date.isoformat()
+                'value': legal_entity.founding_date.isoformat()
             },
             {
                 'name': 'taxId',
-                'value': business.tax_id or ''
+                'value': legal_entity.tax_id or ''
             },
             {
                 'name': 'homeJurisdiction',
@@ -165,11 +165,11 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
             },
             {
                 'name': 'legalType',
-                'value': business.legal_type
+                'value': legal_entity.entity_type
             },
             {
                 'name': 'identifier',
-                'value': business.identifier
+                'value': legal_entity.identifier
             }
         ]
 

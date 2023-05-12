@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License
-"""Filings are legal documents that alter the state of a business."""
+"""Filings are legal documents that alter the state of a LegalEntity."""
 # pylint: disable=unused-argument
 from __future__ import annotations
 
@@ -26,9 +26,9 @@ from flask_jwt_oidc import JwtManager
 from sqlalchemy import desc
 
 from legal_api.core.meta import FilingMeta
-from legal_api.models import Business, Document, DocumentType
-from legal_api.models import Filing as FilingStorage  # noqa: I001
-from legal_api.models import UserRoles
+from legal_api.models import Document, DocumentType
+from legal_api.models import Filing as FilingStorage
+from legal_api.models import LegalEntity, UserRoles
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -184,7 +184,7 @@ class Filing:
             filing_json = filing
 
         else:  # Filing.Status.COMPLETED.value
-            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.legal_entity_id)
 
         return filing_json
     json = property(get_json)
@@ -241,7 +241,7 @@ class Filing:
         if identifier.startswith('T'):
             storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            storage = Business.get_filing_by_id(identifier, filing_id)
+            storage = LegalEntity.get_filing_by_id(identifier, filing_id)
 
         if storage:
             filing = Filing()
@@ -261,9 +261,9 @@ class Filing:
         return None
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
+    def get_filings_by_status(legal_entity_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
-        storages = FilingStorage.get_filings_by_status(business_id, status, after_date)
+        storages = FilingStorage.get_filings_by_status(legal_entity_id, status, after_date)
         filings = []
         for storage in storages:
             filing = Filing()
@@ -273,9 +273,9 @@ class Filing:
         return filings
 
     @staticmethod
-    def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
+    def get_most_recent_filing_json(legal_entity_id: str, filing_type: str = None, jwt: JwtManager = None):
         """Return the most recent filing json."""
-        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+        if storage := FilingStorage.get_most_recent_legal_filing(legal_entity_id, filing_type):
             submitter_displayname = REDACTED_STAFF_SUBMITTER
             if (submitter := storage.filing_submitter) \
                 and submitter.username and jwt \
@@ -319,7 +319,7 @@ class Filing:
         return False
 
     @staticmethod
-    def ledger(business_id: int,  # pylint: disable=too-many-arguments
+    def ledger(legal_entity_id: int,  # pylint: disable=too-many-arguments
                jwt: JwtManager = None,
                statuses: List(str) = None,
                start: int = None,
@@ -333,9 +333,9 @@ class Filing:
         """
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
-        business = Business.find_by_internal_id(business_id)
+        legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
 
-        query = FilingStorage.query.filter(FilingStorage.business_id == business_id)
+        query = FilingStorage.query.filter(FilingStorage.legal_entity_id == legal_entity_id)
 
         if effective_date:
             query = query.filter(FilingStorage.effective_date <= effective_date)
@@ -360,8 +360,8 @@ class Filing:
 
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
-                'businessIdentifier': business.identifier,
-                'displayName': FilingMeta.display_name(business, filing=filing),
+                'businessIdentifier': legal_entity.identifier,
+                'displayName': FilingMeta.display_name(legal_entity, filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
                 'name': filing.filing_type,
@@ -370,7 +370,7 @@ class Filing:
                 'submitter': submitter_displayname,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
 
-                **Filing.common_ledger_items(business.identifier, filing),
+                **Filing.common_ledger_items(legal_entity.identifier, filing),
             }
             if filing.filing_sub_type:
                 ledger_filing['filingSubType'] = filing.filing_sub_type
@@ -378,7 +378,8 @@ class Filing:
             # correction
             if filing.parent_filing:
                 ledger_filing['correctionFilingId'] = filing.parent_filing.id
-                ledger_filing['correctionLink'] = f'{base_url}/{business.identifier}/filings/{filing.parent_filing.id}'
+                ledger_filing['correctionLink'] = \
+                    f'{base_url}/{legal_entity.identifier}/filings/{filing.parent_filing.id}'
                 ledger_filing['correctionFilingStatus'] = filing.parent_filing.status
 
             # add the collected meta_data
@@ -424,7 +425,7 @@ class Filing:
         ledger_filing['data']['order'] = court_order_data
 
     @staticmethod
-    def get_document_list(business, filing, request) -> Optional[dict]:  # pylint: disable=too-many-locals
+    def get_document_list(legal_entity, filing, request) -> Optional[dict]:  # pylint: disable=too-many-locals
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
@@ -444,7 +445,7 @@ class Filing:
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
-        identifier = business.identifier if business else filing.storage.temp_reg
+        identifier = legal_entity.identifier if legal_entity else filing.storage.temp_reg
         doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
@@ -473,9 +474,9 @@ class Filing:
         if filing.status == Filing.Status.PAID and \
             not (filing.filing_type in no_legal_filings_in_paid_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
-                     business.legal_type in [
-                         Business.LegalTypes.SOLE_PROP.value,
-                         Business.LegalTypes.PARTNERSHIP.value])
+                     legal_entity.entity_type in [
+                         LegalEntity.EntityTypes.SOLE_PROP.value,
+                         LegalEntity.EntityTypes.PARTNERSHIP.value])
                  ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
@@ -488,7 +489,7 @@ class Filing:
             if legal_filings := filing.storage.meta_data.get('legalFilings'):
                 legal_filings_copy = copy.deepcopy(legal_filings)
                 if (filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
-                        business.legal_type == Business.LegalTypes.COOP.value and
+                        legal_entity.entity_type == LegalEntity.EntityTypes.COOP.value and
                         Filing.FilingTypes.CHANGEOFNAME.value in legal_filings):
                     # suppress change of name output for MVP since the design is outdated.
                     legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
@@ -503,10 +504,10 @@ class Filing:
                 # get extra outputs
                 if filing.storage.transaction_id and \
                         (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                        filing.storage.transaction_id, business)):
-                    business = bus_rev_temp
+                        filing.storage.transaction_id, legal_entity)):
+                    legal_entity = bus_rev_temp
 
-                adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+                adds = [FilingMeta.get_all_outputs(legal_entity.entity_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 
                 FilingMeta.alter_outputs(filing.storage, additional)

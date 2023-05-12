@@ -21,7 +21,7 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
+from legal_api.models import LegalEntity, PartyRole
 from legal_api.services import NaicsService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -36,7 +36,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     legal_type_path = '/filing/registration/nameRequest/legalType'
     legal_type = get_str(registration_json, legal_type_path)
-    if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+    if legal_type not in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
@@ -61,7 +61,7 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
     """Validate business type."""
     msg = []
     business_type_path = '/filing/registration/businessType'
-    if legal_type == Business.LegalTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
+    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
         msg.append({'error': 'Business Type is required.', 'path': business_type_path})
 
     return msg
@@ -108,9 +108,9 @@ def validate_party(filing: Dict, legal_type: str, filing_type='registration') ->
                 partner_parties += 1
 
     party_path = '/filing/registration/parties'
-    if legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
         msg.append({'error': '1 Proprietor and a Completing Party is required.', 'path': party_path})
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
+    elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
         msg.append({'error': '2 Partners and a Completing Party is required.', 'path': party_path})
 
     return msg
