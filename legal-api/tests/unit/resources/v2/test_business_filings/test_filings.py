@@ -1096,6 +1096,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
             Business.LegalTypes.COMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value,
             Business.LegalTypes.BC_CCC.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, None, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, None, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, None, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, None, False, []),
     ]
 )
 def test_get_correct_fee_codes(
