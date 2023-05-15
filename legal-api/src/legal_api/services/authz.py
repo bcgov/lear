@@ -152,7 +152,7 @@ ALLOWABLE_FILINGS: Final = {
             'consentContinuationOut': {
                 'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                 'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
             'conversion': {
@@ -192,7 +192,7 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'registrarsOrder': {
-                'legalTypes':  ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
@@ -289,6 +289,12 @@ ALLOWABLE_FILINGS: Final = {
                 'blockerChecks': {
                     'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                     'business': [BusinessBlocker.DEFAULT]
+                }
+            },
+            'consentContinuationOut': {
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
             'dissolution': {
