@@ -1022,32 +1022,15 @@ def test_calc_annual_report_date(session, client, jwt):
     assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
-DISSOLUTION_VOLUNTARY_FILING = {
-    'filing': {
-        'header': {
-            'name': 'dissolution',
-            'availableOnPaperOnly': False,
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
-            'date': '2020-02-18',
-            'routingSlipNumber': '123456789'
-        },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08T00:00:00+00:00',
-            'identifier': 'BC1234567',
-            'lastLedgerTimestamp': '2019-04-15T20:05:49.068272+00:00',
-            'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00',
-            'legalName': 'legal name - BC1234567',
-            'legalType': 'BEN'
-        },
-        'dissolution': DISSOLUTION
-    }
-}
+DISSOLUTION_VOLUNTARY_FILING = copy.deepcopy(FILING_HEADER)
+DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution'] = DISSOLUTION
 DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'voluntary'
 
 SPECIAL_RESOLUTION_NO_CON_FILING = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
+
+CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
+CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
@@ -1077,44 +1060,46 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
 
 
 @pytest.mark.parametrize(
-    'identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes',
+    'identifier, base_filing, filing_name, orig_legal_type, free, multiple_fee_codes',
     [
-        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, None, False, []),
-        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, None, True, []),
-        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, None, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, None, True, []),
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value,False, []),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value,  False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, True, []),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, False, []),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, False, []),
+        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, False, []),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, True, []),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
-         Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, None, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, None, False, []),
-        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, None, False,
+         Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, []),
+        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, False,
             ['AFDVT', 'SPRLN', 'DIS_VOL']),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value,
             False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value,
             False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value, None,
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value,
             False, []),
-        ('CP1234567', SPECIAL_RESOLUTION_NO_CON_FILING, 'specialResolution', Business.LegalTypes.COOP.value, None, False,
-         []),
+        ('CP1234567', SPECIAL_RESOLUTION_NO_CON_FILING, 'specialResolution', Business.LegalTypes.COOP.value,
+         False, []),
         ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
-         None, False, ['SPRLN', 'OTCON']),
+         False, ['SPRLN', 'OTCON']),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(
-        session, identifier, base_filing, filing_name, orig_legal_type, new_legal_type, free, multiple_fee_codes):
+        session, identifier, base_filing, filing_name, orig_legal_type, free, multiple_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
     expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)

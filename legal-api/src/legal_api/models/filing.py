@@ -144,6 +144,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CC': 'CONTO'
             }
         },
+        'continuationOut': {
+            'name': 'continuationOut',
+            'title': 'Continuation Out',
+            'codes': {
+                'BC': 'COUTI',
+                'BEN': 'COUTI',
+                'ULC': 'COUTI',
+                'CC': 'COUTI'
+            }
+        },
         'conversion': {
             'name': 'conversion',
             'title': 'Conversion Ledger',

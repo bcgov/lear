@@ -187,6 +187,17 @@ FILINGS: Final = {
             {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
         ]
     },
+    'continuationOut': {
+        'name': 'continuationOut',
+        'title': 'Continuation Out',
+        'displayName': 'Continuation Out',
+        'codes': {
+            'BC': 'COUTI',
+            'BEN': 'COUTI',
+            'ULC': 'COUTI',
+            'CC': 'COUTI'
+        }
+    },
     'conversion': {
         'name': 'conversion',
         'title': 'Conversion Ledger',
