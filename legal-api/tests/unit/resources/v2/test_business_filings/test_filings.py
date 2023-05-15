@@ -1088,12 +1088,9 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, []),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, False, []),
     ]
 )
