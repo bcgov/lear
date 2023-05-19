@@ -155,6 +155,13 @@ ALLOWABLE_FILINGS: Final = {
                     'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
+            'continuationOut': {
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                    'completedFilings': ['consentContinuationOut']
+                }
+            },
             'conversion': {
                 'legalTypes': ['SP', 'GP']
             },
