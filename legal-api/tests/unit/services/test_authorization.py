@@ -26,7 +26,8 @@ from http import HTTPStatus
 import pytest
 from flask import jsonify
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, CORRECTION_AR, \
-    CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN
+    CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN, \
+    CONSENT_CONTINUATION_OUT
 
 from legal_api.models import Filing
 from legal_api.models.business import Business
@@ -215,6 +216,9 @@ CONTINUATION_IN_TEMPLATE['filing']['continuationIn'] = CONTINUATION_IN
 CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = {}
 
+CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
+
 FILING_DATA = {
     'alteration': ALTERATION_FILING_TEMPLATE,
     'correction': CORRECTION_AR,
@@ -225,7 +229,7 @@ FILING_DATA = {
     'dissolution': DISSOLUTION_FILING_TEMPLATE,
     'putBackOn': PUT_BACK_ON_FILING_TEMPLATE,
     'continuationIn': CONTINUATION_IN_TEMPLATE,
-    'continuationOut': CONTINUATION_OUT_TEMPLATE
+    'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE
 }
 
 MISSING_BUSINESS_INFO_WARNINGS = [{'warningType': WarningType.MISSING_REQUIRED_BUSINESS_INFO,
@@ -1384,22 +1388,6 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.TRANSITION,
                           FilingKey.RESTRN_LTD_EXT_CORPS,
                           FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
-        ('staff_active_corps_completed_filings_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['continuationOut'], [None],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
         ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -1578,6 +1566,159 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                               filing_type=filing_type)
             filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
             assert filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'test_name,state,legal_types,username,roles,completed_filing_types,completed_filing_sub_types,expected',
+    [
+        # active business - staff user
+        ('staff_active_cp_unaffected', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.SPECIAL_RESOLUTION])),
+
+        ('staff_active_corps_valid_state_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], [None], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_llc_valid_state_filing_success', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None], []),
+        ('staff_active_llc_valid_state_filing_fail', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None], []),
+
+        ('staff_active_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.CONV_FIRMS,
+                          FilingKey.CORRCTN_FIRMS,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS_FIRMS,
+                          FilingKey.ADM_DISS_FIRMS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+
+        # active business - general user
+        ('general_user_cp_unaffected', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.VOL_DISS,
+                          FilingKey.TRANSITION])),
+        ('general_user_llc_unaffected', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None], []),
+        ('general_user_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.VOL_DISS_FIRMS])),
+
+        # historical business - staff user
+        ('staff_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+        ('staff_historical_cp_invalid_state_filing_fail', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+        ('staff_historical_corps_unaffected', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.RESTRN_FULL_CORPS,
+                          FilingKey.RESTRN_LTD_CORPS])),
+        ('staff_historical_llc_unaffected', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None], []),
+        ('staff_historical_firms_unaffected', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+
+        # historical business - general user
+        ('general_user_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None], []),
+        ('general_user_historical_corps_unaffected', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+         [BASIC_USER], ['consentContinuationOut'], [None], []),
+        ('general_user_historical_llc_unaffected', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None], []),
+        ('general_user_historical_firms_unaffected', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None], [])
+    ]
+)
+def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
+                                            roles, completed_filing_types, completed_filing_sub_types, expected):
+    """Assert that get allowed returns valid filings when completedFilings blocker is defined.
+
+       A filing with completedFilings defined should only return a target filing if the business state filing matches
+       one of the state filing types defined in completedFiling.
+    """
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            for idx, state_filing_type in enumerate(completed_filing_types):
+                business = create_business(legal_type, state)
+                state_filing_sub_type = completed_filing_sub_types[idx]
+                if state_filing_type:
+                    create_state_filing(business, state_filing_type, state_filing_sub_type)
+                allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                assert allowed_filing_types == expected
 
 
 def create_business(legal_type, state):
