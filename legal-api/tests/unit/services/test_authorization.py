@@ -212,6 +212,9 @@ PUT_BACK_ON_FILING_TEMPLATE['filing']['putBackOn'] = PUT_BACK_ON
 CONTINUATION_IN_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONTINUATION_IN_TEMPLATE['filing']['continuationIn'] = CONTINUATION_IN
 
+CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = {}
+
 FILING_DATA = {
     'alteration': ALTERATION_FILING_TEMPLATE,
     'correction': CORRECTION_AR,
@@ -221,7 +224,8 @@ FILING_DATA = {
     'restoration.limitedRestorationExtension': RESTORATION_FILING_TEMPLATE,
     'dissolution': DISSOLUTION_FILING_TEMPLATE,
     'putBackOn': PUT_BACK_ON_FILING_TEMPLATE,
-    'continuationIn': CONTINUATION_IN_TEMPLATE
+    'continuationIn': CONTINUATION_IN_TEMPLATE,
+    'continuationOut': CONTINUATION_OUT_TEMPLATE
 }
 
 MISSING_BUSINESS_INFO_WARNINGS = [{'warningType': WarningType.MISSING_REQUIRED_BUSINESS_INFO,
@@ -1380,6 +1384,22 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.TRANSITION,
                           FilingKey.RESTRN_LTD_EXT_CORPS,
                           FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
+        ('staff_active_corps_completed_filings_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['continuationOut'], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
         ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,

@@ -452,6 +452,9 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
+    if has_blocker_completed_filing(state_filing, blocker_checks):
+        return True
+
     if has_blocker_warning_filing(business.warnings, blocker_checks):
         return True
 
@@ -538,6 +541,23 @@ def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict)
         return False
 
     return has_state_filing(state_filing, state_filing_types)
+
+
+def has_blocker_completed_filing(completed_filing: Filing, blocker_checks: dict):
+    """Check if business has an completed filing."""
+    if not (complete_filing_types := blocker_checks.get('completedFilings', [])):
+        return False
+
+    if not completed_filing:
+        return False
+
+    if not has_state_filing(completed_filing, complete_filing_types):
+        return False
+
+    if completed_filing.status == Filing.Status.COMPLETED.value:
+        return True
+
+    return False
 
 
 def has_state_filing(state_filing: Filing, state_filing_types: list):
