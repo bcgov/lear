@@ -22,7 +22,7 @@ pyrsistent==0.17.3
 python-dotenv==0.15.0
 python-jose==3.2.0
 pytz==2021.1
-requests==2.25.1
+requests==2.31.0
 rsa==4.7.2
 sentry-sdk==1.20.0
 six==1.15.0
