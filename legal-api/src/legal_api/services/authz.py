@@ -547,7 +547,7 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
     """Check if business has an completed filing."""
     if not (complete_filing_types := blocker_checks.get('completedFilings', [])):
         return False
-    
+
     completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
 
     for completed_filing in completed_filings:
