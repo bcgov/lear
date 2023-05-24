@@ -529,7 +529,7 @@ def has_blocker_valid_state_filing(state_filing: Filing, blocker_checks: dict):
     if not state_filing:
         return True
 
-    return not has_state_filing(state_filing, state_filing_types)
+    return not has_filing_match(state_filing, state_filing_types)
 
 
 def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict):
@@ -540,7 +540,7 @@ def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict)
     if not state_filing:
         return False
 
-    return has_state_filing(state_filing, state_filing_types)
+    return has_filing_match(state_filing, state_filing_types)
 
 
 def has_blocker_completed_filing(business: Business, blocker_checks: dict):
@@ -548,20 +548,23 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
     if not (complete_filing_types := blocker_checks.get('completedFilings', [])):
         return False
 
-    completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    filing_type_pairs = [ (parse_filing_info(x)) for x in complete_filing_types]
+    completed_filings = Filing.get_filings_by_type_pairs(business.id,
+                                                         filing_type_pairs,
+                                                         [Filing.Status.COMPLETED.value],
+                                                         True)
 
-    for completed_filing in completed_filings:
-        if has_state_filing(completed_filing, complete_filing_types):
-            return True
+    if len(completed_filings) == len(complete_filing_types):
+        return False
 
-    return False
+    return True
 
 
-def has_state_filing(state_filing: Filing, state_filing_types: list):
+def has_filing_match(filing: Filing, filing_types: list):
     """Return if state filing matches any filings provided in state_filing_types arg ."""
-    for state_filing_type in state_filing_types:
+    for state_filing_type in filing_types:
         filing_type, filing_sub_type = parse_filing_info(state_filing_type)
-        if is_filing_type_match(state_filing, filing_type, filing_sub_type):
+        if is_filing_type_match(filing, filing_type, filing_sub_type):
             return True
 
     return False

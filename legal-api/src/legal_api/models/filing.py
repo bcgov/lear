@@ -18,8 +18,8 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
 
-from sqlalchemy import desc, event, func, inspect, not_, or_, select
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import desc, event, func, inspect, not_, or_, select, and_
+from sqlalchemy.dialects.postgresql import JSONB, dialect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
@@ -747,6 +747,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             order_by(desc(Filing.effective_date)). \
             all()
         return filings
+
+
+    @staticmethod
+    def get_filings_by_type_pairs(business_id: int, filing_type_pairs: list, status: list, use_distinct=False):
+        """Return the filings of particular filing type/sub-type pairs as well as statuses.
+        """
+        filing_type_conditions = [and_(Filing._filing_type==filing_type,
+                                       Filing._filing_sub_type==filing_sub_type).self_group()
+                                  for filing_type, filing_sub_type in filing_type_pairs]
+
+        query = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status.in_(status)). \
+            filter(or_(*filing_type_conditions)). \
+            order_by(desc(Filing.effective_date))
+
+        if use_distinct:
+            distinct_subquery = query.with_entities(Filing._filing_type, Filing._filing_sub_type).distinct().subquery()
+            query = query.outerjoin(
+                distinct_subquery,
+                and_(Filing._filing_type == distinct_subquery.c._filing_type,
+                     Filing._filing_sub_type == distinct_subquery.c._filing_sub_type)
+            )
+
+        filings = query.all()
+        return filings
+
 
     @staticmethod
     def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str, filing_sub_type: str = None):
