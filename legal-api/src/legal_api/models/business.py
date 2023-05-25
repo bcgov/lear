@@ -189,7 +189,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'naics_code',
             'naics_description',
             'start_date',
-            'foreign_jurisdiction',
+            'jurisdiction',
             'foreign_jurisdiction_region',
             'foreign_identifier',
             'foreign_legal_name',
@@ -237,7 +237,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
 
-    foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
+    jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
     foreign_identifier = db.Column(db.String(15))
     foreign_legal_name = db.Column(db.String(1000))
@@ -450,8 +450,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.continuation_out_date:
             d['continuationOutDate'] = self.continuation_out_date.isoformat()
 
-        if self.foreign_jurisdiction:
-            d['jurisdiction'] = self.foreign_jurisdiction
+        if self.jurisdiction:
+            d['jurisdiction'] = self.jurisdiction
             d['jurisdictionRegion'] = self.foreign_jurisdiction_region
             d['foreignIdentifier'] = self.foreign_identifier
             d['foreignLegalName'] = self.foreign_legal_name
