@@ -27,7 +27,7 @@ import pytest
 from flask import jsonify
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, CORRECTION_AR, \
     CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN, \
-    CONTINUATION_OUT
+    CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
 from legal_api.models import Filing
 from legal_api.models.business import Business
@@ -121,6 +121,7 @@ class FilingKey(str, Enum):
     REGISTRARS_ORDER = 'REGISTRARS_ORDER'
     SPECIAL_RESOLUTION = 'SPECIAL_RESOLUTION'
     ALTERATION = 'ALTERATION'
+    CONSENT_CONTINUATION_OUT = 'CONSENT_CONTINUATION_OUT'
     CONTINUATION_OUT = 'CONTINUATION_OUT'
     TRANSITION = 'TRANSITION'
     CHANGE_OF_REGISTRATION = 'CHANGE_OF_REGISTRATION'
@@ -159,8 +160,9 @@ EXPECTED_DATA = {
     FilingKey.REGISTRARS_ORDER: {'displayName': "Registrar's Order", 'feeCode': 'NOFEE', 'name': 'registrarsOrder'},
     FilingKey.SPECIAL_RESOLUTION: {'displayName': 'Special Resolution', 'feeCode': 'SPRLN', 'name': 'specialResolution'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
-    FilingKey.CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
+    FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                  'name': 'consentContinuationOut'},
+    FilingKey.CONTINUATION_OUT: {'displayName': 'Continuation Out', 'feeCode': 'COUTI', 'name': 'continuationOut'},
     FilingKey.TRANSITION: {'displayName': 'Transition Application', 'feeCode': 'TRANS', 'name': 'transition'},
     FilingKey.IA_CP: {'displayName': 'Incorporation Application', 'feeCode': 'OTINC',
                       'name': 'incorporationApplication'},
@@ -214,6 +216,9 @@ CONTINUATION_IN_TEMPLATE['filing']['continuationIn'] = CONTINUATION_IN
 CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = CONTINUATION_OUT
 
+CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
+
 FILING_DATA = {
     'alteration': ALTERATION_FILING_TEMPLATE,
     'correction': CORRECTION_AR,
@@ -224,7 +229,8 @@ FILING_DATA = {
     'dissolution': DISSOLUTION_FILING_TEMPLATE,
     'putBackOn': PUT_BACK_ON_FILING_TEMPLATE,
     'continuationIn': CONTINUATION_IN_TEMPLATE,
-    'continuationOut': CONTINUATION_OUT_TEMPLATE
+    'continuationOut': CONTINUATION_OUT_TEMPLATE,
+    'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE
 }
 
 MISSING_BUSINESS_INFO_WARNINGS = [{'warningType': WarningType.MISSING_REQUIRED_BUSINESS_INFO,
@@ -395,7 +401,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
+         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut', 'continuationOut',
           'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
@@ -466,6 +472,16 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_active', Business.State.ACTIVE, 'changeOfDirectors', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
 
+        ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'consentContinuationOut', None,
+         ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
+        ('staff_active', Business.State.ACTIVE, 'continuationOut', None,
+         ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
+
         ('staff_active_allowed', Business.State.ACTIVE, 'correction', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC', 'SP', 'GP'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'correction', None,
@@ -517,9 +533,6 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
-         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
-
 
         ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
@@ -546,6 +559,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
         ('user_active', Business.State.ACTIVE, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
+
+        ('user_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], False),
+
+        ('user_active', Business.State.ACTIVE, 'continuationOut', None,
+         ['CP', 'LLC'], 'general', [BASIC_USER], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'general', [BASIC_USER], True),
@@ -734,7 +753,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -766,7 +785,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
@@ -877,7 +896,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -909,7 +928,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
@@ -1254,7 +1273,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1282,7 +1301,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
@@ -1357,7 +1376,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1374,7 +1393,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1415,7 +1434,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc_unaffected', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER],
@@ -1492,7 +1511,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
                 business = create_business(legal_type, state)
                 state_filing_sub_type = state_filing_sub_types[idx]
                 if state_filing_type:
-                    state_filing = create_state_filing(business, state_filing_type, state_filing_sub_type)
+                    state_filing = create_filing(business, state_filing_type, state_filing_sub_type)
                     business.state_filing_id = state_filing.id
                     business.save()
                 allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
@@ -1546,6 +1565,69 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
             assert filing_types == expected
 
 
+@pytest.mark.parametrize(
+    'test_name,state,legal_types,username,roles,completed_filing_types,completed_filing_sub_types,expected',
+    [
+        # active business - staff user
+        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], [None], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+    ]
+)
+def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
+                                            roles, completed_filing_types, completed_filing_sub_types, expected):
+    """Assert that get allowed returns valid filings when completedFilings blocker is defined.
+
+       A filing with completedFilings defined should only return a target filing if the business state filing matches
+       one of the state filing types defined in completedFiling.
+    """
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            for idx, filing_type in enumerate(completed_filing_types):
+                business = create_business(legal_type, state)
+                filing_sub_type = completed_filing_sub_types[idx]
+                if filing_type:
+                    create_filing(business, filing_type, filing_sub_type)
+                allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                assert allowed_filing_types == expected
+
+
 def create_business(legal_type, state):
     """Create a business."""
     identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
@@ -1572,7 +1654,7 @@ def create_incomplete_filing(business,
     return filing
 
 
-def create_state_filing(business, filing_type, filing_sub_type=None):
+def create_filing(business, filing_type, filing_sub_type=None):
     """Create a state filing."""
     filing_key = filing_type
     if filing_sub_type:
@@ -1582,8 +1664,8 @@ def create_state_filing(business, filing_type, filing_sub_type=None):
     if filing_sub_type:
         filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, None)
         filing_dict['filing'][filing_type][filing_sub_type_key] = filing_sub_type
-    state_filing = factory_completed_filing(business=business,
+    filing = factory_completed_filing(business=business,
                                             data_dict=filing_dict,
                                             filing_type=filing_type,
                                             filing_sub_type=filing_sub_type)
-    return state_filing
+    return filing
