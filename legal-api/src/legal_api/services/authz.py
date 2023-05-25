@@ -155,6 +155,13 @@ ALLOWABLE_FILINGS: Final = {
                     'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
+            'continuationOut': {
+                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                    'completedFilings': ['consentContinuationOut']
+                }
+            },
             'conversion': {
                 'legalTypes': ['SP', 'GP']
             },
@@ -445,6 +452,9 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
+    if has_blocker_completed_filing(business, blocker_checks):
+        return True
+
     if has_blocker_warning_filing(business.warnings, blocker_checks):
         return True
 
@@ -519,7 +529,7 @@ def has_blocker_valid_state_filing(state_filing: Filing, blocker_checks: dict):
     if not state_filing:
         return True
 
-    return not has_state_filing(state_filing, state_filing_types)
+    return not has_filing_match(state_filing, state_filing_types)
 
 
 def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict):
@@ -530,14 +540,31 @@ def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict)
     if not state_filing:
         return False
 
-    return has_state_filing(state_filing, state_filing_types)
+    return has_filing_match(state_filing, state_filing_types)
 
 
-def has_state_filing(state_filing: Filing, state_filing_types: list):
-    """Return if state filing matches any filings provided in state_filing_types arg ."""
-    for state_filing_type in state_filing_types:
-        filing_type, filing_sub_type = parse_filing_info(state_filing_type)
-        if is_filing_type_match(state_filing, filing_type, filing_sub_type):
+def has_blocker_completed_filing(business: Business, blocker_checks: dict):
+    """Check if business has an completed filing."""
+    if not (complete_filing_types := blocker_checks.get('completedFilings', [])):
+        return False
+
+    filing_type_pairs = [(parse_filing_info(x)) for x in complete_filing_types]
+    completed_filings = Filing.get_filings_by_type_pairs(business.id,
+                                                         filing_type_pairs,
+                                                         [Filing.Status.COMPLETED.value],
+                                                         True)
+
+    if len(completed_filings) == len(complete_filing_types):
+        return False
+
+    return True
+
+
+def has_filing_match(filing: Filing, filing_types: list):
+    """Return if filing matches any filings provided in filing_types arg ."""
+    for filing_type in filing_types:
+        filing_type, filing_sub_type = parse_filing_info(filing_type)
+        if is_filing_type_match(filing, filing_type, filing_sub_type):
             return True
 
     return False
