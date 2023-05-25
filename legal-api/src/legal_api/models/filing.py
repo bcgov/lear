@@ -761,12 +761,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(or_(*filing_type_conditions)). \
             order_by(desc(Filing.effective_date))
 
+        # pylint: disable=W0212; prevent infinite loop
         if use_distinct:
             distinct_subquery = query.with_entities(Filing._filing_type, Filing._filing_sub_type).distinct().subquery()
             query = query.outerjoin(
                 distinct_subquery,
-                and_(Filing._filing_type == distinct_subquery.c._filing_type, # pylint: disable=protected-access
-                     Filing._filing_sub_type == distinct_subquery.c._filing_sub_type) # pylint: disable=protected-access
+                and_(Filing._filing_type == distinct_subquery.c._filing_type,
+                     Filing._filing_sub_type == distinct_subquery.c._filing_sub_type)
             )
 
         filings = query.all()
