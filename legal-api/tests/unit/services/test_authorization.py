@@ -477,7 +477,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
-         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], False),
         ('staff_active', Business.State.ACTIVE, 'continuationOut', None,
          ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
@@ -750,7 +750,6 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -894,7 +893,6 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1072,7 +1070,6 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1163,7 +1160,6 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
          expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1274,7 +1270,6 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1378,7 +1373,6 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1396,7 +1390,6 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
                           FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.VOL_DISS,
@@ -1514,7 +1507,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
                 business = create_business(legal_type, state)
                 state_filing_sub_type = state_filing_sub_types[idx]
                 if state_filing_type:
-                    state_filing = create_state_filing(business, state_filing_type, state_filing_sub_type)
+                    state_filing = create_filing(business, state_filing_type, state_filing_sub_type)
                     business.state_filing_id = state_filing.id
                     business.save()
                 allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
@@ -1586,23 +1579,8 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
 
-        ('staff_active_corps_valid_state_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut'], [None],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], [None], [None],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -1617,9 +1595,24 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc_valid_state_filing_success', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], [None], [None],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_llc_completed_filing_success', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          ['consentContinuationOut'], [None], []),
-        ('staff_active_llc_valid_state_filing_fail', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
+        ('staff_active_llc_completed_filing_fail', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          ['consentContinuationOut'], [None], []),
 
         ('staff_active_firms_unaffected', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
@@ -1712,11 +1705,11 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         for legal_type in legal_types:
-            for idx, state_filing_type in enumerate(completed_filing_types):
+            for idx, filing_type in enumerate(completed_filing_types):
                 business = create_business(legal_type, state)
-                state_filing_sub_type = completed_filing_sub_types[idx]
-                if state_filing_type:
-                    create_state_filing(business, state_filing_type, state_filing_sub_type)
+                filing_sub_type = completed_filing_sub_types[idx]
+                if filing_type:
+                    create_filing(business, filing_type, filing_sub_type)
                 allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert allowed_filing_types == expected
 
@@ -1747,7 +1740,7 @@ def create_incomplete_filing(business,
     return filing
 
 
-def create_state_filing(business, filing_type, filing_sub_type=None):
+def create_filing(business, filing_type, filing_sub_type=None):
     """Create a state filing."""
     filing_key = filing_type
     if filing_sub_type:
@@ -1757,8 +1750,8 @@ def create_state_filing(business, filing_type, filing_sub_type=None):
     if filing_sub_type:
         filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, None)
         filing_dict['filing'][filing_type][filing_sub_type_key] = filing_sub_type
-    state_filing = factory_completed_filing(business=business,
+    filing = factory_completed_filing(business=business,
                                             data_dict=filing_dict,
                                             filing_type=filing_type,
                                             filing_sub_type=filing_sub_type)
-    return state_filing
+    return filing
