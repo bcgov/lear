@@ -559,10 +559,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('user_active', Business.State.ACTIVE, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
+        ('user_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], False),
 
-        ('staff_active', Business.State.ACTIVE, 'continuationOut', None,
+        ('user_active', Business.State.ACTIVE, 'continuationOut', None,
          ['CP', 'LLC'], 'general', [BASIC_USER], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
