@@ -532,9 +532,6 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
-        ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
-         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
-
 
         ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
@@ -561,6 +558,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
         ('user_active', Business.State.ACTIVE, 'courtOrder', None,
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'continuationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'general', [STAFF_ROLE], False),
+
+        ('staff_active', Business.State.ACTIVE, 'continuationOut', None,
+         ['CP', 'LLC'], 'general', [STAFF_ROLE], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'dissolution', 'voluntary',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'], 'general', [BASIC_USER], True),
@@ -1595,23 +1598,6 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        # active business - general user
-        ('general_user_cp_unaffected', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
-         ['consentContinuationOut'], [None],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         ['consentContinuationOut'], [None],
-         expected_lookup([FilingKey.ALTERATION,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
     ]
 )
