@@ -765,8 +765,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             distinct_subquery = query.with_entities(Filing._filing_type, Filing._filing_sub_type).distinct().subquery()
             query = query.outerjoin(
                 distinct_subquery,
-                and_(Filing._filing_type == distinct_subquery.c._filing_type,
-                     Filing._filing_sub_type == distinct_subquery.c._filing_sub_type)
+                and_(Filing._filing_type == distinct_subquery.c._filing_type, # pylint: disable=protected-access
+                     Filing._filing_sub_type == distinct_subquery.c._filing_sub_type) # pylint: disable=protected-access
             )
 
         filings = query.all()
