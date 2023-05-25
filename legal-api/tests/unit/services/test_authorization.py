@@ -1564,6 +1564,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,completed_filing_types,completed_filing_sub_types,expected',
     [
+        # active business - staff user
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut'], [None],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -1594,6 +1595,23 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        # active business - general user
+        ('general_user_cp_unaffected', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+         ['consentContinuationOut'], [None],
+         expected_lookup([FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
     ]
 )
