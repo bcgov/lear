@@ -73,10 +73,10 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
     'test_name, expected_code, message',
     [
         ('FAIL_NO_COUNTRY', HTTPStatus.UNPROCESSABLE_ENTITY, None),
-        ('FAIL_INVAILD_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('FAIL_INVALID_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
         ('FAIL_REGION_BC', HTTPStatus.BAD_REQUEST, 'Region should not be BC.'),
-        ('FAIL_INVAILD_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
-        ('FAIL_INVAILD_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('FAIL_INVALID_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('FAIL_INVALID_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
         ('SUCCESS', None, None)
     ]
 )
@@ -95,13 +95,13 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
 
     if test_name == 'FAIL_NO_COUNTRY':
         del filing['filing']['continuationOut']['foreignJurisdiction']['country']
-    elif test_name == 'FAIL_INVAILD_COUNTRY':
+    elif test_name == 'FAIL_INVALID_COUNTRY':
         filing['filing']['continuationOut']['foreignJurisdiction']['country'] = 'NONE'
     elif test_name == 'FAIL_REGION_BC':
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'BC'
-    elif test_name == 'FAIL_INVAILD_REGION':
+    elif test_name == 'FAIL_INVALID_REGION':
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'NONE'
-    elif test_name == 'FAIL_INVAILD_US_REGION':
+    elif test_name == 'FAIL_INVALID_US_REGION':
         filing['filing']['continuationOut']['foreignJurisdiction']['country'] = 'US'
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'NONE'
 
