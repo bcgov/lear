@@ -69,6 +69,7 @@ class Filing:
         CHANGEOFNAME = 'changeOfName'
         CHANGEOFREGISTRATION = 'changeOfRegistration'
         CONSENTCONTINUATIONOUT = 'consentContinuationOut'
+        CONTINUATIONOUT = 'continuationOut'
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
         CORRECTION = 'correction'

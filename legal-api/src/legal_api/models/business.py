@@ -190,13 +190,15 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'naics_description',
             'start_date',
             'jurisdiction',
+            'foreign_jurisdiction_region',
             'foreign_identifier',
             'foreign_legal_name',
             'foreign_legal_type',
             'foreign_incorporation_date',
             'send_ar_ind',
             'restoration_expiry_date',
-            'cco_expiry_date'
+            'cco_expiry_date',
+            'continuation_out_date'
         ]
     }
 
@@ -216,6 +218,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True))  # consent continuation out expiry_date
+    continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -235,6 +238,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     naics_description = db.Column(db.String(150))
 
     jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
+    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
     foreign_identifier = db.Column(db.String(15))
     foreign_legal_name = db.Column(db.String(1000))
     foreign_legal_type = db.Column(db.String(10))
@@ -443,15 +447,18 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
         if self.cco_expiry_date:
             d['ccoExpiryDate'] = self.cco_expiry_date.isoformat()
+        if self.continuation_out_date:
+            d['continuationOutDate'] = self.continuation_out_date.isoformat()
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
+            d['jurisdictionRegion'] = self.foreign_jurisdiction_region
             d['foreignIdentifier'] = self.foreign_identifier
             d['foreignLegalName'] = self.foreign_legal_name
             d['foreignLegalType'] = self.foreign_legal_type
             d['foreignIncorporationDate'] = datetime.date(
                 LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
-            ).isoformat()
+            ).isoformat() if self.foreign_incorporation_date else None
 
         filings = self.filings.all()
 

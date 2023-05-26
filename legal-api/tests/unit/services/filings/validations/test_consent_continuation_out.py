@@ -26,18 +26,6 @@ from legal_api.utils.datetime import datetime
 legal_name = 'Test name request'
 
 
-class MockResponse:
-    """Mock http response."""
-
-    def __init__(self, json_data):
-        """Initialize mock http response."""
-        self.json_data = json_data
-
-    def json(self):
-        """Return mock json data."""
-        return self.json_data
-
-
 @pytest.mark.parametrize(
     'test_name, expected_code',
     [
