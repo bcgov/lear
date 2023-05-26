@@ -27,7 +27,7 @@ import pytest
 from flask import jsonify
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, CORRECTION_AR, \
     CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN, \
-    CONSENT_CONTINUATION_OUT
+    CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
 from legal_api.models import Filing
 from legal_api.models.business import Business
@@ -214,7 +214,7 @@ CONTINUATION_IN_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONTINUATION_IN_TEMPLATE['filing']['continuationIn'] = CONTINUATION_IN
 
 CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
-CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = {}
+CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = CONTINUATION_OUT
 
 CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
@@ -229,6 +229,7 @@ FILING_DATA = {
     'dissolution': DISSOLUTION_FILING_TEMPLATE,
     'putBackOn': PUT_BACK_ON_FILING_TEMPLATE,
     'continuationIn': CONTINUATION_IN_TEMPLATE,
+    'continuationOut': CONTINUATION_OUT_TEMPLATE,
     'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE
 }
 
@@ -1463,7 +1464,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
         ('staff_historical_corps_invalid_state_filing_fail', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'],
-         'staff', [STAFF_ROLE], ['continuationIn'], [None],
+         'staff', [STAFF_ROLE], ['continuationIn', 'continuationOut'], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
@@ -1479,7 +1480,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         ('general_user_historical_cp_unaffected', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER],
          ['dissolution', 'continuationIn', None], [None, None, None], []),
         ('general_user_historical_corps_unaffected', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
-         [BASIC_USER], ['dissolution', 'continuationIn', None], [None, None, None], []),
+         [BASIC_USER], ['dissolution', 'continuationIn', 'continuationOut', None], [None, None, None, None], []),
         ('general_user_historical_llc_unaffected', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER],
          ['dissolution', None], [None, None], []),
         ('general_user_historical_firms_unaffected', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER],
