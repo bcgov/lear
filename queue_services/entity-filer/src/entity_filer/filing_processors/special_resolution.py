@@ -31,7 +31,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
             party = Party(
                 first_name=signatory.get('givenName', '').upper(),
                 last_name=signatory.get('familyName', '').upper(),
-                middle_initial=signatory.get('additionalName', '').upper()
+                middle_initial=(signatory.get('additionalName', '') or '').upper()
             )
             resolution.party = party
 
