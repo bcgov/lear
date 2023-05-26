@@ -77,12 +77,12 @@ def validate_foreign_jurisdiction(filing: Dict, filing_type: str) -> list:
     foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
 
     foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    country_code = foreign_jurisdiction.get('country').upper() # country is a required field in schema
+    country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
     region = foreign_jurisdiction.get('region', '').upper()
-    
+
     country = pycountry.countries.get(alpha_2=country_code)
     if not country:
-            msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
+        msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
     elif country_code == 'CA':
         if region == 'BC':
             msg.append({'error': 'Region should not be BC.', 'path': f'{foreign_jurisdiction_path}/region'})
