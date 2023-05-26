@@ -77,14 +77,18 @@ def validate_foreign_jurisdiction(filing: Dict, filing_type: str) -> list:
     foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
 
     foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    country = pycountry.countries.search_fuzzy(foreign_jurisdiction['country'])[0].alpha_2
-    region = foreign_jurisdiction.get('region')
-    if country == 'CA':
+    country_code = foreign_jurisdiction.get('country').upper() # country is a required field in schema
+    region = foreign_jurisdiction.get('region', '').upper()
+    
+    country = pycountry.countries.get(alpha_2=country_code)
+    if not country:
+            msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
+    elif country_code == 'CA':
         if region == 'BC':
-            msg.append({'error': 'Region should not be BC.', 'path': foreign_jurisdiction_path})
-        elif not (region == 'FEDERAL' or pycountry.subdivisions.get(code=f'{country}-{region}')):
-            msg.append({'error': 'Invalid region.', 'path': foreign_jurisdiction_path})
-    elif country == 'US' and not pycountry.subdivisions.get(code=f'{country}-{region}'):
-        msg.append({'error': 'Invalid region.', 'path': foreign_jurisdiction_path})
+            msg.append({'error': 'Region should not be BC.', 'path': f'{foreign_jurisdiction_path}/region'})
+        elif not (region == 'FEDERAL' or pycountry.subdivisions.get(code=f'{country_code}-{region}')):
+            msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+    elif country_code == 'US' and not pycountry.subdivisions.get(code=f'{country_code}-{region}'):
+        msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
 
     return msg

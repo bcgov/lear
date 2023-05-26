@@ -72,6 +72,8 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
 @pytest.mark.parametrize(
     'test_name, expected_code, message',
     [
+        ('FAIL_NO_COUNTRY', HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        ('FAIL_INVAILD_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
         ('FAIL_REGION_BC', HTTPStatus.BAD_REQUEST, 'Region should not be BC.'),
         ('FAIL_INVAILD_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
         ('FAIL_INVAILD_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
@@ -91,7 +93,11 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
 
-    if test_name == 'FAIL_REGION_BC':
+    if test_name == 'FAIL_NO_COUNTRY':
+        del filing['filing']['continuationOut']['foreignJurisdiction']['country']
+    elif test_name == 'FAIL_INVAILD_COUNTRY':
+        filing['filing']['continuationOut']['foreignJurisdiction']['country'] = 'NONE'
+    elif test_name == 'FAIL_REGION_BC':
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'BC'
     elif test_name == 'FAIL_INVAILD_REGION':
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'NONE'
@@ -104,7 +110,8 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
     # validate outcomes
     if test_name != 'SUCCESS':
         assert expected_code == err.code
-        assert message == err.msg[0]['error']
+        if message:
+            assert message == err.msg[0]['error']
     else:
         assert not err
 
