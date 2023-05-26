@@ -501,7 +501,9 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
         }
 
         # Provide mocked valid documents
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
 
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -1367,19 +1369,29 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
 
     # Mock upload file for test scenarios
     if scenario == 'success':
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
     if scenario == 'failRules':
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = scenario
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
     if scenario == 'failMemorandum':
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = scenario
     if scenario == 'invalidRulesSize':
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=True)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=False)
     if scenario == 'invalidMemorandumSize':
+        filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileName'] = 'rules.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['rulesFileKey'] = _upload_file(letter, invalid=False)
+        filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileName'] = 'memorandum.pdf'
         filing_json['filing'][incorporation_application_name]['cooperative']['memorandumFileKey'] = _upload_file(letter, invalid=True)
 
     mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
