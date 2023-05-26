@@ -168,8 +168,7 @@ ALLOWABLE_FILINGS: Final = {
             'correction': {
                 'legalTypes': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],
                 'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
+                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO]
                 }
             },
             'courtOrder': {
