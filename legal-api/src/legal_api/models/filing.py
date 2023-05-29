@@ -748,7 +748,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_filings_by_type_pairs(business_id: int, filing_type_pairs: list, status: list, return_unique_pairs=False):
+    def get_filings_by_type_pairs(legal_entity_id: int, filing_type_pairs: list, status: list, return_unique_pairs=False):
         """Return the filings of particular filing type/sub-type pairs as well as statuses.
 
         If return_unique_pairs is True, only return one instance of each filing type/sub-type pair.
@@ -758,7 +758,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                                   for filing_type, filing_sub_type in filing_type_pairs]
 
         base_query = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._status.in_(status)). \
             filter(or_(*filing_type_conditions))
 

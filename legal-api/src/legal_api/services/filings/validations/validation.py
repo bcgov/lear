@@ -178,7 +178,7 @@ def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
                     err = consent_continuation_out_validate(legal_entity, filing_json)
 
                 elif k == Filing.FILINGS['continuationOut'].get('name'):
-                    err = continuation_out_validate(business, filing_json)
+                    err = continuation_out_validate(legal_entity, filing_json)
 
                 if err:
                     return err

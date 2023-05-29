@@ -21,11 +21,11 @@ import pycountry
 import pytest
 from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
-from legal_api.models import Business, ConsentContinuationOut
+from legal_api.models import ConsentContinuationOut, LegalEntity
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 
 date_format = '%Y-%m-%d'
@@ -62,7 +62,7 @@ def _create_consent_continuation_out(business, foreign_jurisdiction, effective_d
 )
 def test_validate_continuation_out_date(session, test_name, expected_code, message):
     """Assert validate continuation_out_date."""
-    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
@@ -102,7 +102,7 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
 )
 def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code, message):
     """Assert validate foreign jurisdiction."""
-    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
@@ -133,7 +133,7 @@ def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code
 
 def test_valid_foreign_jurisdiction(session, mocker):
     """Assert valid foreign jurisdiction."""
-    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'continuationOut'
     mocker.patch(validate_active_cco_path, return_value=[])
@@ -164,7 +164,7 @@ def test_valid_foreign_jurisdiction(session, mocker):
 )
 def test_continuation_out_court_order(session, mocker, test_status, file_number, expected_code):
     """Assert valid court order."""
-    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
