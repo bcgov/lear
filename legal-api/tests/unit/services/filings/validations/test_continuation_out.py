@@ -20,7 +20,7 @@ import pycountry
 import pytest
 from registry_schemas.example_data import FILING_HEADER, CONTINUATION_OUT
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 
@@ -39,10 +39,10 @@ legal_name = 'Test name request'
 )
 def test_validate_continuation_out_date(session, test_name, expected_code, message):
     """Assert validate continuation_out_date."""
-    business = Business(
+    business = LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow(),
         cco_expiry_date=datetime.utcnow()
     )
@@ -82,10 +82,10 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
 )
 def test_validate_foreign_jurisdiction(session, test_name, expected_code, message):
     """Assert validate foreign jurisdiction."""
-    business = Business(
+    business = LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow(),
         cco_expiry_date=datetime.utcnow()
     )
@@ -118,10 +118,10 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
 
 def test_valid_foreign_jurisdiction(session):
     """Assert valid foreign jurisdiction."""
-    business = Business(
+    business = LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow(),
         cco_expiry_date=datetime.utcnow()
     )
@@ -154,10 +154,10 @@ def test_valid_foreign_jurisdiction(session):
 )
 def test_continuation_out_court_order(session, test_status, file_number, expected_code):
     """Assert valid court order."""
-    business = Business(
+    business = LegalEntity(
         identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
+        entity_type='BC',
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow(),
         cco_expiry_date=datetime.utcnow()
     )

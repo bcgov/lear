@@ -19,22 +19,22 @@ import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I003
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.common_validations import validate_court_order
 from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003;
 
 
-def validate(business: Business, filing: Dict) -> Optional[Error]:
+def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     """Validate the Continuation Out filing."""
-    if not business or not filing:
+    if not legal_entity or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
     msg = []
     filing_type = 'continuationOut'
 
-    msg.extend(validate_continuation_out_date(business, filing, filing_type))
+    msg.extend(validate_continuation_out_date(legal_entity, filing, filing_type))
     msg.extend(validate_foreign_jurisdiction(filing, filing_type))
 
     if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
@@ -48,7 +48,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     return None
 
 
-def validate_continuation_out_date(business: Business, filing: Dict, filing_type: str) -> list:
+def validate_continuation_out_date(legal_entity: LegalEntity, filing: Dict, filing_type: str) -> list:
     """Validate continuation out date."""
     msg = []
     continuation_out_date_path = f'/filing/{filing_type}/continuationOutDate'
@@ -59,8 +59,8 @@ def validate_continuation_out_date(business: Business, filing: Dict, filing_type
         msg.append({'error': 'Continuation out date must be today or past.',
                     'path': continuation_out_date_path})
 
-    if business.cco_expiry_date:
-        cco_expiry_date = LegislationDatetime.as_legislation_timezone(business.cco_expiry_date).date()
+    if legal_entity.cco_expiry_date:
+        cco_expiry_date = LegislationDatetime.as_legislation_timezone(legal_entity.cco_expiry_date).date()
         if continuation_out_date > cco_expiry_date:
             msg.append({'error': 'Consent continuation of interest has expired.',
                         'path': continuation_out_date_path})

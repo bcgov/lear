@@ -1569,7 +1569,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
     'test_name,state,legal_types,username,roles,completed_filing_types,completed_filing_sub_types,expected',
     [
         # active business - staff user
-        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+        ('staff_active_corps_completed_filing_success', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut'], [None],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
@@ -1585,7 +1585,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+        ('staff_active_corps_completed_filing_fail', LegalEntity.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None], [None],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
