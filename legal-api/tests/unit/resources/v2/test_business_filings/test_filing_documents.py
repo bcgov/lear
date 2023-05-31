@@ -45,6 +45,7 @@ from registry_schemas.example_data import (
     RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
+    CONTINUATION_OUT,
 )
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
 
@@ -992,6 +993,69 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                     }
       },
      HTTPStatus.OK, '2017-10-01'
+     ),
+    
+    ('bc_continuationOut_complete', 'BC7654321', Business.LegalTypes.COMP.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('ulc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('cc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+            'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('ben_continuationOut_complete', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('bc_continuationOut_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('ulc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('cc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
+     {'documents': {
+            'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
+     ),
+    ('ben_continuationOut_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
+     HTTPStatus.OK, '2017-10-1'
      )
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,

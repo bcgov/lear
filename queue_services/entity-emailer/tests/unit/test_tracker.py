@@ -242,6 +242,7 @@ from . import create_mock_message  # noqa: I003
          })
     ]
 )
+@pytest.mark.asyncio
 async def test_should_successfully_process_valid_messages_for_all_supported_message_types(
         tracker_app,
         tracker_db,
@@ -260,6 +261,7 @@ async def test_should_successfully_process_valid_messages_for_all_supported_mess
         assert result.status == 'COMPLETE'
 
 
+@pytest.mark.asyncio
 async def test_should_not_reprocess_completed_message(tracker_app, tracker_db, session):
     """Assert that processed(status=COMPLETE) messages are not re-processed."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada847aa'
@@ -292,6 +294,7 @@ async def test_should_not_reprocess_completed_message(tracker_app, tracker_db, s
         assert result_2nd_time.status == 'COMPLETE'
 
 
+@pytest.mark.asyncio
 async def test_should_mark_message_as_failed_on_queue_exception(tracker_app, tracker_db, session):
     """Assert that message is marked as failed on queue exception."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84bbb'
@@ -321,6 +324,7 @@ async def test_should_mark_message_as_failed_on_queue_exception(tracker_app, tra
         assert result.last_error == 'QueueException, Exception - Queue Error.'
 
 
+@pytest.mark.asyncio
 async def test_should_mark_message_as_failed_on_email_exception(tracker_app, tracker_db, session):
     """Assert that message is marked as failed on email exception."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
@@ -353,6 +357,7 @@ async def test_should_mark_message_as_failed_on_email_exception(tracker_app, tra
         assert result.last_error == 'EmailException - Unsuccessful response when sending email.'
 
 
+@pytest.mark.asyncio
 async def test_should_process_previously_failed_message_successfully(tracker_app, tracker_db, session):
     """Assert that message that failed processing previously can be processed successfully."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ddd'
@@ -387,6 +392,7 @@ async def test_should_process_previously_failed_message_successfully(tracker_app
         assert result.last_error == 'EmailException - Unsuccessful response when sending email.'
 
 
+@pytest.mark.asyncio
 async def test_should_correctly_track_retries_for_failed_processing(tracker_app, tracker_db, session):
     """Assert that message processing retries are properly tracked."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84eee'
