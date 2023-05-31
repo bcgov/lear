@@ -35,12 +35,15 @@ def test_consent_continuation_out_notification(app, session, status, legal_type,
     """Assert that the consent_continuation_out email processor for corps works as expected."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_consent_continuation_out_filing(session, 'BC1234567', '1', status, legal_type, legal_name, submitter_role)
+    filing = prep_consent_continuation_out_filing(session, 'BC1234567', '1', status, legal_type,
+                                                  legal_name, submitter_role)
     token = 'token'
     # test processor
     with patch.object(consent_continuation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        with patch.object(consent_continuation_out_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
-            with patch.object(consent_continuation_out_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+        with patch.object(consent_continuation_out_notification, 'get_recipient_from_auth',
+                          return_value='recipient@email.com'):
+            with patch.object(consent_continuation_out_notification, 'get_user_email_from_auth',
+                              return_value='user@email.com'):
                 email = consent_continuation_out_notification.process(
                     {'filingId': filing.id, 'type': 'consentContinuationOut', 'option': status}, token)
                 assert email['content']['subject'] == \

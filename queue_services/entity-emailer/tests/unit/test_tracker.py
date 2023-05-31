@@ -239,6 +239,22 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
+         }),
+        ('consentContinuationOut_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'consentContinuationOut',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
+         }),
+        ('continuationOut_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'continuationOut',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
          })
     ]
 )
