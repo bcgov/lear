@@ -17,13 +17,14 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
+from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
 from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
-class PartyRole(db.Model):
+class PartyRole(Versioned, db.Model):
     """Class that manages data for party roles related to a business."""
 
     class RoleTypes(Enum):
@@ -38,14 +39,25 @@ class PartyRole(db.Model):
         PROPRIETOR = 'proprietor'
         PARTNER = 'partner'
 
-    __versioned__ = {}
     __tablename__ = 'party_roles'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'appointment_date',
+            'business_id',
+            'cessation_date',
+            'filing_id',
+            'party_id',
+            'role',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column('role', db.String(30), default=RoleTypes.DIRECTOR)
     appointment_date = db.Column('appointment_date', db.DateTime(timezone=True))
     cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
 
+    # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))

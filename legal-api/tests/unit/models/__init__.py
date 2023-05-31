@@ -151,8 +151,8 @@ def factory_business(identifier,
                         admin_freeze=admin_freeze)
 
     # Versioning business
-    uow = versioning_manager.unit_of_work(db.session)
-    uow.create_transaction(db.session)
+    # uow = versioning_manager.unit_of_work(db.session)
+    # uow.create_transaction(db.session)
 
     business.save()
     return business
@@ -210,6 +210,13 @@ def factory_incorporation_filing(business, data_dict, filing_date=FROZEN_DATETIM
     return filing
 
 
+def set_test_filing_completed(filing: Filing):
+    """Set the status to COMPLETED."""
+    filing._status = Filing.Status.COMPLETED.value
+    setattr(filing, 'skip_status_listener', True)
+    filing.save()
+
+
 def factory_completed_filing(business,
                              data_dict,
                              filing_date=FROZEN_DATETIME,
@@ -233,17 +240,20 @@ def factory_completed_filing(business,
             filing._filing_sub_type = filing_sub_type
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
+        # uow = versioning_manager.unit_of_work(db.session)
+        # transaction = uow.create_transaction(db.session)
+        # filing.transaction_id = transaction.id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
+        filing._status = Filing.Status.COMPLETED.value
         if colin_id:
             colin_event = ColinEventId()
             colin_event.colin_event_id = colin_id
             colin_event.filing_id = filing.id
             colin_event.save()
+        
+        setattr(filing, 'skip_status_listener', True)
         filing.save()
     return filing
 

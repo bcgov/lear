@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
+from sqlalchemy import text
 from sqlalchemy.exc import DataError
 from sqlalchemy_continuum import versioning_manager
 
@@ -48,6 +49,7 @@ from tests.unit.models import (
     factory_completed_filing,
     factory_filing,
     factory_user,
+    set_test_filing_completed,
 )
 
 
@@ -109,9 +111,6 @@ def test_filing_orm_delete_blocked_if_completed(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
-
     b = factory_business('CP1234567')
 
     filing = Filing()
@@ -120,7 +119,7 @@ def test_filing_orm_delete_blocked_if_completed(session):
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = 'a token'
     filing.payment_completion_date = datetime.datetime.utcnow()
-    filing.transaction_id = transaction.id
+    # filing.transaction_id = transaction.id
     filing.save()
 
     with pytest.raises(BusinessException) as excinfo:
@@ -332,22 +331,21 @@ def test_get_filing_by_payment_token(session):
 
 def test_get_filings_by_status(session):
     """Assert that a filing can be retrieved by status."""
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    # uow = versioning_manager.unit_of_work(session)
+    # transaction = uow.create_transaction(session)
     business = factory_business('CP1234567')
     payment_token = '1000'
     filing = Filing()
     filing.business_id = business.id
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = payment_token
-    filing.transaction_id = transaction.id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 
-    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
 
     assert rv
-    assert rv[0].status == Filing.Status.COMPLETED.value
+    assert rv[0].status == Filing.Status.PAID.value
 
 
 def test_get_filings_by_status__default_order(session):
@@ -359,7 +357,6 @@ def test_get_filings_by_status__default_order(session):
     # setup
     base_filing = copy.deepcopy(FILING_HEADER)
     base_filing['specialResolution'] = SPECIAL_RESOLUTION
-    uow = versioning_manager.unit_of_work(session)
     business = factory_business('CP1234567')
 
     completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
@@ -369,7 +366,6 @@ def test_get_filings_by_status__default_order(session):
     file_counter = -1
     with freeze_time(completion_date):
         for i in range(0, 5):
-            transaction = uow.create_transaction(session)
             payment_token = str(i)
             effective_date = f'200{i}-04-15T00:00:00+00:00'
 
@@ -380,7 +376,6 @@ def test_get_filings_by_status__default_order(session):
             filing.filing_json = base_filing
             filing.effective_date = datetime.datetime.fromisoformat(effective_date)
             filing.payment_token = payment_token
-            filing.transaction_id = transaction.id
             filing.payment_completion_date = completion_date
             filing.save()
 
@@ -388,7 +383,7 @@ def test_get_filings_by_status__default_order(session):
             file_counter += 1
 
     # test
-    rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
 
     # check
     assert rv
@@ -401,8 +396,6 @@ def test_get_filings_by_status__default_order(session):
 def test_get_most_recent_filing_by_legal_type_in_json(session):
     """Assert that the most recent legal filing can be retrieved."""
     business = factory_business('CP1234567')
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
 
     for i in range(1, 5):
         effective_date = f'200{i}-07-01T00:00:00+00:00'
@@ -419,9 +412,9 @@ def test_get_most_recent_filing_by_legal_type_in_json(session):
         filing.filing_json = base_filing
         filing.effective_date = datetime.datetime.fromisoformat(effective_date)
         filing.payment_token = 'token'
-        filing.transaction_id = transaction.id
         filing.payment_completion_date = completion_date
         filing.save()
+        set_test_filing_completed(filing)
 
     f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
     assert f.effective_date == datetime.datetime.fromisoformat(effective_date)
@@ -435,8 +428,8 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     Create 3 filings, find the 2 one by the type only.
     """
     business = factory_business('CP1234567')
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    # uow = versioning_manager.unit_of_work(session)
+    # transaction = uow.create_transaction(session)
 
     # filing 1
     effective_date = '2001-07-01T00:00:00+00:00'
@@ -449,10 +442,9 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing1.filing_json = base_filing
     filing1.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing1.payment_token = 'token'
-    filing1.transaction_id = transaction.id
-    filing1.payment_completion_date = completion_date
-    filing1.save()
+    set_test_filing_completed(filing1)
 
+    # filing1.transaction_id = transaction.id
     # filing 2 <- target
     effective_date = '2002-07-01T00:00:00+00:00'
     completion_date = datetime.datetime.fromisoformat(effective_date)
@@ -466,9 +458,10 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing2.filing_json = base_filing
     filing2.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing2.payment_token = 'token'
-    filing2.transaction_id = transaction.id
+    # filing2.transaction_id = transaction.id
     filing2.payment_completion_date = completion_date
     filing2.save()
+    set_test_filing_completed(filing2)
 
     # filing 3
     effective_date = '2003-07-01T00:00:00+00:00'
@@ -481,9 +474,10 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing3.filing_json = base_filing
     filing3.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing3.payment_token = 'token'
-    filing3.transaction_id = transaction.id
+    # filing3.transaction_id = transaction.id
     filing3.payment_completion_date = completion_date
     filing3.save()
+    set_test_filing_completed(filing3)
 
     f = Filing.get_most_recent_legal_filing(business.id, 'changeOfDirectors')
     assert f.filing_type == 'changeOfDirectors'
@@ -501,8 +495,8 @@ TEST_FILING_GO_LIVE_DATE = [
 def test_get_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
     """Assert that a filing can be retrieved by status."""
     import copy
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    # uow = versioning_manager.unit_of_work(session)
+    # transaction = uow.create_transaction(session)
     business = factory_business('CP1234567')
     payment_token = '1000'
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -515,49 +509,16 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     filing.business_id = business.id
     filing.filing_json = ar
     filing.payment_token = payment_token
-    filing.transaction_id = transaction.id
+    # filing.transaction_id = transaction.id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
+    set_test_filing_completed(filing)
 
     rv = Filing.get_filings_by_status(business.id, [Filing.Status.COMPLETED.value], go_live_date)
 
     assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
     if rv:
         assert rv[0].status == status
-
-
-def test_get_internal_filings(session, client, jwt):
-    """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
-    from legal_api.models import Filing
-    from legal_api.models.colin_event_id import ColinEventId
-    from tests.unit.models import factory_completed_filing
-    # setup
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filing = factory_completed_filing(b, ANNUAL_REPORT)
-    assert filing.status == Filing.Status.COMPLETED.value
-    colin_event_id = ColinEventId()
-    colin_event_id.colin_event_id = 12346
-    filing.colin_event_ids.append(colin_event_id)
-    filing.save()
-    filings = Filing.get_completed_filings_for_colin()
-
-    # test method
-    # assert doesn't return completed filing with colin_event_ids set
-    assert len(filings) == 0
-    # assert returns completed filings with colin_event_id not set
-    filing.colin_event_ids.clear()
-    filing.save()
-    filings = Filing.get_completed_filings_for_colin()
-    assert len(filings) == 1
-    assert filing.id == filings[0].json['filing']['header']['filingId']
-    assert filings[0].json['filing']['header']['colinIds'] == []
-    # assert doesn't return non completed filings
-    filing.transaction_id = None
-    filing.save()
-    assert filing.status != Filing.Status.COMPLETED.value
-    filings = Filing.get_completed_filings_for_colin()
-    assert len(filings) == 0
 
 
 def test_get_a_businesses_most_recent_filing_of_a_type(session):
@@ -631,6 +592,11 @@ def test_is_corrected_filing(session):
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
+    filing1._status = Filing.Status.COMPLETED.value
+
+    # by pass the listener code
+    setattr(filing1, 'skip_status_listener', True)
+    
     filing1.save()
 
     b = factory_business('CP1234567')

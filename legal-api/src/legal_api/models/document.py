@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from enum import Enum
 
+from sql_versioning import Versioned
 from sqlalchemy import Column, String, desc
 
 from .db import db
@@ -34,11 +35,19 @@ class DocumentType(Enum):
     COURT_ORDER = 'court_order'
 
 
-class Document(db.Model):
+class Document(Versioned, db.Model):
     """This is the model for a document."""
 
-    __versioned__ = {}
     __tablename__ = 'documents'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'business_id',
+            'file_key',
+            'filing_id',
+            'type',
+        ]
+    }
 
     id = Column(db.Integer, primary_key=True)
     type = Column('type', String(30), nullable=False)

@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
+import contextlib
 import datetime
 import time
 from contextlib import contextmanager, suppress
+from typing import Final
 
+import psycopg2
 import pytest
+import sqlalchemy
 from flask_migrate import Migrate, upgrade
-from sqlalchemy import event, text
+from sqlalchemy import event, inspect, text
 from sqlalchemy.schema import DropConstraint, MetaData
 
 from legal_api import create_app
@@ -27,6 +31,76 @@ from legal_api.models import db as _db
 
 from . import FROZEN_DATETIME
 
+
+DB_TEST_NAME: Final = 'lear_test_db'
+
+def create_test_db(user: str = None,
+                   password: str = None,
+                   database: str = None,
+                   host: str = "localhost",
+                   port: int = 1521,
+                   database_uri: str = None) -> bool:
+    """Create the database in our .devcontainer launched postgres DB.
+
+    Parameters
+    ------------
+        user: str
+            A datbase user that has create database privledges
+        password: str
+            The users password
+        database: str
+            The name of the database to create
+        host: str, Optional
+            The network name of the server
+        port: int, Optional
+            The numeric port number
+    Return
+    -----------
+        : bool
+            If the create database succeeded.
+    """
+    if database_uri:
+        DATABASE_URI = database_uri
+    else:
+        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+
+    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
+
+    try:
+        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+            conn.execute(text(f"CREATE DATABASE {database}"))
+
+        return True
+    except sqlalchemy.exc.ProgrammingError as err:
+        print(err)  # used in the test suite, so on failure print something
+        return False
+
+def drop_test_db(user: str = None,
+                   password: str = None,
+                   database: str = None,
+                   host: str = "localhost",
+                   port: int = 1521,
+                   database_uri: str = None) -> bool:
+    """Delete the database in our .devcontainer launched postgres DB."""
+    if database_uri:
+        DATABASE_URI = database_uri
+    else:
+        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    
+    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
+    
+    close_all = f"""
+        SELECT pg_terminate_backend(pg_stat_activity.pid)
+        FROM pg_stat_activity
+        WHERE pg_stat_activity.datname = '{database}'
+        AND pid <> pg_backend_pid();
+    """
+    with contextlib.suppress(sqlalchemy.exc.ProgrammingError,
+                             psycopg2.OperationalError,
+                             Exception):
+        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+            conn.execute(text(close_all))
+            conn.execute(text(f"DROP DATABASE {database}"))
 
 @contextmanager
 def not_raises(exception):
@@ -109,38 +183,53 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
-        # Clear out any existing tables
-        metadata = MetaData(_db.engine)
-        metadata.reflect()
-        with suppress(Exception):
-            metadata.drop_all()
-        with suppress(Exception):
-            _db.drop_all()
 
-        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-                          WHERE sequence_schema='public'
-                       """
+        drop_test_db(database=app.config.get('DB_NAME'),
+                     database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        create_test_db(database=app.config.get('DB_NAME'),
+                       database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
 
-        sess = _db.session()
-        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            with suppress(Exception):
-                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-                print('DROP SEQUENCE public.%s ' % seq)
-        sess.commit()
+        # metadata_obj = MetaData()
+        # metadata_obj.reflect(bind=_db.engine)
+        # sess = _db.session()
 
-        # drop enums
-        enum_type_sql = "SELECT typname FROM pg_type WHERE typcategory = 'E'"
-        for enum_name in [name for (name,) in sess.execute(text(enum_type_sql))]:
-            with suppress(Exception):
-                sess.execute(text('DROP TYPE %s ;' % enum_name))
-                print('DROP TYPE %s ' % enum_name)
-        sess.commit()
+        # for table in reversed(metadata_obj.sorted_tables):
+        #     print(table.foreign_key_constraints)
+        #     for fk in table.foreign_key_constraints:
+        #         sess.execute(DropConstraint(fk))
+        
+        # with suppress(Exception):
+        #     _db.drop_all()
+
+        # # print(m_obj)
+        # # for table in reversed(metadata_obj.sorted_tables):
+        # #     # _db.engine.execute(table.delete())
+        # #     table.drop(_db.engine)
+        # # with suppress(Exception):
+        # #     sess.commit()
+
+        # sequence_sql = """SELECT sequence_name FROM information_schema.sequences
+        #                   WHERE sequence_schema='public'
+        #                """
+
+        # sess = _db.session()
+        # for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
+        #     with suppress(Exception):
+        #         sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
+        #         print('DROP SEQUENCE public.%s ' % seq)
+
+        # # drop enums
+        # enum_type_sql = "SELECT typname FROM pg_type WHERE typcategory = 'E'"
+        # for enum_name in [name for (name,) in sess.execute(text(enum_type_sql))]:
+        #     with suppress(Exception):
+        #         sess.execute(text('DROP TYPE %s ;' % enum_name))
+        #         print('DROP TYPE %s ' % enum_name)
 
         # For those who have local databases on bare metal in local time.
         # Otherwise some of the returns will come back in local time and unit tests will fail.
         # The current DEV database uses UTC.
-        sess.execute("SET TIME ZONE 'UTC';")
-        sess.commit()
+        sess = _db.session()
+        sess.execute(text("SET TIME ZONE 'UTC';"))
 
         # ############################################
         # There are 2 approaches, an empty database, or the same one that the app will use
@@ -154,7 +243,10 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         Migrate(app, _db)
         upgrade()
 
-        return _db
+        yield _db
+
+        drop_test_db(database=app.config.get('DB_NAME'),
+                     database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
 
 
 @pytest.fixture(scope='function')
@@ -164,8 +256,13 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         conn = db.engine.connect()
         txn = conn.begin()
 
-        options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+        try:
+            options = dict(bind=conn, binds={})
+            # sess = db.create_scoped_session(options=options)
+            sess = db._make_scoped_session(options=options)
+        except Exception as err:
+            print(err)
+            print('done')
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
+from sql_versioning import Versioned
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
@@ -24,11 +25,25 @@ from .db import db
 from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import
 
 
-class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
+class ShareClass(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the share classes."""
 
-    __versioned__ = {}
     __tablename__ = 'share_classes'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'name',
+            'priority',
+            'max_share_flag',
+            'max_shares',
+            'par_value_flag',
+            'par_value',
+            'currency',
+            'special_rights_flag',
+            'business_id',
+            'change_filing_id',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column('name', db.String(1000), index=True)
@@ -42,6 +57,7 @@ class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     # Relationships
     series = db.relationship('ShareSeries',

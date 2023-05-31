@@ -16,11 +16,12 @@
 Currently this only provides API versioning information
 """
 import pycountry
+from sql_versioning import Versioned
 
 from .db import db
 
 
-class Address(db.Model):  # pylint: disable=too-many-instance-attributes
+class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the business addresses.
 
     Every business is required to have 2 addresses on record, DELIVERY and MAILING.
@@ -37,8 +38,23 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
     JSON_DELIVERY = 'deliveryAddress'
     JSON_ADDRESS_TYPES = [JSON_MAILING, JSON_DELIVERY]
 
-    __versioned__ = {}
     __tablename__ = 'addresses'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'address_type',
+            'business_id',
+            'city',
+            'change_filing_id',
+            'country',
+            'delivery_instructions',
+            'office_id',
+            'postal_code',
+            'region',
+            'street',
+            'street_additional',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     address_type = db.Column('address_type', db.String(4096), index=True)
@@ -52,6 +68,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     office_id = db.Column('office_id', db.Integer, db.ForeignKey('offices.id', ondelete='CASCADE'), nullable=True)
     # Relationships - Users
     # business_mailing_address = db.relationship('Business',

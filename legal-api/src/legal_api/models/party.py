@@ -17,6 +17,7 @@ from __future__ import annotations
 from enum import Enum
 from http import HTTPStatus
 
+from sql_versioning import Versioned
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
@@ -25,7 +26,7 @@ from .db import db  # noqa: I001
 from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
-class Party(db.Model):  # pylint: disable=too-many-instance-attributes
+class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the parties (people and organizations)."""
 
     class PartyTypes(Enum):
@@ -34,8 +35,23 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
         PERSON = 'person'
         ORGANIZATION = 'organization'
 
-    __versioned__ = {}
     __tablename__ = 'parties'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'change_filing_id',
+            'delivery_address_id',
+            'email',
+            'first_name',
+            'identifier',
+            'last_name',
+            'mailing_address_id',
+            'middle_initial',
+            'organization_name',
+            'party_type',
+            'title',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     party_type = db.Column('party_type', db.String(30), default=PartyTypes.PERSON.value)
@@ -52,6 +68,7 @@ class Party(db.Model):  # pylint: disable=too-many-instance-attributes
     email = db.Column(db.String(254))
 
     # parent keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
     mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 

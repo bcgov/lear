@@ -15,6 +15,7 @@
 
 from http import HTTPStatus
 
+from sql_versioning import Versioned
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
@@ -22,11 +23,22 @@ from legal_api.exceptions import BusinessException
 from .db import db
 
 
-class ShareSeries(db.Model):  # pylint: disable=too-many-instance-attributes
+class ShareSeries(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the share series."""
 
-    __versioned__ = {}
     __tablename__ = 'share_series'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'change_filing_id',
+            'name',
+            'max_shares',
+            'max_share_flag',
+            'priority',
+            'share_class_id',
+            'special_rights_flag',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column('name', db.String(1000), index=True)
@@ -36,6 +48,7 @@ class ShareSeries(db.Model):  # pylint: disable=too-many-instance-attributes
     special_rights_flag = db.Column('special_rights_flag', db.Boolean, unique=False, default=False)
 
     # parent keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     share_class_id = db.Column('share_class_id', db.Integer, db.ForeignKey('share_classes.id'))
 
     def save(self):

@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the DCConnection Model is working as expected.
 """
+import uuid
 
 from legal_api.models import DCConnection
 
@@ -81,7 +82,7 @@ def test_find_by(session):
 def create_dc_connection(business, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
-        connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
+        connection_id=str(uuid.uuid4()),
         invitation_url="""http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
 25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY

@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the Business Model is working as expected.
 """
+import uuid
 from datetime import datetime, timedelta
 from flask import current_app
 
@@ -84,8 +85,10 @@ def test_business(session):
 
 def test_business_find_by_legal_name_pass(session):
     """Assert that the business can be found by name."""
-    designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    legal_name=f'legal_name-{str(uuid.uuid4().hex)}'
+    designation = '111'
+
+    business = Business(legal_name=legal_name,
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -95,14 +98,15 @@ def test_business_find_by_legal_name_pass(session):
     session.add(business)
     session.commit()
 
-    b = Business.find_by_legal_name('legal_name-001')
+    b = Business.find_by_legal_name(legal_name)
     assert b is not None
 
 
 def test_business_find_by_legal_name_fail(session):
     """Assert that the business can not be found, once it is disolved."""
+    legal_name=f'legal_name-{str(uuid.uuid4().hex)}'
     designation = '001'
-    business = Business(legal_name=f'legal_name-{designation}',
+    business = Business(legal_name=legal_name,
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
@@ -113,7 +117,7 @@ def test_business_find_by_legal_name_fail(session):
     session.commit()
 
     # business is dissolved, it should not be found by name search
-    b = Business.find_by_legal_name('legal_name-001')
+    b = Business.find_by_legal_name(legal_name)
     assert b is None
 
 
@@ -179,16 +183,17 @@ def test_delete_business_active(session):
 def test_business_find_by_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
+    identifier = 'CP0000001'
     business = Business(legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
-                        identifier='CP1234567',
+                        identifier=identifier,
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
     business.save()
 
-    b = Business.find_by_identifier('CP1234567')
+    b = Business.find_by_identifier(identifier)
 
     assert b is not None
 

@@ -44,6 +44,23 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         CHANGE_PARTY = auto()
 
     __tablename__ = 'request_tracker'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'business_id',
+            'creation_date',
+            'filing_id',
+            'is_admin',
+            'is_processed',
+            'last_modified',
+            'message_id',
+            'request_type',
+            'request_object',
+            'response_object',
+            'retry_number',
+            'service_name',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     request_type = db.Column('request_type', db.Enum(RequestType), nullable=False)

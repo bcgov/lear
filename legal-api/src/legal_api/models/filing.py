@@ -21,15 +21,13 @@ from typing import Final, List
 from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import Mapped, backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 
 from .db import db  # noqa: I001
-
-
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
 
@@ -374,11 +372,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
 
+    transaction_id = db.Column('transaction_id', db.Integer)
+    # business_id = db.Column('business_id', db.Integer)
+    business_id: Mapped[int] = db.Column(db.ForeignKey('businesses.id'))
+    business: Mapped['Business'] = db.relationship(back_populates='filings',  # noqa: F821
+                                                   foreign_keys=[business_id],
+                                                   post_update=True)
+
     # # relationships
-    transaction_id = db.Column('transaction_id', db.BigInteger,
-                               db.ForeignKey('transaction.id'))
-    business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'))
+    # business_id = db.Column('business_id', db.Integer,
+    #                         db.ForeignKey('businesses.id'))
+    # business_id: Mapped[int] = db.Column(db.ForeignKey('businesses.id'))
+    # business: Mapped['Business'] = db.relationship(back_populates='filing')
+
     temp_reg = db.Column('temp_reg', db.String(10),
                          db.ForeignKey('registration_bootstrap.identifier'))
     submitter_id = db.Column('submitter_id', db.Integer,

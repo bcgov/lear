@@ -16,13 +16,15 @@
 The Business class and Schema are held in this module
 """
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 import datedelta
 from flask import current_app
+from sql_versioning import Versioned
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import Mapped, backref
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -31,8 +33,6 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
-
-
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -42,7 +42,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class Business(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
@@ -157,17 +157,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         }
     }
 
-    __versioned__ = {}
     __tablename__ = 'businesses'
     __mapper_args__ = {
         'include_properties': [
             'id',
+            '_identifier',
             'admin_freeze',
             'association_type',
+            # 'change_filing_id',
+            'cco_expiry_date',
+            'continuation_out_date',
             'dissolution_date',
             'fiscal_year_end_date',
+            'foreign_jurisdiction_region',
+            'foreign_identifier',
+            'foreign_legal_name',
+            'foreign_legal_type',
+            'foreign_incorporation_date',
             'founding_date',
-            'identifier',
             'last_agm_date',
             'last_ar_date',
             'last_ar_year',
@@ -180,25 +187,18 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'last_remote_ledger_id',
             'legal_name',
             'legal_type',
+            'jurisdiction',
+            'naics_key',
+            'naics_code',
+            'naics_description',
+            'restoration_expiry_date',
             'restriction_ind',
+            'send_ar_ind',
+            'start_date',
             'state',
             'state_filing_id',
             'submitter_userid',
             'tax_id',
-            'naics_key',
-            'naics_code',
-            'naics_description',
-            'start_date',
-            'jurisdiction',
-            'foreign_jurisdiction_region',
-            'foreign_identifier',
-            'foreign_legal_name',
-            'foreign_legal_type',
-            'foreign_incorporation_date',
-            'send_ar_ind',
-            'restoration_expiry_date',
-            'cco_expiry_date',
-            'continuation_out_date'
         ]
     }
 
@@ -244,8 +244,17 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     foreign_legal_type = db.Column(db.String(10))
     foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
+    # parent keys
+    # change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+
     # relationships
-    filings = db.relationship('Filing', lazy='dynamic')
+    # filings: Mapped[List['Filing']] = db.relationship(back_populates='business')
+    # filings = db.relationship('Filing', lazy='dynamic')
+    filings: Mapped[List['Filing']] = db.relationship(back_populates='business',
+                                                      primaryjoin='Business.id==Filing.business_id',
+                                                      post_update=True,
+                                                      lazy='dynamic')
+
     offices = db.relationship('Office', lazy='dynamic', cascade='all, delete, delete-orphan')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
     share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
@@ -574,7 +583,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'FM': 'business_identifier_sp_gp',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
-            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+            return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
         return None
 
     @staticmethod
