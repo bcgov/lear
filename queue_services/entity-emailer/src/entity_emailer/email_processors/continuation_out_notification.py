@@ -29,7 +29,6 @@ from entity_emailer.email_processors import get_filing_info, get_recipient_from_
 
 
 def _get_pdfs(
-        status: str,
         token: str,
         business: dict,
         filing: Filing,
@@ -44,34 +43,33 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
 
-    if status == Filing.Status.COMPLETED.value:
-        # add receipt pdf
-        corp_name = business.get('legalName')
-        business_data = Business.find_by_internal_id(filing.business_id)
-        receipt = requests.post(
-            f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-            json={
-                'corpName': corp_name,
-                'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
-            },
-            headers=headers
+    # add receipt pdf
+    corp_name = business.get('legalName')
+    business_data = Business.find_by_internal_id(filing.business_id)
+    receipt = requests.post(
+        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        json={
+            'corpName': corp_name,
+            'filingDateTime': filing_date_time,
+            'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
+            'filingIdentifier': str(filing.id),
+            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+        },
+        headers=headers
+    )
+    if receipt.status_code != HTTPStatus.CREATED:
+        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+    else:
+        receipt_encoded = base64.b64encode(receipt.content)
+        pdfs.append(
+            {
+                'fileName': 'Receipt.pdf',
+                'fileBytes': receipt_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': attach_order
+            }
         )
-        if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
-        else:
-            receipt_encoded = base64.b64encode(receipt.content)
-            pdfs.append(
-                {
-                    'fileName': 'Receipt.pdf',
-                    'fileBytes': receipt_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
+        attach_order += 1
 
     return pdfs
 
@@ -105,7 +103,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     identifier = filing.filing_json['filing']['business']['identifier']
