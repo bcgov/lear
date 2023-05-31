@@ -15,50 +15,62 @@
 import copy
 import datedelta
 from http import HTTPStatus
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 import pycountry
 import pytest
 from registry_schemas.example_data import FILING_HEADER, CONTINUATION_OUT
 
-from legal_api.models import Business
+from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 
+from tests.unit.models import factory_business
+from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
+
 date_format = '%Y-%m-%d'
 legal_name = 'Test name request'
+
+
+def _create_consent_continuation_out(business, filing, effective_date=datetime.utcnow()):
+    foreign_jurisdiction = filing['filing']['continuationOut']['foreignJurisdiction']
+    consent_continuation_out = ConsentContinuationOut()
+    consent_continuation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
+
+    region = foreign_jurisdiction.get('region')
+    region = region.upper() if region else None
+    consent_continuation_out.foreign_jurisdiction_region = region
+
+    consent_continuation_out.expiry_date = get_cco_expiry_date(effective_date)
+    business.consent_continuation_outs.append(consent_continuation_out)
+    business.save()
 
 
 @pytest.mark.parametrize(
     'test_name, expected_code, message',
     [
         ('FAIL_IN_FUTURE', HTTPStatus.BAD_REQUEST, 'Continuation out date must be today or past.'),
-        ('FAIL_EXPIRED', HTTPStatus.BAD_REQUEST, 'Consent continuation of interest has expired.'),
-        ('FAIL_NO_CCO', HTTPStatus.BAD_REQUEST, 'Did not find an active Consent continuation out for this business.'),
+        ('FAIL_NO_CCO', HTTPStatus.BAD_REQUEST, 'No active consent continuation out for this date.'),
         ('SUCCESS', None, None)
     ]
 )
 def test_validate_continuation_out_date(session, test_name, expected_code, message):
     """Assert validate continuation_out_date."""
-    business = Business(
-        identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow(),
-        cco_expiry_date=datetime.utcnow()
-    )
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
+    co_date = LegislationDatetime.now().date()
+    effective_date = datetime.utcnow()
 
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['continuationOut']['continuationOutDate'] = \
-            (datetime.utcnow() + datedelta.datedelta(days=1)).strftime(date_format)
-    elif test_name == 'FAIL_EXPIRED':
-        filing['filing']['continuationOut']['continuationOutDate'] = datetime.utcnow().strftime(date_format)
-        business.cco_expiry_date = datetime.utcnow() - datedelta.datedelta(days=1)
+            (co_date + datedelta.datedelta(days=1)).strftime(date_format)
     elif test_name == 'FAIL_NO_CCO':
-        business.cco_expiry_date = None
+        filing['filing']['continuationOut']['continuationOutDate'] = co_date.strftime(date_format)
+        effective_date -= datedelta.datedelta(months=6, days=1)
 
+    _create_consent_continuation_out(business, filing, effective_date)
     err = validate(business, filing)
 
     # validate outcomes
@@ -80,15 +92,9 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
         ('SUCCESS', None, None)
     ]
 )
-def test_validate_foreign_jurisdiction(session, test_name, expected_code, message):
+def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code, message):
     """Assert validate foreign jurisdiction."""
-    business = Business(
-        identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow(),
-        cco_expiry_date=datetime.utcnow()
-    )
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
@@ -105,6 +111,7 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
         filing['filing']['continuationOut']['foreignJurisdiction']['country'] = 'US'
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'NONE'
 
+    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
     err = validate(business, filing)
 
     # validate outcomes
@@ -116,17 +123,12 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
         assert not err
 
 
-def test_valid_foreign_jurisdiction(session):
+def test_valid_foreign_jurisdiction(session, mocker):
     """Assert valid foreign jurisdiction."""
-    business = Business(
-        identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow(),
-        cco_expiry_date=datetime.utcnow()
-    )
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'continuationOut'
+    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
 
     for country in pycountry.countries:
         filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
@@ -152,15 +154,9 @@ def test_valid_foreign_jurisdiction(session):
         ('SUCCESS', '12345678901234567890', None)
     ]
 )
-def test_continuation_out_court_order(session, test_status, file_number, expected_code):
+def test_continuation_out_court_order(session, mocker, test_status, file_number, expected_code):
     """Assert valid court order."""
-    business = Business(
-        identifier='BC1234567',
-        legal_type='BC',
-        state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow(),
-        cco_expiry_date=datetime.utcnow()
-    )
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
@@ -172,6 +168,7 @@ def test_continuation_out_court_order(session, test_status, file_number, expecte
     else:
         del filing['filing']['continuationOut']['courtOrder']['fileNumber']
 
+    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
     err = validate(business, filing)
 
     # validate outcomes

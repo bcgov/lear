@@ -605,11 +605,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         else:
             business_json['restorationExpiryDate'] = None
 
-        if business_revision.cco_expiry_date:
-            business_json['ccoExpiryDate'] = datetime.date(business_revision.cco_expiry_date).isoformat()
-        else:
-            business_json['ccoExpiryDate'] = None
-
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
         business_json['legalName'] = business_revision.legal_name
