@@ -30,6 +30,7 @@ from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 
 date_format = '%Y-%m-%d'
 legal_name = 'Test name request'
+validate_active_cco_path = 'legal_api.services.filings.validations.continuation_out.validate_active_cco'
 
 
 def _create_consent_continuation_out(business, filing, effective_date=datetime.utcnow()):
@@ -111,7 +112,7 @@ def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code
         filing['filing']['continuationOut']['foreignJurisdiction']['country'] = 'US'
         filing['filing']['continuationOut']['foreignJurisdiction']['region'] = 'NONE'
 
-    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
+    mocker.patch(validate_active_cco_path, return_value=[])
     err = validate(business, filing)
 
     # validate outcomes
@@ -128,7 +129,7 @@ def test_valid_foreign_jurisdiction(session, mocker):
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'continuationOut'
-    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
+    mocker.patch(validate_active_cco_path, return_value=[])
 
     for country in pycountry.countries:
         filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
@@ -168,7 +169,7 @@ def test_continuation_out_court_order(session, mocker, test_status, file_number,
     else:
         del filing['filing']['continuationOut']['courtOrder']['fileNumber']
 
-    mocker.patch('legal_api.services.filings.validations.continuation_out.validate_active_cco', return_value=[])
+    mocker.patch(validate_active_cco_path, return_value=[])
     err = validate(business, filing)
 
     # validate outcomes

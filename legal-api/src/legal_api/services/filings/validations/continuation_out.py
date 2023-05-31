@@ -37,7 +37,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     is_valid_co_date = True
     is_valid_foreign_jurisdiction = True
 
-    if err := validate_continuation_out_date(business, filing, filing_type):
+    if err := validate_continuation_out_date(filing, filing_type):
         msg.extend(err)
         is_valid_co_date = False
 
@@ -71,13 +71,13 @@ def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> l
     region = foreign_jurisdiction.get('region')
     ccos = ConsentContinuationOut.get_active_cco(business.id, continuation_out_date, country_code, region)
     if not ccos:
-        msg.extend([{'error': "No active consent continuation out for this date.",
+        msg.extend([{'error': 'No active consent continuation out for this date.',
                     'path': f'/filing/{filing_type}/continuationOutDate'}])
 
     return msg
 
 
-def validate_continuation_out_date(business: Business, filing: Dict, filing_type: str) -> list:
+def validate_continuation_out_date(filing: Dict, filing_type: str) -> list:
     """Validate continuation out date."""
     msg = []
     continuation_out_date_path = f'/filing/{filing_type}/continuationOutDate'
