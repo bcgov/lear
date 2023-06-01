@@ -222,7 +222,8 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
     return filing
 
 
-def prep_consent_continuation_out_filing(identifier, payment_id, legal_type, legal_name, submitter_role):
+def prep_consent_continuation_out_filing(session, identifier, payment_id, option, legal_type,
+                                         legal_name, submitter_role):
     """Return a new consent continuation out filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
@@ -259,7 +260,8 @@ def prep_consent_continuation_out_filing(identifier, payment_id, legal_type, leg
     return filing
 
 
-def prep_continuation_out_filing(identifier, payment_id, legal_type, legal_name, submitter_role):
+def prep_continuation_out_filing(session, identifier, payment_id, option, legal_type,
+                                 legal_name, submitter_role):
     """Return a new continuation out filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
