@@ -457,13 +457,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
             ).isoformat() if self.foreign_incorporation_date else None
 
-        filings = self.filings.all()
-
-        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
-                                  x.status == 'COMPLETED')
-
-        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
-                                  x.status == 'COMPLETED')
+        d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
+        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
 
     @property
     def compliance_warnings(self):
