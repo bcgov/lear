@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""File processing rules and actions for the consent continuation out filing."""
+"""File processing rules and actions for the continuation out filing."""
 from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
@@ -39,9 +39,15 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
     foreign_jurisdiction_country = foreign_jurisdiction.get('country')
 
     continuation_out_filing.order_details = details
+    continuation_out_filing.comments.append(
+        Comment(
+            comment=continuation_out_json.get('comment'),
+            staff_id=continuation_out_filing.submitter_id
+        )
+    )
 
-    if continuation_out_date >= datetime.now():
-        business.state = Business.State.HISTORICAL
+    business.state = Business.State.HISTORICAL
+    business.state_filing_id = continuation_out_filing.id
 
     business.jurisdiction = foreign_jurisdiction_country
     business.foreign_legal_name = legal_name
@@ -53,6 +59,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     filing_meta.continuation_out = {}
     filing_meta.continuation_out = {**filing_meta.continuation_out,
-                                    **{'foreignJurisdictionCountry': foreign_jurisdiction_country},
-                                    **{'foreignJurisdictionRegion': foreign_jurisdiction_region},
-                                    **{'foreignLegalName': legal_name}}
+                                    **{'country': foreign_jurisdiction_country},
+                                    **{'region': foreign_jurisdiction_region},
+                                    **{'legalName': legal_name},
+                                    **{'continuationOutDate': continuation_out_date.isoformat()}}

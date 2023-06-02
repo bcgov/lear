@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the Consent Continuation Out filing."""
+"""The Unit Tests for the Continuation Out filing."""
 import copy
 import random
 import pytest
@@ -26,21 +26,15 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import continuation_out
 from tests.unit import create_business, create_filing
 
-@pytest.mark.parametrize('test_name, delta_months, state', [
-    ('business_active', -6, Business.State.ACTIVE),
-    ('business_historical', 6, Business.State.HISTORICAL),
-])
-async def test_worker_continuation_out(app, session, test_name, delta_months, state):
+async def test_worker_continuation_out(app, session):
     """Assert that the continuation out object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='CP')
-    continuation_out_date = (LegislationDatetime.now() + relativedelta(months=delta_months)).strftime('%Y-%m-%d')
 
     filing_json = copy.deepcopy(FILING_TEMPLATE)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['header']['name'] = 'continuationOut'
     filing_json['filing']['continuationOut'] = CONTINUATION_OUT
-    filing_json['filing']['continuationOut']['continuationOutDate'] = continuation_out_date
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     continuation_out_filing = create_filing(payment_id, filing_json, business_id=business.id)
@@ -59,11 +53,12 @@ async def test_worker_continuation_out(app, session, test_name, delta_months, st
     assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
     assert filing_json['filing']['continuationOut']['details'] == final_filing.order_details
 
-    assert business.state == state
+    assert business.state == Business.State.HISTORICAL
+    assert business.state_filing_id == final_filing.id
     assert business.jurisdiction == foreign_jurisdiction_json['country']
     assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region']
     assert business.foreign_legal_name == filing_json['filing']['continuationOut']['legalName']
     
-    assert filing_meta.continuation_out['foreignJurisdictionCountry'] == foreign_jurisdiction_json['country']
-    assert filing_meta.continuation_out['foreignJurisdictionRegion'] == foreign_jurisdiction_json['region']
-    assert filing_meta.continuation_out['foreignLegalName'] == filing_json['filing']['continuationOut']['legalName']
+    assert filing_meta.continuation_out['country'] == foreign_jurisdiction_json['country']
+    assert filing_meta.continuation_out['region'] == foreign_jurisdiction_json['region']
+    assert filing_meta.continuation_out['legalName'] == filing_json['filing']['continuationOut']['legalName']
