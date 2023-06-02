@@ -36,7 +36,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
     legal_name = continuation_out_json.get('legalName')
     continuation_out_date = datetime.strptime(continuation_out_json.get('continuationOutDate'), '%Y-%m-%d')
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
-    foreign_jurisdiction_country = foreign_jurisdiction.get('country')
+    foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
 
     continuation_out_filing.order_details = details
     continuation_out_filing.comments.append(
@@ -55,6 +55,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     with suppress(IndexError, KeyError, TypeError):
         foreign_jurisdiction_region = foreign_jurisdiction.get('region')
+        foreign_jurisdiction_region = foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
         business.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}
