@@ -13,14 +13,11 @@
 # limitations under the License.
 """File processing rules and actions for the consent continuation out filing."""
 from contextlib import suppress
-from datetime import timedelta
 from typing import Dict
 
+import datedelta
 import dpath
-import pytz
-from dateutil.relativedelta import relativedelta
-from legal_api.models import Business, Filing
-from legal_api.utils.datetime import datetime
+from legal_api.models import Business, ConsentContinuationOut, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -35,18 +32,42 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
     cco_filing.order_details = filing['consentContinuationOut'].get('details')
-    expiry_date = get_expiry_date()
-    business.cco_expiry_date = expiry_date
+
+    foreign_jurisdiction = filing['consentContinuationOut']['foreignJurisdiction']
+    consent_continuation_out = ConsentContinuationOut()
+
+    country = foreign_jurisdiction.get('country').upper()
+    consent_continuation_out.foreign_jurisdiction = country
+
+    region = foreign_jurisdiction.get('region')
+    region = region.upper() if region else None
+    consent_continuation_out.foreign_jurisdiction_region = region
+
+    expiry_date = get_expiry_date(cco_filing)
+    consent_continuation_out.expiry_date = expiry_date
+
+    consent_continuation_out.filing_id = cco_filing.id
+    consent_continuation_out.business_id = business.id
+    business.consent_continuation_outs.append(consent_continuation_out)
 
     filing_meta.consent_continuation_out = {}
     filing_meta.consent_continuation_out = {**filing_meta.consent_continuation_out,
-                                            **{'expiry': expiry_date.isoformat()}}
+                                            **{'country': country,
+                                               'region': region,
+                                               'expiry': expiry_date.isoformat()}}
 
 
-def get_expiry_date():
-    """Set up date as UTC + 8hrs."""
-    legislation_date_now = LegislationDatetime.now().date()
-    expiry_date = datetime.combine(legislation_date_now,
-                                   datetime.min.time(),
-                                   tzinfo=pytz.timezone('UTC')) + relativedelta(months=6) + timedelta(hours=8)
-    return expiry_date
+def get_expiry_date(filing: Filing):
+    """Get expiry after 6 months from consent continuation out."""
+    effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date)
+    _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
+    _date += datedelta.datedelta(months=6)
+
+    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
+    _date = LegislationDatetime.as_legislation_timezone(_date)
+
+    # Adjust day light savings. Handle DST +-1 hour changes
+    dst_offset_diff = effective_date.dst() - _date.dst()
+    _date += dst_offset_diff
+
+    return LegislationDatetime.as_utc_timezone(_date)
