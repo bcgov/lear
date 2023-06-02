@@ -14,39 +14,33 @@
 """The Unit Tests for the Consent Continuation Out filing."""
 import copy
 import random
-import pytz
+import pytest
 
-from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from registry_schemas.example_data import COURT_ORDER, FILING_TEMPLATE
+from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import continuation_out
 from tests.unit import create_business, create_filing
 
-CONTINUATION_OUT = {
-    'details': 'A brief note to explain the continue out.',
-    'continuationOutDate': datetime.now(),
-    'foreignJurisdiction': {
-        'country': 'CA',
-        'region': 'AB'
-    },
-    'legalName': 'Legal name of the business in the foreign jurisdiction.',
-    'courtOrder': COURT_ORDER
-}
-
-async def test_worker_continuation_out(app, session):
+@pytest.mark.parametrize('test_name, delta_months, state', [
+    ('business_active', -6, Business.State.ACTIVE),
+    ('business_historical', 6, Business.State.HISTORICAL),
+])
+async def test_worker_continuation_out(app, session, test_name, delta_months, state):
     """Assert that the continuation out object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='CP')
+    continuation_out_date = (LegislationDatetime.now() + relativedelta(months=delta_months)).strftime('%Y-%m-%d')
 
     filing_json = copy.deepcopy(FILING_TEMPLATE)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['header']['name'] = 'continuationOut'
     filing_json['filing']['continuationOut'] = CONTINUATION_OUT
+    filing_json['filing']['continuationOut']['continuationOutDate'] = continuation_out_date
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     continuation_out_filing = create_filing(payment_id, filing_json, business_id=business.id)
@@ -65,8 +59,7 @@ async def test_worker_continuation_out(app, session):
     assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
     assert filing_json['filing']['continuationOut']['details'] == final_filing.order_details
 
-    assert business.state == Business.State.HISTORICAL
-    assert business.state_filing_id == final_filing.id
+    assert business.state == state
     assert business.jurisdiction == foreign_jurisdiction_json['country']
     assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region']
     assert business.foreign_legal_name == filing_json['filing']['continuationOut']['legalName']

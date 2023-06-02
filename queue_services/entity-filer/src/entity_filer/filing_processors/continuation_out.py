@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for the consent continuation out filing."""
 from contextlib import suppress
+from datetime import datetime
 from typing import Dict
 
 import dpath
@@ -33,15 +34,14 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     details = continuation_out_json.get('details')
     legal_name = continuation_out_json.get('legalName')
-    continuation_out_date = continuation_out_json.get('continuationOutDate')
+    continuation_out_date = datetime.strptime(continuation_out_json.get('continuationOutDate'), '%Y-%m-%d')
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
     foreign_jurisdiction_country = foreign_jurisdiction.get('country')
 
     continuation_out_filing.order_details = details
 
-    # if business.dissolution_date > datetime.now():
-    business.state = Business.State.HISTORICAL
-    business.state_filing_id = continuation_out_filing.id
+    if continuation_out_date >= datetime.now():
+        business.state = Business.State.HISTORICAL
 
     business.jurisdiction = foreign_jurisdiction_country
     business.foreign_legal_name = legal_name
