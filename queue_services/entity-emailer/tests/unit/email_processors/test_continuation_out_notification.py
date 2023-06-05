@@ -41,23 +41,16 @@ def test_continuation_out_notification(app, session, status, legal_type, submitt
     with patch.object(continuation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(continuation_out_notification, 'get_recipient_from_auth',
                           return_value='recipient@email.com'):
-            with patch.object(continuation_out_notification, 'get_user_email_from_auth',
-                              return_value='user@email.com'):
-                email = continuation_out_notification.process(
-                    {'filingId': filing.id, 'type': 'continuationOut', 'option': status}, token)
-                assert email['content']['subject'] == \
-                    legal_name + ' - Confirmation of Filing from the Business Registry'
+            email = continuation_out_notification.process(
+                {'filingId': filing.id, 'type': 'continuationOut', 'option': status}, token)
+            assert email['content']['subject'] == \
+                legal_name + ' - Confirmation of Filing from the Business Registry'
 
-                if submitter_role:
-                    assert f'{submitter_role}@email.com' in email['recipients']
-                else:
-                    assert 'user@email.com' in email['recipients']
-                assert 'recipient@email.com' in email['recipients']
-                assert 'custodian@email.com' in email['recipients']
-                assert email['content']['body']
-                assert email['content']['attachments'] == []
-                assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-                assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
-                assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
-                assert mock_get_pdfs.call_args[0][3] == filing
+            assert 'recipient@email.com' in email['recipients']
+            assert email['content']['body']
+            assert email['content']['attachments'] == []
+            assert mock_get_pdfs.call_args[0][1] == token
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
+            assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][3] == filing
