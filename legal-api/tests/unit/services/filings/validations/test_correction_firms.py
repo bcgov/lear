@@ -16,14 +16,19 @@
 import copy
 from http import HTTPStatus
 from unittest.mock import patch
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 import pytest
 from registry_schemas.example_data import CORRECTION_REGISTRATION, CHANGE_OF_REGISTRATION_TEMPLATE
 
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings import validate
+from legal_api.services.authz import STAFF_ROLE, BASIC_USER
 from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit import MockResponse
+
+from ...utils import helper_create_jwt
 
 CHANGE_OF_REGISTRATION_APPLICATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
 
@@ -74,11 +79,18 @@ naics_response = {
         ('gp_correction', GP_CORRECTION_REGISTRATION_APPLICATION),
     ]
 )
-def test_valid_firms_correction(session, test_name, filing):
+def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filing):
     """Test that a valid Firms correction passes validation."""
+    token = helper_create_jwt(jwt)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+    
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier)
+    founding_date = datetime(2022, 1, 1)
+    business = factory_business(identifier, founding_date=founding_date)
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
@@ -88,15 +100,17 @@ def test_valid_firms_correction(session, test_name, filing):
 
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+                err = validate(business, f)
 
-            if err:
-                print(err.msg)
+                if err:
+                    print(err.msg)
 
-    # check that validation passed
-    assert None is err
+        # check that validation passed
+        assert None is err
 
 
 @pytest.mark.parametrize(
@@ -106,8 +120,14 @@ def test_valid_firms_correction(session, test_name, filing):
         ('gp_invalid_party', GP_CORRECTION_REGISTRATION_APPLICATION, '2 Partners and a Completing Party is required.'),
     ]
 )
-def test_firms_correction_invalid_parties(session, test_name, filing, expected_msg):
+def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_name, filing, expected_msg):
     """Test that a invalid Firms correction fails validation."""
+    token = helper_create_jwt(jwt)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+    
     # setup
     identifier = 'FM1234567'
     business = factory_business(identifier)
@@ -121,16 +141,18 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
     del f['filing']['correction']['parties'][0]['roles'][0]
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+                err = validate(business, f)
 
-            if err:
-                print(err.msg)
+                if err:
+                    print(err.msg)
 
-    # check that validation passed
-    assert err
-    assert err.msg[0]['error'] == expected_msg
+        # check that validation passed
+        assert err
+        assert err.msg[0]['error'] == expected_msg
 
 
 @pytest.mark.parametrize(
@@ -172,12 +194,19 @@ def test_firms_correction_invalid_parties(session, test_name, filing, expected_m
          'Invalid naics code or description.'),
     ]
 )
-def test_firms_correction_naics(session, test_name, filing, existing_naics_code, existing_naics_desc,
+def test_firms_correction_naics(monkeypatch, app, session, jwt, test_name, filing, existing_naics_code, existing_naics_desc,
                                 correction_naics_code, correction_naics_desc, naics_response, expected_msg):
     """Test that NAICS code and description are correctly validated."""
+    token = helper_create_jwt(jwt)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+    
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier=identifier, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
+    founding_date = datetime(2022, 1, 1)
+    business = factory_business(identifier=identifier, founding_date=founding_date, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
 
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
@@ -195,16 +224,78 @@ def test_firms_correction_naics(session, test_name, filing, existing_naics_code,
 
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+                err = validate(business, f)
 
-            if err:
-                print(err.msg)
+                if err:
+                    print(err.msg)
 
-    # check for expected validation resultsn
-    if expected_msg:
-        assert err
-        assert err.msg[0]['error'] == expected_msg
-    else:
-        assert None is err
+        # check for expected validation resultsn
+        if expected_msg:
+            assert err
+            assert err.msg[0]['error'] == expected_msg
+        else:
+            assert None is err
+
+
+@pytest.mark.parametrize('test_name, filing, username, roles, founding_date_str, delta_date, is_valid', 
+                         [
+                             ('sp_no_correction_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
+                             ('gp_no_correction_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
+                             ('sp_correction_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=90), True),
+                             ('gp_correction_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=90), True),
+                             ('sp_correction_invalid_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=91), False),
+                             ('gp_correction_invalid_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=91), False),
+                             ('sp_correction_lesser_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', relativedelta(years=-20), True),
+                             ('gp_correction_lesser_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', relativedelta(years=-20), True),
+
+                             ('sp_no_correction_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', None, True),
+                             ('gp_no_correction_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', None, True),
+                             ('sp_correction_greater_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', timedelta(days=90), True),
+                             ('gp_correction_greater_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', timedelta(days=90), True),
+                             ('sp_correction_invalid_greater_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', timedelta(days=91), False),
+                             ('gp_correction_invalid_greater_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', timedelta(days=91), False),
+                             ('sp_correction_lesser_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10), True),
+                             ('gp_correction_lesser_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10), True),
+                             ('sp_correction_invalid_lesser_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10, days=-1), False),
+                             ('gp_correction_invalid_lesser_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10, days=-1), False),
+                         ])
+def test_firms_correction_start_date(monkeypatch, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid):
+    """Test that start date of firms is correctly validated."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+    
+    identifier = 'FM1234567'
+    founding_date = datetime.strptime(founding_date_str, '%Y-%m-%d')
+    business = factory_business(identifier=identifier, founding_date=founding_date)
+
+    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+
+    start_date = founding_date
+    if delta_date:
+        start_date = start_date + delta_date
+
+    f = copy.deepcopy(filing)
+
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['startDate'] = start_date.strftime('%Y-%m-%d')
+
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+                err = validate(business, f)
+
+        if is_valid:
+            assert not err
+        else:
+            assert err
