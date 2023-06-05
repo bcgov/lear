@@ -10,6 +10,18 @@ BC Registries Names Examination, research and approval system API
 * Python, Flask
 * Postgres -  SQLAlchemy, psycopg2-binary & alembic
 
+
+## Poetry
+You may prefer to have the vitrual-environment in the project home. To do that, tell poetry to do that before installing.
+```shell
+poetry config virtualenvs.in-project true
+```
+
+You can issue any command in the current environment, via poetry's shell
+```shell
+poetry shell
+```
+
 ## Third-Party Products/Libraries used and the the License they are covert by
 
 ## Project Status
