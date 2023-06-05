@@ -33,7 +33,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.auth import jwt
 
 from ...utils import get_str, get_date
@@ -173,7 +172,7 @@ def validate_start_date(business: Business, filing: Dict) -> list:
             msg.append({'error': 'Start date must be less than or equal to 10 years.',
                         'path': start_date_path})
     if start_date > greater:
-        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.', 
+        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.',
                     'path': start_date_path})
-        
+
     return msg

@@ -136,7 +136,7 @@ def validate_start_date(filing: Dict) -> list:
             msg.append({'error': 'Start date must be less than or equal to 10 years.',
                         'path': start_date_path})
     if start_date > greater:
-        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.', 
+        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.',
                     'path': start_date_path})
 
     return msg
