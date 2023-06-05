@@ -31,11 +31,11 @@ from tests.unit import prep_consent_continuation_out_filing
     ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff')
 ])
-def test_consent_continuation_out_notification(status, legal_type, submitter_role):
+def test_consent_continuation_out_notification(app, session, status, legal_type, submitter_role):
     """Assert that the consent_continuation_out email processor for corps works as expected."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_consent_continuation_out_filing('BC1234567', '1', legal_type, legal_name, submitter_role)
+    filing = prep_consent_continuation_out_filing(session, 'BC1234567', '1', legal_type, legal_name, submitter_role)
     token = 'token'
     # test processor
     with patch.object(consent_continuation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
