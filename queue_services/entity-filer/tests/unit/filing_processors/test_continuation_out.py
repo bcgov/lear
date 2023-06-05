@@ -15,6 +15,7 @@
 import copy
 import random
 
+from datetime import datetime
 from legal_api.models import Business, Filing
 
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
@@ -45,6 +46,7 @@ async def test_worker_continuation_out(app, session):
     # Check outcome
     final_filing = Filing.find_by_id(continuation_out_filing.id)
     foreign_jurisdiction_json = filing_json['filing']['continuationOut']['foreignJurisdiction']
+    continuation_out_date = filing_json['filing']['continuationOut']['continuationOutDate']
 
     assert filing_json['filing']['continuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
     assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
@@ -53,10 +55,13 @@ async def test_worker_continuation_out(app, session):
 
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == final_filing.id
-    assert business.jurisdiction == foreign_jurisdiction_json['country']
-    assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region']
+    assert business.jurisdiction == foreign_jurisdiction_json['country'].upper()
+    assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region'].upper()
     assert business.foreign_legal_name == filing_json['filing']['continuationOut']['legalName']
+    assert business.continuation_out_date.strftime('%Y-%m-%d') == continuation_out_date
+    assert business.dissolution_date.strftime('%Y-%m-%d') == continuation_out_date
     
     assert filing_meta.continuation_out['country'] == foreign_jurisdiction_json['country']
     assert filing_meta.continuation_out['region'] == foreign_jurisdiction_json['region']
+    assert filing_meta.continuation_out['continuationOutDate'] == datetime.strptime(continuation_out_date, '%Y-%m-%d').isoformat()
     assert filing_meta.continuation_out['legalName'] == filing_json['filing']['continuationOut']['legalName']
