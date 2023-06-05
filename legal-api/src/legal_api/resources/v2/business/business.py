@@ -25,7 +25,7 @@ from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, db
-from legal_api.resources.v1.business.business_filings import ListFilingResource
+from legal_api.resources.v2.business.business_filings import ListFilingResource
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
     SYSTEM_ROLE,

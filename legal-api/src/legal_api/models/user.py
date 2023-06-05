@@ -17,12 +17,12 @@ Actual user data is kept in the OIDC and IDP services, this data is
 here as a convenience for audit and db reporting.
 """
 from datetime import datetime
-from enum import auto
 
 from flask import current_app
+from sql_versioning import Versioned
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum
+from legal_api.utils.enum import BaseEnum, auto
 
 from .db import db
 
@@ -47,10 +47,9 @@ class UserRoles(BaseEnum):
     public_user = auto()
 
 
-class User(db.Model):
+class User(Versioned, db.Model):
     """Used to hold the audit information for a User of this service."""
 
-    __versioned__ = {}
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -59,9 +58,9 @@ class User(db.Model):
     lastname = db.Column(db.String(1000))
     middlename = db.Column(db.String(1000))
     email = db.Column(db.String(1024))
-    sub = db.Column(db.String(36), unique=True)
+    sub = db.Column(db.String((1024)), unique=True)
     iss = db.Column(db.String(1024))
-    idp_userid = db.Column(db.String(256), index=True)
+    idp_userid = db.Column(db.String((1024)), index=True)
     login_source = db.Column(db.String(200), nullable=True)
     creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
 

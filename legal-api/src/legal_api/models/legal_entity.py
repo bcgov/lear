@@ -21,7 +21,8 @@ from typing import Final, Optional
 
 import datedelta
 from flask import current_app
-from sqlalchemy import event
+from sql_versioning import Versioned
+from sqlalchemy import event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -48,7 +49,7 @@ from .role_address import RoleAddress  # noqa: F401 pylint: disable=unused-impor
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a LegalEntity.
 
     A business is base form of any entity that can interact directly
@@ -67,54 +68,54 @@ class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,dis
     class EntityTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
 
-        COOP = 'CP'  # aka COOPERATIVE in namex
         BCOMP = 'BEN'  # aka BENEFIT_COMPANY in namex
-        COMP = 'BC'  # aka CORPORATION in namex
-        CONTINUE_IN = 'C'
+        BC_CCC = 'CC'
+        BC_ULC_COMPANY = 'ULC'
+        CCC_CONTINUE_IN = 'CCC'
+        CEMETARY = 'CEM'
         CO_1860 = 'QA'
         CO_1862 = 'QB'
         CO_1878 = 'QC'
         CO_1890 = 'QD'
         CO_1897 = 'QE'
-        BC_ULC_COMPANY = 'ULC'
+        COMP = 'BC'  # aka CORPORATION in namex
+        CONT_IN_SOCIETY = 'CS'
+        CONTINUE_IN = 'C'
+        COOP = 'CP'  # aka COOPERATIVE in namex
+        EXTRA_PRO_A = 'A'
+        EXTRA_PRO_B = 'B'
+        EXTRA_PRO_REG = 'EPR'
+        FINANCIAL = 'FI'
+        FOREIGN = 'FOR'
+        LIBRARY = 'LIB'
+        LICENSED = 'LIC'
+        LIM_PARTNERSHIP = 'LP'
+        LIMITED_CO = 'LLC'
+        LL_PARTNERSHIP = 'LL'
+        MISC_FIRM = 'MF'
+        ORGANIZATION = 'organization'
+        PARISHES = 'PAR'
+        PARTNERSHIP = 'GP'
+        PENS_FUND_SOC = 'PFS'
+        PERSON = 'person'
+        PRIVATE_ACT = 'PA'
+        RAILWAYS = 'RLY'
+        REGISTRATION = 'REG'
+        SOCIETY = 'S'
+        SOCIETY_BRANCH = 'SB'
+        SOLE_PROP = 'SP'
+        TRAMWAYS = 'TMY'
+        TRUST = 'T'
         ULC_CONTINUE_IN = 'CUL'
         ULC_CO_1860 = 'UQA'
         ULC_CO_1862 = 'UQB'
         ULC_CO_1878 = 'UQC'
         ULC_CO_1890 = 'UQD'
         ULC_CO_1897 = 'UQE'
-        BC_CCC = 'CC'
-        EXTRA_PRO_A = 'A'
-        EXTRA_PRO_B = 'B'
-        CEMETARY = 'CEM'
-        EXTRA_PRO_REG = 'EPR'
-        FOREIGN = 'FOR'
-        LICENSED = 'LIC'
-        LIBRARY = 'LIB'
-        LIMITED_CO = 'LLC'
-        PRIVATE_ACT = 'PA'
-        PARISHES = 'PAR'
-        PENS_FUND_SOC = 'PFS'
-        REGISTRATION = 'REG'
-        RAILWAYS = 'RLY'
-        SOCIETY_BRANCH = 'SB'
-        TRUST = 'T'
-        TRAMWAYS = 'TMY'
         XPRO_COOP = 'XCP'
-        CCC_CONTINUE_IN = 'CCC'
-        SOCIETY = 'S'
-        XPRO_SOCIETY = 'XS'
-        SOLE_PROP = 'SP'
-        PARTNERSHIP = 'GP'
-        LIM_PARTNERSHIP = 'LP'
         XPRO_LIM_PARTNR = 'XP'
-        LL_PARTNERSHIP = 'LL'
         XPRO_LL_PARTNR = 'XL'
-        MISC_FIRM = 'MF'
-        FINANCIAL = 'FI'
-        CONT_IN_SOCIETY = 'CS'
-        PERSON = 'person'
-        ORGANIZATION = 'organization'
+        XPRO_SOCIETY = 'XS'
         # *** The following are not yet supported by legal-api: ***
         # DOING_BUSINESS_AS = 'DBA'
         # XPRO_CORPORATION = 'XCR'
@@ -165,60 +166,59 @@ class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,dis
         }
     }
 
-    __versioned__ = {}
     __tablename__ = 'legal_entities'
-    __mapper_args__ = {
-        'include_properties': [
-            'id',
-            'admin_freeze',
-            'association_type',
-            'dissolution_date',
-            'fiscal_year_end_date',
-            'founding_date',
-            'identifier',
-            'last_agm_date',
-            'last_ar_date',
-            'last_ar_year',
-            'last_ar_reminder_year',
-            'last_coa_date',
-            'last_cod_date',
-            'last_ledger_id',
-            'last_ledger_timestamp',
-            'last_modified',
-            'last_remote_ledger_id',
-            'legal_name',
-            'entity_type',
-            'restriction_ind',
-            'state',
-            'state_filing_id',
-            'submitter_userid',
-            'tax_id',
-            'naics_key',
-            'naics_code',
-            'naics_description',
-            'start_date',
-            'jurisdiction',
-            'foreign_jurisdiction_region',
-            'foreign_identifier',
-            'foreign_legal_name',
-            'foreign_legal_type',
-            'foreign_incorporation_date',
-            'send_ar_ind',
-            'restoration_expiry_date',
-            'cco_expiry_date',
-            'continuation_out_date',
-            'tax_id',
-            'bn9',
-            'first_name',
-            'middle_initial',
-            'last_name',
-            'additional_name',
-            'title',
-            'email',
-            'mailing_address_id',
-            'delivery_address_id'
-        ]
-    }
+    # __mapper_args__ = {
+    #     'include_properties': [
+    #         'id',
+    #         'additional_name',
+    #         'admin_freeze',
+    #         'association_type',
+    #         'bn9',
+    #         'cco_expiry_date',
+    #         'continuation_out_date',
+    #         'delivery_address_id'
+    #         'dissolution_date',
+    #         'email',
+    #         'entity_type',
+    #         'first_name',
+    #         'fiscal_year_end_date',
+    #         'foreign_identifier',
+    #         'foreign_jurisdiction_region',
+    #         'foreign_legal_name',
+    #         'foreign_legal_type',
+    #         'foreign_incorporation_date',
+    #         'founding_date',
+    #         'identifier',
+    #         'jurisdiction',
+    #         'last_agm_date',
+    #         'last_ar_date',
+    #         'last_ar_year',
+    #         'last_ar_reminder_year',
+    #         'last_coa_date',
+    #         'last_cod_date',
+    #         'last_ledger_id',
+    #         'last_ledger_timestamp',
+    #         'last_modified',
+    #         'last_name',
+    #         'last_remote_ledger_id',
+    #         'legal_name',
+    #         'mailing_address_id',
+    #         'middle_initial',
+    #         'naics_code',
+    #         'naics_description',
+    #         'naics_key',
+    #         'restoration_expiry_date',
+    #         'restriction_ind',
+    #         'send_ar_ind',
+    #         'start_date',
+    #         'state',
+    #         'state_filing_id',
+    #         'submitter_userid',
+    #         'tax_id',
+    #         'tax_id',
+    #         'title',
+    #     ]
+    # }
 
     id = db.Column(db.Integer, primary_key=True)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -259,8 +259,12 @@ class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,dis
     email = db.Column('email', db.String(254))
 
     # parent keys
-    delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
-    mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
+    delivery_address_id = db.Column('delivery_address_id',
+                                    db.Integer,
+                                    db.ForeignKey('addresses.id'))
+    mailing_address_id = db.Column('mailing_address_id',
+                                   db.Integer,
+                                   db.ForeignKey('addresses.id'))
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
@@ -664,7 +668,7 @@ class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,dis
             'FM': 'legal_entity_identifier_sp_gp',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
-            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+            return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
         return None
 
     @staticmethod
@@ -709,7 +713,7 @@ class LegalEntity(db.Model):  # pylint: disable=too-many-instance-attributes,dis
                 return False
 
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
-            if not (self.first_name or self.middle_initial or self.last_name):
+            if not (self.first_name or self.middle_initial or self.last_name) or self.legal_name:
                 return False
         return True
 

@@ -19,10 +19,10 @@ import logging
 import random
 import string
 
-import nest_asyncio  # noqa: I001
+# import nest_asyncio  # noqa: I001
 from flask import _app_ctx_stack
-from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
-from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+# from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
+# from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 
 class QueueService():
@@ -53,7 +53,7 @@ class QueueService():
         :param app: Flask app
         :return: naked
         """
-        nest_asyncio.apply()
+        # nest_asyncio.apply()
         self.name = app.config.get('NATS_CLIENT_NAME')
         self.loop = loop or asyncio.get_event_loop()
         self.nats_servers = app.config.get('NATS_SERVERS').split(',')

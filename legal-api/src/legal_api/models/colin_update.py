@@ -24,6 +24,13 @@ class ColinLastUpdate(db.Model):  # pylint: disable=too-few-public-methods
     """Creates a record of the last event loaded from colin."""
 
     __tablename__ = 'colin_last_update'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'last_event_id',
+            'last_update',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)

@@ -16,10 +16,12 @@ from __future__ import annotations
 
 from enum import Enum
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
+class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the resolutions."""
 
     class ResolutionType(Enum):
@@ -28,8 +30,21 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
         ORDINARY = 'ORDINARY'
         SPECIAL = 'SPECIAL'
 
-    __versioned__ = {}
     __tablename__ = 'resolutions'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'change_filing_id',
+            'legal_entity_id',
+            'resolution',
+            'resolution_date',
+            'resolution_sub_type',
+            'resolution_type',
+            'signing_date',
+            'signing_party_id',
+            'signing_legal_entity_id',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     resolution_date = db.Column('resolution_date', db.Date, nullable=False)
@@ -39,6 +54,7 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
     resolution = db.Column(db.Text)
 
     # parent keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
     signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
     signing_legal_entity_id = db.Column('signing_legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))

@@ -22,7 +22,6 @@ from legal_api import errorhandlers
 from legal_api.utils.run_version import get_run_version
 
 from .constants import EndpointEnum, EndpointVersionEnum
-from .v1 import API_BLUEPRINT, OPS_BLUEPRINT
 from .v2 import v2_endpoint
 
 
@@ -42,11 +41,6 @@ class Endpoints:
         self._mount_endpoints()
 
     def _handler_setup(self):
-        @self.app.route('/')
-        def be_nice_swagger_redirect():  # pylint: disable=unused-variable
-            """Redirect / to the swagger app, until the REST extension is removed."""
-            # TODO: remove this when the REST extension is removed.
-            return redirect(EndpointEnum.API_V1, code=HTTPStatus.MOVED_PERMANENTLY)
 
         @self.app.before_request
         def before_request():
@@ -111,9 +105,6 @@ class Endpoints:
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""
-        self.app.register_blueprint(API_BLUEPRINT)
-        self.app.register_blueprint(OPS_BLUEPRINT)
         v2_endpoint.init_app(self.app)
-
 
 endpoints = Endpoints()

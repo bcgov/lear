@@ -14,14 +14,26 @@
 """This module holds data for colin entities."""
 from __future__ import annotations
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class ColinEntity(db.Model):
+class ColinEntity(Versioned, db.Model):
     """This class manages the colin entities."""
 
-    __versioned__ = {}
     __tablename__ = 'colin_entities'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'change_filing_id',
+            'delivery_address_id',
+            'email',
+            'identifier',
+            'organization_name',
+            'mailing_address_id',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     organization_name = db.Column('organization_name', db.String(150), index=True)
@@ -29,6 +41,7 @@ class ColinEntity(db.Model):
     email = db.Column('email', db.String(254), index=True)
 
     # parent keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
     mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 

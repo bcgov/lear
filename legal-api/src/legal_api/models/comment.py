@@ -34,6 +34,16 @@ class Comment(db.Model):
     """
 
     __tablename__ = 'comments'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'comment',
+            'filing_id',
+            'legal_entity_id',
+            'staff_id',
+            'timestamp',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.String(4096))
