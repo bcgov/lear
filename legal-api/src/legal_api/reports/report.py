@@ -520,7 +520,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         country = pycountry.countries.get(alpha_2=cco.foreign_jurisdiction)
         region = None
-        if cco.foreign_jurisdiction_region and region != 'FEDERAL':
+        if cco.foreign_jurisdiction_region and cco.foreign_jurisdiction_region != 'FEDERAL':
             region = pycountry.subdivisions.\
                 get(code=f'{cco.foreign_jurisdiction}-{cco.foreign_jurisdiction_region}')
         filing['jurisdiction'] = f'{region.name}, {country.name}' if region else country

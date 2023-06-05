@@ -13,6 +13,7 @@
 # limitations under the License.
 """This model holds data for consent continuation out."""
 from __future__ import annotations
+
 from typing import Optional
 
 from .db import db
