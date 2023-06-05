@@ -14,13 +14,13 @@
 """This module holds data for aliases."""
 from __future__ import annotations
 
-from enum import auto
+from sql_versioning import Versioned
 
-from ..utils.base import BaseEnum
+from ..utils.enum import BaseEnum, auto
 from .db import db
 
 
-class AlternateName(db.Model):
+class AlternateName(Versioned, db.Model):
     """This class manages the alternate names."""
 
     class NameType(BaseEnum):
@@ -28,8 +28,20 @@ class AlternateName(db.Model):
 
         OPERATING = auto()
 
-    __versioned__ = {}
     __tablename__ = 'alternate_names'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'bn15',
+            'change_filing_id',
+            'end_date',
+            'identifier',
+            'legal_entity_id',
+            'name',
+            'name_type',
+            'start_date',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column('identifier', db.String(10), nullable=True)
@@ -41,6 +53,7 @@ class AlternateName(db.Model):
 
     # parent keys
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     def save(self):
         """Save the object to the database immediately."""

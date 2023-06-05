@@ -27,7 +27,7 @@ from legal_api import config, models
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import digital_credentials, flags, queue
+from legal_api.services import digital_credentials, flags
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
@@ -56,7 +56,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     db.init_app(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
-    queue.init_app(app)
+    # queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
 
@@ -64,8 +64,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         digital_credentials.init_app(app)
 
     setup_jwt_manager(app, jwt)
-
-    register_shellcontext(app)
 
     return app
 
@@ -77,16 +75,3 @@ def setup_jwt_manager(app, jwt_manager):
     app.config['JWT_ROLE_CALLBACK'] = get_roles
 
     jwt_manager.init_app(app)
-
-
-def register_shellcontext(app):
-    """Register shell context objects."""
-    def shell_context():
-        """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt,
-            'db': db,
-            'models': models}  # pragma: no cover
-
-    app.shell_context_processor(shell_context)

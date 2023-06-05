@@ -15,25 +15,38 @@
 
 Currently this only provides API versioning information
 """
-
+from sql_versioning import Versioned
 
 from .db import db
 
 
-class Office(db.Model):  # pylint: disable=too-few-public-methods
+class Office(Versioned, db.Model):  # pylint: disable=too-few-public-methods
     """This is the object mapping for the Office entity.
 
     An office is associated with one business, and 0...n addresses
     """
 
-    __versioned__ = {}
     __tablename__ = 'offices'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'legal_entity_id',
+            'change_filing_id',
+            'deactivated_date',
+            'office_type',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     office_type = db.Column('office_type', db.String(75), db.ForeignKey('office_types.identifier'))
-    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
-    addresses = db.relationship('Address', lazy='dynamic', cascade='all, delete, delete-orphan')
     deactivated_date = db.Column('deactivated_date', db.DateTime(timezone=True), default=None)
+
+    # Parent Keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
+    
+    # Relationships
+    addresses = db.relationship('Address', lazy='dynamic', cascade='all, delete, delete-orphan')
 
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods

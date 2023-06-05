@@ -16,6 +16,8 @@
 
 Test-Suite to ensure that the User Class is working as expected.
 """
+import uuid
+
 import pytest
 
 from legal_api.exceptions import BusinessException
@@ -27,13 +29,14 @@ def test_user(session):
 
     Start with a blank database.
     """
+    salt = str(uuid.uuid4())
     user = User(username='username',
                 firstname='firstname',
                 middlename='middlename',
                 lastname='lastname',
-                sub='sub',
+                sub='sub' + salt,
                 iss='iss',
-                idp_userid='123',
+                idp_userid='idp_userid' + salt,
                 login_source='IDIR'
     )
 
@@ -60,12 +63,14 @@ def test_user_find_by_jwt_token(session):
 
 def test_create_from_jwt_token(session):
     """Assert User is created from the JWT fields."""
+    salt = str(uuid.uuid4())
+
     token = {'username': 'username',
              'given_name': 'given_name',
              'family_name': 'family_name',
              'iss': 'iss',
-             'sub': 'sub',
-             'idp_userid': '123',
+             'sub': 'sub' + salt,
+             'idp_userid': 'idp_userid' + salt,
              'loginSource': 'IDIR'
              }
     u = User.create_from_jwt_token(token)
@@ -115,37 +120,59 @@ def test_create_from_invalid_jwt_token_no_token(session):
 
 def test_find_by_username(session):
     """Assert User can be found by the most current username."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    salt = str(uuid.uuid4())
+    username = 'username' + salt
+    user = User(username=username,
+                firstname='firstname',
+                middlename='middlename',
+                lastname='lastname',
+                sub='sub' + salt,
+                iss='iss',
+                idp_userid='idp_userid' + salt,
+                login_source='IDIR'
+    )
     session.add(user)
     session.commit()
 
-    u = User.find_by_username('username')
+    u = User.find_by_username(username)
 
     assert u.id is not None
 
 
 def test_find_by_sub(session):
     """Assert find User by the unique sub key."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    salt = str(uuid.uuid4())
+    sub = 'sub' + salt
+    user = User(username='username',
+                firstname='firstname',
+                middlename='middlename',
+                lastname='lastname',
+                sub=sub,
+                iss='iss',
+                idp_userid='idp_userid' + salt,
+                login_source='IDIR'
+    )
     session.add(user)
     session.commit()
 
-    u = User.find_by_sub('sub')
+    u = User.find_by_sub(sub)
 
     assert u.id is not None
 
 
-def test_user_save(session):
-    """Assert User record is saved."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
-    user.save()
-
-    assert user.id is not None
-
-
 def test_user_delete(session):
     """Assert the User record is deleted."""
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    salt = str(uuid.uuid4())
+    sub = 'sub' + salt
+    user = User(username='username',
+                firstname='firstname',
+                middlename='middlename',
+                lastname='lastname',
+                sub=sub,
+                iss='iss',
+                idp_userid='idp_userid' + salt,
+                login_source='IDIR'
+    )
     user.save()
     user.delete()
 

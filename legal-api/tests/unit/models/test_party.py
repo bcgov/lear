@@ -66,7 +66,7 @@ def test_party_json(session):
 def test_party_save(session):
     """Assert that the party member saves correctly."""
     member1 = LegalEntity(
-        entity_type=Party.PartyTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name='Michael',
         last_name='Crane',
         middle_initial='Joe',
@@ -93,7 +93,7 @@ def test_invalid_org_party_type(session):
         title='INV'
     )
     member2 = LegalEntity(
-        entity_type=Party.PartyTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         legal_name='BC1234567 LTD'
     )
     with pytest.raises(BusinessException) as party_type_err1:
@@ -101,6 +101,7 @@ def test_invalid_org_party_type(session):
     session.rollback()
     with pytest.raises(BusinessException) as party_type_err2:
         member2.save()
+        print('herhe')
 
     assert party_type_err1 and party_type_err2
     assert party_type_err1.value.status_code == HTTPStatus.BAD_REQUEST

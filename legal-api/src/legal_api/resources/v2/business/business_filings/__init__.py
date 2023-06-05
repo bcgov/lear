@@ -16,7 +16,7 @@
 Provides all business entity Filings externalized services.
 """
 from .business_documents import get_documents
-from .business_filings import delete_filings, get_filings, patch_filings, saving_filings
+from .business_filings import delete_filings, get_filings, patch_filings, saving_filings, ListFilingResource
 
 
 __all__ = (

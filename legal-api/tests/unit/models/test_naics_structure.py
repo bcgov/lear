@@ -122,7 +122,7 @@ def test_naics_find_by_naics_key(app, session):
 
     # check
     assert result
-    assert result.naics_key == naics_key
+    assert str(result.naics_key) == naics_key
     assert result.code == naics_code
     assert result.year == int(app.config.get('NAICS_YEAR'))
     assert result.version == int(app.config.get('NAICS_VERSION'))

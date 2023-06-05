@@ -14,9 +14,9 @@
 """This module holds data for digital credentials schema and credential definition."""
 from __future__ import annotations
 
-from enum import auto
+from sqlalchemy import text
 
-from legal_api.utils.base import BaseEnum
+from legal_api.utils.enum import BaseEnum, auto
 
 from .db import db
 
@@ -77,7 +77,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
                 cls.query
                    .filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
                    .filter(DCDefinition.credential_type == credential_type)
-                   .one_or_none())
+                   .first())
         return dc_definition
 
     @classmethod
@@ -91,9 +91,9 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(DCDefinition.schema_name == schema_name). \
             filter(DCDefinition.schema_version == schema_version)
 
-        return query.one_or_none()
+        return query.first()
 
     @classmethod
     def deactivate(cls, credential_type: CredentialType):
         """Deactivate all definition for the specific credential type."""
-        db.session.execute(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
+        db.session.execute(text(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'"))

@@ -325,13 +325,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_payment_token',
             '_source',
             '_status',
-            'legal_entity_id',
+            'approval_type',
+            'application_date',
             'colin_only',
             'court_order_date',
             'court_order_effect_of_order',
             'court_order_file_number',
             'deletion_locked',
             'effective_date',
+            'legal_entity_id',
+            'notice_date'
             'order_details',
             'paper_only',
             'parent_filing_id',
@@ -341,9 +344,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'tech_correction_json',
             'temp_reg',
             'transaction_id',
-            'approval_type',
-            'application_date',
-            'notice_date'
         ]
     }
 
@@ -374,9 +374,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
 
+    transaction_id = db.Column('transaction_id', db.Integer)
     # # relationships
-    transaction_id = db.Column('transaction_id', db.BigInteger,
-                               db.ForeignKey('transaction.id'))
+    # transaction_id = db.Column('transaction_id', db.BigInteger,
+                            #    db.ForeignKey('transaction.id'))
     legal_entity_id = db.Column('legal_entity_id', db.Integer,
                                 db.ForeignKey('legal_entities.id'))
     temp_reg = db.Column('temp_reg', db.String(10),

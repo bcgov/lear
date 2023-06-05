@@ -17,6 +17,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import auto
 
+from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from ..utils.base import BaseEnum
@@ -24,7 +25,7 @@ from .db import db
 
 
 # pylint: disable=import-outside-toplevel
-class EntityRole(db.Model):
+class EntityRole(Versioned, db.Model):
     """This class manages the entity roles."""
 
     # pylint: disable=invalid-name
@@ -40,8 +41,21 @@ class EntityRole(db.Model):
         proprietor = auto()
         partner = auto()
 
-    __versioned__ = {}
     __tablename__ = 'entity_roles'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'appointment_date',
+            'cessation_date',
+            'delivery_address_id',
+            'filing_id',
+            'legal_entity_id',
+            'mailing_address_id',
+            'related_colin_entity_id',
+            'related_entity_id',
+            'role_type',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     role_type = db.Column('role_type', db.Enum(RoleTypes), nullable=False)

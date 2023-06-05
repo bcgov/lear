@@ -18,27 +18,36 @@ Documents which are static in nature are stored in file server and details will 
 
 from __future__ import annotations
 
-from enum import Enum
+from ..utils.enum import BaseEnum, auto
 
+from sql_versioning import Versioned
 from sqlalchemy import Column, String, desc
 
 from .db import db
 
 
-class DocumentType(Enum):
+class DocumentType(BaseEnum):
     """Document types."""
 
-    COOP_RULES = 'coop_rules'
-    COOP_MEMORANDUM = 'coop_memorandum'
-    AFFIDAVIT = 'affidavit'
-    COURT_ORDER = 'court_order'
+    COOP_RULES = auto()
+    COOP_MEMORANDUM = auto()
+    AFFIDAVIT = auto()
+    COURT_ORDER = auto()
 
 
-class Document(db.Model):
+class Document(Versioned, db.Model):
     """This is the model for a document."""
 
-    __versioned__ = {}
     __tablename__ = 'documents'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'file_key',
+            'filing_id',
+            'legal_entity_id',
+            'type',
+        ]
+    }
 
     id = Column(db.Integer, primary_key=True)
     type = Column('type', String(30), nullable=False)
