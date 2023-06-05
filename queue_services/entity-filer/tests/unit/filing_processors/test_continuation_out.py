@@ -14,11 +14,8 @@
 """The Unit Tests for the Continuation Out filing."""
 import copy
 import random
-import pytest
 
-from dateutil.relativedelta import relativedelta
 from legal_api.models import Business, Filing
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
 
