@@ -66,16 +66,16 @@ class Flags():
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
 
-        if self.sdk_key or app.env != 'production':
+        if self.sdk_key or app.testing:
 
-            if app.env == 'production':
-                config = Config(sdk_key=self.sdk_key)
-            else:
+            if app.testing:
                 factory = FileDataSource.factory(paths=['flags.json'],
                                                  auto_update=True)
                 config = Config(sdk_key=self.sdk_key,
                                 update_processor_class=factory,
                                 send_events=False)
+            else:
+                config = Config(sdk_key=self.sdk_key)
 
             ldclient_set_config(config)
             client = ldclient_get()

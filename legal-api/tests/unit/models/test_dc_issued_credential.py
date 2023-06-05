@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 """
+import uuid
 
 from legal_api.models import DCIssuedCredential
 
@@ -66,7 +67,7 @@ def create_dc_issued_credential(legal_entity=None):
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,
-        credential_exchange_id='8dbdce35-d47a-40cc-96b0-90ec263b162b'
+        credential_exchange_id=str(uuid.uuid4())
     )
     issued_credential.save()
     return issued_credential

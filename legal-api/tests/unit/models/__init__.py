@@ -159,8 +159,8 @@ def factory_legal_entity(identifier=None,
                                last_name=last_name)
 
     # Versioning business
-    uow = versioning_manager.unit_of_work(db.session)
-    uow.create_transaction(db.session)
+    # uow = versioning_manager.unit_of_work(db.session)
+    # uow.create_transaction(db.session)
 
     legal_entity.save()
     return legal_entity
@@ -241,17 +241,17 @@ def factory_completed_filing(legal_entity,
             filing._filing_sub_type = filing_sub_type
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
+        filing._status = Filing.Status.COMPLETED.value
         if colin_id:
             colin_event = ColinEventId()
             colin_event.colin_event_id = colin_id
             colin_event.filing_id = filing.id
             colin_event.save()
+
+        setattr(filing, 'skip_status_listener', True)
         filing.save()
     return filing
 

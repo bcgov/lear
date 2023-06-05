@@ -14,14 +14,25 @@
 """This module holds data for corp type."""
 from __future__ import annotations
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class CorpType(db.Model):  # pylint: disable=too-many-instance-attributes
+class CorpType(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the corp type."""
 
-    __versioned__ = {}
     __tablename__ = 'corp_types'
+    __mapper_args__ = {
+        'include_properties': [
+            'colin_ind',
+            'corp_class',
+            'corp_type_cd',
+            'full_desc',
+            'legislation',
+            'short_desc',
+        ]
+    }
 
     corp_type_cd = db.Column('corp_type_cd', db.String(5), primary_key=True)
     colin_ind = db.Column('colin_ind', db.String(1), nullable=False)

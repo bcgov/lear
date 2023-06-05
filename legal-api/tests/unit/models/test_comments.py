@@ -72,6 +72,7 @@ def test_filing_comment_dump_json(session):
 
     now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
     with freeze_time(now):
+
         assert c.json == {
             'comment': {
                 'id': c.id,

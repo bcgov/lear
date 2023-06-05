@@ -16,10 +16,12 @@ from __future__ import annotations
 
 from enum import Enum
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
+class Alias(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the aliases."""
 
     class AliasType(Enum):
@@ -28,8 +30,16 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
         TRANSLATION = 'TRANSLATION'
         DBA = 'DBA'
 
-    __versioned__ = {}
     __tablename__ = 'aliases'
+    __mapper_args__ = {
+        'include_properties': [
+            'id',
+            'alias',
+            'change_filing_id',
+            'legal_entity_id',
+            'type',
+        ]
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     alias = db.Column('alias', db.String(1000), index=True, nullable=False)
@@ -37,6 +47,7 @@ class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     def save(self):
         """Save the object to the database immediately."""

@@ -69,7 +69,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         dc_issued_credential = None
         if credential_exchange_id:
             dc_issued_credential = cls.query. \
-                filter(DCIssuedCredential.credential_exchange_id == credential_exchange_id).one_or_none()
+                filter(DCIssuedCredential.credential_exchange_id == credential_exchange_id).first()
         return dc_issued_credential
 
     @classmethod
