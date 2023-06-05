@@ -38,10 +38,9 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
     foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
 
-    continuation_out_filing.order_details = details
     continuation_out_filing.comments.append(
         Comment(
-            comment=continuation_out_json.get('comment'),
+            comment=details,
             staff_id=continuation_out_filing.submitter_id
         )
     )
