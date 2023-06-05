@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This model holds data for consent continuation out."""
+from __future__ import annotations
+
+from typing import Optional
 
 from .db import db
 
@@ -49,3 +52,9 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
                 ConsentContinuationOut.foreign_jurisdiction_region == foreign_jurisdiction_region.upper())
 
         return query.all()
+
+    @staticmethod
+    def get_by_filing_id(filing_id) -> Optional[ConsentContinuationOut]:
+        """Get consent continuation out by filing_id."""
+        return db.session.query(ConsentContinuationOut). \
+            filter(ConsentContinuationOut.filing_id == filing_id).one_or_none()

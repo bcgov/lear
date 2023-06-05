@@ -24,7 +24,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
-from legal_api.models import Business, CorpType, Document, Filing, PartyRole
+from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
@@ -338,10 +338,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing['effective_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
             else:
                 filing['agm_date'] = 'No AGM'
-        elif self._filing.filing_type == 'consentContinuationOut':
-            versioned_business = VersionedBusinessDetailsService.\
-                get_business_revision_obj(self._filing.transaction_id, self._business)
-            filing['cco_expiry_date'] = versioned_business.cco_expiry_date.strftime(OUTPUT_DATE_FORMAT)
 
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
@@ -520,6 +516,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
 
     def _format_consent_continuation_out_data(self, filing):
+        cco = ConsentContinuationOut.get_by_filing_id(self._filing.id)
+
+        country = pycountry.countries.get(alpha_2=cco.foreign_jurisdiction)
+        region = None
+        if cco.foreign_jurisdiction_region and cco.foreign_jurisdiction_region != 'FEDERAL':
+            region = pycountry.subdivisions.\
+                get(code=f'{cco.foreign_jurisdiction}-{cco.foreign_jurisdiction_region}')
+        filing['jurisdiction'] = f'{region.name}, {country.name}' if region else country
+
+        expiry_date = LegislationDatetime.as_legislation_timezone(cco.expiry_date)
+        filing['cco_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
+
         filing['offices'] = VersionedBusinessDetailsService.\
             get_office_revision(self._filing.transaction_id, self._business.id)
 
