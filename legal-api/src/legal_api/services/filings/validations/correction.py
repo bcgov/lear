@@ -15,11 +15,16 @@
 from http import HTTPStatus
 from typing import Dict
 
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import NaicsService
+from legal_api.services import (
+    NaicsService,
+    STAFF_ROLE,
+)
 from legal_api.services.filings.validations.common_validations import validate_name_request, validate_share_structure
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
@@ -28,8 +33,10 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
+from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.auth import jwt
 
-from ...utils import get_str
+from ...utils import get_str, get_date
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -74,6 +81,7 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
     msg.extend(validate_naics(business, filing, filing_type))
+    msg.extend(validate_start_date(business, filing))
 
 
 def _validate_corps_correction(filing_dict, legal_type, msg):
@@ -147,4 +155,25 @@ def validate_naics(business: Business, filing: Dict, filing_type: str) -> list:
         if not naics or naics['classTitle'] != naics_desc:
             msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
 
+    return msg
+
+
+def validate_start_date(business: Business, filing: Dict) -> list:
+    """Validate start date."""
+    # Staff can go back with an unlimited period of time, the maximum start date is 90 days after the registration date
+    msg = []
+    start_date_path = '/filing/correction/startDate'
+    start_date = get_date(filing, start_date_path)
+    registration_date = business.founding_date.date()
+    greater = registration_date + timedelta(days=90)
+    lesser = registration_date + relativedelta(years=-10)
+
+    if not jwt.validate_roles([STAFF_ROLE]):
+        if start_date < lesser:
+            msg.append({'error': 'Start date must be less than or equal to 10 years.',
+                        'path': start_date_path})
+    if start_date > greater:
+        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.', 
+                    'path': start_date_path})
+        
     return msg
