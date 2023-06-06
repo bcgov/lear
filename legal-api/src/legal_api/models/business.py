@@ -197,7 +197,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'foreign_incorporation_date',
             'send_ar_ind',
             'restoration_expiry_date',
-            'cco_expiry_date',
             'continuation_out_date'
         ]
     }
@@ -217,7 +216,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     start_date = db.Column('start_date', db.DateTime(timezone=True))
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
-    cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True))  # consent continuation out expiry_date
     continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -252,6 +250,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
+    consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -445,8 +444,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         if self.restoration_expiry_date:
             d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
-        if self.cco_expiry_date:
-            d['ccoExpiryDate'] = self.cco_expiry_date.isoformat()
         if self.continuation_out_date:
             d['continuationOutDate'] = self.continuation_out_date.isoformat()
 
@@ -460,13 +457,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
             ).isoformat() if self.foreign_incorporation_date else None
 
-        filings = self.filings.all()
-
-        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
-                                  x.status == 'COMPLETED')
-
-        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
-                                  x.status == 'COMPLETED')
+        d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
+        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
 
     @property
     def compliance_warnings(self):

@@ -855,6 +855,17 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return None
 
     @staticmethod
+    def has_completed_filing(business_id: int, filing_type: str) -> bool:
+        """Return whether a completed filing of a given filing type exists."""
+        query = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == filing_type). \
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+        exists_stmt = query.exists()
+        filing_exists = db.session.query(exists_stmt).scalar()
+        return filing_exists
+
+    @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
         """Return sub-type from filing json if sub-type exists for filing type."""
         filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type)

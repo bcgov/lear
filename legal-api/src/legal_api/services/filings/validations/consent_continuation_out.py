@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Consent Continuation Out filing."""
+from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I004
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.common_validations import validate_court_order
+from legal_api.services.filings.validations.continuation_out import validate_foreign_jurisdiction
 # noqa: I003;
 
 
@@ -35,6 +37,19 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     msg = []
     filing_type = 'consentContinuationOut'
+
+    if err := validate_foreign_jurisdiction(filing, filing_type):
+        msg.extend(err)
+    else:
+        now = datetime.utcnow()
+        foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
+        country_code = foreign_jurisdiction.get('country')
+        region = foreign_jurisdiction.get('region')
+        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region)
+        if ccos:
+            msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
+                        'path': f'/filing/{filing_type}/foreignJurisdiction'}])
+
     if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
         court_order_path: Final = f'/filing/{filing_type}/courtOrder'
         err = validate_court_order(court_order_path, court_order)

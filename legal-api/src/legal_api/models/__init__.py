@@ -19,6 +19,7 @@ from .alias import Alias
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
+from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
 from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
@@ -38,7 +39,7 @@ from .user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'CorpType',
+           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'ConsentContinuationOut', 'CorpType',
            'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'Document', 'DocumentType',
            'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')
