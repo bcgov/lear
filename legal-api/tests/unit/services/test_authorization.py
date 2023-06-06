@@ -1566,11 +1566,11 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
 
 
 @pytest.mark.parametrize(
-    'test_name,state,legal_types,username,roles,completed_filing_types,completed_filing_sub_types,expected',
+    'test_name,state,legal_types,username,roles,filing_types,filing_sub_types,is_completed,expected',
     [
         # active business - staff user
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['consentContinuationOut'], [None],
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, True],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -1585,8 +1585,23 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, False],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.CONTINUATION_OUT,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
         ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], [None], [None],
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [False, False],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], [None, None], [None, None], [False, False],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -1603,7 +1618,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
     ]
 )
 def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
-                                            roles, completed_filing_types, completed_filing_sub_types, expected):
+                                            roles, filing_types, filing_sub_types, is_completed, expected):
     """Assert that get allowed returns valid filings when completedFilings blocker is defined.
 
        A filing with completedFilings defined should only return a target filing if the business state filing matches
@@ -1619,13 +1634,23 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         for legal_type in legal_types:
-            for idx, filing_type in enumerate(completed_filing_types):
-                business = create_business(legal_type, state)
-                filing_sub_type = completed_filing_sub_types[idx]
+            business = create_business(legal_type, state)
+            for idx, filing_type in enumerate(filing_types):
+                filing_sub_type = filing_sub_types[idx]
                 if filing_type:
-                    create_filing(business, filing_type, filing_sub_type)
-                allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                assert allowed_filing_types == expected
+                    if is_completed[idx]:
+                        create_filing(business, filing_type, filing_sub_type)
+                    else:
+                        filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
+                        create_incomplete_filing(business=business,
+                                                 filing_name='unknown',
+                                                 filing_status=Filing.Status.DRAFT.value, 
+                                                 filing_dict=filing_dict,
+                                                 filing_type=filing_type,
+                                                 filing_sub_type=filing_sub_type)
+
+            allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            assert allowed_filing_types == expected
 
 
 def create_business(legal_type, state):
@@ -1642,12 +1667,13 @@ def create_incomplete_filing(business,
                              filing_name,
                              filing_status,
                              filing_dict: dict = copy.deepcopy(ANNUAL_REPORT),
-                             filing_type=None):
+                             filing_type=None,
+                             filing_sub_type=None):
     """Create an incomplete filing of a given status."""
     filing_dict['filing']['header']['name'] = filing_name
     if filing_dict:
         filing_dict = copy.deepcopy(filing_dict)
-    filing = factory_filing(business=business, data_dict=filing_dict)
+    filing = factory_filing(business=business, data_dict=filing_dict, filing_sub_type=filing_sub_type)
     filing.skip_status_listener = True
     filing._status = filing_status
     filing._filing_type = filing_type
