@@ -22,13 +22,13 @@ from tests.unit import prep_consent_continuation_out_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    # ('COMPLETED', Business.LegalTypes.COMP.value, None),
-    # ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
-    # ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
-    # ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
-    # ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
-    # ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
-    # ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.COMP.value, None),
+    ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
+    ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
+    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
+    ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff')
 ])
 def test_consent_continuation_out_notification(app, session, status, legal_type, submitter_role):

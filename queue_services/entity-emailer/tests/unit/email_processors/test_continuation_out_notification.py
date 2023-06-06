@@ -22,13 +22,13 @@ from tests.unit import prep_continuation_out_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    # ('COMPLETED', Business.LegalTypes.COMP.value, None),
-    # ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
-    # ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
-    # ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
-    # ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
-    # ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
-    # ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.COMP.value, None),
+    ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
+    ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
+    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
+    ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff')
 ])
 def test_continuation_out_notification(app, session, status, legal_type, submitter_role):
@@ -49,8 +49,8 @@ def test_continuation_out_notification(app, session, status, legal_type, submitt
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
-            assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-            assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
-            assert mock_get_pdfs.call_args[0][3] == filing
+            assert mock_get_pdfs.call_args[0][0] == token
+            assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
+            assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][2] == filing
