@@ -138,7 +138,7 @@ def post_businesses():
         return {'error': babel('Unable to create {0} Filing.'.format(Filing.FILINGS[filing_type]['title']))}, \
             HTTPStatus.SERVICE_UNAVAILABLE
 
-    return saving_filings(identifier=bootstrap.identifier)
+    return saving_filings(identifier=bootstrap.identifier)  # pylint: disable=no-value-for-parameter
 
 
 @bp.route('/search', methods=['POST'])
