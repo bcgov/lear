@@ -76,8 +76,9 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
         msg.extend(validate_party(filing, legal_type))
     if filing.get('filing', {}).get('correction', {}).get('offices', None):
         msg.extend(validate_offices(filing, filing_type))
+    if filing.get('filing', {}).get('correction', {}).get('startDate', None):
+        msg.extend(validate_start_date(business, filing))
     msg.extend(validate_naics(business, filing, filing_type))
-    msg.extend(validate_start_date(business, filing))
 
 
 def _validate_corps_correction(filing_dict, legal_type, msg):
