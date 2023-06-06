@@ -25,7 +25,7 @@ from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
-from legal_api.resources.v1.business.business_filings import ListFilingResource
+from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
     SYSTEM_ROLE,
@@ -138,7 +138,7 @@ def post_businesses():
         return {'error': babel('Unable to create {0} Filing.'.format(Filing.FILINGS[filing_type]['title']))}, \
             HTTPStatus.SERVICE_UNAVAILABLE
 
-    return ListFilingResource.put(bootstrap.identifier, None)
+    return saving_filings(identifier=bootstrap.identifier)
 
 
 @bp.route('/search', methods=['POST'])
