@@ -22,12 +22,9 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import (
-    NaicsService,
-    STAFF_ROLE,
-)
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
 from .common_validations import validate_court_order, validate_name_request

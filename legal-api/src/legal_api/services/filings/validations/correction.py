@@ -12,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Correction filing."""
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict
 
-from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import (
-    NaicsService,
-    STAFF_ROLE,
-)
+from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import validate_name_request, validate_share_structure
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
@@ -35,7 +32,7 @@ from legal_api.services.filings.validations.incorporation_application import (
 from legal_api.services.filings.validations.registration import validate_offices
 from legal_api.utils.auth import jwt
 
-from ...utils import get_str, get_date
+from ...utils import get_date, get_str
 
 
 def validate(business: Business, filing: Dict) -> Error:
