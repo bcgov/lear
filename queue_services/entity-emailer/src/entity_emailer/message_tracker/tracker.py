@@ -94,7 +94,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
             message_id = f'{etype}_{option}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
-        if etype == 'consentContinuationOut' \
+        if etype in ('consentContinuationOut', 'continuationOut') \
                 and (option := email.get('option', None)) \
                 and option == 'COMPLETED' \
                 and (filing_id := email.get('filingId', None)):

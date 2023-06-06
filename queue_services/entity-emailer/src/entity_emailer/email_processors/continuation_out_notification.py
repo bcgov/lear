@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for CCO notifications."""
+"""Email processing rules and actions for Continuation Out notifications."""
 from __future__ import annotations
 
 import base64
@@ -35,32 +35,13 @@ def _get_pdfs(
         filing_date_time: str,
         effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
-    """Get the pdfs for the Consent Continuation Out output."""
+    """Get the pdfs for the Continuation Out output."""
     pdfs = []
     attach_order = 1
     headers = {
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
-
-    # add filing pdf
-    filing_pdf = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=letterOfConsent', headers=headers
-    )
-    if filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
-    else:
-        filing_pdf_encoded = base64.b64encode(filing_pdf.content)
-        pdfs.append(
-            {
-                'fileName': 'Letter of Consent.pdf',
-                'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': attach_order
-            }
-        )
-        attach_order += 1
 
     # add receipt pdf
     corp_name = business.get('legalName')
@@ -94,8 +75,8 @@ def _get_pdfs(
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
-    """Build the email for Consent Continuation Out notification."""
-    logger.debug('consent_continuation_out_notification: %s', email_info)
+    """Build the email for Continuation Out notification."""
+    logger.debug('continuation_out_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -103,7 +84,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
     template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/CCO-{status}.html'
+        f'{current_app.config.get("TEMPLATE_PATH")}/CO-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
@@ -130,7 +111,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients.append(get_recipient_from_auth(identifier, token))
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
-        # when staff file a CCO documentOptionalEmail may contain completing party email
+        # when staff file a CO documentOptionalEmail may contain completing party email
         recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
 
     recipients = list(set(recipients))
