@@ -46,6 +46,8 @@ def test_consent_continuation_out_notification(app, session, status, legal_type,
             assert email['content']['subject'] == \
                 legal_name + ' - Confirmation of Filing from the Business Registry'
 
+            if submitter_role:
+                assert f'{submitter_role}@email.com' in email['recipients']
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
