@@ -49,8 +49,8 @@ def test_consent_continuation_out_notification(app, session, status, legal_type,
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
-            assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-            assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
-            assert mock_get_pdfs.call_args[0][3] == filing
+            assert mock_get_pdfs.call_args[0][0] == token
+            assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
+            assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][2] == filing
