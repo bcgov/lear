@@ -22,7 +22,8 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import NaicsService
+from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
@@ -118,16 +119,22 @@ def validate_party(filing: Dict, legal_type: str, filing_type='registration') ->
 
 def validate_start_date(filing: Dict) -> list:
     """Validate start date."""
-    # Less than or equal to 2 years in the past, Less than or equal to 90 days in the future
+    # Non-staff can go less than or equal to 10 years in the past, less than or equal to 90 days in the future
+    # Staff can go back with an unlimited period of time
     msg = []
     start_date_path = '/filing/registration/startDate'
     start_date = get_date(filing, start_date_path)
     now = LegislationDatetime.now().date()
     greater = now + timedelta(days=90)
-    lesser = now + relativedelta(years=-2)
-    if start_date < lesser or start_date > greater:
-        msg.append({'error': 'Start Date must be less than or equal to 2 years in the past and \
-          less than or equal to 90 days in the future.', 'path': start_date_path})
+    lesser = now + relativedelta(years=-10)
+
+    if not jwt.validate_roles([STAFF_ROLE]):
+        if start_date < lesser:
+            msg.append({'error': 'Start date must be less than or equal to 10 years.',
+                        'path': start_date_path})
+    if start_date > greater:
+        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.',
+                    'path': start_date_path})
 
     return msg
 
