@@ -554,8 +554,7 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
                                                          [Filing.Status.COMPLETED.value],
                                                          True)
 
-    filing_types = [filing.filing_type for filing in completed_filings]
-    if all(filing_type in filing_types for filing_type in complete_filing_types):
+    if(len(completed_filings) == len(complete_filing_types)):
         return False
 
     return True
