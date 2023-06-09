@@ -18,7 +18,7 @@ from datetime import timedelta
 from typing import Dict
 
 import dpath
-from legal_api.models import Address, Business, Filing, Party, PartyRole
+from legal_api.models import Address, Business, Filing, Party, PartyRole, Resolution
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -27,8 +27,9 @@ from entity_filer.filing_processors.filing_components import (
     create_party,
     create_role,
     filings,
+    rules_and_memorandum,
     shares,
-    update_address,
+    update_address
 )
 
 
@@ -96,6 +97,27 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
         shares.update_share_structure_correction(business, share_structure)
 
+    # update resolution, if any
+    with suppress(IndexError, KeyError, TypeError):
+        resolution = dpath.util.get(correction_filing, '/correction/resolution')
+        if resolution:
+            update_resolution(business, correction_filing, resolution)
+    
+    # update signatory, if any
+    with suppress(IndexError, KeyError, TypeError):
+        signatory = dpath.util.get(correction_filing, '/correction/signatory')
+        if signatory:
+            update_signatory(business, correction_filing, signatory)
+
+    # update rules, if any
+    with suppress(IndexError, KeyError, TypeError):
+        rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
+        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key)
+
+    with suppress(IndexError, KeyError, TypeError):
+        memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
+        rules_and_memorandum.update_memorandum(business, correction_filing_rec, memorandum_file_key)
+
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
@@ -153,3 +175,20 @@ def _create_party_info(business, correction_filing_rec, party_info):
             correction_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
+
+
+def update_resolution(business: Business, correction_filing: Dict, resolution: str):
+    filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
+    if filing_type:
+        resolution_rec = Resolution.find_latest(business.id, filing_type)
+        resolution_rec.resolution = resolution
+
+def update_signatory(business: Business, correction_filing: Dict, signatory: Dict):
+    filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
+    # if filing_type:
+    #     party = Party(
+    #             first_name=signatory.get('givenName', '').upper(),
+    #             last_name=signatory.get('familyName', '').upper(),
+    #             middle_initial=(signatory.get('additionalName', '') or '').upper()
+    #         )
+    #     resolution.party = party

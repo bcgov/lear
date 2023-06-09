@@ -611,6 +611,8 @@ class ListFilingResource():
         # https://www.stackhawk.com/blog/vue-xss-guide-examples-and-prevention/
         if resolution_content := filing_json['filing'].get('specialResolution', {}).get('resolution', None):
             filing_json['filing']['specialResolution']['resolution'] = Sanitizer().sanitize(resolution_content)
+        if resolution_content := filing_json['filing'].get('correction', {}).get('resolution', None):
+            filing_json['filing']['correction']['resolution'] = Sanitizer().sanitize(resolution_content)
         return filing_json
 
     @staticmethod

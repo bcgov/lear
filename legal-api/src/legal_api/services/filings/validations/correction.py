@@ -33,6 +33,11 @@ from legal_api.services.filings.validations.registration import validate_offices
 from legal_api.utils.auth import jwt
 
 from ...utils import get_date, get_str
+from .special_resolution import (
+    validate_resolution_content,
+    validate_signing_date,
+    validate_signatory_name
+)
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -61,6 +66,8 @@ def validate(business: Business, filing: Dict) -> Error:
                             Business.LegalTypes.BC_ULC_COMPANY.value,
                             Business.LegalTypes.BC_CCC.value]:
             _validate_corps_correction(filing, legal_type, msg)
+        elif legal_type in [Business.LegalTypes.COOP.value]:
+            _validate_special_resolution_correction(filing, legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -103,6 +110,18 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         err = validate_share_structure(filing_dict, filing_type)
         if err:
             msg.extend(err)
+
+
+def _validate_special_resolution_correction(filing_dict, legal_type, msg):
+    filing_type = 'correction'
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('nameRequest', {}).get('nrNumber', None):
+        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('resolution', None):
+        msg.extend(validate_resolution_content(filing_dict, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('signingDate', None):
+        msg.extend(validate_signing_date(filing_dict, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('signatory', None):
+        msg.extend(validate_signatory_name(filing_dict, filing_type))
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
