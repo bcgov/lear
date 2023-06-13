@@ -267,7 +267,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                    db.ForeignKey('addresses.id'))
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
-    naics_description = db.Column(db.String(150))
+    naics_description = db.Column(db.String(300))
 
     jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
