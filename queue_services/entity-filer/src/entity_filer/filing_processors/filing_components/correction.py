@@ -101,13 +101,13 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     with suppress(IndexError, KeyError, TypeError):
         resolution = dpath.util.get(correction_filing, '/correction/resolution')
         if resolution:
-            update_resolution(business, correction_filing, resolution)
+            _update_resolution(business, correction_filing, resolution)
     
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
         signatory = dpath.util.get(correction_filing, '/correction/signatory')
         if signatory:
-            update_signatory(business, correction_filing, signatory)
+            _update_signatory(business, correction_filing, signatory)
 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -177,18 +177,20 @@ def _create_party_info(business, correction_filing_rec, party_info):
             business.party_roles.append(party_role)
 
 
-def update_resolution(business: Business, correction_filing: Dict, resolution: str):
+def _update_resolution(business: Business, correction_filing: Dict, resolution: str):
     filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
     if filing_type:
-        resolution_rec = Resolution.find_latest(business.id, filing_type)
-        resolution_rec.resolution = resolution
+        resolution_rec = Resolution.find_latest_for_business(business.id, filing_type)
+        # resolution_rec.resolution = resolution
 
-def update_signatory(business: Business, correction_filing: Dict, signatory: Dict):
+
+def _update_signatory(business: Business, correction_filing: Dict, signatory: Dict):
     filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
-    # if filing_type:
-    #     party = Party(
-    #             first_name=signatory.get('givenName', '').upper(),
-    #             last_name=signatory.get('familyName', '').upper(),
-    #             middle_initial=(signatory.get('additionalName', '') or '').upper()
-    #         )
-    #     resolution.party = party
+    if filing_type:
+        resolution_rec = Resolution.find_latest_for_business(business.id, filing_type)
+        party = Party(
+                first_name=signatory.get('givenName', '').upper(),
+                last_name=signatory.get('familyName', '').upper(),
+                middle_initial=(signatory.get('additionalName', '') or '').upper()
+            )
+        # resolution_rec.party = party

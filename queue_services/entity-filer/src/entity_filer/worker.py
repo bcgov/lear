@@ -295,7 +295,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     corp_type_code=business.legal_type
                 )
 
-            if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] and \
+            if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC', 'CP'] and \
                     any('correction' in x for x in legal_filings):
                 correction.post_process(business, filing_submission)
                 AccountService.update_entity(
