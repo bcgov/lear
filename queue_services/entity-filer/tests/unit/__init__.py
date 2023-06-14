@@ -531,35 +531,6 @@ def create_party_role(business, party, roles, appointment_date):
     return business
 
 
-def create_resolution(business, filing, resolution):
-    """Create a resolution."""
-    from legal_api.models import Party
-    from legal_api.models import Resolution
-    if (resolution_filing := filing.get('specialResolution')):
-        resolution = Resolution(
-            resolution=resolution_filing.get('resolution'),
-            resolution_type=Resolution.ResolutionType.SPECIAL.value,
-            resolution_sub_type=filing.filing_type
-        )
-
-        if (signatory := resolution_filing.get('signatory')):
-            party = Party(
-                first_name=signatory.get('givenName', '').upper(),
-                last_name=signatory.get('familyName', '').upper(),
-                middle_initial=(signatory.get('additionalName', '') or '').upper()
-            )
-            resolution.party = party
-
-        if resolution_filing.get('resolutionDate'):
-            resolution.resolution_date = parse(resolution_filing.get('resolutionDate')).date()
-        if resolution_filing.get('signingDate'):
-            resolution.signing_date = parse(resolution_filing.get('signingDate')).date()
-
-        business.resolutions.append(resolution)
-    business.save()
-    return business
-
-
 def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
     """Create a completed filing."""
     if not payment_token:

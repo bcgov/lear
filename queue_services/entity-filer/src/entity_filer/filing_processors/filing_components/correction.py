@@ -101,16 +101,13 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     # update resolution, if any
     with suppress(IndexError, KeyError, TypeError):
         resolution = dpath.util.get(correction_filing, '/correction/resolution')
-        filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
-        if resolution and filing_type == 'specialResolution':
-            filings.update_filing_json(correction_filing_rec, resolution)
-            resolutions.update_resolution(business, resolution)
-    
+        filings.update_filing_json(correction_filing_rec, resolution)
+        resolutions.update_resolution(business, resolution)
+
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
         signatory = dpath.util.get(correction_filing, '/correction/signatory')
-        if signatory:
-            resolutions.update_signatory(business, signatory)
+        resolutions.update_signatory(business, signatory)
 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):

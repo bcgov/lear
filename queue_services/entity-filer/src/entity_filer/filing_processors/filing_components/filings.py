@@ -37,9 +37,10 @@ def update_filing_court_order(filing_submission: Filing, court_order_json: Dict)
 
 def update_filing_json(filing_submission: Filing, resolution) -> Optional[Dict]:
     """Update the filing_json info for a Filing."""
-    if not Filing:
-        return {'error': babel('Filing required before alternate names can be set.')}
+    if resolution:
+        if not Filing:
+            return {'error': babel('Filing required before alternate names can be set.')}
 
-    filing_submission.filing_json['filing']['correction']['resolution'] = resolution
+        filing_submission.filing_json['filing']['correction']['resolution'] = resolution
 
     return None

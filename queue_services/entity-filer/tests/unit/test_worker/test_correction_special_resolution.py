@@ -55,7 +55,6 @@ async def test_special_resolution_correction(app, session, mocker):
     sr_payment_id = str(random.SystemRandom().getrandbits(0x58))
     sr_filing_id = (create_filing(sr_payment_id, sr_filing, business_id=business_id)).id
 
-    # create_resolution(business, sr_filing, resolution=SPECIAL_RESOLUTION)
     # Mock the filing message
     sr_filing_msg = {'filing': {'id': sr_filing_id}}
     # Call the process_filing method for the original special resolution
@@ -72,7 +71,7 @@ async def test_special_resolution_correction(app, session, mocker):
         'familyName': 'Doe',
         'additionalName': ''
     }
-    # Update the 'correctedFilingId' in the correction data to point to the original special resolution filing
+    # Update correction data to point to the original special resolution filing
     if 'correction' not in correction_data['filing']:
         correction_data['filing']['correction'] = {}
     correction_data['filing']['correction']['correctedFilingId'] = sr_filing_id
