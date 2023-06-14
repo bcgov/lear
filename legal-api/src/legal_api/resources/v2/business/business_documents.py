@@ -111,7 +111,7 @@ def _get_coop_documents_and_info(business):
                                                          'filing_id': rules_filing.id,
                                                          'legal_filing_name': None})
         documents['certifiedRules'] = f'{base_url}{rules_doc_url}/certifiedRules'
-        filing_date_str = LegislationDatetime.format_as_legislation_date(rules_filing.filing_date.isoformat())
+        filing_date_str = LegislationDatetime.format_as_legislation_date(rules_filing.filing_date)
         file_name = f'{business.identifier} - Certified Rules - {filing_date_str}.pdf'
         info['certifiedRules'] = {
             'key': rules_document.file_key,
@@ -129,7 +129,7 @@ def _get_coop_documents_and_info(business):
                                                               'filing_id': memorandum_filing.id,
                                                               'legal_filing_name': None})
         documents['certifiedMemorandum'] = f'{base_url}{memorandum_doc_url}/certifiedMemorandum'
-        filing_date_str = LegislationDatetime.format_as_legislation_date(memorandum_filing.filing_date.isoformat())
+        filing_date_str = LegislationDatetime.format_as_legislation_date(memorandum_filing.filing_date)
         file_name = f'{business.identifier} - Certified Memorandum - {filing_date_str}.pdf'
         info['certifiedMemorandum'] = {
             'key': memorandum_document.file_key,

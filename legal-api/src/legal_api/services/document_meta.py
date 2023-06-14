@@ -388,8 +388,7 @@ class DocumentMetaService():
 
     def get_general_filename(self, name: str):
         """Return a general filename string."""
-        filing_date_str = LegislationDatetime.format_as_legislation_date(self._filing_date)
-        file_name = f'{self._business_identifier} - {name} - {filing_date_str}.pdf'
+        file_name = f'{self._business_identifier} - {name} - {self._filing_date}.pdf'
         return file_name
 
     def is_bcomp(self):

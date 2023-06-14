@@ -115,10 +115,10 @@ class LegislationDatetime():
         return date_time_str
 
     @staticmethod
-    def format_as_legislation_date(date_string: str) -> str:
+    def format_as_legislation_date(date_time: datetime) -> str:
         """Return the date in legislation timezone as a string."""
-        date_time = datetime.fromisoformat(date_string)
-        return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))).strftime('%Y-%m-%d')
+        date_time = LegislationDatetime.as_legislation_timezone(date_time)
+        return date_time.strftime('%Y-%m-%d')
 
     @staticmethod
     def is_future(date_string: str) -> bool:
