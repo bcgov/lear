@@ -31,7 +31,8 @@ from legal_api.services import DocumentMetaService
 from tests.unit.models import factory_business, factory_filing
 
 
-FILING_DATE = '2020-07-14T11:41:07.230473-07:00'
+FILING_DATE = '2020-07-14'
+EFFECTIVE_DATE = '2020-07-14T11:41:07.230473-07:00'
 COA_TITLE = 'Address Change'
 NOA_TITLE = 'Notice of Articles'
 NOA_FILENAME = 'BC1234567 - Notice of Articles - 2020-07-14.pdf'
@@ -682,7 +683,7 @@ def test_ia_paid(app):
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate': EFFECTIVE_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -723,7 +724,7 @@ def test_ia_status(session, app, status, number_of_docs):
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate': EFFECTIVE_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -774,7 +775,7 @@ def test_ia_completed_bcomp(session, app):
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate': EFFECTIVE_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -822,7 +823,7 @@ def test_ia_completed_bcomp_original(session, app):
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate': EFFECTIVE_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
@@ -1134,7 +1135,7 @@ def test_ia_completed_coop(session, app):
                     'name': 'incorporationApplication',
                     'inColinOnly': False,
                     'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
+                    'effectiveDate': EFFECTIVE_DATE,
                     'date': FILING_DATE
                 },
                 'business': {
