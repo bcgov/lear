@@ -25,6 +25,7 @@ from entity_filer.filing_processors.filing_components import (
     business_profile,
     filings,
     name_request,
+    resolutions,
     shares,
 )
 

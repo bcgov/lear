@@ -18,7 +18,7 @@ from datetime import timedelta
 from typing import Dict
 
 import dpath
-from legal_api.models import Address, Business, Filing, Party, PartyRole, Resolution
+from legal_api.models import Address, Business, Filing, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -27,6 +27,7 @@ from entity_filer.filing_processors.filing_components import (
     create_party,
     create_role,
     filings,
+    resolutions,
     rules_and_memorandum,
     shares,
     update_address
@@ -100,14 +101,16 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     # update resolution, if any
     with suppress(IndexError, KeyError, TypeError):
         resolution = dpath.util.get(correction_filing, '/correction/resolution')
-        if resolution:
-            _update_resolution(business, correction_filing, resolution)
+        filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
+        if resolution and filing_type == 'specialResolution':
+            filings.update_filing_json(correction_filing_rec, resolution)
+            resolutions.update_resolution(business, resolution)
     
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
         signatory = dpath.util.get(correction_filing, '/correction/signatory')
         if signatory:
-            _update_signatory(business, correction_filing, signatory)
+            resolutions.update_signatory(business, signatory)
 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -175,22 +178,3 @@ def _create_party_info(business, correction_filing_rec, party_info):
             correction_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
-
-
-def _update_resolution(business: Business, correction_filing: Dict, resolution: str):
-    filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
-    if filing_type:
-        resolution_rec = Resolution.find_latest_for_business(business.id, filing_type)
-        # resolution_rec.resolution = resolution
-
-
-def _update_signatory(business: Business, correction_filing: Dict, signatory: Dict):
-    filing_type = dpath.util.get(correction_filing, '/correction/correctedFilingType')
-    if filing_type:
-        resolution_rec = Resolution.find_latest_for_business(business.id, filing_type)
-        party = Party(
-                first_name=signatory.get('givenName', '').upper(),
-                last_name=signatory.get('familyName', '').upper(),
-                middle_initial=(signatory.get('additionalName', '') or '').upper()
-            )
-        # resolution_rec.party = party

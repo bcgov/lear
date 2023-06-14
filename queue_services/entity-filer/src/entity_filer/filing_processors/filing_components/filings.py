@@ -33,3 +33,13 @@ def update_filing_court_order(filing_submission: Filing, court_order_json: Dict)
         filing_submission.court_order_date = datetime.fromisoformat(court_order_json.get('orderDate'))
 
     return None
+
+
+def update_filing_json(filing_submission: Filing, resolution) -> Optional[Dict]:
+    """Update the filing_json info for a Filing."""
+    if not Filing:
+        return {'error': babel('Filing required before alternate names can be set.')}
+
+    filing_submission.filing_json['filing']['correction']['resolution'] = resolution
+
+    return None
