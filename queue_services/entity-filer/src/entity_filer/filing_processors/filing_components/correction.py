@@ -30,7 +30,7 @@ from entity_filer.filing_processors.filing_components import (
     resolutions,
     rules_and_memorandum,
     shares,
-    update_address
+    update_address,
 )
 
 

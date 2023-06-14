@@ -30,14 +30,14 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
+from legal_api.services.filings.validations.special_resolution import (
+    validate_resolution_content,
+    validate_signatory_name,
+    validate_signing_date,
+)
 from legal_api.utils.auth import jwt
 
 from ...utils import get_date, get_str
-from .special_resolution import (
-    validate_resolution_content,
-    validate_signing_date,
-    validate_signatory_name
-)
 
 
 def validate(business: Business, filing: Dict) -> Error:
