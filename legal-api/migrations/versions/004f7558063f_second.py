@@ -411,7 +411,7 @@ def upgrade():
     sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
     sa.Column('naics_code', sa.String(length=10), autoincrement=False, nullable=True),
-    sa.Column('naics_description', sa.String(length=150), autoincrement=False, nullable=True),
+    sa.Column('naics_description', sa.String(length=300), autoincrement=False, nullable=True),
     sa.Column('foreign_jurisdiction', sa.String(length=10), autoincrement=False, nullable=True),
     sa.Column('foreign_jurisdiction_region', sa.String(length=10), autoincrement=False, nullable=True),
     sa.Column('foreign_identifier', sa.String(length=15), autoincrement=False, nullable=True),
@@ -877,7 +877,7 @@ def upgrade():
         batch_op.add_column(sa.Column('mailing_address_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('naics_key', sa.String(length=50), nullable=True))
         batch_op.add_column(sa.Column('naics_code', sa.String(length=10), nullable=True))
-        batch_op.add_column(sa.Column('naics_description', sa.String(length=150), nullable=True))
+        batch_op.add_column(sa.Column('naics_description', sa.String(length=300), nullable=True))
         batch_op.add_column(sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=True))
         batch_op.add_column(sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True))
         batch_op.add_column(sa.Column('foreign_identifier', sa.String(length=15), nullable=True))
