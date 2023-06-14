@@ -43,7 +43,7 @@ class LegislationDatetime():
         return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
 
     @staticmethod
-    def as_legislation_timezone_from_date(_date: date) -> date:
+    def as_legislation_timezone_from_date(_date: date) -> datetime:
         """Return a datetime adjusted to the legislation timezone from a date object."""
         return datetime(
             _date.year, _date.month, _date.day, tzinfo=gettz(current_app.config.get('LEGISLATIVE_TIMEZONE'))
@@ -55,13 +55,19 @@ class LegislationDatetime():
 
         Note: it is assumed that the date_string provided is already in legislation timezone.
         """
-        legislation_tz = pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE'))
-        return datetime.fromisoformat(date_string).replace(tzinfo=legislation_tz)
+        _date = datetime.fromisoformat(date_string)
+        return LegislationDatetime.as_legislation_timezone_from_date(_date)
 
     @staticmethod
     def as_utc_timezone(date_time: datetime) -> datetime:
         """Return a datetime adjusted to the GMT timezone (aka UTC)."""
         return date_time.astimezone(pytz.timezone('GMT'))
+
+    @staticmethod
+    def as_utc_timezone_from_legislation_date_str(date_string: str) -> datetime:
+        """Return a datetime adjusted to the GMT timezone (aka UTC) from a date (1900-12-31) string."""
+        _date_time = LegislationDatetime.as_legislation_timezone_from_date_str(date_string)
+        return LegislationDatetime.as_utc_timezone(_date_time)
 
     @staticmethod
     def format_as_report_string(date_time: datetime) -> str:
