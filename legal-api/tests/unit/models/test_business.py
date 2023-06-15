@@ -308,7 +308,7 @@ def test_business_json(session):
 
     # include dissolutionDate
     business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = datetime.date(business.dissolution_date).isoformat()
+    d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(business.dissolution_date)
     business_json = business.json()
     assert business_json == d
     dissolution_date_str = business_json['dissolutionDate']
@@ -401,6 +401,5 @@ def test_continued_in_business(session):
     assert business_json['foreignIdentifier'] == business.foreign_identifier
     assert business_json['foreignLegalName'] == business.foreign_legal_name
     assert business_json['foreignLegalType'] == business.foreign_legal_type
-    assert business_json['foreignIncorporationDate'] == datetime.date(
-        LegislationDatetime.as_legislation_timezone(business.foreign_incorporation_date)
-    ).isoformat()
+    assert business_json['foreignIncorporationDate'] == \
+        LegislationDatetime.format_as_legislation_date(business.foreign_incorporation_date)

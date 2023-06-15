@@ -14,7 +14,7 @@ import copy
 import json
 import os
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Final
@@ -204,7 +204,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self):  # pylint: disable=too-many-branches, too-many-statements
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
