@@ -77,7 +77,7 @@ naics_response = {
     ]
 )
 async def test_correction_name_start_date(app, session, mocker, test_name, legal_name, new_legal_name,
-                                                 legal_type, filing_template):
+                                          legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = 'FM1234567'
@@ -131,7 +131,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
     assert len(corrected_filing.comments.all()) == 1
-    assert business.start_date.isoformat() == '2022-01-01T08:00:00+00:00'
+    assert business.start_date == datetime.fromisoformat('2022-01-01T08:00:00+00:00')
 
 
 @pytest.mark.asyncio
@@ -143,7 +143,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     ]
 )
 async def test_correction_business_address(app, session, mocker, test_name, legal_type, legal_name,
-                                                       filing_template):
+                                           filing_template):
     """Assert the worker process calls the business address change correctly."""
     identifier = 'FM1234567'
     business = create_entity(identifier, legal_type, legal_name)
@@ -193,11 +193,11 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
     changed_delivery_address = Address.find_by_id(business_delivery_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
-               filing['filing']['correction']['offices']['businessOffice']['deliveryAddress'][key]
+            filing['filing']['correction']['offices']['businessOffice']['deliveryAddress'][key]
     changed_mailing_address = Address.find_by_id(business_mailing_address_id)
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
-               filing['filing']['correction']['offices']['businessOffice']['mailingAddress'][key]
+            filing['filing']['correction']['offices']['businessOffice']['mailingAddress'][key]
 
 
 @pytest.mark.asyncio
@@ -301,9 +301,9 @@ async def test_worker_proprietor_name_and_address_change(app, session, mocker):
     party = business.party_roles.all()[0].party
     assert party.first_name == filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
     assert party.delivery_address.street == \
-           filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
+        filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
     assert party.mailing_address.street == \
-           filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
+        filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
 
 
 @pytest.mark.asyncio
@@ -380,11 +380,11 @@ async def test_worker_partner_name_and_address_change(app, session, mocker, test
     if test_name == 'gp_edit_partner_name_and_address':
         party = business.party_roles.all()[0].party
         assert party.first_name == \
-               filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
+            filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
         assert party.delivery_address.street == \
-               filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
+            filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
         assert party.mailing_address.street == \
-               filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
+            filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
         assert business.party_roles.all()[0].cessation_date is None
         assert business.party_roles.all()[1].cessation_date is None
 

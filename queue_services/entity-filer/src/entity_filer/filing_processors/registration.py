@@ -14,7 +14,6 @@
 """File processing rules and actions for the registration of a business."""
 import copy
 from contextlib import suppress
-from datetime import timedelta
 from http import HTTPStatus
 from typing import Dict
 
@@ -23,7 +22,7 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
-from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile, filings
@@ -103,8 +102,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-    business.start_date = datetime.fromisoformat(registration_filing.get('startDate')) + timedelta(hours=8)
-    business.founding_date = filing_rec.effective_date
+    business.start_date = \
+        LegislationDatetime.as_utc_timezone_from_legislation_date_str(registration_filing.get('startDate'))
 
     business_obj = registration_filing.get('business', {})
     if (naics := business_obj.get('naics')) and naics.get('naicsCode'):

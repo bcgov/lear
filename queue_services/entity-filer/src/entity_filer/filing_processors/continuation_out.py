@@ -13,7 +13,6 @@
 # limitations under the License.
 """File processing rules and actions for the continuation out filing."""
 from contextlib import suppress
-from datetime import datetime
 from typing import Dict
 
 import dpath
@@ -35,8 +34,8 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     details = continuation_out_json.get('details')
     legal_name = continuation_out_json.get('legalName')
-    continuation_out_date = continuation_out_json.get('continuationOutDate')
-    continuation_out_date = LegislationDatetime.as_utc_timezone(datetime.fromisoformat(continuation_out_date))
+    continuation_out_date_str = continuation_out_json.get('continuationOutDate')
+    continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
     foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
 
@@ -61,8 +60,10 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
         business.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}
-    filing_meta.continuation_out = {**filing_meta.continuation_out,
-                                    **{'country': foreign_jurisdiction_country},
-                                    **{'region': foreign_jurisdiction_region},
-                                    **{'legalName': legal_name},
-                                    **{'continuationOutDate': continuation_out_date.isoformat()}}
+    filing_meta.continuation_out = {
+        **filing_meta.continuation_out,
+        'country': foreign_jurisdiction_country,
+        'region': foreign_jurisdiction_region,
+        'legalName': legal_name,
+        'continuationOutDate': continuation_out_date_str
+    }
