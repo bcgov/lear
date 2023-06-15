@@ -334,7 +334,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
             if agm_date_str:
-                agm_date = LegislationDatetime.as_legislation_timezone_from_date_str(agm_date_str)
+                agm_date = datetime.fromisoformat(agm_date_str)
                 filing['agm_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
                 # for AR, the effective date is the AGM date
                 filing['effective_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
@@ -453,8 +453,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
 
-        filing['registration']['startDate'] = \
-            LegislationDatetime.format_as_legislation_date(filing['registration']['startDate'])
+        start_date = LegislationDatetime.as_legislation_timezone_from_date_str(filing['registration']['startDate'])
+        filing['registration']['startDate'] = start_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_name_change_data(self, filing):
         meta_data = self._filing.meta_data or {}
