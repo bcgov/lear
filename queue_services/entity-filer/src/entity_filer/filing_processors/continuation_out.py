@@ -60,8 +60,10 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
         business.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}
-    filing_meta.continuation_out = {**filing_meta.continuation_out,
-                                    **{'country': foreign_jurisdiction_country},
-                                    **{'region': foreign_jurisdiction_region},
-                                    **{'legalName': legal_name},
-                                    **{'continuationOutDate': continuation_out_date.isoformat()}}
+    filing_meta.continuation_out = {
+        **filing_meta.continuation_out,
+        'country': foreign_jurisdiction_country,
+        'region': foreign_jurisdiction_region,
+        'legalName': legal_name,
+        'continuationOutDate': continuation_out_date_str
+    }
