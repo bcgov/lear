@@ -204,7 +204,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches, too-many-statements
+    def _get_template_data(self):
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
@@ -212,37 +212,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
             filing['header']['status'] = self._filing.status
-            if self._report_key == 'incorporationApplication':
-                self._format_incorporation_data(filing)
-            elif self._report_key == 'specialResolution':
-                self._format_special_resolution(filing)
-            elif self._report_key == 'alterationNotice':
-                self._format_alteration_data(filing)
-            elif self._report_key == 'registration':
-                self._format_registration_data(filing)
-            elif self._report_key == 'changeOfRegistration':
-                self._format_change_of_registration_data(filing, 'changeOfRegistration')
-            elif self._report_key == 'certificateOfNameChange':
-                self._format_name_change_data(filing)
-            elif self._report_key == 'certificateOfRestoration':
-                self._format_certificate_of_restoration_data(filing)
-            elif self._report_key == 'restoration':
-                self._format_restoration_data(filing)
-            elif self._report_key == 'letterOfConsent':
-                self._format_consent_continuation_out_data(filing)
-            elif self._report_key == 'correction':
-                self._format_correction_data(filing)
-            elif self._report_key == 'transition':
-                self._format_transition_data(filing)
-            elif self._report_key == 'dissolution':
-                self._format_dissolution_data(filing)
-            else:
-                # set registered office address from either the COA filing or status quo data in AR filing
-                with suppress(KeyError):
-                    self._set_addresses(filing)
-                # set director list from either the COD filing or status quo data in AR filing
-                with suppress(KeyError):
-                    self._set_directors(filing)
+            self._format_filing_json(filing)
 
         filing['header']['reportType'] = self._report_key
 
@@ -253,6 +223,39 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
         return filing
+
+    def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
+        if self._report_key == 'incorporationApplication':
+            self._format_incorporation_data(filing)
+        elif self._report_key == 'specialResolution':
+            self._format_special_resolution(filing)
+        elif self._report_key == 'alterationNotice':
+            self._format_alteration_data(filing)
+        elif self._report_key == 'registration':
+            self._format_registration_data(filing)
+        elif self._report_key == 'changeOfRegistration':
+            self._format_change_of_registration_data(filing, 'changeOfRegistration')
+        elif self._report_key == 'certificateOfNameChange':
+            self._format_name_change_data(filing)
+        elif self._report_key == 'certificateOfRestoration':
+            self._format_certificate_of_restoration_data(filing)
+        elif self._report_key == 'restoration':
+            self._format_restoration_data(filing)
+        elif self._report_key == 'letterOfConsent':
+            self._format_consent_continuation_out_data(filing)
+        elif self._report_key == 'correction':
+            self._format_correction_data(filing)
+        elif self._report_key == 'transition':
+            self._format_transition_data(filing)
+        elif self._report_key == 'dissolution':
+            self._format_dissolution_data(filing)
+        else:
+            # set registered office address from either the COA filing or status quo data in AR filing
+            with suppress(KeyError):
+                self._set_addresses(filing)
+            # set director list from either the COD filing or status quo data in AR filing
+            with suppress(KeyError):
+                self._set_directors(filing)
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
