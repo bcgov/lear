@@ -13,7 +13,6 @@
 # limitations under the License.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
-from datetime import datetime, timedelta
 from typing import Dict
 
 import dpath
@@ -23,6 +22,7 @@ from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
@@ -48,9 +48,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # should we save dissolution_statement_type in businesses table?
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
     dissolution_date = filing_rec.effective_date
-    if dissolution_type == DissolutionTypes.VOLUNTARY:
+    if dissolution_type == DissolutionTypes.VOLUNTARY and \
+            business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                    Business.LegalTypes.PARTNERSHIP.value):
         dissolution_date_str = dissolution_filing.get('dissolutionDate')
-        dissolution_date = datetime.fromisoformat(dissolution_date_str) + timedelta(hours=8)
+        dissolution_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date_str)
     business.dissolution_date = dissolution_date
 
     business.state = Business.State.HISTORICAL
@@ -81,9 +83,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
 
     with suppress(IndexError, KeyError, TypeError):
-        filing_meta.dissolution = {**filing_meta.dissolution,
-                                   **{'dissolutionType': dissolution_type},
-                                   **{'dissolutionDate': datetime.date(business.dissolution_date).isoformat()}}
+        filing_meta.dissolution = {
+            **filing_meta.dissolution,
+            'dissolutionType': dissolution_type,
+            'dissolutionDate': LegislationDatetime.format_as_legislation_date(business.dissolution_date)
+        }
 
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):

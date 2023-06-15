@@ -13,9 +13,7 @@
 # limitations under the License.
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
-import io
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime
 
 import pytest
 
@@ -121,9 +119,9 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
 
     expected_dissolution_date = filing.effective_date
     expected_dissolution_date_str = datetime.date(filing.effective_date).isoformat()
-    if dissolution_type == 'voluntary':
-        expected_dissolution_date = \
-            datetime.fromisoformat(dissolution_date).replace(tzinfo=pytz.UTC) + timedelta(hours=8)
+    if dissolution_type == 'voluntary' and business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                                                   Business.LegalTypes.PARTNERSHIP.value):
+        expected_dissolution_date = datetime.fromisoformat(f'{dissolution_date}T07:00:00+00:00')
         expected_dissolution_date_str = dissolution_date
     assert business.dissolution_date == expected_dissolution_date
     dissolution_date_format_correct = has_expected_date_str_format(expected_dissolution_date_str, '%Y-%m-%d')

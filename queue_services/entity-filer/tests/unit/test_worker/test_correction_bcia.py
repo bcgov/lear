@@ -93,7 +93,6 @@ BC_CORRECTION = {
                 'email': 'no_one@never.get',
                 'phone': '(123) 456-7890'
             },
-            'startDate': '2022-01-01',
             'nameRequest': {
                 'nrNumber': 'NR 8798956',
                 'legalName': 'HAULER MEDIA INC.',
@@ -236,8 +235,8 @@ naics_response = {
         ('no_change', 'Test Firm', None, 'ULC', BC_CORRECTION),
     ]
 )
-async def test_correction_name_start_date(app, session, mocker, test_name, legal_name, new_legal_name,
-                                          legal_type, filing_template):
+async def test_correction_name_change(app, session, mocker, test_name, legal_name, new_legal_name,
+                                      legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = 'BC1234567'
@@ -292,7 +291,6 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
     assert len(corrected_filing.comments.all()) == 1
-    assert business.start_date.isoformat() == '2022-01-01T08:00:00+00:00'
 
 
 @pytest.mark.asyncio
@@ -323,7 +321,6 @@ async def test_correction_name_translation(app, session, mocker, test_name, lega
 
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['business']
-    del filing['filing']['correction']['startDate']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
 

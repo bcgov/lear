@@ -14,11 +14,11 @@
 """File processing rules and actions for the correction filing."""
 import datetime
 from contextlib import suppress
-from datetime import timedelta
 from typing import Dict
 
 import dpath
 from legal_api.models import Address, Business, Filing, Party, PartyRole
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -89,7 +89,7 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     with suppress(IndexError, KeyError, TypeError):
         business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
         if business_start_date:
-            business.start_date = datetime.datetime.fromisoformat(business_start_date) + timedelta(hours=8)
+            business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
