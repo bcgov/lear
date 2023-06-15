@@ -26,12 +26,11 @@ def find_resolution_with_largest_id(resolutions) -> Optional[Dict]:
 def update_resolution(business: Business, resolution_correction) -> Dict:
     """Update the resolution with the largest id."""
     if not business:
-        return {'error': babel('A business is required to update resolution.')}
+        return None
 
     if not resolution_correction:
         return {'error': babel('Resolution correction text is required.')}
 
-    # Find the resolution with the largest id
     largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
 
     # Update the resolution with the largest id
@@ -43,20 +42,20 @@ def update_resolution(business: Business, resolution_correction) -> Dict:
 
 def update_signatory(business: Business, signatory: Dict) -> Dict:
     """Update the signatory with the largest id."""
-    if signatory:
-        if not business:
-            return {'error': babel('A business is required to update signatory.')}
+    if not signatory:
+        return None
 
-        # Find the resolution with the largest id
-        largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
+    if not business:
+        return {'error': babel('A business is required to update signatory.')}
 
-        # Update the resolution with the largest id
-        if largest_resolution:
-            party = Party(
-                first_name=signatory.get('givenName', '').upper(),
-                last_name=signatory.get('familyName', '').upper(),
-                middle_initial=(signatory.get('additionalName', '') or '').upper()
-            )
-            largest_resolution.party = party
-            return largest_resolution
-    return None
+    largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
+
+    # Update the resolution with the largest id
+    if largest_resolution:
+        party = Party(
+            first_name=signatory.get('givenName', '').upper(),
+            last_name=signatory.get('familyName', '').upper(),
+            middle_initial=(signatory.get('additionalName', '') or '').upper()
+        )
+        largest_resolution.party = party
+        return largest_resolution
