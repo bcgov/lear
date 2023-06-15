@@ -15,7 +15,6 @@
 import base64
 import uuid
 
-from dateutil.parser import parse
 from freezegun import freeze_time
 from sqlalchemy_continuum import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
