@@ -242,8 +242,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_transition_data(filing)
 
             if self._report_key == 'dissolution':
-                filing['dissolution']['dissolution_date_str'] = \
-                    datetime.fromisoformat(filing['dissolution']['dissolutionDate']).strftime(OUTPUT_DATE_FORMAT)
+                if self._business.legal_type in ['SP', 'GP']:
+                    filing['dissolution']['dissolution_date_str'] = LegislationDatetime. \
+                        as_legislation_timezone_from_date_str(filing['dissolution']['dissolutionDate']). \
+                        strftime(OUTPUT_DATE_FORMAT)
                 self._format_directors(filing['dissolution']['parties'])
                 filing['parties'] = filing['dissolution']['parties']
 
@@ -332,7 +334,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == 'annualReport':
             agm_date_str = filing.get('annualReport', {}).get('annualGeneralMeetingDate', None)
             if agm_date_str:
-                agm_date = datetime.fromisoformat(agm_date_str)
+                agm_date = LegislationDatetime.as_legislation_timezone_from_date_str(agm_date_str)
                 filing['agm_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
                 # for AR, the effective date is the AGM date
                 filing['effective_date'] = agm_date.strftime(OUTPUT_DATE_FORMAT)
@@ -451,8 +453,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
 
-        start_date = datetime.fromisoformat(filing['registration']['startDate'])
-        filing['registration']['startDate'] = start_date.strftime(OUTPUT_DATE_FORMAT)
+        filing['registration']['startDate'] = \
+            LegislationDatetime.format_as_legislation_date(filing['registration']['startDate'])
 
     def _format_name_change_data(self, filing):
         meta_data = self._filing.meta_data or {}
@@ -471,8 +473,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         meta_data = self._filing.meta_data or {}
         filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
         filing['toLegalName'] = meta_data.get('restoration', {}).get('toLegalName')
-        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
-            filing['restoration_expiry_date'] = datetime.fromisoformat(expiry_date).strftime(OUTPUT_DATE_FORMAT)
+        if expiry_date_str := meta_data.get('restoration', {}).get('expiry'):
+            expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date_str)
+            filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_sub_type == 'limitedRestorationToFull':
             business_previous_restoration_expiry = \
                 VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
@@ -603,10 +606,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if filing_type == 'correction':
             prev_start_date = versioned_business.start_date
             new_start_date_str = filing.get(filing_type).get('startDate')
-            if new_start_date_str:
-                new_start_date = datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
-                if prev_start_date != new_start_date:
-                    filing['newStartDate'] = new_start_date_str
+            if new_start_date_str != LegislationDatetime.format_as_legislation_date(prev_start_date):
+                filing['newStartDate'] = new_start_date_str
 
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
@@ -910,10 +911,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
         signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
         if resolution_date_str:
-            resolution_date = datetime.fromisoformat(resolution_date_str)
+            resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
             filing['specialResolution']['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
         if signing_date_str:
-            signing_date = datetime.fromisoformat(signing_date_str)
+            signing_date = LegislationDatetime.as_legislation_timezone_from_date_str(signing_date_str)
             filing['specialResolution']['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_noa_data(self, filing):

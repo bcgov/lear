@@ -15,6 +15,7 @@ import os
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
+from typing import Final
 
 import pycountry
 import requests
@@ -26,6 +27,9 @@ from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
+
+OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
 
 class BusinessDocument:
@@ -203,18 +207,18 @@ class BusinessDocument:
         """Set the business json with formatted dates."""
         # business dates
         if self._business.last_ar_date:
-            last_ar_date = self._business.last_ar_date.strftime('%B %-d, %Y')
+            last_ar_date = self._business.last_ar_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             last_ar_date = 'Not Available'
         business['business']['last_ar_date'] = last_ar_date
         if self._business.last_agm_date:
-            last_agm_date = self._business.last_agm_date.strftime('%B %-d, %Y')
+            last_agm_date = self._business.last_agm_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             last_agm_date = 'Not Available'
         business['business']['last_agm_date'] = last_agm_date
         if epoch_date := business['business'].get('epochFilingDate'):
             business['business']['epochFilingDate'] = LegislationDatetime.\
-                as_legislation_timezone(datetime.fromisoformat(epoch_date)).strftime('%B %-d, %Y')
+                as_legislation_timezone(datetime.fromisoformat(epoch_date)).strftime(OUTPUT_DATE_FORMAT)
         if self._business.restoration_expiry_date:
             business['business']['restorationExpiryDate'] = LegislationDatetime.\
                 format_as_report_string(self._business.restoration_expiry_date)
@@ -225,7 +229,7 @@ class BusinessDocument:
             effective_datetime = LegislationDatetime\
                 .as_legislation_timezone(datetime.fromisoformat(filing['effectiveDateTime']))
             filing['effectiveDateTime'] = LegislationDatetime.format_as_report_string(effective_datetime)
-            filing['effectiveDate'] = effective_datetime.strftime('%B %-d, %Y')
+            filing['effectiveDate'] = effective_datetime.strftime(OUTPUT_DATE_FORMAT)
         # name change dates
         for filing in business.get('nameChanges', []):
             filing_datetime = datetime.fromisoformat(filing['filingDateTime'])
@@ -245,16 +249,16 @@ class BusinessDocument:
         # founding dates
         founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
-        business['formatted_founding_date'] = founding_datetime.strftime('%B %-d, %Y')
+        business['formatted_founding_date'] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         # dissolution dates
         if self._business.dissolution_date:
             dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._business.dissolution_date)
-            business['formatted_dissolution_date'] = dissolution_datetime.strftime('%B %-d, %Y')
+            business['formatted_dissolution_date'] = dissolution_datetime.strftime(OUTPUT_DATE_FORMAT)
         # report dates
         business['report_date_time'] = LegislationDatetime.format_as_report_string(self._report_date_time)
-        business['report_date'] = self._report_date_time.strftime('%B %-d, %Y')
+        business['report_date'] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
         if self._business.start_date:
-            business['start_date_utc'] = self._business.start_date.strftime('%B %-d, %Y')
+            business['start_date_utc'] = self._business.start_date.strftime(OUTPUT_DATE_FORMAT)
         if self._business.restoration_expiry_date:
             formatted_restoration_expiry_date = \
                 LegislationDatetime.format_as_report_expiry_string(self._business.restoration_expiry_date)
@@ -379,9 +383,8 @@ class BusinessDocument:
                                           self._business.legal_type)
             if self._business.legal_type in ['SP', 'GP'] and filing_meta['dissolution']['dissolutionType'] == \
                     'voluntary':
-                filing_info['dissolution_date_str'] = \
-                    datetime.utcnow().strptime(filing.filing_json['filing']['dissolution']['dissolutionDate'],
-                                               '%Y-%m-%d').date().strftime('%B %-d, %Y')
+                filing_info['dissolution_date_str'] = LegislationDatetime.as_legislation_timezone_from_date_str(
+                    filing.filing_json['filing']['dissolution']['dissolutionDate']).strftime(OUTPUT_DATE_FORMAT)
         elif filing.filing_type == 'restoration':
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type,
