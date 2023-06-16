@@ -88,13 +88,3 @@ class Resolution(db.Model):  # pylint: disable=too-many-instance-attributes
             filter(Resolution.resolution_type == resolution_type). \
             all()
         return resolutions
-
-    @classmethod
-    def find_latest_for_business(cls, business_id: int, resolution_type: str) -> Resolution:
-        """Return the latest resolution of a specific type for a business."""
-        resolution = db.session.query(Resolution). \
-            filter(Resolution.business_id == business_id). \
-            filter(Resolution.resolution_type == resolution_type). \
-            order_by(Resolution.id.desc()). \
-            first()
-        return resolution
