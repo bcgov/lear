@@ -33,6 +33,7 @@ from legal_api.models import (
     ShareSeries,
     db,
 )
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-methods
@@ -594,16 +595,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
         business_json['hasRestrictions'] = business_revision.restriction_ind
-        if business_revision.dissolution_date:
-            business_json['dissolutionDate'] = datetime.date(business_revision.dissolution_date).isoformat()
-        else:
-            business_json['dissolutionDate'] = None
-
-        if business_revision.restoration_expiry_date:
-            business_json['restorationExpiryDate'] = datetime.date(
-                business_revision.restoration_expiry_date).isoformat()
-        else:
-            business_json['restorationExpiryDate'] = None
+        business_json['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(
+            business_revision.dissolution_date) if business_revision.dissolution_date else None
+        business_json['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(
+            business_revision.restoration_expiry_date) if business_revision.restoration_expiry_date else None
+        business_json['startDate'] = LegislationDatetime.format_as_legislation_date(
+            business_revision.start_date) if business_revision.start_date else None
+        business_json['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(
+            business_revision.continuation_out_date) if business_revision.continuation_out_date else None
 
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id

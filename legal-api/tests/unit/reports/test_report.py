@@ -222,7 +222,7 @@ def test_alteration_name_change(session):
     named_company_report_template = named_company_report._get_template()
     assert named_company_report_template
     named_company_report_template_data = named_company_report._get_template_data()
-    assert named_company_report_template_data['meta_data']['alteration']['toLegalName'] == named_company_name
+    assert named_company_report_template_data['toLegalName'] == named_company_name
 
     # changes its name to a numbered company
     numbered_company_filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
@@ -238,7 +238,7 @@ def test_alteration_name_change(session):
     numbered_company_template = numbered_company_report._get_template()
     assert numbered_company_template
     numbered_company_template_data = numbered_company_report._get_template_data()
-    assert numbered_company_template_data['meta_data']['alteration']['toLegalName'] == numbered_company_name
+    assert numbered_company_template_data['toLegalName'] == numbered_company_name
 
 
 def update_business_legal_name(business, legal_name):

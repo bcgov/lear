@@ -53,9 +53,11 @@ class LegislationDatetime():
     def as_legislation_timezone_from_date_str(date_string: str) -> datetime:
         """Return a date time object using provided date_string in legislation timezone.
 
-        Note: it is assumed that the date_string provided is already in legislation timezone.
+        Note:
+        This function expect a date_sting without time (example: 1990-12-31).
+        It is assumed that the date_string provided is already in legislation timezone.
         """
-        _date = datetime.fromisoformat(date_string)
+        _date = date.fromisoformat(date_string)
         return LegislationDatetime.as_legislation_timezone_from_date(_date)
 
     @staticmethod
