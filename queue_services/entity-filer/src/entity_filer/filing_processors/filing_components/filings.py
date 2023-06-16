@@ -39,7 +39,7 @@ def update_filing_json(filing_submission: Filing, resolution) -> Optional[Dict]:
     """Update the filing_json info for a Filing."""
     if resolution:
         if not Filing:
-            return {'error': babel('Filing required before alternate names can be set.')}
+            return {'error': babel('Filing required before resolution can be set.')}
 
         filing_submission.filing_json['filing']['correction']['resolution'] = resolution
 

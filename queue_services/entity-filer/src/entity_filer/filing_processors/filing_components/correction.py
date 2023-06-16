@@ -114,6 +114,7 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
         rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key)
 
+    # update memorandum, if any
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
         rules_and_memorandum.update_memorandum(business, correction_filing_rec, memorandum_file_key)
