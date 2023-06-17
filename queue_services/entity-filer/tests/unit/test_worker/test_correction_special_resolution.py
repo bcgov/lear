@@ -20,7 +20,7 @@ import random
 import pytest
 from legal_api.models import Business
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
-                                        CP_SPECIAL_RESOLUTION_TEMPLATE
+                                        CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 
 from entity_filer.worker import process_filing
 from tests.unit import create_entity, create_filing
@@ -61,7 +61,8 @@ async def test_special_resolution_correction(app, session, mocker):
     await process_filing(sr_filing_msg, app)
 
     # Simulate a correction filing
-    correction_data = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data = copy.deepcopy(FILING_HEADER)
+    correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
     correction_data['filing']['header']['name'] = 'correction'
     correction_data['filing']['business'] = {'identifier': identifier}
     correction_data['filing']['correction']['correctedFilingType'] = 'specialResolution'
