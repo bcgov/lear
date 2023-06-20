@@ -15,13 +15,12 @@
 
 import copy
 
-from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION, CP_SPECIAL_RESOLUTION_TEMPLATE
-
+from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
+                                        CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
-CORRECTION = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
 
 
 def test_valid_special_resolution_correction(session):
@@ -29,10 +28,12 @@ def test_valid_special_resolution_correction(session):
     # setup
     identifier = 'CP1234567'
     business = factory_business(identifier)
-
     corrected_filing = factory_completed_filing(business, CP_SPECIAL_RESOLUTION_APPLICATION)
 
-    f = copy.deepcopy(CORRECTION)
+    correction_data = copy.deepcopy(FILING_HEADER)
+    correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data['filing']['header']['name'] = 'correction'
+    f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
