@@ -79,6 +79,9 @@ def test_get_active_cco(session):
     cco = consent_continuation_out.get_active_cco(business.id, expiry_date, 'CA', 'AB')
     assert cco
 
+    cco = consent_continuation_out.get_active_cco(business.id, filing.effective_date - datedelta.datedelta(days=1))
+    assert not cco
+
     cco = consent_continuation_out.get_active_cco(business.id, expiry_date + datedelta.datedelta(days=1))
     assert not cco
 

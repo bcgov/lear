@@ -70,7 +70,7 @@ def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> l
     region = foreign_jurisdiction.get('region')
     ccos = ConsentContinuationOut.get_active_cco(business.id, continuation_out_date, country_code, region)
     if not ccos:
-        msg.extend([{'error': 'No active consent continuation out for this date.',
+        msg.extend([{'error': 'No active consent continuation out for this date and/or jurisdiction.',
                     'path': f'/filing/{filing_type}/continuationOutDate'}])
 
     return msg
