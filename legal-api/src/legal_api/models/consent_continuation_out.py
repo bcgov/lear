@@ -16,9 +16,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sqlalchemy import Date, cast
-
 from .db import db
+
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
@@ -46,7 +45,7 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         query = db.session.query(ConsentContinuationOut, Filing). \
             filter(ConsentContinuationOut.business_id == business_id). \
             filter(ConsentContinuationOut.expiry_date >= expiry_date). \
-            filter(cast(Filing.effective_date, Date) <= expiry_date.date())
+            filter(Filing.effective_date <= expiry_date)
 
         if foreign_jurisdiction:
             query = query.filter(ConsentContinuationOut.foreign_jurisdiction == foreign_jurisdiction.upper())

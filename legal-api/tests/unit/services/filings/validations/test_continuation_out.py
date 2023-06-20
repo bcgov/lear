@@ -66,8 +66,8 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
-    effective_date = datetime.utcnow()
-    co_date = LegislationDatetime.now().date()
+    co_date = LegislationDatetime.as_legislation_timezone_from_date_str('2023-06-19')
+    effective_date = LegislationDatetime.as_utc_timezone(co_date)
     filing['filing']['continuationOut']['continuationOutDate'] = co_date.strftime(date_format)
 
     if test_name == 'FAIL_IN_FUTURE':
