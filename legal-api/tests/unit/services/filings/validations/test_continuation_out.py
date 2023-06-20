@@ -72,7 +72,7 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
 
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['continuationOut']['continuationOutDate'] = \
-            (co_date + datedelta.datedelta(days=1)).strftime(date_format)
+            (LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime(date_format)
     elif test_name == 'FAIL_NO_CCO':
         effective_date -= datedelta.datedelta(months=6, days=1)
 

@@ -16,9 +16,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .db import db
+from sqlalchemy.orm import backref
 
-from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .db import db
 
 
 class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-methods
@@ -34,18 +34,23 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
 
+    # relationships
+    filing = db.relationship('Filing', backref=backref('filing', uselist=False), foreign_keys=[filing_id])
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
 
     @staticmethod
-    def get_active_cco(business_id, expiry_date, foreign_jurisdiction=None, foreign_jurisdiction_region=None):
+    def get_active_cco(business_id,
+                       expiry_date,
+                       foreign_jurisdiction=None,
+                       foreign_jurisdiction_region=None) -> list[ConsentContinuationOut]:
         """Get a list of active consent_continuation_outs linked to the given business_id."""
-        query = db.session.query(ConsentContinuationOut, Filing). \
+        query = db.session.query(ConsentContinuationOut). \
             filter(ConsentContinuationOut.business_id == business_id). \
-            filter(ConsentContinuationOut.expiry_date >= expiry_date). \
-            filter(Filing.effective_date <= expiry_date)
+            filter(ConsentContinuationOut.expiry_date >= expiry_date)
 
         if foreign_jurisdiction:
             query = query.filter(ConsentContinuationOut.foreign_jurisdiction == foreign_jurisdiction.upper())
