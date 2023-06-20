@@ -63,14 +63,25 @@ def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> l
     """Validate active consent continuation out."""
     msg = []
     continuation_out_date_str = filing['filing'][filing_type]['continuationOutDate']
-    continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
+    continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(continuation_out_date_str)
 
     foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
     country_code = foreign_jurisdiction.get('country')
     region = foreign_jurisdiction.get('region')
-    ccos = ConsentContinuationOut.get_active_cco(business.id, continuation_out_date, country_code, region)
-    if not ccos:
-        msg.extend([{'error': 'No active consent continuation out for this date.',
+
+    continuation_out_date_utc = LegislationDatetime.as_utc_timezone(continuation_out_date)
+    ccos = ConsentContinuationOut.get_active_cco(business.id, continuation_out_date_utc, country_code, region)
+
+    active_consent = False
+    # Make sure continuation_out_date is on or after consent filing effective date
+    for consent in ccos:
+        if continuation_out_date.date() >= \
+                LegislationDatetime.as_legislation_timezone(consent.filing.effective_date).date():
+            active_consent = True
+            break
+
+    if not active_consent:
+        msg.extend([{'error': 'No active consent continuation out for this date and/or jurisdiction.',
                     'path': f'/filing/{filing_type}/continuationOutDate'}])
 
     return msg
