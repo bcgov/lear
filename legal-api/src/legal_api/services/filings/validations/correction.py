@@ -18,7 +18,6 @@ from typing import Dict, Final
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _
-
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
@@ -26,7 +25,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_pdf,
-    validate_share_structure
+    validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
