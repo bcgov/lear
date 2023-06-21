@@ -18,6 +18,7 @@ from typing import Dict, Final
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _
+
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
