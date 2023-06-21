@@ -27,6 +27,8 @@ from entity_filer.filing_processors.filing_components import (
     create_party,
     create_role,
     filings,
+    resolutions,
+    rules_and_memorandum,
     shares,
     update_address,
 )
@@ -95,6 +97,22 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
         shares.update_share_structure_correction(business, share_structure)
+
+    # update resolution, if any
+    with suppress(IndexError, KeyError, TypeError):
+        resolution = dpath.util.get(correction_filing, '/correction/resolution')
+        filings.update_filing_json(correction_filing_rec, resolution)
+        resolutions.update_resolution(business, resolution)
+
+    # update signatory, if any
+    with suppress(IndexError, KeyError, TypeError):
+        signatory = dpath.util.get(correction_filing, '/correction/signatory')
+        resolutions.update_signatory(business, signatory)
+
+    # update rules, if any
+    with suppress(IndexError, KeyError, TypeError):
+        rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
+        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key)
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

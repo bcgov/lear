@@ -14,7 +14,7 @@
 """Validation for the Correction filing."""
 from datetime import timedelta
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Final
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _
@@ -22,7 +22,12 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
-from legal_api.services.filings.validations.common_validations import validate_name_request, validate_share_structure
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_name_request,
+    validate_pdf,
+    validate_share_structure,
+)
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
@@ -30,6 +35,11 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
+from legal_api.services.filings.validations.special_resolution import (
+    validate_resolution_content,
+    validate_signatory_name,
+    validate_signing_date,
+)
 from legal_api.utils.auth import jwt
 
 from ...utils import get_date, get_str
@@ -61,6 +71,8 @@ def validate(business: Business, filing: Dict) -> Error:
                             Business.LegalTypes.BC_ULC_COMPANY.value,
                             Business.LegalTypes.BC_CCC.value]:
             _validate_corps_correction(filing, legal_type, msg)
+        elif legal_type in [Business.LegalTypes.COOP.value]:
+            _validate_special_resolution_correction(filing, legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -103,6 +115,22 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         err = validate_share_structure(filing_dict, filing_type)
         if err:
             msg.extend(err)
+
+
+def _validate_special_resolution_correction(filing_dict, legal_type, msg):
+    filing_type = 'correction'
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('nameRequest', {}).get('nrNumber', None):
+        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('resolution', None):
+        msg.extend(validate_resolution_content(filing_dict, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('signingDate', None):
+        msg.extend(validate_signing_date(filing_dict, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('signatory', None):
+        msg.extend(validate_signatory_name(filing_dict, filing_type))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('courtOrder', None):
+        msg.extend(court_order_validation(filing_dict))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('rulesFileKey', None):
+        msg.extend(rules_change_validation(filing_dict))
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
@@ -174,3 +202,27 @@ def validate_start_date(business: Business, filing: Dict) -> list:
                     'path': start_date_path})
 
     return msg
+
+
+def court_order_validation(filing):
+    """Validate court order."""
+    court_order_path: Final = '/filing/correction/courtOrder'
+    if get_str(filing, court_order_path):
+        err = validate_court_order(court_order_path, filing['filing']['correction']['courtOrder'])
+        if err:
+            return err
+    return []
+
+
+def rules_change_validation(filing):
+    """Validate rules change."""
+    msg = []
+    rules_file_key_path: Final = '/filing/correction/rulesFileKey'
+    rules_file_key: Final = get_str(filing, rules_file_key_path)
+
+    if rules_file_key:
+        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
+        if rules_err:
+            msg.extend(rules_err)
+        return msg
+    return []

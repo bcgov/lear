@@ -47,10 +47,10 @@ def validate(business: Business, filing_json: Dict) -> Error:
     return None
 
 
-def validate_resolution_content(filing_json):
+def validate_resolution_content(filing_json, filing_type: str = 'specialResolution'):
     """Validate resolution content."""
     msg = []
-    resolution_path = '/filing/specialResolution/resolution'
+    resolution_path = f'/filing/{filing_type}/resolution'
     resolution_content = get_str(filing_json, resolution_path)
 
     if not resolution_content:
@@ -87,12 +87,12 @@ def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[
     return msg
 
 
-def validate_signing_date(filing_json: Dict) -> Optional[list]:
+def validate_signing_date(filing_json: Dict, filing_type: str = 'specialResolution') -> Optional[list]:
     """Validate signing date."""
     msg = []
-    signing_date_path = '/filing/specialResolution/signingDate'
+    signing_date_path = f'/filing/{filing_type}/signingDate'
     signing_date = get_date(filing_json, signing_date_path)
-    resolution_date_path = '/filing/specialResolution/resolutionDate'
+    resolution_date_path = f'/filing/{filing_type}/resolutionDate'
     resolution_date = get_date(filing_json, resolution_date_path)
 
     if not signing_date:
@@ -115,11 +115,11 @@ def validate_signing_date(filing_json: Dict) -> Optional[list]:
     return msg
 
 
-def validate_signatory_name(filing_json: Dict) -> Optional[list]:
+def validate_signatory_name(filing_json: Dict, filing_type: str = 'specialResolution') -> Optional[list]:
     """Validate signatory name."""
     msg = []
-    signatory_given_name_path = '/filing/specialResolution/signatory/givenName'
-    signatory_family_name_path = '/filing/specialResolution/signatory/familyName'
+    signatory_given_name_path = f'/filing/{filing_type}/signatory/givenName'
+    signatory_family_name_path = f'/filing/{filing_type}/signatory/familyName'
     signatory_given_name = get_str(filing_json, signatory_given_name_path)
     signatory_family_name = get_str(filing_json, signatory_family_name_path)
 

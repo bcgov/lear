@@ -48,7 +48,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
             staff_id=correction_filing.submitter_id
         )
     )
-    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC']:
+    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or \
+            filing['correction']['correctedFilingType'] == 'specialResolution':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
