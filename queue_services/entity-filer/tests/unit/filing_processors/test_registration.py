@@ -14,7 +14,7 @@
 """The Unit Tests for the Registration filing."""
 
 import copy
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch, call
 
@@ -32,7 +32,7 @@ from entity_filer.filing_processors import registration
 from tests.unit import create_filing
 
 
-now = datetime.now().strftime('%Y-%m-%d')
+now = '2023-01-08'
 
 GP_REGISTRATION = copy.deepcopy(FILING_HEADER)
 GP_REGISTRATION['filing']['header']['name'] = 'registration'
@@ -88,7 +88,7 @@ def test_registration_process(app, session, legal_type, filing):
     # Assertions
     assert business.identifier.startswith('FM')
     assert business.founding_date == effective_date
-    assert business.start_date == datetime.fromisoformat(now) + timedelta(hours=8)
+    assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
     assert business.legal_type == filing['filing']['registration']['nameRequest']['legalType']
     assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
     assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
@@ -106,15 +106,16 @@ def test_registration_process(app, session, legal_type, filing):
     assert business.offices[0].office_type == 'businessOffice'
 
 
-@pytest.mark.parametrize('legal_type, filing, party_type, organization_name, first_name, last_name, middle_name, expected_pass_code',
- [
-     ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
-     ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
-     ('SP', copy.deepcopy(SP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME'),
-     ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
-     ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
-     ('GP', copy.deepcopy(GP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME')
- ])
+@pytest.mark.parametrize(
+    'legal_type, filing, party_type, organization_name, first_name, last_name, middle_name, expected_pass_code',
+    [
+        ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
+        ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
+        ('SP', copy.deepcopy(SP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME'),
+        ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
+        ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
+        ('GP', copy.deepcopy(GP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME')
+    ])
 def test_registration_affiliation(app, session, legal_type, filing, party_type, organization_name, first_name,
                                   last_name, middle_name, expected_pass_code):
     """Assert affiliation of a firm calls expected auth api endpoints and with expected parameter values."""

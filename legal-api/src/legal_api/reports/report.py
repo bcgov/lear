@@ -14,7 +14,7 @@ import copy
 import json
 import os
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Final
@@ -204,7 +204,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
 
-    def _get_template_data(self):  # pylint: disable=too-many-branches
+    def _get_template_data(self):
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
@@ -212,49 +212,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing = copy.deepcopy(self._filing.filing_json['filing'])
             filing['header']['filingId'] = self._filing.id
             filing['header']['status'] = self._filing.status
-            if self._report_key == 'incorporationApplication':
-                self._format_incorporation_data(filing)
-            elif self._report_key == 'specialResolution':
-                self._format_special_resolution(filing)
-            elif self._report_key == 'alterationNotice':
-                self._format_alteration_data(filing)
-            elif self._report_key == 'registration':
-                self._format_registration_data(filing)
-            elif self._report_key == 'changeOfRegistration':
-                self._format_change_of_registration_data(filing, 'changeOfRegistration')
-            elif self._report_key == 'certificateOfNameChange':
-                self._format_name_change_data(filing)
-            elif self._report_key == 'certificateOfRestoration':
-                self._format_certificate_of_restoration_data(filing)
-            elif self._report_key == 'restoration':
-                self._format_restoration_data(filing)
-            elif self._report_key == 'letterOfConsent':
-                self._format_consent_continuation_out_data(filing)
-            else:
-                # set registered office address from either the COA filing or status quo data in AR filing
-                with suppress(KeyError):
-                    self._set_addresses(filing)
-                # set director list from either the COD filing or status quo data in AR filing
-                with suppress(KeyError):
-                    self._set_directors(filing)
-
-            if self._report_key == 'transition':
-                self._format_transition_data(filing)
-
-            if self._report_key == 'dissolution':
-                filing['dissolution']['dissolution_date_str'] = \
-                    datetime.fromisoformat(filing['dissolution']['dissolutionDate']).strftime(OUTPUT_DATE_FORMAT)
-                self._format_directors(filing['dissolution']['parties'])
-                filing['parties'] = filing['dissolution']['parties']
-
-            # since we reset _report_key with correction type
-            if filing['header']['name'] == 'correction':
-                if self._business.legal_type in ['SP', 'GP']:
-                    self._format_change_of_registration_data(filing, 'correction')
-                else:
-                    self._format_correction_data(filing)
-
-            filing['meta_data'] = self._filing.meta_data or {}
+            self._format_filing_json(filing)
 
         filing['header']['reportType'] = self._report_key
 
@@ -265,6 +223,39 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
         return filing
+
+    def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
+        if self._report_key == 'incorporationApplication':
+            self._format_incorporation_data(filing)
+        elif self._report_key == 'specialResolution':
+            self._format_special_resolution(filing)
+        elif self._report_key == 'alterationNotice':
+            self._format_alteration_data(filing)
+        elif self._report_key == 'registration':
+            self._format_registration_data(filing)
+        elif self._report_key == 'changeOfRegistration':
+            self._format_change_of_registration_data(filing, 'changeOfRegistration')
+        elif self._report_key == 'certificateOfNameChange':
+            self._format_name_change_data(filing)
+        elif self._report_key == 'certificateOfRestoration':
+            self._format_certificate_of_restoration_data(filing)
+        elif self._report_key == 'restoration':
+            self._format_restoration_data(filing)
+        elif self._report_key == 'letterOfConsent':
+            self._format_consent_continuation_out_data(filing)
+        elif self._report_key == 'correction':
+            self._format_correction_data(filing)
+        elif self._report_key == 'transition':
+            self._format_transition_data(filing)
+        elif self._report_key == 'dissolution':
+            self._format_dissolution_data(filing)
+        else:
+            # set registered office address from either the COA filing or status quo data in AR filing
+            with suppress(KeyError):
+                self._set_addresses(filing)
+            # set director list from either the COD filing or status quo data in AR filing
+            with suppress(KeyError):
+                self._set_directors(filing)
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
@@ -420,6 +411,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_transition_data(self, filing):
         filing.update(filing['transition'])
         self._format_directors(filing['parties'])
+        self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
+        self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
+        if 'recordsOffice' in filing['offices']:
+            self._format_address(filing['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(filing['offices']['recordsOffice']['mailingAddress'])
         if filing.get('shareStructure', {}).get('shareClasses', None):
             filing['shareClasses'] = filing['shareStructure']['shareClasses']
 
@@ -451,7 +447,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
 
-        start_date = datetime.fromisoformat(filing['registration']['startDate'])
+        start_date = LegislationDatetime.as_legislation_timezone_from_date_str(filing['registration']['startDate'])
         filing['registration']['startDate'] = start_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_name_change_data(self, filing):
@@ -471,8 +467,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         meta_data = self._filing.meta_data or {}
         filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
         filing['toLegalName'] = meta_data.get('restoration', {}).get('toLegalName')
-        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
-            filing['restoration_expiry_date'] = datetime.fromisoformat(expiry_date).strftime(OUTPUT_DATE_FORMAT)
+        if expiry_date_str := meta_data.get('restoration', {}).get('expiry'):
+            expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date_str)
+            filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_sub_type == 'limitedRestorationToFull':
             business_previous_restoration_expiry = \
                 VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
@@ -486,6 +483,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.transaction_id, self._business.id, is_dissolution_date=True)
         filing['formatted_dissolution_date'] = \
             LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
+
+    def _format_dissolution_data(self, filing):
+        if self._business.legal_type in ['SP', 'GP'] and filing['dissolution']['dissolutionType'] == 'voluntary':
+            filing['dissolution']['dissolution_date_str'] = LegislationDatetime. \
+                as_legislation_timezone_from_date_str(filing['dissolution']['dissolutionDate']). \
+                strftime(OUTPUT_DATE_FORMAT)
+        self._format_directors(filing['dissolution']['parties'])
+        filing['parties'] = filing['dissolution']['parties']
 
     def _format_restoration_data(self, filing):
         filing['nameRequest'] = filing['restoration'].get('nameRequest')
@@ -603,10 +608,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if filing_type == 'correction':
             prev_start_date = versioned_business.start_date
             new_start_date_str = filing.get(filing_type).get('startDate')
-            if new_start_date_str:
-                new_start_date = datetime.fromisoformat(new_start_date_str) + timedelta(hours=8)
-                if prev_start_date != new_start_date:
-                    filing['newStartDate'] = new_start_date_str
+            if new_start_date_str != LegislationDatetime.format_as_legislation_date(prev_start_date):
+                filing['newStartDate'] = new_start_date_str
 
         # Change of Address
         if business_office := filing.get(filing_type).get('offices', {}).get('businessOffice'):
@@ -733,15 +736,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
-        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-        versioned_business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
+        if self._business.legal_type in ['SP', 'GP']:
+            self._format_change_of_registration_data(filing, 'correction')
+        else:
+            prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+            versioned_business = VersionedBusinessDetailsService.\
+                get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
 
-        self._format_name_request_data(filing, versioned_business)
-        self._format_name_translations_data(filing, prev_completed_filing)
-        self._format_office_data(filing, prev_completed_filing)
-        self._format_party_data(filing, prev_completed_filing)
-        self._format_share_class_data(filing, prev_completed_filing)
+            self._format_name_request_data(filing, versioned_business)
+            self._format_name_translations_data(filing, prev_completed_filing)
+            self._format_office_data(filing, prev_completed_filing)
+            self._format_party_data(filing, prev_completed_filing)
+            self._format_share_class_data(filing, prev_completed_filing)
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
@@ -910,10 +916,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
         signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
         if resolution_date_str:
-            resolution_date = datetime.fromisoformat(resolution_date_str)
+            resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
             filing['specialResolution']['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
         if signing_date_str:
-            signing_date = datetime.fromisoformat(signing_date_str)
+            signing_date = LegislationDatetime.as_legislation_timezone_from_date_str(signing_date_str)
             filing['specialResolution']['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_noa_data(self, filing):

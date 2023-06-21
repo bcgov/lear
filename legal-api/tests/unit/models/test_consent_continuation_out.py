@@ -84,8 +84,15 @@ def test_get_active_cco(session):
 
 
 def get_cco_expiry_date(filing_effective_date):
-    _date = LegislationDatetime.as_legislation_timezone(filing_effective_date)
+    effective_date = LegislationDatetime.as_legislation_timezone(filing_effective_date)
+    _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
     _date += datedelta.datedelta(months=6)
-    _date = _date.replace(hour=23, minute=59, second=0, microsecond=0)
-    expiry_date = LegislationDatetime.as_utc_timezone(_date)
-    return expiry_date
+
+    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
+    _date = LegislationDatetime.as_legislation_timezone(_date)
+
+    # Adjust day light savings. Handle DST +-1 hour changes
+    dst_offset_diff = effective_date.dst() - _date.dst()
+    _date += dst_offset_diff
+
+    return LegislationDatetime.as_utc_timezone(_date)

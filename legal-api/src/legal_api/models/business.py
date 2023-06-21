@@ -426,30 +426,25 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
         if self.last_coa_date:
-            d['lastAddressChangeDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.last_coa_date)
-            ).isoformat()
+            d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
         if self.last_cod_date:
-            d['lastDirectorChangeDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.last_cod_date)
-            ).isoformat()
+            d['lastDirectorChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
 
         if self.dissolution_date:
-            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
+            d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(self.dissolution_date)
+
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         if self.start_date:
-            d['startDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.start_date)
-            ).isoformat()
+            d['startDate'] = LegislationDatetime.format_as_legislation_date(self.start_date)
 
         if self.restoration_expiry_date:
-            d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
+            d['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
-            d['continuationOutDate'] = self.continuation_out_date.isoformat()
+            d['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
@@ -457,9 +452,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             d['foreignIdentifier'] = self.foreign_identifier
             d['foreignLegalName'] = self.foreign_legal_name
             d['foreignLegalType'] = self.foreign_legal_type
-            d['foreignIncorporationDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
-            ).isoformat() if self.foreign_incorporation_date else None
+            d['foreignIncorporationDate'] = LegislationDatetime.format_as_legislation_date(
+                self.foreign_incorporation_date) if self.foreign_incorporation_date else None
 
         d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
         d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')

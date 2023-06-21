@@ -13,15 +13,15 @@
 # limitations under the License.
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
-import io
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime
 
 import pytest
 
 from legal_api.models import Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
+from legal_api.utils.legislation_datetime import LegislationDatetime
+
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
 from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
@@ -120,11 +120,11 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
 
     expected_dissolution_date = filing.effective_date
-    expected_dissolution_date_str = datetime.date(filing.effective_date).isoformat()
-    if dissolution_type == 'voluntary':
-        expected_dissolution_date = \
-            datetime.fromisoformat(dissolution_date).replace(tzinfo=pytz.UTC) + timedelta(hours=8)
-        expected_dissolution_date_str = dissolution_date
+    if dissolution_type == 'voluntary' and business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
+                                                                   Business.LegalTypes.PARTNERSHIP.value):
+        expected_dissolution_date = datetime.fromisoformat(f'{dissolution_date}T07:00:00+00:00')
+
+    expected_dissolution_date_str = LegislationDatetime.format_as_legislation_date(expected_dissolution_date)
     assert business.dissolution_date == expected_dissolution_date
     dissolution_date_format_correct = has_expected_date_str_format(expected_dissolution_date_str, '%Y-%m-%d')
     assert dissolution_date_format_correct
@@ -214,7 +214,7 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
 
-    dissolution_date_str = datetime.date(filing.effective_date).isoformat()
+    dissolution_date_str = LegislationDatetime.format_as_legislation_date(filing.effective_date)
     dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
     assert dissolution_date_format_correct
     assert filing_meta.dissolution['dissolutionDate'] == dissolution_date_str

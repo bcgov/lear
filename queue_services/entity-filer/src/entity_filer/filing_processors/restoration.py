@@ -14,13 +14,13 @@
 """File processing rules and actions for the restoration on filing."""
 
 from contextlib import suppress
-from datetime import timedelta
 from typing import Dict
 
 import dpath
 import sentry_sdk
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
@@ -53,7 +53,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     }
 
     if expiry := restoration_filing.get('expiry'):  # limitedRestoration, limitedRestorationExtension
-        business.restoration_expiry_date = datetime.fromisoformat(expiry) + timedelta(hours=8)
+        business.restoration_expiry_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(expiry)
         filing_meta.restoration = {
             **filing_meta.restoration,
             'expiry': expiry
@@ -82,8 +82,9 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         application_date = restoration_filing.get('applicationDate')
         notice_date = restoration_filing.get('noticeDate')
         if application_date and notice_date:
-            filing_rec.application_date = datetime.fromisoformat(application_date) + timedelta(hours=8)
-            filing_rec.notice_date = datetime.fromisoformat(notice_date) + timedelta(hours=8)
+            filing_rec.application_date = \
+                LegislationDatetime.as_utc_timezone_from_legislation_date_str(application_date)
+            filing_rec.notice_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(notice_date)
 
 
 def _update_parties(business: Business, parties: dict, filing_rec: Filing):

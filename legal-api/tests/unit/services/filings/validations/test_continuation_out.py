@@ -19,13 +19,13 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 import pycountry
 import pytest
-from registry_schemas.example_data import FILING_HEADER, CONTINUATION_OUT
+from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
 from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 
 date_format = '%Y-%m-%d'
@@ -33,8 +33,11 @@ legal_name = 'Test name request'
 validate_active_cco_path = 'legal_api.services.filings.validations.continuation_out.validate_active_cco'
 
 
-def _create_consent_continuation_out(business, filing, effective_date=datetime.utcnow()):
-    foreign_jurisdiction = filing['filing']['continuationOut']['foreignJurisdiction']
+def _create_consent_continuation_out(business, foreign_jurisdiction, effective_date=datetime.utcnow()):
+    filing_dict = copy.deepcopy(FILING_HEADER)
+    filing_dict['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+    filing = factory_completed_filing(business, filing_dict, filing_date=effective_date)
+
     consent_continuation_out = ConsentContinuationOut()
     consent_continuation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
 
@@ -42,7 +45,9 @@ def _create_consent_continuation_out(business, filing, effective_date=datetime.u
     region = region.upper() if region else None
     consent_continuation_out.foreign_jurisdiction_region = region
 
-    consent_continuation_out.expiry_date = get_cco_expiry_date(effective_date)
+    consent_continuation_out.expiry_date = get_cco_expiry_date(filing.effective_date)
+
+    consent_continuation_out.filing_id = filing.id
     business.consent_continuation_outs.append(consent_continuation_out)
     business.save()
 
@@ -51,7 +56,7 @@ def _create_consent_continuation_out(business, filing, effective_date=datetime.u
     'test_name, expected_code, message',
     [
         ('FAIL_IN_FUTURE', HTTPStatus.BAD_REQUEST, 'Continuation out date must be today or past.'),
-        ('FAIL_NO_CCO', HTTPStatus.BAD_REQUEST, 'No active consent continuation out for this date.'),
+        ('FAIL_NO_CCO', HTTPStatus.BAD_REQUEST, 'No active consent continuation out for this date and/or jurisdiction.'),
         ('SUCCESS', None, None)
     ]
 )
@@ -61,17 +66,19 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'continuationOut'
-    co_date = LegislationDatetime.now().date()
-    effective_date = datetime.utcnow()
+    co_date = LegislationDatetime.as_legislation_timezone_from_date_str('2023-06-19')
+    effective_date = LegislationDatetime.as_utc_timezone(co_date)
+    filing['filing']['continuationOut']['continuationOutDate'] = co_date.strftime(date_format)
 
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['continuationOut']['continuationOutDate'] = \
-            (co_date + datedelta.datedelta(days=1)).strftime(date_format)
+            (LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime(date_format)
     elif test_name == 'FAIL_NO_CCO':
-        filing['filing']['continuationOut']['continuationOutDate'] = co_date.strftime(date_format)
         effective_date -= datedelta.datedelta(months=6, days=1)
 
-    _create_consent_continuation_out(business, filing, effective_date)
+    _create_consent_continuation_out(business,
+                                     filing['filing']['continuationOut']['foreignJurisdiction'],
+                                     effective_date)
     err = validate(business, filing)
 
     # validate outcomes

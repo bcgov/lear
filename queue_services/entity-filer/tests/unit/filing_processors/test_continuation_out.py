@@ -25,6 +25,7 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import continuation_out
 from tests.unit import create_business, create_filing
 
+
 async def test_worker_continuation_out(app, session):
     """Assert that the continuation out object is correctly populated to model objects."""
     identifier = 'BC1234567'
@@ -47,8 +48,8 @@ async def test_worker_continuation_out(app, session):
     # Check outcome
     final_filing = Filing.find_by_id(continuation_out_filing.id)
     foreign_jurisdiction_json = filing_json['filing']['continuationOut']['foreignJurisdiction']
-    continuation_out_date = filing_json['filing']['continuationOut']['continuationOutDate']
-    continuation_out_date = LegislationDatetime.as_utc_timezone(datetime.fromisoformat(continuation_out_date))
+    continuation_out_date_str = filing_json['filing']['continuationOut']['continuationOutDate']
+    continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
 
     assert filing_json['filing']['continuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
     assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
@@ -62,8 +63,8 @@ async def test_worker_continuation_out(app, session):
     assert business.foreign_legal_name == filing_json['filing']['continuationOut']['legalName']
     assert business.continuation_out_date == continuation_out_date
     assert business.dissolution_date == continuation_out_date
-    
+
     assert filing_meta.continuation_out['country'] == foreign_jurisdiction_json['country']
     assert filing_meta.continuation_out['region'] == foreign_jurisdiction_json['region']
-    assert filing_meta.continuation_out['continuationOutDate'] == continuation_out_date.isoformat()
+    assert filing_meta.continuation_out['continuationOutDate'] == continuation_out_date_str
     assert filing_meta.continuation_out['legalName'] == filing_json['filing']['continuationOut']['legalName']

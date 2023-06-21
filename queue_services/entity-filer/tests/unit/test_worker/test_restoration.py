@@ -13,8 +13,6 @@
 # limitations under the License.
 """The Unit Tests for the Restoration filing."""
 import copy
-from datetime import timedelta
-from dateutil.relativedelta import relativedelta
 import random
 
 import pytest
@@ -29,7 +27,6 @@ from tests.unit import create_business, create_filing
 
 legal_name = 'old name'
 legal_type = 'BC'
-date_format = '%Y-%m-%d'
 
 
 @pytest.mark.parametrize('restoration_type', [
@@ -50,7 +47,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
-    expiry_date = (LegislationDatetime.now() + relativedelta(months=1)).strftime(date_format)
+    expiry_date = '2023-05-18'
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         filing['filing']['restoration']['expiry'] = expiry_date
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -69,8 +66,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     assert business.dissolution_date is None
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
-        assert LegislationDatetime.as_legislation_timezone(business.restoration_expiry_date) == \
-            LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(expiry_date) + timedelta(hours=8))
+        assert business.restoration_expiry_date == datetime.fromisoformat(f'{expiry_date}T07:00:00+00:00')
 
         final_filing = Filing.find_by_id(filing_id)
         restoration = final_filing.meta_data.get('restoration', {})
@@ -203,9 +199,11 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['approvalType'] = approval_type
-    filing['filing']['restoration']['applicationDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
-    filing['filing']['restoration']['noticeDate'] = (LegislationDatetime.now() + relativedelta(months=-1)).strftime(date_format)
-    
+    application_date = '2023-01-15'
+    notice_date = '2023-05-02'
+    filing['filing']['restoration']['applicationDate'] = application_date
+    filing['filing']['restoration']['noticeDate'] = notice_date
+
     if approval_type == 'courtOrder':
         del filing['filing']['restoration']['applicationDate']
         del filing['filing']['restoration']['noticeDate']
@@ -223,8 +221,10 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing['filing']['restoration']['approvalType'] == final_filing.approval_type
     if approval_type == 'registrar':
-        assert filing['filing']['restoration']['applicationDate'] == (final_filing.application_date).strftime(date_format)
-        assert filing['filing']['restoration']['noticeDate'] == (final_filing.notice_date).strftime(date_format)
+        assert final_filing.application_date == datetime.fromisoformat(f'{application_date}T08:00:00+00:00')
+        assert final_filing.notice_date == datetime.fromisoformat(f'{notice_date}T07:00:00+00:00')
+        assert application_date == LegislationDatetime.format_as_legislation_date(final_filing.application_date)
+        assert notice_date == LegislationDatetime.format_as_legislation_date(final_filing.notice_date)
     else:
         assert final_filing.application_date is None
         assert final_filing.notice_date is None
@@ -248,8 +248,8 @@ async def test_restoration_name_translations(app, session, mocker):
     _mock_out(mocker)
 
     await process_filing(filing_msg, app)
-    
-    #Check outcome
+
+    # Check outcome
     assert filing['filing']['restoration']['nameTranslations'] == [{'name': 'ABCD Ltd.'}]
     assert business.aliases is not None
 
