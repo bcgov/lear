@@ -31,10 +31,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Final
 
-from entity_queue_common.service_utils import error_cb, logger, signal_handler
-
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+
+from entity_queue_common.service_utils import error_cb, logger, signal_handler
 
 
 affiliation_type: Final = 'bc.registry.affiliation'
