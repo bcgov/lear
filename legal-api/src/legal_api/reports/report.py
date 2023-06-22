@@ -528,7 +528,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if cco.foreign_jurisdiction_region and cco.foreign_jurisdiction_region != 'FEDERAL':
             region = pycountry.subdivisions.\
                 get(code=f'{cco.foreign_jurisdiction}-{cco.foreign_jurisdiction_region}')
-        filing['jurisdiction'] = f'{region.name}, {country.name}' if region else country
+        filing['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
 
         expiry_date = LegislationDatetime.as_legislation_timezone(cco.expiry_date)
         filing['cco_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
