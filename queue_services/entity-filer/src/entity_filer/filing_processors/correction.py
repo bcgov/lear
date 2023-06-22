@@ -24,6 +24,21 @@ from entity_filer.filing_processors.filing_components import business_profile, n
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
+def is_special_resolution_correction(filing, business, original_filing):
+    """Check whether it is a special resolution correction."""
+    corrected_filing_type = filing['correction']['correctedFilingType']
+    is_coop = business.legal_type in ['CP']
+
+    return (
+        corrected_filing_type == 'specialResolution' or
+        (
+            corrected_filing_type == 'correction' and
+            is_coop and
+            original_filing.filing_json['filing']['correction']['correctedFilingType'] == 'specialResolution'
+        )
+    )
+
+
 def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):
     """Render the correction filing onto the business model objects."""
     local_timezone = pytz.timezone('US/Pacific')
@@ -48,8 +63,9 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
             staff_id=correction_filing.submitter_id
         )
     )
+
     if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or \
-            filing['correction']['legalType'] == 'CP':
+            is_special_resolution_correction(filing, business, original_filing):
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
