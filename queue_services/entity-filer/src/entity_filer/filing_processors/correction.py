@@ -24,7 +24,7 @@ from entity_filer.filing_processors.filing_components import business_profile, n
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
-def is_special_resolution_correction(filing, business, original_filing):
+def is_special_resolution_correction(filing: Dict, business: Business, original_filing: Filing):
     """Check whether it is a special resolution correction."""
     corrected_filing_type = filing['correction']['correctedFilingType']
     is_coop = business.legal_type in ['CP']
