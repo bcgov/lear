@@ -108,7 +108,7 @@ def validate_foreign_jurisdiction(filing: Dict, filing_type: str) -> list:
 
     foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
     country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
-    region = foreign_jurisdiction.get('region', '').upper()
+    region = (foreign_jurisdiction.get('region') or '').upper()
 
     country = pycountry.countries.get(alpha_2=country_code)
     if not country:

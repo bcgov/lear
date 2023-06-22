@@ -2,7 +2,7 @@
 <div class="no-page-break">
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">
-       {% if business.legalType in ['SP', 'GP'] %}
+      {% if business.legalType in ['SP', 'GP'] %}
         <span>Business Status Information</span>
       {% else %}
         <span>Dissolution/Restoration Information</span>
@@ -19,6 +19,15 @@
               {% endif %}
             </div>
             <div class="pt-2">
+              {% if filing.filingType == 'continuationOut' %}
+                <span>Jurisdiction: {{ filing.jurisdiction }}</span>
+                <div class="pt-2">
+                  <span>Name Company Continued Out As: {{ filing.foreignLegalName }}</span>
+                </div>
+                <div class="pt-2">
+                  <span>Continuation Out Date: {{ filing.continuationOutDate }}</span>
+                </div>
+              {% else %}
                 <span>Filing Date:</span>
                 <span>{{filing.filingDateTime}}</span>
                 {% if filing.dissolution_date_str %}
@@ -27,6 +36,7 @@
                         <span>{{ filing.dissolution_date_str }}</span>
                     </div>
                 {% endif %}
+              {% endif %}
             </div>
         </td>
     </tr>

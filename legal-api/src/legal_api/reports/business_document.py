@@ -306,7 +306,8 @@ class BusinessDocument:
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
-                                                                      'voluntaryLiquidation', 'putBackOn']):
+                                                                      'voluntaryLiquidation', 'putBackOn',
+                                                                      'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
@@ -372,6 +373,7 @@ class BusinessDocument:
         """Format state change filing data."""
         filing_info = {}
 
+        filing_info['filingType'] = filing.filing_type
         filing_info['filingDateTime'] = filing.filing_date.isoformat()
         filing_info['effectiveDateTime'] = filing.effective_date.isoformat()
 
@@ -395,7 +397,21 @@ class BusinessDocument:
                 expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
                 expiry_date = expiry_date.replace(minute=1)
                 filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
+        elif filing.filing_type == 'continuationOut':
+            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing.filing_type, None, None)
 
+            country_code = filing_meta['continuationOut']['country']
+            region_code = filing_meta['continuationOut']['region']
+
+            country = pycountry.countries.get(alpha_2=country_code)
+            region = None
+            if region_code and region_code.upper() != 'FEDERAL':
+                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+            filing_info['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
+            filing_info['foreignLegalName'] = filing_meta['continuationOut']['legalName']
+            continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                filing_meta['continuationOut']['continuationOutDate'])
+            filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -505,7 +521,8 @@ class BusinessDocument:
         'voluntaryDissolution': 'Voluntary Dissolution',
         'Involuntary Dissolution': 'Involuntary Dissolution',
         'voluntaryLiquidation': 'Voluntary Liquidation',
-        'putBackOn': 'Correction - Put Back On'
+        'putBackOn': 'Correction - Put Back On',
+        'continuationOut': 'Continuation Out'
     }
 
     CP_TYPE_DESCRIPTION = {
