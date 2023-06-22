@@ -31,10 +31,10 @@ def is_special_resolution_correction(filing: Dict, business: Business, original_
 
     if not is_coop:
         return False
-    
+
     if corrected_filing_type == 'specialResolution':
         return True
-    
+
     # Check to see if top level original filing is a specialResolution
     original_filing_correction = original_filing.filing_json['filing']['correction']
     while original_filing_correction.get('correctedFilingType') == 'correction':
