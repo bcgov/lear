@@ -29,14 +29,25 @@ def is_special_resolution_correction(filing: Dict, business: Business, original_
     corrected_filing_type = filing['correction']['correctedFilingType']
     is_coop = business.legal_type in ['CP']
 
-    return (
-        corrected_filing_type == 'specialResolution' or
-        (
+    if not is_coop:
+        return False
+    
+    if corrected_filing_type == 'specialResolution':
+        return True
+    
+    # Check to see if top level original filing is a specialResolution
+    original_filing_correction = original_filing.filing_json['filing']['correction']
+    while original_filing_correction.get('correctedFilingType') == 'correction':
+        if (
             corrected_filing_type == 'correction' and
-            is_coop and
-            original_filing.filing_json['filing']['correction']['correctedFilingType'] == 'specialResolution'
-        )
-    )
+            original_filing_correction .get('correctedFilingType') == 'specialResolution'
+        ):
+            return True
+        # Find the next original filing in the chain of corrections
+        original_filing = Filing.find_by_id(original_filing_correction.get('correctedFilingId'))
+        original_filing_correction = original_filing.filing_json['filing']['correction']
+
+    return corrected_filing_type == 'specialResolution'
 
 
 def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):

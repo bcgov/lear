@@ -457,6 +457,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
                     name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
 
+                if corrected_filing_type in ['specialResolution']:
+                    corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
+                    name = f'{FilingMeta.display_name(business_revision, corrected_filing)} Correction'
+
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
                 name = 'Administrative Dissolution'
