@@ -92,11 +92,16 @@ def process(
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
-        rules_and_memorandum.update_rules(business, filing_submission, rules_file_key)
+        rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
+        rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
+        filing_meta.alteration = {**filing_meta.alteration,
+                                  **{'rulesInResolution': True}}
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
         rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key)
+        filing_meta.alteration = {**filing_meta.alteration,
+                                  **{'memorandumInResolution': True}}
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):

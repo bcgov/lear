@@ -27,7 +27,8 @@ from entity_filer.utils import replace_file_with_certified_copy
 def update_rules(
     business: Business,
     filing: Filing,
-    rules_file_key: String
+    rules_file_key: String,
+    file_name: String
 ) -> Optional[List]:
     """Updtes rules if any.
 
@@ -38,7 +39,7 @@ def update_rules(
         return None
 
     rules_file = MinioService.get_file(rules_file_key)
-    replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
+    replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date, file_name)
 
     document = Document()
     document.type = DocumentType.COOP_RULES.value

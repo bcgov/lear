@@ -56,7 +56,7 @@ class PdfService:
         return output
 
     @classmethod
-    def create_registrars_stamp(cls, registrars_signature_image, incorp_date, incorp_num):
+    def create_registrars_stamp(cls, registrars_signature_image, incorp_date, incorp_num, file_name):
         """Create a Registrar's stamp to certify documents."""
         buffer = io.BytesIO()
         can = canvas.Canvas(buffer, pagesize=letter)
@@ -72,8 +72,11 @@ class PdfService:
                       preserveAspectRatio=True,
                       mask='auto')
 
-        text = 'Filed on ' + LegislationDatetime.format_as_report_string(incorp_date) \
-            + '\nIncorporation Number: ' + incorp_num
+        text = 'Filed on ' + LegislationDatetime.format_as_report_string(incorp_date)
+        if file_name:
+            text += '\nFile Name: ' + file_name
+        text += '\nIncorporation Number: ' + incorp_num
+
         text_x_margin = 32
         text_y_margin = doc_height - 42
         line_height = 14

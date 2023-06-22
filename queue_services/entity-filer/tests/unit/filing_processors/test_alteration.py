@@ -290,3 +290,6 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
     assert memorandum_file_obj
     assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
+
+    assert filing_meta.alteration['rulesInResolution'] == True
+    assert filing_meta.alteration['memorandumInResolution'] == True

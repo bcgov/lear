@@ -490,10 +490,13 @@ class Filing:
             if legal_filings := filing.storage.meta_data.get('legalFilings'):
                 legal_filings_copy = copy.deepcopy(legal_filings)
                 if (filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
-                        business.legal_type == Business.LegalTypes.COOP.value and
-                        Filing.FilingTypes.CHANGEOFNAME.value in legal_filings):
-                    # suppress change of name output for MVP since the design is outdated.
-                    legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
+                        business.legal_type == Business.LegalTypes.COOP.value):
+                    # add special resolution application output
+                    documents['documents']['specialResolutionApplication'] = \
+                        f'{base_url}{doc_url}/specialResolutionApplication'
+                    if Filing.FilingTypes.CHANGEOFNAME.value in legal_filings:
+                        # suppress change of name output for MVP since the design is outdated.
+                        legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
 
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,

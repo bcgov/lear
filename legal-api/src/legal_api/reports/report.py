@@ -175,6 +175,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/nameTranslation',
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
+            'special-resolution/resolutionApplication',
             'addresses',
             'certification',
             'directors',
@@ -229,6 +230,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_incorporation_data(filing)
         elif self._report_key == 'specialResolution':
             self._format_special_resolution(filing)
+        elif self._report_key == 'specialResolutionApplication':
+            self._format_special_resolution_application(filing)
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
         elif self._report_key == 'registration':
@@ -922,6 +925,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             signing_date = LegislationDatetime.as_legislation_timezone_from_date_str(signing_date_str)
             filing['specialResolution']['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
+    def _format_special_resolution_application(self, filing):
+        meta_data = self._filing.meta_data or {}
+        prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
+        to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
+        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
+            filing['fromLegalName'] = prev_legal_name
+            filing['toLegalName'] = to_legal_name
+            filing['nrNumber'] = filing.get('changeOfName').get('nameRequest', {}).get('nrNumber', None)
+        prev_association_type = meta_data.get('alteration', {}).get('fromCooperativeAssociationType')
+        to_association_type = meta_data.get('alteration', {}).get('toCooperativeAssociationType')
+        if prev_association_type and to_association_type and prev_association_type != to_association_type:
+            filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get('prev_association_type', '')
+            filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get('to_association_type', '')
+        filing['rulesInResolution'] = meta_data.get('alteration', {}).get('rulesInResolution')
+        filing['memorandumInResolution'] = meta_data.get('alteration', {}).get('memorandumInResolution')
+
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
@@ -1018,6 +1037,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'specialResolution': {
             'filingDescription': 'Special Resolution',
             'fileName': 'specialResolution'
+        },
+        'specialResolutionApplication': {
+            'filingDescription': 'Special Resolution Application',
+            'fileName': 'specialResolutionApplication'
         },
         'voluntaryDissolution': {
             'filingDescription': 'Voluntary Dissolution',
