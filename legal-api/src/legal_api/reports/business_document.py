@@ -15,7 +15,7 @@ import os
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Final
+from typing import Final, Optional
 
 import pycountry
 import requests
@@ -474,7 +474,9 @@ class BusinessDocument:
         return ''
 
     @staticmethod
-    def _get_summary_display_name(filing_type: str, filing_sub_type: str, legal_type: str) -> str:
+    def _get_summary_display_name(filing_type: str,
+                                  filing_sub_type: Optional[str],
+                                  legal_type: Optional[str]) -> str:
         if filing_type == 'dissolution':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
         elif filing_type == 'restoration':
