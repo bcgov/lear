@@ -60,7 +60,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    MSG_RETRY_NUM = int(os.getenv('MSG_RETRY_NUM', 5))
+    MSG_RETRY_NUM = int(os.getenv('MSG_RETRY_NUM', '5'))
 
     # urls
     DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
