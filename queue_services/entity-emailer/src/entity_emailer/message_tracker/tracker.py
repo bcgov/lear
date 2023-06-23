@@ -14,13 +14,18 @@
 """Functionality for tracking processing of messages in queue."""
 
 import json
+import os
 
 import nats
 
+from entity_emailer import config
 from entity_emailer.email_processors import filing_notification
-from entity_emailer.worker import APP_CONFIG
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
+
+MSG_RETRY_NUM = config.get_named_config(
+    os.getenv('DEPLOYMENT_ENV', 'production')
+    ).MSG_RETRY_NUM
 
 
 def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: disable=too-many-return-statements
@@ -142,7 +147,7 @@ def is_processable_message(message_context_properties: dict):
         msg: MessageProcessing = \
             MessageProcessingService.find_message_by_message_id(message_id)
 
-    if msg and msg.message_seen_count > APP_CONFIG.MSG_RETRY_NUM:
+    if msg and msg.message_seen_count > MSG_RETRY_NUM:
         return False, msg
 
     if msg is None or msg.status == MessageProcessing.Status.FAILED.value:
