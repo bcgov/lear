@@ -51,6 +51,7 @@ from legal_api.services import (
 )
 from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
+from legal_api.services.filings.validations.schemas import build_schema_error_response
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
@@ -629,9 +630,7 @@ class ListFilingResource():
         if valid:
             return {'message': 'Filing is valid'}, HTTPStatus.OK
 
-        errors = []
-        for error in err:
-            errors.append({'path': '/'.join(error.path), 'error': error.message})
+        errors = build_schema_error_response(err)
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod

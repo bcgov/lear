@@ -32,7 +32,21 @@ def validate_against_schema(json_data: Dict = None) -> Error:
     if valid:
         return None
 
-    errors = []
-    for error in err:
-        errors.append({'path': '/'.join(error.path), 'error': error.message})
+    errors = build_schema_error_response(err)
     return Error(HTTPStatus.UNPROCESSABLE_ENTITY, errors)
+
+
+def build_schema_error_response(errors):
+    """Provide a formatted error response for schema errors."""
+    formatted_errors = []
+    for error in errors:
+        validation_errors = []
+        for context in error.context:
+            validation_errors.append({
+                'message': context.message,
+                'json_path': context.json_path,
+                'validator': context.validator,
+                'validator_value': context.validator_value
+            })
+        formatted_errors.append({'path': '/'.join(error.path), 'error': error.message, 'context': validation_errors})
+    return formatted_errors

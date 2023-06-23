@@ -26,6 +26,7 @@ from sqlalchemy.orm import backref
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
+from legal_api.services.filings.validations.schemas import build_schema_error_response
 
 from .db import db  # noqa: I001
 
@@ -519,9 +520,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             if not valid:
                 self._filing_type = None
                 self._payment_token = None
-                errors = []
-                for error in err:
-                    errors.append({'path': '/'.join(error.path), 'error': error.message})
+                errors = build_schema_error_response(err)
                 raise BusinessException(
                     error=f'{errors}',
                     status_code=HTTPStatus.UNPROCESSABLE_ENTITY
