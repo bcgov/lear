@@ -57,8 +57,6 @@ from entity_emailer.email_processors import (
     restoration_notification,
 )
 
-from .message_tracker import tracker as tracker_util
-
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
@@ -66,6 +64,7 @@ FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 
+from .message_tracker import tracker as tracker_util
 
 async def publish_event(payload: dict):
     """Publish the email message onto the NATS event subject."""

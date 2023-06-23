@@ -430,11 +430,11 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
 
     # mock out process_email function to throw exception to simulate failed scenario
     with patch.object(worker, 'process_email', side_effect=QueueException('Queue Error.')):
-        for x in range(5):
+        for x in range(10):
             await worker.cb_subscription_handler(mock_msg)
 
     result = MessageProcessing.find_message_by_message_id(message_id=message_id)
     assert result
     assert result.status == 'FAILED'
-    assert result.message_seen_count == 5
+    assert result.message_seen_count == 6
     assert result.last_error == 'QueueException, Exception - Queue Error.'

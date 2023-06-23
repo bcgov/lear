@@ -18,6 +18,7 @@ import json
 import nats
 
 from entity_emailer.email_processors import filing_notification
+from entity_emailer.worker import APP_CONFIG
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
@@ -140,6 +141,9 @@ def is_processable_message(message_context_properties: dict):
             return False, None
         msg: MessageProcessing = \
             MessageProcessingService.find_message_by_message_id(message_id)
+
+    if msg and msg.message_seen_count > APP_CONFIG.MSG_RETRY_NUM:
+        return False, msg
 
     if msg is None or msg.status == MessageProcessing.Status.FAILED.value:
         return True, msg
