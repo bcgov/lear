@@ -23,6 +23,7 @@ from entity_emailer.email_processors import filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
+
 MSG_RETRY_NUM = config.get_named_config(
     os.getenv('DEPLOYMENT_ENV', 'production')
     ).MSG_RETRY_NUM

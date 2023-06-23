@@ -433,7 +433,7 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
         for _ in range(6):
             with pytest.raises(EmailException):
                 await worker.cb_subscription_handler(mock_msg)
-        
+
     # mock out process_email function not to process since message reaches max retries
     with patch.object(worker, 'process_email', side_effect=EmailException('Queue Error.')):
         for _ in range(5):
