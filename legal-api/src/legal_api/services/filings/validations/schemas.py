@@ -17,6 +17,7 @@ from typing import Dict
 
 from legal_api.errors import Error
 from legal_api.schemas import rsbc_schemas
+from legal_api.utils.util import build_schema_error_response
 
 
 def validate_against_schema(json_data: Dict = None) -> Error:
@@ -32,7 +33,5 @@ def validate_against_schema(json_data: Dict = None) -> Error:
     if valid:
         return None
 
-    errors = []
-    for error in err:
-        errors.append({'path': '/'.join(error.path), 'error': error.message})
+    errors = build_schema_error_response(err)
     return Error(HTTPStatus.UNPROCESSABLE_ENTITY, errors)

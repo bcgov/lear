@@ -50,7 +50,7 @@ from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.utils.util import cors_preflight
+from legal_api.utils.util import build_schema_error_response, cors_preflight
 
 from .api_namespace import API
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
@@ -604,9 +604,7 @@ class ListFilingResource(Resource):
         if valid:
             return {'message': 'Filing is valid'}, HTTPStatus.OK
 
-        errors = []
-        for error in err:
-            errors.append({'path': '/'.join(error.path), 'error': error.message})
+        errors = build_schema_error_response(err)
         return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
