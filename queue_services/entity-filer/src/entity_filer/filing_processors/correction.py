@@ -31,23 +31,15 @@ def is_special_resolution_correction(filing: Dict, business: Business, original_
 
     if not is_coop:
         return False
-
     if corrected_filing_type == 'specialResolution':
         return True
+    if corrected_filing_type not in ('specialResolution', 'correction'):
+        return False
 
-    # Check to see if top level original filing is a specialResolution
-    original_filing_correction = original_filing.filing_json['filing']['correction']
-    while original_filing_correction.get('correctedFilingType') == 'correction':
-        if (
-            corrected_filing_type == 'correction' and
-            original_filing_correction .get('correctedFilingType') == 'specialResolution'
-        ):
-            return True
-        # Find the next original filing in the chain of corrections
-        original_filing = Filing.find_by_id(original_filing_correction.get('correctedFilingId'))
-        original_filing_correction = original_filing.filing_json['filing']['correction']
-
-    return corrected_filing_type == 'specialResolution'
+    # Find the next original filing in the chain of corrections
+    filing = original_filing.filing_json['filing']
+    original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
+    return is_special_resolution_correction(filing, business, original_filing)
 
 
 def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):

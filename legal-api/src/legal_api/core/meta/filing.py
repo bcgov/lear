@@ -451,15 +451,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 # Depending on filing_json to get corrected filing until changing the parent_filing logic.
                 # Now staff can correct a filing multiple time and parent_filing in the original filing will be
                 # overriden with the latest correction, which cause loosing the previous correction link.
-                corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
-                corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
-                if corrected_filing_type in ['annualReport']:
-                    corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
-                    name = f'Correction - {FilingMeta.display_name(business_revision, corrected_filing)}'
-
-                if corrected_filing_type in ['specialResolution']:
-                    corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
-                    name = f'{FilingMeta.display_name(business_revision, corrected_filing)} Correction'
+                name = FilingMeta.get_corrected_filing_name(filing, business_revision, name)
 
         elif filing.filing_type in ('dissolution') and filing.meta_data:
             if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
@@ -517,3 +509,18 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 display_name = display_name.get(legal_type)
 
         return display_name
+
+    @staticmethod
+    def get_corrected_filing_name(filing: FilingStorage, business_revision: Business, name: str):
+        """Return filing name for correction."""
+        corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
+
+        if corrected_filing_type in ['annualReport', 'specialResolution']:
+            corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
+            display_name = FilingMeta.display_name(business_revision, corrected_filing)
+            if corrected_filing_type == 'annualReport':
+                return f'Correction - {display_name}'
+            else:
+                return f'{display_name} Correction'
+        return name

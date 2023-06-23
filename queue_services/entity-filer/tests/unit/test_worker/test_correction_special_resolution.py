@@ -18,7 +18,7 @@ import io
 import random
 
 import pytest
-from legal_api.models import Business
+from legal_api.models import Business, Filing
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 
@@ -68,7 +68,7 @@ async def test_special_resolution_correction(app, session, mocker):
     correction_data['filing']['correction']['correctedFilingType'] = 'specialResolution'
     correction_data['filing']['correction']['resolution'] = '<p>xxxx</p>'
     correction_data['filing']['correction']['signatory'] = {
-        'givenName': 'Joe',
+        'givenName': 'Joey',
         'familyName': 'Doe',
         'additionalName': ''
     }
@@ -95,5 +95,42 @@ async def test_special_resolution_correction(app, session, mocker):
     # # # Check if the signatory was updated
     party = resolution.party
     assert party is not None, 'Party should exist'
-    assert party.first_name == 'JOE', 'First name should be corrected'
+    assert party.first_name == 'JOEY', 'First name should be corrected'
+    assert party.last_name == 'DOE', 'Last name should be corrected'
+
+    # Simulate another correction filing on previous correction
+    correction_data_2 = copy.deepcopy(FILING_HEADER)
+    correction_data_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data_2['filing']['header']['name'] = 'correction'
+    correction_data_2['filing']['business'] = {'identifier': identifier}
+    correction_data_2['filing']['correction']['correctedFilingType'] = 'correction'
+    correction_data_2['filing']['correction']['resolution'] = '<p>yyyy</p>'
+    correction_data_2['filing']['correction']['signatory'] = {
+        'givenName': 'Sarah',
+        'familyName': 'Doe',
+        'additionalName': ''
+    }
+    # Update correction data to point to the original special resolution filing
+    if 'correction' not in correction_data_2['filing']:
+        correction_data_2['filing']['correction'] = {}
+    correction_data_2['filing']['correction']['correctedFilingId'] = correction_filing_id
+    correction_payment_id_2 = str(random.SystemRandom().getrandbits(0x58))
+    correction_filing_id_2 = (create_filing(correction_payment_id_2, correction_data_2, business_id=business_id)).id
+
+    # Mock the correction filing message
+    correction_filing_msg_2 = {'filing': {'id': correction_filing_id_2}}
+
+    # Call the process_filing method for the correction
+    await process_filing(correction_filing_msg_2, app)
+
+    # Assertions
+    business = Business.find_by_internal_id(business_id)
+    resolution = business.resolutions.first()
+    assert resolution is not None, 'Resolution should exist'
+    assert resolution.resolution == '<p>yyyy</p>', 'Resolution text should be corrected'
+
+    # # # Check if the signatory was updated
+    party = resolution.party
+    assert party is not None, 'Party should exist'
+    assert party.first_name == 'SARAH', 'First name should be corrected'
     assert party.last_name == 'DOE', 'Last name should be corrected'
