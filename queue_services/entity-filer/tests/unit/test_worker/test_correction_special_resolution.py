@@ -19,7 +19,7 @@ import random
 
 import pytest
 from legal_api.models import Business, Filing
-from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 
 from entity_filer.worker import process_filing
@@ -134,3 +134,32 @@ async def test_special_resolution_correction(app, session, mocker):
     assert party is not None, 'Party should exist'
     assert party.first_name == 'SARAH', 'First name should be corrected'
     assert party.last_name == 'DOE', 'Last name should be corrected'
+
+
+async def test_non_special_resolution_correction_filing(app, session):
+    """Assert we can't process a cp but not SR correction filing."""
+    # Create business
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+    business = create_entity(identifier, 'CP', 'COOP INC.')
+    business_id = business.id
+    business.save()
+    original_filing_id = create_filing(payment_id, copy.deepcopy(ANNUAL_REPORT), business_id).id
+
+    # setup - create correction filing
+    filing = copy.deepcopy(CORRECTION_AR)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['comment'] = 'test cp correction'
+    filing['filing']['correction']['correctedFilingId'] = original_filing_id
+    correction_filing = create_filing(payment_id, filing, business_id)
+    correction_filing.save()
+
+    correction_filing_id = correction_filing.id
+    filing_msg = {'filing': {'id': correction_filing_id}}
+
+    # TEST
+    await process_filing(filing_msg, app)
+
+    # Assertions
+    origin_filing = Filing.find_by_id(original_filing_id)
+    assert origin_filing.status == 'PENDING'
