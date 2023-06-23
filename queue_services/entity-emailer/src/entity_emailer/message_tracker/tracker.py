@@ -147,6 +147,7 @@ def is_processable_message(message_context_properties: dict):
         msg: MessageProcessing = \
             MessageProcessingService.find_message_by_message_id(message_id)
 
+    # limit total number of retries to 1 + MSG_RETRY_NUM
     if msg and msg.message_seen_count > MSG_RETRY_NUM:
         return False, msg
 
