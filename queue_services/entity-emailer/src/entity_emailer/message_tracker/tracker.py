@@ -15,8 +15,8 @@
 
 import json
 
-from flask import current_app
 import nats
+from flask import current_app
 
 from entity_emailer.email_processors import filing_notification
 from tracker.models import MessageProcessing
