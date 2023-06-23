@@ -15,10 +15,10 @@
 
 import json
 
+from flask import current_app
 import nats
 
 from entity_emailer.email_processors import filing_notification
-from flask import current_app
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
@@ -142,9 +142,9 @@ def is_processable_message(message_context_properties: dict):
         msg: MessageProcessing = \
             MessageProcessingService.find_message_by_message_id(message_id)
 
-    # limit total number of retries to 1 + MSG_RETRY_NUM
-    MSG_RETRY_NUM = current_app.config.get('MSG_RETRY_NUM')
-    if msg and msg.message_seen_count > MSG_RETRY_NUM:
+    # limit total number of retries to 1 + msg_retry_num
+    msg_retry_num = current_app.config.get('MSG_RETRY_NUM')
+    if msg and msg.message_seen_count > msg_retry_num:
         return False, msg
 
     if msg is None or msg.status == MessageProcessing.Status.FAILED.value:
