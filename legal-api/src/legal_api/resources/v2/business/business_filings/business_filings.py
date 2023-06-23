@@ -51,11 +51,11 @@ from legal_api.services import (
 )
 from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.schemas import build_schema_error_response
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.util import build_schema_error_response
 
 from ..bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
