@@ -44,9 +44,9 @@ def build_schema_error_response(errors):
         for context in error.context:
             validation_errors.append({
                 'message': context.message,
-                'json_path': context.json_path,
+                'jsonPath': context.json_path,
                 'validator': context.validator,
-                'validator_value': context.validator_value
+                'validatorValue': context.validator_value
             })
         formatted_errors.append({'path': '/'.join(error.path), 'error': error.message, 'context': validation_errors})
     return formatted_errors
