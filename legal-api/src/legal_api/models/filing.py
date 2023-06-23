@@ -26,7 +26,7 @@ from sqlalchemy.orm import backref
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
-from legal_api.services.filings.validations.schemas import build_schema_error_response
+from legal_api.utils.util import build_schema_error_response
 
 from .db import db  # noqa: I001
 
