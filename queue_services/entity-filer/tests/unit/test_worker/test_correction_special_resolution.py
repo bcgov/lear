@@ -18,6 +18,7 @@ import io
 import random
 
 import pytest
+from dateutil.parser import parse
 from legal_api.models import Business, Filing
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
@@ -99,12 +100,14 @@ async def test_special_resolution_correction(app, session, mocker):
     assert party.last_name == 'DOE', 'Last name should be corrected'
 
     # Simulate another correction filing on previous correction
+    resolution_date = '2023-06-16'
     correction_data_2 = copy.deepcopy(FILING_HEADER)
     correction_data_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
     correction_data_2['filing']['header']['name'] = 'correction'
     correction_data_2['filing']['business'] = {'identifier': identifier}
     correction_data_2['filing']['correction']['correctedFilingType'] = 'correction'
     correction_data_2['filing']['correction']['resolution'] = '<p>yyyy</p>'
+    correction_data_2['filing']['correction']['resolutionDate'] = resolution_date
     correction_data_2['filing']['correction']['signatory'] = {
         'givenName': 'Sarah',
         'familyName': 'Doe',
@@ -128,6 +131,7 @@ async def test_special_resolution_correction(app, session, mocker):
     resolution = business.resolutions.first()
     assert resolution is not None, 'Resolution should exist'
     assert resolution.resolution == '<p>yyyy</p>', 'Resolution text should be corrected'
+    assert resolution.resolution_date == parse(resolution_date).date()
 
     # # # Check if the signatory was updated
     party = resolution.party

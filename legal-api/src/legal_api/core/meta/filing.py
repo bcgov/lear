@@ -523,4 +523,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 return f'Correction - {display_name}'
             else:
                 return f'{display_name} Correction'
+        elif corrected_filing_type == 'correction':
+            corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
+            return FilingMeta.get_corrected_filing_name(corrected_filing, business_revision, name)
         return name
