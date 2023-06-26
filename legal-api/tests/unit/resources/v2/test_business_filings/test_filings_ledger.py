@@ -506,7 +506,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
     original.save()
 
     today = date.today().isoformat()
-    correction_meta = {'legalFilings': ['correction', 'correction']}
+    correction_meta = {'legalFilings': ['specialResolution', 'correction']}
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
 
@@ -519,13 +519,12 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         business,
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
-        filing_dict=sr_correction)
+        filing_dict=sr_correction_2)
     correction.parent_filing_id = correction_2.id
     correction.save()
 
-    today = date.today().isoformat()
-    correction_meta = {'legalFilings': ['specialResolution', 'correction', 'correction']}
-    correction_2._meta_data = {**{'applicationDate': today}, **correction_meta}
+    correction_2_meta = {'legalFilings': ['correction']}
+    correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
     correction_2.save()
 
     # test
