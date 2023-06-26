@@ -20,7 +20,7 @@ import random
 import pytest
 from dateutil.parser import parse
 from legal_api.models import Business, Filing
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, CORRECTION_CP_SPECIAL_RESOLUTION,\
+from registry_schemas.example_data import CORRECTION_AR, CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 
 from entity_filer.worker import process_filing
@@ -148,7 +148,7 @@ async def test_non_special_resolution_correction_filing(app, session):
     business = create_entity(identifier, 'CP', 'COOP INC.')
     business_id = business.id
     business.save()
-    original_filing_id = create_filing(payment_id, copy.deepcopy(ANNUAL_REPORT), business_id).id
+    original_filing_id = create_filing(payment_id, copy.deepcopy(CORRECTION_AR), business_id).id
 
     # setup - create correction filing
     filing = copy.deepcopy(CORRECTION_AR)
