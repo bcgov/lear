@@ -938,9 +938,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if prev_association_type and to_association_type and prev_association_type != to_association_type:
             filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
             filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
-        filing['rulesFileKey'] = filing.get('alteration', {}).get('rulesFileKey')
+        filing['rulesInResolution'] = filing.get('alteration', {}).get('rulesInResolution')
         filing['uploadNewRules'] = meta_data.get('alteration', {}).get('uploadNewRules')
-        filing['memorandumFileKey'] = filing.get('alteration', {}).get('memorandumFileKey')
+        filing['memorandumInResolution'] = filing.get('alteration', {}).get('memorandumInResolution')
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
