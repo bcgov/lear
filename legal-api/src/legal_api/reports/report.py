@@ -936,8 +936,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         prev_association_type = meta_data.get('alteration', {}).get('fromCooperativeAssociationType')
         to_association_type = meta_data.get('alteration', {}).get('toCooperativeAssociationType')
         if prev_association_type and to_association_type and prev_association_type != to_association_type:
-            filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get('prev_association_type', '')
-            filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get('to_association_type', '')
+            filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
+            filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
         filing['rulesInResolution'] = meta_data.get('alteration', {}).get('rulesInResolution')
         filing['memorandumInResolution'] = meta_data.get('alteration', {}).get('memorandumInResolution')
 

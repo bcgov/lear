@@ -184,7 +184,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      {'documents': {
                     'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/alteration'},
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ],
                     'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',

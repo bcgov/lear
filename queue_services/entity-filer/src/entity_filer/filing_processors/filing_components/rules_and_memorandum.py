@@ -28,7 +28,7 @@ def update_rules(
     business: Business,
     filing: Filing,
     rules_file_key: String,
-    file_name: String
+    file_name: String = None
 ) -> Optional[List]:
     """Updtes rules if any.
 

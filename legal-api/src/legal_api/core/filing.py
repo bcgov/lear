@@ -499,6 +499,9 @@ class Filing:
                     if Filing.FilingTypes.CHANGEOFNAME.value in legal_filings:
                         # suppress change of name output for MVP since the design is outdated.
                         legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
+                    if Filing.FilingTypes.ALTERATION.value in legal_filings:
+                        # suppress alteration output for MVP since the design is outdated.
+                        legal_filings_copy.remove(Filing.FilingTypes.ALTERATION.value)
 
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
