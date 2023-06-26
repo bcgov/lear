@@ -214,8 +214,10 @@ def test_alteration_name_change(session):
     legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
 
     # changes its name to a named company
+    # create the minimal filing
     named_company_filing = filing_named_company(legal_entity, ALTERATION_FILING_TEMPLATE, named_company_name)
-    update_business_legal_name(legal_entity, named_company_name)
+    # mark the business as changed by the filing
+    update_business_legal_name(legal_entity, named_company_name, named_company_filing)
     named_company_report = create_alteration_report(named_company_filing, legal_entity, report_type)
     named_company_report_filename = named_company_report._get_report_filename()
     assert named_company_report_filename
@@ -226,7 +228,7 @@ def test_alteration_name_change(session):
 
     # changes its name to a numbered company
     numbered_company_filing = filing_numbered_company(legal_entity, ALTERATION_FILING_TEMPLATE, numbered_company_name)
-    update_business_legal_name(legal_entity, numbered_company_name)
+    update_business_legal_name(legal_entity, numbered_company_name, numbered_company_filing)
 
     # new legal_name can be retrieved from the versioned business (numbered company case)
     business_revision = \
@@ -241,11 +243,10 @@ def test_alteration_name_change(session):
     assert numbered_company_template_data['meta_data']['alteration']['toLegalName'] == numbered_company_name
 
 
-def update_business_legal_name(legal_entity, legal_name):
+def update_business_legal_name(legal_entity, legal_name, filing):
     """Update business legal name."""
-    uow = versioning_manager.unit_of_work(db.session)
-    uow.create_transaction(db.session)
     legal_entity.legal_name = legal_name
+    legal_entity.change_filing_id = filing.id
     legal_entity.save()
 
 

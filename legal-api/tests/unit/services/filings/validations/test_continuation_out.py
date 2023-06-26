@@ -23,6 +23,7 @@ from registry_schemas.example_data import FILING_HEADER, CONTINUATION_OUT
 from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 date_format = '%Y-%m-%d'
 legal_name = 'Test name request'
@@ -54,8 +55,9 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
         filing['filing']['continuationOut']['continuationOutDate'] = \
             (datetime.utcnow() + datedelta.datedelta(days=1)).strftime(date_format)
     elif test_name == 'FAIL_EXPIRED':
-        filing['filing']['continuationOut']['continuationOutDate'] = datetime.utcnow().strftime(date_format)
-        business.cco_expiry_date = datetime.utcnow() - datedelta.datedelta(days=1)
+        filing['filing']['continuationOut']['continuationOutDate'] = \
+            LegislationDatetime.now().strftime(date_format)
+        business.cco_expiry_date = datetime.utcnow() - datedelta.datedelta(days=2)
     elif test_name == 'FAIL_NO_CCO':
         business.cco_expiry_date = None
 

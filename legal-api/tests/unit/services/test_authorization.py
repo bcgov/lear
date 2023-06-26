@@ -49,25 +49,26 @@ def test_jwt_manager_initialized(jwt):
 @not_github_ci
 def test_jwt_manager_correct_test_config(app_request, jwt):
     """Assert that the test configuration for the JWT is working as expected."""
-    message = 'This is a protected end-point'
-    protected_route = '/fake_jwt_route'
+    with app_request.app_context():
+        message = 'This is a protected end-point'
+        protected_route = '/fake_jwt_route'
 
-    @app_request.route(protected_route)
-    @jwt.has_one_of_roles([STAFF_ROLE])
-    def get():
-        return jsonify(message=message)
+        @app_request.route(protected_route)
+        @jwt.has_one_of_roles([STAFF_ROLE])
+        def get():
+            return jsonify(message=message)
 
-    # assert that JWT is setup correctly for a known role
-    token = helper_create_jwt(jwt, [STAFF_ROLE])
-    headers = {'Authorization': 'Bearer ' + token}
-    rv = app_request.test_client().get(protected_route, headers=headers)
-    assert rv.status_code == HTTPStatus.OK
+        # assert that JWT is setup correctly for a known role
+        token = helper_create_jwt(jwt, [STAFF_ROLE])
+        headers = {'Authorization': 'Bearer ' + token}
+        rv = app_request.test_client().get(protected_route, headers=headers)
+        assert rv.status_code == HTTPStatus.OK
 
-    # assert the JWT fails for an unknown role
-    token = helper_create_jwt(jwt, ['SHOULD-FAIL'])
-    headers = {'Authorization': 'Bearer ' + token}
-    rv = app_request.test_client().get(protected_route, headers=headers)
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        # assert the JWT fails for an unknown role
+        token = helper_create_jwt(jwt, ['SHOULD-FAIL'])
+        headers = {'Authorization': 'Bearer ' + token}
+        rv = app_request.test_client().get(protected_route, headers=headers)
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 TEST_AUTHZ_DATA = [

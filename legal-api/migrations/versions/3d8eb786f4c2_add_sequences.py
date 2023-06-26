@@ -18,7 +18,9 @@ depends_on = None
 
 def upgrade():
     op.execute("CREATE SEQUENCE legal_entity_identifier_coop START 1002395")
+    op.execute("CREATE SEQUENCE legal_entity_identifier_sp_gp START 1002395")
 
 
 def downgrade():
     op.execute("DROP SEQUENCE legal_entity_identifier_coop")
+    op.execute("DROP SEQUENCE legal_entity_identifier_sp_gp")

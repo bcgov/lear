@@ -253,6 +253,10 @@ def factory_completed_filing(legal_entity,
 
         setattr(filing, 'skip_status_listener', True)
         filing.save()
+
+        legal_entity.change_filing_id = filing.id
+        legal_entity.save()
+
     return filing
 
 

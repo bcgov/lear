@@ -1,59 +1,44 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2023 Government of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the 'License');
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an 'AS IS' BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Manage the Feature Flags initialization, setup and service."""
+"""Feature flag wrapper for Flask."""
+from __future__ import annotations
+
+from contextlib import suppress
+from typing import Union
+
+import ldclient
+from ldclient import LDClient, Config
+from ldclient.integrations.test_data import TestData
 from flask import current_app
-from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
-from ldclient.config import Config  # noqa: I005
-from ldclient.impl.integrations.files.file_data_source import _FileDataSource
-from ldclient.interfaces import UpdateProcessor
+from flask import has_app_context
+from flask import Flask
 
-from legal_api.models import User
-
-
-class FileDataSource(UpdateProcessor):
-    """FileDataStore has been removed, so this provides similar functionality."""
-
-    @classmethod
-    def factory(cls, **kwargs):
-        """Provide a way to use local files as a source of feature flag state.
-
-        .. deprecated:: 6.8.0
-          This module and this implementation class are deprecated and may be changed or removed in the future.
-          Please use :func:`ldclient.integrations.Files.new_data_source()`.
-
-        The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
-        """
-        return lambda config, store, ready: _FileDataSource(store, ready,
-                                                            paths=kwargs.get('paths'),
-                                                            auto_update=kwargs.get('auto_update', False),
-                                                            poll_interval=kwargs.get('poll_interval', 1),
-                                                            force_polling=kwargs.get('force_polling', False))
+import legal_api
+# from legal_api.models import User
+from legal_api.services.authz import get_role
+from legal_api.utils.auth import JwtManager
 
 
 class Flags():
     """Wrapper around the feature flag system.
 
-    calls FAIL to FALSE
-
-    If the feature flag service is unavailable
-    AND
-    there is no local config file
-    Calls -> False
-
+    1 client per application.
     """
 
-    def __init__(self, app=None):
+    COMPONENT_NAME = 'featureflags'
+
+    def __init__(self, app: Flask = None):
         """Initialize this object."""
         self.sdk_key = None
         self.app = None
@@ -61,85 +46,99 @@ class Flags():
         if app:
             self.init_app(app)
 
-    def init_app(self, app):
-        """Initialize the Feature Flag environment."""
+    def init_app(self, app: Flask, td: TestData = None):
+        """Initialize the Feature Flag environment.
+
+        Provide TD for TestData.
+        """
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
 
-        if self.sdk_key or app.testing:
+        if td:
+            client = LDClient(config=Config('testing', update_processor_class=td))
+        elif self.sdk_key:
+            ldclient.set_config(Config(self.sdk_key))
+            client = ldclient.get()
 
-            if app.testing:
-                factory = FileDataSource.factory(paths=['flags.json'],
-                                                 auto_update=True)
-                config = Config(sdk_key=self.sdk_key,
-                                update_processor_class=factory,
-                                send_events=False)
-            else:
-                config = Config(sdk_key=self.sdk_key)
-
-            ldclient_set_config(config)
-            client = ldclient_get()
-
-            app.extensions['featureflags'] = client
-
-    def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
-        """Destroy all objects created by this extension."""
-        client = current_app.extensions['featureflags']
-        client.close()
-
-    def _get_client(self):
+        # with suppress(Exception):
         try:
-            client = current_app.extensions['featureflags']
-        except KeyError:
-            try:
-                self.init_app(current_app)
-                client = current_app.extensions['featureflags']
-            except KeyError:
-                client = None
+            if client and client.is_initialized():  # pylint: disable=E0601
+                app.extensions[Flags.COMPONENT_NAME] = client
+                app.teardown_appcontext(self.teardown)
+        except Exception as err:  # noqa: B903
+            if app and has_app_context():
+                app.logger.warn('issue registering flag service', err)
 
-        return client
+    def teardown(self, exception):  # pylint: disable=unused-argument,no-self-use; flask method signature
+        """Destroy all objects created by this extension.
+
+        Ensure we close the client connection nicely.
+        """
+        with suppress(Exception):
+            if client := current_app.extensions.get(Flags.COMPONENT_NAME):
+                client.close()
 
     @staticmethod
-    def _get_anonymous_user():
+    def get_client():
+        """Get the currently configured ldclient."""
+        with suppress(KeyError):
+            client = current_app.extensions[Flags.COMPONENT_NAME]
+            return client
+
+        try:
+            return ldclient.get()
+        except Exception:  # noqa: B902
+            return None
+
+    @staticmethod
+    def get_anonymous_user():
+        """Return an anonymous key."""
         return {
             'key': 'anonymous'
         }
 
     @staticmethod
-    def _user_as_key(user: User):
-        user_json = {
+    def flag_user(user: legal_api.models.User,
+                  account_id: int = None,
+                  jwt: JwtManager = None):
+        """Convert User into a Flag user dict."""
+        if not isinstance(user, legal_api.models.User):
+            return None
+
+        _user = {
             'key': user.sub,
             'firstName': user.firstname,
-            'lastName': user.lastname
+            'lastName': user.lastname,
+            'email': user.email,
+            'custom': {
+                'loginSource': user.login_source,
+            }
         }
-        return user_json
+        with suppress(Exception):
+            if account_id and jwt:
+                _user['custom']['group'] = get_role(jwt, account_id)
 
-    def is_on(self, flag: str, user: User = None) -> bool:
-        """Assert that the flag is set for this user."""
-        client = self._get_client()
+        return _user
 
-        if user:
-            flag_user = self._user_as_key(user)
-        else:
-            flag_user = self._get_anonymous_user()
-
-        try:
-            return bool(client.variation(flag, flag_user, None))
-        except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
-            return False
-
-    def value(self, flag: str, user: User = None) -> bool:
+    @staticmethod
+    def value(flag: str, user=None):
         """Retrieve the value  of the (flag, user) tuple."""
-        client = self._get_client()
+        client = Flags.get_client()
 
         if user:
-            flag_user = self._user_as_key(user)
+            flag_user = user
         else:
-            flag_user = self._get_anonymous_user()
+            flag_user = Flags.get_anonymous_user()
 
         try:
             return client.variation(flag, flag_user, None)
-        except Exception as err:
+        except Exception as err:  # noqa: B902
             current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
-            return False
+            return None
+
+    @staticmethod
+    def detail(flag: str, user=None) -> Union[bool, int, str]:  # pylint: disable=E1136
+        """Return the full flag and meta info."""
+        client = current_app.extensions[Flags.COMPONENT_NAME]
+        link = client.variation_detail(flag, user, False)
+        return link

@@ -37,14 +37,14 @@ def test_stamp(app):  # pylint:disable=unused-argument
         registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature, incorp_date, 'CP00000001')
         
         certified_copy = pdf_service.stamp_pdf(pdf_input, registrars_stamp, only_first_page=True)
-        certified_copy_obj = PyPDF2.PdfFileReader(certified_copy)
+        certified_copy_obj = PyPDF2.PdfReader(certified_copy)
         
-        certified_copy_page = certified_copy_obj.getPage(0)
-        text = certified_copy_page.extractText() 
+        certified_copy_page = certified_copy_obj.pages[0]
+        text = certified_copy_page.extract_text() 
         assert 'Filed on' in text
         
-        certified_copy_page = certified_copy_obj.getPage(1)
-        text = certified_copy_page.extractText() 
+        certified_copy_page = certified_copy_obj.pages[1]
+        text = certified_copy_page.extract_text() 
         assert 'Filed on' not in text
 
         # Uncomment to generate the file:

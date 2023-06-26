@@ -18,13 +18,24 @@ error - a description of the error {code / description: classname / full text}
 status_code - where possible use HTTP Error Codes
 """
 import functools
+from typing import Dict, List
 
 from .business_exception import BusinessException
 from .error_messages import ErrorCode, get_error_message
 
 
 __all__ = (
+    'ApiConnectionException',
     'BusinessException',
     'ErrorCode',
     'get_error_message',
 )
+
+class ApiConnectionException(Exception):
+    """Api Connection exception."""
+
+    def __init__(self, code: int, detail: List[Dict]):
+        """Initialize the error object."""
+        super(ApiConnectionException, self).__init__()
+        self.code = code
+        self.detail = detail

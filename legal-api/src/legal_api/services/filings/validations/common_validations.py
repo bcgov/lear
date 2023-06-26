@@ -173,18 +173,18 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
     try:
         file = MinioService.get_file(file_key)
         open_pdf_file = io.BytesIO(file.data)
-        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+        pdf_reader = PyPDF2.PdfReader(open_pdf_file)
 
         # Check that all pages in the pdf are letter size and able to be processed.
-        if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
+        if any(x.mediabox.width != 612 or x.mediabox.height != 792 for x in pdf_reader.pages):
             msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
                         'path': file_key_path})
-
+        
         file_info = MinioService.get_file_info(file_key)
         if file_info.size > 30000000:
             msg.append({'error': _('File exceeds maximum size.'), 'path': file_key_path})
 
-        if pdf_reader.isEncrypted:
+        if pdf_reader.is_encrypted:
             msg.append({'error': _('File must be unencrypted.'), 'path': file_key_path})
 
     except Exception:

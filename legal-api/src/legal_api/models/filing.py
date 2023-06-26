@@ -334,7 +334,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'deletion_locked',
             'effective_date',
             'legal_entity_id',
-            'notice_date'
+            'notice_date',
             'order_details',
             'paper_only',
             'parent_filing_id',
@@ -368,7 +368,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
     court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
     court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
-    order_details = db.Column(db.String(2000))
+    order_details = db.Column('order_details', db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
     approval_type = db.Column('approval_type', db.String(15))
     application_date = db.Column('application_date', db.DateTime(timezone=True))
@@ -393,7 +393,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
-    filing_entity_roles = db.relationship('EntityRole', lazy='dynamic')
+    filing_entity_roles = db.relationship('EntityRole', lazy='dynamic', primaryjoin="(Filing.id==EntityRole.filing_id)")
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))

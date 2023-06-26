@@ -22,6 +22,7 @@ import psycopg2
 import pytest
 import sqlalchemy
 from flask_migrate import Migrate, upgrade
+from ldclient.integrations.test_data import TestData
 from sqlalchemy import event, inspect, text
 from sqlalchemy.schema import DropConstraint, MetaData
 
@@ -127,9 +128,16 @@ def freeze_datetime_utcnow(monkeypatch):
 
 
 @pytest.fixture(scope='session')
-def app():
+def ld():
+    """LaunchDarkly TestData source."""
+    td = TestData.data_source()
+    yield td
+
+
+@pytest.fixture(scope='session')
+def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app('testing', **{'ld_test_data': ld})
 
     return _app
 
