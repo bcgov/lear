@@ -17,7 +17,9 @@
 from datetime import datetime
 
 import pycountry
+from sql_versioning import history_cls
 from sqlalchemy import or_
+from sqlalchemy.sql.expression import null
 from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
@@ -149,7 +151,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ar_json = {}
 
         ar_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, legal_entity)
+            VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
 
         ar_json['annualReport'] = {}
         if legal_entity.last_ar_date:
@@ -164,10 +166,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
 
         ar_json['annualReport']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     legal_entity.id, role='director')
         ar_json['annualReport']['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, legal_entity.id)
+            VersionedBusinessDetailsService.get_office_revision(filing, legal_entity.id)
 
         # legal_type CP may need changeOfDirectors/changeOfAddress
         if 'changeOfDirectors' in filing.json['filing']:
@@ -208,17 +210,24 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return company_profile_json
 
     @staticmethod
-    def get_business_revision(transaction_id, legal_entity) -> dict:
+    def get_business_revision(filing, legal_entity) -> dict:
         """Consolidates the business info as of a particular transaction."""
-        business_version = version_class(LegalEntity)
-        business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id <= transaction_id) \
-            .filter(business_version.operation_type != 2) \
-            .filter(business_version.id == legal_entity.id) \
-            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        business_version.end_transaction_id > transaction_id)) \
-            .order_by(business_version.transaction_id).one_or_none()
-        return VersionedBusinessDetailsService.business_revision_json(business_revision, legal_entity.json())
+        filing_id = filing.id
+        
+        # The history table has the old revisions, not the current one.
+        if not(le_revision := db.session.query(LegalEntity) \
+                .filter(or_(LegalEntity.change_filing_id <= filing_id, 
+                            LegalEntity.change_filing_id == None)) \
+                .filter(LegalEntity.id == legal_entity.id).one_or_none()
+        ):
+            legal_entity_version = history_cls(legal_entity)
+            le_revision = db.session.query(legal_entity_version) \
+            .filter(legal_entity_version.change_filing_id <= filing_id) \
+            .filter(legal_entity_version.id == legal_entity.id) \
+            .order_by(legal_entity_version.change_filing_id).first()
+            
+        return VersionedBusinessDetailsService.business_revision_json(le_revision, legal_entity.json())
+
 
     @staticmethod
     def get_business_revision_obj(transaction_id, legal_entity):
@@ -254,60 +263,146 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_business_revision_after_filing(filing_id, legal_entity_id) -> dict:
         """Consolidates the business info as of a particular transaction."""
         legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
-        filing = Filing.find_by_id(filing_id)
-        business_version = version_class(LegalEntity)
-        business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id > filing.transaction_id) \
-            .filter(business_version.operation_type != 2) \
-            .filter(business_version.id == legal_entity.id) \
-            .order_by(business_version.transaction_id).one_or_none()
+        # set the revision to the current state, makes the IF easier
+        business_revision = legal_entity
+        if legal_entity.change_filing_id != filing_id:
+            # it's not current for the filing, so get the most recent
+            # revision for the filing
+            business_history = history_cls(LegalEntity)
+            business_revision = db.session.query(business_history) \
+                .filter(business_history.change_filing_id <= filing_id) \
+                .filter(business_history.id == legal_entity_id) \
+                .order_by(business_history.change_filing_id).first()
+
         return VersionedBusinessDetailsService.business_revision_json(business_revision, legal_entity.json())
 
+
     @staticmethod
-    def get_office_revision(transaction_id, legal_entity_id) -> dict:
+    def get_office_revision(filing, legal_entity_id) -> dict:
         """Consolidates all office changes upto the given transaction id."""
+        filing_id = filing.id
         offices_json = {}
-        address_version = version_class(Address)
-        offices_version = version_class(Office)
+        # address_version = version_class(Address)
+        # offices_version = version_class(Office)
 
-        offices = db.session.query(offices_version) \
-            .filter(offices_version.transaction_id <= transaction_id) \
-            .filter(offices_version.operation_type != 2) \
-            .filter(offices_version.legal_entity_id == legal_entity_id) \
-            .filter(or_(offices_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        offices_version.end_transaction_id > transaction_id)) \
-            .order_by(offices_version.transaction_id).all()
+        # offices = db.session.query(offices_version) \
+        #     .filter(offices_version.transaction_id <= transaction_id) \
+        #     .filter(offices_version.operation_type != 2) \
+        #     .filter(offices_version.legal_entity_id == legal_entity_id) \
+        #     .filter(or_(offices_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+        #                 offices_version.end_transaction_id > transaction_id)) \
+        #     .order_by(offices_version.transaction_id).all()
 
-        for office in offices:
+        # for office in offices:
+        #     offices_json[office.office_type] = {}
+        #     addresses_list = db.session.query(address_version) \
+        #         .filter(address_version.transaction_id <= transaction_id) \
+        #         .filter(address_version.operation_type != 2) \
+        #         .filter(address_version.office_id == office.id) \
+        #         .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+        #                     address_version.end_transaction_id > transaction_id)) \
+        #         .order_by(address_version.transaction_id).all()
+        #     for address in addresses_list:
+        #         offices_json[office.office_type][f'{address.address_type}Address'] = \
+        #             VersionedBusinessDetailsService.address_revision_json(address)
+
+        # HERE
+        filing_id = filing.id
+        address_history = history_cls(Address)
+        office_history = history_cls(Office)
+
+        offices_current = db.session.query(Office, null().label("changed")) \
+            .filter(Office.change_filing_id <= filing_id) \
+            .filter(Office.legal_entity_id == legal_entity_id) \
+            .filter(Office.deactivated_date is null())
+
+        offices_historical = db.session.query(office_history) \
+            .filter(office_history.change_filing_id <= filing_id) \
+            .filter(office_history.legal_entity_id == legal_entity_id)  \
+            .filter(Office.deactivated_date > filing.effective_date)
+
+        # Get all of the valid types in effect for this LegalEntity and Filing
+        current_types = db.session.query(Office.office_type) \
+            .filter(Office.change_filing_id <= filing_id) \
+            .filter(Office.legal_entity_id == legal_entity_id) \
+            .filter(Office.deactivated_date is null())
+        historical_types = db.session.query(office_history.office_type) \
+            .filter(office_history.change_filing_id <= filing_id) \
+            .filter(office_history.legal_entity_id == legal_entity_id) \
+            .filter(Office.deactivated_date > filing.effective_date)
+
+        valid_office_types = current_types.union(historical_types).distinct().all()
+
+        for valid_office_type in valid_office_types:
+
+            office = offices_current.filter(Office.office_type == valid_office_type) \
+                    .union(offices_historical.filter(office_history.office_type == valid_office_type)) \
+                    .first()
+
             offices_json[office.office_type] = {}
-            addresses_list = db.session.query(address_version) \
-                .filter(address_version.transaction_id <= transaction_id) \
-                .filter(address_version.operation_type != 2) \
-                .filter(address_version.office_id == office.id) \
-                .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                            address_version.end_transaction_id > transaction_id)) \
-                .order_by(address_version.transaction_id).all()
-            for address in addresses_list:
-                offices_json[office.office_type][f'{address.address_type}Address'] = \
-                    VersionedBusinessDetailsService.address_revision_json(address)
+
+            # addresses_list = db.session.query(Address) \
+            
+            # addresses_list = db.session.query(address_history) \
+            #     .filter(address_history.transaction_id <= filing_id) \
+            #     .filter(address_history.office_id == office.id) \
+            #     .order_by(address_history.change_filing_id).first()
+            # for address in addresses_list:
+            #     offices_json[office.office_type][f'{address.address_type}Address'] = \
+            #         VersionedBusinessDetailsService.address_revision_json(address)
 
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, legal_entity_id, is_ia_or_after=False, role=None) -> dict:
+    def get_party_role_revision(filing, legal_entity_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
-        party_role_version = version_class(EntityRole)
-        party_roles = db.session.query(party_role_version)\
-            .filter(party_role_version.transaction_id <= transaction_id) \
-            .filter(party_role_version.operation_type != 2) \
-            .filter(party_role_version.legal_entity_id == legal_entity_id) \
+        # party_role_version = version_class(EntityRole)
+        # party_roles = db.session.query(party_role_version)\
+        #     .filter(party_role_version.transaction_id <= transaction_id) \
+        #     .filter(party_role_version.operation_type != 2) \
+        #     .filter(party_role_version.legal_entity_id == legal_entity_id) \
+        #     .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+        #                 party_role_version.role_type == role)) \
+        #     .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
+        #                 party_role_version.end_transaction_id > transaction_id)) \
+        #     .order_by(party_role_version.transaction_id).all()
+        # parties = []
+        # for party_role in party_roles:
+        #     if party_role.cessation_date is None:
+        #         party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+        #                                                                                    party_role, is_ia_or_after)
+        #         if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
+        #                                                           == party_role_json['officer']['id']), None)):
+        #             party['roles'].extend(party_role_json['roles'])
+        #         else:
+        #             parties.append(party_role_json)
+
+        # return parties
+        # HERE
+        filing_id = filing.id
+        filing_date = filing.effective_date
+        entity_role_version = history_cls(EntityRole)
+
+        entity_roles_current = db.session.query(EntityRole, null().label("changed"))\
+            .filter(EntityRole.change_filing_id <= filing_id) \
+            .filter(EntityRole.legal_entity_id == legal_entity_id) \
+            .filter(EntityRole.cessation_date is null()) \
             .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_role_version.role_type == role)) \
-            .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_role_version.end_transaction_id > transaction_id)) \
-            .order_by(party_role_version.transaction_id).all()
+                        EntityRole.role_type == role))
+        
+        entity_roles_historical = db.session.query(entity_role_version)\
+            .filter(entity_role_version.change_filing_id <= filing_id) \
+            .filter(entity_role_version.legal_entity_id == legal_entity_id) \
+            .filter(or_(entity_role_version.cessation_date is null(),
+                        entity_role_version.change_filing_id <= filing_id)) \
+            .filter(or_(role is null(),
+                        entity_role_version.role_type == role))
+        
+        entity_roles = entity_roles_current.union(entity_roles_historical) \
+            .order_by(entity_role_version.filing_id).all()
+        
         parties = []
-        for party_role in party_roles:
+        for party_role in entity_roles:
             if party_role.cessation_date is None:
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
                                                                                            party_role, is_ia_or_after)

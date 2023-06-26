@@ -257,14 +257,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     additional_name = db.Column('additional_name', db.String(100))
     title = db.Column('title', db.String(1000))
     email = db.Column('email', db.String(254))
-
-    # parent keys
-    delivery_address_id = db.Column('delivery_address_id',
-                                    db.Integer,
-                                    db.ForeignKey('addresses.id'))
-    mailing_address_id = db.Column('mailing_address_id',
-                                   db.Integer,
-                                   db.ForeignKey('addresses.id'))
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(300))
@@ -276,8 +268,25 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     foreign_legal_type = db.Column(db.String(10))
     foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
+    # parent keys
+    delivery_address_id = db.Column('delivery_address_id',
+                                    db.Integer,
+                                    db.ForeignKey('addresses.id'))
+    mailing_address_id = db.Column('mailing_address_id',
+                                   db.Integer,
+                                   db.ForeignKey('addresses.id'))
+    change_filing_id = db.Column('change_filing_id',
+                                 db.Integer,
+                                 db.ForeignKey('filings.id'),
+                                 index=True)
+    
+
     # relationships
-    filings = db.relationship('Filing', lazy='dynamic')
+    change_filing = db.relationship('Filing', foreign_keys=[change_filing_id])
+    filings = db.relationship('Filing', lazy='dynamic',
+                              foreign_keys='Filing.legal_entity_id',
+                            #   primaryjoin="(Filing.id==Address.user_id)",
+                             )
     offices = db.relationship('Office', lazy='dynamic', cascade='all, delete, delete-orphan')
     share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')

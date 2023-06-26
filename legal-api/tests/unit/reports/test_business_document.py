@@ -13,12 +13,15 @@
 # limitations under the License.
 
 """Test-Suite to ensure that the Business Report class is working as expected."""
-import pytest
+from contextlib import suppress
 from http import HTTPStatus
+
+import pytest
 
 from legal_api.reports.business_document import BusinessDocument  # noqa:I001
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
+from tests.unit import nested_session
 
 from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address
 
@@ -36,54 +39,55 @@ from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing
         ('BC7654321', 'BEN', 'cstat'),
         ('FM0000123', 'SP', 'cstat'),
         ('FM1100012', 'GP', 'cstat'),
-        ('CP1234567', 'CP', 'lseal'),
-        ('BC7654321', 'BEN', 'lseal'),
-        ('FM0000123', 'SP', 'lseal'),
-        ('FM1100012', 'GP', 'lseal'),
+        ('CP1234568', 'CP', 'lseal'),
+        ('BC7654322', 'BEN', 'lseal'),
+        ('FM0001123', 'SP', 'lseal'),
+        ('FM1101012', 'GP', 'lseal'),
     ]
 )
 def test_get_json(session, app, jwt, identifier, entity_type, document_name):
     """Assert business document can be returned as JSON."""
-    request_ctx = app.test_request_context(
-        headers=create_header(jwt, [STAFF_ROLE], identifier)
-    )
-    with request_ctx:
-        legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
-        factory_legal_entity_mailing_address(legal_entity)
-        report = BusinessDocument(legal_entity, document_name)
-        json_resp = report.get_json()
-        assert json_resp
-        assert json_resp[1] == HTTPStatus.OK
-        json = json_resp[0]
-        assert json['business']
-        assert json['reportType'] == document_name
-        assert json['reportDateTime']
-        assert json['registrarInfo']
-        assert json['entityDescription']
-        assert json['entityAct']
+    with nested_session(session):
+        request_ctx = app.test_request_context(
+            headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
+        with request_ctx:
+            legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+            factory_legal_entity_mailing_address(legal_entity)
+            report = BusinessDocument(legal_entity, document_name)
+            json_resp = report.get_json()
+            assert json_resp
+            assert json_resp[1] == HTTPStatus.OK
+            json = json_resp[0]
+            assert json['business']
+            assert json['reportType'] == document_name
+            assert json['reportDateTime']
+            assert json['registrarInfo']
+            assert json['entityDescription']
+            assert json['entityAct']
 
 
 @pytest.mark.parametrize(
     'identifier, entity_type, document_name',
     [
-        ('CP1234567', 'CP', 'summary'),
-        ('BC1234567', 'BC', 'summary'),
-        ('BC7654321', 'BEN', 'summary'),
-        ('BC1234567', 'CC', 'summary'),
-        ('BC7654321', 'ULC', 'summary'),
-        ('BC1234567', 'LLC', 'summary'),
-        ('FM0000123', 'SP', 'summary'),
-        ('FM1100012', 'GP', 'summary'),
-        ('CP1234567', 'CP', 'cogs'),
-        ('BC7654321', 'BEN', 'cogs'),
-        ('CP1234567', 'CP', 'cstat'),
-        ('BC7654321', 'BEN', 'cstat'),
-        ('FM0000123', 'SP', 'cstat'),
-        ('FM1100012', 'GP', 'cstat'),
-        ('CP1234567', 'CP', 'lseal'),
-        ('BC7654321', 'BEN', 'lseal'),
-        ('FM0000123', 'SP', 'lseal'),
-        ('FM1100012', 'GP', 'lseal'),
+        ('CP2234567', 'CP', 'summary'),
+        ('BC2234567', 'BC', 'summary'),
+        ('BC2654321', 'BEN', 'summary'),
+        ('BC3234567', 'CC', 'summary'),
+        ('BC4654321', 'ULC', 'summary'),
+        ('BC4234567', 'LLC', 'summary'),
+        ('FM2002123', 'SP', 'summary'),
+        ('FM2102012', 'GP', 'summary'),
+        ('CP2634567', 'CP', 'cogs'),
+        ('BC2754321', 'BEN', 'cogs'),
+        ('CP2534567', 'CP', 'cstat'),
+        ('BC2654321', 'BEN', 'cstat'),
+        ('FM2500123', 'SP', 'cstat'),
+        ('FM2500012', 'GP', 'cstat'),
+        ('CP6534567', 'CP', 'lseal'),
+        ('BC2554321', 'BEN', 'lseal'),
+        ('FM2003123', 'SP', 'lseal'),
+        ('FM2103012', 'GP', 'lseal'),
     ]
 )
 def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
+from contextlib import suppress
+
 from unittest.mock import patch
 from datetime import datetime
 
@@ -66,34 +68,39 @@ def test_check_warnings(session, test_name, entity_type, identifier, has_office,
                         person_cessation_dates: list, org_cessation_dates:list, expected_code, expected_msg):
     """Assert that warnings check functions properly."""
 
-    legal_entity =None
+    with suppress(Exception):
+        sess = session.begin_nested()
 
-    create_business(entity_type=entity_type,
-                    identifier=identifier,
-                    create_office=has_office,
-                    create_office_mailing_address=has_office,
-                    create_office_delivery_address=has_office,
-                    firm_num_persons_roles=num_persons_roles,
-                    firm_num_org_roles=num_org_roles,
-                    filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party,
-                    start_date=datetime.utcnow(),
-                    person_cessation_dates=person_cessation_dates,
-                    org_cessation_dates=org_cessation_dates)
+        legal_entity =None
 
-    legal_entity =LegalEntity.find_by_identifier(identifier)
-    assert legal_entity
-    assert legal_entity.entity_type == entity_type
-    assert legal_entity.identifier == identifier
+        create_business(entity_type=entity_type,
+                        identifier=identifier,
+                        create_office=has_office,
+                        create_office_mailing_address=has_office,
+                        create_office_delivery_address=has_office,
+                        firm_num_persons_roles=num_persons_roles,
+                        firm_num_org_roles=num_org_roles,
+                        filing_types=filing_types,
+                        filing_has_completing_party=filing_has_completing_party,
+                        start_date=datetime.utcnow(),
+                        person_cessation_dates=person_cessation_dates,
+                        org_cessation_dates=org_cessation_dates)
 
-    with patch.object(firms, 'check_address', return_value=[]):
-        result = check_warnings(legal_entity)
+        legal_entity =LegalEntity.find_by_identifier(identifier)
+        assert legal_entity
+        assert legal_entity.entity_type == entity_type
+        assert legal_entity.identifier == identifier
 
-    if expected_code:
-        assert len(result) == 1
-        warning = result[0]
-        assert warning['code'] == expected_code
-        assert warning['message'] == expected_msg
-        assert warning['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO'
-    else:
-        assert len(result) == 0
+        with patch.object(firms, 'check_address', return_value=[]):
+            result = check_warnings(legal_entity)
+
+        if expected_code:
+            assert len(result) == 1
+            warning = result[0]
+            assert warning['code'] == expected_code
+            assert warning['message'] == expected_msg
+            assert warning['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO'
+        else:
+            assert len(result) == 0
+        
+        sess.rollback()

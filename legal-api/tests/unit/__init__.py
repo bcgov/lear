@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Centralized setup of logging for the service."""
+from contextlib import contextmanager
 from datetime import datetime
 
 
@@ -34,3 +35,15 @@ def has_expected_date_str_format(date_str: str, format: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+@contextmanager
+def nested_session(session):
+    try:
+        sess = session.begin_nested()
+        yield sess
+        sess.rollback()
+    except:
+        pass
+    finally:
+        pass

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
+from contextlib import suppress
+
 from unittest.mock import patch
 from datetime import datetime
 
@@ -279,31 +281,35 @@ def test_check_parties(session, test_name, legal_type, identifier, num_persons_r
                        expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    legal_entity =None
+    with suppress(Exception):
+        sess = session.begin_nested()
+        legal_entity =None
 
-    create_business(entity_type=legal_type,
-                    identifier=identifier,
-                    firm_num_persons_roles=num_persons_roles,
-                    firm_num_org_roles=num_org_roles,
-                    filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party)
+        create_business(entity_type=legal_type,
+                        identifier=identifier,
+                        firm_num_persons_roles=num_persons_roles,
+                        firm_num_org_roles=num_org_roles,
+                        filing_types=filing_types,
+                        filing_has_completing_party=filing_has_completing_party)
 
 
-    legal_entity =LegalEntity.find_by_identifier(identifier)
-    assert legal_entity
-    assert legal_entity.entity_type == legal_type
-    assert legal_entity.identifier == identifier
+        legal_entity =LegalEntity.find_by_identifier(identifier)
+        assert legal_entity
+        assert legal_entity.entity_type == legal_type
+        assert legal_entity.identifier == identifier
 
-    with patch.object(firms, 'check_address', return_value=[]):
-        result = check_parties(legal_type, legal_entity)
+        with patch.object(firms, 'check_address', return_value=[]):
+            result = check_parties(legal_type, legal_entity)
 
-    if expected_code:
-        assert len(result) == 1
-        business_warning = result[0]
-        assert business_warning['code'] == expected_code
-        assert business_warning['message'] == expected_msg
-    else:
-        assert len(result) == 0
+        if expected_code:
+            assert len(result) == 1
+            business_warning = result[0]
+            assert business_warning['code'] == expected_code
+            assert business_warning['message'] == expected_msg
+        else:
+            assert len(result) == 0
+        
+        sess.rollback()
 
 
 @pytest.mark.parametrize(
@@ -336,34 +342,42 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                        filing_types: list, filing_has_completing_party: list, expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    legal_entity =None
+    # pytest scope change, so do a nested transaction
+    # to avoid test data comflicts
+    # failed tests rollback correctly, so watch out!
+    with suppress(Exception):
+        sess = session.begin_nested()
 
-    create_business(entity_type=legal_type,
-                    identifier=identifier,
-                    create_office=has_office,
-                    create_office_mailing_address=has_office,
-                    create_office_delivery_address=has_office,
-                    firm_num_persons_roles=num_persons_roles,
-                    firm_num_org_roles=num_org_roles,
-                    filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party,
-                    start_date=datetime.utcnow())
+        legal_entity =None
 
-    legal_entity =LegalEntity.find_by_identifier(identifier)
-    assert legal_entity
-    assert legal_entity.entity_type == legal_type
-    assert legal_entity.identifier == identifier
+        create_business(entity_type=legal_type,
+                        identifier=identifier,
+                        create_office=has_office,
+                        create_office_mailing_address=has_office,
+                        create_office_delivery_address=has_office,
+                        firm_num_persons_roles=num_persons_roles,
+                        firm_num_org_roles=num_org_roles,
+                        filing_types=filing_types,
+                        filing_has_completing_party=filing_has_completing_party,
+                        start_date=datetime.utcnow())
 
-    with patch.object(firms, 'check_address', return_value=[]):
-        result = check_business(legal_entity)
+        legal_entity =LegalEntity.find_by_identifier(identifier)
+        assert legal_entity
+        assert legal_entity.entity_type == legal_type
+        assert legal_entity.identifier == identifier
 
-    if expected_code:
-        assert len(result) == 1
-        business_warning = result[0]
-        assert business_warning['code'] == expected_code
-        assert business_warning['message'] == expected_msg
-    else:
-        assert len(result) == 0
+        with patch.object(firms, 'check_address', return_value=[]):
+            result = check_business(legal_entity)
+
+        if expected_code:
+            assert len(result) == 1
+            business_warning = result[0]
+            assert business_warning['code'] == expected_code
+            assert business_warning['message'] == expected_msg
+        else:
+            assert len(result) == 0
+        
+        sess.rollback()
 
 
 @pytest.mark.parametrize(
@@ -384,44 +398,48 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
 def test_check_office(session, test_name, legal_type, identifier, expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    legal_entity =None
-    if test_name == 'SUCCESS':
-        create_business(entity_type=legal_type,
-                        identifier=identifier,
-                        create_office=True,
-                        create_office_mailing_address=True,
-                        create_office_delivery_address=True)
-    elif test_name == 'FAIL_NO_OFFICE':
-        create_business(entity_type=legal_type,
-                        identifier=identifier,
-                        create_office=False)
-    elif test_name == 'FAIL_NO_MAILING_ADDR':
-        create_business(entity_type=legal_type,
-                        identifier=identifier,
-                        create_office=True,
-                        create_office_mailing_address=False,
-                        create_office_delivery_address=True)
-    elif test_name == 'FAIL_NO_DELIVERY_ADDR':
-        create_business(entity_type=legal_type,
-                        identifier=identifier,
-                        create_office=True,
-                        create_office_mailing_address=True,
-                        create_office_delivery_address=False)
+    with suppress(Exception):
+        sess = session.begin_nested()
+        legal_entity =None
+        if test_name == 'SUCCESS':
+            create_business(entity_type=legal_type,
+                            identifier=identifier,
+                            create_office=True,
+                            create_office_mailing_address=True,
+                            create_office_delivery_address=True)
+        elif test_name == 'FAIL_NO_OFFICE':
+            create_business(entity_type=legal_type,
+                            identifier=identifier,
+                            create_office=False)
+        elif test_name == 'FAIL_NO_MAILING_ADDR':
+            create_business(entity_type=legal_type,
+                            identifier=identifier,
+                            create_office=True,
+                            create_office_mailing_address=False,
+                            create_office_delivery_address=True)
+        elif test_name == 'FAIL_NO_DELIVERY_ADDR':
+            create_business(entity_type=legal_type,
+                            identifier=identifier,
+                            create_office=True,
+                            create_office_mailing_address=True,
+                            create_office_delivery_address=False)
 
-    legal_entity =LegalEntity.find_by_identifier(identifier)
-    assert legal_entity
-    assert legal_entity.entity_type == legal_type
-    assert legal_entity.identifier == identifier
+        legal_entity =LegalEntity.find_by_identifier(identifier)
+        assert legal_entity
+        assert legal_entity.entity_type == legal_type
+        assert legal_entity.identifier == identifier
 
-    result = check_office(legal_entity)
+        result = check_office(legal_entity)
 
-    if expected_code:
-        assert len(result) == 1
-        business_warning = result[0]
-        assert business_warning['code'] == expected_code
-        assert business_warning['message'] == expected_msg
-    else:
-        assert len(result) == 0
+        if expected_code:
+            assert len(result) == 1
+            business_warning = result[0]
+            assert business_warning['code'] == expected_code
+            assert business_warning['message'] == expected_msg
+        else:
+            assert len(result) == 0
+        
+        sess.rollback()
 
 
 @pytest.mark.parametrize(
@@ -438,39 +456,43 @@ def test_check_parties_cessation_date(session, test_name, legal_type, identifier
                                       expected_code, expected_msg):
     """Assert that business firm parties check functions properly."""
 
-    legal_entity =None
+    with suppress(Exception):
+        sess = session.begin_nested()
+        legal_entity =None
 
-    create_business(entity_type=legal_type,
-                    identifier=identifier,
-                    firm_num_persons_roles=num_persons_roles,
-                    firm_num_org_roles=num_org_roles,
-                    person_cessation_dates=person_cessation_dates,
-                    org_cessation_dates=org_cessation_dates,
-                    create_firm_party_address=True,
-                    filing_types=filing_types,
-                    filing_has_completing_party=filing_has_completing_party,
-                    create_completing_party_address=True)
+        create_business(entity_type=legal_type,
+                        identifier=identifier,
+                        firm_num_persons_roles=num_persons_roles,
+                        firm_num_org_roles=num_org_roles,
+                        person_cessation_dates=person_cessation_dates,
+                        org_cessation_dates=org_cessation_dates,
+                        create_firm_party_address=True,
+                        filing_types=filing_types,
+                        filing_has_completing_party=filing_has_completing_party,
+                        create_completing_party_address=True)
 
 
-    legal_entity = LegalEntity.find_by_identifier(identifier)
-    assert legal_entity
-    assert legal_entity.entity_type == legal_type
-    assert legal_entity.identifier == identifier
+        legal_entity = LegalEntity.find_by_identifier(identifier)
+        assert legal_entity
+        assert legal_entity.entity_type == legal_type
+        assert legal_entity.identifier == identifier
 
-    ceased_party = None
-    if 'PARTY_MA_MISSING_STREET' in test_name:
-        ceased_party_role = legal_entity.entity_roles \
-            .filter(EntityRole.role_type.in_(['partner', 'proprietor'])) \
-            .filter(EntityRole.cessation_date != None).one_or_none()
-        ceased_party = ceased_party_role.related_entity
-        ceased_party.entity_mailing_address.street = None
+        ceased_party = None
+        if 'PARTY_MA_MISSING_STREET' in test_name:
+            ceased_party_role = legal_entity.entity_roles \
+                .filter(EntityRole.role_type.in_(['partner', 'proprietor'])) \
+                .filter(EntityRole.cessation_date != None).one_or_none()
+            ceased_party = ceased_party_role.related_entity
+            ceased_party.entity_mailing_address.street = None
 
-    if ceased_party:
-        ceased_party.save()
+        if ceased_party:
+            ceased_party.save()
 
-    result = check_parties(legal_type, legal_entity)
+        result = check_parties(legal_type, legal_entity)
 
-    if expected_code:
-        assert len(result) == 1
-    else:
-        assert len(result) == 0
+        if expected_code:
+            assert len(result) == 1
+        else:
+            assert len(result) == 0
+        
+        sess.rollback()

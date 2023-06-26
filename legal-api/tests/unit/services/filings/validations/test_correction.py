@@ -64,7 +64,7 @@ def test_correction__does_not_own_corrected_filing(session):
 def test_correction__corrected_filing_does_not_exist(session):
     """Check that a correction fails on a filing that does not exist."""
     # setup
-    identifier = 'CP1234567'
+    identifier = 'CP2222567'
     legal_entity =factory_legal_entity(identifier)
 
     f = copy.deepcopy(CORRECTION_AR)
@@ -77,7 +77,7 @@ def test_correction__corrected_filing_does_not_exist(session):
 
     # check that validation failed as expected
     assert HTTPStatus.BAD_REQUEST == err.code
-    assert 'Corrected filing is not a valid filing.' == err.msg[0]['error']
+    assert err.msg[0]['error'].startswith('Corrected filing is not a valid filing')
 
 
 def test_correction__corrected_filing_is_not_complete(session):

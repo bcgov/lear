@@ -1,4 +1,4 @@
-"""add_coop_firm_sequence
+"""add_coop_sequence
 
 Revision ID: 3d8eb786f4c2
 Revises: b6997f07700a
@@ -17,8 +17,8 @@ depends_on = None
 
 
 def upgrade():
-    op.execute("CREATE SEQUENCE legal_entity_identifier_coop")
-    op.execute("CREATE SEQUENCE legal_entity_identifier_sp_gp")
+    op.execute("CREATE SEQUENCE legal_entity_identifier_coop START 1002395")
+    op.execute("CREATE SEQUENCE legal_entity_identifier_sp_gp START 1002395")
 
 
 def downgrade():
