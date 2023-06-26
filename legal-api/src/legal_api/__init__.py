@@ -27,7 +27,7 @@ from legal_api import config, models
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import digital_credentials, flags
+from legal_api.services import digital_credentials, Flags
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
@@ -37,7 +37,7 @@ from legal_api.utils.run_version import get_run_version
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+def create_app(run_mode=os.getenv('FLASK_ENV', 'production'), **kwargs):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
@@ -55,8 +55,9 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
     db.init_app(app)
     rsbc_schemas.init_app(app)
-    flags.init_app(app)
-    # queue.init_app(app)
+     # td is testData instance passed in to support testing
+    td = kwargs.get('ld_test_data', None)
+    Flags().init_app(app, td)    # queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
 

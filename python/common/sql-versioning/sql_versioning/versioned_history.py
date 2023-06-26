@@ -1,5 +1,6 @@
 """Versioned mixin class and other utilities."""
 import datetime
+from contextlib import suppress
 
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -269,3 +270,10 @@ def versioned_session(session):
             create_version(obj, session)
         # for obj in versioned_objects(session.deleted):
         #     create_version(obj, session, deleted=True)
+
+def history_cls(obj):
+    with suppress(Exception):
+        history_mapper = obj.__history_mapper__
+        history_cls = history_mapper.class_
+        return history_cls
+    return None

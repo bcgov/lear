@@ -47,6 +47,7 @@ class EntityRole(Versioned, db.Model):
             'id',
             'appointment_date',
             'cessation_date',
+            'change_filing_id',
             'delivery_address_id',
             'filing_id',
             'legal_entity_id',
@@ -63,14 +64,20 @@ class EntityRole(Versioned, db.Model):
     cessation_date = db.Column('cessation_date', db.DateTime(timezone=True), nullable=True)
 
     # parent keys
+    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'))
+    delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
     related_entity_id = db.Column('related_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
     related_colin_entity_id = db.Column('related_colin_entity_id', db.Integer, db.ForeignKey('colin_entities.id'))
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    delivery_address_id = db.Column('delivery_address_id', db.Integer, db.ForeignKey('addresses.id'))
-    mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # relationships
+    filing = db.relationship('Filing', foreign_keys=[filing_id],
+                             primaryjoin="(EntityRole.filing_id==Filing.id)")
+    change_filing = db.relationship('Filing', foreign_keys=[change_filing_id],
+                                    primaryjoin="(EntityRole.change_filing_id==Filing.id)")
+   
     legal_entity = db.relationship('LegalEntity', foreign_keys=[legal_entity_id])
     related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
                                      foreign_keys=[related_entity_id])

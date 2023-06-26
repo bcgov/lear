@@ -17,6 +17,7 @@
 Test-Suite to ensure that the Document Meta Service is working as expected.
 """
 import copy
+from contextlib import suppress
 from unittest.mock import patch
 
 import pytest
@@ -41,554 +42,612 @@ CON_TITLE = 'Legal Name Change'
 
 def test_business_not_found(session, app):
     """Assert that no documents are returned when the filing's business is not found."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'DONT_CARE',
-                    'name': 'changeOfAddress',
-                    'availableOnPaperOnly': False,
-                    'inColinOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC7654321'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'DONT_CARE',
+                        'name': 'changeOfAddress',
+                        'availableOnPaperOnly': False,
+                        'inColinOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC7654321'
+                    }
                 }
             }
-        }
-        assert len(document_meta.get_documents(filing)) == 0
-        # also verify document class properties:
-        assert document_meta._legal_entity_identifier == 'BC7654321'
-        assert document_meta._entity_type is None
+            assert len(document_meta.get_documents(filing)) == 0
+            # also verify document class properties:
+            assert document_meta._legal_entity_identifier == 'BC7654321'
+            assert document_meta._entity_type is None
+        sess.rollback()
 
 
 def test_wrong_filing_status(session, app):
     """Assert that no documents are returned for a non- PAID and COMPLETED filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'NOT_PAID_OR_COMPLETE',
-                    'name': 'changeOfAddress',
-                    'availableOnPaperOnly': False,
-                    'inColinOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'NOT_PAID_OR_COMPLETE',
+                        'name': 'changeOfAddress',
+                        'availableOnPaperOnly': False,
+                        'inColinOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        assert len(document_meta.get_documents(filing)) == 0
-        # also verify document class properties:
-        assert document_meta._legal_entity_identifier == 'BC1234567'
-        assert document_meta._entity_type == LegalEntity.EntityTypes.BCOMP.value
+            assert len(document_meta.get_documents(filing)) == 0
+            # also verify document class properties:
+            assert document_meta._legal_entity_identifier == 'BC1234567'
+            assert document_meta._entity_type == LegalEntity.EntityTypes.BCOMP.value
+        sess.rollback()
 
 
 def test_available_on_paper_only(session, app):
     """Assert that no documents are returned for a paper-only filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfAddress',
-                    'availableOnPaperOnly': True,
-                    'inColinOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfAddress',
+                        'availableOnPaperOnly': True,
+                        'inColinOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        assert len(document_meta.get_documents(filing)) == 0
+            assert len(document_meta.get_documents(filing)) == 0
+        sess.rollback()
 
 
 def test_available_in_colin_only(session, app):
     """Assert that no documents are returned for a colin-only filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfAddress',
-                    'availableOnPaperOnly': False,
-                    'inColinOnly': True,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfAddress',
+                        'availableOnPaperOnly': False,
+                        'inColinOnly': True,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        assert len(document_meta.get_documents(filing)) == 0
+            assert len(document_meta.get_documents(filing)) == 0
+        sess.rollback()
 
 
 def test_coa_paid(session, app):
     """Assert that an Address Change document is returned for a PAID COA filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'PAID',
-                    'name': 'changeOfAddress',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'PAID',
+                        'name': 'changeOfAddress',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COA_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COA_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_coa_completed_bc(session, app):
     """Assert that Address Change + NOA documents are returned for a COMPLETED BCOMP COA filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfAddress',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfAddress',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 2
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 2
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COA_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COA_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Address Change - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_coa_completed_cp(session, app):
     """Assert that an Address Change document is returned for a COMPLETED COOP COA filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='CP1234567', entity_type='CP')
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfAddress',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'CP1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='CP1234567', entity_type='CP')
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfAddress',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'CP1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COA_TITLE
-        assert documents[0]['filename'] == 'CP1234567 - Address Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COA_TITLE
+            assert documents[0]['filename'] == 'CP1234567 - Address Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_ar(session, app):
     """Assert that an Annual Report document is returned for an AR filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'annualReport',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'annualReport',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Annual Report'
-        assert documents[0]['filename'] == 'BC1234567 - Annual Report - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Annual Report'
+            assert documents[0]['filename'] == 'BC1234567 - Annual Report - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_cod_paid(session, app):
     """Assert that a Director Change document is returned for a PAID COD filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'PAID',
-                    'name': 'changeOfDirectors',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'PAID',
+                        'name': 'changeOfDirectors',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COD_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COD_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_cod_completed_bc(session, app):
     """Assert that Director Change + NOA documents are returned for a COMPLETED BCOMP COD filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfDirectors',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfDirectors',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 2
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 2
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COD_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COD_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Director Change - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_cod_completed_cp(session, app):
     """Assert that a Director Change document is returned for a COMPLETED COOP COD filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='CP1234567', entity_type='CP')
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfDirectors',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'CP1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='CP1234567', entity_type='CP')
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfDirectors',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'CP1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == COD_TITLE
-        assert documents[0]['filename'] == 'CP1234567 - Director Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == COD_TITLE
+            assert documents[0]['filename'] == 'CP1234567 - Director Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_con_paid(session, app):
     """Assert that a Legal Name Change document is returned for a PAID CON filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'PAID',
-                    'name': 'changeOfName',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'PAID',
+                        'name': 'changeOfName',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == CON_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == CON_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_con_completed_bc(session, app):
     """Assert that Legal Name Change + NOA documents are returned for a COMPLETED BCOMP CON filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfName',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfName',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 2
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 2
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == CON_TITLE
-        assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == CON_TITLE
+            assert documents[0]['filename'] == 'BC1234567 - Legal Name Change - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12356
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12356
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_con_completed_cp(session, app):
     """Assert that a Legal Name Change document is returned for a COMPLETED COOP CON filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='CP1234567', entity_type='CP')
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'changeOfName',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'CP1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='CP1234567', entity_type='CP')
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'changeOfName',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'CP1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == CON_TITLE
-        assert documents[0]['filename'] == 'CP1234567 - Legal Name Change - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == CON_TITLE
+            assert documents[0]['filename'] == 'CP1234567 - Legal Name Change - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_special_resolution_paid(session, app):
     """Assert that no documents are returned for a PAID Special Resolution filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'PAID',
-                    'name': 'specialResolution',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'PAID',
+                        'name': 'specialResolution',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 0
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 0
+        sess.rollback()
 
 
 def test_special_resolution_completed(session, app):
     """Assert that a Special Resolution document is returned for a COMPLETED Special Resolution filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'specialResolution',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'specialResolution',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Special Resolution'
-        assert documents[0]['filename'] == 'BC1234567 - Special Resolution - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Special Resolution'
+            assert documents[0]['filename'] == 'BC1234567 - Special Resolution - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_voluntary_dissolution_paid(session, app):
     """Assert that no documents are returned for a PAID Voluntary Dissolution filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'PAID',
-                    'name': 'voluntaryDissolution',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'PAID',
+                        'name': 'voluntaryDissolution',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 0
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 0
+        sess.rollback()
 
 
 def test_voluntary_dissolution_completed(session, app):
     """Assert that a Voluntary Dissolution document is returned for a COMPLETED Voluntary Dissolution filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'voluntaryDissolution',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'voluntaryDissolution',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 1
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12356
-        assert documents[0]['title'] == 'Voluntary Dissolution'
-        assert documents[0]['filename'] == 'BC1234567 - Voluntary Dissolution - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12356
+            assert documents[0]['title'] == 'Voluntary Dissolution'
+            assert documents[0]['filename'] == 'BC1234567 - Voluntary Dissolution - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_correction(session, app):
     """Assert that no documents are returned for a Correction filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'correction',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'correction',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 0
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == 0
+        sess.rollback()
 
 
 @pytest.mark.parametrize(
@@ -608,30 +667,33 @@ def test_correction(session, app):
 )
 def test_alteration(status, filing_id, business_identifier, expected_number, alteration_json, session, app):
     """Assert that the correct number of documents are returned for alterations in 3 scenarios."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier=business_identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': filing_id,
-                    'status': status,
-                    'name': 'alteration',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': business_identifier,
-                    'legalName': 'HAULER MEDIA INC.',
-                    'legalType': 'BC'
-                },
-                'alteration': alteration_json
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier=business_identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': filing_id,
+                        'status': status,
+                        'name': 'alteration',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': business_identifier,
+                        'legalName': 'HAULER MEDIA INC.',
+                        'legalType': 'BC'
+                    },
+                    'alteration': alteration_json
+                }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == expected_number
+            documents = document_meta.get_documents(filing)
+            assert len(documents) == expected_number
+        sess.rollback()
 
 
 def test_ia_fed(app):
@@ -713,460 +775,490 @@ def test_ia_paid(app):
                          ])
 def test_ia_status(session, app, status, number_of_docs):
     """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing."""
-    document_meta = DocumentMetaService()
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': status,
-                    'name': 'incorporationApplication',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'T12345678'
-                },
-                'incorporationApplication': {
-                    'nameRequest': {
-                        'legalType': LegalEntity.EntityTypes.BCOMP.value
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': status,
+                        'name': 'incorporationApplication',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'effectiveDate': FILING_DATE,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'T12345678'
+                    },
+                    'incorporationApplication': {
+                        'nameRequest': {
+                            'legalType': LegalEntity.EntityTypes.BCOMP.value
+                        }
                     }
                 }
             }
-        }
 
-        with patch.object(Filing, 'find_by_id', return_value=Filing()):
-            documents = document_meta.get_documents(filing)
-            assert len(documents) == number_of_docs
+            with patch.object(Filing, 'find_by_id', return_value=Filing()):
+                documents = document_meta.get_documents(filing)
+                assert len(documents) == number_of_docs
 
-            if number_of_docs:
+                if number_of_docs:
+                    assert documents[0]['type'] == 'REPORT'
+                    assert documents[0]['reportType'] is None
+                    assert documents[0]['filingId'] == 12356
+                    assert documents[0]['title'] == 'Incorporation Application'
+                    assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
+
+                    assert documents[1]['type'] == 'REPORT'
+                    assert documents[1]['reportType'] == 'noa'
+                    assert documents[1]['filingId'] == 12356
+                    assert documents[1]['title'] == 'Notice of Articles'
+                    assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+
+                    assert documents[2]['type'] == 'REPORT'
+                    assert documents[2]['reportType'] == 'certificate'
+                    assert documents[2]['filingId'] == 12356
+                    assert documents[2]['title'] == 'Certificate'
+                    assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
+        sess.rollback()
+
+
+def test_ia_completed_bcomp(session, app):
+    """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'incorporationApplication',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'effectiveDate': FILING_DATE,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
+                }
+            }
+
+            with patch.object(Filing, 'find_by_id', return_value=Filing()):
+                documents = document_meta.get_documents(filing)
+                assert len(documents) == 3
+
                 assert documents[0]['type'] == 'REPORT'
                 assert documents[0]['reportType'] is None
                 assert documents[0]['filingId'] == 12356
                 assert documents[0]['title'] == 'Incorporation Application'
-                assert documents[0]['filename'] == 'T12345678 - Incorporation Application - 2020-07-14.pdf'
+                assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
 
                 assert documents[1]['type'] == 'REPORT'
                 assert documents[1]['reportType'] == 'noa'
                 assert documents[1]['filingId'] == 12356
-                assert documents[1]['title'] == 'Notice of Articles'
-                assert documents[1]['filename'] == 'T12345678 - Notice of Articles - 2020-07-14.pdf'
+                assert documents[1]['title'] == NOA_TITLE
+                assert documents[1]['filename'] == NOA_FILENAME
 
                 assert documents[2]['type'] == 'REPORT'
                 assert documents[2]['reportType'] == 'certificate'
                 assert documents[2]['filingId'] == 12356
                 assert documents[2]['title'] == 'Certificate'
-                assert documents[2]['filename'] == 'T12345678 - Certificate - 2020-07-14.pdf'
+                assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+        sess.rollback()
 
 
-def test_ia_completed_bcomp(session, app):
-    """Assert that IA + NOA + Certificate documents are returned for a COMPLETED IA filing when business is a BCOMP."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'incorporationApplication',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+def test_ia_completed_bcomp_original(session, app):
+    """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+            CORRECTION_INCORPORATION['filing']['correction']['correctedFilingId'] = original_filing.id
+            corrected_filing = factory_filing(b, CORRECTION_INCORPORATION)
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': original_filing.id,
+                        'status': 'COMPLETED',
+                        'name': 'incorporationApplication',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'effectiveDate': FILING_DATE,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
-
-        with patch.object(Filing, 'find_by_id', return_value=Filing()):
+            original_filing.parent_filing_id = corrected_filing.id
+            original_filing.save()
             documents = document_meta.get_documents(filing)
             assert len(documents) == 3
 
             assert documents[0]['type'] == 'REPORT'
             assert documents[0]['reportType'] is None
-            assert documents[0]['filingId'] == 12356
-            assert documents[0]['title'] == 'Incorporation Application'
-            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
+            assert documents[0]['filingId'] == original_filing.id
+            assert documents[0]['title'] == 'Incorporation Application (Original)'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Original) - 2020-07-14.pdf'
 
             assert documents[1]['type'] == 'REPORT'
             assert documents[1]['reportType'] == 'noa'
-            assert documents[1]['filingId'] == 12356
+            assert documents[1]['filingId'] == original_filing.id
             assert documents[1]['title'] == NOA_TITLE
             assert documents[1]['filename'] == NOA_FILENAME
 
             assert documents[2]['type'] == 'REPORT'
             assert documents[2]['reportType'] == 'certificate'
-            assert documents[2]['filingId'] == 12356
+            assert documents[2]['filingId'] == original_filing.id
             assert documents[2]['title'] == 'Certificate'
             assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
-
-
-def test_ia_completed_bcomp_original(session, app):
-    """Assert that IA + Certificate documents with (Original) are returned for a COMPLETED IA."""
-    document_meta = DocumentMetaService()
-    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
-        CORRECTION_INCORPORATION['filing']['correction']['correctedFilingId'] = original_filing.id
-        corrected_filing = factory_filing(b, CORRECTION_INCORPORATION)
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': original_filing.id,
-                    'status': 'COMPLETED',
-                    'name': 'incorporationApplication',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
-                }
-            }
-        }
-        original_filing.parent_filing_id = corrected_filing.id
-        original_filing.save()
-        documents = document_meta.get_documents(filing)
-        assert len(documents) == 3
-
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == original_filing.id
-        assert documents[0]['title'] == 'Incorporation Application (Original)'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Original) - 2020-07-14.pdf'
-
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == original_filing.id
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
-
-        assert documents[2]['type'] == 'REPORT'
-        assert documents[2]['reportType'] == 'certificate'
-        assert documents[2]['filingId'] == original_filing.id
-        assert documents[2]['title'] == 'Certificate'
-        assert documents[2]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_correction_ia(session, app):
     """Assert that IA + NOA documents are returned for a Correction filing without name change."""
-    document_meta = DocumentMetaService()
-    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12357,
-                    'status': 'COMPLETED',
-                    'name': 'correction',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
-                },
-                'correction': {
-                    'correctedFilingId': original_filing.id
-                },
-                'incorporationApplication': {
-                    'nameRequest': {
-                        'legalType': LegalEntity.EntityTypes.BCOMP.value
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12357,
+                        'status': 'COMPLETED',
+                        'name': 'correction',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    },
+                    'correction': {
+                        'correctedFilingId': original_filing.id
+                    },
+                    'incorporationApplication': {
+                        'nameRequest': {
+                            'legalType': LegalEntity.EntityTypes.BCOMP.value
+                        }
                     }
                 }
             }
-        }
 
-        documents = document_meta.get_documents(filing)
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 2
+            assert len(documents) == 2
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12357
-        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12357
+            assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 12357
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 12357
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_correction_ia_with_cert_nr_change(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
-    document_meta = DocumentMetaService()
-    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    initial_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    initial_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
-    initial_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'New Name'
-    initial_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12357,
-                    'status': 'COMPLETED',
-                    'name': 'correction',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
-                },
-                'correction': {
-                    'correctedFilingId': original_filing.id
-                },
-                'incorporationApplication': {
-                    'nameRequest': {
-                        'legalType': LegalEntity.EntityTypes.BCOMP.value,
-                        'nrNumber': 'NR 3456789'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        initial_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        initial_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+        initial_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'New Name'
+        initial_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+        original_filing = factory_filing(b, INCORPORATION_FILING_TEMPLATE)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12357,
+                        'status': 'COMPLETED',
+                        'name': 'correction',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    },
+                    'correction': {
+                        'correctedFilingId': original_filing.id
+                    },
+                    'incorporationApplication': {
+                        'nameRequest': {
+                            'legalType': LegalEntity.EntityTypes.BCOMP.value,
+                            'nrNumber': 'NR 3456789'
+                        }
                     }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 3
+            assert len(documents) == 3
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12357
-        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12357
+            assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'certificate'
-        assert documents[1]['filingId'] == 12357
-        assert documents[1]['title'] == 'Certificate (Corrected)'
-        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'certificate'
+            assert documents[1]['filingId'] == 12357
+            assert documents[1]['title'] == 'Certificate (Corrected)'
+            assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
 
-        assert documents[2]['type'] == 'REPORT'
-        assert documents[2]['reportType'] == 'noa'
-        assert documents[2]['filingId'] == 12357
-        assert documents[2]['title'] == NOA_TITLE
-        assert documents[2]['filename'] == NOA_FILENAME
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'noa'
+            assert documents[2]['filingId'] == 12357
+            assert documents[2]['title'] == NOA_TITLE
+            assert documents[2]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_correction_ia_with_cert_name_correction(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
-    document_meta = DocumentMetaService()
-    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
-    original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
-    original_filing = factory_filing(b, original_filing_json)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12357,
-                    'status': 'COMPLETED',
-                    'name': 'correction',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
-                },
-                'correction': {
-                    'correctedFilingId': original_filing.id
-                },
-                'incorporationApplication': {
-                    'nameRequest': {
-                        'legalType': LegalEntity.EntityTypes.BCOMP.value,
-                        'nrNumber': 'NR 1234567',
-                        'legalName': 'abc.'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+        original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+        original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+        original_filing = factory_filing(b, original_filing_json)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12357,
+                        'status': 'COMPLETED',
+                        'name': 'correction',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    },
+                    'correction': {
+                        'correctedFilingId': original_filing.id
+                    },
+                    'incorporationApplication': {
+                        'nameRequest': {
+                            'legalType': LegalEntity.EntityTypes.BCOMP.value,
+                            'nrNumber': 'NR 1234567',
+                            'legalName': 'abc.'
+                        }
                     }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 3
+            assert len(documents) == 3
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12357
-        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12357
+            assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'certificate'
-        assert documents[1]['filingId'] == 12357
-        assert documents[1]['title'] == 'Certificate (Corrected)'
-        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'certificate'
+            assert documents[1]['filingId'] == 12357
+            assert documents[1]['title'] == 'Certificate (Corrected)'
+            assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
 
-        assert documents[2]['type'] == 'REPORT'
-        assert documents[2]['reportType'] == 'noa'
-        assert documents[2]['filingId'] == 12357
-        assert documents[2]['title'] == NOA_TITLE
-        assert documents[2]['filename'] == NOA_FILENAME
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'noa'
+            assert documents[2]['filingId'] == 12357
+            assert documents[2]['title'] == NOA_TITLE
+            assert documents[2]['filename'] == NOA_FILENAME
+        sess.rollbac()
 
 
 def test_correction_ia_with_named_to_numbered(session, app):
     """Assert that IA + NOA + Certificate documents are returned for a Correction filing with name change."""
-    document_meta = DocumentMetaService()
-    b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
-    original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-    original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
-    original_filing = factory_filing(b, original_filing_json)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12357,
-                    'status': 'COMPLETED',
-                    'name': 'correction',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
-                },
-                'correction': {
-                    'correctedFilingId': original_filing.id
-                },
-                'incorporationApplication': {
-                    'nameRequest': {
-                        'legalType': LegalEntity.EntityTypes.BCOMP.value
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        b = factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        original_filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        original_filing_json['filing']['incorporationApplication']['nameRequest'] = {}
+        original_filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+        original_filing_json['filing']['incorporationApplication']['nameRequest']['legalName'] = 'abc'
+        original_filing = factory_filing(b, original_filing_json)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12357,
+                        'status': 'COMPLETED',
+                        'name': 'correction',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    },
+                    'correction': {
+                        'correctedFilingId': original_filing.id
+                    },
+                    'incorporationApplication': {
+                        'nameRequest': {
+                            'legalType': LegalEntity.EntityTypes.BCOMP.value
+                        }
                     }
                 }
             }
-        }
-        documents = document_meta.get_documents(filing)
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 3
+            assert len(documents) == 3
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 12357
-        assert documents[0]['title'] == 'Incorporation Application (Corrected)'
-        assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 12357
+            assert documents[0]['title'] == 'Incorporation Application (Corrected)'
+            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application (Corrected) - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'certificate'
-        assert documents[1]['filingId'] == 12357
-        assert documents[1]['title'] == 'Certificate (Corrected)'
-        assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'certificate'
+            assert documents[1]['filingId'] == 12357
+            assert documents[1]['title'] == 'Certificate (Corrected)'
+            assert documents[1]['filename'] == 'BC1234567 - Certificate (Corrected) - 2020-07-14.pdf'
 
-        assert documents[2]['type'] == 'REPORT'
-        assert documents[2]['reportType'] == 'noa'
-        assert documents[2]['filingId'] == 12357
-        assert documents[2]['title'] == NOA_TITLE
-        assert documents[2]['filename'] == NOA_FILENAME
+            assert documents[2]['type'] == 'REPORT'
+            assert documents[2]['reportType'] == 'noa'
+            assert documents[2]['filingId'] == 12357
+            assert documents[2]['title'] == NOA_TITLE
+            assert documents[2]['filename'] == NOA_FILENAME
+        sess.rollback()
 
 
 def test_transition_bcomp_paid(session, app):
     """Assert that Transition Application document is returned for a filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
-        filing['filing']['header']['date'] = FILING_DATE
-        filing['filing']['header']['status'] = 'PAID'
-        filing['filing']['header']['availableOnPaperOnly'] = False
-        filing['filing']['header']['inColinOnly'] = False
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+            filing['filing']['header']['date'] = FILING_DATE
+            filing['filing']['header']['status'] = 'PAID'
+            filing['filing']['header']['availableOnPaperOnly'] = False
+            filing['filing']['header']['inColinOnly'] = False
 
-        documents = document_meta.get_documents(filing)
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 1
+            assert len(documents) == 1
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 1
-        assert documents[0]['title'] == 'Transition Application - Pending'
-        assert documents[0]['filename'] == 'BC1234567 - Transition Application (Pending) - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 1
+            assert documents[0]['title'] == 'Transition Application - Pending'
+            assert documents[0]['filename'] == 'BC1234567 - Transition Application (Pending) - 2020-07-14.pdf'
+        sess.rollback()
 
 
 def test_transition_bcomp_completed(session, app):
     """Assert that Transition Application + NOA documents are returned for a filing."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
-    with app.app_context():
-        filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
-        filing['filing']['header']['date'] = FILING_DATE
-        filing['filing']['header']['status'] = 'COMPLETED'
-        filing['filing']['header']['availableOnPaperOnly'] = False
-        filing['filing']['header']['inColinOnly'] = False
-        documents = document_meta.get_documents(filing)
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        with app.app_context():
+            filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+            filing['filing']['header']['date'] = FILING_DATE
+            filing['filing']['header']['status'] = 'COMPLETED'
+            filing['filing']['header']['availableOnPaperOnly'] = False
+            filing['filing']['header']['inColinOnly'] = False
+            documents = document_meta.get_documents(filing)
 
-        assert len(documents) == 2
+            assert len(documents) == 2
 
-        assert documents[0]['type'] == 'REPORT'
-        assert documents[0]['reportType'] is None
-        assert documents[0]['filingId'] == 1
-        assert documents[0]['title'] == 'Transition Application'
-        assert documents[0]['filename'] == 'BC1234567 - Transition Application - 2020-07-14.pdf'
+            assert documents[0]['type'] == 'REPORT'
+            assert documents[0]['reportType'] is None
+            assert documents[0]['filingId'] == 1
+            assert documents[0]['title'] == 'Transition Application'
+            assert documents[0]['filename'] == 'BC1234567 - Transition Application - 2020-07-14.pdf'
 
-        assert documents[1]['type'] == 'REPORT'
-        assert documents[1]['reportType'] == 'noa'
-        assert documents[1]['filingId'] == 1
-        assert documents[1]['title'] == NOA_TITLE
-        assert documents[1]['filename'] == NOA_FILENAME
+            assert documents[1]['type'] == 'REPORT'
+            assert documents[1]['reportType'] == 'noa'
+            assert documents[1]['filingId'] == 1
+            assert documents[1]['title'] == NOA_TITLE
+            assert documents[1]['filename'] == NOA_FILENAME
+        sess.rolback()
 
 
 def test_ia_completed_coop(session, app):
     """Assert that documents are returned for a COMPLETED IA filing when business is a COOP."""
-    document_meta = DocumentMetaService()
-    factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.COOP.value)
-    with app.app_context():
-        filing = {
-            'filing': {
-                'header': {
-                    'filingId': 12356,
-                    'status': 'COMPLETED',
-                    'name': 'incorporationApplication',
-                    'inColinOnly': False,
-                    'availableOnPaperOnly': False,
-                    'effectiveDate': FILING_DATE,
-                    'date': FILING_DATE
-                },
-                'business': {
-                    'identifier': 'BC1234567'
+    with suppress(Exception):
+        sess = session.begin_nested()
+        document_meta = DocumentMetaService()
+        factory_legal_entity(identifier='BC1234567', entity_type=LegalEntity.EntityTypes.COOP.value)
+        with app.app_context():
+            filing = {
+                'filing': {
+                    'header': {
+                        'filingId': 12356,
+                        'status': 'COMPLETED',
+                        'name': 'incorporationApplication',
+                        'inColinOnly': False,
+                        'availableOnPaperOnly': False,
+                        'effectiveDate': FILING_DATE,
+                        'date': FILING_DATE
+                    },
+                    'business': {
+                        'identifier': 'BC1234567'
+                    }
                 }
             }
-        }
 
-        with patch.object(Filing, 'find_by_id', return_value=Filing()):
-            documents = document_meta.get_documents(filing)
-            assert len(documents) == 4
+            with patch.object(Filing, 'find_by_id', return_value=Filing()):
+                documents = document_meta.get_documents(filing)
+                assert len(documents) == 4
 
-            assert documents[0]['type'] == 'REPORT'
-            assert documents[0]['reportType'] is None
-            assert documents[0]['filingId'] == 12356
-            assert documents[0]['title'] == 'Incorporation Application'
-            assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
+                assert documents[0]['type'] == 'REPORT'
+                assert documents[0]['reportType'] is None
+                assert documents[0]['filingId'] == 12356
+                assert documents[0]['title'] == 'Incorporation Application'
+                assert documents[0]['filename'] == 'BC1234567 - Incorporation Application - 2020-07-14.pdf'
 
-            assert documents[1]['type'] == 'REPORT'
-            assert documents[1]['reportType'] == 'certificate'
-            assert documents[1]['filingId'] == 12356
-            assert documents[1]['title'] == 'Certificate'
-            assert documents[1]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
+                assert documents[1]['type'] == 'REPORT'
+                assert documents[1]['reportType'] == 'certificate'
+                assert documents[1]['filingId'] == 12356
+                assert documents[1]['title'] == 'Certificate'
+                assert documents[1]['filename'] == 'BC1234567 - Certificate - 2020-07-14.pdf'
 
-            assert documents[2]['type'] == 'REPORT'
-            assert documents[2]['reportType'] == 'certifiedRules'
-            assert documents[2]['filingId'] == 12356
-            assert documents[2]['title'] == 'Certified Rules'
-            assert documents[2]['filename'] == 'BC1234567 - Certified Rules - 2020-07-14.pdf'
+                assert documents[2]['type'] == 'REPORT'
+                assert documents[2]['reportType'] == 'certifiedRules'
+                assert documents[2]['filingId'] == 12356
+                assert documents[2]['title'] == 'Certified Rules'
+                assert documents[2]['filename'] == 'BC1234567 - Certified Rules - 2020-07-14.pdf'
 
-            assert documents[3]['type'] == 'REPORT'
-            assert documents[3]['reportType'] == 'certifiedMemorandum'
-            assert documents[3]['filingId'] == 12356
-            assert documents[3]['title'] == 'Certified Memorandum'
-            assert documents[3]['filename'] == 'BC1234567 - Certified Memorandum - 2020-07-14.pdf'
+                assert documents[3]['type'] == 'REPORT'
+                assert documents[3]['reportType'] == 'certifiedMemorandum'
+                assert documents[3]['filingId'] == 12356
+                assert documents[3]['title'] == 'Certified Memorandum'
+                assert documents[3]['filename'] == 'BC1234567 - Certified Memorandum - 2020-07-14.pdf'
+        sess.rollback()

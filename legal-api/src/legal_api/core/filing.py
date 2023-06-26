@@ -388,6 +388,9 @@ class Filing:
                 ledger_filing['data'] = filing.meta_data
 
             # orders
+            the_cof_type = type(filing.court_order_file_number)
+            the_od_type = type(filing.order_details)
+            print(the_od_type)
             if filing.court_order_file_number or filing.order_details:
                 Filing._add_ledger_order(filing, ledger_filing)
 

@@ -50,34 +50,29 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     msg.extend(validate_offices(incorporation_json))
 
-    err = validate_roles(incorporation_json, legal_type)
-    if err:
+    if err := validate_roles(incorporation_json, legal_type):
         msg.extend(err)
 
     # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
     # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
     # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
-    err = validate_parties_names(incorporation_json, legal_type)
-    if err:
+    if err := validate_parties_names(incorporation_json, legal_type):
         msg.extend(err)
 
-    err = validate_parties_mailing_address(incorporation_json, legal_type)
-    if err:
+    if err := validate_parties_mailing_address(incorporation_json, legal_type):
         msg.extend(err)
 
     msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
 
     if legal_type in [LegalEntity.EntityTypes.BCOMP.value, LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
                       LegalEntity.EntityTypes.COMP.value, LegalEntity.EntityTypes.BC_CCC.value]:
-        err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
-        if err:
+        if err := validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value):
             msg.extend(err)
 
     elif legal_type == LegalEntity.EntityTypes.COOP.value:
         msg.extend(validate_cooperative_documents(incorporation_json))
 
-    err = validate_incorporation_effective_date(incorporation_json)
-    if err:
+    if err := validate_incorporation_effective_date(incorporation_json):
         msg.extend(err)
 
     msg.extend(validate_ia_court_order(incorporation_json))
