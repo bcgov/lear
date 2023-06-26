@@ -506,9 +506,27 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
     original.save()
 
     today = date.today().isoformat()
-    correction_meta = {'legalFilings': ['specialResolution', 'correction']}
+    correction_meta = {'legalFilings': ['correction', 'correction']}
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
+
+    # sr_correction_2 is a correction on sr correction
+    sr_correction_2 = copy.deepcopy(FILING_HEADER)
+    sr_correction_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    sr_correction_2['filing']['correction']['correctedFilingId'] = correction.id
+    sr_correction_2['filing']['correction']['correctedFilingType'] = 'correction'
+    correction_2 = ledger_element_setup_filing(
+        business,
+        'correction',
+        filing_date=business.founding_date + datedelta.datedelta(months=3),
+        filing_dict=sr_correction)
+    correction.parent_filing_id = correction_2.id
+    correction.save()
+
+    today = date.today().isoformat()
+    correction_meta = {'legalFilings': ['specialResolution', 'correction', 'correction']}
+    correction_2._meta_data = {**{'applicationDate': today}, **correction_meta}
+    correction_2.save()
 
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
