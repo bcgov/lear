@@ -413,7 +413,8 @@ async def test_should_process_previously_failed_message_successfully(tracker_app
 @pytest.mark.asyncio
 @pytest.mark.parametrize(['message_id', 'exception', 'args', 'expected_last_error'], [
     ('16fd2111-8baf-433b-82eb-8c7fada84eea', OperationalError, [None, None, None], 'OperationalError'),
-    ('16fd2111-8baf-433b-82eb-8c7fada84eeb', EmailException, ['Unsucessful response when sending email.'], 'EmailException'),
+    ('16fd2111-8baf-433b-82eb-8c7fada84eeb', EmailException,
+     ['Unsucessful response when sending email.'], 'EmailException'),
     ('16fd2111-8baf-433b-82eb-8c7fada84eec', QueueException, ['Queue error.'], 'QueueException, Exception'),
     ('16fd2111-8baf-433b-82eb-8c7fada84eed', Exception, ['Other error.'], 'QueueException, Exception')
 ])
