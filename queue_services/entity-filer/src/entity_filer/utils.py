@@ -39,7 +39,7 @@ def get_run_version():
     return __version__
 
 
-def replace_file_with_certified_copy(_bytes, business, key, certify_date):
+def replace_file_with_certified_copy(_bytes, business, key, certify_date, file_name=None):
     """Create a certified copy and replace it into Minio server."""
     open_pdf_file = io.BytesIO(_bytes)
     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
@@ -55,7 +55,8 @@ def replace_file_with_certified_copy(_bytes, business, key, certify_date):
     registrars_stamp = \
         pdf_service.create_registrars_stamp(registrars_signature,
                                             LegislationDatetime.as_legislation_timezone(certify_date),
-                                            business.identifier)
+                                            business.identifier,
+                                            file_name)
     certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
 
     MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)

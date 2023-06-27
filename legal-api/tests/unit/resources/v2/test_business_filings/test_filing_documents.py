@@ -173,7 +173,8 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                     ],
-                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
                     }
       },
      HTTPStatus.OK, '2017-10-01'
@@ -183,10 +184,10 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      {'documents': {
                     'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/alteration'},
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ],
-                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
+                    'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
                     }
       },
      HTTPStatus.OK, '2017-10-01'
@@ -202,6 +203,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
                     ],
                     'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
                     }
       },
      HTTPStatus.OK, '2017-10-01'
@@ -423,7 +425,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                 {'specialResolution':
                 f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
             ],
-            'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt'
+            'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
          },
      },
      HTTPStatus.OK, '2017-10-01'

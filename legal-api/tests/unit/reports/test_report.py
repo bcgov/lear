@@ -159,6 +159,7 @@ def set_meta_info(report):
         ('CP COR combined AR', 'CP1234567', 'CP', 'correction', 'correction', CORRECTION_COMBINED_AR),
         ('CP CON', 'CP1234567', 'CP', 'changeOfName', 'changeOfName', CHANGE_OF_NAME),
         ('CP SR', 'CP1234567', 'CP', 'specialResolution', 'specialResolution', SPECIAL_RESOLUTION),
+        ('CP SR', 'CP1234567', 'CP', 'specialResolutionApplication', 'specialResolution', SPECIAL_RESOLUTION),
         ('CP DISSOLUTION', 'CP1234567', 'CP', 'dissolution', 'dissolution', DISSOLUTION),
         ('CP DISSOLUTION', 'CP1234567', 'CP', 'specialResolution', 'dissolution', DISSOLUTION),
         ('BEN DISSOLUTION', 'BC1234567', 'BEN', 'dissolution', 'dissolution', DISSOLUTION),
