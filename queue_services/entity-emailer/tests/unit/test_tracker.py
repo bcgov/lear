@@ -15,10 +15,12 @@
 from unittest.mock import patch
 
 import pytest
+from entity_queue_common.service_utils import EmailException, QueueException  # noqa: I001
+from sqlalchemy.exc import OperationalError
 
 from entity_emailer import worker
-from entity_queue_common.service_utils import EmailException, QueueException  # noqa: I001
 from tracker.models import MessageProcessing
+
 from . import create_mock_message  # noqa: I003
 
 
@@ -409,9 +411,16 @@ async def test_should_process_previously_failed_message_successfully(tracker_app
 
 
 @pytest.mark.asyncio
-async def test_should_correctly_track_retries_for_failed_processing(tracker_app, tracker_db, session):
+@pytest.mark.parametrize(['message_id', 'exception', 'args', 'expected_last_error'], [
+    ('16fd2111-8baf-433b-82eb-8c7fada84eea', OperationalError, [None, None, None], 'OperationalError'),
+    ('16fd2111-8baf-433b-82eb-8c7fada84eeb', EmailException,
+     ['Unsucessful response when sending email.'], 'EmailException'),
+    ('16fd2111-8baf-433b-82eb-8c7fada84eec', QueueException, ['Queue error.'], 'QueueException, Exception'),
+    ('16fd2111-8baf-433b-82eb-8c7fada84eed', Exception, ['Other error.'], 'QueueException, Exception')
+])
+async def test_should_correctly_track_retries_for_failed_processing(tracker_app, tracker_db, session,
+                                                                    message_id, exception, args, expected_last_error):
     """Assert that message processing retries are properly tracked."""
-    message_id = '16fd2111-8baf-433b-82eb-8c7fada84eee'
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.names.request',
@@ -429,12 +438,22 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
     mock_msg = create_mock_message(message_payload)
 
     # mock out process_email function to throw exception to simulate failed scenario
-    with patch.object(worker, 'process_email', side_effect=QueueException('Queue Error.')):
-        for x in range(5):
+    with patch.object(worker, 'process_email', side_effect=exception(*args)):
+        for _ in range(6):
+            if exception in [OperationalError, EmailException]:
+                with pytest.raises(exception):
+                    await worker.cb_subscription_handler(mock_msg)
+            else:
+                await worker.cb_subscription_handler(mock_msg)
+
+    # mock out process_email function not to process since message reaches max retries
+    with patch.object(worker, 'process_email', side_effect=exception(*args)):
+        for _ in range(5):
             await worker.cb_subscription_handler(mock_msg)
 
     result = MessageProcessing.find_message_by_message_id(message_id=message_id)
     assert result
     assert result.status == 'FAILED'
-    assert result.message_seen_count == 5
-    assert result.last_error == 'QueueException, Exception - Queue Error.'
+    # check email retries not exceed the max retry limit
+    assert result.message_seen_count == 6
+    assert expected_last_error in result.last_error
