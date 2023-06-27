@@ -253,6 +253,7 @@ def test_alteration_coop_rules_and_memorandum(app, session, minio_server):
     rules_file_key_uploaded_by_user = upload_file('rules.pdf')
     memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
     alteration_filing['filing']['alteration']['rulesFileKey'] = rules_file_key_uploaded_by_user
+    alteration_filing['filing']['alteration']['rulesFileName'] = 'rules.pdf'
     alteration_filing['filing']['alteration']['memorandumFileKey'] = memorandum_file_key_uploaded_by_user
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
