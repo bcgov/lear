@@ -28,6 +28,7 @@ from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
+from tests.unit import nested_session
 from tests.unit.models import factory_legal_entity, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
@@ -161,111 +162,116 @@ def test_get_temp_business_info(session, client, jwt):
 ])
 def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth):
     """Assert that the business info can be received in a valid JSONSchema format."""
-    identifier = 'CP7654321'
-    legal_name = identifier + ' legal name'
-    factory_legal_entity_model(legal_name=legal_name,
-                           identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
-                           fiscal_year_end_date=None,
-                           tax_id=None,
-                           dissolution_date=None)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_name = identifier + ' legal name'
+        factory_legal_entity_model(legal_name=legal_name,
+                            identifier=identifier,
+                            founding_date=datetime.utcfromtimestamp(0),
+                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                            last_modified=datetime.utcfromtimestamp(0),
+                            fiscal_year_end_date=None,
+                            tax_id=None,
+                            dissolution_date=None)
 
-    if calls_auth:
-        # should not call auth for staff/system/account_identity
-        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+        if calls_auth:
+            # should not call auth for staff/system/account_identity
+            requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
-    rv = client.get('/api/v2/businesses/' + identifier,
-                    headers=create_header(jwt, [role], identifier))
+        rv = client.get('/api/v2/businesses/' + identifier,
+                        headers=create_header(jwt, [role], identifier))
 
-    print('business json', rv.json)
+        print('business json', rv.json)
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['business']['identifier'] == identifier
-    assert rv.json['business']['hasCorrections'] == False
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['business']['identifier'] == identifier
+        assert rv.json['business']['hasCorrections'] == False
 
-    print('valid schema?', registry_schemas.validate(rv.json, 'business'))
+        print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
-    assert registry_schemas.validate(rv.json, 'business')
+        assert registry_schemas.validate(rv.json, 'business')
 
 
 def test_get_business_with_correction_filings(session, client, jwt):
     """Assert that the business info sets hasCorrections property."""
-    identifier = 'CP7654321'
-    legal_name = identifier + ' legal name'
-    legal_entity =factory_legal_entity_model(legal_name=legal_name,
-                                      identifier=identifier,
-                                      founding_date=datetime.utcfromtimestamp(0),
-                                      last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                                      last_modified=datetime.utcfromtimestamp(0),
-                                      fiscal_year_end_date=None,
-                                      tax_id=None,
-                                      dissolution_date=None)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_name = identifier + ' legal name'
+        legal_entity =factory_legal_entity_model(legal_name=legal_name,
+                                        identifier=identifier,
+                                        founding_date=datetime.utcfromtimestamp(0),
+                                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                                        last_modified=datetime.utcfromtimestamp(0),
+                                        fiscal_year_end_date=None,
+                                        tax_id=None,
+                                        dissolution_date=None)
 
-    corrected_filing = factory_completed_filing(legal_entity, ANNUAL_REPORT)
+        corrected_filing = factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
-    f = copy.deepcopy(CORRECTION_AR)
-    f['filing']['header']['identifier'] = legal_entity.identifier
-    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    factory_completed_filing(legal_entity, f)
+        f = copy.deepcopy(CORRECTION_AR)
+        f['filing']['header']['identifier'] = legal_entity.identifier
+        f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+        factory_completed_filing(legal_entity, f)
 
-    rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.json['business']['identifier'] == identifier
-    assert rv.json['business']['hasCorrections'] == True
+        assert rv.json['business']['identifier'] == identifier
+        assert rv.json['business']['hasCorrections'] == True
 
 
 def test_get_business_info_dissolution(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
-    identifier = 'CP1234567'
-    legal_name = identifier + ' legal name'
-    factory_legal_entity_model(legal_name=legal_name,
-                           identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
-                           fiscal_year_end_date=None,
-                           tax_id=None,
-                           dissolution_date=datetime.utcfromtimestamp(0))
-    rv = client.get(f'/api/v2/businesses/{identifier}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    with nested_session(session):
+        identifier = 'CP1234567'
+        legal_name = identifier + ' legal name'
+        factory_legal_entity_model(legal_name=legal_name,
+                            identifier=identifier,
+                            founding_date=datetime.utcfromtimestamp(0),
+                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                            last_modified=datetime.utcfromtimestamp(0),
+                            fiscal_year_end_date=None,
+                            tax_id=None,
+                            dissolution_date=datetime.utcfromtimestamp(0))
+        rv = client.get(f'/api/v2/businesses/{identifier}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    # dissolved company cannot be found.
-    assert rv.status_code == 200
-    assert rv.json.get('business').get('dissolutionDate')
-    assert rv.json.get('business').get('identifier') == identifier
+        # dissolved company cannot be found.
+        assert rv.status_code == 200
+        assert rv.json.get('business').get('dissolutionDate')
+        assert rv.json.get('business').get('identifier') == identifier
 
 
 def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
-    factory_legal_entity_model(legal_name='legal_name',
-                           identifier='CP7654321',
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
-                           fiscal_year_end_date=None,
-                           tax_id=None,
-                           dissolution_date=None)
-    identifier = 'CP0000001'
-    rv = client.get(f'/api/v2/businesses/{identifier}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    with nested_session(session):
+        factory_legal_entity_model(legal_name='legal_name',
+                            identifier='CP7654321',
+                            founding_date=datetime.utcfromtimestamp(0),
+                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                            last_modified=datetime.utcfromtimestamp(0),
+                            fiscal_year_end_date=None,
+                            tax_id=None,
+                            dissolution_date=None)
+        identifier = 'CP0000001'
+        rv = client.get(f'/api/v2/businesses/{identifier}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} not found'}
+        assert rv.status_code == HTTPStatus.NOT_FOUND
+        assert rv.json == {'message': f'{identifier} not found'}
 
 
 def test_get_business_with_allowed_filings(session, client, jwt):
     """Assert that the allowed filings are returned with business."""
-    identifier = 'CP0000001'
-    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
+    with nested_session(session):
+        identifier = 'CP0000001'
+        factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
-    rv = client.get(f'/api/v2/businesses/{identifier}?allowed_filings=true',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get(f'/api/v2/businesses/{identifier}?allowed_filings=true',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['business']['allowedFilings']
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['business']['allowedFilings']
 
 
 @pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, missing_business_info_warning_expected', [
@@ -280,134 +286,139 @@ def test_get_business_with_allowed_filings(session, client, jwt):
 def test_get_business_with_incomplete_info(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
                                            missing_business_info_warning_expected):
     """Assert that SP/GPs with missing business info is populating warnings list."""
+    with nested_session(session):
 
-    if has_missing_business_info:
-        legal_entity =factory_legal_entity(entity_type=legal_type, identifier=identifier)
-    else:
-        legal_entity =create_business(entity_type=legal_type,
-                                   identifier=identifier,
-                                   create_office=True,
-                                   create_office_mailing_address=True,
-                                   create_office_delivery_address=True,
-                                   firm_num_persons_roles=2,
-                                   create_firm_party_address=True,
-                                   filing_types=['registration'],
-                                   filing_has_completing_party=[True],
-                                   create_completing_party_address=[True]
-                                   )
-    legal_entity.start_date = datetime.utcnow().date()
-    legal_entity.save()
-    session.commit()
-    rv = client.get(f'/api/v2/businesses/{identifier}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        if has_missing_business_info:
+            legal_entity =factory_legal_entity(entity_type=legal_type, identifier=identifier)
+        else:
+            legal_entity =create_business(entity_type=legal_type,
+                                    identifier=identifier,
+                                    create_office=True,
+                                    create_office_mailing_address=True,
+                                    create_office_delivery_address=True,
+                                    firm_num_persons_roles=2,
+                                    create_firm_party_address=True,
+                                    filing_types=['registration'],
+                                    filing_has_completing_party=[True],
+                                    create_completing_party_address=[True]
+                                    )
+        legal_entity.start_date = datetime.utcnow().date()
+        legal_entity.save()
+        session.commit()
+        rv = client.get(f'/api/v2/businesses/{identifier}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.OK
-    rv_json = rv.json
+        assert rv.status_code == HTTPStatus.OK
+        rv_json = rv.json
 
-    if missing_business_info_warning_expected:
-        # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
-        assert len(rv_json['business']['complianceWarnings']) > 0
-        assert len(rv_json['business']['warnings']) > 0
-        for warning in rv_json['business']['warnings']:
-            assert warning['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO'
-    else:
-        # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
-        assert len(rv_json['business']['complianceWarnings']) == 0
-        assert len(rv_json['business']['warnings']) == 0
+        if missing_business_info_warning_expected:
+            # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
+            assert len(rv_json['business']['complianceWarnings']) > 0
+            assert len(rv_json['business']['warnings']) > 0
+            for warning in rv_json['business']['warnings']:
+                assert warning['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO'
+        else:
+            # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
+            assert len(rv_json['business']['complianceWarnings']) == 0
+            assert len(rv_json['business']['warnings']) == 0
 
 
 def test_get_business_with_court_orders(session, client, jwt):
     """Assert that the business info sets hasCourtOrders property."""
-    identifier = 'CP7654321'
-    legal_name = identifier + ' legal name'
-    legal_entity =factory_legal_entity_model(legal_name=legal_name,
-                                      identifier=identifier,
-                                      founding_date=datetime.utcfromtimestamp(0),
-                                      last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                                      last_modified=datetime.utcfromtimestamp(0),
-                                      fiscal_year_end_date=None,
-                                      tax_id=None,
-                                      dissolution_date=None)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_name = identifier + ' legal name'
+        legal_entity =factory_legal_entity_model(legal_name=legal_name,
+                                        identifier=identifier,
+                                        founding_date=datetime.utcfromtimestamp(0),
+                                        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                                        last_modified=datetime.utcfromtimestamp(0),
+                                        fiscal_year_end_date=None,
+                                        tax_id=None,
+                                        dissolution_date=None)
 
-    factory_completed_filing(legal_entity, COURT_ORDER_FILING_TEMPLATE)
+        factory_completed_filing(legal_entity, COURT_ORDER_FILING_TEMPLATE)
 
-    rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get('/api/v2/businesses/' + legal_entity.identifier,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.json['business']['identifier'] == identifier
-    assert rv.json['business']['hasCourtOrders'] == True
+        assert rv.json['business']['identifier'] == identifier
+        assert rv.json['business']['hasCourtOrders'] == True
 
 
 def test_post_affiliated_businesses(session, client, jwt):
     """Assert that the affiliated businesses endpoint returns as expected."""
-    # setup
-    identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq', 'Tb31yQIuBz']
-    businesses = [
-        (identifiers[0], LegalEntity.EntityTypes.COOP.value, None),
-        (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, '123456789BC0001')]
-    draft_businesses = [
-        (identifiers[2], LegalEntity.EntityTypes.BCOMP.value, None),
-        (identifiers[3], LegalEntity.EntityTypes.SOLE_PROP.value, 'NR 1234567'),
-        (identifiers[4], LegalEntity.EntityTypes.BCOMP.value, None)]
+    with nested_session(session):
+        # setup
+        identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq', 'Tb31yQIuBz']
+        businesses = [
+            (identifiers[0], LegalEntity.EntityTypes.COOP.value, None),
+            (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, '123456789BC0001')]
+        draft_businesses = [
+            (identifiers[2], LegalEntity.EntityTypes.BCOMP.value, None),
+            (identifiers[3], LegalEntity.EntityTypes.SOLE_PROP.value, 'NR 1234567'),
+            (identifiers[4], LegalEntity.EntityTypes.BCOMP.value, None)]
 
-    # NB: these are real businesses now so temp should not get returned
-    old_draft_businesses = [identifiers[4]]
+        # NB: these are real businesses now so temp should not get returned
+        old_draft_businesses = [identifiers[4]]
 
-    for business in businesses:
-        factory_legal_entity_model(legal_name=business[0] + 'name',
-                               identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
-                               founding_date=datetime.utcfromtimestamp(0),
-                               last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                               last_modified=datetime.utcfromtimestamp(0),
-                               fiscal_year_end_date=None,
-                               tax_id=business[2],
-                               dissolution_date=None,
-                               entity_type=business[1])
+        for business in businesses:
+            factory_legal_entity_model(legal_name=business[0] + 'name',
+                                identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
+                                founding_date=datetime.utcfromtimestamp(0),
+                                last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                                last_modified=datetime.utcfromtimestamp(0),
+                                fiscal_year_end_date=None,
+                                tax_id=business[2],
+                                dissolution_date=None,
+                                entity_type=business[1])
 
-    for draft_business in draft_businesses:
-        filing_name = 'incorporationApplication' if draft_business[1] == LegalEntity.EntityTypes.BCOMP.value else 'registration'
-        temp_reg = RegistrationBootstrap()
-        temp_reg._identifier = draft_business[0]
-        temp_reg.save()
-        json_data = copy.deepcopy(FILING_HEADER)
-        json_data['filing']['header']['name'] = filing_name
-        json_data['filing']['header']['identifier'] = draft_business[0]
-        json_data['filing']['header']['legalType'] = draft_business[1]
-        if draft_business[2]:
-            json_data['filing'][filing_name] = {
-                'nameRequest': {'nrNumber': draft_business[2]}
-            }
-        filing = factory_pending_filing(None, json_data)
-        filing.temp_reg = draft_business[0]
-        if draft_business[0] in old_draft_businesses:
-            # adding a business id informs the search that it is associated with a completed business
-            legal_entity =LegalEntity.find_by_identifier(identifiers[0])
-            filing.legal_entity_id = legal_entity.id
-        filing.save()
+        for draft_business in draft_businesses:
+            filing_name = 'incorporationApplication' if draft_business[1] == LegalEntity.EntityTypes.BCOMP.value else 'registration'
+            temp_reg = RegistrationBootstrap()
+            temp_reg._identifier = draft_business[0]
+            temp_reg.save()
+            json_data = copy.deepcopy(FILING_HEADER)
+            json_data['filing']['header']['name'] = filing_name
+            json_data['filing']['header']['identifier'] = draft_business[0]
+            json_data['filing']['header']['legalType'] = draft_business[1]
+            if draft_business[2]:
+                json_data['filing'][filing_name] = {
+                    'nameRequest': {'nrNumber': draft_business[2]}
+                }
+            filing = factory_pending_filing(None, json_data)
+            filing.temp_reg = draft_business[0]
+            if draft_business[0] in old_draft_businesses:
+                # adding a business id informs the search that it is associated with a completed business
+                legal_entity =LegalEntity.find_by_identifier(identifiers[0])
+                filing.legal_entity_id = legal_entity.id
+            filing.save()
 
-    rv = client.post('/api/v2/businesses/search',
-                     json={'identifiers': identifiers},
-                     headers=create_header(jwt, [SYSTEM_ROLE]))
+        rv = client.post('/api/v2/businesses/search',
+                        json={'identifiers': identifiers},
+                        headers=create_header(jwt, [SYSTEM_ROLE]))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json['businessEntities']) == len(businesses)
-    assert len(rv.json['draftEntities']) == len(draft_businesses) - len(old_draft_businesses)
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json['businessEntities']) == len(businesses)
+        assert len(rv.json['draftEntities']) == len(draft_businesses) - len(old_draft_businesses)
 
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
     """Assert that the affiliated businesses endpoint unauthorized if not a system token."""
-    rv = client.post('/api/v2/businesses/search',
-                     json={'identifiers': ['CP1234567']},
-                     headers=create_header(jwt, [STAFF_ROLE]))
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    with nested_session(session):
+        rv = client.post('/api/v2/businesses/search',
+                        json={'identifiers': ['CP1234567']},
+                        headers=create_header(jwt, [STAFF_ROLE]))
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_post_affiliated_businesses_invalid(session, client, jwt):
     """Assert that the affiliated businesses endpoint bad request when identifiers not given."""
-    rv = client.post('/api/v2/businesses/search',
-                     json={},
-                     headers=create_header(jwt, [SYSTEM_ROLE]))
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    with nested_session(session):
+        rv = client.post('/api/v2/businesses/search',
+                        json={},
+                        headers=create_header(jwt, [SYSTEM_ROLE]))
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
 
 
 # def test_get_business_unauthorized(app, session, client, jwt, requests_mock):
