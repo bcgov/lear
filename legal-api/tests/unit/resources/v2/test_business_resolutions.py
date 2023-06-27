@@ -22,6 +22,7 @@ from http import HTTPStatus
 from legal_api.models import Party, Resolution, LegalEntity
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests import FROZEN_DATETIME
+from tests.unit import nested_session
 from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
@@ -34,46 +35,48 @@ from tests.unit.services.utils import create_header
 ])
 def test_get_business_resolutions(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business resolutions are returned."""
-    identifier = 'CP1234567'
-    resolution_text = 'bla bla'
-    legal_entity =factory_legal_entity(identifier)
-    signing_party = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value,
-                                first_name='signing',
-                                last_name='party')
-    resolution = Resolution(resolution_date=FROZEN_DATETIME,
-                            resolution_type=Resolution.ResolutionType.SPECIAL.value,
-                            signing_date=FROZEN_DATETIME,
-                            resolution=resolution_text)
+    with nested_session(session):
+        identifier = 'CP1234567'
+        resolution_text = 'bla bla'
+        legal_entity =factory_legal_entity(identifier)
+        signing_party = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value,
+                                    first_name='signing',
+                                    last_name='party')
+        resolution = Resolution(resolution_date=FROZEN_DATETIME,
+                                resolution_type=Resolution.ResolutionType.SPECIAL.value,
+                                signing_date=FROZEN_DATETIME,
+                                resolution=resolution_text)
 
-    resolution.signing_legal_entity = signing_party
-    legal_entity.resolutions = [resolution]
-    legal_entity.save()
+        resolution.signing_legal_entity = signing_party
+        legal_entity.resolutions = [resolution]
+        legal_entity.save()
 
-    # mock response from auth to give view access (not needed if staff / system)
-    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+        # mock response from auth to give view access (not needed if staff / system)
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/resolutions',
-                    headers=create_header(jwt, [role], identifier)
-                    )
-    # check
-    assert rv.status_code == HTTPStatus.OK
-    assert 'resolutions' in rv.json
-    assert rv.json == {'resolutions': [resolution.json]}
+        rv = client.get(f'/api/v2/businesses/{identifier}/resolutions',
+                        headers=create_header(jwt, [role], identifier)
+                        )
+        # check
+        assert rv.status_code == HTTPStatus.OK
+        assert 'resolutions' in rv.json
+        assert rv.json == {'resolutions': [resolution.json]}
 
 
 def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock):
     """Assert that share classes are not returned for an unauthorized user."""
-    # setup
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier)
-    legal_entity.save()
+    with nested_session(session):
+        # setup
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier)
+        legal_entity.save()
 
-    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
 
-    # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/resolutions',
-                    headers=create_header(jwt, [PUBLIC_USER], identifier)
-                    )
-    # check
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
-    assert rv.json == {'message': f'You are not authorized to view resolutions for {identifier}.'}
+        # test
+        rv = client.get(f'/api/v2/businesses/{identifier}/resolutions',
+                        headers=create_header(jwt, [PUBLIC_USER], identifier)
+                        )
+        # check
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert rv.json == {'message': f'You are not authorized to view resolutions for {identifier}.'}
