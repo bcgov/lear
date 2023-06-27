@@ -75,6 +75,10 @@ ALTER TABLE share_series
     ENABLE TRIGGER ALL;
 ALTER TABLE share_series_history
     ENABLE TRIGGER ALL;
+ALTER TABLE consent_continuation_outs
+    ENABLE TRIGGER ALL;
+ALTER TABLE sent_to_gazette
+    ENABLE TRIGGER ALL;
 
 -- Cleanup temporary columns/functions/triggers
 

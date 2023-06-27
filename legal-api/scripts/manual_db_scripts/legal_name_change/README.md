@@ -28,7 +28,7 @@ Processing file /Users/argus/h3/git/bcreg/lear/legal-api/scripts/manual_db_scrip
 Transfer using 8 thread(s) users ...                                368 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) users_history ...                        472 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) legal_entities ...                       3707 rows in 00:01. Reader waited 00:00, writer 00:08.
-Transfer using 8 thread(s) legal_entities_history ...               19232 rows in 00:01. Reader waited 00:00, writer 00:08.
+Transfer using 8 thread(s) legal_entities_history ...               19232 rows in 00:01. Reader waited 00:00, writer 00:09.
 Transfer using 8 thread(s) filings ...                              32674 rows in 00:02. Reader waited 00:00, writer 00:09.
 Transfer using 8 thread(s) addresses ...                            28079 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) addresses_history ...                    31928 rows in 00:01. Reader waited 00:00, writer 00:08.
@@ -52,10 +52,13 @@ Transfer using 8 thread(s) registration_bootstrap ...               2722 rows in
 Transfer using 8 thread(s) request_tracker ...                      830 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) resolutions ...                          271 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) resolutions_history ...                  271 rows in 00:01. Reader waited 00:00, writer 00:08.
-Transfer using 8 thread(s) share_classes ...                        1037 rows in 00:01. Reader waited 00:00, writer 00:08.
+Transfer using 8 thread(s) share_classes ...                        1037 rows in 00:02. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) share_classes_history ...                2166 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) share_series ...                         137 rows in 00:01. Reader waited 00:00, writer 00:08.
 Transfer using 8 thread(s) share_series_history ...                 573 rows in 00:01. Reader waited 00:00, writer 00:08.
+Transfer using 8 thread(s) consent_continuation_outs ...            11 rows in 00:01. Reader waited 00:00, writer 00:08.
+Transfer using 8 thread(s) sent_to_gazette ...                      1038 rows in 00:01. Reader waited 00:00, writer 00:08.
+
 
 ...
 
@@ -65,5 +68,7 @@ Done
 8. Cleanup temporary artifacts and states created by data transfer scripts.
    Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_after.sql` against new LEAR db
 
-### 2. FUTURE (Migrate data in new LEAR database for legal name changes)
+### 2. Migrate data in new LEAR database for legal name changes
+
+1. Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/legal_name_updates.sql` against new LEAR db
 
