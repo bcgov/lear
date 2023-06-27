@@ -16,11 +16,13 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import datetime
+from contextlib import suppress
 from http import HTTPStatus
 from typing import Tuple
 
 from flask import g, jsonify, request
 from flask_cors import cross_origin
+from werkzeug.exceptions import UnsupportedMediaType
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import LegalEntity, Comment, Filing as FilingModel, User, db  # noqa: I001
@@ -109,7 +111,11 @@ def post_comments(identifier):
 
 def _basic_checks(identifier: str, legal_entity: LegalEntity, client_request) -> Tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
-    json_input = client_request.get_json()
+    
+    json_input = None
+    with suppress(UnsupportedMediaType):
+        json_input = client_request.get_json()
+    
     if client_request.method == 'POST' and not json_input:
         return ({'message': f'No comment json data in body of post for {identifier}.'},
                 HTTPStatus.BAD_REQUEST)

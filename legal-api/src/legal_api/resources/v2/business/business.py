@@ -101,6 +101,9 @@ def get_businesses(identifier: str):
 @jwt.requires_auth
 def post_businesses():
     """Create a valid filing, else error out."""
+    if not request.data and not request.is_json:
+        return {'error': babel('No valid JSON submitted.')}, \
+            HTTPStatus.BAD_REQUEST 
     json_input = request.get_json()
     valid_filing_types = [
         Filing.FILINGS['incorporationApplication']['name'],
