@@ -14,7 +14,7 @@
 """Manages the resolutions of a Business."""
 from typing import Dict, Optional
 
-from flask_babel import _ as babel  # noqa: N813
+from dateutil.parser import parse
 from legal_api.models import Business, Party
 
 
@@ -28,26 +28,20 @@ def update_resolution(business: Business, resolution_correction) -> Optional[Dic
     if not business or not resolution_correction:
         return None
 
+    # Find and update the resolution with the largest id
     largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
+    if largest_resolution:
+        largest_resolution.resolution = resolution_correction
 
-    if not largest_resolution:
-        return None
-
-    # Update the resolution with the largest id
-    largest_resolution.resolution = resolution_correction
     return largest_resolution
 
 
 def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
     """Update the signatory with the largest id."""
-    if not signatory:
+    if not business or not signatory:
         return None
 
-    if not business:
-        return {'error': babel('A business is required to update signatory.')}
-
     largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
-
     if not largest_resolution:
         return None
 
@@ -58,4 +52,18 @@ def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
         middle_initial=(signatory.get('additionalName', '') or '').upper()
     )
     largest_resolution.party = party
+    return largest_resolution
+
+
+def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
+    """Update the resolution_date with the largest id."""
+    if not business or not date:
+        return None
+
+    largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
+    if not largest_resolution:
+        return None
+
+    # Update the resolution with the largest id
+    largest_resolution.resolution_date = parse(date).date()
     return largest_resolution

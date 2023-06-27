@@ -109,6 +109,11 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         signatory = dpath.util.get(correction_filing, '/correction/signatory')
         resolutions.update_signatory(business, signatory)
 
+        # update business start date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        resolution_date = dpath.util.get(correction_filing, '/correction/resolutionDate')
+        resolutions.update_resolution_date(business, resolution_date)
+
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
