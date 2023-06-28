@@ -75,6 +75,10 @@ ALTER TABLE public.share_series
     DISABLE TRIGGER ALL;
 ALTER TABLE public.share_series_history
     DISABLE TRIGGER ALL;
+ALTER TABLE public.consent_continuation_outs
+    DISABLE TRIGGER ALL;
+ALTER TABLE public.sent_to_gazette
+    DISABLE TRIGGER ALL;
 
 
 -- Temporary columns/functions/triggers for enum workaround
@@ -159,3 +163,4 @@ CREATE TRIGGER fill_service_name_trigger
     ON public.request_tracker
     FOR EACH ROW
 EXECUTE FUNCTION public.fill_service_name();
+

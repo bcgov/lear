@@ -122,11 +122,21 @@ SELECT b.id,
        b.state_filing_id,
        b.submitter_userid,
        b.tax_id,
+       (CASE
+            WHEN f.id is not null THEN f.id
+            WHEN tmft.filing_id is not null THEN tmft.filing_id
+            ELSE NULL
+           END)                AS change_filing_id,
        COALESCE(bv.version, 0) as version
 FROM public.businesses b
-         left join (select id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
                     from businesses_version bv
-                    group by id) bv on b.id = bv.id;
+                    group by id) bv on b.id = bv.id
+         left join public.filings f
+                   on bv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      f.transaction_id = bv.transaction_id
+         left join temp_multiple_filing_transactions tmft on bv.transaction_id = tmft.transaction_id
+;
 
 
 -- businesses_version -> legal_entities_history
@@ -168,10 +178,19 @@ SELECT bv.id,
        bv.state_filing_id,
        bv.submitter_userid,
        bv.tax_id,
+       (CASE
+            WHEN f.id is not null THEN f.id
+            WHEN tmft.filing_id is not null THEN tmft.filing_id
+            ELSE NULL
+           END)                                                                               AS change_filing_id,
        t.issued_at                                                                            as changed,
        COALESCE(ROW_NUMBER() OVER (PARTITION BY bv.id ORDER BY bv.transaction_id ASC) - 1, 0) as version
 from public.businesses_version bv
-         join public.transaction t on bv.transaction_id = t.id;
+         left join public.transaction t
+                   on bv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      bv.transaction_id = t.id
+         left join public.filings f on f.transaction_id = t.id
+         left join temp_multiple_filing_transactions tmft on bv.transaction_id = tmft.transaction_id;
 
 
 -- filings -> filings
@@ -493,11 +512,21 @@ SELECT pr.id,
        pr.business_id           as legal_entity_id,
        pr.party_id,
        pr.filing_id,
+       (CASE
+            WHEN f.id is not null THEN f.id
+            WHEN tmft.filing_id is not null THEN tmft.filing_id
+            ELSE NULL
+           END)                 AS change_filing_id,
        COALESCE(prv.version, 0) as version
 FROM public.party_roles pr
-         left join (select id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
                     from public.party_roles_version
-                    group by id) prv on pr.id = prv.id;
+                    group by id) prv on pr.id = prv.id
+         left join public.filings f
+                   on prv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      f.transaction_id = prv.transaction_id
+         left join temp_multiple_filing_transactions tmft on prv.transaction_id = tmft.transaction_id
+;
 
 
 -- party_roles_version -> party_roles_history
@@ -509,10 +538,20 @@ SELECT prv.id,
        prv.business_id                                                                          as legal_entity_id,
        prv.party_id,
        prv.filing_id,
+       (CASE
+            WHEN f.id is not null THEN f.id
+            WHEN tmft.filing_id is not null THEN tmft.filing_id
+            ELSE NULL
+           END)                                                                                 AS change_filing_id,
        t.issued_at                                                                              as changed,
        COALESCE(ROW_NUMBER() OVER (PARTITION BY prv.id ORDER BY prv.transaction_id ASC) - 1, 0) as version
 from public.party_roles_version prv
-         left join public.transaction t on prv.transaction_id = t.id;
+         left join public.transaction t
+                   on prv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      prv.transaction_id = t.id
+         left join public.filings f on f.transaction_id = t.id
+         left join temp_multiple_filing_transactions tmft on prv.transaction_id = tmft.transaction_id
+;
 
 
 -- registration_bootstrap -> registration_bootstrap
@@ -655,6 +694,26 @@ from public.share_series_version ssv
          left join public.filings f on f.transaction_id = t.id;
 
 
+-- consent_continuation_outs -> consent_continuation_outs
+transfer public.consent_continuation_outs from lear_old using
+SELECT cco.id,
+       cco.foreign_jurisdiction,
+       cco.foreign_jurisdiction_region,
+       cco.expiry_date,
+       cco.filing_id as change_filing_id,
+       cco.business_id as legal_entity_id
+FROM public.consent_continuation_outs cco;
+
+
+-- sent_to_gazette -> sent_to_gazette
+transfer public.sent_to_gazette from lear_old using
+SELECT stg.filing_id,
+       stg.identifier,
+       stg.sent_to_gazette_date
+FROM public.sent_to_gazette stg;
+
+
+
 -- ensure sequence numbers are updated so collisions with future data does not happen
 SELECT setval('users_id_seq', (SELECT max(id) + 1 FROM public.users));
 SELECT setval('legal_entities_id_seq', (SELECT max(id) + 1 FROM public.legal_entities));
@@ -681,6 +740,7 @@ SELECT setval('request_tracker_id_seq', (SELECT max(id) + 1 FROM public.request_
 SELECT setval('resolutions_id_seq', (SELECT max(id) + 1 FROM public.resolutions));
 SELECT setval('share_classes_id_seq', (SELECT max(id) + 1 FROM public.share_classes));
 SELECT setval('share_series_id_seq', (SELECT max(id) + 1 FROM public.share_series));
+SELECT setval('consent_continuation_outs_id_seq', (SELECT max(id) + 1 FROM public.consent_continuation_outs));
 
 -- *****************************************************************************************************************
 -- Cleanup of any necessary artifacts/states created as a part of data transfer
