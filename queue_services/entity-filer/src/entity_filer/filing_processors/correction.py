@@ -67,8 +67,11 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
         )
     )
 
-    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or \
-            is_special_resolution_correction(filing, business, original_filing):
+    corrected_filing_type = filing['correction']['correctedFilingType']
+
+    if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
+            is_special_resolution_correction(filing, business, original_filing)) \
+            and corrected_filing_type != 'conversion':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
