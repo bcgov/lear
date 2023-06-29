@@ -69,15 +69,15 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
 
     corrected_filing_type = filing['correction']['correctedFilingType']
 
-    if business.legal_type not in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] and \
-            not is_special_resolution_correction(filing, business, original_filing) \
-            or corrected_filing_type == 'conversion':
+    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or \
+            is_special_resolution_correction(filing, business, original_filing) \
+            or corrected_filing_type != 'conversion':
+        correct_business_data(business, correction_filing, filing, filing_meta)
+    else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
         # - include flag so that listener in Filing model does not change state automatically to COMPLETE
         correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
         setattr(correction_filing, 'skip_status_listener', True)
-    else:
-        correct_business_data(business, correction_filing, filing, filing_meta)
 
     original_filing.save_to_session()
     return correction_filing
