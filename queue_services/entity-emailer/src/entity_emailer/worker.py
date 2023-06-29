@@ -55,6 +55,7 @@ from entity_emailer.email_processors import (
     nr_notification,
     registration_notification,
     restoration_notification,
+    special_resolution_notification,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -164,6 +165,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'continuationOut':
                 email = continuation_out_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'specialResolution':
+                email = special_resolution_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:

@@ -18,7 +18,13 @@ import pytest
 from legal_api.models import Business
 
 from entity_emailer.email_processors import correction_notification
-from tests.unit import prep_firm_correction_filing, prep_incorp_filing, prep_incorporation_correction_filing
+from tests.unit import (
+    prep_cp_special_resolution_correction_filing,
+    prep_cp_special_resolution_filing,
+    prep_firm_correction_filing,
+    prep_incorp_filing,
+    prep_incorporation_correction_filing,
+)
 
 
 @pytest.mark.parametrize('status,legal_type', [
@@ -96,4 +102,39 @@ def test_bc_correction_notification(app, session, status, legal_type):
 
         if status == 'COMPLETED':
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+        assert mock_get_pdfs.call_args[0][3] == filing
+
+
+@pytest.mark.parametrize('status,legal_type', [
+    ('PAID', Business.LegalTypes.COOP.value),
+    ('COMPLETED', Business.LegalTypes.COOP.value),
+])
+def test_cp_special_resolution_correction_notification(app, session, status, legal_type):
+    """Assert that email attributes are correct."""
+    # setup filing + business for email
+    legal_name = 'test business'
+    original_filing = prep_cp_special_resolution_filing(session, 'CP1234567', '1', legal_type, legal_name)
+    token = 'token'
+    business = Business.find_by_identifier('CP1234567')
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id, '1', status)
+    # test processor
+    with patch.object(correction_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        email = correction_notification.process(
+            {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
+        if status == 'PAID':
+            assert email['content']['subject'] == legal_name + ' - Confirmation of correction'
+        else:
+            assert email['content']['subject'] == \
+                legal_name + ' - Correction Documents from the Business Registry'
+
+        assert 'test@test.com' in email['recipients']
+
+        assert email['content']['body']
+        assert email['content']['attachments'] == []
+
+        assert mock_get_pdfs.call_args[0][0] == status
+        assert mock_get_pdfs.call_args[0][1] == token
+
+        if status == 'COMPLETED':
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'CP1234567'
         assert mock_get_pdfs.call_args[0][3] == filing

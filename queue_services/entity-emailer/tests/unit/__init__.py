@@ -28,8 +28,10 @@ from registry_schemas.example_data import (
     CONSENT_CONTINUATION_OUT,
     CONTINUATION_OUT,
     CORP_CHANGE_OF_ADDRESS,
+    CORRECTION_CP_SPECIAL_RESOLUTION,
     CORRECTION_INCORPORATION,
     CORRECTION_REGISTRATION,
+    CP_SPECIAL_RESOLUTION_TEMPLATE,
     DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
@@ -477,6 +479,37 @@ def prep_firm_correction_filing(session, identifier, payment_id, legal_type, leg
         filing.submitter_roles = submitter_role
 
     filing.save()
+    return filing
+
+
+def prep_cp_special_resolution_filing(session, identifier, payment_id, legal_type, legal_name):
+    """Return a new cp special resolution out filing prepped for email notification."""
+    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+    filing_template = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+    filing_template['filing']['business'] = \
+        {'identifier': f'{identifier}', 'legalype': legal_type, 'legalName': legal_name}
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing.save()
+
+    return filing
+
+
+def prep_cp_special_resolution_correction_filing(session, business, original_filing_id, payment_id, option):
+    """Return a cp special resolution correction filing prepped for email notification."""
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'correction'
+    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing_template['filing']['correction']['contactPoint']['email'] = 'test@test.com'
+    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+    if option in ['COMPLETED']:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
     return filing
 
 

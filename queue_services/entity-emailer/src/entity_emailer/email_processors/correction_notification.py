@@ -24,7 +24,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 
@@ -35,7 +35,8 @@ def _get_pdfs(
         business: dict,
         filing: Filing,
         filing_date_time: str,
-        effective_date: str) -> list:
+        effective_date: str,
+        name_changed: bool) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the correction notification."""
     pdfs = []
@@ -45,6 +46,9 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
     legal_type = business.get('legalType', None)
+    is_cp_special_resolution = False
+    if legal_type == Business.LegalTypes.COOP.value and filing.get('correctedFilingType') == 'specialResolution':
+        is_cp_special_resolution = True
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -59,7 +63,8 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    'fileName': 'Register Correction Application.pdf',
+                    'fileName': 'Special Resolution Correction Application.pdf' if is_cp_special_resolution else
+                                'Register Correction Application.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -133,7 +138,63 @@ def _get_pdfs(
                     }
                 )
                 attach_order += 1
+        elif is_cp_special_resolution:
+            # specialResolution
+            special_resolution = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=specialResolution',
+                headers=headers
+            )
+            if special_resolution.status_code != HTTPStatus.OK:
+                logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
+            else:
+                certificate_encoded = base64.b64encode(special_resolution.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Special Resolution.pdf',
+                        'fileBytes': certificate_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': attach_order
+                    }
+                )
+                attach_order += 1
 
+            # Certificate Rules
+            rules = requests.get(
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=certifiedRules',
+                headers=headers
+            )
+            if rules.status_code == HTTPStatus.OK:
+                certified_rules_encoded = base64.b64encode(rules.content)
+                pdfs.append(
+                    {
+                        'fileName': 'Certified Rules.pdf',
+                        'fileBytes': certified_rules_encoded.decode('utf-8'),
+                        'fileUrl': '',
+                        'attachOrder': attach_order
+                    }
+                )
+                attach_order += 1
+
+            # Change of Name
+            if name_changed:
+                name_change = requests.get(
+                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                    '?type=changeOfName',
+                    headers=headers
+                )
+                if name_change.status_code == HTTPStatus.OK:
+                    certified_name_change_encoded = base64.b64encode(name_change.content)
+                    pdfs.append(
+                        {
+                            'fileName': 'Change of Name Certified.pdf',
+                            'fileBytes': certified_name_change_encoded.decode('utf-8'),
+                            'fileUrl': '',
+                            'attachOrder': attach_order
+                        }
+                    )
+                    attach_order += 1
     return pdfs
 
 
@@ -148,12 +209,18 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
 
     prefix = 'BC'
     legal_type = business.get('legalType', None)
+    name_changed = False
     if legal_type in ['SP', 'GP']:
         prefix = 'FIRM'
     elif legal_type in ['BC', 'BEN', 'CC', 'ULC']:
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
+    elif legal_type in ['CP']:
+        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
+        if original_filing_type in ['specialResolution']:
+            prefix = 'CP-SR'
+            name_changed = filing.filing_json['filing'].get('changeOfName')
     else:
         return None
 
@@ -172,16 +239,17 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
+        name_changed=name_changed
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, name_changed)
 
     # get recipients
     recipients = []
 
-    for party in filing.filing_json['filing']['correction']['parties']:
+    for party in filing.filing_json['filing']['correction'].get('parties', []):
         for role in party['roles']:
             if role['roleType'] in ('Partner', 'Proprietor', 'Completing Party'):
                 recipients.append(party['officer'].get('email'))
@@ -195,7 +263,8 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
 
     # assign subject
     subjects = {
-        Filing.Status.PAID.value: 'Confirmation of Filing from the Business Registry',
+        Filing.Status.PAID.value: 'Confirmation of correction' if prefix == 'CP-SR' else
+                                  'Confirmation of Filing from the Business Registry',
         Filing.Status.COMPLETED.value: 'Correction Documents from the Business Registry'
     }
 
