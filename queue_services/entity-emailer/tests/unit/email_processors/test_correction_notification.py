@@ -120,7 +120,7 @@ def test_cp_special_resolution_correction_notification(app, session, status, leg
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'cp business'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
@@ -155,7 +155,7 @@ def test_complete_special_resolution_correction_attachments(session, config):
     legal_name = 'test cp sr business'
     token = 'token'
     status = 'COMPLETED'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
@@ -204,7 +204,7 @@ def test_paid_special_resolution_correction_attachments(session, config):
     legal_name = 'test cp sr business'
     token = 'token'
     status = 'PAID'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
@@ -238,7 +238,7 @@ def test_paid_special_resolution_correction_on_correction(session, config):
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'cp business'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', 'CP', legal_name)
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', 'CP', legal_name, submitter_role=None)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing_correction = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,

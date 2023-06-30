@@ -482,7 +482,7 @@ def prep_firm_correction_filing(session, identifier, payment_id, legal_type, leg
     return filing
 
 
-def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_name):
+def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_name, submitter_role=None):
     """Return a new cp special resolution out filing prepped for email notification."""
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     filing_template = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
@@ -499,9 +499,15 @@ def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_
         'rulesInResolution': True,
         'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
     }
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
-    filing.save()
 
+    user = create_user('cp_test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+    filing.save()
     return filing
 
 

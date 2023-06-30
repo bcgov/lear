@@ -22,7 +22,12 @@ from flask import current_app
 from jinja2 import Template
 from legal_api.models import Filing, UserRoles
 
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
+from entity_emailer.email_processors import (
+    get_filing_info,
+    get_recipient_from_auth,
+    get_user_email_from_auth,
+    substitute_template_parts,
+)
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs, get_paid_pdfs
 
 
@@ -70,7 +75,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients.append(get_recipient_from_auth(identifier, token))
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
+        # when staff file a dissolution documentOptionalEmail may contain completing party email
         recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
+    else:
+        recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
