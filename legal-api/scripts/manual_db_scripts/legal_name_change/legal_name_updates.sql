@@ -15,26 +15,6 @@
 --    changeOfRegistration and conversion) that contain references to party ids.
 
 
--- disable triggers to deal with existing bad data scenarios
-ALTER table legal_entities_history
-    disable trigger all;
-ALTER table legal_entities
-    disable trigger all;
-ALTER table entity_roles_history
-    disable trigger all;
-ALTER table entity_roles
-    disable trigger all;
-ALTER table addresses_history
-    disable trigger all;
-ALTER table addresses
-    disable trigger all;
-
--- temporarily remove primary keys for versioning tables as there are scenarios where version numbers need
--- to be updated.  in these scenarios, some version numbers are repeated until the full update has completed
-ALTER TABLE public.legal_entities_history
-    DROP CONSTRAINT legal_entities_history_pkey;
-
-
 -- temp columns used to provide a way of joining newly created entries with previous party/party_roles data
 ALTER TABLE legal_entities
     ADD COLUMN temp_party_id INTEGER;
@@ -613,23 +593,5 @@ ALTER TABLE entity_roles
 ALTER TABLE entity_roles
     DROP COLUMN temp_party_id;
 
--- restore required constraints that were previously dropped
-ALTER TABLE public.legal_entities_history
-    ADD CONSTRAINT legal_entities_history_pkey PRIMARY KEY (id, version);
-
-
--- re-enable triggers
-ALTER table legal_entities_history
-    enable trigger all;
-ALTER table legal_entities
-    enable trigger all;
-ALTER table entity_roles_history
-    enable trigger all;
-ALTER table entity_roles
-    enable trigger all;
-ALTER table addresses_history
-    enable trigger all;
-ALTER table addresses
-    enable trigger all;
 
 VACUUM FULL;
