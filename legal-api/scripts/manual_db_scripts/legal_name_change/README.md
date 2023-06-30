@@ -65,10 +65,10 @@ Transfer using 8 thread(s) sent_to_gazette ...                      1038 rows in
 Done
 
 ```
-8. Cleanup temporary artifacts and states created by data transfer scripts.
-   Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_after.sql` against new LEAR db
 
 ### 2. Migrate data in new LEAR database for legal name changes
 
 1. Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/legal_name_updates.sql` against new LEAR db
+2. Cleanup temporary artifacts and states created by data transfer scripts.
+   Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_after.sql` against new LEAR db
 
