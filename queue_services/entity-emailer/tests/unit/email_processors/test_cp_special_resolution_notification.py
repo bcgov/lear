@@ -28,6 +28,7 @@ LEGAL_NAME = 'test business'
 IDENTIFIER = 'CP1234567'
 TOKEN = 'token'
 RECIPIENT_EMAIL = 'recipient@email.com'
+USER_EMAIL_FROM_AUTH = 'user@email.com'
 
 
 @pytest.mark.parametrize('status', [
@@ -44,7 +45,7 @@ def test_cp_special_resolution_notification(session, app, config, status):
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
                           return_value=RECIPIENT_EMAIL):
             with patch.object(special_resolution_notification, 'get_user_email_from_auth',
-                              return_value='user@email.com'):
+                              return_value=USER_EMAIL_FROM_AUTH):
                 email = special_resolution_notification.process(
                     {'filingId': filing.id, 'type': 'specialResolution', 'option': status}, TOKEN)
                 if status == 'PAID':
@@ -71,7 +72,7 @@ def test_complete_special_resolution_attachments(session, config):
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
                           return_value=RECIPIENT_EMAIL):
             with patch.object(special_resolution_notification, 'get_user_email_from_auth',
-                              return_value='user@email.com'):
+                              return_value=USER_EMAIL_FROM_AUTH):
                 m.get(
                     (
                         f'{config.get("LEGAL_API_URL")}'
@@ -121,7 +122,7 @@ def test_paid_special_resolution_attachments(session, config):
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
                           return_value=RECIPIENT_EMAIL):
             with patch.object(special_resolution_notification, 'get_user_email_from_auth',
-                              return_value='user@email.com'):
+                              return_value=USER_EMAIL_FROM_AUTH):
                 m.get(
                     (
                         f'{config.get("LEGAL_API_URL")}'
