@@ -27,6 +27,7 @@ LEGAL_TYPE = Business.LegalTypes.COOP.value
 LEGAL_NAME = 'test business'
 IDENTIFIER = 'CP1234567'
 TOKEN = 'token'
+RECIPIENT_EMAIL = 'recipient@email.com'
 
 
 @pytest.mark.parametrize('status', [
@@ -37,10 +38,11 @@ def test_cp_special_resolution_notification(session, app, config, status):
     """Assert that the special resolution email processor works as expected."""
     # setup filing + business for email
     filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
+    get_pdf_function = 'get_paid_pdfs' if status == 'PAID' else 'get_completed_pdfs'
     # test processor
-    with patch.object(special_resolution_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(special_resolution_notification, get_pdf_function, return_value=[]) as mock_get_pdfs:
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
-                          return_value='recipient@email.com'):
+                          return_value=RECIPIENT_EMAIL):
             email = special_resolution_notification.process(
                 {'filingId': filing.id, 'type': 'specialResolution', 'option': status}, TOKEN)
             if status == 'PAID':
@@ -50,15 +52,12 @@ def test_cp_special_resolution_notification(session, app, config, status):
                 assert email['content']['subject'] == \
                     LEGAL_NAME + ' - Special Resolution Documents from the Business Registry'
 
-            assert 'recipient@email.com' in email['recipients']
+            assert RECIPIENT_EMAIL in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
-            assert mock_get_pdfs.call_args[0][0] == status
-            assert mock_get_pdfs.call_args[0][1] == TOKEN
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == IDENTIFIER
-            assert mock_get_pdfs.call_args[0][2]['legalName'] == LEGAL_NAME
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == LEGAL_TYPE
-            assert mock_get_pdfs.call_args[0][3] == filing
+            assert mock_get_pdfs.call_args[0][0] == TOKEN
+            assert mock_get_pdfs.call_args[0][1]['identifier'] == IDENTIFIER
+            assert mock_get_pdfs.call_args[0][2] == filing
 
 
 def test_complete_special_resolution_attachments(session, config):
@@ -68,7 +67,7 @@ def test_complete_special_resolution_attachments(session, config):
     filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
     with requests_mock.Mocker() as m:
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
-                          return_value='recipient@email.com'):
+                          return_value=RECIPIENT_EMAIL):
             m.get(
                 (
                     f'{config.get("LEGAL_API_URL")}'
@@ -113,7 +112,7 @@ def test_paid_special_resolution_attachments(session, config):
     filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
     with requests_mock.Mocker() as m:
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
-                          return_value='recipient@email.com'):
+                          return_value=RECIPIENT_EMAIL):
             m.get(
                 (
                     f'{config.get("LEGAL_API_URL")}'

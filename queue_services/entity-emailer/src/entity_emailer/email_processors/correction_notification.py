@@ -27,6 +27,7 @@ from jinja2 import Template
 from legal_api.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
+from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
 
 
 def _get_pdfs(
@@ -140,74 +141,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
         elif is_cp_special_resolution:
-            sr_pdf = _get_special_resolution_correction_completed_pdfs(headers, business,
-                                                                       filing, attach_order, name_changed)
-            pdfs = pdfs + sr_pdf
-    return pdfs
-
-
-def _get_special_resolution_correction_completed_pdfs(headers: dict, business: Business,
-                                                      filing: Filing, attach_order: int, name_changed: bool) -> list:
-    """Return pdfs for sr correction."""
-    # Special Resolution
-    pdfs = []
-    special_resolution = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}'
-        f'/businesses/{business["identifier"]}'
-        f'/filings/{filing.id}/documents/specialResolution',
-        headers=headers
-    )
-    if special_resolution.status_code != HTTPStatus.OK:
-        logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
-    else:
-        certificate_encoded = base64.b64encode(special_resolution.content)
-        pdfs.append(
-            {
-                'fileName': 'Special Resolution.pdf',
-                'fileBytes': certificate_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': attach_order
-            }
-        )
-        attach_order += 1
-
-    # Change of Name
-    if name_changed:
-        name_change = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=changeOfName',
-            headers=headers
-        )
-        if name_change.status_code == HTTPStatus.OK:
-            certified_name_change_encoded = base64.b64encode(name_change.content)
-            pdfs.append(
-                {
-                    'fileName': 'Change of Name Certified.pdf',
-                    'fileBytes': certified_name_change_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
-
-    # Certificate Rules
-    rules = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=certifiedRules',
-        headers=headers
-    )
-    if rules.status_code == HTTPStatus.OK:
-        certified_rules_encoded = base64.b64encode(rules.content)
-        pdfs.append(
-            {
-                'fileName': 'Certified Rules.pdf',
-                'fileBytes': certified_rules_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': attach_order
-            }
-        )
-        attach_order += 1
-
+            pdfs = get_completed_pdfs(headers, business, filing, name_changed)
     return pdfs
 
 
