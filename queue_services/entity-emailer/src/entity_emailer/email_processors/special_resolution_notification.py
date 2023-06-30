@@ -70,7 +70,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients.append(get_recipient_from_auth(identifier, token))
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
-        # when staff file a sr due to client error, documentOptionalEmail may contain completing party email
         recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
 
     recipients = list(set(recipients))

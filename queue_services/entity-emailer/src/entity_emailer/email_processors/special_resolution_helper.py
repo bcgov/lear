@@ -84,7 +84,7 @@ def get_completed_pdfs(
         certified_rules_encoded = base64.b64encode(rules.content)
         pdfs.append(
             {
-                'fileName': 'Certified Rules.pdf',
+                'fileName': 'Certificate Rules.pdf',
                 'fileBytes': certified_rules_encoded.decode('utf-8'),
                 'fileUrl': '',
                 'attachOrder': attach_order

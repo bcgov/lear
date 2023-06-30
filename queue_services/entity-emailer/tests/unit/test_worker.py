@@ -25,13 +25,19 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from entity_emailer import worker
 from entity_emailer.email_processors import (
     ar_reminder_notification,
+    correction_notification,
     filing_notification,
     name_request,
     nr_notification,
     special_resolution_notification,
 )
 from tests import MockResponse
-from tests.unit import prep_cp_special_resolution_filing, prep_incorp_filing, prep_maintenance_filing
+from tests.unit import (
+    prep_cp_special_resolution_correction_filing,
+    prep_cp_special_resolution_filing,
+    prep_incorp_filing,
+    prep_maintenance_filing,
+)
 
 
 def test_process_filing_missing_app(app, session):
@@ -195,6 +201,37 @@ def test_process_special_resolution_email(app, session, option):
                     assert mock_send_email.call_args[0][0]['content']['body']
                     assert mock_send_email.call_args[0][0]['content']['attachments'] == []
                     assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize('option', [
+    ('PAID'),
+    ('COMPLETED'),
+])
+def test_process_correction_cp_sr_email(app, session, option):
+    """Assert that a correction email msg is processed correctly."""
+    identifier = 'CP1234567'
+    original_filing = prep_cp_special_resolution_filing(identifier, '1', 'CP', 'TEST')
+    token = '1'
+    business = Business.find_by_identifier(identifier)
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                          '1', option, 'specialResolution')
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(correction_notification, '_get_pdfs', return_value=[]):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}, app)
+
+                if option == 'PAID':
+                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                        'TEST - Confirmation of correction'
+                else:
+                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                        'TEST - Correction Documents from the Business Registry'
+                assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
+                assert mock_send_email.call_args[0][0]['content']['body']
+                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                assert mock_send_email.call_args[0][1] == token
 
 
 def test_process_ar_reminder_email(app, session):
