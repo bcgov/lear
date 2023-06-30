@@ -12,45 +12,132 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Special Resolution email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from legal_api.models import Business
 
 from entity_emailer.email_processors import special_resolution_notification
 from tests.unit import prep_cp_special_resolution_filing
 
 
+LEGAL_TYPE = Business.LegalTypes.COOP.value
+LEGAL_NAME = 'test business'
+IDENTIFIER = 'CP1234567'
+TOKEN = 'token'
+
+
 @pytest.mark.parametrize('status', [
     ('PAID'),
     ('COMPLETED')
 ])
-def test_cp_special_resolution_notification(app, session, status):
+def test_cp_special_resolution_notification(session, app, config, status):
     """Assert that the special resolution email processor works as expected."""
     # setup filing + business for email
-    legal_name = 'test business'
-    legal_type = Business.LegalTypes.COOP.value
-    filing = prep_cp_special_resolution_filing(session, 'CP1234567', '1', legal_type, legal_name)
-    token = 'token'
+    filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
     # test processor
     with patch.object(special_resolution_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(special_resolution_notification, 'get_recipient_from_auth',
                           return_value='recipient@email.com'):
             email = special_resolution_notification.process(
-                {'filingId': filing.id, 'type': 'specialResolution', 'option': status}, token)
+                {'filingId': filing.id, 'type': 'specialResolution', 'option': status}, TOKEN)
             if status == 'PAID':
-                assert email['content']['subject'] == legal_name + \
+                assert email['content']['subject'] == LEGAL_NAME + \
                     ' - Confirmation of Special Resolution from the Business Registry'
             else:
                 assert email['content']['subject'] == \
-                    legal_name + ' - Special Resolution Documents from the Business Registry'
+                    LEGAL_NAME + ' - Special Resolution Documents from the Business Registry'
 
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
             assert mock_get_pdfs.call_args[0][0] == status
-            assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'CP1234567'
-            assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][1] == TOKEN
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == IDENTIFIER
+            assert mock_get_pdfs.call_args[0][2]['legalName'] == LEGAL_NAME
+            assert mock_get_pdfs.call_args[0][2]['legalType'] == LEGAL_TYPE
             assert mock_get_pdfs.call_args[0][3] == filing
+
+
+def test_complete_special_resolution_attachments(session, config):
+    """Test completed special resolution notification."""
+    # setup filing + business for email
+    status = 'COMPLETED'
+    filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
+    with requests_mock.Mocker() as m:
+        with patch.object(special_resolution_notification, 'get_recipient_from_auth',
+                          return_value='recipient@email.com'):
+            m.get(
+                (
+                    f'{config.get("LEGAL_API_URL")}'
+                    f'/businesses/{IDENTIFIER}'
+                    f'/filings/{filing.id}'
+                    f'/documents/specialResolution'
+                ),
+                content=b'pdf_content_1',
+                status_code=200
+            )
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{IDENTIFIER}/filings/{filing.id}?type=changeOfName',
+                content=b'pdf_content_2',
+                status_code=200
+            )
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{IDENTIFIER}/filings/{filing.id}?type=certifiedRules',
+                content=b'pdf_content_3',
+                status_code=200
+            )
+
+            output = special_resolution_notification.process({
+                'filingId': filing.id,
+                'type': 'specialResolution',
+                'option': status
+            }, TOKEN)
+            assert 'content' in output
+            assert 'attachments' in output['content']
+            assert len(output['content']['attachments']) == 3
+            assert output['content']['attachments'][0]['fileName'] == 'Special Resolution.pdf'
+            assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+            assert output['content']['attachments'][1]['fileName'] == 'Change of Name Certified.pdf'
+            assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+            assert output['content']['attachments'][2]['fileName'] == 'Certified Rules.pdf'
+            assert base64.b64decode(output['content']['attachments'][2]['fileBytes']).decode('utf-8') == 'pdf_content_3'
+
+
+def test_paid_special_resolution_attachments(session, config):
+    """Test paid special resolution notification."""
+    # setup filing + business for email
+    status = 'PAID'
+    filing = prep_cp_special_resolution_filing(IDENTIFIER, '1', LEGAL_TYPE, LEGAL_NAME)
+    with requests_mock.Mocker() as m:
+        with patch.object(special_resolution_notification, 'get_recipient_from_auth',
+                          return_value='recipient@email.com'):
+            m.get(
+                (
+                    f'{config.get("LEGAL_API_URL")}'
+                    f'/businesses/{IDENTIFIER}'
+                    f'/filings/{filing.id}'
+                    f'/documents/specialResolutionApplication'
+                ),
+                content=b'pdf_content_1',
+                status_code=200
+            )
+            m.post(
+                f'{config.get("PAY_API_URL")}/1/receipts',
+                content=b'pdf_content_2',
+                status_code=201
+            )
+            output = special_resolution_notification.process({
+                'filingId': filing.id,
+                'type': 'specialResolution',
+                'option': status
+            }, TOKEN)
+            assert 'content' in output
+            assert 'attachments' in output['content']
+            assert len(output['content']['attachments']) == 2
+            assert output['content']['attachments'][0]['fileName'] == 'Special Resolution Application.pdf'
+            assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+            assert output['content']['attachments'][1]['fileName'] == 'Receipt.pdf'
+            assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'

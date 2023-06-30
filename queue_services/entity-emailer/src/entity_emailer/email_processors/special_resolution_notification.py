@@ -48,7 +48,9 @@ def _get_pdfs(
     if status == Filing.Status.PAID.value:
         # add filing pdf
         filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
+            f'{current_app.config.get("LEGAL_API_URL")}'
+            f'/businesses/{business["identifier"]}'
+            f'/filings/{filing.id}/documents/specialResolutionApplication',
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
@@ -93,8 +95,9 @@ def _get_pdfs(
     if status == Filing.Status.COMPLETED.value:
         # specialResolution
         special_resolution = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=specialResolution',
+            f'{current_app.config.get("LEGAL_API_URL")}'
+            f'/businesses/{business["identifier"]}'
+            f'/filings/{filing.id}/documents/specialResolution',
             headers=headers
         )
         if special_resolution.status_code != HTTPStatus.OK:
@@ -105,23 +108,6 @@ def _get_pdfs(
                 {
                     'fileName': 'Special Resolution.pdf',
                     'fileBytes': certificate_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
-                }
-            )
-            attach_order += 1
-        # Certificate Rules
-        rules = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certifiedRules',
-            headers=headers
-        )
-        if rules.status_code == HTTPStatus.OK:
-            certified_rules_encoded = base64.b64encode(rules.content)
-            pdfs.append(
-                {
-                    'fileName': 'Certified Rules.pdf',
-                    'fileBytes': certified_rules_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
                 }
@@ -145,6 +131,23 @@ def _get_pdfs(
                     }
                 )
                 attach_order += 1
+        # Certificate Rules
+        rules = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certifiedRules',
+            headers=headers
+        )
+        if rules.status_code == HTTPStatus.OK:
+            certified_rules_encoded = base64.b64encode(rules.content)
+            pdfs.append(
+                {
+                    'fileName': 'Certified Rules.pdf',
+                    'fileBytes': certified_rules_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
 
     return pdfs
 
@@ -166,7 +169,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     name_changed = filing.filing_json['filing'].get('changeOfName')
-    rules_changed = filing.filing_json['filing'].get('rulesFileKey')
+    rules_changed = bool(filing.filing_json['filing'].get('restoration', {}).get('rulesFileKey'))
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
