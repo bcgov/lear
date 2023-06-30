@@ -31,6 +31,7 @@ from tests.unit import (
 
 COMPLETED_SUBJECT_SUFIX = ' - Correction Documents from the Business Registry'
 CP_IDENTIFIER = 'CP1234567'
+SPECIAL_RESOLUTION_FILING_TYPE = 'specialResolution'
 
 
 @pytest.mark.parametrize('status,legal_type', [
@@ -122,7 +123,8 @@ def test_cp_special_resolution_correction_notification(app, session, status, leg
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
-    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id, '1', status)
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                          '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     # test processor
     with patch.object(correction_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = correction_notification.process(
@@ -155,7 +157,8 @@ def test_complete_special_resolution_correction_attachments(session, config):
     status = 'COMPLETED'
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
     business = Business.find_by_identifier(CP_IDENTIFIER)
-    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id, '1', status)
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                          '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     with requests_mock.Mocker() as m:
         m.get(
             (
@@ -203,7 +206,8 @@ def test_paid_special_resolution_correction_attachments(session, config):
     status = 'PAID'
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name)
     business = Business.find_by_identifier(CP_IDENTIFIER)
-    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id, '1', status)
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                          '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     with requests_mock.Mocker() as m:
         m.get(
             f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
@@ -228,3 +232,25 @@ def test_paid_special_resolution_correction_attachments(session, config):
         assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
         assert output['content']['attachments'][1]['fileName'] == 'Receipt.pdf'
         assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_paid_special_resolution_correction_on_correction(session, config):
+    """Assert that email attributes are correct."""
+    # setup filing + business for email
+    legal_name = 'cp business'
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', 'CP', legal_name)
+    token = 'token'
+    business = Business.find_by_identifier(CP_IDENTIFIER)
+    filing_correction = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                                     '1', 'COMPLETED', SPECIAL_RESOLUTION_FILING_TYPE)
+    filing = prep_cp_special_resolution_correction_filing(session, business, filing_correction.id,
+                                                          '1', 'PAID', 'correction')
+    # test processor
+    with patch.object(correction_notification, '_get_pdfs', return_value=[]):
+        email = correction_notification.process(
+            {'filingId': filing.id, 'type': 'correction', 'option': 'PAID'}, token)
+
+        assert email['content']['subject'] == legal_name + ' - Confirmation of correction'
+        assert 'cp_sr@test.com' in email['recipients']
+        assert email['content']['body']
+        assert email['content']['attachments'] == []

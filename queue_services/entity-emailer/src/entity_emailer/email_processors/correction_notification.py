@@ -24,10 +24,13 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
+from legal_api.models import Filing
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
-from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
+from entity_emailer.email_processors.special_resolution_helper import (
+    get_completed_pdfs,
+    is_special_resolution_correction,
+)
 
 
 def _get_pdfs(
@@ -47,9 +50,11 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
     legal_type = business.get('legalType', None)
-    is_cp_special_resolution = (
-        legal_type == Business.LegalTypes.COOP.value and
-        filing.filing_json['filing']['correction'].get('correctedFilingType') == 'specialResolution'
+    is_cp_special_resolution = is_special_resolution_correction(
+        legal_type,
+        filing.filing_json['filing'],
+        business,
+        filing
     )
 
     if status == Filing.Status.PAID.value:
@@ -141,7 +146,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
         elif is_cp_special_resolution:
-            pdfs = get_completed_pdfs(headers, business, filing, name_changed)
+            pdfs = get_completed_pdfs(token, business, filing, name_changed)
     return pdfs
 
 
@@ -176,7 +181,6 @@ def _get_template(prefix: str, status: str, filing_type: str, filing: Filing,  #
 def _get_recipients(filing: Filing) -> list:
     """Return recipients list."""
     recipients = []
-
     for party in filing.filing_json['filing']['correction'].get('parties', []):
         for role in party['roles']:
             if role['roleType'] in ('Partner', 'Proprietor', 'Completing Party'):
@@ -187,7 +191,7 @@ def _get_recipients(filing: Filing) -> list:
         recipients.append(filing.filing_json['filing']['correction']['contactPoint']['email'])
 
     recipients = list(set(recipients))
-    recipients = ', '.join(filter(None, recipients)).strip()
+    recipients = list(filter(None, recipients))
     return recipients
 
 
@@ -227,11 +231,14 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
-    elif legal_type in ['CP']:
-        original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
-        if original_filing_type in ['specialResolution']:
-            prefix = 'CP-SR'
-            name_changed = filing.filing_json['filing'].get('changeOfName')
+    elif is_special_resolution_correction(
+            legal_type,
+            filing.filing_json['filing'],
+            business,
+            filing
+    ):
+        prefix = 'CP-SR'
+        name_changed = filing.filing_json['filing'].get('changeOfName')
     else:
         return None
 

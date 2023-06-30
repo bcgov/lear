@@ -505,7 +505,8 @@ def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_
     return filing
 
 
-def prep_cp_special_resolution_correction_filing(session, business, original_filing_id, payment_id, option):
+def prep_cp_special_resolution_correction_filing(session, business, original_filing_id,
+                                                 payment_id, option, corrected_filing_type):
     """Return a cp special resolution correction filing prepped for email notification."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'correction'
@@ -513,6 +514,7 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     filing_template['filing']['business'] = {'identifier': business.identifier}
     filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
+    filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
     filing_template['filing']['changeOfName'] = {
         'nameRequest': {
             'nrNumber': 'NR 8798956',
