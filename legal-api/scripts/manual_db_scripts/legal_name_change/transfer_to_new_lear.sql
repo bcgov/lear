@@ -4,7 +4,7 @@
 -- Notes: ensure that lear_old and lear_new connections have been configured before running this script via dbshell.
 
 vset ignore_errors=false
-vset transfer.threads=8
+vset transfer.threads=3
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
@@ -80,6 +80,50 @@ select uv.id,
        COALESCE(ROW_NUMBER() OVER (PARTITION BY uv.id ORDER BY uv.transaction_id ASC) - 1, 0) as version
 from public.users_version uv
          left join transaction t on uv.transaction_id = t.id;
+
+
+-- registration_bootstrap -> registration_bootstrap
+transfer public.registration_bootstrap from lear_old using
+SELECT identifier,
+       account,
+       last_modified
+FROM public.registration_bootstrap;
+
+
+-- filings -> filings
+transfer public.filings from lear_old using
+select id,
+       application_date,
+       approval_type,
+       business_id as legal_entity_id,
+       colin_only,
+       completion_date,
+       court_order_date,
+       court_order_effect_of_order,
+       court_order_file_number,
+       deletion_locked,
+       effective_date,
+       filing_date,
+       filing_json,
+       filing_sub_type,
+       filing_type,
+       meta_data,
+       notice_date,
+       order_details,
+       paper_only,
+       parent_filing_id,
+       payment_account,
+       payment_completion_date,
+       payment_id,
+       payment_status_code,
+       source,
+       status,
+       submitter_id,
+       submitter_roles,
+       tech_correction_json,
+       temp_reg,
+       transaction_id
+from public.filings;
 
 
 
@@ -191,42 +235,6 @@ from public.businesses_version bv
                       bv.transaction_id = t.id
          left join public.filings f on f.transaction_id = t.id
          left join temp_multiple_filing_transactions tmft on bv.transaction_id = tmft.transaction_id;
-
-
--- filings -> filings
-transfer public.filings from lear_old using
-select id,
-       application_date,
-       approval_type,
-       business_id as legal_entity_id,
-       colin_only,
-       completion_date,
-       court_order_date,
-       court_order_effect_of_order,
-       court_order_file_number,
-       deletion_locked,
-       effective_date,
-       filing_date,
-       filing_json,
-       filing_sub_type,
-       filing_type,
-       meta_data,
-       notice_date,
-       order_details,
-       paper_only,
-       parent_filing_id,
-       payment_account,
-       payment_completion_date,
-       payment_id,
-       payment_status_code,
-       source,
-       status,
-       submitter_id,
-       submitter_roles,
-       tech_correction_json,
-       temp_reg,
-       transaction_id
-from public.filings;
 
 
 -- addresses -> addresses
@@ -554,14 +562,6 @@ from public.party_roles_version prv
 ;
 
 
--- registration_bootstrap -> registration_bootstrap
-transfer public.registration_bootstrap from lear_old using
-SELECT identifier,
-       account,
-       last_modified
-FROM public.registration_bootstrap;
-
-
 -- request_tracker -> request_tracker
 transfer public.request_tracker from lear_old using
 SELECT id,
@@ -715,32 +715,39 @@ FROM public.sent_to_gazette stg;
 
 
 -- ensure sequence numbers are updated so collisions with future data does not happen
-SELECT setval('users_id_seq', (SELECT max(id) + 1 FROM public.users));
-SELECT setval('legal_entities_id_seq', (SELECT max(id) + 1 FROM public.legal_entities));
+SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
+SELECT setval('legal_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM public.legal_entities));
+SELECT setval('entity_roles_id_seq', (select coalesce(max(id) + 1, 1) FROM public.entity_roles));
+SELECT setval('colin_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM public.colin_entities));
 SELECT setval('legal_entity_identifier_coop', (select MAX(CAST(substring(identifier, '(1[0-9]{6})') AS INTEGER)) + 1
                                                from legal_entities
                                                where entity_type = 'CP'));
 SELECT setval('legal_entity_identifier_sp_gp', (select MAX(CAST(substring(identifier, '(1[0-9]{6})') AS INTEGER)) + 1
                                                 from legal_entities
                                                 where entity_type in ('SP', 'GP')));
-SELECT setval('filings_id_seq', (SELECT max(id) + 1 FROM public.filings));
-SELECT setval('addresses_id_seq', (SELECT max(id) + 1 FROM public.addresses));
-SELECT setval('aliases_id_seq', (SELECT max(id) + 1 FROM public.aliases));
-SELECT setval('colin_event_ids_colin_event_id_seq', (SELECT max(colin_event_id) + 1 FROM public.colin_event_ids));
-SELECT setval('colin_last_update_id_seq', (SELECT max(id) + 1 FROM public.colin_last_update));
-SELECT setval('comments_id_seq', (SELECT max(id) + 1 FROM public.comments));
-SELECT setval('dc_definitions_id_seq', (SELECT max(id) + 1 FROM public.dc_definitions));
-SELECT setval('dc_connections_id_seq', (SELECT max(id) + 1 FROM public.dc_connections));
-SELECT setval('dc_issued_credentials_id_seq', (SELECT max(id) + 1 FROM public.dc_issued_credentials));
-SELECT setval('documents_id_seq', (SELECT max(id) + 1 FROM public.documents));
-SELECT setval('offices_id_seq', (SELECT max(id) + 1 FROM public.offices));
-SELECT setval('parties_id_seq', (SELECT max(id) + 1 FROM public.parties));
-SELECT setval('party_roles_id_seq', (SELECT max(id) + 1 FROM public.party_roles));
-SELECT setval('request_tracker_id_seq', (SELECT max(id) + 1 FROM public.request_tracker));
-SELECT setval('resolutions_id_seq', (SELECT max(id) + 1 FROM public.resolutions));
-SELECT setval('share_classes_id_seq', (SELECT max(id) + 1 FROM public.share_classes));
-SELECT setval('share_series_id_seq', (SELECT max(id) + 1 FROM public.share_series));
-SELECT setval('consent_continuation_outs_id_seq', (SELECT max(id) + 1 FROM public.consent_continuation_outs));
+SELECT setval('filings_id_seq', (select coalesce(max(id) + 1, 1) FROM public.filings));
+SELECT setval('addresses_id_seq', (select coalesce(max(id) + 1, 1) FROM public.addresses));
+SELECT setval('aliases_id_seq', (select coalesce(max(id) + 1, 1) FROM public.aliases));
+SELECT setval('colin_event_ids_colin_event_id_seq', (SELECT coalesce(max(colin_event_id) + 1, 1) FROM public.colin_event_ids));
+SELECT setval('colin_last_update_id_seq', (select coalesce(max(id) + 1, 1) FROM public.colin_last_update));
+SELECT setval('comments_id_seq', (select coalesce(max(id) + 1, 1) FROM public.comments));
+SELECT setval('dc_definitions_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_definitions));
+SELECT setval('dc_connections_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_connections));
+SELECT setval('dc_issued_credentials_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_issued_credentials));
+SELECT setval('documents_id_seq', (select coalesce(max(id) + 1, 1) FROM public.documents));
+SELECT setval('offices_id_seq', (select coalesce(max(id) + 1, 1) FROM public.offices));
+SELECT setval('parties_id_seq', (select coalesce(max(id) + 1, 1) FROM public.parties));
+SELECT setval('party_roles_id_seq', (select coalesce(max(id) + 1, 1) FROM public.party_roles));
+SELECT setval('request_tracker_id_seq', (select coalesce(max(id) + 1, 1) FROM public.request_tracker));
+SELECT setval('resolutions_id_seq', (select coalesce(max(id) + 1, 1) FROM public.resolutions));
+SELECT setval('share_classes_id_seq', (select coalesce(max(id) + 1, 1) FROM public.share_classes));
+SELECT setval('share_series_id_seq', (select coalesce(max(id) + 1, 1) FROM public.share_series));
+SELECT setval('entity_roles_id_seq', (select coalesce(max(id) + 1, 1) FROM public.share_series));
+SELECT setval('legal_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM public.legal_entities));
+SELECT setval('colin_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM public.colin_entities));
+SELECT setval('alternate_names_id_seq', (select coalesce(max(id) + 1, 1) FROM public.alternate_names));
+SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
+SELECT setval('consent_continuation_outs_id_seq', (select coalesce(max(id) + 1, 1) FROM public.consent_continuation_outs));
 
 -- *****************************************************************************************************************
 -- Cleanup of any necessary artifacts/states created as a part of data transfer

@@ -10,75 +10,115 @@
 -- fields properly.
 -- ******************************************************************************************************************
 
--- Disable triggers
-ALTER TABLE public.users
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.users_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.dc_definitions
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.legal_entities
-    DISABLE TRIGGER ALL;
+
+-- DISABLE CONSTRAINTS
+-- Note: Initially, the approach of disabling triggers was used to help with the data migration.  This was
+-- changed as Google Cloud SQL databases do not allow disabling of triggers easily.  It was possible to disable triggers
+-- on a session basis using `SET session_replication_role = 'replica';` but this did not play well with dbshell.
+
+-- legal_entities/legal_entities_history
 ALTER TABLE public.legal_entities_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.filings
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.addresses
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT legal_entities_history_pkey;
+
+ALTER TABLE public.legal_entities
+    DROP CONSTRAINT legal_entities_delivery_address_id_fkey;
+ALTER TABLE public.legal_entities
+    DROP CONSTRAINT legal_entities_mailing_address_id_fkey;
+
+ALTER TABLE public.legal_entities_history
+    DROP CONSTRAINT legal_entities_history_delivery_address_id_fkey;
+ALTER TABLE public.legal_entities_history
+    DROP CONSTRAINT legal_entities_history_mailing_address_id_fkey;
+
+
+-- addresses/addresses_history
 ALTER TABLE public.addresses_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.aliases
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT addresses_history_pkey;
+
+ALTER TABLE public.addresses
+    DROP CONSTRAINT addresses_legal_entity_id_fkey;
+ALTER TABLE public.addresses
+    DROP CONSTRAINT addresses_office_id_fkey;
+
+ALTER TABLE public.addresses_history
+    DROP CONSTRAINT addresses_history_legal_entity_id_fkey;
+ALTER TABLE public.addresses_history
+    DROP CONSTRAINT addresses_history_office_id_fkey;
+
+
+-- aliases/aliases_history
 ALTER TABLE public.aliases_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.colin_event_ids
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.colin_last_update
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.comments
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.dc_connections
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.dc_definitions
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.dc_issued_credentials
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.documents
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.documents_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.offices
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT aliases_history_pkey;
+
+ALTER TABLE public.aliases
+    DROP CONSTRAINT aliases_legal_entity_id_fkey;
+
+ALTER TABLE public.aliases_history
+    DROP CONSTRAINT aliases_history_legal_entity_id_fkey;
+
+
+-- offices/offices_history
 ALTER TABLE public.offices_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.parties
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT offices_history_pkey;
+
+ALTER TABLE public.offices_history
+    DROP CONSTRAINT offices_history_legal_entity_id_fkey;
+
+
+-- parties/parties_history
 ALTER TABLE public.parties_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.party_roles
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT parties_history_pkey;
+
+ALTER TABLE public.parties_history
+    DROP CONSTRAINT parties_history_delivery_address_id_fkey;
+ALTER TABLE public.parties_history
+    DROP CONSTRAINT parties_history_mailing_address_id_fkey;
+
+
+-- party_roles/party_roles_history
 ALTER TABLE public.party_roles_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.registration_bootstrap
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.request_tracker
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.resolutions
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.resolutions_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.share_classes
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.share_classes_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.share_series
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT party_roles_history_pkey;
+
+ALTER TABLE public.party_roles_history
+    DROP CONSTRAINT party_roles_history_filing_id_fkey;
+ALTER TABLE public.party_roles_history
+    DROP CONSTRAINT party_roles_history_legal_entity_id_fkey;
+ALTER TABLE public.party_roles_history
+    DROP CONSTRAINT party_roles_history_party_id_fkey;
+
+
+-- share_series/share_series_history
 ALTER TABLE public.share_series_history
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.consent_continuation_outs
-    DISABLE TRIGGER ALL;
-ALTER TABLE public.sent_to_gazette
-    DISABLE TRIGGER ALL;
+    DROP CONSTRAINT share_series_history_pkey;
+
+ALTER TABLE public.share_series_history
+    DROP CONSTRAINT share_series_history_share_class_id_fkey;
+
+
+-- entity_roles/entity_roles_history
+ALTER TABLE public.entity_roles_history
+    DROP CONSTRAINT entity_roles_history_pkey;
+
+ALTER TABLE public.entity_roles
+    DROP CONSTRAINT entity_roles_filing_id_fkey;
+ALTER TABLE public.entity_roles
+    DROP CONSTRAINT entity_roles_legal_entity_id_fkey;
+ALTER TABLE public.entity_roles
+    DROP CONSTRAINT entity_roles_related_entity_id_fkey;
+
+ALTER TABLE public.entity_roles_history
+    DROP CONSTRAINT entity_roles_history_filing_id_fkey;
+ALTER TABLE public.entity_roles_history
+    DROP CONSTRAINT entity_roles_history_legal_entity_id_fkey;
+ALTER TABLE public.entity_roles_history
+    DROP CONSTRAINT entity_roles_history_related_entity_id_fkey;
+
+
+-- filings
+ALTER TABLE public.filings
+    DROP CONSTRAINT filings_parent_filing_id_fkey;
+ALTER TABLE public.filings
+    DROP CONSTRAINT filings_legal_entity_id_fkey;
 
 
 -- Temporary columns/functions/triggers for enum workaround
