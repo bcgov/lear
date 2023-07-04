@@ -1088,8 +1088,6 @@ def test_document_list_for_various_filing_states(session, client, jwt,
     # identifier = 'CP7654321'
     business = factory_business(identifier, entity_type=entity_type)
 
-    user = factory_user('tester', 'first_name', 'last_name')
-
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = filing_name_1
     filing_json['filing']['business']['legalType'] = entity_type
@@ -1105,8 +1103,6 @@ def test_document_list_for_various_filing_states(session, client, jwt,
     filing.skip_status_listener = True
     filing._status = status
     filing._payment_completion_date = payment_completion_date
-    filing.submitter_id = user.id
-    filing.submitter_roles = STAFF_ROLE
     filing.save()
 
     if status == 'COMPLETED':
