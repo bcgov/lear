@@ -79,6 +79,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         'familyName': 'Doe',
         'additionalName': ''
     }
+    correction_data['filing']['correction']['cooperativeAssociationType'] = 'HC'
     # Update correction data to point to the original special resolution filing
     if 'correction' not in correction_data['filing']:
         correction_data['filing']['correction'] = {}
@@ -101,6 +102,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
     else:
         assert len(business.resolutions.all()) == 1
         resolution = business.resolutions.first()
+        assert business.association_type == 'HC'
         assert resolution is not None, 'Resolution should exist'
         assert resolution.resolution == '<p>xxxx</p>', 'Resolution text should be corrected'
 
@@ -112,6 +114,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'
+        signing_date = '2023-06-17'
         correction_data_2 = copy.deepcopy(FILING_HEADER)
         correction_data_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
         correction_data_2['filing']['header']['name'] = 'correction'
@@ -119,6 +122,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         correction_data_2['filing']['correction']['correctedFilingType'] = 'correction'
         correction_data_2['filing']['correction']['resolution'] = '<p>yyyy</p>'
         correction_data_2['filing']['correction']['resolutionDate'] = resolution_date
+        correction_data_2['filing']['correction']['signingDate'] = signing_date
         correction_data_2['filing']['correction']['signatory'] = {
             'givenName': 'Sarah',
             'familyName': 'Doe',
@@ -143,6 +147,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         assert resolution is not None, 'Resolution should exist'
         assert resolution.resolution == '<p>yyyy</p>', 'Resolution text should be corrected'
         assert resolution.resolution_date == parse(resolution_date).date()
+        assert resolution.signing_date == parse(signing_date).date()
 
         # # # Check if the signatory was updated
         party = resolution.party

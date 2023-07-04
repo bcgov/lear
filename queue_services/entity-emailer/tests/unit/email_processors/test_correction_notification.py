@@ -21,7 +21,6 @@ from legal_api.models import Business
 
 from entity_emailer.email_processors import correction_notification
 from tests.unit import (
-    prep_alteration_filing,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_firm_correction_filing,
@@ -237,18 +236,15 @@ def test_paid_special_resolution_correction_attachments(session, config):
 
 @pytest.mark.parametrize('legal_type, filing_type', [
     (Business.LegalTypes.COOP.value, SPECIAL_RESOLUTION_FILING_TYPE),
-    (Business.LegalTypes.BC_CCC.value, SPECIAL_RESOLUTION_FILING_TYPE),
+    (Business.LegalTypes.CCC_CONTINUE_IN.value, SPECIAL_RESOLUTION_FILING_TYPE),
     (Business.LegalTypes.COOP.value, 'registration'),
 ])
 def test_paid_special_resolution_correction_on_correction(session, config, legal_type, filing_type):
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'cp business'
-    if legal_type == Business.LegalTypes.COOP.value:
-        original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type,
-                                                            legal_name, submitter_role=None)
-    else:
-        original_filing = prep_alteration_filing(session, CP_IDENTIFIER, 'COMPLETED', legal_name)
+    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type,
+                                                        legal_name, submitter_role=None)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing_correction = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
