@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from entity_emailer.email_processors import correction_notification
 from tests.unit import (
@@ -244,7 +244,6 @@ def test_paid_special_resolution_correction_on_correction(session, config, legal
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'cp business'
-    original_filing = Filing()
     if legal_type == Business.LegalTypes.COOP.value:
         original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type,
                                                             legal_name, submitter_role=None)
