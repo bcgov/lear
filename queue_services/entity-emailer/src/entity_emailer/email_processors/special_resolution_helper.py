@@ -111,42 +111,45 @@ def get_paid_pdfs(
     }
 
     # add filing pdf
-    filing_pdf = requests.get(
+    sr_filing_pdf = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}'
         f'/businesses/{business["identifier"]}'
         f'/filings/{filing.id}/documents/specialResolutionApplication',
         headers=headers
     )
-    if filing_pdf.status_code != HTTPStatus.OK:
+    if sr_filing_pdf.status_code != HTTPStatus.OK:
         logger.error('Failed to get pdf for filing: %s', filing.id)
     else:
-        filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+        sr_filing_pdf_encoded = base64.b64encode(sr_filing_pdf.content)
         pdfs.append(
             {
                 'fileName': 'Special Resolution Application.pdf',
-                'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                'fileBytes': sr_filing_pdf_encoded.decode('utf-8'),
                 'fileUrl': '',
                 'attachOrder': attach_order
             }
         )
         attach_order += 1
-    corp_name = business.get('legalName')
-    business_data = Business.find_by_internal_id(filing.business_id)
-    receipt = requests.post(
+
+    legal_name = business.get('legalName')
+    origin_business = Business.find_by_internal_id(filing.business_id)
+
+    sr_receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
         json={
-            'corpName': corp_name,
+            'corpName': legal_name,
             'filingDateTime': filing_date_time,
             'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
             'filingIdentifier': str(filing.id),
-            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+            'businessNumber': origin_business.tax_id if origin_business and origin_business.tax_id else ''
         },
         headers=headers
     )
-    if receipt.status_code != HTTPStatus.CREATED:
+
+    if sr_receipt.status_code != HTTPStatus.CREATED:
         logger.error('Failed to get receipt pdf for filing: %s', filing.id)
     else:
-        receipt_encoded = base64.b64encode(receipt.content)
+        receipt_encoded = base64.b64encode(sr_receipt.content)
         pdfs.append(
             {
                 'fileName': 'Receipt.pdf',
