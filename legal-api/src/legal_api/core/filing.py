@@ -520,12 +520,6 @@ class Filing:
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 
-                # Supress Certificate of Dissolution for Admin Dissolution
-                if filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and \
-                        filing.storage.filing_sub_type == 'administrative' and \
-                        filing.storage.submitter_roles == UserRoles.staff.value:
-                    additional.remove('certificateOfDissolution')
-
                 FilingMeta.alter_outputs(filing.storage, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
