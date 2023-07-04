@@ -24,7 +24,8 @@ from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
-
+from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors import correction
 from entity_filer.worker import process_filing
 from tests.unit import create_entity, create_filing
 from tests.utils import upload_file, assert_pdf_contains_text
@@ -97,6 +98,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
     await process_filing(correction_filing_msg, app)
 
     # Assertions
+
     business = Business.find_by_internal_id(business_id)
 
     if test_name == 'non_sr_correction':
@@ -131,31 +133,15 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
             'familyName': 'Doe',
             'additionalName': ''
         }
-        rules_file_key_uploaded = upload_file('rules.pdf')
-        correction_data_2['filing']['correction']['rulesFileKey'] = rules_file_key_uploaded
-        correction_data_2['filing']['correction']['rulesFileName'] = 'rules.pdf'
         # Update correction data to point to the original special resolution filing
         if 'correction' not in correction_data_2['filing']:
             correction_data_2['filing']['correction'] = {}
         correction_data_2['filing']['correction']['correctedFilingId'] = correction_filing_id
         correction_payment_id_2 = str(random.SystemRandom().getrandbits(0x58))
         correction_filing_id_2 = (create_filing(correction_payment_id_2, correction_data_2, business_id=business_id)).id
-
         # Mock the correction filing message
         correction_filing_msg_2 = {'filing': {'id': correction_filing_id_2}}
-
-        # Call the process_filing method for the correction
         await process_filing(correction_filing_msg_2, app)
-
-        rules_doc = (session.query(Document).
-                     filter(Document.filing_id == sr_filing_id).
-                     filter(Document.type == DocumentType.COOP_RULES.value).
-                     one_or_none())
-        assert rules_doc.file_key == correction_data_2['filing']['correction']['rulesFileKey']
-        assert MinioService.get_file(rules_doc.file_key)
-        rules_files_obj = MinioService.get_file(rules_file_key_uploaded)
-        assert rules_files_obj
-        assert_pdf_contains_text('Filed on ', rules_files_obj.read())
 
         # Assertions
         business = Business.find_by_internal_id(business_id)
@@ -170,3 +156,56 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         assert party is not None, 'Party should exist'
         assert party.first_name == 'SARAH', 'First name should be corrected'
         assert party.last_name == 'DOE', 'Last name should be corrected'
+
+
+def test_correction_coop_rules(app, session, minio_server):
+    """Assert that the coop rules is altered."""
+    # Create business
+    identifier = 'CP1234567'
+    business = create_entity(identifier, 'CP', 'COOP INC.')
+    business_id = business.id
+    business.save()
+
+    # Create an initial special resolution filing
+    sr_filing = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+    sr_payment_id = str(random.SystemRandom().getrandbits(0x58))
+    sr_filing_id = (create_filing(sr_payment_id, sr_filing, business_id=business_id)).id
+
+    # Mock the filing message
+    sr_filing_msg = {'filing': {'id': sr_filing_id}}
+    # Call the process_filing method for the original special resolution
+    process_filing(sr_filing_msg, app)
+
+    correction_filing = copy.deepcopy(FILING_HEADER)
+    correction_filing['filing']['header']['name'] = 'correction'
+    correction_filing['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
+    correction_filing['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_filing['filing']['correction']['correctedFilingId'] = sr_filing_id
+    rules_file_key_uploaded_by_user = upload_file('rules.pdf')
+    correction_filing['filing']['correction']['rulesFileKey'] = rules_file_key_uploaded_by_user
+    correction_filing['filing']['correction']['rulesFileName'] = 'rules.pdf'
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_submission = create_filing(payment_id, correction_filing, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # test
+    correction.process(correction_filing=filing_submission,
+                       filing=correction_filing['filing'],
+                       filing_meta=filing_meta,
+                       business=business)
+
+    business.save()
+
+    rules_document = session.query(Document). \
+        filter(Document.filing_id == filing_submission.id). \
+        filter(Document.type == DocumentType.COOP_RULES.value). \
+        one_or_none()
+
+    assert rules_document.file_key == correction_filing['filing']['correction']['rulesFileKey']
+    assert MinioService.get_file(rules_document.file_key)
+    rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
+    assert rules_files_obj
+    assert_pdf_contains_text('Filed on ', rules_files_obj.read())
