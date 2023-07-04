@@ -493,6 +493,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     outputs.remove('certifiedMemorandum')
                 if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
                     outputs.remove('certifiedRules')
+        elif filing.filing_type == 'dissolution' and filing.filing_sub_type == 'administrative':
+            # Supress Certificate of Dissolution for Admin Dissolution
+            outputs.remove('certificateOfDissolution')
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:

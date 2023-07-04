@@ -65,6 +65,9 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.utils import create_header, helper_create_jwt
 
+ADMIN_DISSOLUTION = copy.deepcopy(DISSOLUTION)
+ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
+
 
 def basic_test_helper():
     identifier = 'CP7654321'
@@ -517,6 +520,18 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
              'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
              'certificateOfDissolution':
              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
+                 'legalFilings': [
+                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
+                 ]
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('dissolution_completed_no_certificate_of_dissolution', 'BC7654321', 'LLC',
+     'dissolution', ADMIN_DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
                  'legalFilings': [
                      {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
                  ]
