@@ -56,6 +56,7 @@ def test_cp_special_resolution_notification(session, app, config, status):
                         LEGAL_NAME + ' - Special Resolution Documents from the Business Registry'
 
                 assert RECIPIENT_EMAIL in email['recipients']
+                assert USER_EMAIL_FROM_AUTH in email['recipients']
                 assert email['content']['body']
                 assert email['content']['attachments'] == []
                 assert mock_get_pdfs.call_args[0][0] == TOKEN

@@ -34,7 +34,7 @@ from entity_filer.filing_processors.filing_components import (
 )
 
 
-def correct_business_data(business: Business, correction_filing_rec: Filing,  # pylint: disable=too-many-locals
+def correct_business_data(business: Business, correction_filing_rec: Filing,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing: Dict,
                           filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
@@ -49,7 +49,7 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
             filing_meta.correction = {**filing_meta.correction,
                                       **{'fromLegalName': from_legal_name,
                                          'toLegalName': business.legal_name}}
-            
+
     # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
         coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
