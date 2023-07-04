@@ -521,12 +521,10 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
     filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
-    filing_template['filing']['changeOfName'] = {
-        'nameRequest': {
-            'nrNumber': 'NR 8798956',
-            'legalName': 'HAULER MEDIA INC.',
-            'legalType': 'BC'
-        }
+    filing_template['filing']['correction']['nameRequest'] = {
+        'nrNumber': 'NR 8798956',
+        'legalName': 'HAULER MEDIA INC.',
+        'legalType': 'BC'
     }
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
     filing.payment_completion_date = filing.filing_date

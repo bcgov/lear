@@ -131,7 +131,10 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
-        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key)
+        rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
+        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
+        filing_meta.correction = {**filing_meta.correction,
+                                  **{'uploadNewRules': True}}
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

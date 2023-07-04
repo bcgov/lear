@@ -19,12 +19,15 @@ import random
 
 import pytest
 from dateutil.parser import parse
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Document, Filing
+from legal_api.models.document import DocumentType
+from legal_api.services.minio import MinioService
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 
 from entity_filer.worker import process_filing
 from tests.unit import create_entity, create_filing
+from tests.utils import upload_file, assert_pdf_contains_text
 
 
 @pytest.mark.parametrize(
@@ -128,6 +131,9 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
             'familyName': 'Doe',
             'additionalName': ''
         }
+        rules_file_key_uploaded = upload_file('rules.pdf')
+        correction_data_2['filing']['correction']['rulesFileKey'] = rules_file_key_uploaded
+        correction_data_2['filing']['correction']['rulesFileName'] = 'rules.pdf'
         # Update correction data to point to the original special resolution filing
         if 'correction' not in correction_data_2['filing']:
             correction_data_2['filing']['correction'] = {}
@@ -140,6 +146,16 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
         # Call the process_filing method for the correction
         await process_filing(correction_filing_msg_2, app)
+
+        rules_doc = (session.query(Document).
+                     filter(Document.filing_id == sr_filing_id).
+                     filter(Document.type == DocumentType.COOP_RULES.value).
+                     one_or_none())
+        assert rules_doc.file_key == correction_data_2['filing']['correction']['rulesFileKey']
+        assert MinioService.get_file(rules_doc.file_key)
+        rules_files_obj = MinioService.get_file(rules_file_key_uploaded)
+        assert rules_files_obj
+        assert_pdf_contains_text('Filed on ', rules_files_obj.read())
 
         # Assertions
         business = Business.find_by_internal_id(business_id)

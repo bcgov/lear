@@ -48,7 +48,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     name_changed = filing.filing_json['filing'].get('changeOfName')
-    rules_changed = bool(filing.filing_json['filing'].get('restoration', {}).get('rulesFileKey'))
+    rules_changed = bool(filing.filing_json['filing'].get('alteration', {}).get('rulesFileKey'))
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,

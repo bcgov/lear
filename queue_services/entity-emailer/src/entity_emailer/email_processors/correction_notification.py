@@ -238,7 +238,7 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
             filing
     ):
         prefix = 'CP-SR'
-        name_changed = filing.filing_json['filing'].get('changeOfName')
+        name_changed = filing.filing_json['filing']['correction'].get('nameRequest', {})
     else:
         return None
 
