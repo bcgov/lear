@@ -257,6 +257,22 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
+         }),
+        ('specialResolution_COMPLETED_111222333',
+         {
+             'email': {
+                 'type': 'specialResolution',
+                 'option': 'COMPLETED',
+                 'filingId': '111222333'
+             }
+         }),
+        ('specialResolution_PAID_111222333',
+         {
+             'email': {
+                 'type': 'specialResolution',
+                 'option': 'PAID',
+                 'filingId': '111222333'
+             }
          })
     ]
 )

@@ -23,9 +23,21 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
-from entity_emailer.email_processors import ar_reminder_notification, filing_notification, name_request, nr_notification
+from entity_emailer.email_processors import (
+    ar_reminder_notification,
+    correction_notification,
+    filing_notification,
+    name_request,
+    nr_notification,
+    special_resolution_notification,
+)
 from tests import MockResponse
-from tests.unit import prep_incorp_filing, prep_maintenance_filing
+from tests.unit import (
+    prep_cp_special_resolution_correction_filing,
+    prep_cp_special_resolution_filing,
+    prep_incorp_filing,
+    prep_maintenance_filing,
+)
 
 
 def test_process_filing_missing_app(app, session):
@@ -156,6 +168,77 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize(['option', 'submitter_role'], [
+    ('PAID', 'staff'),
+    ('COMPLETED', None),
+])
+def test_process_special_resolution_email(app, session, option, submitter_role):
+    """Assert that an special resolution email msg is processed correctly."""
+    filing = prep_cp_special_resolution_filing('CP1234567', '1', 'CP', 'TEST', submitter_role=submitter_role)
+    token = '1'
+    get_pdf_function = 'get_paid_pdfs' if option == 'PAID' else 'get_completed_pdfs'
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(special_resolution_notification, get_pdf_function, return_value=[]) as mock_get_pdfs:
+            with patch.object(special_resolution_notification, 'get_recipient_from_auth',
+                              return_value='recipient@email.com'):
+                with patch.object(special_resolution_notification, 'get_user_email_from_auth',
+                                  return_value='user@email.com'):
+                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                        worker.process_email(
+                            {'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}}, app)
+
+                        assert mock_get_pdfs.call_args[0][0] == token
+                        assert mock_get_pdfs.call_args[0][1]['identifier'] == 'CP1234567'
+                        assert mock_get_pdfs.call_args[0][2] == filing
+
+                        if option == 'PAID':
+                            assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                                'TEST - Confirmation of Special Resolution from the Business Registry'
+                        else:
+                            assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                                'TEST - Special Resolution Documents from the Business Registry'
+                        assert 'recipient@email.com' in mock_send_email.call_args[0][0]['recipients']
+                        if submitter_role:
+                            assert f'{submitter_role}@email.com' in mock_send_email.call_args[0][0]['recipients']
+                        else:
+                            assert 'user@email.com' in mock_send_email.call_args[0][0]['recipients']
+                        assert mock_send_email.call_args[0][0]['content']['body']
+                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                        assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize('option', [
+    ('PAID'),
+    ('COMPLETED'),
+])
+def test_process_correction_cp_sr_email(app, session, option):
+    """Assert that a correction email msg is processed correctly."""
+    identifier = 'CP1234567'
+    original_filing = prep_cp_special_resolution_filing(identifier, '1', 'CP', 'TEST', submitter_role=None)
+    token = '1'
+    business = Business.find_by_identifier(identifier)
+    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
+                                                          '1', option, 'specialResolution')
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(correction_notification, '_get_pdfs', return_value=[]):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}, app)
+
+                if option == 'PAID':
+                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                        'TEST - Confirmation of correction'
+                else:
+                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                        'TEST - Correction Documents from the Business Registry'
+                assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
+                assert mock_send_email.call_args[0][0]['content']['body']
+                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                assert mock_send_email.call_args[0][1] == token
 
 
 def test_process_ar_reminder_email(app, session):

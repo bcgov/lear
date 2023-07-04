@@ -67,3 +67,17 @@ def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
     # Update the resolution with the largest id
     largest_resolution.resolution_date = parse(date).date()
     return largest_resolution
+
+
+def update_signing_date(business: Business, date: str) -> Optional[Dict]:
+    """Update the signing_date with the largest id."""
+    if not business or not date:
+        return None
+
+    largest_resolution = find_resolution_with_largest_id(business.resolutions.all())
+    if not largest_resolution:
+        return None
+
+    # Update the resolution with the largest id
+    largest_resolution.signing_date = parse(date).date()
+    return largest_resolution

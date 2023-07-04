@@ -34,7 +34,8 @@ from entity_filer.filing_processors.filing_components import (
 )
 
 
-def correct_business_data(business: Business, correction_filing_rec: Filing,  # pylint: disable=too-many-locals
+def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
+                          correction_filing_rec: Filing,
                           correction_filing: Dict,
                           filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
@@ -49,6 +50,14 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
             filing_meta.correction = {**filing_meta.correction,
                                       **{'fromLegalName': from_legal_name,
                                          'toLegalName': business.legal_name}}
+
+    # Update cooperativeAssociationType if present
+    with suppress(IndexError, KeyError, TypeError):
+        coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
+        filing_meta.correction = {**filing_meta.correction,
+                                  **{'fromCooperativeAssociationType': business.association_type,
+                                     'toCooperativeAssociationType': coop_association_type}}
+        business_info.set_association_type(business, coop_association_type)
 
     # Update Nature of Business
     if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
@@ -109,7 +118,12 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
         signatory = dpath.util.get(correction_filing, '/correction/signatory')
         resolutions.update_signatory(business, signatory)
 
-        # update business start date, if any is present
+    # update business signing date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        signing_date = dpath.util.get(correction_filing, '/correction/signingDate')
+        resolutions.update_signing_date(business, signing_date)
+
+    # update business resolution date, if any is present
     with suppress(IndexError, KeyError, TypeError):
         resolution_date = dpath.util.get(correction_filing, '/correction/resolutionDate')
         resolutions.update_resolution_date(business, resolution_date)
@@ -117,7 +131,10 @@ def correct_business_data(business: Business, correction_filing_rec: Filing,  # 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
-        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key)
+        rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
+        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
+        filing_meta.correction = {**filing_meta.correction,
+                                  **{'uploadNewRules': True}}
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):
