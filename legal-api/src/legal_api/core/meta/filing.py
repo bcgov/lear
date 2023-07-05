@@ -398,7 +398,7 @@ FILINGS: Final = {
             'CP': 'SPRLN'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
+            {'types': 'CP', 'outputs': ['certifiedRules', 'certifiedMemorandum']},
         ]
     },
     'transition': {
@@ -486,7 +486,6 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if filing.meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
         elif filing.filing_type == 'specialResolution':
-            outputs.remove('certificate')
             if 'changeOfName' in filing.meta_data.get('legalFilings', []):
                 outputs.add('certificateOfNameChange')
             if 'alteration' in filing.meta_data.get('legalFilings', []):
