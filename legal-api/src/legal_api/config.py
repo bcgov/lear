@@ -127,6 +127,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
 
+    # keycloak service account token lifepan
+    try:
+        CACHE_DEFAULT_TIMEOUT = int(os.getenv('ACCESS_TOKEN_LIFESPAN'))
+    except:  # pylint:disable=bare-except # noqa: B901, E722
+        CACHE_DEFAULT_TIMEOUT = 300
+
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 

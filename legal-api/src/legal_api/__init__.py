@@ -33,6 +33,8 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 # noqa: I003; the sentry import creates a bad line count in isort
+from legal_api.utils.cache import cache
+
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
@@ -66,6 +68,8 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     setup_jwt_manager(app, jwt)
 
     register_shellcontext(app)
+
+    cache.init_app(app)
 
     return app
 

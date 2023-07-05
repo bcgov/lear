@@ -26,7 +26,7 @@ from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
-
+from legal_api.utils.cache import cache
 
 class RegistrationBootstrapService:
     """Provides services to bootstrap the IA registration and account affiliation."""
@@ -106,6 +106,7 @@ class AccountService:
         timeout = 20
 
     @classmethod
+    @cache.cached()
     def get_bearer_token(cls):
         """Get a valid Bearer token for the service to use."""
         token_url = current_app.config.get('ACCOUNT_SVC_AUTH_URL')
