@@ -170,7 +170,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
-                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
@@ -185,7 +184,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('special_res_rules_memorandum_included_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, 'alteration', ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION, Filing.Status.COMPLETED,
      {'documents': {
-                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'legalFilings': [
                         {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
                     ],
@@ -198,7 +196,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
      {'documents': {
-                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'legalFilings': [
@@ -417,7 +414,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
          'documents': {
             'affidavit':
                      f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
-             'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
              'certificateOfDissolution':
              f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
 

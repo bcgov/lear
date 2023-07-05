@@ -398,7 +398,7 @@ FILINGS: Final = {
             'CP': 'SPRLN'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
+            {'types': 'CP', 'outputs': ['certifiedRules', 'certifiedMemorandum']},
         ]
     },
     'transition': {
