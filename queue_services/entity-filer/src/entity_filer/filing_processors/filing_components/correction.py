@@ -54,10 +54,13 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
         coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
-        filing_meta.correction = {**filing_meta.correction,
-                                  **{'fromCooperativeAssociationType': business.association_type,
-                                     'toCooperativeAssociationType': coop_association_type}}
-        business_info.set_association_type(business, coop_association_type)
+        from_association_type = business.association_type
+        if coop_association_type:
+            business_info.set_association_type(business, coop_association_type)
+        if from_association_type != business.association_type:
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromCooperativeAssociationType': from_association_type,
+                                         'toCooperativeAssociationType': business.association_type}}
 
     # Update Nature of Business
     if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
@@ -132,9 +135,10 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
         rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
-        rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
-        filing_meta.correction = {**filing_meta.correction,
-                                  **{'uploadNewRules': True}}
+        if rules_file_key:
+            rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'uploadNewRules': True}}
 
 
 def update_parties(business: Business, parties: dict, correction_filing_rec: Filing):

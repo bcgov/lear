@@ -57,6 +57,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
     # Create business
     identifier = 'CP1234567'
+    coop_associate_type = 'HC'
     business = create_entity(identifier, 'CP', 'COOP INC.')
     business_id = business.id
     business.save()
@@ -116,6 +117,12 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         assert party is not None, 'Party should exist'
         assert party.first_name == 'JOEY', 'First name should be corrected'
         assert party.last_name == 'DOE', 'Last name should be corrected'
+
+        # Check outcome
+        final_filing = Filing.find_by_id(correction_filing_id)
+        alteration = final_filing.meta_data.get('correction', {})
+        assert business.association_type == coop_associate_type
+        assert alteration.get('toCooperativeAssociationType') == coop_associate_type
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'
