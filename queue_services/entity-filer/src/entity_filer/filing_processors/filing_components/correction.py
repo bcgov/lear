@@ -143,8 +143,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    if not parties and business.legal_type == Business.LegalTypes.COOP.value:
-        return None
+    is_coop = Business.LegalTypes.COOP.value
     end_date_time = datetime.datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
@@ -158,6 +157,9 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         # Create if id not present
         # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
         # The backend will have an id of type int
+        role_type = party_info.get('roleType', None)
+        if is_coop and role_type != 'Completing Party':
+            continue
         if not party_info.get('officer').get('id') or \
                 (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
             _create_party_info(business, correction_filing_rec, party_info)
