@@ -38,7 +38,8 @@ from tests.utils import upload_file, assert_pdf_contains_text
         ('non_sr_correction', 'changeOfAddress', CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
     ]
 )
-async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type, filing_template, correction_template):
+async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
+                                             filing_template, correction_template):
     """Test the special resolution correction functionality."""
     class MockFileResponse:
         """Mock the MinioService."""
@@ -46,7 +47,8 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         def __init__(self, file_content):
             self.data = io.BytesIO(file_content.encode('utf-8'))
 
-    # Mock the MinioService's get_file method to return a dictionary with 'data' pointing to an instance of MockFileResponse
+    # Mock the MinioService's get_file method to return a dictionary with 'data' pointing
+    # to an instance of MockFileResponse
     mocker.patch('legal_api.services.minio.MinioService.get_file', return_value=MockFileResponse('fake file content'))
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
     mocker.patch('entity_filer.worker.publish_event', return_value=None)
@@ -60,6 +62,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
     coop_associate_type = 'HC'
     business = create_entity(identifier, 'CP', 'COOP INC.')
     business_id = business.id
+    business.association_type = 'OC'
     business.save()
 
     # Create an initial special resolution filing
@@ -122,7 +125,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         final_filing = Filing.find_by_id(correction_filing_id)
         alteration = final_filing.meta_data.get('correction', {})
         assert business.association_type == coop_associate_type
-        assert alteration.get('fromCooperativeAssociationType') == None
+        assert alteration.get('fromCooperativeAssociationType') == 'OC'
         assert alteration.get('toCooperativeAssociationType') == coop_associate_type
 
         # Simulate another correction filing on previous correction
