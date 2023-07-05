@@ -57,7 +57,6 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
         from_association_type = business.association_type
         if coop_association_type:
             business_info.set_association_type(business, coop_association_type)
-        if from_association_type != business.association_type:
             filing_meta.correction = {**filing_meta.correction,
                                       **{'fromCooperativeAssociationType': from_association_type,
                                          'toCooperativeAssociationType': business.association_type}}

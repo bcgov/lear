@@ -122,6 +122,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         final_filing = Filing.find_by_id(correction_filing_id)
         alteration = final_filing.meta_data.get('correction', {})
         assert business.association_type == coop_associate_type
+        assert alteration.get('fromCooperativeAssociationType') == None
         assert alteration.get('toCooperativeAssociationType') == coop_associate_type
 
         # Simulate another correction filing on previous correction
