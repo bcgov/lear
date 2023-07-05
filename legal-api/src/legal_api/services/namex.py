@@ -23,6 +23,7 @@ from flask import current_app
 
 from ..models import Filing
 from .utils import get_str
+from legal_api.utils.cache import cache
 
 
 class NameXService():
@@ -47,12 +48,12 @@ class NameXService():
         NRO_UPDATING = 'NRO_UPDATING'
 
     @staticmethod
-    def query_nr_number(identifier: str):
-        """Return a JSON object with name request information."""
+    @cache.cached()
+    def get_service_account_token() -> str:
+        """Generate a service account token."""
         auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
         username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
         secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
-        namex_url = current_app.config.get('NAMEX_SVC_URL')
 
         # Get access token for namex-api in a different keycloak realm
         auth = requests.post(auth_url, auth=(username, secret), headers={
@@ -63,6 +64,14 @@ class NameXService():
             return auth.json()
 
         token = dict(auth.json())['access_token']
+        return token
+
+    @staticmethod
+    def query_nr_number(identifier: str):
+        """Return a JSON object with name request information."""
+        token = NameXService.get_service_account_token()
+
+        namex_url = current_app.config.get('NAMEX_SVC_URL')
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
         nr_response = requests.get(namex_url + 'requests/' + identifier, headers={
@@ -75,20 +84,9 @@ class NameXService():
     @staticmethod
     def update_nr(nr_json):
         """Update name request with nr_json."""
-        auth_url = current_app.config.get('NAMEX_AUTH_SVC_URL')
-        username = current_app.config.get('NAMEX_SERVICE_CLIENT_USERNAME')
-        secret = current_app.config.get('NAMEX_SERVICE_CLIENT_SECRET')
+        token = NameXService.get_service_account_token()
+
         namex_url = current_app.config.get('NAMEX_SVC_URL')
-
-        # Get access token for namex-api in a different keycloak realm
-        auth = requests.post(auth_url, auth=(username, secret), headers={
-            'Content-Type': 'application/x-www-form-urlencoded'}, data={'grant_type': 'client_credentials'})
-
-        # Return the auth response if an error occurs
-        if auth.status_code != 200:
-            return auth.json()
-
-        token = dict(auth.json())['access_token']
 
         # Perform update proxy call using nr number (e.g. NR 1234567)
         nr_response = requests.put(namex_url + 'requests/' + nr_json['nrNum'], headers={
