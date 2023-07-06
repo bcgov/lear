@@ -114,6 +114,26 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
                 'postalCode': 'T4G 1X4',
                 'addressCountry': 'CA'
             }
+        },
+        {
+            'officer': {
+                'partyType': 'person',
+                'firstName': 'test',
+                'lastName': 'test'
+            },
+            'roles': [
+                {
+                    'roleType': 'Director',
+                    'appointmentDate': '2023-07-05'
+                }
+            ],
+            'mailingAddress': {
+                'streetAddress': '4343 55 Avenue Cres',
+                'addressCity': 'Innisfail',
+                'addressRegion': 'AB',
+                'postalCode': 'T4G 1X4',
+                'addressCountry': 'CA'
+            }
         }
     ]
 
@@ -166,6 +186,8 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
                        for party_role in existing_business_party_roles)
         assert any(party_role.role == PartyRole.RoleTypes.COMPLETING_PARTY.value
                    for party_role in existing_filing_party_roles)
+        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+                       for party_role in existing_filing_party_roles)
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'
