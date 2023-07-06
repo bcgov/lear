@@ -260,7 +260,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._set_directors(filing)
 
     def _handle_special_resolution_filing_json(self, filing):
-        """Handle special resolution (and correction), special resolution application (non correction)."""
+        """Handle special resolution (and correction), special resolution application (and correction)."""
         if self._report_key == 'specialResolution':
             self._format_special_resolution(filing)
         elif self._report_key == 'specialResolutionApplication':
