@@ -231,7 +231,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         elif self._report_key == 'specialResolution':
             self._format_special_resolution(filing, 'specialResolution')
         elif self._report_key == 'specialResolutionApplication':
-            self._format_special_resolution_application(filing, 'specialResolution')
+            self._format_special_resolution_application(filing, 'alteration')
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
         elif self._report_key == 'registration':
