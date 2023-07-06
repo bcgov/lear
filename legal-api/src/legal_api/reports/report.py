@@ -229,9 +229,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._report_key == 'incorporationApplication':
             self._format_incorporation_data(filing)
         elif self._report_key == 'specialResolution':
-            self._format_special_resolution(filing)
+            self._format_special_resolution_data(filing, 'specialResolution')
         elif self._report_key == 'specialResolutionApplication':
-            self._format_special_resolution_application(filing)
+            self._format_special_resolution_application(filing, 'specialResolution')
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
         elif self._report_key == 'registration':
@@ -739,8 +739,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
+        original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
+        elif self._business.legal_type == 'CP' and \
+                self.is_special_resolution_correction(filing, self._business, original_filing):
+            self._format_special_resolution_data(filing, 'correction')
+            self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
@@ -751,6 +756,23 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_office_data(filing, prev_completed_filing)
             self._format_party_data(filing, prev_completed_filing)
             self._format_share_class_data(filing, prev_completed_filing)
+
+    def is_special_resolution_correction(self, filing: dict, business: Business, original_filing: Filing):
+        """Check whether it is a special resolution correction."""
+        corrected_filing_type = filing['correction']['correctedFilingType']
+        is_coop = business.legal_type in ['CP']
+
+        if not is_coop:
+            return False
+        if corrected_filing_type == 'specialResolution':
+            return True
+        if corrected_filing_type not in ('specialResolution', 'correction'):
+            return False
+
+        # Find the next original filing in the chain of corrections
+        filing = original_filing.filing_json['filing']
+        original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
+        return self.is_special_resolution_correction(filing, business, original_filing)
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
@@ -911,21 +933,23 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     changed = True
         return changed
 
-    def _format_special_resolution(self, filing):
+    def _format_special_resolution_data(self, filing, filing_type):
+        """This works for both special resolutions and special resolution corrections."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
         filing['header']['displayName'] = display_name
-        resolution_date_str = filing.get('specialResolution', {}).get('resolutionDate', None)
-        signing_date_str = filing.get('specialResolution', {}).get('signingDate', None)
+        resolution_date_str = filing.get(filing_type, {}).get('resolutionDate', None)
+        signing_date_str = filing.get(filing_type, {}).get('signingDate', None)
         if resolution_date_str:
             resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
-            filing['specialResolution']['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+            filing[filing_type]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
         if signing_date_str:
             signing_date = LegislationDatetime.as_legislation_timezone_from_date_str(signing_date_str)
-            filing['specialResolution']['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
+            filing[filing_type]['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
-    def _format_special_resolution_application(self, filing):
+    def _format_special_resolution_application(self, filing, filing_type):
+        """This works for both special resolutions and special resolution corrections."""
         meta_data = self._filing.meta_data or {}
         prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
         to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
@@ -933,14 +957,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['fromLegalName'] = prev_legal_name
             filing['toLegalName'] = to_legal_name
             filing['nrNumber'] = filing.get('changeOfName').get('nameRequest', {}).get('nrNumber', None)
-        prev_association_type = meta_data.get('alteration', {}).get('fromCooperativeAssociationType')
-        to_association_type = meta_data.get('alteration', {}).get('toCooperativeAssociationType')
+        prev_association_type = meta_data.get(filing_type, {}).get('fromCooperativeAssociationType')
+        to_association_type = meta_data.get(filing_type, {}).get('toCooperativeAssociationType')
         if prev_association_type and to_association_type and prev_association_type != to_association_type:
             filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
             filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
-        filing['rulesInResolution'] = filing.get('alteration', {}).get('rulesInResolution')
-        filing['uploadNewRules'] = meta_data.get('alteration', {}).get('uploadNewRules')
-        filing['memorandumInResolution'] = filing.get('alteration', {}).get('memorandumInResolution')
+        filing['rulesInResolution'] = filing.get(filing_type, {}).get('rulesInResolution')
+        filing['uploadNewRules'] = meta_data.get(filing_type, {}).get('uploadNewRules')
+        filing['memorandumInResolution'] = filing.get(filing_type, {}).get('memorandumInResolution')
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
