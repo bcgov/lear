@@ -117,25 +117,26 @@ def _get_pdfs(
                 )
                 attach_order += 1
         else:
-            # add certificateOfDissolution
-            certificate = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=certificateOfDissolution',
-                headers=headers
-            )
-            if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
-            else:
-                certificate_encoded = base64.b64encode(certificate.content)
-                pdfs.append(
-                    {
-                        'fileName': 'Certificate of Dissolution.pdf',
-                        'fileBytes': certificate_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
-                    }
+            if filing.filing_sub_type != 'administrative':
+                # add certificateOfDissolution, suppress certificate of dissolution for admin dissolution
+                certificate = requests.get(
+                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                    '?type=certificateOfDissolution',
+                    headers=headers
                 )
-                attach_order += 1
+                if certificate.status_code != HTTPStatus.OK:
+                    logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
+                else:
+                    certificate_encoded = base64.b64encode(certificate.content)
+                    pdfs.append(
+                        {
+                            'fileName': 'Certificate of Dissolution.pdf',
+                            'fileBytes': certificate_encoded.decode('utf-8'),
+                            'fileUrl': '',
+                            'attachOrder': attach_order
+                        }
+                    )
+                    attach_order += 1
 
             if legal_type == Business.LegalTypes.COOP.value:
                 # certifiedAffidavit
