@@ -227,6 +227,7 @@ FILINGS: Final = {
         'additional': [
             {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
             {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]},
+            {'types': 'CP', 'outputs': ['certifiedRules', 'specialResolution', 'correctedSpecialResolutionApplication']},
         ]
     },
     'courtOrder': {

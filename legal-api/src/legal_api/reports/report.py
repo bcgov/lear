@@ -228,10 +228,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
         if self._report_key == 'incorporationApplication':
             self._format_incorporation_data(filing)
-        elif self._report_key == 'specialResolution':
-            self._format_special_resolution(filing, 'specialResolution')
-        elif self._report_key == 'specialResolutionApplication':
-            self._format_special_resolution_application(filing, 'alteration')
+        elif self._report_key in \
+                ['specialResolution', 'specialResolutionApplication', 'correctedSpecialResolutionApplication']:
+            self._handle_special_resolution_filing_json(filing)
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
         elif self._report_key == 'registration':
@@ -259,6 +258,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # set director list from either the COD filing or status quo data in AR filing
             with suppress(KeyError):
                 self._set_directors(filing)
+
+    def _handle_special_resolution_filing_json(self, filing):
+        """Handle special resolution (and correction), special resolution application (non correction)."""
+        if self._report_key == 'specialResolution':
+            self._format_special_resolution(filing)
+        elif self._report_key == 'specialResolutionApplication':
+            self._format_special_resolution_application(filing, 'alteration')
+        elif self._report_key == 'correctedSpecialResolutionApplication':
+            self._format_special_resolution_application(filing, 'correction')
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
@@ -739,13 +747,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
-        original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
-        elif self._business.legal_type == 'CP' and \
-                self.is_special_resolution_correction(filing, self._business, original_filing):
-            self._format_special_resolution(filing, 'correction')
-            self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
@@ -933,11 +936,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     changed = True
         return changed
 
-    def _format_special_resolution(self, filing, filing_source):
+    def _format_special_resolution(self, filing):
         """For both special resolutions and special resolution corrections."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
+        filing_source = 'specialResolution' if self._filing.filing_type == 'specialResolution' else 'correction'
         filing['header']['displayName'] = display_name
         resolution_date_str = filing.get(filing_source, {}).get('resolutionDate', None)
         signing_date_str = filing.get(filing_source, {}).get('signingDate', None)
@@ -1090,6 +1094,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'amendedRegistrationStatement': {
             'filingDescription': 'Amended Registration Statement',
             'fileName': 'amendedRegistrationStatement'
+        },
+        'correctedSpecialResolutionApplication': {
+            'filingDescription': 'Special Resolution Correction Application',
+            'fileName': 'specialResolutionCorrectionApplication',
         },
         'correctedRegistrationStatement': {
             'filingDescription': 'Corrected Registration Statement',
