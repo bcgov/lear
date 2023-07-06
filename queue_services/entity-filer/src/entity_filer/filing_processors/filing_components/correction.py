@@ -37,7 +37,8 @@ from entity_filer.filing_processors.filing_components import (
 def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing_rec: Filing,
                           correction_filing: Dict,
-                          filing_meta: FilingMeta):
+                          filing_meta: FilingMeta,
+                          is_sr_correction: bool):
     """Render the correction filing onto the business model objects."""
     filing_meta.correction = {}
 
@@ -91,7 +92,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
-        update_parties(business, party_json, correction_filing_rec)
+        update_parties(business, party_json, correction_filing_rec, is_sr_correction=is_sr_correction)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -140,7 +141,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                                       **{'uploadNewRules': True}}
 
 
-def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
+def update_parties(business: Business, parties: list, correction_filing_rec: Filing, is_sr_correction=False):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
     is_coop = Business.LegalTypes.COOP.value
@@ -158,7 +159,7 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
         # The backend will have an id of type int
         role_type = party_info.get('roleType', None)
-        if is_coop and role_type != 'Completing Party':
+        if is_coop and is_sr_correction and role_type != 'Completing Party':
             continue
         if not party_info.get('officer').get('id') or \
                 (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
