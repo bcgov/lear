@@ -160,7 +160,7 @@ def _update_parties(business: Business, parties: list, correction_filing_rec: Fi
             _update_party(party_info)
 
 
-def _is_cp_sr_completing_party(business: Business, role_str: str, is_sr_correction: bool) -> bool:
+def _is_not_cp_sr_completing_party(business: Business, role_str: str, is_sr_correction: bool) -> bool:
     is_coop = business.legal_type == Business.LegalTypes.COOP.value
     if is_coop and is_sr_correction and role_str != 'completing party':
         return True
@@ -195,7 +195,7 @@ def _create_party_info(business, correction_filing_rec, party_info, is_sr_correc
             'cessationDate': role_type.get('cessationDate', None)
         }
         party_role = create_role(party=party, role_info=role)
-        if _is_cp_sr_completing_party(business, role_str, is_sr_correction):
+        if _is_not_cp_sr_completing_party(business, role_str, is_sr_correction):
             continue
         if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value]:
             correction_filing_rec.filing_party_roles.append(party_role)
