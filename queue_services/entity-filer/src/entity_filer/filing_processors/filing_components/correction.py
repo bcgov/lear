@@ -87,7 +87,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
-        update_parties(business, party_json, correction_filing_rec, is_sr_correction=is_sr_correction)
+        _update_parties(business, party_json, correction_filing_rec, is_sr_correction=is_sr_correction)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -136,10 +136,9 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                                       **{'uploadNewRules': True}}
 
 
-def update_parties(business: Business, parties: list, correction_filing_rec: Filing, is_sr_correction=False):
+def _update_parties(business: Business, parties: list, correction_filing_rec: Filing, is_sr_correction=False):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    is_coop = Business.LegalTypes.COOP.value
     end_date_time = datetime.datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
@@ -153,15 +152,19 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         # Create if id not present
         # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
         # The backend will have an id of type int
-        role_type = party_info.get('roleType', None)
-        if is_coop and is_sr_correction and role_type != 'Completing Party':
-            continue
         if not party_info.get('officer').get('id') or \
                 (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
-            _create_party_info(business, correction_filing_rec, party_info)
+            _create_party_info(business, correction_filing_rec, party_info, is_sr_correction=is_sr_correction)
         else:
             # Update if id is present
             _update_party(party_info)
+
+
+def _is_cp_sr_completing_party(business: Business, role_str: str, is_sr_correction: bool) -> bool:
+    is_coop = business.legal_type == Business.LegalTypes.COOP.value
+    if is_coop and is_sr_correction and role_str != 'completing party':
+        return True
+    return False
 
 
 def _update_party(party_info):
@@ -182,7 +185,7 @@ def _update_party(party_info):
             update_address(party.mailing_address, party_info.get('mailingAddress'))
 
 
-def _create_party_info(business, correction_filing_rec, party_info):
+def _create_party_info(business, correction_filing_rec, party_info, is_sr_correction=False):
     party = create_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
@@ -192,6 +195,8 @@ def _create_party_info(business, correction_filing_rec, party_info):
             'cessationDate': role_type.get('cessationDate', None)
         }
         party_role = create_role(party=party, role_info=role)
+        if _is_cp_sr_completing_party(business, role_str, is_sr_correction):
+            continue
         if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value]:
             correction_filing_rec.filing_party_roles.append(party_role)
         else:

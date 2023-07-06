@@ -35,8 +35,10 @@ from tests.utils import upload_file, assert_pdf_contains_text
 @pytest.mark.parametrize(
     'test_name, correct_filing_type, filing_template, correction_template',
     [
-        ('sr_correction', 'specialResolution', CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION),
-        ('non_sr_correction', 'changeOfAddress', CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
+        ('sr_correction', 'specialResolution',
+         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION),
+        ('non_sr_correction', 'changeOfAddress',
+         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
     ]
 )
 async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
@@ -99,6 +101,10 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
                 {
                     'roleType': 'Director',
                     'appointmentDate': '2023-07-05'
+                },
+                {
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2023-07-05'
                 }
             ],
             'mailingAddress': {
@@ -154,8 +160,12 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
         # Check invalid parties should not updated, origin business test data has no Director
         end_date_time = datetime.datetime.utcnow()
-        existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
-        assert not any(party_role.role == 'Director' for party_role in existing_party_roles)
+        existing_business_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
+        existing_filing_party_roles = PartyRole.get_party_roles_by_filing(correction_filing_id, end_date_time.date())
+        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+                       for party_role in existing_business_party_roles)
+        assert any(party_role.role == PartyRole.RoleTypes.COMPLETING_PARTY.value
+                   for party_role in existing_filing_party_roles)
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'
