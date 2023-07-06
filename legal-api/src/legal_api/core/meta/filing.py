@@ -15,7 +15,7 @@
 import re
 from contextlib import suppress
 from enum import Enum, auto
-from typing import Final, MutableMapping, Optional
+from typing import Dict, Final, MutableMapping, Optional
 
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
@@ -226,10 +226,7 @@ FILINGS: Final = {
         },
         'additional': [
             {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
-            {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]},
-            {'types': 'CP', 'outputs': [
-                'certifiedRules', 'specialResolution', 'correctedSpecialResolutionApplication'
-            ]},
+            {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]}
         ]
     },
     'courtOrder': {
@@ -483,7 +480,28 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return []
 
     @staticmethod
-    def alter_outputs(filing: FilingStorage, outputs: set):
+    def is_special_resolution_correction(
+        legal_type: str, filing: Dict, business: Business, original_filing: FilingStorage
+    ):
+        """Check whether it is a special resolution correction."""
+        corrected_filing_type = filing['correction'].get('correctedFilingType')
+
+        if legal_type != Business.LegalTypes.COOP.value:
+            return False
+        if corrected_filing_type == 'specialResolution':
+            return True
+        if corrected_filing_type not in ('specialResolution', 'correction'):
+            return False
+        if not original_filing:
+            return False
+
+        # Find the next original filing in the chain of corrections
+        filing = original_filing.filing_json['filing']
+        original_filing = FilingStorage.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
+        return FilingMeta.is_special_resolution_correction(legal_type, filing, business, original_filing)
+
+    @staticmethod
+    def alter_outputs(filing: FilingStorage, business: Business, outputs: set):
         """Add or remove outputs conditionally."""
         if filing.filing_type == 'alteration':
             if filing.meta_data.get('alteration', {}).get('toLegalName'):
@@ -499,6 +517,16 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         elif filing.filing_type == 'dissolution' and filing.filing_sub_type == 'administrative':
             # Supress Certificate of Dissolution for Admin Dissolution
             outputs.remove('certificateOfDissolution')
+        elif filing.filing_type == 'correction':
+            corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
+            original_filing = FilingStorage.find_by_id(corrected_filing_id)
+            if FilingMeta.is_special_resolution_correction(
+                    business.legal_type, filing.filing_json['filing'], business, original_filing
+                    ):
+                outputs.add('certifiedRules')
+                outputs.add('specialResolution')
+                outputs.add('correctedSpecialResolutionApplication')
+
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
