@@ -497,7 +497,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         # Find the next original filing in the chain of corrections
         filing = original_filing.filing_json['filing']
-        original_filing = FilingStorage.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
+        original_filing = FilingStorage.find_by_id(filing['correction']['correctedFilingId'])
         return FilingMeta.is_special_resolution_correction(legal_type, filing, business, original_filing)
 
     @staticmethod
@@ -530,7 +530,6 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 if filing.filing_json['filing']['correction'].get('rulesFileKey'):
                     outputs.add('certifiedRules')
                 outputs.add('specialResolution')
-                outputs.add('correctedSpecialResolutionApplication')
         return outputs
 
     @staticmethod

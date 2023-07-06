@@ -17,7 +17,7 @@ from contextlib import suppress
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Final
+from typing import Dict, Final
 
 import pycountry
 import requests
@@ -198,9 +198,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if ReportMeta.reports[self._report_key].get('hasDifferentTemplates', False):
             # Get template specific to legal type
             specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
-            # Fallback to default if specific template not found
-            file_name = specific_template['fileName'] if specific_template else \
-                ReportMeta.reports[self._report_key]['default']['fileName']
+            if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
+                corrected_filing_id = self._filing.filing_json['filing'].get('correction', {}).get('correctedFilingId')
+                original_filing = Filing.find_by_id(corrected_filing_id)
+                if self._is_special_resolution_correction(
+                    self._business.legal_type, self._filing.filing_json['filing'], self._business, original_filing
+                ):
+                    file_name = 'specialResolutionCorrectionApplication'
+            else:
+                # Fallback to default if specific template not found
+                file_name = specific_template['fileName'] if specific_template else \
+                    ReportMeta.reports[self._report_key]['default']['fileName']
         else:
             file_name = ReportMeta.reports[self._report_key]['fileName']
         return '{}.html'.format(file_name)
@@ -228,8 +236,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
         if self._report_key == 'incorporationApplication':
             self._format_incorporation_data(filing)
-        elif self._report_key in \
-                ['specialResolution', 'specialResolutionApplication', 'correctedSpecialResolutionApplication']:
+        elif self._report_key in ['specialResolution', 'specialResolutionApplication']:
             self._handle_special_resolution_filing_json(filing)
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
@@ -260,13 +267,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._set_directors(filing)
 
     def _handle_special_resolution_filing_json(self, filing):
-        """Handle special resolution (and correction), special resolution application (and correction)."""
+        """Handle special resolution (and correction), special resolution application (non correction)."""
         if self._report_key == 'specialResolution':
             self._format_special_resolution(filing)
         elif self._report_key == 'specialResolutionApplication':
             self._format_special_resolution_application(filing, 'alteration')
-        elif self._report_key == 'correctedSpecialResolutionApplication':
-            self._format_special_resolution_application(filing, 'correction')
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
@@ -746,9 +751,33 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         return has_change
 
+    def _is_special_resolution_correction(
+        self, legal_type: str, filing: Dict, business: Business, original_filing: Filing
+    ):
+        """Check whether it is a special resolution correction."""
+        corrected_filing_type = filing['correction'].get('correctedFilingType')
+
+        if legal_type != Business.LegalTypes.COOP.value:
+            return False
+        if corrected_filing_type == 'specialResolution':
+            return True
+        if corrected_filing_type not in ('specialResolution', 'correction'):
+            return False
+        if not original_filing:
+            return False
+
+        # Find the next original filing in the chain of corrections
+        filing = original_filing.filing_json['filing']
+        original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
+        return self._is_special_resolution_correction(legal_type, filing, business, original_filing)
+
     def _format_correction_data(self, filing):
+        corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
+        original_filing = Filing.find_by_id(corrected_filing_id)
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
+        elif self._is_special_resolution_correction(self._business.legal_type, filing, self._business, original_filing):
+            self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
@@ -1077,10 +1106,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'amendedRegistrationStatement': {
             'filingDescription': 'Amended Registration Statement',
             'fileName': 'amendedRegistrationStatement'
-        },
-        'correctedSpecialResolutionApplication': {
-            'filingDescription': 'Special Resolution Correction Application',
-            'fileName': 'specialResolutionCorrectionApplication',
         },
         'correctedRegistrationStatement': {
             'filingDescription': 'Corrected Registration Statement',

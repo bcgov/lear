@@ -213,7 +213,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-        'correctedSpecialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correctedSpecialResolutionApplication' ,
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
         ],
