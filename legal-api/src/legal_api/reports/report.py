@@ -760,23 +760,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_party_data(filing, prev_completed_filing)
             self._format_share_class_data(filing, prev_completed_filing)
 
-    def is_special_resolution_correction(self, filing: dict, business: Business, original_filing: Filing):
-        """Check whether it is a special resolution correction."""
-        corrected_filing_type = filing['correction']['correctedFilingType']
-        is_coop = business.legal_type in ['CP']
-
-        if not is_coop:
-            return False
-        if corrected_filing_type == 'specialResolution':
-            return True
-        if corrected_filing_type not in ('specialResolution', 'correction'):
-            return False
-
-        # Find the next original filing in the chain of corrections
-        filing = original_filing.filing_json['filing']
-        original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
-        return self.is_special_resolution_correction(filing, business, original_filing)
-
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
