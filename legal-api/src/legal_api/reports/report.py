@@ -933,22 +933,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     changed = True
         return changed
 
-    def _format_special_resolution(self, filing, filing_type):
+    def _format_special_resolution(self, filing, filing_source):
         """For both special resolutions and special resolution corrections."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
         filing['header']['displayName'] = display_name
-        resolution_date_str = filing.get(filing_type, {}).get('resolutionDate', None)
-        signing_date_str = filing.get(filing_type, {}).get('signingDate', None)
+        resolution_date_str = filing.get(filing_source, {}).get('resolutionDate', None)
+        signing_date_str = filing.get(filing_source, {}).get('signingDate', None)
         if resolution_date_str:
             resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
-            filing[filing_type]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+            filing[filing_source]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
         if signing_date_str:
             signing_date = LegislationDatetime.as_legislation_timezone_from_date_str(signing_date_str)
-            filing[filing_type]['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
+            filing[filing_source]['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
-    def _format_special_resolution_application(self, filing, filing_type):
+    def _format_special_resolution_application(self, filing, filing_source):
         """For both special resolutions and special resolution corrections."""
         meta_data = self._filing.meta_data or {}
         prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
@@ -957,14 +957,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['fromLegalName'] = prev_legal_name
             filing['toLegalName'] = to_legal_name
             filing['nrNumber'] = filing.get('changeOfName').get('nameRequest', {}).get('nrNumber', None)
-        prev_association_type = meta_data.get(filing_type, {}).get('fromCooperativeAssociationType')
-        to_association_type = meta_data.get(filing_type, {}).get('toCooperativeAssociationType')
+        prev_association_type = meta_data.get(filing_source, {}).get('fromCooperativeAssociationType')
+        to_association_type = meta_data.get(filing_source, {}).get('toCooperativeAssociationType')
         if prev_association_type and to_association_type and prev_association_type != to_association_type:
             filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
             filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
-        filing['rulesInResolution'] = filing.get(filing_type, {}).get('rulesInResolution')
-        filing['uploadNewRules'] = meta_data.get(filing_type, {}).get('uploadNewRules')
-        filing['memorandumInResolution'] = filing.get(filing_type, {}).get('memorandumInResolution')
+        filing['rulesInResolution'] = filing.get(filing_source, {}).get('rulesInResolution')
+        filing['uploadNewRules'] = meta_data.get(filing_source, {}).get('uploadNewRules')
+        filing['memorandumInResolution'] = filing.get(filing_source, {}).get('memorandumInResolution')
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
