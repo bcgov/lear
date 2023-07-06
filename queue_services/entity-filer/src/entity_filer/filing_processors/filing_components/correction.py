@@ -199,6 +199,7 @@ def _create_party_info(business, correction_filing_rec, party_info):
 
 
 def _update_addresses(offices_structure):
+    """Update addresses when offices exists."""
     for addresses in offices_structure.values():
         for updated_address in addresses.values():
             if updated_address.get('id', None):
