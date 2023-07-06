@@ -523,7 +523,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if FilingMeta.is_special_resolution_correction(
                     business.legal_type, filing.filing_json['filing'], business, original_filing
                     ):
-                outputs.add('certifiedRules')
+                if filing.filing_json['filing']['correction'].get('rulesFileKey'):
+                    outputs.add('certifiedRules')
                 outputs.add('specialResolution')
                 outputs.add('correctedSpecialResolutionApplication')
 
