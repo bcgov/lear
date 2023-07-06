@@ -156,6 +156,9 @@ def _update_parties(business: Business, parties: list, correction_filing_rec: Fi
                 (party_info.get('officer').get('id') and not isinstance(party_info.get('officer').get('id'), int)):
             _create_party_info(business, correction_filing_rec, party_info, is_sr_correction=is_sr_correction)
         else:
+            is_coop = business.legal_type == Business.LegalTypes.COOP.value
+            if is_coop and is_sr_correction:
+                continue
             # Update if id is present
             _update_party(party_info)
 
