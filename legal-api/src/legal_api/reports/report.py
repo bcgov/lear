@@ -229,7 +229,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._report_key == 'incorporationApplication':
             self._format_incorporation_data(filing)
         elif self._report_key == 'specialResolution':
-            self._format_special_resolution_data(filing, 'specialResolution')
+            self._format_special_resolution(filing, 'specialResolution')
         elif self._report_key == 'specialResolutionApplication':
             self._format_special_resolution_application(filing, 'specialResolution')
         elif self._report_key == 'alterationNotice':
@@ -744,7 +744,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_change_of_registration_data(filing, 'correction')
         elif self._business.legal_type == 'CP' and \
                 self.is_special_resolution_correction(filing, self._business, original_filing):
-            self._format_special_resolution_data(filing, 'correction')
+            self._format_special_resolution(filing, 'correction')
             self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
@@ -933,7 +933,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     changed = True
         return changed
 
-    def _format_special_resolution_data(self, filing, filing_type):
+    def _format_special_resolution(self, filing, filing_type):
         """This works for both special resolutions and special resolution corrections."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
