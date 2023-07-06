@@ -60,7 +60,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         email_header=filing_name.upper(),
         filing_type=filing_type,
         name_changed=name_changed,
-        rules_changed=rules_changed
+        rules_updated=rules_changed
     )
 
     # get attachments

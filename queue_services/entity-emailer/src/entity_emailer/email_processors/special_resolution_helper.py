@@ -59,11 +59,13 @@ def get_completed_pdfs(
     # Change of Name
     if name_changed:
         name_change = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=changeOfName',
-            headers=headers
-        )
-        if name_change.status_code == HTTPStatus.OK:
+                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+                '?type=certificateOfNameChange',
+                headers=headers
+            )
+        if name_change.status_code != HTTPStatus.OK:
+            logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
+        else:
             certified_name_change_encoded = base64.b64encode(name_change.content)
             pdfs.append(
                 {
@@ -74,6 +76,7 @@ def get_completed_pdfs(
                 }
             )
             attach_order += 1
+
     # Certificate Rules
     rules = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'

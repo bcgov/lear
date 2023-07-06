@@ -171,7 +171,8 @@ def test_complete_special_resolution_correction_attachments(session, config):
             status_code=200
         )
         m.get(
-            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}?type=changeOfName',
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
+            '?type=certificateOfNameChange',
             content=b'pdf_content_2',
             status_code=200
         )

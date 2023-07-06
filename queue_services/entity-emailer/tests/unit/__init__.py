@@ -488,7 +488,7 @@ def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_
     filing_template = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
     filing_template['filing']['business'] = \
         {'identifier': f'{identifier}', 'legalype': legal_type, 'legalName': legal_name}
-    filing_template['alteration'] = {
+    filing_template['filing']['alteration'] = {
         'business': {
             'identifier': 'BC1234567',
             'legalType': 'BEN'
