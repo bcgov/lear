@@ -82,12 +82,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
         offices_structure = dpath.util.get(correction_filing, '/correction/offices')
-        for addresses in offices_structure.values():
-            for updated_address in addresses.values():
-                if updated_address.get('id', None):
-                    address = Address.find_by_id(updated_address.get('id'))
-                    if address:
-                        update_address(address, updated_address)
+        _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
@@ -201,3 +196,12 @@ def _create_party_info(business, correction_filing_rec, party_info):
             correction_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
+
+
+def _update_addresses(offices_structure):
+    for addresses in offices_structure.values():
+        for updated_address in addresses.values():
+            if updated_address.get('id', None):
+                address = Address.find_by_id(updated_address.get('id'))
+                if address:
+                    update_address(address, updated_address)
