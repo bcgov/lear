@@ -43,9 +43,7 @@ def get_completed_pdfs(
         f'/filings/{filing.id}/documents/specialResolution',
         headers=headers
     )
-    if special_resolution.status_code != HTTPStatus.OK:
-        logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
-    else:
+    if special_resolution.status_code == HTTPStatus.OK:
         certificate_encoded = base64.b64encode(special_resolution.content)
         pdfs.append(
             {
@@ -56,6 +54,10 @@ def get_completed_pdfs(
             }
         )
         attach_order += 1
+    else:
+        logger.error('Failed to get specialResolution pdf for filing: %s, status code: %s',
+                     filing.id, special_resolution.status_code)
+
     # Change of Name
     if name_changed:
         name_change = requests.get(
@@ -63,9 +65,8 @@ def get_completed_pdfs(
             '?type=certificateOfNameChange',
             headers=headers
             )
-        if name_change.status_code != HTTPStatus.OK:
-            logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
-        else:
+
+        if name_change.status_code == HTTPStatus.OK:
             certified_name_change_encoded = base64.b64encode(name_change.content)
             pdfs.append(
                 {
@@ -76,6 +77,9 @@ def get_completed_pdfs(
                 }
             )
             attach_order += 1
+        else:
+            logger.error('Failed to get certificateOfNameChange pdf for filing: %s, status code: %s',
+                         filing.id, name_change.status_code)
 
     # Certificate Rules
     rules = requests.get(
