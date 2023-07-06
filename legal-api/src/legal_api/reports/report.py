@@ -197,6 +197,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_template_filename(self):
         if ReportMeta.reports[self._report_key].get('hasDifferentTemplates', False):
             # Get template specific to legal type
+            file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
             if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
                 corrected_filing_id = self._filing.filing_json['filing'].get('correction', {}).get('correctedFilingId')
@@ -205,7 +206,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     self._business.legal_type, self._filing.filing_json['filing'], self._business, original_filing
                 ):
                     file_name = 'specialResolutionCorrectionApplication'
-            else:
+            if file_name is None:
                 # Fallback to default if specific template not found
                 file_name = specific_template['fileName'] if specific_template else \
                     ReportMeta.reports[self._report_key]['default']['fileName']
