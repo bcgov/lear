@@ -14,7 +14,6 @@
 """Common functions relate to Special Resolution."""
 import base64
 from http import HTTPStatus
-from typing import Dict
 
 import requests
 from entity_queue_common.service_utils import logger
@@ -161,4 +160,3 @@ def get_paid_pdfs(
         attach_order += 1
 
     return pdfs
-

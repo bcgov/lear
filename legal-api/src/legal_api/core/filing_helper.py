@@ -1,5 +1,6 @@
 """Helper function for filings."""
 from typing import Dict
+
 from legal_api.models.business import Business
 
 
