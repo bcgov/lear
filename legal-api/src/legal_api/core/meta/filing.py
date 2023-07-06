@@ -15,8 +15,9 @@
 import re
 from contextlib import suppress
 from enum import Enum, auto
-from typing import Dict, Final, MutableMapping, Optional
+from typing import Final, MutableMapping, Optional
 
+from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
@@ -480,27 +481,6 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return []
 
     @staticmethod
-    def is_special_resolution_correction(
-        legal_type: str, filing: Dict, business: Business, original_filing: FilingStorage
-    ):
-        """Check whether it is a special resolution correction."""
-        corrected_filing_type = filing['correction'].get('correctedFilingType')
-
-        if legal_type != Business.LegalTypes.COOP.value:
-            return False
-        if corrected_filing_type == 'specialResolution':
-            return True
-        if corrected_filing_type not in ('specialResolution', 'correction'):
-            return False
-        if not original_filing:
-            return False
-
-        # Find the next original filing in the chain of corrections
-        filing = original_filing.filing_json['filing']
-        original_filing = FilingStorage.find_by_id(filing['correction']['correctedFilingId'])
-        return FilingMeta.is_special_resolution_correction(legal_type, filing, business, original_filing)
-
-    @staticmethod
     def alter_outputs(filing: FilingStorage, business: Business, outputs: set):
         """Add or remove outputs conditionally."""
         outputs = FilingMeta.alter_outputs_alteration(filing, outputs)
@@ -524,8 +504,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == 'correction':
             corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
             original_filing = FilingStorage.find_by_id(corrected_filing_id)
-            if FilingMeta.is_special_resolution_correction(
-                    business.legal_type, filing.filing_json['filing'], business, original_filing
+            if is_special_resolution_correction(
+                    filing.filing_json['filing'], business, original_filing
                     ):
                 if filing.filing_json['filing']['correction'].get('rulesFileKey'):
                     outputs.add('certifiedRules')

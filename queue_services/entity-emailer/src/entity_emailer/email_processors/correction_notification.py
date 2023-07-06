@@ -24,12 +24,12 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
+from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Filing
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import (
-    get_completed_pdfs,
-    is_special_resolution_correction,
+    get_completed_pdfs
 )
 
 
@@ -51,7 +51,6 @@ def _get_pdfs(
     }
     legal_type = business.get('legalType', None)
     is_cp_special_resolution = is_special_resolution_correction(
-        legal_type,
         filing.filing_json['filing'],
         business,
         filing
@@ -232,7 +231,6 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
     elif is_special_resolution_correction(
-            legal_type,
             filing.filing_json['filing'],
             business,
             filing

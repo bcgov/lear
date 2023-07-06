@@ -17,12 +17,13 @@ from contextlib import suppress
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, Final
+from typing import Final
 
 import pycountry
 import requests
 from flask import current_app, jsonify
 
+from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
@@ -202,8 +203,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
                 corrected_filing_id = self._filing.filing_json['filing'].get('correction', {}).get('correctedFilingId')
                 original_filing = Filing.find_by_id(corrected_filing_id)
-                if self._is_special_resolution_correction(
-                    self._business.legal_type, self._filing.filing_json['filing'], self._business, original_filing
+                if is_special_resolution_correction(
+                    self._filing.filing_json['filing'], self._business, original_filing
                 ):
                     file_name = 'specialResolutionCorrectionApplication'
             if file_name is None:
@@ -238,7 +239,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._report_key == 'incorporationApplication':
             self._format_incorporation_data(filing)
         elif self._report_key in ['specialResolution', 'specialResolutionApplication']:
-            self._handle_special_resolution_filing_json(filing)
+            self._handle_special_resolution_filing_data(filing)
         elif self._report_key == 'alterationNotice':
             self._format_alteration_data(filing)
         elif self._report_key == 'registration':
@@ -267,7 +268,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             with suppress(KeyError):
                 self._set_directors(filing)
 
-    def _handle_special_resolution_filing_json(self, filing):
+    def _handle_special_resolution_filing_data(self, filing):
         """Handle special resolution (and correction), special resolution application (non correction)."""
         if self._report_key == 'specialResolution':
             self._format_special_resolution(filing)
@@ -752,32 +753,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         return has_change
 
-    def _is_special_resolution_correction(
-        self, legal_type: str, filing: Dict, business: Business, original_filing: Filing
-    ):
-        """Check whether it is a special resolution correction."""
-        corrected_filing_type = filing['correction'].get('correctedFilingType')
-
-        if legal_type != Business.LegalTypes.COOP.value:
-            return False
-        if corrected_filing_type == 'specialResolution':
-            return True
-        if corrected_filing_type not in ('specialResolution', 'correction'):
-            return False
-        if not original_filing:
-            return False
-
-        # Find the next original filing in the chain of corrections
-        filing = original_filing.filing_json['filing']
-        original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
-        return self._is_special_resolution_correction(legal_type, filing, business, original_filing)
-
     def _format_correction_data(self, filing):
         corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
         original_filing = Filing.find_by_id(corrected_filing_id)
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
-        elif self._is_special_resolution_correction(self._business.legal_type, filing, self._business, original_filing):
+        elif is_special_resolution_correction(filing, self._business, original_filing):
             self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)

@@ -162,19 +162,3 @@ def get_paid_pdfs(
 
     return pdfs
 
-
-def is_special_resolution_correction(legal_type: str, filing: Dict, business: Business, original_filing: Filing):
-    """Check whether it is a special resolution correction."""
-    corrected_filing_type = filing['correction'].get('correctedFilingType')
-
-    if legal_type != Business.LegalTypes.COOP.value:
-        return False
-    if corrected_filing_type == 'specialResolution':
-        return True
-    if corrected_filing_type not in ('specialResolution', 'correction'):
-        return False
-
-    # Find the next original filing in the chain of corrections
-    filing = original_filing.filing_json['filing']
-    original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
-    return is_special_resolution_correction(legal_type, filing, business, original_filing)
