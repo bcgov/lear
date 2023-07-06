@@ -934,7 +934,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return changed
 
     def _format_special_resolution(self, filing, filing_type):
-        """This works for both special resolutions and special resolution corrections."""
+        """For both special resolutions and special resolution corrections."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
@@ -949,7 +949,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing[filing_type]['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_special_resolution_application(self, filing, filing_type):
-        """This works for both special resolutions and special resolution corrections."""
+        """For both special resolutions and special resolution corrections."""
         meta_data = self._filing.meta_data or {}
         prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
         to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
