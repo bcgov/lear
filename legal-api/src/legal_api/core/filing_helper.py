@@ -4,13 +4,15 @@ from typing import Dict
 from legal_api.models.business import Business
 
 
-def is_special_resolution_correction(filing: Dict, business: Business, original_filing):
+def is_special_resolution_correction(filing: Dict, business, original_filing):
     """Check whether it is a special resolution correction."""
     # Avoid circular import.
     from legal_api.core.filing import Filing  # pylint: disable=import-outside-toplevel
     corrected_filing_type = filing['correction'].get('correctedFilingType')
 
-    if business.legal_type != Business.LegalTypes.COOP.value:
+    if isinstance(business, Business) and business.legal_type != Business.LegalTypes.COOP.value:
+        return False
+    if isinstance(business, dict) and business.get('legalType') != Business.LegalTypes.COOP.value:
         return False
     if corrected_filing_type == 'specialResolution':
         return True

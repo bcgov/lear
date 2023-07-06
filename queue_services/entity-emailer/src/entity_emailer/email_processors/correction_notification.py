@@ -24,6 +24,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
+
 from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Filing
 
