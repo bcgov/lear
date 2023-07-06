@@ -176,6 +176,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
             'special-resolution/resolutionApplication',
+            'special-resolution/resolutionCorrection',
             'addresses',
             'certification',
             'directors',
@@ -1042,6 +1043,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'specialResolutionApplication': {
             'filingDescription': 'Special Resolution Application',
             'fileName': 'specialResolutionApplication'
+        },
+        'specialResolutionCorrection': {
+            'filingDescription': 'Special Resolution Correction Application',
+            'fileName': 'specialResolutionCorrectionApplication'
         },
         'voluntaryDissolution': {
             'filingDescription': 'Voluntary Dissolution',
