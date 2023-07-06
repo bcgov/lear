@@ -503,21 +503,25 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     @staticmethod
     def alter_outputs(filing: FilingStorage, business: Business, outputs: set):
         """Add or remove outputs conditionally."""
+        outputs = FilingMeta.alter_outputs_alteration(filing, outputs)
+        outputs = FilingMeta.alter_outputs_correction(filing, business, outputs)
+        outputs = FilingMeta.alter_outputs_special_resolution(filing, outputs)
+        if filing.filing_type == 'dissolution' and filing.filing_sub_type == 'administrative':
+            # Supress Certificate of Dissolution for Admin Dissolution
+            outputs.remove('certificateOfDissolution')
+
+    @staticmethod
+    def alter_outputs_alteration(filing, outputs):
+        """Handle output file list modification for alterations."""
         if filing.filing_type == 'alteration':
             if filing.meta_data.get('alteration', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
-        elif filing.filing_type == 'specialResolution':
-            if 'changeOfName' in filing.meta_data.get('legalFilings', []):
-                outputs.add('certificateOfNameChange')
-            if 'alteration' in filing.meta_data.get('legalFilings', []):
-                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
-                    outputs.remove('certifiedMemorandum')
-                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
-                    outputs.remove('certifiedRules')
-        elif filing.filing_type == 'dissolution' and filing.filing_sub_type == 'administrative':
-            # Supress Certificate of Dissolution for Admin Dissolution
-            outputs.remove('certificateOfDissolution')
-        elif filing.filing_type == 'correction':
+        return outputs
+
+    @staticmethod
+    def alter_outputs_correction(filing, business, outputs):
+        """Handle output file list modification for corrections."""
+        if filing.filing_type == 'correction':
             corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
             original_filing = FilingStorage.find_by_id(corrected_filing_id)
             if FilingMeta.is_special_resolution_correction(
@@ -527,7 +531,20 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     outputs.add('certifiedRules')
                 outputs.add('specialResolution')
                 outputs.add('correctedSpecialResolutionApplication')
+        return outputs
 
+    @staticmethod
+    def alter_outputs_special_resolution(filing, outputs):
+        """Handle output file list modification for special resolution."""
+        if filing.filing_type == 'specialResolution':
+            if 'changeOfName' in filing.meta_data.get('legalFilings', []):
+                outputs.add('certificateOfNameChange')
+            if 'alteration' in filing.meta_data.get('legalFilings', []):
+                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
+                    outputs.remove('certifiedMemorandum')
+                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
+                    outputs.remove('certifiedRules')
+        return outputs
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
