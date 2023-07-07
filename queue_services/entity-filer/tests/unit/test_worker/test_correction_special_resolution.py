@@ -20,7 +20,7 @@ import random
 
 import pytest
 from dateutil.parser import parse
-from legal_api.models import Business, Document, Filing, PartyRole
+from legal_api.models import Business, Document, Filing, Party, PartyRole
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
@@ -91,6 +91,71 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         'additionalName': ''
     }
     correction_data['filing']['correction']['cooperativeAssociationType'] = 'HC'
+    correction_data['filing']['correction']['parties'] = [
+        {
+            'officer': {
+                'id': 156268,
+                'partyType': 'person',
+                'firstName': 'hello',
+                'lastName': '1234'
+            },
+            'roles': [
+                {
+
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2023-07-05'
+                }
+            ],
+            'mailingAddress': {
+                'streetAddress': '4343 55 Avenue Cres',
+                'addressCity': 'Innisfail',
+                'addressRegion': 'AB',
+                'postalCode': 'T4G 1X4',
+                'addressCountry': 'CA'
+            }
+        },
+        {
+            'officer': {
+                'partyType': 'person',
+                'firstName': 'test',
+                'lastName': 'test'
+            },
+            'roles': [
+                {
+                    'roleType': 'Director',
+                    'appointmentDate': '2023-07-05'
+                }
+            ],
+            'mailingAddress': {
+                'streetAddress': '4343 55 Avenue Cres',
+                'addressCity': 'Innisfail',
+                'addressRegion': 'AB',
+                'postalCode': 'T4G 1X4',
+                'addressCountry': 'CA'
+            }
+        },
+        {
+            'officer': {
+                'partyType': 'person',
+                'firstName': 'Sarah',
+                'lastName': 'Smith'
+            },
+            'roles': [
+                {
+
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2023-07-05'
+                }
+            ],
+            'mailingAddress': {
+                'streetAddress': '4343 55 Avenue Cres',
+                'addressCity': 'Innisfail',
+                'addressRegion': 'AB',
+                'postalCode': 'T4G 1X4',
+                'addressCountry': 'CA'
+            }
+        }
+    ]
     # Update correction data to point to the original special resolution filing
     if 'correction' not in correction_data['filing']:
         correction_data['filing']['correction'] = {}
@@ -130,6 +195,22 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         assert business.association_type == coop_associate_type
         assert alteration.get('fromCooperativeAssociationType') == 'OC'
         assert alteration.get('toCooperativeAssociationType') == coop_associate_type
+
+        # Check invalid parties should not updated, origin business test data has no Director
+        end_date_time = datetime.datetime.utcnow()
+        existing_business_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
+        existing_filing_party_roles = PartyRole.get_party_roles_by_filing(correction_filing_id, end_date_time.date())
+        # Director should not included in business and filing
+        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+                       for party_role in existing_business_party_roles)
+        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+                       for party_role in existing_filing_party_roles)
+        # Filing should include completing_party
+        assert any(party_role.role == PartyRole.RoleTypes.COMPLETING_PARTY.value
+                   for party_role in existing_filing_party_roles)
+        # Party with id should not in Filing (test existing ones)
+        assert not any(Party.find_by_id(party_role.party_id).first_name == 'hello'
+                       for party_role in existing_filing_party_roles)
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'

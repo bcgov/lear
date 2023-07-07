@@ -37,7 +37,8 @@ from entity_filer.filing_processors.filing_components import (
 def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing_rec: Filing,
                           correction_filing: Dict,
-                          filing_meta: FilingMeta):
+                          filing_meta: FilingMeta,
+                          is_sr_correction: bool):
     """Render the correction filing onto the business model objects."""
     filing_meta.correction = {}
 
@@ -86,6 +87,14 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
+        # change is_sr_correction if try filter by changeOfDirectors filing
+        if is_sr_correction:
+            # Only include the completing party for SR correction
+            party_json = [
+                party for party in party_json
+                if not any(role.get('roleType') == 'Director' for role in party.get('roles', []))
+                and not party.get('officer', {}).get('id')
+            ]
         update_parties(business, party_json, correction_filing_rec)
 
     # update court order, if any is present
