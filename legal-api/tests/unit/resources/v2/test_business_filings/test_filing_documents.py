@@ -34,6 +34,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
     CORRECTION_AR,
+    CORRECTION_CP_SPECIAL_RESOLUTION,
     CORRECTION_INCORPORATION,
     COURT_ORDER,
     DISSOLUTION,
@@ -205,6 +206,19 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                     'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
                     }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
+     'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
+     {'documents': {
+        'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
+        'legalFilings': [
+            {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
+        ],
+        'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
+        'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'
+        }
       },
      HTTPStatus.OK, '2017-10-01'
      ),
