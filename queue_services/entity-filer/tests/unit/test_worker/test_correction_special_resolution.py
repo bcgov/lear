@@ -90,53 +90,6 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         'familyName': 'Doe',
         'additionalName': ''
     }
-    correction_data['filing']['correction']['parties'] = [
-        {
-            'officer': {
-                'partyType': 'person',
-                'firstName': 'hello',
-                'lastName': '1234'
-            },
-            'roles': [
-                {
-                    'roleType': 'Director',
-                    'appointmentDate': '2023-07-05'
-                },
-                {
-                    'roleType': 'Completing Party',
-                    'appointmentDate': '2023-07-05'
-                }
-            ],
-            'mailingAddress': {
-                'streetAddress': '4343 55 Avenue Cres',
-                'addressCity': 'Innisfail',
-                'addressRegion': 'AB',
-                'postalCode': 'T4G 1X4',
-                'addressCountry': 'CA'
-            }
-        },
-        {
-            'officer': {
-                'partyType': 'person',
-                'firstName': 'test',
-                'lastName': 'test'
-            },
-            'roles': [
-                {
-                    'roleType': 'Director',
-                    'appointmentDate': '2023-07-05'
-                }
-            ],
-            'mailingAddress': {
-                'streetAddress': '4343 55 Avenue Cres',
-                'addressCity': 'Innisfail',
-                'addressRegion': 'AB',
-                'postalCode': 'T4G 1X4',
-                'addressCountry': 'CA'
-            }
-        }
-    ]
-
     correction_data['filing']['correction']['cooperativeAssociationType'] = 'HC'
     # Update correction data to point to the original special resolution filing
     if 'correction' not in correction_data['filing']:
@@ -177,17 +130,6 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
         assert business.association_type == coop_associate_type
         assert alteration.get('fromCooperativeAssociationType') == 'OC'
         assert alteration.get('toCooperativeAssociationType') == coop_associate_type
-
-        # Check invalid parties should not updated, origin business test data has no Director
-        end_date_time = datetime.datetime.utcnow()
-        existing_business_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
-        existing_filing_party_roles = PartyRole.get_party_roles_by_filing(correction_filing_id, end_date_time.date())
-        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
-                       for party_role in existing_business_party_roles)
-        assert any(party_role.role == PartyRole.RoleTypes.COMPLETING_PARTY.value
-                   for party_role in existing_filing_party_roles)
-        assert not any(party_role.role == PartyRole.RoleTypes.DIRECTOR.value
-                       for party_role in existing_filing_party_roles)
 
         # Simulate another correction filing on previous correction
         resolution_date = '2023-06-16'
