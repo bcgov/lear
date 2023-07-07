@@ -67,7 +67,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if status == Filing.Status.PAID.value:
         pdfs = get_paid_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     if status == Filing.Status.COMPLETED.value:
-        pdfs = get_completed_pdfs(token, business, filing, name_changed)
+        pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
 
     # get recipients
     identifier = filing.filing_json['filing']['business']['identifier']

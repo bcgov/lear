@@ -107,7 +107,7 @@ def test_complete_special_resolution_attachments(session, config):
                 assert output['content']['attachments'][0]['fileName'] == 'Special Resolution.pdf'
                 assert (base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8')
                         == 'pdf_content_1')
-                assert output['content']['attachments'][1]['fileName'] == 'Change of Name Certified.pdf'
+                assert output['content']['attachments'][1]['fileName'] == 'Certificate of Name Change.pdf'
                 assert (base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8')
                         == 'pdf_content_2')
                 assert output['content']['attachments'][2]['fileName'] == 'Certificate Rules.pdf'

@@ -26,7 +26,8 @@ def get_completed_pdfs(
         token: str,
         business: dict,
         filing: Filing,
-        name_changed: bool) -> list:
+        name_changed: bool,
+        rules_changed=False) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the completed pdfs for the special resolution output."""
     pdfs = []
@@ -70,7 +71,7 @@ def get_completed_pdfs(
             certified_name_change_encoded = base64.b64encode(name_change.content)
             pdfs.append(
                 {
-                    'fileName': 'Change of Name Certified.pdf',
+                    'fileName': 'Certificate of Name Change.pdf',
                     'fileBytes': certified_name_change_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -82,22 +83,23 @@ def get_completed_pdfs(
                          filing.id, name_change.status_code)
 
     # Certificate Rules
-    rules = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=certifiedRules',
-        headers=headers
-    )
-    if rules.status_code == HTTPStatus.OK:
-        certified_rules_encoded = base64.b64encode(rules.content)
-        pdfs.append(
-            {
-                'fileName': 'Certificate Rules.pdf',
-                'fileBytes': certified_rules_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': attach_order
-            }
+    if rules_changed:
+        rules = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certifiedRules',
+            headers=headers
         )
-        attach_order += 1
+        if rules.status_code == HTTPStatus.OK:
+            certified_rules_encoded = base64.b64encode(rules.content)
+            pdfs.append(
+                {
+                    'fileName': 'Certificate Rules.pdf',
+                    'fileBytes': certified_rules_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
 
     return pdfs
 
