@@ -754,7 +754,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
-        corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
+        corrected_filing_id = filing.get('correction', {}).get('correctedFilingId')
         original_filing = Filing.find_by_id(corrected_filing_id)
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
