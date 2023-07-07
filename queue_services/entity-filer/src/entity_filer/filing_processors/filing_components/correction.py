@@ -87,7 +87,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
-        update_parties(business, party_json, correction_filing_rec, is_sr_correction=is_sr_correction)
+        update_parties(business, party_json, correction_filing_rec)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -136,7 +136,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                                       **{'uploadNewRules': True}}
 
 
-def update_parties(business: Business, parties: list, correction_filing_rec: Filing, is_sr_correction=False):
+def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
     end_date_time = datetime.datetime.utcnow()
@@ -178,7 +178,7 @@ def _update_party(party_info):
             update_address(party.mailing_address, party_info.get('mailingAddress'))
 
 
-def _create_party_info(business, correction_filing_rec, party_info, is_sr_correction=False):
+def _create_party_info(business, correction_filing_rec, party_info):
     party = create_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
