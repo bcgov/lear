@@ -15,6 +15,10 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
+
+from typing import Optional
+
 import pycountry
 from flask import current_app
 
@@ -53,41 +57,58 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
         }
 
     @classmethod
-    def _build_address_obj(cls, address: dict = None):
-        # returns address obj given address dict
-        if address['addr_line_1'] and address['addr_line_2'] and address['addr_line_3']:
-            current_app.logger.error('Expected 2, but got 3 address lines for addr_id: {}'
-                                     .format(address['addr_id']))
-        if not address['addr_line_1'] and not address['addr_line_2'] and not address['addr_line_3']:
-            current_app.logger.error('Expected at least 1 addr_line, but got 0 for addr_id: {}'
-                                     .format(address['addr_id']))
-        if not address['city'] or not address['province'] or not address['full_desc'] or not address['postal_cd']:
-            current_app.logger.error('Missing field in address for addr_id: {}'.format(address['addr_id']))
+    def _build_address_obj(cls, address: dict) -> Address:
+        """Return the parsed address obj given the raw address dict."""
+        print('_build_address_obj')
+        street_address = ''
+        street_address_add = ''
+        if address['address_format_type'] in ['BAS', 'ADV']:
+            print('BAS, ADV')
+            street_elements = [
+                address['unit_type'] or '',
+                address['unit_no'] or '',
+                address['civic_no'] or '',
+                address['civic_no_suffix'] or '',
+                address['street_name'] or '',
+                address['street_type'] or '',
+                address['street_direction'] or '']
 
-        # for cases where addresses were input out of order - shift them to lines 1 and 2
-        if not address['addr_line_1']:
-            if address['addr_line_2']:
-                address['addr_line_1'] = address['addr_line_2']
-                address['addr_line_2'] = None
-        if not address['addr_line_2']:
-            if address['addr_line_3']:
-                address['addr_line_2'] = address['addr_line_3']
-                address['addr_line_3'] = None
+            street_address = ' '.join([x.strip() for x in street_elements]).strip()
 
+            if address['address_format_type'] == 'ADV':
+                print('ADV')
+                street_add_elements = [
+                    address['route_service_type'] or '',
+                    address['lock_box_no'] or '',
+                    address['route_service_no'] or '',
+                    address['installation_type'] or '',
+                    address['installation_name'] or '']
+
+                street_address += ' '.join([x.strip() for x in street_add_elements])
+        else:
+            print('FOR, NULL')
+            # address format type of 'null' or 'FOR'
+            street_address = (address['addr_line_1'] or address['addr_line_2'] or address['addr_line_3'] or '').strip()
+            if address['addr_line_1']:
+                street_address_add = ' '.join(x.strip() for x in [address['addr_line_2'] or '', address['addr_line_3'] or ''])
+            elif address['addr_line_2']:
+                street_address_add = (address['addr_line_3'] or '').strip()
+
+        print('address_obj')
         address_obj = Address()
-        address_obj.street_address = address['addr_line_1'].strip() if address['addr_line_1'] else ''
-        address_obj.street_address_additional = address['addr_line_2'].strip() if address['addr_line_2'] else ''
-        address_obj.address_city = address['city'].strip() if address['city'].strip() else ''
+        address_obj.street_address = street_address
+        address_obj.street_address_additional = street_address_add
+        address_obj.address_city = address['city'].strip() if address['city'] else ''
         address_obj.address_region = address['province'].strip() if address['province'] else None
         address_obj.postal_code = address['postal_cd'].strip() if address['postal_cd'] else ''
         address_obj.address_country = address['full_desc'].strip() if address['full_desc'] else ''
         address_obj.delivery_instructions = address['delivery_instructions'] if address['delivery_instructions'] else ''
-        address_obj.address_id = address['addr_id'] if address['addr_id'] else ''
+        address_obj.address_id = address['addr_id']
 
         return address_obj
 
     @classmethod
-    def get_by_address_id(cls, cursor, address_id: str = None):
+    def get_by_address_id(cls, cursor, address_id: str = None) -> Optional[Address]:
         """Return single address associated with given addr_id."""
         if not address_id:
             return None
@@ -96,19 +117,22 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             if not cursor:
                 cursor = DB.connection.cursor()
             cursor.execute("""
-                select ADDR_ID, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, CITY, PROVINCE, COUNTRY_TYPE.FULL_DESC,
-                POSTAL_CD, DELIVERY_INSTRUCTIONS
-                from ADDRESS
-                join COUNTRY_TYPE on ADDRESS.COUNTRY_TYP_CD = COUNTRY_TYPE.COUNTRY_TYP_CD
-                where ADDR_ID=:address_id
+                SELECT province, city, postal_cd, addr_line_1, addr_line_2, addr_line_3,
+                  unit_type, unit_no, civic_no, civic_no_suffix, street_name, street_type,
+                  street_direction, address_format_type, route_service_type, lock_box_no,
+                  route_service_no, installation_type, installation_name, addr_id, ct.full_desc, delivery_instructions
+                FROM ADDRESS a
+                  LEFT JOIN COUNTRY_TYPE ct on a.country_typ_cd = ct.country_typ_cd
+                WHERE addr_id=:address_id
                 """,
-                           address_id=address_id
-                           )
+                address_id=address_id)
 
+            print('get_by_address_id')
             address = cursor.fetchone()
+            print(address)
             address = dict(zip([x[0].lower() for x in cursor.description], address))
-            address_obj = cls._build_address_obj(address)
-            return address_obj
+            print(address)
+            return cls._build_address_obj(address)
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))

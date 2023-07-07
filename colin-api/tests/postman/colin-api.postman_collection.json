@@ -1,9 +1,11 @@
 {
 	"info": {
-		"_postman_id": "2fc9e177-5a43-4bee-af08-caa4cc46064d",
+		"_postman_id": "4c9af778-f52b-420f-b381-38632538ce00",
 		"name": "colin-api",
 		"description": "version=0.108 - This is a Colin API description",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6835935",
+		"_collection_link": "https://warped-escape-616276.postman.co/workspace/bc-registries~8ef8e652-492a-4d19-b978-d4f0da255b2c/collection/6835935-4c9af778-f52b-420f-b381-38632538ce00?action=share&creator=6835935&source=collection_link"
 	},
 	"item": [
 		{
@@ -10404,6 +10406,70 @@
 							""
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "All",
+			"item": [
+				{
+					"name": "parties",
+					"item": [
+						{
+							"name": "GET all parties",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json()",
+											"",
+											"pm.test(\"Response time is less than 10000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/LP/LP0022908/parties/all",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"LP",
+										"LP0022908",
+										"parties",
+										"all"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}
