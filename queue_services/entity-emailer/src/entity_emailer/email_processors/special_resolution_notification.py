@@ -60,14 +60,14 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         email_header=filing_name.upper(),
         filing_type=filing_type,
         name_changed=name_changed,
-        rules_changed=rules_changed
+        rules_updated=rules_changed
     )
 
     # get attachments
     if status == Filing.Status.PAID.value:
         pdfs = get_paid_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     if status == Filing.Status.COMPLETED.value:
-        pdfs = get_completed_pdfs(token, business, filing, name_changed)
+        pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
 
     # get recipients
     identifier = filing.filing_json['filing']['business']['identifier']
