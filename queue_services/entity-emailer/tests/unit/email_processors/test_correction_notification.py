@@ -165,7 +165,7 @@ def test_complete_special_resolution_correction_attachments(session, config):
                 f'{config.get("LEGAL_API_URL")}'
                 f'/businesses/{CP_IDENTIFIER}'
                 f'/filings/{filing.id}'
-                f'/documents/specialResolution'
+                f'?type=specialResolution'
             ),
             content=b'pdf_content_1',
             status_code=200
@@ -194,7 +194,7 @@ def test_complete_special_resolution_correction_attachments(session, config):
         assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
         assert output['content']['attachments'][1]['fileName'] == 'Certificate of Name Change.pdf'
         assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
-        assert output['content']['attachments'][2]['fileName'] == 'Certificate Rules.pdf'
+        assert output['content']['attachments'][2]['fileName'] == 'Certified Rules.pdf'
         assert base64.b64decode(output['content']['attachments'][2]['fileBytes']).decode('utf-8') == 'pdf_content_3'
 
 
@@ -212,7 +212,7 @@ def test_paid_special_resolution_correction_attachments(session, config):
     with requests_mock.Mocker() as m:
         m.get(
             f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
-            f'?type=correction',
+            f'?type=specialResolutionCorrectionApplication',
             content=b'pdf_content_1',
             status_code=200
         )
