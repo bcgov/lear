@@ -104,7 +104,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'orgName': (row.get('business_nme', '') or '').strip()
         }
         return officer_obj
-    
+
     @classmethod
     def _parse_party(cls, cursor, row: dict) -> Party:
         """Parse the party row."""
@@ -229,8 +229,10 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     if not party.appointment_date and party_id_map.get(party.prev_party_id):
                         # set the appointment date from previous party record
                         child_party = party_id_map[party.prev_party_id]
-                        party.appointment_date = child_party.appointment_date or child_party.get_start_event_date(cursor) or 'unknown'
-                    # mark the prev_party_id as a child so its not returned (not removed in case another party record references it)
+                        party.appointment_date = child_party.appointment_date or \
+                            child_party.get_start_event_date(cursor) or 'unknown'
+                    # mark the prev_party_id as a child so its not returned
+                    # (not removed in case another party record references it)
                     child_party_ids.append(party.prev_party_id)
                 if not party.appointment_date:
                     # wasn't set by a previous record so set it by its event or filing date

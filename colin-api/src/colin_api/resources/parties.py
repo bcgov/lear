@@ -61,6 +61,7 @@ class PartiesInfo(Resource):
             return jsonify(
                 {'message': 'Error when trying to retrieve directors from COLIN'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+
 @cors_preflight('GET')
 @API.route('/<string:legal_type>/<string:identifier>/parties/all')
 class Parties(Resource):

@@ -59,11 +59,9 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
     @classmethod
     def _build_address_obj(cls, address: dict) -> Address:
         """Return the parsed address obj given the raw address dict."""
-        print('_build_address_obj')
         street_address = ''
         street_address_add = ''
         if address['address_format_type'] in ['BAS', 'ADV']:
-            print('BAS, ADV')
             street_elements = [
                 address['unit_type'] or '',
                 address['unit_no'] or '',
@@ -76,7 +74,6 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
             street_address = ' '.join([x.strip() for x in street_elements]).strip()
 
             if address['address_format_type'] == 'ADV':
-                print('ADV')
                 street_add_elements = [
                     address['route_service_type'] or '',
                     address['lock_box_no'] or '',
@@ -86,15 +83,14 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
                 street_address += ' '.join([x.strip() for x in street_add_elements])
         else:
-            print('FOR, NULL')
             # address format type of 'null' or 'FOR'
             street_address = (address['addr_line_1'] or address['addr_line_2'] or address['addr_line_3'] or '').strip()
             if address['addr_line_1']:
-                street_address_add = ' '.join(x.strip() for x in [address['addr_line_2'] or '', address['addr_line_3'] or ''])
+                street_address_add = ' '.join(x.strip() for x in [address['addr_line_2'] or '',
+                                                                  address['addr_line_3'] or ''])
             elif address['addr_line_2']:
                 street_address_add = (address['addr_line_3'] or '').strip()
 
-        print('address_obj')
         address_obj = Address()
         address_obj.street_address = street_address
         address_obj.street_address_additional = street_address_add
@@ -124,14 +120,10 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                 FROM ADDRESS a
                   LEFT JOIN COUNTRY_TYPE ct on a.country_typ_cd = ct.country_typ_cd
                 WHERE addr_id=:address_id
-                """,
-                address_id=address_id)
+                """, address_id=address_id)
 
-            print('get_by_address_id')
             address = cursor.fetchone()
-            print(address)
             address = dict(zip([x[0].lower() for x in cursor.description], address))
-            print(address)
             return cls._build_address_obj(address)
 
         except Exception as err:
