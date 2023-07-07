@@ -55,7 +55,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
             is_sr_correction) and \
             corrected_filing_type != 'conversion':
-        correct_business_data(business, correction_filing, filing, filing_meta, is_sr_correction)  # pylint: disable=too-many-function-args
+        # pylint: disable=too-many-function-args
+        correct_business_data(business, correction_filing, filing, filing_meta, is_sr_correction)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
         # - include flag so that listener in Filing model does not change state automatically to COMPLETE
