@@ -37,8 +37,7 @@ from entity_filer.filing_processors.filing_components import (
 def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing_rec: Filing,
                           correction_filing: Dict,
-                          filing_meta: FilingMeta,
-                          is_sr_correction: bool):
+                          filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
     filing_meta.correction = {}
 
