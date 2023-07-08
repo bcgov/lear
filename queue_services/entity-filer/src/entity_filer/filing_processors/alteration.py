@@ -93,9 +93,10 @@ def process(
     with suppress(IndexError, KeyError, TypeError):
         rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
         rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
-        rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
-        filing_meta.alteration = {**filing_meta.alteration,
-                                  **{'uploadNewRules': True}}
+        if rules_file_key:
+            rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
+            filing_meta.alteration = {**filing_meta.alteration,
+                                      **{'uploadNewRules': True}}
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')

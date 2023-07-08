@@ -14,7 +14,6 @@
 """Common functions relate to Special Resolution."""
 import base64
 from http import HTTPStatus
-from typing import Dict
 
 import requests
 from entity_queue_common.service_utils import logger
@@ -26,7 +25,8 @@ def get_completed_pdfs(
         token: str,
         business: dict,
         filing: Filing,
-        name_changed: bool) -> list:
+        name_changed: bool,
+        rules_changed=False) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the completed pdfs for the special resolution output."""
     pdfs = []
@@ -43,9 +43,7 @@ def get_completed_pdfs(
         f'/filings/{filing.id}/documents/specialResolution',
         headers=headers
     )
-    if special_resolution.status_code != HTTPStatus.OK:
-        logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
-    else:
+    if special_resolution.status_code == HTTPStatus.OK:
         certificate_encoded = base64.b64encode(special_resolution.content)
         pdfs.append(
             {
@@ -56,41 +54,51 @@ def get_completed_pdfs(
             }
         )
         attach_order += 1
+    else:
+        logger.error('Failed to get specialResolution pdf for filing: %s, status code: %s',
+                     filing.id, special_resolution.status_code)
+
     # Change of Name
     if name_changed:
         name_change = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=changeOfName',
+            '?type=certificateOfNameChange',
             headers=headers
-        )
+            )
+
         if name_change.status_code == HTTPStatus.OK:
             certified_name_change_encoded = base64.b64encode(name_change.content)
             pdfs.append(
                 {
-                    'fileName': 'Change of Name Certified.pdf',
+                    'fileName': 'Certificate of Name Change.pdf',
                     'fileBytes': certified_name_change_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
                 }
             )
             attach_order += 1
+        else:
+            logger.error('Failed to get certificateOfNameChange pdf for filing: %s, status code: %s',
+                         filing.id, name_change.status_code)
+
     # Certificate Rules
-    rules = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=certifiedRules',
-        headers=headers
-    )
-    if rules.status_code == HTTPStatus.OK:
-        certified_rules_encoded = base64.b64encode(rules.content)
-        pdfs.append(
-            {
-                'fileName': 'Certificate Rules.pdf',
-                'fileBytes': certified_rules_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': attach_order
-            }
+    if rules_changed:
+        rules = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certifiedRules',
+            headers=headers
         )
-        attach_order += 1
+        if rules.status_code == HTTPStatus.OK:
+            certified_rules_encoded = base64.b64encode(rules.content)
+            pdfs.append(
+                {
+                    'fileName': 'Certificate Rules.pdf',
+                    'fileBytes': certified_rules_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
 
     return pdfs
 
@@ -161,20 +169,3 @@ def get_paid_pdfs(
         attach_order += 1
 
     return pdfs
-
-
-def is_special_resolution_correction(legal_type: str, filing: Dict, business: Business, original_filing: Filing):
-    """Check whether it is a special resolution correction."""
-    corrected_filing_type = filing['correction'].get('correctedFilingType')
-
-    if legal_type != Business.LegalTypes.COOP.value:
-        return False
-    if corrected_filing_type == 'specialResolution':
-        return True
-    if corrected_filing_type not in ('specialResolution', 'correction'):
-        return False
-
-    # Find the next original filing in the chain of corrections
-    filing = original_filing.filing_json['filing']
-    original_filing = Filing.find_by_id(original_filing.filing_json['filing']['correction']['correctedFilingId'])
-    return is_special_resolution_correction(legal_type, filing, business, original_filing)
