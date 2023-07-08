@@ -1066,10 +1066,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Special Resolution Application',
             'fileName': 'specialResolutionApplication'
         },
-        'specialResolutionCorrection': {
-            'filingDescription': 'Special Resolution Correction Application',
-            'fileName': 'specialResolutionCorrectionApplication'
-        },
         'voluntaryDissolution': {
             'filingDescription': 'Voluntary Dissolution',
             'fileName': 'voluntaryDissolution'
