@@ -79,7 +79,7 @@ def test_complete_special_resolution_attachments(session, config):
                         f'{config.get("LEGAL_API_URL")}'
                         f'/businesses/{IDENTIFIER}'
                         f'/filings/{filing.id}'
-                        f'/documents/specialResolution'
+                        f'?type=specialResolution'
                     ),
                     content=b'pdf_content_1',
                     status_code=200
@@ -110,7 +110,7 @@ def test_complete_special_resolution_attachments(session, config):
                 assert output['content']['attachments'][1]['fileName'] == 'Certificate of Name Change.pdf'
                 assert (base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8')
                         == 'pdf_content_2')
-                assert output['content']['attachments'][2]['fileName'] == 'Certificate Rules.pdf'
+                assert output['content']['attachments'][2]['fileName'] == 'Certified Rules.pdf'
                 assert (base64.b64decode(output['content']['attachments'][2]['fileBytes']).decode('utf-8')
                         == 'pdf_content_3')
 
@@ -130,7 +130,7 @@ def test_paid_special_resolution_attachments(session, config):
                         f'{config.get("LEGAL_API_URL")}'
                         f'/businesses/{IDENTIFIER}'
                         f'/filings/{filing.id}'
-                        f'/documents/specialResolutionApplication'
+                        f'?type=specialResolutionApplication'
                     ),
                     content=b'pdf_content_1',
                     status_code=200
