@@ -75,7 +75,11 @@
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{header.displayName}}</div>
-               <div class="pt-2">{{specialResolution.resolutionDate}}</div>
+               {% if specialResolution is defined and specialResolution %}
+                  <div class="pt-2">{{specialResolution.resolutionDate}}</div>
+               {% else %}
+                  <div class="pt-2">{{correction.resolutionDate}}</div>
+               {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'specialResolutionApplication' %}
