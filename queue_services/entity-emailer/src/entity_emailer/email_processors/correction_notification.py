@@ -251,6 +251,7 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
     pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, name_changed)
     # get recipients
     recipients = _get_recipients(filing)
+    recipients = ', '.join(filter(None, recipients)).strip()
     # assign subject
     subject = get_subject(email_info['option'], prefix, business)
 
