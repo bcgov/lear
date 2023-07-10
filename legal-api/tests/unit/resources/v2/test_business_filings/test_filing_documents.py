@@ -1129,12 +1129,10 @@ def test_document_list_for_various_filing_states(session, client, jwt,
 
         # usually done by the filer.
         if filing_name_1 == 'correction' and business.legal_type == 'CP' and \
-           filing_json['filing']['correction'].get('resolution'):
-            legal_name = filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')
+                (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
             meta_data['correction'] = {}
             meta_data['correction']['fromLegalName'] = business.legal_name
             meta_data['correction']['toLegalName'] = legal_name
-            meta_data['correction']['hasResolutionChanges'] = True
 
         filing._meta_data = meta_data
         filing.save()

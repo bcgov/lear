@@ -109,9 +109,6 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
         resolution = dpath.util.get(correction_filing, '/correction/resolution')
         filings.update_filing_json(correction_filing_rec, resolution)
         resolutions.update_resolution(business, resolution)
-        if resolution:
-            filing_meta.correction = {**filing_meta.correction,
-                                      **{'hasResolutionChanges': True}}
 
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
