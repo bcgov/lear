@@ -56,10 +56,9 @@ def _get_pdfs(
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        correction_type = 'specialResolutionCorrectionApplication' if is_cp_special_resolution else 'correction'
         filing_pdf = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            f'?type={correction_type}',
+            f'?type=correction',
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:

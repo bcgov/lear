@@ -273,6 +273,22 @@ from . import create_mock_message  # noqa: I003
                  'option': 'PAID',
                  'filingId': '111222333'
              }
+         }),
+        ('correction_PAID_111222334',
+         {
+             'email': {
+                 'type': 'correction',
+                 'option': 'PAID',
+                 'filingId': '111222334'
+             }
+         }),
+        ('correction_COMPLETED_111222335',
+         {
+             'email': {
+                 'type': 'correction',
+                 'option': 'COMPLETED',
+                 'filingId': '111222335'
+             }
          })
     ]
 )
