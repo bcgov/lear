@@ -212,6 +212,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
      'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
+        'certificateOfNameChange': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfNameChange',
         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
@@ -1125,6 +1126,13 @@ def test_document_list_for_various_filing_states(session, client, jwt,
             meta_data['alteration'] = {}
             meta_data['alteration']['fromLegalName'] = business.legal_name
             meta_data['alteration']['toLegalName'] = legal_name
+
+        # usually done by the filer.
+        if filing_name_1 == 'correction' and business.legal_type == 'CP' and \
+                (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
+            meta_data['correction'] = {}
+            meta_data['correction']['fromLegalName'] = business.legal_name
+            meta_data['correction']['toLegalName'] = legal_name
 
         filing._meta_data = meta_data
         filing.save()
