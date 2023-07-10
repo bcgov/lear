@@ -26,7 +26,11 @@
                 <div class="lbl-business-name">{{business.legalName}}</div>
          </div>
       </div>
-      [[common/businessDetails.html]]
+      {% if specialResolution is defined and specialResolution %}
+         [[common/businessDetails.html]]
+      {% else %}
+         [[correction/businessDetails.html]]
+      {% endif %}
       <div class="container">
          [[special-resolution/resolution.html]]
       </div>
