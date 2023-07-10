@@ -40,7 +40,8 @@ def get_completed_pdfs(
     special_resolution = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}'
         f'/businesses/{business["identifier"]}'
-        f'/filings/{filing.id}/documents/specialResolution',
+        f'/filings/{filing.id}'
+        '?type=specialResolution',
         headers=headers
     )
     if special_resolution.status_code == HTTPStatus.OK:
@@ -81,7 +82,7 @@ def get_completed_pdfs(
             logger.error('Failed to get certificateOfNameChange pdf for filing: %s, status code: %s',
                          filing.id, name_change.status_code)
 
-    # Certificate Rules
+    # Certified Rules
     if rules_changed:
         rules = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -92,7 +93,7 @@ def get_completed_pdfs(
             certified_rules_encoded = base64.b64encode(rules.content)
             pdfs.append(
                 {
-                    'fileName': 'Certificate Rules.pdf',
+                    'fileName': 'Certified Rules.pdf',
                     'fileBytes': certified_rules_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
@@ -122,9 +123,11 @@ def get_paid_pdfs(
     sr_filing_pdf = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}'
         f'/businesses/{business["identifier"]}'
-        f'/filings/{filing.id}/documents/specialResolutionApplication',
+        f'/filings/{filing.id}'
+        '?type=specialResolutionApplication',
         headers=headers
     )
+
     if sr_filing_pdf.status_code != HTTPStatus.OK:
         logger.error('Failed to get pdf for filing: %s', filing.id)
     else:
