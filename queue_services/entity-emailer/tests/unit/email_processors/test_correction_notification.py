@@ -212,7 +212,7 @@ def test_paid_special_resolution_correction_attachments(session, config):
     with requests_mock.Mocker() as m:
         m.get(
             f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
-            f'?type=specialResolutionCorrectionApplication',
+            f'?type=correction',
             content=b'pdf_content_1',
             status_code=200
         )
