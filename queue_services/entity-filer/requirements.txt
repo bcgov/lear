@@ -24,5 +24,5 @@ minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.1
 git+https://github.com/bcgov/business-schemas.git@2.18.10#egg=registry_schemas
-git+https://github.com/seeker25/lear.git@report_fix_for_sr_corrections#egg=legal_api&subdirectory=legal-api
+git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common

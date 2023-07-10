@@ -60,3 +60,35 @@ class PartiesInfo(Resource):
             current_app.logger.error(err.with_traceback(None))
             return jsonify(
                 {'message': 'Error when trying to retrieve directors from COLIN'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET')
+@API.route('/<string:legal_type>/<string:identifier>/parties/all')
+class Parties(Resource):
+    """Meta information about the overall service."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    def get(legal_type: str, identifier: str):
+        """Return all the parties for a business."""
+        try:
+            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
+                identifier = identifier[-7:]
+
+            cursor = DB.connection.cursor()
+            parties = Party.get_all_parties(cursor=cursor, corp_num=identifier)
+
+            if not parties:
+                return jsonify({'message': f'Parties not found for {identifier} not found'}), HTTPStatus.NOT_FOUND
+
+            return jsonify({'parties': [x.as_dict() for x in parties]}), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify(
+                {'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to retrieve parties from COLIN.'}), HTTPStatus.INTERNAL_SERVER_ERROR

@@ -40,11 +40,14 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     roles = None
     # for role (i.e. director)
     role_type = None
+    role_desc = None
     appointment_date = None
     cessation_date = None
     start_event_id = None
     end_event_id = None
     corp_party_id = None
+    prev_party_id = None
+    corp_num = None
 
     role_types = {
         'Director': 'DIR',
@@ -73,11 +76,27 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'startEventId': self.start_event_id,
             'endEventId': self.end_event_id,
             'actions': [],
-            'roles': self.roles
+            'roles': self.roles,
+            'id': self.corp_party_id
         }
 
+    def get_start_event_date(self, cursor):
+        """Get the start event date of the party."""
+        query = """
+                SELECT event_typ_cd, event_timestmp, effective_dt
+                FROM event e
+                  LEFT JOIN filing f on f.event_id = e.event_id
+                WHERE e.event_id=:event_id
+                """
+        dates = cursor.execute(query, event_id=self.start_event_id).fetchone()
+        description = cursor.description
+        dates = dict(zip([x[0].lower() for x in description], dates))
+        if dates['event_typ_cd'] in ['CONVICORP', 'CONVAMAL', 'CONVCIN']:
+            return None
+        return convert_to_json_date(dates['effective_dt'] or dates['event_timestmp'])
+
     @classmethod
-    def _get_officer(cls, row):
+    def _parse_officer(cls, row):
         officer_obj = {
             'firstName': (row.get('first_nme', '') or '').strip(),
             'lastName': (row.get('last_nme', '') or '').strip(),
@@ -87,7 +106,31 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
-    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None) -> Optional[List]:
+    def _parse_party(cls, cursor, row: dict) -> Party:
+        """Parse the party row."""
+        party = Party()
+        party.title = ''
+        party.officer = Party._parse_officer(row)
+        if row['delivery_addr_id']:
+            party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
+        party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
+            if row['mailing_addr_id'] else party.delivery_address
+        party.appointment_date =\
+            convert_to_json_date(row.get('appointment_dt', None))
+        party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
+        party.start_event_id = (row.get('start_event_id', '')) or ''
+        party.end_event_id = (row.get('end_event_id', '')) or ''
+        party.role_type = (row.get('party_typ_cd', '')) or ''
+        party.role_desc = (row.get('short_desc', '')) or ''
+        party.corp_party_id = row.get('corp_party_id', None)
+        party.prev_party_id = row.get('prev_party_id', None)
+        party.corp_num = row.get('corp_num', None)
+
+        return party
+
+    @classmethod
+    def _build_parties_list(cls, cursor, corp_num: str, event_id: int = None) -> Optional[List[Party]]:
+        """Return the party list from the query."""
         parties = cursor.fetchall()
 
         if not parties:
@@ -97,36 +140,25 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         party_list = []
         description = cursor.description
         for row in parties:
-            party = Party()
-            party.title = ''
             row = dict(zip([x[0].lower() for x in description], row))
-            if not row['appointment_dt']:
-                row['appointment_dt'] = Business.get_founding_date(cursor=cursor, corp_num=corp_num)
-            party.officer = cls._get_officer(row)
-            if (row.get('party_typ_cd', None) == cls.role_types['Director']) and not row['delivery_addr_id']:
-                current_app.logger.error(
-                    f"Bad director data for {party.officer.get('firstName')} {party.officer.get('lastName')} {corp_num}"
-                )
-            else:
-                if row['delivery_addr_id']:
-                    party.delivery_address = Address.get_by_address_id(cursor, row['delivery_addr_id']).as_dict()
-                party.mailing_address = Address.get_by_address_id(cursor, row['mailing_addr_id']).as_dict() \
-                    if row['mailing_addr_id'] else party.delivery_address
-                party.appointment_date =\
-                    convert_to_json_date(row.get('appointment_dt', None))
-                party.cessation_date = convert_to_json_date(row.get('cessation_dt', None))
-                party.start_event_id = (row.get('start_event_id', '')) or ''
-                party.end_event_id = (row.get('end_event_id', '')) or ''
-                party.role_type = (row.get('party_typ_cd', '')) or ''
-                party.corp_party_id = row.get('corp_party_id', None)
+            party = Party._parse_party(cursor, row)
 
-                party_list.append(party)
+            if not party.appointment_date:
+                party.appointment_date = Business.get_founding_date(cursor=cursor, corp_num=corp_num)
+
+            if party.role_type == cls.role_types['Director'] and not party.delivery_address:
+                current_app.logger.error('Bad director data for party id: %s, corp num: %s',
+                                         party.corp_party_id,
+                                         party.corp_num)
+
+            party_list.append(party)
+
         if event_id:
             completing_parties = cls.get_completing_parties(cursor, event_id)
         return cls.group_parties(party_list, completing_parties)
 
     @classmethod
-    def group_parties(cls, parties: List['Party'], completing_parties: dict) -> List:
+    def group_parties(cls, parties: List['Party'], completing_parties: dict) -> List[Party]:
         """Group parties based on roles for LEAR formatting."""
         role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
 
@@ -160,6 +192,77 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             party.roles = roles
             grouped_list.append(party)
         return grouped_list
+
+    @classmethod
+    def get_all_parties(cls, cursor, corp_num: str) -> List[Party]:
+        """Return all corp_parties for the given corp_num."""
+        query = """
+                SELECT first_nme, middle_nme, last_nme, delivery_addr_id, mailing_addr_id,
+                  appointment_dt, cessation_dt, start_event_id, end_event_id, business_nme,
+                  cp.party_typ_cd, corp_party_id, prev_party_id, corp_num, pt.short_desc
+                FROM corp_party cp
+                  JOIN party_type pt on pt.party_typ_cd = cp.party_typ_cd
+                WHERE corp_num=:identifier
+                ORDER BY start_event_id asc
+                """
+        party_list = []
+        try:
+            if not cursor:
+                cursor = DB.connection.cursor()
+            cursor.execute(query, identifier=corp_num)
+            description = cursor.description
+
+            parties = cursor.fetchall()
+            if not parties:
+                raise PartiesNotFoundException(identifier=corp_num)
+
+            party_id_map: Dict[str, Party] = {}
+            child_party_ids: List[str] = []
+            # NB: list is already ordered by start_event_id so we can assume the
+            #     1st record is the oldest child and the last one is the newest parent
+            for party_row in parties:
+                party_row = dict(zip([x[0].lower() for x in description], party_row))
+                party = Party._parse_party(cursor, party_row)
+                party_id_map[party.corp_party_id] = party
+                if party.prev_party_id:
+                    # only need previous party information for appointment date when applicable
+                    if not party.appointment_date and party_id_map.get(party.prev_party_id):
+                        # set the appointment date from previous party record
+                        child_party = party_id_map[party.prev_party_id]
+                        party.appointment_date = child_party.appointment_date or \
+                            child_party.get_start_event_date(cursor) or 'unknown'
+                    # mark the prev_party_id as a child so its not returned
+                    # (not removed in case another party record references it)
+                    child_party_ids.append(party.prev_party_id)
+                if not party.appointment_date:
+                    # wasn't set by a previous record so set it by its event or filing date
+                    party.appointment_date = party.get_start_event_date(cursor)
+
+            # only return the top level parent records
+            for party_id in party_id_map:
+                if party_id not in child_party_ids:
+                    party = party_id_map[party_id]
+                    if party.appointment_date == 'unknown':
+                        # marked as unknown previously to prevent parent record
+                        # overwriting a child None value with the parent event timestamp
+                        party.appointment_date = None
+
+                    party.roles = [{
+                        'appointmentDate': party.appointment_date,
+                        'cessationDate': party.cessation_date,
+                        'roleType': party.role_desc}]
+
+                    party_list.append(party)
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.debug(err.with_traceback(None))
+            current_app.logger.error('Error in get_all_parties for %s', corp_num)
+            raise err
+
+        if not party_list:
+            raise PartiesNotFoundException(identifier=corp_num)
+
+        return party_list
 
     @classmethod
     def get_completing_parties(cls, cursor, event_id: int) -> Dict:
