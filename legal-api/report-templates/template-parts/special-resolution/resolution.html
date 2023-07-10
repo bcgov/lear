@@ -1,24 +1,25 @@
+<!-- Has both correction and regular in one document. -->
+{% set filing_template = specialResolution or correction %}
 <div class="no-page-break">
-  <div class="section-title mt-4">Special Resolution</div>
+<div class="section-title mt-4">Special Resolution</div>
 </div>
-<div class="section-data mt-4">{{specialResolution.resolution|safe}}</div>
+<div class="section-data mt-4">{{ filing_template.resolution|safe}}</div>
 <div class="separator mt-4"></div>
-{% if specialResolution.signatory is defined  %}
+{% if filing_template.signatory is defined  %}
 <div class="section-data mt-4">
     <div>
         <span class="section-sub-title">Signed By: </span>
         <span>
-            <span class="capitalize-text">{{specialResolution.signatory.givenName}}</span>
-            {% if specialResolution.signatory.additionalName %}
-                <span class="capitalize-text">{{specialResolution.signatory.additionalName}}</span>
+            <span class="capitalize-text">{{filing_template.signatory.givenName}}</span>
+            {% if filing_template.signatory.additionalName %}
+                <span class="capitalize-text">{{filing_template.signatory.additionalName}}</span>
             {% endif %}
-            <span class="capitalize-text">{{specialResolution.signatory.familyName}}</span>
+            <span class="capitalize-text">{{filing_template.signatory.familyName}}</span>
         </span>
     </div>
     <div>
         <span class="section-sub-title">Signed On: </span>
-        <span>{{specialResolution.signingDate}}</span>
+        <span>{{filing_template.signingDate}}</span>
     </div>
 </div>
 {% endif %}
-
