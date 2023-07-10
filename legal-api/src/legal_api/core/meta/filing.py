@@ -511,7 +511,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     ):
                 if filing.filing_json['filing']['correction'].get('rulesFileKey'):
                     outputs.add('certifiedRules')
-                if filing.meta_data.get('hasResolutionChanges'):
+                if filing.meta_data.get('correction', {}).get('hasResolutionChanges'):
                     outputs.add('specialResolution')
         return outputs
 
