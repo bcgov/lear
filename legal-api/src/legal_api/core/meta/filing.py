@@ -502,7 +502,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def alter_outputs_correction(filing, business, outputs):
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
-            if 'changeOfName' in filing.meta_data.get('legalFilings', []):
+            if filing.meta_data.get('correction', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
             corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
             original_filing = FilingStorage.find_by_id(corrected_filing_id)
