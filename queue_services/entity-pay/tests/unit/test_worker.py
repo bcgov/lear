@@ -1,158 +1,264 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the 'License');
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
 """The Test Suites to ensure that the worker is operating correctly."""
-import json
+# import json
+import base64
 import random
+from http import HTTPStatus
 
 import pytest
+from legal_api.models import Filing
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-# from tests.unit import create_business, create_director, create_filing  # noqa I001, E501;
-from tests.unit import create_business, create_filing  # noqa I001, E501;
+from entity_pay.resources.worker import get_filing_by_payment_id
+from entity_pay.resources.worker import get_payment_token
 
-
-def test_extract_payment_token():
-    """Assert that the payment token can be extracted from the Queue delivered Msg."""
-    import stan.pb.protocol_pb2 as protocol
-    from stan.aio.client import Msg
-
-    from entity_pay.worker import extract_payment_token
-
-    # setup
-    token = {'paymentToken': {'id': 1234, 'statusCode': 'COMPLETED'}}
-    msg = Msg()
-    msg.proto = protocol.MsgProto
-    msg.proto.data = json.dumps(token).encode('utf-8')
-
-    # test and verify
-    assert extract_payment_token(msg) == token
+from tests.unit import create_legal_entity
+from tests.unit import create_filing
+from tests.unit import nested_session
 
 
-def test_get_filing_by_payment_id(app, session):
-    """Assert that a unique filling gets retrieved for a filing id."""
-    from entity_pay.worker import get_filing_by_payment_id
+def test_no_message(client):
+    '''Return a 4xx when an no JSON present.'''
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    rv = client.post('/')
 
-    create_filing(payment_id)
+    assert rv.status_code == HTTPStatus.OK
 
-    filing = get_filing_by_payment_id(int(payment_id))
+CLOUD_EVENT = SimpleCloudEvent(id='fake-id',
+                               source='fake-for-tests',
+                               subject='fake-subject',
+                               type='payment',
+                               data = {'paymentToken': {
+                                           'id': '29590',
+                                           'statusCode': 'COMPLETED',
+                                           'filingIdentifier': 12345,
+                                           'corpTypeCode': 'BC'}
+                                }
+                            )
+#
+# This needs to mimic the envelope created by GCP PubSb when call a resource
+#
+CLOUD_EVENT_ENVELOPE = {
+    "subscription": "projects/PUBSUB_PROJECT_ID/subscriptions/SUBSCRIPTION_ID",
+    "message": {
+        "data": base64.b64encode(to_queue_message(CLOUD_EVENT)).decode('UTF-8'),
+        "messageId": "10",
+        "attributes": {}
+    },
+    "id": 1
+}
 
-    assert filing
-    assert filing.payment_token == payment_id
-
-
-async def test_process_payment_missing_app(app, session):
-    """Assert that a filling will fail with no flask app supplied."""
-    from legal_api.models import Filing
-
-    from entity_pay.worker import process_payment
-
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    create_filing(payment_id, None, business.id)
-    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
-
-    # TEST
-    with pytest.raises(Exception):
-        await process_payment(payment_token, flask_app=None)
-
-
-async def test_process_empty_filing(app, session):
-    """Assert that an AR filling can be applied to the model correctly."""
-    from legal_api.models import Filing
-
-    from entity_pay.worker import get_filing_by_payment_id, process_payment
-
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    business_id = business.id
-    create_filing(payment_id, None, business.id)
-    payment_token = {'paymentToken': {'id': payment_id, 'statusCode': Filing.Status.COMPLETED.value}}
-
-    # TEST
-    await process_payment(payment_token, app)
-
-    # Get modified data
-    filing = get_filing_by_payment_id(int(payment_id))
-
-    # check it out
-    assert filing.business_id == business_id
-    assert filing.status == Filing.Status.PAID.value
-
-
-async def test_process_payment_failed(app, session):
-    """Assert that an AR filling status is set to error if payment transaction failed."""
-    from legal_api.models import Business, Filing
-
-    from entity_pay.worker import get_filing_by_payment_id, process_payment
-
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    business_id = business.id
-    create_filing(payment_id, None, business.id)
-    payment_token = {'paymentToken': {'id': payment_id,
-                                      'statusCode': 'TRANSACTION_FAILED'}}
-
-    # TEST
-    await process_payment(payment_token, app)
-
-    # Get modified data
-    filing = get_filing_by_payment_id(int(payment_id))
-    business = Business.find_by_internal_id(business_id)
-
-    # check it out
-    assert filing.business_id == business_id
-    assert filing.status == Filing.Status.PENDING.value
-    assert not business.last_agm_date
-    assert not business.last_ar_date
-
-
-@pytest.mark.parametrize('name,filing_id,corp_type_code,expected_result', [
-    ('success', '1', 'BEN', True),
-    ('success', '1', 'CP', True),
-    ('success', '1', 'SP', True),
-    ('success', '1', 'GP', True),
-    ('success', '1', 'BC', True),
-    ('success', '1', 'ULC', True),
-    ('success', '1', 'CC', True),
-    ('fail_invalid_corp_type', '1', None, False),
-    ('fail_invalid_corp_type', '1', 'CSO', False),
-    ('fail_no_payment_token', '1', 'BC', False),
+@pytest.mark.parametrize('test_name,queue_envelope,expected', [
+    ('invalid', {}, HTTPStatus.OK),
+    ('valid', CLOUD_EVENT_ENVELOPE, HTTPStatus.OK)
 ])
-def test_is_processable_message(app, session, name, filing_id, corp_type_code, expected_result):
-    """Assert that the queue message is processable only when msg meets required criteria."""
-    from entity_pay.worker import is_processable_message
+def test_simple_cloud_event(client, session, test_name, queue_envelope, expected):
+
+    with nested_session(session):
+
+        filing = Filing()
+        filing.payment_token = 29590
+        filing.save()
+
+        rv = client.post('/', json=CLOUD_EVENT_ENVELOPE)
+
+        assert rv.status_code == expected
+
+
+def test_get_payment_token():
+    '''Test that the payment token is retrieved.'''
+    from copy import deepcopy
+
+    CLOUD_EVENT_TEMPLATE = {"data": {
+                                    "paymentToken": {
+                                        "id": 29590,
+                                        "statusCode": "COMPLETED",
+                                        "filingIdentifier": None,
+                                        "corpTypeCode": "BC"}},
+                            "id": 29590,
+                            "source": "sbc-pay",
+                            "subject": "BC1234567",
+                            "time": "2023-07-05T22:04:25.952027",
+                            "type": "payment"}
+    
+    # base - should pass
+    ce_dict = deepcopy(CLOUD_EVENT_TEMPLATE)
+    ce = SimpleCloudEvent(**ce_dict)
+    payment_token = get_payment_token(ce)
+    assert payment_token
+    assert payment_token.id == ce_dict['data']['paymentToken']['id']
+
+    # wrong type
+    ce_dict = deepcopy(CLOUD_EVENT_TEMPLATE)
+    ce_dict['type'] = 'not-a-payment'
+    ce = SimpleCloudEvent(**ce_dict)
+    payment_token = get_payment_token(ce)
+    assert not payment_token
+
+
+def test_process_payment_failed(app, session, client, mocker):
+    """Assert that an AR filling status is set to error if payment transaction failed."""
+    from legal_api.models import LegalEntity, Filing
+    from entity_pay.resources.worker import get_filing_by_payment_id
+    from entity_pay.services import queue
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
 
     # setup
-    if name == 'fail_no_payment_token':
-        msg = {'paymentToken': None}
-    else:
-        msg = {'paymentToken': {'id': 1234,
-                                'statusCode': 'COMPLETED',
-                                'corpTypeCode': corp_type_code}}
+    business = create_legal_entity(identifier)
+    business_id = business.id
+    filing = create_filing(payment_id, None, business.id)
+    payment_token = {'paymentToken': {
+                        'id': payment_id,
+                        'statusCode': 'TRANSACTION_FAILED',
+                        'filingIdentifier': filing.id,
+                        'corpTypeCode': 'BC'}
+                    }
 
-    # test and verify
-    assert is_processable_message(msg) == expected_result
+    message = helper_create_cloud_event_envelope(source='sbc-pay',
+                                                 subject='payment',
+                                                 data=payment_token
+                                                 )
+
+    def mock_publish():
+        return {}
+    mocker.patch.object(queue, "publish", mock_publish)
+
+    # TEST
+    # await process_payment(payment_token, app)
+    rv = client.post('/', json=message)
+
+    # Check
+    assert rv.status_code == HTTPStatus.OK
+
+    # Get modified data
+    filing_from_db = get_filing_by_payment_id(int(payment_id))
+
+    # check it out
+    assert filing_from_db.business_id == business_id
+    assert filing_from_db.status == Filing.Status.PENDING.value
+
+def test_process_payment(app, session, client, mocker):
+    """Assert that an AR filling status is set to error if payment transaction failed."""
+    from legal_api.models import Filing
+    from entity_pay.resources.worker import get_filing_by_payment_id
+    from entity_pay.services import queue
+
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+
+    # setup
+    legal_entity = create_legal_entity(identifier)
+    legal_entity_id = legal_entity.id
+    filing = create_filing(payment_id, None, legal_entity.id)
+    payment_token = {'paymentToken': {
+                        'id': payment_id,
+                        'statusCode': 'COMPLETED',
+                        'filingIdentifier': filing.id,
+                        'corpTypeCode': 'BC'}
+                    }
+
+    message = helper_create_cloud_event_envelope(source='sbc-pay',
+                                                 subject='payment',
+                                                 data=payment_token
+                                                 )
+    # keep track of topics called on the mock
+    topics = []
+    def mock_publish(topic: str, payload: bytes):
+        nonlocal topics
+        topics.append(topic)
+        return {}
+    mocker.patch.object(queue, "publish", mock_publish)
+
+    # TEST
+    # await process_payment(payment_token, app)
+    rv = client.post('/', json=message)
+
+    # Check
+    assert rv.status_code == HTTPStatus.OK
+    assert len(topics) == 2
+    assert 'mailer' in topics
+    assert 'filer' in topics
+
+    # Get modified data
+    filing_from_db = get_filing_by_payment_id(int(payment_id))
+    # check it out
+    assert filing_from_db.business_id == legal_entity_id
+    assert filing_from_db.status == Filing.Status.PAID.value
+
+
+def helper_create_cloud_event_envelope(cloud_event_id: str = None,
+                            source: str = 'fake-for-tests',
+                            subject: str ='fake-subject',
+                            type: str ='payment',
+                            data: dict = {},
+                            pubsub_project_id: str = 'PUBSUB_PROJECT_ID',
+                            subscription_id: str = 'SUBSCRIPTION_ID',
+                            message_id: int = 1,
+                            envelope_id:int = 1,
+                            attributes: dict = {},
+                            ce: SimpleCloudEvent = None):
+
+    if not data:
+        data = {'paymentToken': {
+                    'id': '29590',
+                    'statusCode': 'COMPLETED',
+                    'filingIdentifier': 12345,
+                    'corpTypeCode': 'BC'}
+        }
+    if not ce:
+        ce = SimpleCloudEvent(id=cloud_event_id,
+                               source=source,
+                               subject=subject,
+                               type=type,
+                               data = data
+                            )
+    #
+    # This needs to mimic the envelope created by GCP PubSb when call a resource
+    #
+    envelope = {
+        "subscription": f"projects/{pubsub_project_id}/subscriptions/{subscription_id}",
+        "message": {
+            "data": base64.b64encode(to_queue_message(ce)).decode('UTF-8'),
+            "messageId": str(message_id),
+            "attributes": attributes
+        },
+        "id": envelope_id
+    }
+    return envelope

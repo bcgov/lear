@@ -6,7 +6,7 @@
 #    https://opensource.org/license/bsd-3-clause/
 #
 # Redistribution and use in source and binary forms,
-# with or without modification, are permitted provided that the 
+# with or without modification, are permitted provided that the
 # following conditions are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -17,7 +17,7 @@
 #    and/or other materials provided with the distribution.
 #
 # 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software 
+#    may be used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
@@ -31,44 +31,21 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Unit Tests and the helper routines."""
-from contextlib import contextmanager
+"""Entity-Pay module.
 
-from tests import EPOCH_DATETIME
+Provides the service that applies payments to filings.
+If the Filing is not a FED, then it places a processing message on the Filer Q
+"""
+from flask import Flask
 
-
-def create_filing(token, json_filing=None, legal_entity_id=None):
-    """Return a test filing."""
-    from legal_api.models import Filing
-    filing = Filing()
-    filing.payment_token = str(token)
-    filing.filing_date = EPOCH_DATETIME
-
-    if json_filing:
-        filing.filing_json = json_filing
-    if legal_entity_id:
-        filing.business_id = legal_entity_id
-
-    filing.save()
-    return filing
+from .worker import bp as worker_endpoint
 
 
-def create_legal_entity(identifier):
-    """Return a test business."""
-    from legal_api.models import Address, LegalEntity
-    legal_entity = LegalEntity()
-    legal_entity.identifier = identifier
-    legal_entity.save()
-    return legal_entity
+def register_endpoints(app: Flask):
+    # Allow base route to match with, and without a trailing slash
+    app.url_map.strict_slashes = False
 
-
-@contextmanager
-def nested_session(session):
-    try:
-        sess = session.begin_nested()
-        yield sess
-        sess.rollback()
-    except:
-        pass
-    finally:
-        pass
+    app.register_blueprint(
+        url_prefix="/",
+        blueprint=worker_endpoint,
+    )
