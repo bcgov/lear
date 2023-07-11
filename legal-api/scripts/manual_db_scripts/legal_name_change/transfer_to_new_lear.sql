@@ -128,6 +128,8 @@ from public.filings;
 
 
 -- businesses -> legal_entities
+CREATE CAST (varchar AS state) WITH INOUT AS IMPLICIT;
+
 transfer public.legal_entities from lear_old using
 SELECT b.id,
        b.admin_freeze,
@@ -162,7 +164,7 @@ SELECT b.id,
        b.restriction_ind,
        b.send_ar_ind,
        b.start_date,
-       b.state                 as state_text,
+       b.state,
        b.state_filing_id,
        b.submitter_userid,
        b.tax_id,
@@ -218,7 +220,7 @@ SELECT bv.id,
        bv.restriction_ind,
        bv.send_ar_ind,
        bv.start_date,
-       bv.state                                                                               as state_text,
+       bv.state,
        bv.state_filing_id,
        bv.submitter_userid,
        bv.tax_id,
@@ -363,9 +365,11 @@ FROM public.dc_connections;
 
 
 -- dc_definitions -> dc_definitions
+CREATE CAST (varchar AS credentialtype) WITH INOUT AS IMPLICIT;
+
 transfer public.dc_definitions from lear_old using
 SELECT id,
-       credential_type as credential_type_text,
+       credential_type,
        schema_id,
        schema_name,
        schema_version,
@@ -563,14 +567,17 @@ from public.party_roles_version prv
 
 
 -- request_tracker -> request_tracker
+CREATE CAST (varchar AS requesttype) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS servicename) WITH INOUT AS IMPLICIT;
+
 transfer public.request_tracker from lear_old using
 SELECT id,
-       request_type as request_type_text,
+       request_type,
        is_processed,
        request_object,
        response_object,
        retry_number,
-       service_name as service_name_text,
+       service_name,
        business_id  as legal_entity_id,
        creation_date,
        last_modified,
@@ -748,6 +755,12 @@ SELECT setval('colin_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM pub
 SELECT setval('alternate_names_id_seq', (select coalesce(max(id) + 1, 1) FROM public.alternate_names));
 SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
 SELECT setval('consent_continuation_outs_id_seq', (select coalesce(max(id) + 1, 1) FROM public.consent_continuation_outs));
+
+DROP CAST (varchar AS state);
+DROP CAST (varchar AS credentialtype);
+DROP CAST (varchar AS requesttype);
+DROP CAST (varchar AS servicename);
+
 
 -- *****************************************************************************************************************
 -- Cleanup of any necessary artifacts/states created as a part of data transfer

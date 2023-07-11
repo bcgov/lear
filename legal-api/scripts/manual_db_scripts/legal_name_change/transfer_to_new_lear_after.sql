@@ -1,15 +1,9 @@
 -- ******************************************************************************************************************
 -- Description:
 -- Script that runs after transfer_to_new_lear.sql runs.
--- This script re-enables triggers and removes temporary triggers/columns/functions used to deal with transferring
--- enum type data.
+-- This script restores constraints removed to make data migration to the new LEAR model easier.
 --
--- Note: it would have been ideal to have the sql in this script in transfer_to_new_lear.sql but the tool(dbshell)
--- used to transfer data between the source(old LEAR) and target(new LEAR) database has issues with the postgres
--- enum type.  To workaround this enum issue, temporary triggers/columns/functions are used to populate the enum
--- fields properly.
 -- ******************************************************************************************************************
-
 
 -- RESTORE CONSTRAINTS
 
@@ -97,8 +91,6 @@ ALTER TABLE public.entity_roles_history
     ADD CONSTRAINT entity_roles_history_pkey PRIMARY KEY (id, version);
 
 ALTER TABLE public.entity_roles
-    ADD CONSTRAINT entity_roles_related_colin_entity_id_fkey FOREIGN KEY (related_colin_entity_id) REFERENCES public.colin_entities (id);
-ALTER TABLE public.entity_roles
     ADD CONSTRAINT entity_roles_filing_id_fkey FOREIGN KEY (filing_id) REFERENCES public.filings (id);
 ALTER TABLE public.entity_roles
     ADD CONSTRAINT entity_roles_legal_entity_id_fkey FOREIGN KEY (legal_entity_id) REFERENCES public.legal_entities (id);
@@ -118,33 +110,3 @@ ALTER TABLE public.filings
     ADD CONSTRAINT filings_parent_filing_id_fkey FOREIGN KEY (parent_filing_id) REFERENCES public.filings (id);
 ALTER TABLE public.filings
     ADD CONSTRAINT filings_legal_entity_id_fkey FOREIGN KEY (legal_entity_id) REFERENCES public.legal_entities (id);
-
-
--- Cleanup temporary columns/functions/triggers
-
--- legal_entities.state & legal_entities_history.state enum
-DROP TRIGGER fill_state_trigger ON legal_entities;
-DROP TRIGGER fill_state_history_trigger ON legal_entities_history;
-ALTER TABLE legal_entities
-    DROP COLUMN state_text;
-ALTER TABLE legal_entities_history
-    DROP COLUMN state_text;
-DROP FUNCTION fill_state;
-
--- dc_definitions.credential_type enum
-DROP TRIGGER fill_credential_type_trigger ON dc_definitions;
-ALTER TABLE dc_definitions
-    DROP COLUMN credential_type_text;
-DROP FUNCTION fill_credential_type;
-
--- request_tracker.request_type enum
-DROP TRIGGER fill_request_type_trigger ON request_tracker;
-ALTER TABLE request_tracker
-    DROP COLUMN request_type_text;
-DROP FUNCTION fill_request_type;
-
--- request_tracker.service_name enum
-DROP TRIGGER fill_service_name_trigger ON request_tracker;
-ALTER TABLE request_tracker
-    DROP COLUMN service_name_text;
-DROP FUNCTION fill_service_name;
