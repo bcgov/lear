@@ -6,7 +6,7 @@
 #    https://opensource.org/license/bsd-3-clause/
 #
 # Redistribution and use in source and binary forms,
-# with or without modification, are permitted provided that the 
+# with or without modification, are permitted provided that the
 # following conditions are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -17,7 +17,7 @@
 #    and/or other materials provided with the distribution.
 #
 # 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software 
+#    may be used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
@@ -40,6 +40,7 @@ from tests import EPOCH_DATETIME
 def create_filing(token, json_filing=None, legal_entity_id=None):
     """Return a test filing."""
     from legal_api.models import Filing
+
     filing = Filing()
     filing.payment_token = str(token)
     filing.filing_date = EPOCH_DATETIME
@@ -56,6 +57,7 @@ def create_filing(token, json_filing=None, legal_entity_id=None):
 def create_legal_entity(identifier):
     """Return a test business."""
     from legal_api.models import Address, LegalEntity
+
     legal_entity = LegalEntity()
     legal_entity.identifier = identifier
     legal_entity.save()

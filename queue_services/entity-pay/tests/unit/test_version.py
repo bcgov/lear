@@ -6,7 +6,7 @@
 #    https://opensource.org/license/bsd-3-clause/
 #
 # Redistribution and use in source and binary forms,
-# with or without modification, are permitted provided that the 
+# with or without modification, are permitted provided that the
 # following conditions are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -17,7 +17,7 @@
 #    and/or other materials provided with the distribution.
 #
 # 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software 
+#    may be used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
@@ -40,7 +40,7 @@ from importlib.metadata import version
 
 from entity_pay import utils
 
-PACKAGE_NAME = 'entity_pay'
+PACKAGE_NAME = "entity_pay"
 
 
 def test_get_version():
@@ -52,8 +52,9 @@ def test_get_version():
 def test_get_version_hash(monkeypatch):
     """Assert that the version also contains the git commit hash."""
     from uuid import uuid4
+
     fake_hash = str(uuid4())
-    monkeypatch.setenv('VCS_REF', fake_hash)
+    monkeypatch.setenv("VCS_REF", fake_hash)
     rv = utils.get_run_version()
     assert fake_hash in rv
     assert version(PACKAGE_NAME) in rv
