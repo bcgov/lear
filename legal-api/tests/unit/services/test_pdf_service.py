@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import PdfService
-from legal_api.services.pdf_service import _write_text
+from legal_api.services.pdf_service import RegistrarStampData, _write_text
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -31,21 +31,20 @@ def test_stamp(app):  # pylint:disable=unused-argument
     with app.app_context():
         pdf_input = _create_pdf_file()
         incorp_date = LegislationDatetime.now()
-        registrar_info = RegistrarInfo.get_registrar_info(incorp_date)
-        registrars_signature = registrar_info['signatureAndText']
         pdf_service = PdfService()
-        registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature, incorp_date, 'CP00000001', 'rules.pdf')
+        registrar_stamp_data = RegistrarStampData(incorp_date, 'CP00000001', file_name='rules.pdf')
+        registrars_stamp = pdf_service.create_registrars_stamp(registrar_stamp_data)
         
         certified_copy = pdf_service.stamp_pdf(pdf_input, registrars_stamp, only_first_page=True)
         certified_copy_obj = PyPDF2.PdfFileReader(certified_copy)
         
         certified_copy_page = certified_copy_obj.getPage(0)
-        text = certified_copy_page.extractText() 
+        text = certified_copy_page.extractText()
         assert 'Filed on' in text
         assert 'File Name: rules.pdf' in text
         
         certified_copy_page = certified_copy_obj.getPage(1)
-        text = certified_copy_page.extractText() 
+        text = certified_copy_page.extractText()
         assert 'Filed on' not in text
 
         # Uncomment to generate the file:

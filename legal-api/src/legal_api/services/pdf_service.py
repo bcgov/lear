@@ -1,4 +1,4 @@
-# Copyright © 2021 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module is a wrapper for Pdf Services."""
+
 import io
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
 import PyPDF2
 from flask import current_app
@@ -21,7 +25,18 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
+
+@dataclass
+class RegistrarStampData:
+    """Data class for Registrar's stamp."""
+
+    certify_date: datetime
+    identifier: str
+    file_name: Optional[str] = None
+    is_correction: bool = False
 
 
 class PdfService:
@@ -56,8 +71,9 @@ class PdfService:
         return output
 
     @classmethod
-    def create_registrars_stamp(cls, registrars_signature_image, incorp_date, incorp_num, file_name):
+    def create_registrars_stamp(cls, data: RegistrarStampData):
         """Create a Registrar's stamp to certify documents."""
+        registrar_info = RegistrarInfo.get_registrar_info(data.certify_date)
         buffer = io.BytesIO()
         can = canvas.Canvas(buffer, pagesize=letter)
         doc_width = letter[0]
@@ -65,17 +81,20 @@ class PdfService:
 
         image_x_margin = doc_width - 130
         image_y_margin = doc_height - 150
-        can.drawImage(registrars_signature_image,
+        can.drawImage(registrar_info['signatureAndText'],
                       image_x_margin,
                       image_y_margin,
                       width=100,
                       preserveAspectRatio=True,
                       mask='auto')
 
-        text = 'Filed on ' + LegislationDatetime.format_as_report_string(incorp_date)
-        if file_name:
-            text += '\nFile Name: ' + file_name
-        text += '\nIncorporation Number: ' + incorp_num
+        certify_date = LegislationDatetime.as_legislation_timezone(data.certify_date)
+        text = 'Filed on ' + LegislationDatetime.format_as_report_string(certify_date)
+        if data.is_correction:
+            text += ' (Corrected)'
+        if data.file_name:
+            text += '\nFile Name: ' + data.file_name
+        text += '\nIncorporation Number: ' + data.identifier
 
         text_x_margin = 32
         text_y_margin = doc_height - 42

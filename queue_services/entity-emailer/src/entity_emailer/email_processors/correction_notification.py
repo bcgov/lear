@@ -48,9 +48,7 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
     legal_type = business.get('legalType', None)
-    is_cp_special_resolution = is_special_resolution_correction(
-        filing.filing_json['filing'],
-        business,
+    is_cp_special_resolution = legal_type == 'CP' and is_special_resolution_correction(
         filing
     )
 
@@ -143,7 +141,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
         elif is_cp_special_resolution:
-            rules_changed = bool(filing.filing_json['filing']['correction'].get('rulesFileKey'))
+            rules_changed = bool(filing.meta_data['correction'].get('uploadNewRules'))
             pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
     return pdfs
 
@@ -229,13 +227,11 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
-    elif is_special_resolution_correction(
-            filing.filing_json['filing'],
-            business,
+    elif legal_type == 'CP' and is_special_resolution_correction(
             filing
     ):
         prefix = 'CP-SR'
-        name_changed = filing.filing_json['filing']['correction'].get('nameRequest', {})
+        name_changed = filing.meta_data['correction'].get('toLegalName', {})
     else:
         return None
 

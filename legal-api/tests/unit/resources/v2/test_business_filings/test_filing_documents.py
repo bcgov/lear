@@ -1120,21 +1120,7 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
         meta_data = {'legalFilings': legal_filings}
-
-        if filing_name_1 == 'alteration' and \
-                (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
-            meta_data['alteration'] = {}
-            meta_data['alteration']['fromLegalName'] = business.legal_name
-            meta_data['alteration']['toLegalName'] = legal_name
-
-        # usually done by the filer.
-        if filing_name_1 == 'correction' and business.legal_type == 'CP' and \
-                (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
-            meta_data['correction'] = {}
-            meta_data['correction']['fromLegalName'] = business.legal_name
-            meta_data['correction']['toLegalName'] = legal_name
-
-        filing._meta_data = meta_data
+        filing._meta_data = filer_action(filing_name_1, filing_json, meta_data, business)
         filing.save()
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
@@ -1146,6 +1132,29 @@ def test_document_list_for_various_filing_states(session, client, jwt,
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
+
+
+def filer_action(filing_name, filing_json, meta_data, business):
+    """Helper function for test_document_list_for_various_filing_states. """
+    if filing_name == 'alteration' and \
+            (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
+        meta_data['alteration'] = {}
+        meta_data['alteration']['fromLegalName'] = business.legal_name
+        meta_data['alteration']['toLegalName'] = legal_name
+
+    if filing_name == 'correction' and business.legal_type == 'CP':
+        meta_data['correction'] = {}
+        if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
+            meta_data['correction']['fromLegalName'] = business.legal_name
+            meta_data['correction']['toLegalName'] = legal_name
+
+        if filing_json['filing']['correction'].get('rulesFileKey'):
+            meta_data['correction']['uploadNewRules'] = True
+
+        if filing_json['filing']['correction'].get('resolution'):
+            meta_data['correction']['hasResolution'] = True
+
+    return meta_data
 
 
 def test_get_receipt(session, client, jwt, requests_mock):

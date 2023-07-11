@@ -17,12 +17,25 @@ from typing import Dict
 
 import pytz
 import sentry_sdk
-from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_profile, name_request
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
+
+
+def filer_is_special_resolution_correction(filing: Dict):
+    """Check whether it is a special resolution correction."""
+    # Note this relies on the filing data once. This is acceptable inside of the filer (which runs once).
+    # For filing data that persists in the database, attempt to use the metadata instead.
+    sr_correction_keys = ['rulesInResolution', 'resolution', 'rulesFileKey',
+                          'memorandumInResolution', 'associationType']
+    for key in sr_correction_keys:
+        if key in filing.get('correction'):
+            return True
+    if 'requestType' in filing.get('correction', {}).get('nameRequest', {}):
+        return True
+    return False
 
 
 def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):
@@ -51,7 +64,7 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     )
 
     corrected_filing_type = filing['correction']['correctedFilingType']
-    is_sr_correction = is_special_resolution_correction(filing, business, original_filing)
+    is_sr_correction = business.legal_type == 'CP' and filer_is_special_resolution_correction(filing)
     if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
             is_sr_correction) and \
             corrected_filing_type != 'conversion':
