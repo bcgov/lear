@@ -56,9 +56,6 @@ RUN apt-get update && apt-get upgrade -y \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# RUN mkdir -p /python
-# COPY ../python/common /python
-
 WORKDIR /code
 
 RUN groupadd -g "${GID}" -r web \
@@ -66,11 +63,10 @@ RUN groupadd -g "${GID}" -r web \
   && chown web:web -R '/code'
 
 # Copy only requirements, to cache them in docker layer
-COPY --chown=web:web legal-api/poetry.lock legal-api/pyproject.toml legal-api/gunicorn_config.py legal-api/wsgi.py /code/
+COPY --chown=web:web ./poetry.lock ./pyproject.toml /code/
 
-COPY --chown=web:web ./python /python
-COPY --chown=web:web legal-api/src /code/src
-COPY --chown=web:web legal-api/README.md /code
+COPY --chown=web:web ./src /code/src
+COPY --chown=web:web ./README.md /code
 
 # Project initialization:
 RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
