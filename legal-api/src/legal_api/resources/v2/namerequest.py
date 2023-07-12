@@ -35,6 +35,8 @@ def get(identifier):
         if nr_response.status_code == 404:
             return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
+        if 'applicants' in nr_response:
+            nr_response.pop('applicants')
         return jsonify(nr_response.json())
     except Exception as err:
         current_app.logger.error(err)
