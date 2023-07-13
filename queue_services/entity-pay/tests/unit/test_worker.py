@@ -33,7 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 """The Test Suites to ensure that the worker is operating correctly."""
-# import json
 import base64
 import random
 from http import HTTPStatus

@@ -86,7 +86,6 @@ class GcpQueue:
                 self.credentials_pub = credentials.with_claims(
                     audience=publisher_audience
                 )
-                # publisher = pubsub_v1.PublisherClient(credentials=credentials_pub)
             except Exception as error:  # noqa: B902
                 raise Exception(
                     "Unable to create a connection", error
