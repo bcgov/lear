@@ -23,7 +23,7 @@ from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OU
 from legal_api.models import ConsentContinuationOut, LegalEntity
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 
 from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 legal_name = 'Test name request'
@@ -77,10 +77,10 @@ def test_consent_continuation_out_active_and_good_standing(session, test_name, e
 )
 def test_validate_foreign_jurisdiction(session, test_name, expected_code, message):
     """Assert validate foreign jurisdiction."""
-    business = Business(
+    business = factory_legal_entity(
         identifier='BC1234567',
         legal_type='BC',
-        state=Business.State.ACTIVE,
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
@@ -112,10 +112,10 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
 
 def test_valid_foreign_jurisdiction(session):
     """Assert valid foreign jurisdiction."""
-    business = Business(
+    business = factory_legal_entity(
         identifier='BC1234567',
         legal_type='BC',
-        state=Business.State.ACTIVE,
+        state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
@@ -148,7 +148,7 @@ def test_valid_foreign_jurisdiction(session):
 )
 def test_validate_existing_cco(session, test_name, expected_code, message):
     """Assert validate foreign jurisdiction exist."""
-    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
     filing['filing']['header']['name'] = 'consentContinuationOut'

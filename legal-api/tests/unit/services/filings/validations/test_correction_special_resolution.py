@@ -18,7 +18,7 @@ import copy
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_legal_entity, factory_completed_filing
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 
@@ -27,7 +27,7 @@ def test_valid_special_resolution_correction(session):
     """Test that a valid SPECIAL_RESOLUTION correction passes validation."""
     # setup
     identifier = 'CP1234567'
-    business = factory_business(identifier)
+    business = factory_legal_entity(identifier)
     corrected_filing = factory_completed_filing(business, CP_SPECIAL_RESOLUTION_APPLICATION)
 
     correction_data = copy.deepcopy(FILING_HEADER)

@@ -482,7 +482,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return []
 
     @staticmethod
-    def alter_outputs(filing: FilingStorage, business: Business, outputs: set):
+    def alter_outputs(filing: FilingStorage, business: LegalEntity, outputs: set):
         """Add or remove outputs conditionally."""
         outputs = FilingMeta.alter_outputs_alteration(filing, outputs)
         outputs = FilingMeta.alter_outputs_correction(filing, business, outputs)
@@ -546,7 +546,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return display_name
 
     @staticmethod
-    def get_corrected_filing_name(filing: FilingStorage, business_revision: Business, name: str):
+    def get_corrected_filing_name(filing: FilingStorage, business_revision: LegalEntity, name: str):
         """Return filing name for correction."""
         corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']

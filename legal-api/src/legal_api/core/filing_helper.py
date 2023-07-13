@@ -1,7 +1,7 @@
 """Helper function for filings."""
 from typing import Dict
 
-from legal_api.models.business import Business
+from legal_api.models.legal_entity import LegalEntity
 
 
 def is_special_resolution_correction(filing: Dict, business, original_filing):
@@ -10,9 +10,9 @@ def is_special_resolution_correction(filing: Dict, business, original_filing):
     from legal_api.models import Filing  # pylint: disable=import-outside-toplevel
     corrected_filing_type = filing['correction'].get('correctedFilingType')
 
-    if isinstance(business, Business) and business.legal_type != Business.LegalTypes.COOP.value:
+    if isinstance(business, LegalEntity) and business.legal_type != LegalEntity.LegalTypes.COOP.value:
         return False
-    if isinstance(business, dict) and business.get('legalType') != Business.LegalTypes.COOP.value:
+    if isinstance(business, dict) and business.get('legalType') != LegalEntity.LegalTypes.COOP.value:
         return False
     if corrected_filing_type == 'specialResolution':
         return True

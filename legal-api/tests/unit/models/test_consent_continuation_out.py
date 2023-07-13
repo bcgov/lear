@@ -30,14 +30,14 @@ from legal_api.models.consent_continuation_out import ConsentContinuationOut
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from tests.unit.models import (
-    factory_business,
+    factory_legal_entity,
     factory_completed_filing,
 )
 
 
 def test_consent_continuation_out_save(session):
     """Assert that the consent_continuation_out was saved."""
-    business = factory_business('BC1234567')
+    business = factory_legal_entity('BC1234567')
     filing_dict = copy.deepcopy(FILING_HEADER)
     filing_dict['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
     filing = factory_completed_filing(business, filing_dict)
@@ -57,7 +57,7 @@ def test_consent_continuation_out_save(session):
 
 def test_get_active_cco(session):
     """Assert that the active consent_continuation_out can be retrieved."""
-    business = factory_business('BC1234567')
+    business = factory_legal_entity('BC1234567')
     filing_dict = copy.deepcopy(FILING_HEADER)
     filing_dict['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
     filing = factory_completed_filing(business, filing_dict)

@@ -174,7 +174,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     #         'admin_freeze',
     #         'association_type',
     #         'bn9',
-    #         'cco_expiry_date',
     #         'continuation_out_date',
     #         'delivery_address_id'
     #         'dissolution_date',
@@ -235,7 +234,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     start_date = db.Column('start_date', db.DateTime(timezone=True))
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
-    cco_expiry_date = db.Column('cco_expiry_date', db.DateTime(timezone=True))  # consent continuation out expiry_date
     continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
@@ -279,7 +277,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                  db.Integer,
                                  db.ForeignKey('filings.id'),
                                  index=True)
-    
+
 
     # relationships
     change_filing = db.relationship('Filing', foreign_keys=[change_filing_id])
@@ -292,6 +290,8 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic', foreign_keys='Resolution.legal_entity_id')
     documents = db.relationship('Document', lazy='dynamic')
+    # TODO: GET on LE fails when this relationship is uncommented.  Need to figure out why
+    # consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     entity_roles = db.relationship('EntityRole', foreign_keys='EntityRole.legal_entity_id', lazy='dynamic',
                                    overlaps='legal_entity')
     alternate_names = db.relationship('AlternateName', lazy='dynamic')
@@ -397,9 +397,13 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             return True
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
-        is_active = self.state.name == LegalEntity.State.ACTIVE.name
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
-        return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow() if is_active else True
+        if self.state == LegalEntity.State.ACTIVE:
+            if self.restoration_expiry_date:
+                return False  # A business in limited restoration is not in good standing
+            else:
+                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
+        return True
 
     def save(self):
         """Render a Business to the local cache."""
@@ -475,32 +479,25 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
         if self.last_coa_date:
-            d['lastAddressChangeDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.last_coa_date)
-            ).isoformat()
+            d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
         if self.last_cod_date:
-            d['lastDirectorChangeDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.last_cod_date)
-            ).isoformat()
+            d['lastDirectorChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
 
         if self.dissolution_date:
-            d['dissolutionDate'] = datetime.date(self.dissolution_date).isoformat()
+            d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(self.dissolution_date)
+
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
             d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         if self.start_date:
-            d['startDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.start_date)
-            ).isoformat()
+            d['startDate'] = LegislationDatetime.format_as_legislation_date(self.start_date)
 
         if self.restoration_expiry_date:
-            d['restorationExpiryDate'] = self.restoration_expiry_date.isoformat()
-        if self.cco_expiry_date:
-            d['ccoExpiryDate'] = self.cco_expiry_date.isoformat()
+            d['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
-            d['continuationOutDate'] = self.continuation_out_date.isoformat()
+            d['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
@@ -508,17 +505,12 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             d['foreignIdentifier'] = self.foreign_identifier
             d['foreignLegalName'] = self.foreign_legal_name
             d['foreignLegalType'] = self.foreign_legal_type
-            d['foreignIncorporationDate'] = datetime.date(
-                LegislationDatetime.as_legislation_timezone(self.foreign_incorporation_date)
-            ).isoformat() if self.foreign_incorporation_date else None
+            d['foreignIncorporationDate'] = LegislationDatetime.format_as_legislation_date(
+                self.foreign_incorporation_date) if self.foreign_incorporation_date else None
 
-        filings = self.filings.all()
+        d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
+        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
 
-        d['hasCorrections'] = any(x for x in filings if x.filing_type == 'correction' and
-                                  x.status == 'COMPLETED')
-
-        d['hasCourtOrders'] = any(x for x in filings if x.filing_type == 'courtOrder' and
-                                  x.status == 'COMPLETED')
 
     @property
     def party_json(self) -> dict:

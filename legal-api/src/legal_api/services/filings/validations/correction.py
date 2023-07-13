@@ -184,7 +184,7 @@ def validate_naics(legal_entity: LegalEntity, filing: Dict, filing_type: str) ->
     return msg
 
 
-def validate_start_date(business: Business, filing: Dict) -> list:
+def validate_start_date(business: LegalEntity, filing: Dict) -> list:
     """Validate start date."""
     # Staff can go back with an unlimited period of time, the maximum start date is 90 days after the registration date
     msg = []

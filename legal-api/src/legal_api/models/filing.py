@@ -870,10 +870,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return None
 
     @staticmethod
-    def has_completed_filing(business_id: int, filing_type: str) -> bool:
+    def has_completed_filing(legal_entity_id: int, filing_type: str) -> bool:
         """Return whether a completed filing of a given filing type exists."""
         query = db.session.query(Filing). \
-            filter(Filing.business_id == business_id). \
+            filter(Filing.legal_entity_id == legal_entity_id). \
             filter(Filing._filing_type == filing_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
         exists_stmt = query.exists()

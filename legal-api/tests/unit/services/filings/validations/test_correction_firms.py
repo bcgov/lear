@@ -273,7 +273,7 @@ def test_firms_correction_start_date(monkeypatch, app, session, jwt, test_name, 
 
     identifier = 'FM1234567'
     founding_date = datetime.strptime(founding_date_str, '%Y-%m-%d')
-    business = factory_business(identifier=identifier, founding_date=founding_date)
+    business = factory_legal_entity(identifier=identifier, founding_date=founding_date)
 
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 

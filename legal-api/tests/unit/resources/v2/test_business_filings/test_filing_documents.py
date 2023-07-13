@@ -1028,7 +1028,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      HTTPStatus.OK, '2017-10-01'
      ),
 
-    ('bc_continuationOut_complete', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_continuationOut_complete', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1036,7 +1036,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('ulc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_continuationOut_complete', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1044,7 +1044,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('cc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_continuationOut_complete', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
      {'documents': {
             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1052,14 +1052,14 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('ben_continuationOut_complete', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
+    ('ben_continuationOut_complete', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
         }
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('bc_continuationOut_paid', 'BC7654321', Business.LegalTypes.COMP.value,
+    ('bc_continuationOut_paid', 'BC7654321', LegalEntity.EntityTypes.COMP.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1067,7 +1067,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('ulc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
+    ('ulc_continuationOut_paid', 'BC7654321', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1075,7 +1075,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('cc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
+    ('cc_continuationOut_paid', 'BC7654321', LegalEntity.EntityTypes.BC_CCC.value,
      'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
      {'documents': {
             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
@@ -1083,7 +1083,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-1'
      ),
-    ('ben_continuationOut_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
+    ('ben_continuationOut_paid', 'BC7654321', LegalEntity.EntityTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
         }
