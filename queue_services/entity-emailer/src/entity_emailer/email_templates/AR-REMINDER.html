@@ -29,12 +29,26 @@
               Annual Report. The filing fee for the annual report is ${{ ar_fee }} + $1.50 service fee.
             </p>
             
+            {% if specific_service_provider %}
             [[whitespace-16px.html]]
             <p>
               If you prefer to file by mail, contact the Corporate Registry's preferred service provider, Dye & Durham,
               who can file on your behalf for an additional fee. For information, contact Dye and Durham at
               1-800-268-7580 or visit their website at <a href="www.dyedurhambc.com">www.dyedurhambc.com</a>
             </p>
+            {% else %}
+            [[whitespace-16px.html]]
+            <p>
+              If you prefer to file by mail, contact an accountant, lawyer or service provider of your choice
+              for support. An additional fee may apply.
+            </p>
+            [[whitespace-16px.html]]
+            <p>
+              Service BC filing support can be reached by phone at <b>1-877-370-1033</b>, or by visiting a
+              <a href="https://www2.gov.bc.ca/gov/content/governments/organizational-structure/ministries-organizations/ministries/citizens-services/servicebc">
+                Service BC office</a>. Please note that Service BC does not provide legal or financial advice.
+            </p>
+            {% endif %}
 
             [[whitespace-16px.html]]
             <p>
