@@ -31,41 +31,8 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Entity Payment service.
-
-This module applied payments against Filings, and if NOT a FED type
-puts a message onto the Filers queue to process the file.
-"""
-from __future__ import annotations
-
-import sentry_sdk
-from flask import Flask
-from legal_api.models import db
-from legal_api.utils.run_version import get_run_version
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-from .config import Config
-from .config import Production
-from .resources import register_endpoints
-from .services import queue
+"""This module contains all the services used."""
+from .gcp_queue import GcpQueue
 
 
-def create_app(environment: Config = Production, **kwargs) -> Flask:
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            release=f"legal-api@{get_run_version()}",
-            send_default_pii=False,
-        )
-
-    db.init_app(app)
-    queue.init_app(app)
-    register_endpoints(app)
-
-    return app
+queue = GcpQueue()

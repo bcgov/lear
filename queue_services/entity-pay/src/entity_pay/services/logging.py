@@ -31,41 +31,38 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Entity Payment service.
+"""Structured logging based on emitting to knative."""
+import inspect
+import json
+import os
 
-This module applied payments against Filings, and if NOT a FED type
-puts a message onto the Filers queue to process the file.
-"""
-from __future__ import annotations
-
-import sentry_sdk
-from flask import Flask
-from legal_api.models import db
-from legal_api.utils.run_version import get_run_version
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-from .config import Config
-from .config import Production
-from .resources import register_endpoints
-from .services import queue
+from werkzeug.local import LocalProxy
 
 
-def create_app(environment: Config = Production, **kwargs) -> Flask:
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(environment)
+def structured_log(request: LocalProxy, severity: str = "NOTICE", message: str = None):
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
 
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            release=f"legal-api@{get_run_version()}",
-            send_default_pii=False,
-        )
+    # Build structured log messages as an object.
+    global_log_fields = {}
 
-    db.init_app(app)
-    queue.init_app(app)
-    register_endpoints(app)
+    if PROJECT := os.environ.get("GOOGLE_CLOUD_PROJECT"):
+        # Add log correlation to nest all log messages.
+        trace_header = request.headers.get("X-Cloud-Trace-Context")
 
-    return app
+        if trace_header and PROJECT:
+            trace = trace_header.split("/")
+            global_log_fields[
+                "logging.googleapis.com/trace"
+            ] = f"projects/{PROJECT}/traces/{trace[0]}"
+
+    # Complete a structured log entry.
+    entry = dict(
+        severity=severity,
+        message=message,
+        # Log viewer accesses 'component' as jsonPayload.component'.
+        component=f"{mod.__name__}.{frm.function}",
+        **global_log_fields,
+    )
+
+    print(json.dumps(entry))
