@@ -87,6 +87,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     corp_state = None
     corp_type = None
     corp_state_class = None
+    email = None
     founding_date = None
     jurisdiction = None
     last_agm_date = None
@@ -104,6 +105,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 'businessNumber': self.business_number,
                 'corpState': self.corp_state,
                 'corpStateClass': self.corp_state_class,
+                'email': self.email,
                 'foundingDate': self.founding_date,
                 'identifier': self.corp_num,
                 'jurisdiction': self.jurisdiction,
@@ -200,7 +202,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             cursor.execute(
                 f"""
                 select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
-                    filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state,
+                    filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
                     corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class
                 from CORPORATION corp
                     join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
@@ -258,6 +260,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business_obj.corp_state = business['corp_state']
             business_obj.corp_state_class = business['corp_state_class']
             business_obj.corp_type = business['corp_typ_cd']
+            business_obj.email = business['admin_email']
             business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
             business_obj.jurisdiction = business['jurisdiction']
             business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])

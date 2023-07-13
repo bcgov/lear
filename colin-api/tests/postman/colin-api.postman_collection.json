@@ -10413,6 +10413,136 @@
 			"name": "All",
 			"item": [
 				{
+					"name": "businesses",
+					"item": [
+						{
+							"name": "GET business A",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response time is less than 10000ms\", function () {",
+											"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('should return JSON', function () {",
+											"    pm.response.to.have.header('Content-Type', 'application/json');",
+											"});",
+											"",
+											"pm.test(\"Returns the required fields for business\", () => {",
+											"    var jsonData = pm.response.json()",
+											"    pm.expect(jsonData.business).to.exist",
+											"    pm.expect(jsonData.business.businessNumber).to.exist",
+											"    pm.expect(jsonData.business.email).to.exist",
+											"    pm.expect(jsonData.business.foundingDate).to.exist",
+											"    pm.expect(jsonData.business.identifier).to.eql('A0005599')",
+											"    pm.expect(jsonData.business.jurisdiction).to.eql('BC')",
+											"    pm.expect(jsonData.business.corpState).to.eql('ACT')",
+											"    pm.expect(jsonData.business.status).to.eql('Active')",
+											"    pm.expect(jsonData.business.legalType).to.eql('A')",
+											"    pm.expect(jsonData.business.legalName).to.exist",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{url}}/api/v1/businesses/A/A0005599",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"businesses",
+										"A",
+										"A0005599"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GET business CP0002098 CP",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json",
+												"disabled": true
+											}
+										],
+										"url": {
+											"raw": "{{url}}/api/v1/businesses/CP0002098",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"businesses",
+												"CP0002098"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "GET, OPTIONS, HEAD"
+										},
+										{
+											"key": "Access-Control-Max-Age",
+											"value": "21600"
+										},
+										{
+											"key": "API",
+											"value": "colin_api/0.1.0a0.dev"
+										},
+										{
+											"key": "Server",
+											"value": "Werkzeug/0.15.4 Python/3.6.5"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 15 Jul 2019 16:02:10 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"business\": {\n        \"businessNumber\": null,\n        \"cacheId\": 0,\n        \"corpState\": \"ACT\",\n        \"foundingDate\": \"2010-10-15\",\n        \"identifier\": \"CP0002098\",\n        \"jurisdiction\": \"BC\",\n        \"lastAgmDate\": \"2017-09-11\",\n        \"lastArFiledDate\": \"2017-09-11\",\n        \"lastLedgerTimestamp\": \"2017-12-21T00:00:00-00:00\",\n        \"legalName\": \"LAKES ARTISAN COOPERATIVE\",\n        \"status\": \"Active\",\n        \"type\": \"CP\"\n    }\n}"
+								}
+							]
+						}
+					]
+				},
+				{
 					"name": "parties",
 					"item": [
 						{
