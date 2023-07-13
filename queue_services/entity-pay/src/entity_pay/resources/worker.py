@@ -75,6 +75,7 @@ def worker():
     - Once the filing is marked paid, no errors should escape to the Q
     - If there's no matching filing, put back on Q
     """
+    structured_log(request, "INFO", f"Incoming raw msg: {request.data}")
 
     # 1. Get cloud event
     # ##
@@ -148,6 +149,7 @@ def worker():
                 request, "INFO", f"publish to filer for pay-id: {payment_token.id}"
             )
 
+    structured_log(request, "INFO", f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
 
 
