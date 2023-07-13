@@ -38,9 +38,6 @@ puts a message onto the Filers queue to process the file.
 """
 from __future__ import annotations
 
-import os
-from typing import Final
-
 import sentry_sdk
 from flask import Flask
 from legal_api.models import db

@@ -40,7 +40,6 @@ Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
 import os
-import random
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -111,9 +110,7 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods

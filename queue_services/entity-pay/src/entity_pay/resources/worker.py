@@ -184,39 +184,6 @@ def dict_keys_to_snake_case(d: dict):
     return converted
 
 
-{
-    "data": {
-        "paymentToken": {
-            "id": 29590,
-            "statusCode": "COMPLETED",
-            "filingIdentifier": None,
-            "corpTypeCode": "NRO",
-        }
-    },
-    "datacontenttype": "application/json",
-    "id": 29590,
-    "source": "sbc-pay",
-    "specversion": "1.0",
-    "subject": "NR 6384972",
-    "time": "2023-07-05T22:04:25.952027",
-    "type": "payment",
-}
-
-
 def get_filing_by_payment_id(payment_id: int) -> Filing:
     """Return the outcome of Filing.get_filing_by_payment_token."""
     return Filing.get_filing_by_payment_token(str(payment_id))
-
-
-# def send_email():
-# def publish_to_queue(payload: dict, invoice: Invoice):
-#     """Publish a 'COMPLETED' invoice's info to the GCP PubSub Queue."""
-#     ce = SimpleCloudEvent()
-#     ce.id = payload.get('paymentToken', {}).get('id', str(uuid.uuid4()))
-#     ce.source = 'sbc-pay'
-#     ce.subject = invoice.business_identifier
-#     ce.time = invoice.payment_date
-#     ce.type = 'payment'
-#     ce.data = payload
-
-# _send_to_queue(to_queue_message(ce))
