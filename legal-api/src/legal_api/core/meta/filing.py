@@ -17,7 +17,6 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final, MutableMapping, Optional
 
-from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Business
 from legal_api.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
@@ -504,28 +503,21 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == 'correction':
             if filing.meta_data.get('correction', {}).get('toLegalName'):
                 outputs.add('certificateOfNameChange')
-            corrected_filing_id = filing.filing_json.get('correction', {}).get('correctedFilingId')
-            original_filing = FilingStorage.find_by_id(corrected_filing_id)
-            if is_special_resolution_correction(
-                    filing.filing_json['filing'], business, original_filing
-                    ):
-                if filing.filing_json['filing']['correction'].get('rulesFileKey'):
-                    outputs.add('certifiedRules')
-                if filing.filing_json['filing']['correction'].get('resolution'):
-                    outputs.add('specialResolution')
+            if filing.meta_data.get('correction', {}).get('uploadNewRules'):
+                outputs.add('certifiedRules')
+            if filing.meta_data.get('correction', {}).get('hasResolution'):
+                outputs.add('specialResolution')
         return outputs
 
     @staticmethod
     def alter_outputs_special_resolution(filing, outputs):
         """Handle output file list modification for special resolution."""
         if filing.filing_type == 'specialResolution':
+            outputs.remove('certifiedMemorandum')
             if 'changeOfName' in filing.meta_data.get('legalFilings', []):
                 outputs.add('certificateOfNameChange')
-            if 'alteration' in filing.meta_data.get('legalFilings', []):
-                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
-                    outputs.remove('certifiedMemorandum')
-                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
-                    outputs.remove('certifiedRules')
+            if not filing.meta_data.get('alteration', {}).get('uploadNewRules'):
+                outputs.remove('certifiedRules')
         return outputs
 
     @staticmethod

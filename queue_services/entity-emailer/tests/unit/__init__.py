@@ -524,10 +524,13 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     filing_template['filing']['correction']['nameRequest'] = {
         'nrNumber': 'NR 8798956',
         'legalName': 'HAULER MEDIA INC.',
-        'legalType': 'BC'
+        'legalType': 'BC',
+        'requestType': 'CHG'
     }
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
     filing.payment_completion_date = filing.filing_date
+    # Triggered from the filer.
+    filing._meta_data = {'correction': {'uploadNewRules': True, 'toLegalName': True}}
     filing.save()
     if option in ['COMPLETED']:
         uow = versioning_manager.unit_of_work(session)

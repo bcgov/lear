@@ -23,7 +23,7 @@ from dateutil.parser import parse
 from legal_api.models import Business, Document, Filing, PartyRole
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
-from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
+from registry_schemas.example_data import CORRECTION_COA, CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import correction
@@ -38,7 +38,7 @@ from tests.utils import upload_file, assert_pdf_contains_text
         ('sr_correction', 'specialResolution',
          CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION),
         ('non_sr_correction', 'changeOfAddress',
-         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
+         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_COA)
     ]
 )
 async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
@@ -78,23 +78,28 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
     # Call the process_filing method for the original special resolution
     await process_filing(sr_filing_msg, app)
 
-    # Simulate a correction filing
-    correction_data = copy.deepcopy(FILING_HEADER)
-    correction_data['filing']['correction'] = copy.deepcopy(correction_template)
-    correction_data['filing']['header']['name'] = 'correction'
-    correction_data['filing']['business'] = {'identifier': identifier}
-    correction_data['filing']['correction']['correctedFilingType'] = correct_filing_type
-    correction_data['filing']['correction']['resolution'] = '<p>xxxx</p>'
-    correction_data['filing']['correction']['signatory'] = {
-        'givenName': 'Joey',
-        'familyName': 'Doe',
-        'additionalName': ''
-    }
-    correction_data['filing']['correction']['cooperativeAssociationType'] = 'HC'
-    # Update correction data to point to the original special resolution filing
-    if 'correction' not in correction_data['filing']:
-        correction_data['filing']['correction'] = {}
-    correction_data['filing']['correction']['correctedFilingId'] = sr_filing_id
+    if correct_filing_type == 'changeOfAddress':
+        correction_data = copy.deepcopy(correction_template)
+        correction_data['filing']['changeOfAddress']['offices'] = {}
+        correction_data['filing']['correction']['correctedFilingId'] = sr_filing_id
+    else:
+        # Simulate a correction filing
+        correction_data = copy.deepcopy(FILING_HEADER)
+        correction_data['filing']['correction'] = copy.deepcopy(correction_template)
+        correction_data['filing']['header']['name'] = 'correction'
+        correction_data['filing']['business'] = {'identifier': identifier}
+        correction_data['filing']['correction']['correctedFilingType'] = correct_filing_type
+        correction_data['filing']['correction']['resolution'] = '<p>xxxx</p>'
+        correction_data['filing']['correction']['signatory'] = {
+            'givenName': 'Joey',
+            'familyName': 'Doe',
+            'additionalName': ''
+        }
+        correction_data['filing']['correction']['cooperativeAssociationType'] = 'HC'
+        # Update correction data to point to the original special resolution filing
+        if 'correction' not in correction_data['filing']:
+            correction_data['filing']['correction'] = {}
+        correction_data['filing']['correction']['correctedFilingId'] = sr_filing_id
     correction_payment_id = str(random.SystemRandom().getrandbits(0x58))
     correction_filing_id = (create_filing(correction_payment_id, correction_data, business_id=business_id)).id
 
@@ -201,7 +206,9 @@ def test_correction_coop_rules(app, session, minio_server):
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
-    filing_submission = create_filing(payment_id, correction_filing, business_id=business.id)
+    filing_submission = create_filing(
+        payment_id, correction_filing, business_id=business.id, filing_date=datetime.datetime.utcnow()
+    )
 
     filing_meta = FilingMeta()
 
