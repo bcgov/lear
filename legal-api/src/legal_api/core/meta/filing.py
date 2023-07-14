@@ -513,11 +513,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def alter_outputs_special_resolution(filing, outputs):
         """Handle output file list modification for special resolution."""
         if filing.filing_type == 'specialResolution':
+            outputs.remove('certifiedMemorandum')
             if 'changeOfName' in filing.meta_data.get('legalFilings', []):
                 outputs.add('certificateOfNameChange')
             if 'alteration' in filing.meta_data.get('legalFilings', []):
-                if 'dissolution' not in filing.meta_data.get('legalFilings', []):
-                    outputs.remove('certifiedMemorandum')
                 if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
                     outputs.remove('certifiedRules')
         return outputs
