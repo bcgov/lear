@@ -26,7 +26,7 @@ def test_valid_coa_correction(session):
     # setup
     identifier = 'CP1234567'
     name = 'changeOfAddress'
-    legal_entity =factory_legal_entity(identifier)
+    legal_entity = factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
     coa['filing']['header']['name'] = name
     coa['filing'][name] = CHANGE_OF_ADDRESS
@@ -51,7 +51,7 @@ def test_fail_coa_correction(session):
     # setup
     identifier = 'CP1234567'
     name = 'changeOfAddress'
-    legal_entity =factory_legal_entity(identifier)
+    legal_entity = factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
     coa['filing']['header']['name'] = name
     coa['filing'][name] = CHANGE_OF_ADDRESS

@@ -290,8 +290,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic', foreign_keys='Resolution.legal_entity_id')
     documents = db.relationship('Document', lazy='dynamic')
-    # TODO: GET on LE fails when this relationship is uncommented.  Need to figure out why
-    # consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
+    consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     entity_roles = db.relationship('EntityRole', foreign_keys='EntityRole.legal_entity_id', lazy='dynamic',
                                    overlaps='legal_entity')
     alternate_names = db.relationship('AlternateName', lazy='dynamic')

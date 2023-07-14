@@ -79,7 +79,7 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
     """Assert validate foreign jurisdiction."""
     business = factory_legal_entity(
         identifier='BC1234567',
-        legal_type='BC',
+        entity_type='BC',
         state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
@@ -114,7 +114,7 @@ def test_valid_foreign_jurisdiction(session):
     """Assert valid foreign jurisdiction."""
     business = factory_legal_entity(
         identifier='BC1234567',
-        legal_type='BC',
+        entity_type='BC',
         state=LegalEntity.State.ACTIVE,
         founding_date=datetime.utcnow()
     )
@@ -166,7 +166,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
     consent_continuation_out.expiry_date = get_cco_expiry_date(effective_date)
 
     consent_continuation_out.filing_id = previous_filing.id
-    consent_continuation_out.business_id = business.id
+    consent_continuation_out.legal_entity_id = business.id
     business.consent_continuation_outs.append(consent_continuation_out)
     business.save()
 
