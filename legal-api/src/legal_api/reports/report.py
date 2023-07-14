@@ -23,7 +23,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.core.filing_helper import is_special_resolution_correction
+from legal_api.core.filing_helper import is_special_resolution_correction_by_meta_data
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
@@ -211,9 +211,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
             if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
-                if is_special_resolution_correction(
-                    self._filing
-                ):
+                if is_special_resolution_correction_by_meta_data(self._filing):
                     file_name = 'specialResolutionCorrectionApplication'
             if file_name is None:
                 # Fallback to default if specific template not found
@@ -767,7 +765,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_correction_data(self, filing):
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
-        elif self._business.legal_type == 'CP' and is_special_resolution_correction(self._filing):
+        elif self._business.legal_type == 'CP' and is_special_resolution_correction_by_meta_data(self._filing):
             self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
