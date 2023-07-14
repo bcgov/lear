@@ -41,7 +41,7 @@ def update_rules(
 
     is_correction = filing.filing_type == 'correction'
     rules_file = MinioService.get_file(rules_file_key)
-    registrar_stamp_data = RegistrarStampData(filing.filing_date, business.identifier, file_name, is_correction)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
     replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
 
     document = Document()
@@ -69,7 +69,7 @@ def update_memorandum(
 
     # create certified copy for memorandum document
     memorandum_file = MinioService.get_file(memorandum_file_key)
-    registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier)
     replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
     document = Document()
