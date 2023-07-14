@@ -1029,8 +1029,11 @@ files = []
 develop = false
 
 [package.source]
-type = "directory"
-url = "../sql-versioning"
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "dev_legal_name_changes"
+resolved_reference = "5eb6e3600fc204c29ff90d229e20dad17de69953"
+subdirectory = "python/common/sql-versioning"
 
 [[package]]
 name = "sqlalchemy"
@@ -1197,4 +1200,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bb56e0f26267531c8a294b3177b03263618ca7804f4df527fc93d9ca21ea8be8"
+content-hash = "43af4f1a60aa525151859d0b51114669809ee34808e900fd90ba6eaf595c19bd"
