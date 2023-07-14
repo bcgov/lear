@@ -484,6 +484,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == 'correction':
             from_legal_name = meta_data.get('correction', {}).get('fromLegalName')
             to_legal_name = meta_data.get('correction', {}).get('toLegalName')
+            corrected_on = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+            filing['correctedOn'] = corrected_on.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_type == 'specialResolution' and 'changeOfName' in meta_data.get('legalFilings', []):
             from_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
             to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
