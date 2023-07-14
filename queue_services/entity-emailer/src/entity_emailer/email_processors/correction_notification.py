@@ -141,7 +141,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
         elif is_cp_special_resolution:
-            rules_changed = bool(filing.meta_data['correction'].get('uploadNewRules'))
+            rules_changed = bool(filing.filing_json['filing']['correction'].get('rulesFileKey'))
             pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
     return pdfs
 
@@ -231,7 +231,7 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
             filing
     ):
         prefix = 'CP-SR'
-        name_changed = filing.meta_data['correction'].get('toLegalName', {})
+        name_changed = 'requestType' in filing.filing_json['filing']['correction'].get('nameRequest', {})
     else:
         return None
 
