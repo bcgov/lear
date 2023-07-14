@@ -398,7 +398,7 @@ FILINGS: Final = {
             'CP': 'SPRLN'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certifiedRules']},
+            {'types': 'CP', 'outputs': ['certifiedRules', 'certifiedMemorandum']},
         ]
     },
     'transition': {
@@ -516,7 +516,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if 'changeOfName' in filing.meta_data.get('legalFilings', []):
                 outputs.add('certificateOfNameChange')
             if 'alteration' in filing.meta_data.get('legalFilings', []):
-                if filing.filing_json['filing']['alteration'].get('memorandumInResolution') is True:
+                if 'dissolution' not in filing.meta_data.get('legalFilings', []):
                     outputs.remove('certifiedMemorandum')
                 if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
                     outputs.remove('certifiedRules')
