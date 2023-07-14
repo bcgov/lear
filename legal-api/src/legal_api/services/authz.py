@@ -561,10 +561,7 @@ def has_blocker_completed_filing(legal_entity: LegalEntity, blocker_checks: dict
     completed_filings = Filing.get_filings_by_type_pairs(legal_entity.id,
                                                          filing_type_pairs,
                                                          [Filing.Status.COMPLETED.value],
-                                                         False)
-    # TODO setting to True fails with invlaid SQL
-    # probably need to @FIX that
-    #                                                    #  True)
+                                                         True)
 
     if len(completed_filings) == len(complete_filing_types):
         return False

@@ -48,7 +48,7 @@ def test_consent_continuation_out_save(session):
     consent_continuation_out.foreign_jurisdiction = 'CA'
     consent_continuation_out.foreign_jurisdiction_region = 'AB'
     consent_continuation_out.expiry_date = expiry_date
-    consent_continuation_out.business_id = business.id
+    consent_continuation_out.legal_entity_id = business.id
     consent_continuation_out.filing_id = filing.id
     consent_continuation_out.save()
 
@@ -68,7 +68,7 @@ def test_get_active_cco(session):
     consent_continuation_out.foreign_jurisdiction = 'CA'
     consent_continuation_out.foreign_jurisdiction_region = 'AB'
     consent_continuation_out.expiry_date = expiry_date
-    consent_continuation_out.business_id = business.id
+    consent_continuation_out.legal_entity_id = business.id
     consent_continuation_out.filing_id = filing.id
     consent_continuation_out.save()
 

@@ -1619,7 +1619,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
     ]
 )
 def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
-                                            roles, filing_types, filing_sub_types, is_completed, expected):
+                                                roles, filing_types, filing_sub_types, is_completed, expected):
     """Assert that get allowed returns valid filings when completedFilings blocker is defined.
 
        A filing with completedFilings defined should only return a target filing if the business state filing matches
@@ -1643,7 +1643,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                         create_filing(business, filing_type, filing_sub_type)
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
-                        create_incomplete_filing(business=business,
+                        create_incomplete_filing(legal_entity=business,
                                                  filing_name='unknown',
                                                  filing_status=Filing.Status.DRAFT.value,
                                                  filing_dict=filing_dict,
@@ -1657,10 +1657,10 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
 def create_business(legal_type, state):
     """Create a business."""
     identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
-    legal_entity =factory_legal_entity(identifier=identifier,
-                                entity_type=legal_type,
-                                state=state,
-                                founding_date=_datetime.now())
+    legal_entity = factory_legal_entity(identifier=identifier,
+                                        entity_type=legal_type,
+                                        state=state,
+                                        founding_date=_datetime.now())
     return legal_entity
 
 

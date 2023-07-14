@@ -45,7 +45,7 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
         foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
         country_code = foreign_jurisdiction.get('country')
         region = foreign_jurisdiction.get('region')
-        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region)
+        ccos = ConsentContinuationOut.get_active_cco(legal_entity.id, now, country_code, region)
         if ccos:
             msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
                         'path': f'/filing/{filing_type}/foreignJurisdiction'}])

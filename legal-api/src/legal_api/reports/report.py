@@ -202,11 +202,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # Get template specific to legal type
             file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(self._legal_entity.entity_type, None)
-            if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
+            if self._legal_entity.entity_type == 'CP' and self._filing.filing_type == 'correction':
                 corrected_filing_id = self._filing.filing_json['filing'].get('correction', {}).get('correctedFilingId')
                 original_filing = Filing.find_by_id(corrected_filing_id)
                 if is_special_resolution_correction(
-                    self._filing.filing_json['filing'], self._business, original_filing
+                    self._filing.filing_json['filing'], self._legal_entity, original_filing
                 ):
                     file_name = 'specialResolutionCorrectionApplication'
             if file_name is None:

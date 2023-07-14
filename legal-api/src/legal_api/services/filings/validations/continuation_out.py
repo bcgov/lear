@@ -37,7 +37,7 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     is_valid_co_date = True
     is_valid_foreign_jurisdiction = True
 
-    if err := validate_continuation_out_date(legal_entity, filing, filing_type):
+    if err := validate_continuation_out_date(filing, filing_type):
         msg.extend(err)
         is_valid_co_date = False
 

@@ -71,7 +71,7 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Error:
                             LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
                             LegalEntity.EntityTypes.BC_CCC.value]:
             _validate_corps_correction(filing, legal_type, msg)
-        elif legal_type in [Business.LegalTypes.COOP.value]:
+        elif legal_type in [LegalEntity.EntityTypes.COOP.value]:
             _validate_special_resolution_correction(filing, legal_type, msg)
 
     if msg:

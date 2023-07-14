@@ -32,7 +32,7 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
     expiry_date = db.Column('expiry_date', db.DateTime(timezone=True))
 
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
 
     # relationships
     filing = db.relationship('Filing', backref=backref('filing', uselist=False), foreign_keys=[filing_id])
@@ -43,13 +43,13 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         db.session.commit()
 
     @staticmethod
-    def get_active_cco(business_id,
+    def get_active_cco(legal_entity_id,
                        expiry_date,
                        foreign_jurisdiction=None,
                        foreign_jurisdiction_region=None) -> list[ConsentContinuationOut]:
-        """Get a list of active consent_continuation_outs linked to the given business_id."""
+        """Get a list of active consent_continuation_outs linked to the given legal_entity_id."""
         query = db.session.query(ConsentContinuationOut). \
-            filter(ConsentContinuationOut.business_id == business_id). \
+            filter(ConsentContinuationOut.legal_entity_id == legal_entity_id). \
             filter(ConsentContinuationOut.expiry_date >= expiry_date)
 
         if foreign_jurisdiction:
