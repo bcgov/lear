@@ -516,9 +516,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             outputs.remove('certifiedMemorandum')
             if 'changeOfName' in filing.meta_data.get('legalFilings', []):
                 outputs.add('certificateOfNameChange')
-            if 'alteration' in filing.meta_data.get('legalFilings', []):
-                if filing.filing_json['filing']['alteration'].get('rulesInResolution') is True:
-                    outputs.remove('certifiedRules')
+            if not filing.meta_data.get('alteration', {}).get('uploadNewRules'):
+                outputs.remove('certifiedRules')
         return outputs
 
     @staticmethod

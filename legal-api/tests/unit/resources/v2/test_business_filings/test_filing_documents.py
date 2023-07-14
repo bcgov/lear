@@ -1133,7 +1133,7 @@ def test_document_list_for_various_filing_states(session, client, jwt,
 
 
 def filer_action(filing_name, filing_json, meta_data, business):
-    """Helper function for test_document_list_for_various_filing_states. """
+    """Helper function for test_document_list_for_various_filing_states."""
     if filing_name == 'alteration' and \
             (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
         meta_data['alteration'] = {}
@@ -1151,6 +1151,10 @@ def filer_action(filing_name, filing_json, meta_data, business):
 
         if filing_json['filing']['correction'].get('resolution'):
             meta_data['correction']['hasResolution'] = True
+
+    if filing_name == 'specialResolution' and business.legal_type == 'CP':
+        meta_data['alteration'] = {}
+        meta_data['alteration']['uploadNewRules'] = True
 
     return meta_data
 
