@@ -24,15 +24,15 @@ def upgrade():
                     sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True),
                     sa.Column('expiry_date', sa.DateTime(timezone=True), nullable=True),
                     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
-                    sa.Column('change_filing_id', sa.Integer(), nullable=True),
-                    sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
+                    sa.Column('filing_id', sa.Integer(), nullable=True),
+                    sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
                     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('id'),
                     sqlite_autoincrement=True
                     )
     with op.batch_alter_table('consent_continuation_outs', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_consent_continuation_outs_change_filing_id'), ['change_filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_consent_continuation_outs_filing_id'), ['filing_id'], unique=False)
 
     op.create_table('sent_to_gazette',
                     sa.Column('filing_id', sa.Integer(), nullable=False),
@@ -47,7 +47,7 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table('consent_continuation_outs', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_consent_continuation_outs_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_consent_continuation_outs_filing_id'))
 
     op.drop_table('consent_continuation_outs')
     op.drop_table('sent_to_gazette')
