@@ -707,7 +707,7 @@ SELECT cco.id,
        cco.foreign_jurisdiction,
        cco.foreign_jurisdiction_region,
        cco.expiry_date,
-       cco.filing_id as change_filing_id,
+       cco.filing_id,
        cco.business_id as legal_entity_id
 FROM public.consent_continuation_outs cco;
 
