@@ -70,7 +70,7 @@ FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
-    flags.init_app(FLASK_APP) 
+    flags.init_app(FLASK_APP)
 
 
 async def publish_event(payload: dict):
