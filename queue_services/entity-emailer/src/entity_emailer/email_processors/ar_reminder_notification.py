@@ -20,15 +20,11 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business, CorpType
-from legal_api.services.flags import Flags
 
 from entity_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
 
 
-flags = Flags()  # pylint: disable=invalid-name
-
-
-def process(email_msg: dict, token: str) -> dict:
+def process(email_msg: dict, token: str, flag_on: bool) -> dict:
     """Build the email for annual report reminder notification."""
     logger.debug('ar_reminder_notification: %s', email_msg)
     ar_fee = email_msg['arFee']
@@ -38,7 +34,6 @@ def process(email_msg: dict, token: str) -> dict:
     filled_template = substitute_template_parts(template)
     business = Business.find_by_internal_id(email_msg['businessId'])
     corp_type = CorpType.find_by_id(business.legal_type)
-    specific_service_provider = flags.is_on('enable-specific-service-provider')
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -48,7 +43,7 @@ def process(email_msg: dict, token: str) -> dict:
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.identifier,
-        specific_service_provider=specific_service_provider
+        specific_service_provider=flag_on
     )
 
     # get recipients

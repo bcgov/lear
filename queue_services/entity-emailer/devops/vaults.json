@@ -12,7 +12,8 @@
             "entity-emailer",
             "nats-emailer",
             "entity-service-account",
-            "sentry"
+            "sentry",
+            "launchdarkly"
         ]
     }
 ]

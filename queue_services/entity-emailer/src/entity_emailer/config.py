@@ -62,6 +62,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     MSG_RETRY_NUM = int(os.getenv('MSG_RETRY_NUM', '5'))
 
+    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
+
     # urls
     DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
     NOTIFY_API_URL = os.getenv('NOTIFY_API_URL', None)
