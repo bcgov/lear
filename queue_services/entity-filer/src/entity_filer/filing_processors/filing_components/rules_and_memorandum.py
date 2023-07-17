@@ -20,6 +20,7 @@ from typing import List, Optional
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
+from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.utils import replace_file_with_certified_copy
 
@@ -38,8 +39,10 @@ def update_rules(
         # if nothing is passed in, we don't care and it's not an error
         return None
 
+    is_correction = filing.filing_type == 'correction'
     rules_file = MinioService.get_file(rules_file_key)
-    replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date, file_name)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
+    replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
 
     document = Document()
     document.type = DocumentType.COOP_RULES.value
@@ -66,7 +69,8 @@ def update_memorandum(
 
     # create certified copy for memorandum document
     memorandum_file = MinioService.get_file(memorandum_file_key)
-    replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier)
+    replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
     document = Document()
     document.type = DocumentType.COOP_MEMORANDUM.value

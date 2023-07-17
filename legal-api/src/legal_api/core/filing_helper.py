@@ -1,27 +1,33 @@
 """Helper function for filings."""
+
+
 from typing import Dict
 
-from legal_api.models.business import Business
 
-
-def is_special_resolution_correction(filing: Dict, business, original_filing):
+def is_special_resolution_correction_by_meta_data(filing):
     """Check whether it is a special resolution correction."""
-    # Avoid circular import.
-    from legal_api.models import Filing  # pylint: disable=import-outside-toplevel
-    corrected_filing_type = filing['correction'].get('correctedFilingType')
+    # Check by using the meta_data, this is more permanent than the filing json.
+    # This is used by reports (after the filer).
+    if filing.meta_data and (correction_meta_data := filing.meta_data.get('correction')):
+        # Note these come from the corrections filer.
+        sr_correction_meta_data_keys = ['hasResolution', 'memorandumInResolution', 'rulesInResolution',
+                                        'uploadNewRules', 'toCooperativeAssociationType', 'toLegalName']
+        for key in sr_correction_meta_data_keys:
+            if key in correction_meta_data:
+                return True
+    return False
 
-    if isinstance(business, Business) and business.legal_type != Business.LegalTypes.COOP.value:
-        return False
-    if isinstance(business, dict) and business.get('legalType') != Business.LegalTypes.COOP.value:
-        return False
-    if corrected_filing_type == 'specialResolution':
+
+def is_special_resolution_correction_by_filing_json(filing: Dict):
+    """Check whether it is a special resolution correction."""
+    # Note this relies on the filing data once. This is acceptable inside of the filer (which runs once)
+    # and emailer (runs on PAID which is before the filer and runs on COMPLETED).
+    # For filing data that persists in the database, attempt to use the meta_data instead.
+    sr_correction_keys = ['rulesInResolution', 'resolution', 'rulesFileKey',
+                          'memorandumInResolution', 'cooperativeAssociationType']
+    for key in sr_correction_keys:
+        if key in filing.get('correction'):
+            return True
+    if 'requestType' in filing.get('correction', {}).get('nameRequest', {}):
         return True
-    if corrected_filing_type not in ('specialResolution', 'correction'):
-        return False
-    if not original_filing:
-        return False
-
-    # Find the next original filing in the chain of corrections
-    filing = original_filing.filing_json['filing']
-    original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
-    return is_special_resolution_correction(filing, business, original_filing)
+    return False

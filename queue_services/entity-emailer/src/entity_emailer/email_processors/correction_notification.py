@@ -24,7 +24,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.core.filing_helper import is_special_resolution_correction
+from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.models import Filing
 
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
@@ -48,10 +48,8 @@ def _get_pdfs(
         'Authorization': f'Bearer {token}'
     }
     legal_type = business.get('legalType', None)
-    is_cp_special_resolution = is_special_resolution_correction(
-        filing.filing_json['filing'],
-        business,
-        filing
+    is_cp_special_resolution = legal_type == 'CP' and is_special_resolution_correction_by_filing_json(
+        filing.filing_json['filing']
     )
 
     if status == Filing.Status.PAID.value:
@@ -229,13 +227,11 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
-    elif is_special_resolution_correction(
-            filing.filing_json['filing'],
-            business,
-            filing
+    elif legal_type == 'CP' and is_special_resolution_correction_by_filing_json(
+            filing.filing_json['filing']
     ):
         prefix = 'CP-SR'
-        name_changed = filing.filing_json['filing']['correction'].get('nameRequest', {})
+        name_changed = 'requestType' in filing.filing_json['filing']['correction'].get('nameRequest', {})
     else:
         return None
 

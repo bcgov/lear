@@ -109,6 +109,8 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
         resolution = dpath.util.get(correction_filing, '/correction/resolution')
         filings.update_filing_json(correction_filing_rec, resolution)
         resolutions.update_resolution(business, resolution)
+        if resolution:
+            filing_meta.correction = {**filing_meta.correction, **{'hasResolution': True}}
 
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -133,6 +135,16 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
             rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
             filing_meta.correction = {**filing_meta.correction,
                                       **{'uploadNewRules': True}}
+
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, '/correction/memorandumInResolution'):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'memorandumInResolution': True}}
+
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, '/correction/rulesInResolution'):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'rulesInResolution': True}}
 
 
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):

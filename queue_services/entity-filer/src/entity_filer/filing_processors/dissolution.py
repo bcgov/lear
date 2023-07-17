@@ -22,6 +22,7 @@ from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
+from legal_api.services.pdf_service import RegistrarStampData
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -101,7 +102,8 @@ def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Fi
     # create certified copy for affidavit document
     affidavit_file_key = dissolution_filing.get('affidavitFileKey')
     affidavit_file = MinioService.get_file(affidavit_file_key)
-    replace_file_with_certified_copy(affidavit_file.data, business, affidavit_file_key, filing.effective_date)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier)
+    replace_file_with_certified_copy(affidavit_file.data, affidavit_file_key, registrar_stamp_data)
 
     document = Document()
     document.type = DocumentType.AFFIDAVIT.value
