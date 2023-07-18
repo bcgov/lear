@@ -1,5 +1,5 @@
 {
     "flagValues": {
-        "enable-specific-service-provider": true
+        "disable-specific-service-provider": true
     }
 }

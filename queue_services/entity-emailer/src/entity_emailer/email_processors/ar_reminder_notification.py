@@ -43,7 +43,7 @@ def process(email_msg: dict, token: str, flag_on: bool) -> dict:
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.identifier,
-        specific_service_provider=flag_on
+        disable_specific_service_provider=flag_on
     )
 
     # get recipients

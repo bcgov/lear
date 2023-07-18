@@ -265,7 +265,7 @@ def test_process_ar_reminder_email(app, session):
                 assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
                 assert call_args[0][0]['recipients'] == 'test@test.com'
                 assert call_args[0][0]['content']['body']
-                assert 'Dye & Durham' in call_args[0][0]['content']['body']
+                assert 'Dye & Durham' not in call_args[0][0]['content']['body']
                 assert call_args[0][0]['content']['attachments'] == []
                 assert call_args[0][1] == token
 

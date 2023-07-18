@@ -148,7 +148,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 email = mras_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'annualReport' and option == 'reminder':
-                flag_on = flags.is_on('enable-specific-service-provider')
+                flag_on = flags.is_on('disable-specific-service-provider')
                 email = ar_reminder_notification.process(email_msg['email'], token, flag_on)
                 send_email(email, token)
             elif etype == 'dissolution':
