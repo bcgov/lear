@@ -244,6 +244,8 @@ def test_process_correction_cp_sr_email(app, session, option):
 def test_process_ar_reminder_email(app, session):
     """Assert that the ar reminder notification can be processed."""
     # setup filing + business for email
+    app.env = 'development'
+
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
     business = Business.find_by_internal_id(filing.business_id)
     business.legal_type = 'BC'
