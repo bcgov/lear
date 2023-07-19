@@ -37,6 +37,7 @@ from flask import Flask
 from legal_api import db
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.flags import Flags
 from sqlalchemy.exc import OperationalError
 
 from entity_emailer import config
@@ -62,10 +63,14 @@ from .message_tracker import tracker as tracker_util
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
+flags = Flags()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
+
+if FLASK_APP.config.get('LD_SDK_KEY', None):
+    flags.init_app(FLASK_APP)
 
 
 async def publish_event(payload: dict):
@@ -143,7 +148,8 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 email = mras_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'annualReport' and option == 'reminder':
-                email = ar_reminder_notification.process(email_msg['email'], token)
+                flag_on = flags.is_on('disable-specific-service-provider')
+                email = ar_reminder_notification.process(email_msg['email'], token, flag_on)
                 send_email(email, token)
             elif etype == 'dissolution':
                 email = dissolution_notification.process(email_msg['email'], token)
