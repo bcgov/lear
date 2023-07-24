@@ -55,9 +55,9 @@ select u.id,
        u.middlename,
        u.idp_userid,
        u.login_source,
-       COALESCE(uv.version, 0) as version
+       COALESCE(uv.version, 1) as version
 from public.users u
-         left join (select id, count(transaction_id) - 1 as version
+         left join (select id, count(transaction_id) as version
                     from users_version
                     group by id) uv on u.id = uv.id;
 
@@ -65,21 +65,30 @@ from public.users u
 
 -- users_version -> users_history
 transfer public.users_history from lear_old using
-select uv.id,
-       uv.username,
-       uv.firstname,
-       uv.lastname,
-       uv.email,
-       uv.sub,
-       uv.iss,
-       uv.creation_date,
-       uv.middlename,
-       uv.idp_userid,
-       uv.login_source,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY uv.id ORDER BY uv.transaction_id ASC) - 1, 0) as version
-from public.users_version uv
-         left join transaction t on uv.transaction_id = t.id;
+with subquery as
+         (select uv.id,
+                 uv.username,
+                 uv.firstname,
+                 uv.lastname,
+                 uv.email,
+                 uv.sub,
+                 uv.iss,
+                 uv.creation_date,
+                 uv.middlename,
+                 uv.idp_userid,
+                 uv.login_source,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY uv.id ORDER BY uv.transaction_id ASC), 1) as version
+          from public.users_version uv
+                   left join transaction t on uv.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- registration_bootstrap -> registration_bootstrap
@@ -173,9 +182,9 @@ SELECT b.id,
             WHEN tmft.filing_id is not null THEN tmft.filing_id
             ELSE NULL
            END)                AS change_filing_id,
-       COALESCE(bv.version, 0) as version
+       COALESCE(bv.version, 1) as version
 FROM public.businesses b
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from businesses_version bv
                     group by id) bv on b.id = bv.id
          left join public.filings f
@@ -187,56 +196,66 @@ FROM public.businesses b
 
 -- businesses_version -> legal_entities_history
 transfer public.legal_entities_history from lear_old using
-SELECT bv.id,
-       bv.admin_freeze,
-       bv.association_type,
-       bv.continuation_out_date,
-       bv.dissolution_date,
-       bv.fiscal_year_end_date,
-       bv.foreign_identifier,
-       bv.foreign_incorporation_date,
-       bv.foreign_jurisdiction,
-       bv.foreign_jurisdiction_region,
-       bv.foreign_legal_name,
-       bv.foreign_legal_type,
-       bv.founding_date,
-       bv.identifier,
-       bv.last_agm_date,
-       bv.last_ar_date,
-       bv.last_ar_reminder_year,
-       bv.last_ar_year,
-       bv.last_coa_date,
-       bv.last_cod_date,
-       bv.last_ledger_id,
-       bv.last_ledger_timestamp,
-       bv.last_modified,
-       bv.last_remote_ledger_id,
-       bv.legal_name,
-       bv.legal_type                                                                          as entity_type,
-       bv.naics_code,
-       bv.naics_description,
-       bv.naics_key,
-       bv.restoration_expiry_date,
-       bv.restriction_ind,
-       bv.send_ar_ind,
-       bv.start_date,
-       bv.state,
-       bv.state_filing_id,
-       bv.submitter_userid,
-       bv.tax_id,
-       (CASE
-            WHEN f.id is not null THEN f.id
-            WHEN tmft.filing_id is not null THEN tmft.filing_id
-            ELSE NULL
-           END)                                                                               AS change_filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY bv.id ORDER BY bv.transaction_id ASC) - 1, 0) as version
-from public.businesses_version bv
-         left join public.transaction t
-                   on bv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
-                      bv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id
-         left join temp_multiple_filing_transactions tmft on bv.transaction_id = tmft.transaction_id;
+with subquery as
+         (SELECT bv.id,
+                 bv.admin_freeze,
+                 bv.association_type,
+                 bv.continuation_out_date,
+                 bv.dissolution_date,
+                 bv.fiscal_year_end_date,
+                 bv.foreign_identifier,
+                 bv.foreign_incorporation_date,
+                 bv.foreign_jurisdiction,
+                 bv.foreign_jurisdiction_region,
+                 bv.foreign_legal_name,
+                 bv.foreign_legal_type,
+                 bv.founding_date,
+                 bv.identifier,
+                 bv.last_agm_date,
+                 bv.last_ar_date,
+                 bv.last_ar_reminder_year,
+                 bv.last_ar_year,
+                 bv.last_coa_date,
+                 bv.last_cod_date,
+                 bv.last_ledger_id,
+                 bv.last_ledger_timestamp,
+                 bv.last_modified,
+                 bv.last_remote_ledger_id,
+                 bv.legal_name,
+                 bv.legal_type                                                                      as entity_type,
+                 bv.naics_code,
+                 bv.naics_description,
+                 bv.naics_key,
+                 bv.restoration_expiry_date,
+                 bv.restriction_ind,
+                 bv.send_ar_ind,
+                 bv.start_date,
+                 bv.state,
+                 bv.state_filing_id,
+                 bv.submitter_userid,
+                 bv.tax_id,
+                 (CASE
+                      WHEN f.id is not null THEN f.id
+                      WHEN tmft.filing_id is not null THEN tmft.filing_id
+                      ELSE NULL
+                     END)                                                                           AS change_filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY bv.id ORDER BY bv.transaction_id ASC), 1) as version
+          from public.businesses_version bv
+                   left join public.transaction t
+                             on bv.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                bv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id
+                   left join temp_multiple_filing_transactions tmft on bv.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- addresses -> addresses
@@ -259,7 +278,7 @@ SELECT a.id,
            END)                AS change_filing_id,
        COALESCE(av.version, 0) as version
 FROM public.addresses a
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.addresses_version
                     group by id) av on a.id = av.id
          left join public.filings f
@@ -271,31 +290,40 @@ FROM public.addresses a
 
 -- addresses_version -> addresses_history
 transfer public.addresses_history from lear_old using
-SELECT av.id,
-       av.address_type,
-       av.street,
-       av.street_additional,
-       av.city,
-       av.region,
-       av.country,
-       av.postal_code,
-       av.delivery_instructions,
-       av.business_id                                                            as legal_entity_id,
-       av.office_id,
-       (CASE
-            WHEN f.id is not null THEN f.id
-            WHEN tmft.filing_id is not null THEN tmft.filing_id
-            ELSE NULL
-           END)                                                                  AS change_filing_id,
-       t.issued_at                                                               as changed,
-       ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC) - 1 as version
-from public.addresses_version av
-         left join public.transaction t
-                   on av.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
-                      av.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id
-         left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id
-;
+with subquery as
+         (SELECT av.id,
+                 av.address_type,
+                 av.street,
+                 av.street_additional,
+                 av.city,
+                 av.region,
+                 av.country,
+                 av.postal_code,
+                 av.delivery_instructions,
+                 av.business_id                                                                     as legal_entity_id,
+                 av.office_id,
+                 (CASE
+                      WHEN f.id is not null THEN f.id
+                      WHEN tmft.filing_id is not null THEN tmft.filing_id
+                      ELSE NULL
+                     END)                                                                           AS change_filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
+          from public.addresses_version av
+                   left join public.transaction t
+                             on av.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                av.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id
+                   left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- aliases -> aliases
@@ -307,7 +335,7 @@ SELECT a.id,
        f.id                    as change_filing_id,
        COALESCE(av.version, 0) as version
 FROM public.aliases a
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.aliases_version
                     group by id) av on a.id = av.id
          left join public.filings f on f.transaction_id = av.transaction_id;
@@ -315,16 +343,25 @@ FROM public.aliases a
 
 -- aliases_version -> aliases_history
 transfer public.aliases_history from lear_old using
-SELECT av.id,
-       av.alias,
-       av.type,
-       av.business_id                                                                         as legal_entity_id,
-       f.id                                                                                   as change_filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC) - 1, 0) as version
-from public.aliases_version av
-         left join public.transaction t on av.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id;
+with subquery as
+         (SELECT av.id,
+                 av.alias,
+                 av.type,
+                 av.business_id                                                                     as legal_entity_id,
+                 f.id                                                                               as change_filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
+          from public.aliases_version av
+                   left join public.transaction t on av.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- colin_event_ids -> colin_event_ids
@@ -398,26 +435,33 @@ SELECT d.id,
        d.file_key,
        d.business_id           as legal_entity_id,
        d.filing_id,
-       COALESCE(dv.version, 0) as version
+       COALESCE(dv.version, 1) as version
 FROM public.documents d
-         left join (select id, count(transaction_id) - 1 as version
+         left join (select id, count(transaction_id) as version
                     from public.documents_version
                     group by id) dv on d.id = dv.id;
 
 
 -- documents_version -> documents_history
 transfer public.documents_history from lear_old using
-SELECT dv.id,
-       dv.type,
-       dv.file_key,
-       dv.business_id                                                                         as legal_entity_id,
-       dv.filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY dv.id ORDER BY dv.transaction_id ASC) - 1, 0) as version
-from public.documents_version dv
-         left join public.transaction t on dv.transaction_id = t.id;
-
-
+with subquery as
+         (SELECT dv.id,
+                 dv.type,
+                 dv.file_key,
+                 dv.business_id                                                                     as legal_entity_id,
+                 dv.filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY dv.id ORDER BY dv.transaction_id ASC), 1) as version
+          from public.documents_version dv
+                   left join public.transaction t on dv.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- offices -> offices
@@ -432,9 +476,9 @@ SELECT distinct o.id,
                      ELSE NULL
                     END)                AS change_filing_id,
 
-                COALESCE(ov.version, 0) as version
+                COALESCE(ov.version, 1) as version
 FROM public.offices o
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.offices_version
                     group by id) ov on o.id = ov.id
          left join public.filings f
@@ -445,19 +489,37 @@ FROM public.offices o
 
 -- offices_version -> offices_history
 transfer public.offices_history from lear_old using
-SELECT ov.id,
-       ov.office_type,
-       ov.deactivated_date,
-       ov.business_id                                                                         as legal_entity_id,
-       f.id                                                                                   as change_filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY ov.id ORDER BY ov.transaction_id ASC) - 1, 0) as version
-from public.offices_version ov
-         left join public.transaction t
-                   on ov.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
-                      ov.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id
-         left join temp_multiple_filing_transactions tmft on ov.transaction_id = tmft.transaction_id;
+with subquery as
+         (SELECT ov.id,
+                 ov.office_type,
+                 (CASE
+                      WHEN ov.operation_type = 2 THEN f.effective_date
+                      ELSE NULL
+                     END)                                                                           as deactivated_date,
+                 ov.business_id                                                                     as legal_entity_id,
+                 (CASE
+                      WHEN f.id is not null THEN f.id
+                      WHEN tmft.filing_id is not null THEN tmft.filing_id
+                      ELSE NULL
+                     END)                                                                           AS change_filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY ov.id ORDER BY ov.transaction_id ASC), 1) as version
+          from public.offices_version ov
+                   left join public.transaction t
+                             on ov.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                ov.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id
+                   left join temp_multiple_filing_transactions tmft on ov.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.deactivated_date is not null
+   or sq.version != mv.max_version;
 
 
 -- parties -> parties
@@ -478,9 +540,9 @@ SELECT p.id,
             WHEN tmft.filing_id is not null THEN tmft.filing_id
             ELSE NULL
            END)                AS change_filing_id,
-       COALESCE(pv.version, 0) as version
+       COALESCE(pv.version, 1) as version
 FROM public.parties p
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.parties_version
                     group by id) pv on p.id = pv.id
          left join public.filings f
@@ -489,30 +551,43 @@ FROM public.parties p
          left join temp_multiple_filing_transactions tmft on pv.transaction_id = tmft.transaction_id;
 
 
-
-
 -- parties_version -> parties_history
 transfer public.parties_history from lear_old using
-SELECT pv.id,
-       pv.party_type,
-       pv.first_name,
-       pv.middle_initial,
-       pv.last_name,
-       pv.title,
-       pv.organization_name,
-       pv.delivery_address_id,
-       pv.mailing_address_id,
-       pv.identifier,
-       pv.email,
-       f.id                                                                                   as change_filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY pv.id ORDER BY pv.transaction_id ASC) - 1, 0) as version
-from public.parties_version pv
-         left join public.transaction t
-                   on pv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
-                      pv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id
-         left join temp_multiple_filing_transactions tmft on pv.transaction_id = tmft.transaction_id;
+with subquery as
+         (SELECT pv.id,
+                 pv.party_type,
+                 pv.first_name,
+                 pv.middle_initial,
+                 pv.last_name,
+                 pv.title,
+                 pv.organization_name,
+                 pv.delivery_address_id,
+                 pv.mailing_address_id,
+                 pv.identifier,
+                 pv.email,
+                 (CASE
+                      WHEN f.id is not null THEN f.id
+                      WHEN tmft.filing_id is not null THEN tmft.filing_id
+                      ELSE NULL
+                     END)                                                                       AS change_filing_id,
+                 t.issued_at                                                                    as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY pv.id ORDER BY pv.transaction_id), 1) as version
+          from public.parties_version pv
+                   left join public.transaction t
+                             on pv.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                pv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id
+                   left join temp_multiple_filing_transactions tmft on pv.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version
+;
 
 
 -- party_roles -> party_roles
@@ -529,9 +604,9 @@ SELECT pr.id,
             WHEN tmft.filing_id is not null THEN tmft.filing_id
             ELSE NULL
            END)                 AS change_filing_id,
-       COALESCE(prv.version, 0) as version
+       COALESCE(prv.version, 1) as version
 FROM public.party_roles pr
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.party_roles_version
                     group by id) prv on pr.id = prv.id
          left join public.filings f
@@ -543,27 +618,36 @@ FROM public.party_roles pr
 
 -- party_roles_version -> party_roles_history
 transfer public.party_roles_history from lear_old using
-SELECT prv.id,
-       prv.role,
-       prv.appointment_date,
-       prv.cessation_date,
-       prv.business_id                                                                          as legal_entity_id,
-       prv.party_id,
-       prv.filing_id,
-       (CASE
-            WHEN f.id is not null THEN f.id
-            WHEN tmft.filing_id is not null THEN tmft.filing_id
-            ELSE NULL
-           END)                                                                                 AS change_filing_id,
-       t.issued_at                                                                              as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY prv.id ORDER BY prv.transaction_id ASC) - 1, 0) as version
-from public.party_roles_version prv
-         left join public.transaction t
-                   on prv.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
-                      prv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id
-         left join temp_multiple_filing_transactions tmft on prv.transaction_id = tmft.transaction_id
-;
+with subquery as
+         (SELECT prv.id,
+                 prv.role,
+                 prv.appointment_date,
+                 prv.cessation_date,
+                 prv.business_id                                                                      as legal_entity_id,
+                 prv.party_id,
+                 prv.filing_id,
+                 (CASE
+                      WHEN f.id is not null THEN f.id
+                      WHEN tmft.filing_id is not null THEN tmft.filing_id
+                      ELSE NULL
+                     END)                                                                             AS change_filing_id,
+                 t.issued_at                                                                          as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY prv.id ORDER BY prv.transaction_id ASC), 1) as version
+          from public.party_roles_version prv
+                   left join public.transaction t
+                             on prv.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                prv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id
+                   left join temp_multiple_filing_transactions tmft on prv.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- request_tracker -> request_tracker
@@ -598,9 +682,9 @@ SELECT r.id,
        r.signing_party_id,
        r.sub_type,
        f.id                    as change_filing_id,
-       COALESCE(rv.version, 0) as version
+       COALESCE(rv.version, 1) as version
 FROM public.resolutions r
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.resolutions_version
                     group by id) rv on r.id = rv.id
          left join public.filings f on f.transaction_id = rv.transaction_id;
@@ -609,20 +693,30 @@ FROM public.resolutions r
 
 -- resolutions_version -> resolutions_history
 transfer public.resolutions_history from lear_old using
-SELECT rv.id,
-       rv.resolution_date,
-       rv.type,
-       rv.business_id                                                                         as legal_entity_id,
-       rv.resolution,
-       rv.signing_date,
-       rv.signing_party_id,
-       rv.sub_type,
-       f.id                                                                                   as change_filing_id,
-       t.issued_at                                                                            as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY rv.id ORDER BY rv.transaction_id ASC) - 1, 0) as version
-from public.resolutions_version rv
-         left join public.transaction t on rv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id;
+with subquery as
+         (SELECT rv.id,
+                 rv.resolution_date,
+                 rv.type,
+                 rv.business_id                                                                     as legal_entity_id,
+                 rv.resolution,
+                 rv.signing_date,
+                 rv.signing_party_id,
+                 rv.sub_type,
+                 f.id                                                                               as change_filing_id,
+                 t.issued_at                                                                        as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY rv.id ORDER BY rv.transaction_id ASC), 1) as version
+          from public.resolutions_version rv
+                   left join public.transaction t on rv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
+
 
 
 -- share_classes -> share_classes
@@ -638,9 +732,9 @@ SELECT sc.id,
        sc.special_rights_flag,
        sc.business_id           as legal_entity_id,
        f.id                     as change_filing_id,
-       COALESCE(scv.version, 0) as version
+       COALESCE(scv.version, 1) as version
 FROM public.share_classes sc
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.share_classes_version
                     group by id) scv on sc.id = scv.id
          left join public.filings f on f.transaction_id = scv.transaction_id;
@@ -648,22 +742,31 @@ FROM public.share_classes sc
 
 -- share_classes_version -> share_classes_history
 transfer public.share_classes_history from lear_old using
-SELECT scv.id,
-       scv.name,
-       scv.priority,
-       scv.max_share_flag,
-       scv.max_shares,
-       scv.par_value_flag,
-       scv.par_value,
-       scv.currency,
-       scv.special_rights_flag,
-       scv.business_id                                                                          as legal_entity_id,
-       f.id                                                                                     as change_filing_id,
-       t.issued_at                                                                              as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY scv.id ORDER BY scv.transaction_id ASC) - 1, 0) as version
-from public.share_classes_version scv
-         left join public.transaction t on scv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id;
+with subquery as
+         (SELECT scv.id,
+                 scv.name,
+                 scv.priority,
+                 scv.max_share_flag,
+                 scv.max_shares,
+                 scv.par_value_flag,
+                 scv.par_value,
+                 scv.currency,
+                 scv.special_rights_flag,
+                 scv.business_id                                                                      as legal_entity_id,
+                 f.id                                                                                 as change_filing_id,
+                 t.issued_at                                                                          as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY scv.id ORDER BY scv.transaction_id ASC), 1) as version
+          from public.share_classes_version scv
+                   left join public.transaction t on scv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- share_series -> share_series
@@ -676,9 +779,9 @@ SELECT ss.id,
        ss.special_rights_flag,
        ss.share_class_id,
        f.id                     as change_filing_id,
-       COALESCE(ssv.version, 0) as version
+       COALESCE(ssv.version, 1) as version
 FROM public.share_series ss
-         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) - 1 as version
+         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.share_series_version ssv
                     group by id) ssv on ss.id = ssv.id
          left join public.filings f on f.transaction_id = ssv.transaction_id;
@@ -686,19 +789,28 @@ FROM public.share_series ss
 
 -- share_series_version -> share_series_history
 transfer public.share_series_history from lear_old using
-SELECT ssv.id,
-       ssv.name,
-       ssv.priority,
-       ssv.max_share_flag,
-       ssv.max_shares,
-       ssv.special_rights_flag,
-       ssv.share_class_id,
-       f.id                                                                                     as change_filing_id,
-       t.issued_at                                                                              as changed,
-       COALESCE(ROW_NUMBER() OVER (PARTITION BY ssv.id ORDER BY ssv.transaction_id ASC) - 1, 0) as version
-from public.share_series_version ssv
-         left join public.transaction t on ssv.transaction_id = t.id
-         left join public.filings f on f.transaction_id = t.id;
+with subquery as
+         (SELECT ssv.id,
+                 ssv.name,
+                 ssv.priority,
+                 ssv.max_share_flag,
+                 ssv.max_shares,
+                 ssv.special_rights_flag,
+                 ssv.share_class_id,
+                 f.id                                                                                 as change_filing_id,
+                 t.issued_at                                                                          as changed,
+                 COALESCE(ROW_NUMBER() OVER (PARTITION BY ssv.id ORDER BY ssv.transaction_id ASC), 0) as version
+          from public.share_series_version ssv
+                   left join public.transaction t on ssv.transaction_id = t.id
+                   left join public.filings f on f.transaction_id = t.id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- consent_continuation_outs -> consent_continuation_outs

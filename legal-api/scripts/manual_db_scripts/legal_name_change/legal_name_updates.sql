@@ -61,43 +61,83 @@ BEGIN
 END ;
 $$;
 
+
 -- A temp table to determine which SP/GP legal entities_history records contain legal name changes and the necessary
 -- query logic to determine correct end transaction ids/dates so that they can be used for
 -- alternate_names/alternate_names_history entries.  This table is also used to update the existing entities_history
 -- records.
 CREATE TEMP TABLE temp_legal_name_changes AS
+select le.id,
+       le.identifier,
+       le.tax_id,
+       prev_leh.legal_name                         as prev_legal_name,
+       le.legal_name,
+       (CASE
+            WHEN le.legal_name != prev_leh.legal_name THEN TRUE
+            WHEN le.legal_name is not null and prev_leh.legal_name is null THEN TRUE
+            ELSE FALSE
+           END)                                    AS legal_name_changed,
+       has_non_legal_name_change(le.identifier, le.version,
+                                 prev_leh.version) AS non_legal_name_change,
+       le.entity_type,
+       f.id                                        as filing_id,
+       f.filing_type,
+       f.effective_date                            as start_date,
+       null                                        as end_date,
+       le.version
+from legal_entities le
+         left join filings f on f.id = le.change_filing_id
+         left join (select id, max(version) as max_version from legal_entities_history group by id) prev_leh_version
+                   on le.id = prev_leh_version.id
+         left join legal_entities_history prev_leh
+                   on prev_leh.id = prev_leh_version.id and prev_leh.version = prev_leh_version.max_version
+UNION
 select leh.id,
        leh.identifier,
        leh.tax_id,
-       prev_leh.legal_name                              as prev_legal_name,
+       prev_leh.legal_name                         as prev_legal_name,
        leh.legal_name,
        (CASE
             WHEN leh.legal_name != prev_leh.legal_name THEN TRUE
             WHEN leh.legal_name is not null and prev_leh.legal_name is null THEN TRUE
             ELSE FALSE
-           END)                                         AS legal_name_changed,
+           END)                                    AS legal_name_changed,
        has_non_legal_name_change(leh.identifier, leh.version,
-                                 prev_leh.version)      AS non_legal_name_change,
+                                 prev_leh.version) AS non_legal_name_change,
        leh.entity_type,
-       f.id                                             as filing_id,
+       f.id                                        as filing_id,
        f.filing_type,
-       f.effective_date                                 as start_date,
+       f.effective_date                            as start_date,
        (select (CASE
-                    WHEN leh_next_tmp.legal_name is NULL THEN NULL
-                    WHEN leh.legal_name != leh_next_tmp.legal_name THEN f_next_tmp.effective_date
+                    WHEN tmp_next_le.legal_name is NULL THEN NULL
+                    WHEN leh.legal_name != tmp_next_le.legal_name THEN tmp_next_le.effective_date
                     ELSE NULL
            END) AS end_date
-        from legal_entities_history leh_next_tmp
-                 left join filings f_next_tmp on f_next_tmp.id = leh_next_tmp.change_filing_id
-        where f_next_tmp.legal_entity_id = leh.id
-          and leh_next_tmp.version = (leh.version + 1)) as end_date,
+        from (select leh_next_tmp.legal_name,
+                     f_next_tmp.effective_date
+              from legal_entities_history leh_next_tmp
+                       left join filings f_next_tmp
+                                 on f_next_tmp.id = leh_next_tmp.change_filing_id
+              where f_next_tmp.legal_entity_id = leh.id
+                and leh_next_tmp.version = (leh.version + 1)
+              UNION
+              select le_next_tmp.legal_name, f_next_tmp.effective_date
+              from legal_entities le_next_tmp
+                       left join filings f_next_tmp on f_next_tmp.id = le_next_tmp.change_filing_id
+              where f_next_tmp.legal_entity_id = leh.id
+                and le_next_tmp.version = (leh.version + 1)) tmp_next_le
+
+        where tmp_next_le.legal_name is not null)
+                                                   as end_date,
        leh.version
 from legal_entities_history leh
          left join filings f on f.id = leh.change_filing_id
          left join legal_entities_history prev_leh
                    on leh.id = prev_leh.id and prev_leh.version = leh.version - 1
+         left join legal_entities le on leh.id = le.id
 where leh.entity_type in ('SP', 'GP')
-order by leh.identifier, leh.version desc;
+;
+
 
 
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
@@ -115,8 +155,8 @@ select lnc.id                  as legal_entity_id,
        max_version.new_version as version
 from temp_legal_name_changes lnc
          join (select id,
-                      max(version)       as version_match,
-                      count(version) - 1 as new_version
+                      max(version)   as version_match,
+                      count(version) as new_version
                from temp_legal_name_changes lnc
                where lnc.filing_id is not null
                  and lnc.legal_name_changed = True
@@ -132,20 +172,21 @@ INSERT
 INTO alternate_names_history(id, legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
                              version, change_filing_id, changed)
 select an.id,
-       lnc.id                                                              as legal_entity_id,
+       lnc.id                                                          as legal_entity_id,
        lnc.identifier,
-       lnc.legal_name                                                      as name,
-       lnc.tax_id                                                          as bn15,
+       lnc.legal_name                                                  as name,
+       lnc.tax_id                                                      as bn15,
        lnc.start_date,
        lnc.end_date,
-       'OPERATING'                                                         as name_type,
-       ROW_NUMBER() OVER (PARTITION BY an.id ORDER BY lnc.version ASC) - 1 as version,
-       lnc.filing_id                                                       as change_filing_id,
-       lnc.start_date                                                      as changed
+       'OPERATING'                                                     as name_type,
+       ROW_NUMBER() OVER (PARTITION BY an.id ORDER BY lnc.version ASC) as version,
+       lnc.filing_id                                                   as change_filing_id,
+       lnc.start_date                                                  as changed
 from temp_legal_name_changes lnc
          join alternate_names an on an.legal_entity_id = lnc.id
 where lnc.filing_id is not null
   and lnc.legal_name_changed = True
+  and lnc.version != an.version
 ;
 
 
@@ -156,7 +197,7 @@ from legal_entities_history leh
     using temp_legal_name_changes lnc
 where leh.id = lnc.id
   and leh.version = lnc.version
-  and leh.version != 0
+  and leh.version != 1
   and legal_name_changed
   and not non_legal_name_change
 ;
@@ -168,8 +209,8 @@ where leh.id = lnc.id
 with temp_legal_entities_history AS
          (select id,
                  identifier,
-                 version                                                      as old_version,
-                 ROW_NUMBER() OVER (PARTITION BY id ORDER BY version ASC) - 1 as new_version
+                 version                                                  as old_version,
+                 ROW_NUMBER() OVER (PARTITION BY id ORDER BY version ASC) as new_version
           from legal_entities_history
           where entity_type in ('SP', 'GP')
           order by id, version desc)
@@ -180,15 +221,22 @@ where legal_entities_history.id = tleh.id
   and legal_entities_history.version = tleh.old_version
 ;
 
+
 -- Update version numbers to ensure correct version numbers are in place for each legal_entities entries.
 -- This is required as some legal_entities_history were deleted and moved to the alternate_names_history table.
 -- In the cases where legal_entities_history entries were moved, the corresponding legal_entities version number
 -- may be incorrect.
 update legal_entities le
 set version = tempLeh.maxVersion
-from (select id, max(version) as maxVersion
-      from legal_entities_history
-      group by id) as tempLeh
+from (select le.id,
+             CASE
+                 when max_leh_version.id is null then 1
+                 else max_leh_version.maxVersion + 1
+                 end as maxVersion
+      from legal_entities le
+               left join (select id, max(version) as maxVersion
+                          from legal_entities_history
+                          group by id) max_leh_version on le.id = max_leh_version.id) as tempLeh
 where le.id = tempLeh.id
 ;
 
@@ -215,7 +263,8 @@ select distinct ph.id                 as                                        
                 ph.party_type,
                 (CASE
                      WHEN ph.party_type = 'person'
-                         THEN CONCAT_WS(' ', ph.first_name, NULLIF(ph.middle_initial, ''), NULLIF(ph.last_name, ''))
+                         THEN CONCAT_WS(' ', ph.first_name, NULLIF(ph.middle_initial, ''),
+                                        NULLIF(ph.last_name, ''))
                      WHEN ph.party_type = 'organization'
                          THEN ph.organization_name
                      ELSE NULL
@@ -227,7 +276,6 @@ select distinct ph.id                 as                                        
                 ph.organization_name,
                 ph.delivery_address_id,
                 ph.mailing_address_id,
-                ph.version,
                 ph.changed,
                 ph.change_filing_id,
                 f.effective_date      as                                             change_filing_effective_date,
@@ -254,6 +302,7 @@ select distinct ph.id                 as                                        
                     )                                                                is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                          is_filing_party,
                 (r.id is not null and pr.id is null)                                 is_resolution_party,
+                ph.version,
                 cp.version            as                                             max_version
 from parties_history ph
          left join party_roles pr on ph.id = pr.party_id
@@ -265,6 +314,61 @@ from parties_history ph
                        and (ph.identifier is not null and ph.identifier != '')
          left join filings f on f.id = ph.change_filing_id
          join parties cp on cp.id = ph.id
+UNION
+select distinct p.id                  as                                            party_id,
+                CAST(NULL AS INTEGER) as                                            new_legal_entity_id,
+                p.party_type,
+                (CASE
+                     WHEN p.party_type = 'person'
+                         THEN CONCAT_WS(' ', p.first_name, NULLIF(p.middle_initial, ''), NULLIF(p.last_name, ''))
+                     WHEN p.party_type = 'organization'
+                         THEN p.organization_name
+                     ELSE NULL
+                    END)              AS                                            legal_name,
+                p.first_name,
+                p.middle_initial,
+                p.last_name,
+                p.title,
+                p.organization_name,
+                p.delivery_address_id,
+                p.mailing_address_id,
+                f.effective_date      as                                            changed,
+                p.change_filing_id,
+                f.effective_date      as                                            change_filing_effective_date,
+                p.identifier,
+                p.email,
+                le.id                 as                                            matching_legal_entity_id,
+                (r.id is null and pr.filing_id is null)                             is_business_party,
+                (r.id is null and pr.filing_id is null and p.party_type = 'person') is_business_party_person,
+                (r.id is null
+                    and pr.filing_id is null
+                    and p.party_type = 'organization'
+                    and le.id is null
+                    and (p.identifier is null or p.identifier = '' or p.identifier like 'FM%')
+                    )                                                               is_business_party_org_no_match,
+                (r.id is null
+                    and pr.filing_id is null
+                    and p.party_type = 'organization'
+                    and le.id is not null)                                          is_business_party_org_match,
+                (r.id is null
+                    and pr.filing_id is null
+                    and le.id is null
+                    and p.party_type = 'organization'
+                    and (p.identifier is not null and p.identifier != '' and p.identifier not like 'FM%')
+                    )                                                               is_business_party_colin_entity,
+                (r.id is null and pr.filing_id is not null)                         is_filing_party,
+                (r.id is not null and pr.id is null)                                is_resolution_party,
+                p.version,
+                p.version             as                                            max_version
+from parties p
+         left join party_roles pr on p.id = pr.party_id
+         left join resolutions r on r.signing_party_id = p.id
+         left join legal_entities le
+                   on UPPER(p.identifier) = UPPER(le.identifier)
+                       and p.party_type = 'organization'
+                       and le.entity_type in ('BEN', 'CP', 'SP', 'GP')
+                       and (p.identifier is not null and p.identifier != '')
+         left join filings f on f.id = p.change_filing_id
 ;
 
 
@@ -338,28 +442,42 @@ where temp_parties_legal_name.party_id = ibp.temp_party_id
 -- INSERT legal_entities_history records for parties
 -- ************************************************************************************************
 
+
 -- insert all version records for persons into legal_entities_history table
 INSERT INTO legal_entities_history (id, entity_type, identifier, legal_name, first_name, middle_initial, last_name,
                                     title, delivery_address_id, mailing_address_id, email, version, change_filing_id,
                                     changed)
-select distinct tp.new_legal_entity_id as id,
-                tp.party_type          as entity_type,
-                tp.identifier,
-                tp.legal_name,
-                tp.first_name,
-                tp.middle_initial,
-                tp.last_name,
-                tp.title,
-                tp.delivery_address_id,
-                tp.mailing_address_id,
-                tp.email,
-                tp.version,
-                tp.change_filing_id,
-                tp.changed
-from temp_parties_legal_name tp
-         join temp_parties_legal_name maxTp
-              on tp.party_id = maxTp.party_id and tp.max_version = maxTp.version
-where not maxTp.is_business_party_colin_entity
+with subquery as
+         (select distinct tp.new_legal_entity_id as id,
+                          tp.party_type          as entity_type,
+                          tp.identifier,
+                          tp.legal_name,
+                          tp.first_name,
+                          tp.middle_initial,
+                          tp.last_name,
+                          tp.title,
+                          tp.delivery_address_id,
+                          tp.mailing_address_id,
+                          tp.email,
+                          tp.version,
+                          tp.change_filing_id,
+                          tp.changed
+          from temp_parties_legal_name tp
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+          where not maxTp.is_business_party_colin_entity),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 ;
 
 
@@ -377,20 +495,28 @@ where tp.is_resolution_party
 INSERT INTO colin_entities_history (id, identifier, organization_name,
                                     delivery_address_id,
                                     mailing_address_id, email, change_filing_id, changed, version)
-select tp.new_legal_entity_id as id,
-       tp.identifier,
-       tp.organization_name,
-       tp.delivery_address_id,
-       tp.mailing_address_id,
-       tp.email,
-       tp.change_filing_id,
-       tp.changed,
-       tp.version
-from temp_parties_legal_name tp
-         join temp_parties_legal_name maxTp
-              on tp.party_id = maxTp.party_id and tp.max_version = maxTp.version
-where maxTp.is_business_party_colin_entity
-;
+with subquery as
+         (select tp.new_legal_entity_id as id,
+                 tp.identifier,
+                 tp.organization_name,
+                 tp.delivery_address_id,
+                 tp.mailing_address_id,
+                 tp.email,
+                 tp.change_filing_id,
+                 tp.changed,
+                 tp.version
+          from temp_parties_legal_name tp
+                   join temp_parties_legal_name maxTp
+                        on tp.party_id = maxTp.party_id and tp.max_version = maxTp.version
+          where maxTp.is_business_party_colin_entity),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 
 -- ************************************************************************************************
@@ -398,6 +524,21 @@ where maxTp.is_business_party_colin_entity
 -- ************************************************************************************************
 
 CREATE TEMP TABLE temp_party_roles_legal_name AS
+select pr.id                 as party_role_id,
+       CAST(NULL AS INTEGER) as new_entity_role_id,
+       pr.role::roletypes    as role_type,
+       pr.appointment_date,
+       pr.cessation_date,
+       pr.legal_entity_id,
+       pr.party_id,
+       pr.filing_id,
+       pr.change_filing_id,
+       f.effective_date      as changed,
+       pr.version,
+       pr.version            as max_version
+from party_roles pr
+         left join filings f on pr.change_filing_id = f.id
+UNION
 select prh.id                as party_role_id,
        CAST(NULL AS INTEGER) as new_entity_role_id,
        prh.role::roletypes   as role_type,
@@ -445,21 +586,30 @@ where temp_party_roles_legal_name.party_role_id = ibper.temp_party_role_id
 -- insert all version records business party persons associations into entity_roles_history table
 INSERT INTO entity_roles_history (id, role_type, legal_entity_id, related_entity_id, appointment_date, cessation_date,
                                   filing_id, change_filing_id, changed, version)
-select distinct tpr.new_entity_role_id as id,
-                tpr.role_type,
-                tpr.legal_entity_id,
-                tp.new_legal_entity_id as related_entity_id,
-                tpr.appointment_date,
-                tpr.cessation_date,
-                tpr.filing_id,
-                tpr.change_filing_id,
-                tpr.changed,
-                tpr.version
-from temp_party_roles_legal_name tpr
-         join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
-where not tp.is_business_party_colin_entity
-  and not tp.is_resolution_party
-;
+with subquery as
+         (select distinct tpr.new_entity_role_id as id,
+                          tpr.role_type,
+                          tpr.legal_entity_id,
+                          tp.new_legal_entity_id as related_entity_id,
+                          tpr.appointment_date,
+                          tpr.cessation_date,
+                          tpr.filing_id,
+                          tpr.change_filing_id,
+                          tpr.changed,
+                          tpr.version
+          from temp_party_roles_legal_name tpr
+                   join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
+          where not tp.is_business_party_colin_entity
+            and not tp.is_resolution_party),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.cessation_date is not null
+   or sq.version != mv.max_version;
 
 
 -- insert initial record for colin entity association into entity_roles table
@@ -492,21 +642,35 @@ where temp_party_roles_legal_name.party_role_id = icer.temp_party_role_id
 INSERT INTO entity_roles_history (id, role_type, legal_entity_id, related_colin_entity_id, appointment_date,
                                   cessation_date,
                                   filing_id, change_filing_id, changed, version)
-select distinct tpr.new_entity_role_id as id,
-                tpr.role_type,
-                tpr.legal_entity_id,
-                tp.new_legal_entity_id as related_colin_entity_id,
-                tpr.appointment_date,
-                tpr.cessation_date,
-                tpr.filing_id,
-                tpr.change_filing_id,
-                tpr.changed,
-                tpr.version
-from temp_party_roles_legal_name tpr
-         join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
-where tp.is_business_party_colin_entity
-  and not tp.is_resolution_party
-;
+with subquery as
+         (select distinct tpr.new_entity_role_id as id,
+                          tpr.role_type,
+                          tpr.legal_entity_id,
+                          tp.new_legal_entity_id as related_colin_entity_id,
+                          tpr.appointment_date,
+                          tpr.cessation_date,
+                          tpr.filing_id,
+                          tpr.change_filing_id,
+                          tpr.changed,
+                          tpr.version
+          from temp_party_roles_legal_name tpr
+                   join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
+          where tp.is_business_party_colin_entity
+            and not tp.is_resolution_party),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.cessation_date is not null
+   or sq.version != mv.max_version;
+
+
+delete
+from entity_roles
+where cessation_date is not null;
 
 -- ************************************************************************************************
 -- Update filing json to replace party ids with newly created legal entity ids for COD, correction,
