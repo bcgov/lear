@@ -400,3 +400,38 @@ def test_continued_in_business(session):
     assert business_json['foreignLegalType'] == legal_entity.foreign_legal_type
     assert business_json['foreignIncorporationDate'] == \
         LegislationDatetime.format_as_legislation_date(legal_entity.foreign_incorporation_date)
+
+
+def test_versioning(session):
+    """Assert that the continued corp is saved successfully."""
+    legal_entity =LegalEntity(
+        legal_name='Test - Legal Name',
+        entity_type='BC',
+        founding_date=datetime.utcfromtimestamp(0),
+        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+        dissolution_date=None,
+        identifier='BC1234567',
+        state=LegalEntity.State.ACTIVE,
+        jurisdiction='CA',
+        foreign_identifier='C1234567',
+        foreign_legal_name='Prev Legal Name',
+        foreign_legal_type='BEN',
+        foreign_incorporation_date=datetime.utcfromtimestamp(0),
+    )
+    legal_entity.save()
+    session.flush()
+    le_id = legal_entity.id
+
+    le2 = LegalEntity.find_by_id(le_id)
+
+    le2.state = LegalEntity.State.HISTORICAL
+    le2.dissolution_date = datetime.now()
+    le2.save()
+    session.flush()
+
+    session.delete(legal_entity)
+    session.commit()
+    session.flush()
+    print ('stop')
+
+

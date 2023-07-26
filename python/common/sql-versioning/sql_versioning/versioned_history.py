@@ -268,8 +268,8 @@ def versioned_session(session):
     def before_flush(session, flush_context, instances):
         for obj in versioned_objects(session.dirty):
             create_version(obj, session)
-        # for obj in versioned_objects(session.deleted):
-        #     create_version(obj, session, deleted=True)
+        for obj in versioned_objects(session.deleted):
+            create_version(obj, session, deleted=True)
 
 def history_cls(obj):
     with suppress(Exception):
