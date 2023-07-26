@@ -14,6 +14,7 @@
 """The Unit Tests for the Affiliation email processor."""
 from unittest.mock import patch
 
+from legal_api.models import Business
 from entity_emailer.email_processors import affiliation_notification
 from tests.unit import prep_alteration_filing
 
@@ -24,7 +25,8 @@ def test_notifications(app, session):
     company_name = 'Company Name'
     testing_email = 'test@test.com'
     token = 'token'
-    filing = prep_alteration_filing(session, 'BC1234567', 'DRAFT', company_name)
+    # pylint: disable=too-many-function-args
+    filing = prep_alteration_filing(session, 'BC1234567', 'DRAFT', company_name, Business.LegalTypes.BCOMP.value)
 
     # test processor
     with patch.object(affiliation_notification, 'get_recipients', return_value=testing_email):

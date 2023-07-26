@@ -43,6 +43,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import config
 from entity_emailer.email_processors import (
     affiliation_notification,
+    alteration_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -174,6 +175,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'specialResolution':
                 email = special_resolution_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'alteration':
+                email = alteration_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
