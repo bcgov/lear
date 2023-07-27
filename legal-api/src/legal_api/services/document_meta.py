@@ -330,6 +330,7 @@ class DocumentMetaService():
             ]
 
         filing_data = Filing.find_by_id(filing['filing']['header']['filingId'])
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
         has_corrected = filing_data.parent_filing_id is not None  # Identify whether it is corrected
         label_original = ' (Original)' if has_corrected else ''
         label_certificate_original = ' (Original)' if has_corrected and NameXService.\

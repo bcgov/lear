@@ -599,7 +599,8 @@ def test_is_corrected_filing(session):
 
     b = factory_legal_entity('CP1234567')
     filing2 = factory_completed_filing(b, CORRECTION_AR)
-
+    
+    # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     filing1.parent_filing = filing2
     filing1.save()
 
@@ -628,6 +629,7 @@ def test_is_pending_correction_filing(session):
     setattr(filing2, 'skip_status_listener', True)
     filing2.save()
 
+    # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     filing1.parent_filing = filing2
     filing1.save()
 
@@ -653,6 +655,7 @@ def test_linked_not_correction(session):
     filing2.filing_json = f
     filing2.save()
 
+    # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     filing1.parent_filing = filing2
     filing1.save()
 

@@ -901,6 +901,7 @@ def test_ia_completed_bcomp_original(session, app):
                     }
                 }
             }
+            # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
             original_filing.parent_filing_id = corrected_filing.id
             original_filing.save()
             documents = document_meta.get_documents(filing)

@@ -394,6 +394,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
         identifier = 'BC1234567'
         legal_entity, original = ledger_element_setup_help(identifier, 'incorporationApplication')
         correction = ledger_element_setup_filing(legal_entity, 'correction', filing_date=legal_entity.founding_date + datedelta.datedelta(months=3))
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
         original.parent_filing_id = correction.id
         original.save()
 
@@ -425,6 +426,7 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             'correction',
             filing_date=legal_entity.founding_date + datedelta.datedelta(months=3),
             filing_dict=ar_correction)
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
         original.parent_filing_id = correction.id
         original.save()
 
@@ -516,6 +518,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=sr_correction)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     original.parent_filing_id = correction.id
     original.save()
 
@@ -534,6 +537,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=sr_correction_2)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     correction.parent_filing_id = correction_2.id
     correction.save()
 
@@ -570,6 +574,7 @@ def test_ledger_display_non_special_resolution_correction_name(session, client, 
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=correction)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     original.parent_filing_id = correction.id
     original.save()
 
