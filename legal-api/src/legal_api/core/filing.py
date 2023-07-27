@@ -362,10 +362,7 @@ class Filing:
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': legal_entity.identifier,
-                # TODO: returning nothing for now until we get display name updated to find display name using new
-                # versioning model
-                'displayName': '',
-                # 'displayName': FilingMeta.display_name(legal_entity, filing=filing),
+                'displayName': FilingMeta.display_name(legal_entity, filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
                 'name': filing.filing_type,
