@@ -54,7 +54,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
     filing_json['filing']['business']['legalType'] = entity_type
     filing_json['filing']['header']['name'] = filing_type
 
-    legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+    legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
     if report_type == 'correction':
         original_filing_json = copy.deepcopy(filing_json)
         original_filing_json['filing']['header']['name'] = filing_json['filing']['correction']['correctedFilingType']
@@ -66,7 +66,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
     filing = factory_completed_filing(legal_entity, filing_json)
 
     report = Report(filing)
-    report._legal_entity =legal_entity
+    report._legal_entity = legal_entity
     report._report_key = report_type
     if report._report_key == 'correction':
         report._report_key = report._filing.filing_json['filing']['correction']['correctedFilingType']
@@ -212,7 +212,7 @@ def test_alteration_name_change(session):
     report_type = 'certificateOfNameChange'
 
     # An existing business
-    legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+    legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
 
     # changes its name to a named company
     # create the minimal filing
@@ -233,7 +233,7 @@ def test_alteration_name_change(session):
 
     # new legal_name can be retrieved from the versioned business (numbered company case)
     business_revision = \
-        VersionedBusinessDetailsService.get_business_revision_after_filing(numbered_company_filing.id, legal_entity.id)
+        VersionedBusinessDetailsService.get_business_revision(numbered_company_filing, legal_entity)
     assert business_revision['legalName'] == numbered_company_name
     numbered_company_report = create_alteration_report(numbered_company_filing, legal_entity, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
@@ -285,7 +285,7 @@ def filing_numbered_company(legal_entity, template, legal_name):
 def create_alteration_report(filing, business, report_type):
     """Create a report for alteration."""
     report = Report(filing)
-    report._legal_entity =business
+    report._legal_entity = business
     report._report_key = report_type
     populate_business_info_to_filing(report)
     set_dates(report)
