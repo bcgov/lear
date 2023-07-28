@@ -264,7 +264,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         offices_historical = db.session.query(office_history) \
             .filter(office_history.change_filing_id == filing_id) \
             .filter(office_history.legal_entity_id == legal_entity_id)  \
-            .filter(office_history.deactivated_date > filing.effective_date)
+            .filter(office_history.deactivated_date == None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
 
         # Get all of the valid types in effect for this LegalEntity and Filing
         current_types = db.session.query(Office.office_type.label('office_type')) \
@@ -274,7 +274,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         historical_types = db.session.query(office_history.office_type.label('office_type')) \
             .filter(office_history.change_filing_id == filing_id) \
             .filter(office_history.legal_entity_id == legal_entity_id) \
-            .filter(office_history.deactivated_date > filing.effective_date)
+            .filter(office_history.deactivated_date == None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
 
         valid_office_types = current_types.union(historical_types).distinct().all()
 

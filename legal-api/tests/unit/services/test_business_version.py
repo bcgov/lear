@@ -120,6 +120,7 @@ def test_get_office_revision(session):
     """Make sure the office version data can be retrieved."""
     versioned_session(db.session)
 
+    # incorporation application
     ia_effective_date = datetime.datetime.utcnow()
     ia_filing = Filing(_filing_type='incorporationApplication', effective_date=ia_effective_date)
     ia_filing.save()
@@ -128,32 +129,52 @@ def test_get_office_revision(session):
                     office_types=[OfficeType.REGISTERED, OfficeType.RECORDS],
                     change_filing=ia_filing)
     legal_entity.save()
-    offices_version = VersionedBusinessDetailsService.get_office_revision(ia_filing, legal_entity.id)
-    assert offices_version
 
+    # alteration
+    alt_effective_date = datetime.datetime.utcnow()
+    alt_filing = Filing(_filing_type='alteration', effective_date=alt_effective_date)
+    alt_filing.save()
+
+    if existing_offices := legal_entity.offices.all():
+        for office in existing_offices:
+            if office.office_type == OfficeType.RECORDS:
+                office.deactivated_date = alt_effective_date
+            office.change_filing_id = alt_filing.id
+            db.session.add(office)
+            db.session.commit()
+
+            if office.office_type == OfficeType.RECORDS:
+                db.session.delete(office)
+                db.session.commit()
+
+    # dissolution
     dis_effective_date = datetime.datetime.utcnow()
     dis_filing = Filing(_filing_type='dissolution', effective_date=dis_effective_date)
     dis_filing.save()
 
     if existing_offices := legal_entity.offices.all():
         for office in existing_offices:
-            office.deactivated_date = dis_effective_date
+            office.change_filing_id = dis_filing.id
             db.session.add(office)
-            db.session.commit()
-            db.session.delete(office)
-
+        db.session.commit()
     factory_offices(legal_entity,
-                    office_types=[OfficeType.REGISTERED, OfficeType.RECORDS, OfficeType.CUSTODIAL],
+                    office_types=[OfficeType.CUSTODIAL],
                     change_filing=dis_filing)
     legal_entity.save()
-    offices_version = VersionedBusinessDetailsService.get_office_revision(ia_filing, legal_entity.id)
-    assert offices_version
-    assert len(offices_version) == 2
+    ia_offices_version = VersionedBusinessDetailsService.get_office_revision(ia_filing, legal_entity.id)
+    assert ia_offices_version
+    assert len(ia_offices_version) == 2
     assert all(office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]
-               for office_type in offices_version.keys())
+               for office_type in ia_offices_version.keys())
 
-    offices_version = VersionedBusinessDetailsService.get_office_revision(dis_filing, legal_entity.id)
-    assert offices_version
-    assert len(offices_version) == 3
-    assert all(office_type in [OfficeType.REGISTERED, OfficeType.RECORDS, OfficeType.CUSTODIAL]
-               for office_type in offices_version.keys())
+    alt_offices_version = VersionedBusinessDetailsService.get_office_revision(alt_filing, legal_entity.id)
+    assert alt_offices_version
+    assert len(alt_offices_version) == 1  # OfficeType.RECORDS deleted in alteration filing
+    assert all(office_type in [OfficeType.REGISTERED]
+               for office_type in alt_offices_version.keys())
+
+    dis_offices_version = VersionedBusinessDetailsService.get_office_revision(dis_filing, legal_entity.id)
+    assert dis_offices_version
+    assert len(dis_offices_version) == 2
+    assert all(office_type in [OfficeType.REGISTERED, OfficeType.CUSTODIAL]
+               for office_type in dis_offices_version.keys())
