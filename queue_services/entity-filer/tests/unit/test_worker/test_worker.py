@@ -460,6 +460,7 @@ async def test_correction_filing(app, session):
     staff_user = User.find_by_username('staff_user')
 
     # check that the correction filing is linked to the original filing
+    # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     assert original_filing.parent_filing
     assert original_filing.parent_filing == correction_filing
 
