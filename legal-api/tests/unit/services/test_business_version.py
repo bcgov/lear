@@ -141,6 +141,10 @@ def test_get_office_revision(session):
                 office.deactivated_date = alt_effective_date
             office.change_filing_id = alt_filing.id
             db.session.add(office)
+            if existing_address := office.addresses.all():
+                for address in existing_address:
+                    address.change_filing_id = alt_filing.id
+                    db.session.add(address)
             db.session.commit()
 
             if office.office_type == OfficeType.RECORDS:
@@ -156,7 +160,13 @@ def test_get_office_revision(session):
         for office in existing_offices:
             office.change_filing_id = dis_filing.id
             db.session.add(office)
+
+            if existing_address := office.addresses.all():
+                for address in existing_address:
+                    address.change_filing_id = dis_filing.id
+                    db.session.add(address)
         db.session.commit()
+
     factory_offices(legal_entity,
                     office_types=[OfficeType.CUSTODIAL],
                     change_filing=dis_filing)
@@ -166,15 +176,35 @@ def test_get_office_revision(session):
     assert len(ia_offices_version) == 2
     assert all(office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]
                for office_type in ia_offices_version.keys())
+    for office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
+        assert ia_offices_version[office_type]['deliveryAddress']['streetAddress'] == \
+            f'incorporationApplication {office_type} Delivery Street'
+        assert ia_offices_version[office_type]['mailingAddress']['streetAddress'] == \
+            f'incorporationApplication {office_type} Mailing Street'
 
     alt_offices_version = VersionedBusinessDetailsService.get_office_revision(alt_filing, legal_entity.id)
     assert alt_offices_version
     assert len(alt_offices_version) == 1  # OfficeType.RECORDS deleted in alteration filing
     assert all(office_type in [OfficeType.REGISTERED]
                for office_type in alt_offices_version.keys())
+    for office_type in [OfficeType.REGISTERED]:
+        assert alt_offices_version[office_type]['deliveryAddress']['streetAddress'] == \
+            f'incorporationApplication {office_type} Delivery Street'
+        assert alt_offices_version[office_type]['mailingAddress']['streetAddress'] == \
+            f'incorporationApplication {office_type} Mailing Street'
 
     dis_offices_version = VersionedBusinessDetailsService.get_office_revision(dis_filing, legal_entity.id)
     assert dis_offices_version
     assert len(dis_offices_version) == 2
     assert all(office_type in [OfficeType.REGISTERED, OfficeType.CUSTODIAL]
                for office_type in dis_offices_version.keys())
+
+    assert dis_offices_version[OfficeType.REGISTERED]['deliveryAddress']['streetAddress'] == \
+        f'incorporationApplication {OfficeType.REGISTERED} Delivery Street'
+    assert dis_offices_version[OfficeType.REGISTERED]['mailingAddress']['streetAddress'] == \
+        f'incorporationApplication {OfficeType.REGISTERED} Mailing Street'
+
+    assert dis_offices_version[OfficeType.CUSTODIAL]['deliveryAddress']['streetAddress'] == \
+        f'dissolution {OfficeType.CUSTODIAL} Delivery Street'
+    assert dis_offices_version[OfficeType.CUSTODIAL]['mailingAddress']['streetAddress'] == \
+        f'dissolution {OfficeType.CUSTODIAL} Mailing Street'
