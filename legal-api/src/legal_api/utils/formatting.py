@@ -17,10 +17,8 @@ import decimal
 
 def float_to_str(f, precision=17):
     """Convert the given float to a string without resorting to scientific notation."""
-
-    # create a new context for this task
-    ctx = decimal.Context()
+    ctx = decimal.Context()  # create a new context for this task
     ctx.prec = precision
 
-    d1 = ctx.create_decimal(repr(f))
-    return format(d1, 'f')
+    value = ctx.create_decimal(repr(f))
+    return format(value, 'f')
