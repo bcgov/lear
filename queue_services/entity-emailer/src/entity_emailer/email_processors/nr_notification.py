@@ -72,13 +72,18 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
             legal_name = n_item['name']
             break
 
+    name_request_url = current_app.config.get('NAME_REQUEST_URL')
+    decide_business_url = current_app.config.get('DECIDE_BUSINESS_URL')
+
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
     html_out = mail_template.render(
         nr_number=nr_number,
         expiration_date=expiration_date,
         legal_name=legal_name,
-        refund_value=refund_value
+        refund_value=refund_value,
+        name_request_url=name_request_url,
+        decide_business_url=decide_business_url
     )
 
     # get recipients
