@@ -19,10 +19,10 @@
                 <td class="bold pt-2">Name Reserved:</td>
                 <td class="pt-2">
                     {% if not nameRequest.nrNumber %}
-                    The company is to be restored with a name created by adding "{{numberedLegalNameSuffix}}" after
+                    The company is to be restored with a name created by adding "{{numberedBusinessNameSuffix}}" after
                     the incorporation number.
                     {% else %}
-                    {{nameRequest.legalName}}
+                    {{nameRequest.businessName}}
                     {% endif %}
                 </td>
             </tr>

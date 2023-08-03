@@ -117,10 +117,10 @@ def company_name_validation(filing):
             msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
 
         # ensure company is named if being altered to numbered
-        legal_name_path: Final = '/filing/business/legalName'
-        if not get_str(filing, legal_name_path):
+        business_name_path: Final = '/filing/business/businessName'
+        if not get_str(filing, business_name_path):
             msg.append({'error': babel('Alteration to Numbered Company can only be done for a Named Company.'),
-                        'path': legal_name_path})
+                        'path': business_name_path})
 
     return msg
 

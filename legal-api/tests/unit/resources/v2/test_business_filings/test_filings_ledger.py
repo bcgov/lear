@@ -319,7 +319,7 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
         business_name = 'Skinners Fine Saves'
 
         legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
-        legal_entity.legal_name = business_name
+        legal_entity._legal_name = business_name
         legal_entity.save()
 
         filing = copy.deepcopy(FILING_HEADER)
@@ -359,7 +359,7 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
         business_name = 'The Truffle House'
 
         legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-        legal_entity.legal_name = business_name
+        legal_entity._legal_name = business_name
         legal_entity.save()
 
         filing = copy.deepcopy(FILING_HEADER)
@@ -368,13 +368,13 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
         filing['filing'][filing_name] = copy.deepcopy(INCORPORATION)
         filing['filing'][filing_name]['nameRequest']['nrNumber'] = nr_number
         filing['filing'][filing_name]['nameRequest']['legalType'] = entity_type
-        filing['filing'][filing_name]['legalName'] = business_name
+        filing['filing'][filing_name]['businessName'] = business_name
 
         f = factory_completed_filing(legal_entity, filing, filing_date=filing_date)
         today = filing_date.isoformat()
         ia_meta = {'legalFilings': [filing_name, ],
                 filing_name: {'nrNumber': nr_number,
-                                'legalName': business_name}
+                                'businessName': business_name}
                 }
         f._meta_data = {**{'applicationDate': today}, **ia_meta}
 
@@ -475,7 +475,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
             entity_type = LegalEntity.EntityTypes.BCOMP.value
 
             legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-            legal_entity.legal_name = business_name
+            legal_entity._legal_name = business_name
             legal_entity.save()
 
             filing_name = 'specialResolution'

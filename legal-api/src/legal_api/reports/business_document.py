@@ -348,29 +348,29 @@ class BusinessDocument:
                             _get_legal_type_description(filing_changes['fromLegalType'])
                         change_info['toLegalType'] = BusinessDocument.\
                             _get_legal_type_description(filing_changes['toLegalType'])
-                        if not filing_changes.get('fromLegalName'):
-                            change_info['fromLegalName'] = filing_json['filing']['business']['legalName']
-                            change_info['toLegalName'] = filing_json['filing']['business']['legalName']
-                    if filing_changes.get('fromLegalName'):
-                        change_info['fromLegalName'] = filing_changes['fromLegalName']
-                        change_info['toLegalName'] = filing_changes['toLegalName']
+                        if not filing_changes.get('fromBusinessName'):
+                            change_info['fromBusinessName'] = filing_json['filing']['business']['businessName']
+                            change_info['toBusinessName'] = filing_json['filing']['business']['businessName']
+                    if filing_changes.get('fromBusinessName'):
+                        change_info['fromBusinessName'] = filing_changes['fromBusinessName']
+                        change_info['toBusinessName'] = filing_changes['toBusinessName']
 
                     if change_info.get('fromLegalType'):
                         alterations.append(change_info)
-                    elif change_info.get('fromLegalName'):
+                    elif change_info.get('fromBusinessName'):
                         name_changes.append(change_info)
                 else:
-                    if filing_changes.get('fromLegalName') or filing.filing_type == 'changeOfName':
+                    if filing_changes.get('fromBusinessName') or filing.filing_type == 'changeOfName':
                         name_change_info = {}
-                        name_change_info['fromLegalName'] = filing_changes.get('fromLegalName', NOT_AVAILABLE)
-                        name_change_info['toLegalName'] = filing_changes.get('toLegalName', NOT_AVAILABLE)
+                        name_change_info['fromBusinessName'] = filing_changes.get('fromBusinessName', NOT_AVAILABLE)
+                        name_change_info['toBusinessName'] = filing_changes.get('toBusinessName', NOT_AVAILABLE)
                         name_change_info['filingDateTime'] = filing.filing_date.isoformat()
                         name_changes.append(name_change_info)
                     elif filing_meta.get('changeOfName'):  # For compound filing like CP special resolution
                         name_change_info = {}
-                        name_change_info['fromLegalName'] = filing_meta.get('changeOfName').get('fromLegalName',
+                        name_change_info['fromBusinessName'] = filing_meta.get('changeOfName').get('fromBusinessName',
                                                                                                 NOT_AVAILABLE)
-                        name_change_info['toLegalName'] = filing_meta.get('changeOfName').get('toLegalName',
+                        name_change_info['toBusinessName'] = filing_meta.get('changeOfName').get('toBusinessName',
                                                                                               NOT_AVAILABLE)
                         name_change_info['filingDateTime'] = filing.filing_date.isoformat()
                         name_changes.append(name_change_info)

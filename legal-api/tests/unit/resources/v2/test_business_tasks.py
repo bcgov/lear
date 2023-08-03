@@ -46,7 +46,7 @@ AR_FILING_CURRENT_YEAR = {
             'cacheId': 1,
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
+            'businessName': 'legal name - CP1234567'
         },
         'annualReport': {
             'annualGeneralMeetingDate': str(datetime.today()).split()[0],
@@ -69,7 +69,7 @@ AR_FILING_PREVIOUS_YEAR = {
             'cacheId': 1,
             'foundingDate': '2007-04-08T00:00:00+00:00',
             'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567',
+            'businessName': 'legal name - CP1234567',
             'lastPreBobFilingTimestamp': '2019-01-01T20:05:49.068272+00:00'
         },
         'annualReport': {

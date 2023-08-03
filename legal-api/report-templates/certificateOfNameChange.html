@@ -13,7 +13,7 @@
     <div class="outer-container">
       <div class="outer-container-header">
         <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
-      </div>      
+      </div>
 
       <div class="certificate-statements">
           [[common/certificateLogo.html]]
@@ -26,9 +26,9 @@
 
           <div class="certify-clause-container">
             <span>I hereby certify that</span>
-            <span class="company-name-header">{{ fromLegalName }}</span>
+            <span class="company-name-header">{{ fromBusinessName }}</span>
             <span>changed its name to</span>
-            <span class="company-name-header">{{ toLegalName }}</span>
+            <span class="company-name-header">{{ toBusinessName }}</span>
             <span>on {{ effective_date_time }}</span>
             <div class="cert-separator"></div>
             <div class="cert-issued-by">

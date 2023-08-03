@@ -13,13 +13,13 @@
                         <div class="pt-2">{{ business.identifier }}</div>
                     </td>
                     <td><span class="bold">Name of Company </span>
-                        {% if previousLegalName %}
-                             <div class="pt-2">{{previousLegalName}}</div>
+                        {% if previousBusinessName %}
+                             <div class="pt-2">{{previousBusinessName}}</div>
                         {% else %}
-                            <div class="pt-2">{{business.legalName}}</div>
+                            <div class="pt-2">{{business.businessName}}</div>
                         {% endif %}
-                    </td>          
-                    </tr>         
+                    </td>
+                    </tr>
                 </table>
             </div>
         </div>

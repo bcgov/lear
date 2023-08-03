@@ -77,7 +77,7 @@ class EntityRole(Versioned, db.Model):
                              primaryjoin="(EntityRole.filing_id==Filing.id)")
     change_filing = db.relationship('Filing', foreign_keys=[change_filing_id],
                                     primaryjoin="(EntityRole.change_filing_id==Filing.id)")
-   
+
     legal_entity = db.relationship('LegalEntity', foreign_keys=[legal_entity_id])
     related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
                                      foreign_keys=[related_entity_id])
@@ -231,7 +231,7 @@ class EntityRole(Versioned, db.Model):
         from legal_api.models import LegalEntity
 
         if self.related_entity_id and \
-                self.related_entity.entity_type != LegalEntity.EntityType.PERSON.value:
+                self.related_entity.entity_type != LegalEntity.EntityTypes.PERSON.value:
             return True
 
         return False
@@ -266,8 +266,12 @@ class EntityRole(Versioned, db.Model):
     @property
     def json(self) -> dict:
         """Return the party member as a json object."""
+
+        party_json = self.related_colin_entity.json \
+                       if self.is_related_colin_entity \
+                       else self.related_entity.party_json
         party = {
-            **self.related_entity.party_json,
+            **party_json,
             'appointmentDate': datetime.date(self.appointment_date).isoformat(),
             'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
             'role': self.role_type.name

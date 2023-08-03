@@ -24,7 +24,7 @@ import datedelta
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import LegalEntity
+from legal_api.models import LegalEntity, EntityRole, ColinEntity, AlternateName
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
@@ -32,7 +32,7 @@ from tests.unit import has_expected_date_str_format
 
 def factory_legal_entity(designation: str = '001'):
     """Return a valid Business object stamped with the supplied designation."""
-    return LegalEntity(legal_name=f'legal_name-{designation}',
+    return LegalEntity(_legal_name=f'legal_name-{designation}',
                     founding_date=datetime.utcfromtimestamp(0),
                     last_ledger_timestamp=datetime.utcfromtimestamp(0),
                     dissolution_date=None,
@@ -88,7 +88,7 @@ def test_business_find_by_legal_name_pass(session):
     """Assert that the business can be found by name."""
     designation = '001'
     legal_name=f'legal_name-{str(uuid.uuid4().hex)}'
-    legal_entity =LegalEntity(legal_name=legal_name,
+    legal_entity =LegalEntity(_legal_name=legal_name,
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -106,7 +106,7 @@ def test_business_find_by_legal_name_fail(session):
     """Assert that the business can not be found, once it is disolved."""
     legal_name=f'legal_name-{str(uuid.uuid4().hex)}'
     designation = '001'
-    legal_entity =LegalEntity(legal_name=legal_name,
+    legal_entity =LegalEntity(_legal_name=legal_name,
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
@@ -124,7 +124,7 @@ def test_business_find_by_legal_name_fail(session):
 def test_business_find_by_legal_name_missing(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -149,7 +149,7 @@ def test_business_find_by_legal_name_no_database_connection(app_request):
 def test_delete_business_with_dissolution(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=datetime.utcfromtimestamp(0),
@@ -166,7 +166,7 @@ def test_delete_business_with_dissolution(session):
 def test_delete_business_active(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -184,7 +184,8 @@ def test_business_find_by_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
     identifier = 'CP0000001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
+                        entity_type='CP',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -201,7 +202,7 @@ def test_business_find_by_identifier(session):
 def test_business_find_by_identifier_no_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -231,7 +232,7 @@ TEST_GOOD_STANDING_DATA = [
 def test_good_standing(session, last_ar_date, entity_type, state, limited_restoration, expected):
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
-    legal_entity =LegalEntity(legal_name=f'legal_name-{designation}',
+    legal_entity =LegalEntity(_legal_name=f'legal_name-{designation}',
                         founding_date=datetime.utcfromtimestamp(0),
                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
                         dissolution_date=None,
@@ -249,7 +250,7 @@ def test_good_standing(session, last_ar_date, entity_type, state, limited_restor
 
 def test_business_json(session):
     """Assert that the business model is saved correctly."""
-    legal_entity =LegalEntity(legal_name='legal_name',
+    legal_entity =LegalEntity(_legal_name='legal_name',
                         entity_type='CP',
                         founding_date=EPOCH_DATETIME,
                         start_date=datetime(2021, 8, 5, 8, 7, 58, 272362),
@@ -270,6 +271,7 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
+        'businessName': 'legal_name',
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'legalName': 'legal_name',
@@ -340,7 +342,7 @@ def test_business_relationships_json(session):
     """Assert that the business model is saved correctly."""
     from legal_api.models import Address, Office
 
-    legal_entity =LegalEntity(legal_name='legal_name',
+    legal_entity =LegalEntity(_legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         identifier='CP1234567',
@@ -387,7 +389,7 @@ def test_get_next_value_from_sequence(session, business_type, expected):
 def test_continued_in_business(session):
     """Assert that the continued corp is saved successfully."""
     legal_entity =LegalEntity(
-        legal_name='Test - Legal Name',
+        _legal_name='Test - Legal Name',
         entity_type='BC',
         founding_date=datetime.utcfromtimestamp(0),
         last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -408,3 +410,345 @@ def test_continued_in_business(session):
     assert business_json['foreignLegalType'] == legal_entity.foreign_legal_type
     assert business_json['foreignIncorporationDate'] == \
         LegislationDatetime.format_as_legislation_date(legal_entity.foreign_incorporation_date)
+
+
+@pytest.mark.parametrize(
+    'entity_type',
+    [
+        ('CP'),
+        ('BEN'),
+        ('BC'),
+        ('ULC'),
+        ('CC')
+    ]
+)
+def test_legal_name_non_firm(session, entity_type):
+    """Assert that correct legal name returned for non-firm entity types."""
+    legal_entity = LegalEntity(
+        _legal_name='Test - Legal Name',
+        entity_type=entity_type,
+        founding_date=datetime.utcfromtimestamp(0),
+        identifier='BC1234567',
+        state=LegalEntity.State.ACTIVE
+    )
+    legal_entity.save()
+    assert legal_entity.legal_name == 'Test - Legal Name'
+
+
+@pytest.mark.parametrize(
+    'test_name, firm_entity_type, partner_info, expected_legal_name',
+    [
+        ('SP_1_Person',
+         LegalEntity.EntityTypes.SOLE_PROP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jane',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'Jane Doe'),
+        ('SP_1_Person',
+         LegalEntity.EntityTypes.SOLE_PROP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'John',
+                     'middleName': 'jklasdf',
+                     'lastName': 'Doe'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'John jklasdf Doe'),
+        ('SP_1_Org',
+         LegalEntity.EntityTypes.SOLE_PROP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Studio'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'XYZ Studio'),
+        ('SP_1_Colin_Org',
+         LegalEntity.EntityTypes.SOLE_PROP.value,
+         {
+             'legalEntities': [],
+             'colinEntities': [
+                 { 'organizationName': 'ABC Labs' }
+             ]
+         },
+         'ABC Labs'),
+        ('GP_2_Partners-2_Persons',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jane',
+                     'middleName': 'abc',
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'John',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'Jane abc Doe, John Doe'),
+        ('GP_3_Partners-3_Persons',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jane',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'John',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jimmy',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'Jane Doe, Jimmy Doe, et al'),
+        ('GP_2_Partners-2_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Studio'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'ABC Studio'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'ABC Studio, XYZ Studio'),
+        ('GP_3_Partners-3_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Studio'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Labs'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Widgets'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'XYZ Labs, XYZ Studio, et al'),
+        ('GP_2_Partners-1_Person_1_Org',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jimmy',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Widgets'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'Jimmy Doe, XYZ Widgets'),
+        ('GP_4_partners_2_Persons_2_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'Jane',
+                     'middleName': 'abc',
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.PERSON.value,
+                     'firstName': 'John',
+                     'middleName': None,
+                     'lastName': 'Doe'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'ABC Labs'
+                 },
+                 {
+                     'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                     'organizationName': 'XYZ Widgets'
+                 }
+             ],
+             'colinEntities': []
+         },
+         'ABC Labs, Jane abc Doe, et al'),
+        ('GP_2_Partners-2_Colin_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [],
+             'colinEntities': [
+                 { 'organizationName': 'ABC Labs' },
+                 { 'organizationName': 'XYZ Labs' }
+             ]
+         },
+         'ABC Labs, XYZ Labs'),
+        ('GP_3_Partners-3_Colin_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [],
+             'colinEntities': [
+                 { 'organizationName': '111 Labs' },
+                 { 'organizationName': '222 Labs' },
+                 { 'organizationName': '333 Labs' }
+             ]
+         },
+         '111 Labs, 222 Labs, et al'),
+        ('GP_5_Partners-1_Person_2_Orgs_2_Colin_Orgs',
+         LegalEntity.EntityTypes.PARTNERSHIP.value,
+         {
+             'legalEntities': [
+                  {
+                      'entityType': LegalEntity.EntityTypes.PERSON.value,
+                      'firstName': 'Jane',
+                      'middleName': 'abc',
+                      'lastName': 'Doe'
+                  },
+                  {
+                      'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                      'organizationName': 'XYZ Studio'
+                  },
+                  {
+                      'entityType': LegalEntity.EntityTypes.ORGANIZATION.value,
+                      'organizationName': 'ABC Studio'
+                  }
+             ],
+             'colinEntities': [
+                 { 'organizationName': 'ABC Labs' },
+                 { 'organizationName': 'XYZ Labs' }
+             ]
+         },
+         'ABC Labs, ABC Studio, et al'),
+    ]
+)
+def test_legal_name_firms(session, test_name, firm_entity_type, partner_info, expected_legal_name):
+    """Assert that correct legal name returned for firms."""
+    le_firm = LegalEntity(
+        entity_type=firm_entity_type,
+        founding_date=datetime.utcfromtimestamp(0),
+        identifier='FM1234567',
+        state=LegalEntity.State.ACTIVE
+    )
+
+    le_entries = partner_info.get('legalEntities')
+    for le_entry in le_entries:
+        entity_type = le_entry.get('entityType')
+        le_partner = LegalEntity(
+            entity_type=entity_type,
+            founding_date=datetime.utcfromtimestamp(0),
+            state=LegalEntity.State.ACTIVE
+        )
+        if entity_type == LegalEntity.EntityTypes.PERSON.value:
+            le_partner.first_name = le_entry.get('firstName')
+            le_partner.middle_initial = le_entry.get('middleName')
+            le_partner.last_name = le_entry.get('lastName')
+        else:
+            le_partner._legal_name = le_entry.get('organizationName')
+        le_partner.save()
+        entity_role_partner = EntityRole(
+            role_type=EntityRole.RoleTypes.partner.value,
+            legal_entity_id=le_firm.id,
+            appointment_date=datetime.utcfromtimestamp(0),
+            related_entity_id=le_partner.id
+        )
+        le_firm.entity_roles.append(entity_role_partner)
+
+    ce_entries = partner_info.get('colinEntities')
+    for ce_entry in ce_entries:
+        ce_partner = ColinEntity(organization_name=ce_entry.get('organizationName'))
+        ce_partner.save()
+        entity_role_partner = EntityRole(
+            role_type=EntityRole.RoleTypes.partner.value,
+            legal_entity_id=le_firm.id,
+            appointment_date=datetime.utcfromtimestamp(0),
+            related_colin_entity_id=ce_partner.id
+        )
+        le_firm.entity_roles.append(entity_role_partner)
+
+    le_firm.save()
+
+    assert le_firm.legal_name == expected_legal_name
+
+
+@pytest.mark.parametrize(
+    'entity_type, legal_name, operating_name, expected_business_name',
+    [
+        ('CP', 'CP Test XYZ', None, 'CP Test XYZ'),
+        ('BEN', 'BEN Test XYZ', None, 'BEN Test XYZ'),
+        ('BC', 'BC Test XYZ', None, 'BC Test XYZ'),
+        ('ULC', 'ULC Test XYZ', None, 'ULC Test XYZ'),
+        ('CC', 'CC Test XYZ', None, 'CC Test XYZ'),
+        ('SP', None, 'SP Test XYZ', 'SP Test XYZ'),
+        ('GP', None, 'GP Test XYZ', 'GP Test XYZ')
+    ]
+)
+def test_business_name(session, entity_type, legal_name, operating_name, expected_business_name):
+    """Assert that correct business name is returned."""
+    le = LegalEntity(
+        _legal_name=legal_name,
+        entity_type=entity_type,
+        founding_date=datetime.utcfromtimestamp(0),
+        identifier='BC1234567',
+        state=LegalEntity.State.ACTIVE
+    )
+
+    if operating_name:
+        alternate_name = AlternateName(
+            identifier='BC1234567',
+            name_type=AlternateName.NameType.OPERATING,
+            name=operating_name,
+            bn15='111111100BC1111',
+            start_date=datetime.utcnow(),
+            legal_entity_id=le.id)
+        alternate_name.save()
+        le.alternate_names.append(alternate_name)
+
+    le.save()
+
+    assert le.business_name == expected_business_name
+
+
+
+
