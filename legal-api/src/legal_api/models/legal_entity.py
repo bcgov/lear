@@ -410,13 +410,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
 
-    # @property
-    # def is_business(self):
-    #     if not self.entity_type \
-    #             or self.entity_type not in (LegalEntity.NON_BUSINESS_ENTITY_TYPES):
-    #         return False
-    #
-    #     return True
 
     @property
     def legal_name(self):
@@ -708,7 +701,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         """Return a Business by the id assigned by the Registrar."""
         legal_entity = None
         if identifier:
-            # legal_entity = cls.query.filter_by(identifier=identifier).one_or_none()
             non_entity_types = [LegalEntity.EntityTypes.PERSON.value, LegalEntity.EntityTypes.ORGANIZATION.value]
             legal_entity = (cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types)).
                             filter_by(identifier=identifier).one_or_none())
