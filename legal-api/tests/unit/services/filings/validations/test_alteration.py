@@ -62,7 +62,7 @@ def test_alteration(session, use_nr, new_name, entity_type, nr_type, should_pass
 
     if use_nr:
         f['filing']['business']['identifier'] = identifier
-        f['filing']['business']['legalName'] = 'legal_name-BC1234567'
+        f['filing']['business']['businessName'] = 'legal_name-BC1234567'
         f['filing']['business']['legalType'] = entity_type
 
         f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
@@ -117,7 +117,7 @@ def test_alteration_name_change(session, new_name, entity_type, nr_entity_type, 
     f['filing']['alteration']['business']['legalType'] = entity_type
 
     f['filing']['business']['identifier'] = identifier
-    f['filing']['business']['legalName'] = 'legal_name-BC1234567'
+    f['filing']['business']['businessName'] = 'legal_name-BC1234567'
 
     f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
     f['filing']['alteration']['nameRequest']['legalName'] = new_name

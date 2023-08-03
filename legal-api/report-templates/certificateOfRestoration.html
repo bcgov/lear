@@ -13,7 +13,7 @@
     <div class="outer-container">
       <div class="outer-container-header">
         <div class="business-number">Incorporation Number: {{business.identifier}}</div>
-      </div>      
+      </div>
 
       <div class="certificate-statements">
           [[common/certificateLogo.html]]
@@ -26,13 +26,13 @@
 
           <div class="certify-clause-container">
             <div>I hereby certify that</div>
-            <div class="company-name-header">{{fromLegalName}}</div>
+            <div class="company-name-header">{{fromBusinessName}}</div>
             <div>
               which was recognized on {{business.formatted_founding_date_time}} under certificate number
               {{business.identifier}}, and was dissolved on {{formatted_dissolution_date}},
               {% if restoration.type == 'fullRestoration' %}
                 has on {{effective_date_time}} been restored under the {{entityAct}} as
-                <span class="bold-italic">{{business.legalName}}</span>
+                <span class="bold-italic">{{business.businessName}}</span>
               {% elif restoration.type == 'limitedRestoration' %}
                 has on {{effective_date_time}} been restored for a period ending
                 <span class="bold-italic">{{restoration_expiry_date}}</span> under the {{entityAct}}.

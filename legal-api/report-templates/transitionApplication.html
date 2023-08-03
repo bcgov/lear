@@ -21,7 +21,7 @@
             </tr>
          </table>
          <div class="business-name-header">
-            <label class="lbl-business-name">{{business.legalName}}</label>
+            <label class="lbl-business-name">{{business.businessName}}</label>
          </div>
       </div>
       [[common/businessDetails.html]]
@@ -30,19 +30,19 @@
          <div class="section-data pt-4">
             This confirms there has been filed with the registrar all records necessary to ensure that the
             information in the corporate registry respecting the directors of the company is, immediately
-            before the transition application is submitted to the registrar for filing, correct.         
+            before the transition application is submitted to the registrar for filing, correct.
          </div>
 
          <div class="section-data mt-4">
             <span class="bold">Name of Company:</span>
-            {{business.legalName}}
+            {{business.businessName}}
          </div>
          <div class="section-data mt-4">
             <span class="bold">Incorporation Number:</span>
             {{business.identifier}}
          </div>
       </div>
-        
+
       <div class="section-header mt-5 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
          [[notice-of-articles/benefitCompanyStmt.html]]

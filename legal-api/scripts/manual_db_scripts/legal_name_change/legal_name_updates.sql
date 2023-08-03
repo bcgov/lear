@@ -25,6 +25,41 @@ ALTER TABLE entity_roles
 ALTER TABLE entity_roles
     ADD COLUMN temp_party_id INTEGER;
 
+-- Function to replace an existing key name with a new key name
+CREATE OR REPLACE FUNCTION rename_jsonb_key(json_data JSONB, old_key TEXT, new_key TEXT)
+    RETURNS JSONB AS
+$$
+DECLARE
+    result JSONB;
+    key    TEXT;
+BEGIN
+    IF json_data ? old_key THEN
+        result := json_data #- ARRAY [old_key];
+        result := jsonb_set(result, ARRAY [new_key], json_data -> old_key);
+    ELSE
+        result := json_data;
+    END IF;
+
+    IF jsonb_typeof(json_data) = 'object' THEN
+        FOR key IN
+            SELECT * FROM jsonb_object_keys(json_data)
+            LOOP
+                IF jsonb_typeof(json_data -> key) = 'object' THEN
+                    result := jsonb_set(result, ARRAY [key], rename_jsonb_key(json_data -> key, old_key, new_key));
+                ELSIF jsonb_typeof(json_data -> key) = 'array' THEN
+                    result := jsonb_set(result, ARRAY [key],
+                                        (SELECT jsonb_agg(rename_jsonb_key(value, old_key, new_key))
+                                         FROM jsonb_array_elements(json_data -> key)));
+                END IF;
+            END LOOP;
+    END IF;
+
+    RETURN result;
+END;
+$$
+    LANGUAGE plpgsql;
+
+
 
 -- Function to compare two legal_entities_history records and determine if there is a non-legal name change.
 -- A predefined list of columns('legal_name', 'version', 'change_filing_id', 'changed') are
@@ -137,7 +172,6 @@ from legal_entities_history leh
          left join legal_entities le on leh.id = le.id
 where leh.entity_type in ('SP', 'GP')
 ;
-
 
 
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
@@ -263,8 +297,7 @@ select distinct ph.id                 as                                        
                 ph.party_type,
                 (CASE
                      WHEN ph.party_type = 'person'
-                         THEN CONCAT_WS(' ', ph.first_name, NULLIF(ph.middle_initial, ''),
-                                        NULLIF(ph.last_name, ''))
+                         THEN NULL
                      WHEN ph.party_type = 'organization'
                          THEN ph.organization_name
                      ELSE NULL
@@ -320,7 +353,7 @@ select distinct p.id                  as                                        
                 p.party_type,
                 (CASE
                      WHEN p.party_type = 'person'
-                         THEN CONCAT_WS(' ', p.first_name, NULLIF(p.middle_initial, ''), NULLIF(p.last_name, ''))
+                         THEN NULL
                      WHEN p.party_type = 'organization'
                          THEN p.organization_name
                      ELSE NULL
@@ -736,12 +769,41 @@ SELECT update_filing_json_party_ids('{filing,changeOfRegistration,parties}');
 SELECT update_filing_json_party_ids('{filing,conversion,parties}');
 
 
+-- Update all 'fromLegalName' keys to 'fromBusinessName' in meta_data column of filings table
+update filings
+set meta_data = rename_jsonb_key(meta_data, 'fromLegalName', 'fromBusinessName');
+
+-- Update all 'toLegalName' keys to 'toBusinessName' in meta_data column of filings table
+update filings
+set meta_data = rename_jsonb_key(meta_data, 'toLegalName', 'toBusinessName');
+
+
+-- copy all legal name key/value pairs found in filing_json -> 'filing' -> 'business' -> 'legalName'
+-- into a new key on the business block called 'businessName'
+UPDATE filings
+SET filing_json = jsonb_set(filing_json,
+                            '{filing,business,businessName}',
+                            to_jsonb(filing_json -> 'filing' -> 'business' ->> 'legalName'))
+WHERE filing_json -> 'filing' -> 'business' ? 'legalName'
+;
+
+
+-- updating all firm legal names to be null.
+-- TODO: populate with right legal names for firms once scripts handle new way of cutting party rows
+UPDATE filings
+SET filing_json = jsonb_set(filing_json, '{filing,business,legalName}', 'null', false)
+WHERE filing_json -> 'filing' -> 'business' ? 'legalName'
+  and filing_json -> 'filing' -> 'business' ? 'legalType'
+  and filing_json -> 'filing' -> 'business' ->> 'legalType' in ('SP', 'GP');
+
+
 -- DROP temporarily created columns, functions and tables
 DROP TABLE temp_legal_name_changes;
 DROP TABLE temp_parties_legal_name;
 DROP TABLE temp_party_roles_legal_name;
 DROP FUNCTION has_non_legal_name_change;
 DROP FUNCTION update_filing_json_party_ids;
+DROP FUNCTION rename_jsonb_key;
 ALTER TABLE legal_entities
     DROP COLUMN temp_party_id;
 ALTER TABLE colin_entities

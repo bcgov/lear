@@ -213,10 +213,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_business_revision(filing, legal_entity) -> dict:
         """Consolidates the business info as of a particular transaction."""
         filing_id = filing.id
-        
+
         # The history table has the old revisions, not the current one.
         if not(le_revision := db.session.query(LegalEntity) \
-                .filter(or_(LegalEntity.change_filing_id <= filing_id, 
+                .filter(or_(LegalEntity.change_filing_id <= filing_id,
                             LegalEntity.change_filing_id == None)) \
                 .filter(LegalEntity.id == legal_entity.id).one_or_none()
         ):
@@ -225,7 +225,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(legal_entity_version.change_filing_id <= filing_id) \
             .filter(legal_entity_version.id == legal_entity.id) \
             .order_by(legal_entity_version.change_filing_id).first()
-            
+
         return VersionedBusinessDetailsService.business_revision_json(le_revision, legal_entity.json())
 
 
@@ -342,7 +342,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             offices_json[office.office_type] = {}
 
             # addresses_list = db.session.query(Address) \
-            
+
             # addresses_list = db.session.query(address_history) \
             #     .filter(address_history.transaction_id <= filing_id) \
             #     .filter(address_history.office_id == office.id) \
@@ -389,7 +389,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(EntityRole.cessation_date is null()) \
             .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         EntityRole.role_type == role))
-        
+
         entity_roles_historical = db.session.query(entity_role_version)\
             .filter(entity_role_version.change_filing_id <= filing_id) \
             .filter(entity_role_version.legal_entity_id == legal_entity_id) \
@@ -397,10 +397,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         entity_role_version.change_filing_id <= filing_id)) \
             .filter(or_(role is null(),
                         entity_role_version.role_type == role))
-        
+
         entity_roles = entity_roles_current.union(entity_roles_historical) \
             .order_by(entity_role_version.filing_id).all()
-        
+
         parties = []
         for party_role in entity_roles:
             if party_role.cessation_date is None:
@@ -772,6 +772,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
         business_json['legalName'] = business_revision.legal_name
+        business_json['businessName'] = business_revision.business_name
         business_json['legalType'] = business_revision.entity_type
         business_json['naicsDescription'] = business_revision.naics_description
         return business_json

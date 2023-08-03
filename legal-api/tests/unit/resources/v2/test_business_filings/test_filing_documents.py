@@ -1130,15 +1130,15 @@ def test_document_list_for_various_filing_states(session, client, jwt,
             if filing_name_1 == 'alteration' and \
                     (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
                 meta_data['alteration'] = {}
-                meta_data['alteration']['fromLegalName'] = legal_entity.legal_name
-                meta_data['alteration']['toLegalName'] = legal_name
+                meta_data['alteration']['fromBusinessName'] = legal_entity.legal_name
+                meta_data['alteration']['toBusinessName'] = legal_name
 
         # usually done by the filer.
         if filing_name_1 == 'correction' and legal_entity.legal_type == 'CP' and \
                 (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
             meta_data['correction'] = {}
-            meta_data['correction']['fromLegalName'] = legal_entity.legal_name
-            meta_data['correction']['toLegalName'] = legal_name
+            meta_data['correction']['fromBusinessName'] = legal_entity.legal_name
+            meta_data['correction']['toBusinessName'] = legal_name
 
         filing._meta_data = meta_data
         filing.save()

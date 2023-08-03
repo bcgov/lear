@@ -46,7 +46,7 @@ def factory_legal_entity_model(legal_name,
                            entity_type=None):
     """Return a valid Business object stamped with the supplied designation."""
     from legal_api.models import LegalEntity as LegalEntityModel
-    b = LegalEntityModel(legal_name=legal_name,
+    b = LegalEntityModel(_legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
                       last_ledger_timestamp=last_ledger_timestamp,

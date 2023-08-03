@@ -297,7 +297,7 @@ class DocumentMetaService():
             name_request = filing.get('filing', {}).get('alteration', {}).get('nameRequest', None)
             legal_entity = filing.get('filing', {}).get('business', {})
             if name_request and 'legalName' in name_request and \
-                    name_request['legalName'] != legal_entity.get('legalName', None):
+                    name_request['legalName'] != legal_entity.get('businessName', None):
                 reports.append(
                     self.create_report_object(
                         'Change of Name Certificate',

@@ -4,7 +4,7 @@
 -- Notes: ensure that lear_old and lear_new connections have been configured before running this script via dbshell.
 
 vset ignore_errors=false
-vset transfer.threads=3
+vset transfer.threads=8
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 

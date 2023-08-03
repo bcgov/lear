@@ -14,7 +14,7 @@
       <div class="outer-container-header">
         <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
         [[common/correctedOnCertificate.html]]
-      </div>      
+      </div>
 
       <div class="certificate-statements">
           [[common/certificateLogo.html]]
@@ -27,7 +27,7 @@
 
           <div class="certify-clause-container">
             <div>I hereby certify that</div>
-            <div class="company-name-header">{{ business.legalName }}</div>
+            <div class="company-name-header">{{ business.businessName }}</div>
             <div>was incorporated under the {{ entityAct }}</div>
             <div>on {{ business.formatted_founding_date_time }}</div>
             <div class="cert-separator"></div>

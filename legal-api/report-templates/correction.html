@@ -24,7 +24,7 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {{ business.legalName }}
+            {{ business.businessName }}
             </label>
          </div>
       </div>
@@ -32,11 +32,11 @@
 
       <div class="container">
          [[correction/legalNameChange.html]]
-         
+
          {% if nameTranslationsChange %}
             [[common/nameTranslation.html]]
          {% endif %}
-         
+
          [[correction/addresses.html]]
 
          [[correction/directors.html]]

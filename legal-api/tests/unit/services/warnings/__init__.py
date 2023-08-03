@@ -145,7 +145,7 @@ def factory_address(address_type: str,
 
 
 def factory_legal_entity(entity_type: str, identifier: str, custom_id: int = None):
-    legal_entity = LegalEntity(legal_name='test business',
+    legal_entity = LegalEntity(_legal_name='test business',
                                entity_type=entity_type,
                                identifier=identifier,
                                state='ACTIVE')

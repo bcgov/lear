@@ -90,13 +90,14 @@ def test_get_json(session, app, jwt, identifier, entity_type, document_name):
         ('FM2103012', 'GP', 'lseal'),
     ]
 )
-def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
+def test_get_pdf(mocker, session, app, jwt, identifier, entity_type, document_name):
     """Assert business document can be returned as a PDF."""
     request_ctx = app.test_request_context(
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
     with request_ctx:
-        legal_entity =factory_legal_entity(identifier=identifier, entity_type=entity_type)
+        mocker.patch('legal_api.models.legal_entity.LegalEntity.legal_name', return_value='legal_name')
+        legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
         factory_legal_entity_mailing_address(legal_entity)
         report = BusinessDocument(legal_entity, document_name)
         filename = report._get_report_filename()

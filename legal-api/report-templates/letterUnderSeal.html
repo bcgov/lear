@@ -13,7 +13,7 @@
     </div>
     <div class="letter-copy">
       <div>{{ report_date }}</div>
-      <div class="mt-12">{{ business.legalName }}</div>
+      <div class="mt-12">{{ business.businessName }}</div>
       {% set office = offices.businessOffice if offices.businessOffice else offices.registeredOffice %}
       <div>{{ office.mailingAddress.streetAddress }}</div>
       <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
@@ -25,7 +25,7 @@
       <div class="mt-7">To Whom It May Concern:</div>
       <div class="mt-5">
         <span>I hereby certify that the {{ entityInformalDescription }}</span>
-        <span class="bold">{{ business.legalName }}</span>
+        <span class="bold">{{ business.businessName }}</span>
         {% if business.legalType in ['GP', 'SP'] %}
           <span>was registered</span>
         {% else %}
