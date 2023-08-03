@@ -1455,9 +1455,9 @@ strict-rfc3339 = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/argush3/business-schemas.git"
+url = "https://github.com/bcgov/business-schemas.git"
 reference = "dev_legal_name_changes"
-resolved_reference = "d0aa022c841dd607e78c5385ab51c86228bae09a"
+resolved_reference = "7ea34413e62e555b8d55fc07d9da0fb8e399cdd2"
 
 [[package]]
 name = "reportlab"
@@ -1900,4 +1900,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5638abc99e261121fd3db2b47b2242493749960e342918f7e0ee217b6f8df7ab"
+content-hash = "ea64314ff3584b37c63ec4d47d4a750c5fe1f0b8b1b2ce7442b275279dba1818"

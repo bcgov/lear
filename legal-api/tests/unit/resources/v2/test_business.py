@@ -165,7 +165,7 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     with nested_session(session):
         identifier = 'CP7654321'
         legal_name = identifier + ' legal name'
-        factory_legal_entity_model(_legal_name=legal_name,
+        factory_legal_entity_model(legal_name=legal_name,
                             identifier=identifier,
                             founding_date=datetime.utcfromtimestamp(0),
                             last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -197,7 +197,7 @@ def test_get_business_with_correction_filings(session, client, jwt):
     with nested_session(session):
         identifier = 'CP7654321'
         legal_name = identifier + ' legal name'
-        legal_entity =factory_legal_entity_model(_legal_name=legal_name,
+        legal_entity =factory_legal_entity_model(legal_name=legal_name,
                                         identifier=identifier,
                                         founding_date=datetime.utcfromtimestamp(0),
                                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -225,7 +225,7 @@ def test_get_business_info_dissolution(session, client, jwt):
     with nested_session(session):
         identifier = 'CP1234567'
         legal_name = identifier + ' legal name'
-        factory_legal_entity_model(_legal_name=legal_name,
+        factory_legal_entity_model(legal_name=legal_name,
                             identifier=identifier,
                             founding_date=datetime.utcfromtimestamp(0),
                             last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -328,7 +328,7 @@ def test_get_business_with_court_orders(session, client, jwt):
     with nested_session(session):
         identifier = 'CP7654321'
         legal_name = identifier + ' legal name'
-        legal_entity =factory_legal_entity_model(_legal_name=legal_name,
+        legal_entity =factory_legal_entity_model(legal_name=legal_name,
                                         identifier=identifier,
                                         founding_date=datetime.utcfromtimestamp(0),
                                         last_ledger_timestamp=datetime.utcfromtimestamp(0),
