@@ -245,7 +245,7 @@ def test_get_business_info_dissolution(session, client, jwt):
 def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
-        factory_legal_entity_model(_legal_name='legal_name',
+        factory_legal_entity_model(legal_name='legal_name',
                             identifier='CP7654321',
                             founding_date=datetime.utcfromtimestamp(0),
                             last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -363,7 +363,7 @@ def test_post_affiliated_businesses(session, client, jwt):
         old_draft_businesses = [identifiers[4]]
 
         for business in businesses:
-            factory_legal_entity_model(_legal_name=business[0] + 'name',
+            factory_legal_entity_model(legal_name=business[0] + 'name',
                                 identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
                                 founding_date=datetime.utcfromtimestamp(0),
                                 last_ledger_timestamp=datetime.utcfromtimestamp(0),
