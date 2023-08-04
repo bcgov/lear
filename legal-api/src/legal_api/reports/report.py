@@ -803,7 +803,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         versioned_name_translations = VersionedBusinessDetailsService.\
             get_name_translations_revision(prev_completed_filing.transaction_id, self._business.id)
         filing['previousNameTranslations'] = versioned_name_translations
-        filing['nameTranslationsChange'] = sorted(filing['listOfTranslations']) != sorted(versioned_name_translations)
+        filing['nameTranslationsChange'] = \
+            sorted([translation['name'] for translation in filing['listOfTranslations']]) != \
+            sorted([translation['name'] for translation in versioned_name_translations])
 
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing['offices'] = {}
