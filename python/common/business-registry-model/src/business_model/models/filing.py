@@ -33,6 +33,15 @@ from .db import db  # noqa: I001
 
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
+class DissolutionTypes(str, Enum):
+    """Dissolution types."""
+
+    ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
+    INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
+
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.

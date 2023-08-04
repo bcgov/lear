@@ -154,7 +154,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         migrate = Migrate(app,
                 _db,
-                directory="src/migrations",
+                directory="src/business_model_migrations",
                 **{'dialect_name': 'postgres'})
         upgrade()
 
