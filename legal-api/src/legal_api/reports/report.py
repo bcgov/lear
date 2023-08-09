@@ -25,7 +25,7 @@ from flask import current_app, jsonify
 
 from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.core.meta.filing import FILINGS
-from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity, PartyRole
+from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity
 from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
@@ -421,7 +421,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _populate_business_info_to_filing(filing: Filing, legal_entity: LegalEntity):
         founding_datetime = LegislationDatetime.as_legislation_timezone(legal_entity.founding_date)
         if filing.transaction_id:
-            business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, legal_entity)
+            business_json = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
         else:
             business_json = legal_entity.json()
         business_json['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
@@ -493,15 +493,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_sub_type == 'limitedRestorationToFull':
             business_previous_restoration_expiry = \
-                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
-                                                                                       self._legal_entity.id,
+                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing,
+                                                                                       self._legal_entity,
                                                                                        is_restoration_expiry_date=True)
             restoration_expiry_datetime = LegislationDatetime.as_legislation_timezone(
                 business_previous_restoration_expiry.restoration_expiry_date)
             filing['previous_restoration_expiry_date'] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._legal_entity.id, is_dissolution_date=True)
+            self._filing, self._legal_entity, is_dissolution_date=True)
         filing['formatted_dissolution_date'] = \
             LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
 
@@ -534,7 +534,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['noticeDate'] = filing['restoration'].get('noticeDate', 'Not Applicable')
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._legal_entity.id, is_dissolution_date=True)
+            self._filing, self._legal_entity, is_dissolution_date=True)
         filing['dissolutionBusinessName'] = business_dissolution.business_name
 
         if expiry_date := meta_data.get('restoration', {}).get('expiry'):
@@ -555,8 +555,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         expiry_date = LegislationDatetime.as_legislation_timezone(cco.expiry_date)
         filing['cco_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
 
-        filing['offices'] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._legal_entity.id)
+        filing['offices'] = VersionedBusinessDetailsService.get_office_revision(self._filing, self._legal_entity.id)
 
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
@@ -568,7 +567,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if 'nameTranslations' in filing['alteration']:
             filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
             # Get previous translations for deleted translations. No record created in aliases version for deletions
-            filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
+            filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_revision(
                 self._filing.transaction_id, self._legal_entity.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
@@ -605,8 +604,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-        versioned_legal_entity = VersionedBusinessDetailsService.\
-            get_business_revision_obj(prev_completed_filing.transaction_id, self._legal_entity)
+        versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(prev_completed_filing,
+                                                                                           self._legal_entity.id)
 
         # Change of Name
         prev_business_name = versioned_legal_entity.legal_name
@@ -638,7 +637,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['offices'] = {}
             filing['offices']['businessOffice'] = business_office
             offices_json = VersionedBusinessDetailsService.get_office_revision(
-                prev_completed_filing.transaction_id,
+                prev_completed_filing,
                 self._filing.legal_entity_id)
             filing['offices']['businessOffice']['mailingAddress']['changed'] = \
                 self._compare_address(business_office.get('mailingAddress'),
@@ -665,10 +664,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 if party['officer'].get('id'):
                     parties_to_edit.append(str(party['officer'].get('id')))
                     prev_party =\
-                        VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party['officer'].get('id'))
-                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
-                        prev_completed_filing.transaction_id, prev_party, True)
+                        VersionedBusinessDetailsService.get_party_revision(prev_completed_filing,
+                                                                           party['officer'].get('id'))
+                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(prev_completed_filing,
+                                                                                          prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
                         party['nameChanged'] = True
                         party['previousName'] = self._get_party_name(prev_party_json)
@@ -684,7 +683,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.transaction_id, self._legal_entity.id, True)
+                prev_completed_filing, self._legal_entity.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -766,8 +765,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-            versioned_legal_entity = VersionedBusinessDetailsService.\
-                get_business_revision_obj(prev_completed_filing.transaction_id, self._legal_entity)
+            versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(prev_completed_filing,
+                                                                                               self._legal_entity.id)
 
             self._format_name_request_data(filing, versioned_legal_entity)
             self._format_name_translations_data(filing, prev_completed_filing)
@@ -779,8 +778,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
         prev_business_name = versioned_legal_entity.legal_name
-        legal_entity = VersionedBusinessDetailsService.\
-            get_business_revision_obj(self._filing.transaction_id, self._legal_entity)
+        legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(self._filing, self._legal_entity.id)
         if prev_business_name != legal_entity.legal_name:
             filing['previousBusinessName'] = prev_business_name
             filing['newBusinessName'] = legal_entity.legal_name
@@ -788,14 +786,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
         versioned_name_translations = VersionedBusinessDetailsService.\
-            get_name_translations_revision(prev_completed_filing.transaction_id, self._legal_entity.id)
+            get_name_translations_revision(prev_completed_filing, self._legal_entity.id)
         filing['previousNameTranslations'] = versioned_name_translations
         filing['nameTranslationsChange'] = sorted(filing['listOfTranslations']) != sorted(versioned_name_translations)
 
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing['offices'] = {}
         if offices := filing.get('correction').get('offices'):
-            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.transaction_id,
+            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing,
                                                                                self._filing.legal_entity_id)
             if registered_office := offices.get('registeredOffice'):
                 filing['offices']['registeredOffice'] = registered_office
@@ -840,10 +838,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 if party_id := party['officer'].get('id'):
                     parties_to_edit.append(str(party_id))
                     prev_party =\
-                        VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party_id)
-                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
-                        prev_completed_filing.transaction_id, prev_party, True)
+                        VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(prev_completed_filing,
+                                                                                          prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
                         party['nameChanged'] = True
                         party['previousName'] = self._get_party_name(prev_party_json)
@@ -859,7 +856,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.transaction_id, self._legal_entity.id, True)
+                prev_completed_filing, self._legal_entity.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -869,7 +866,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['newShareClasses'] = []
         if filing.get('shareClasses'):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
-                prev_completed_filing.transaction_id,
+                prev_completed_filing,
                 prev_completed_filing.legal_entity_id)
             prev_share_class_ids = [x['id'] for x in prev_share_class_json]
 
@@ -896,9 +893,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         if share_class.get('series'):
-            prev_share_series_json = VersionedBusinessDetailsService.get_share_series_revision(
-                prev_completed_filing.transaction_id,
-                share_class.get('id'))
+            prev_share_series_json = VersionedBusinessDetailsService.get_share_series_revision(prev_completed_filing,
+                                                                                               share_class.get('id'))
             prev_share_series_ids = [x['id'] for x in prev_share_series_json]
             share_series_to_edit = []
             for share_series in share_class.get('series'):

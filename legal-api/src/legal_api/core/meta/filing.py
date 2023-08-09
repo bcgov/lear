@@ -436,8 +436,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         business_revision = legal_entity
         # retrieve business revision at time of filing so legal type is correct when returned for display name
-        if filing.transaction_id and \
-                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, legal_entity)):
+        if bus_rev_temp := VersionService.get_business_revision_obj(filing, legal_entity.id):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):
@@ -509,7 +508,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             original_filing = FilingStorage.find_by_id(corrected_filing_id)
             if is_special_resolution_correction(
                     filing.filing_json['filing'], business, original_filing
-                    ):
+            ):
                 if filing.filing_json['filing']['correction'].get('rulesFileKey'):
                     outputs.add('certifiedRules')
                 if filing.filing_json['filing']['correction'].get('resolution'):

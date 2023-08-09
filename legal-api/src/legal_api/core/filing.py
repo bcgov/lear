@@ -362,10 +362,7 @@ class Filing:
             ledger_filing = {
                 'availableOnPaperOnly': filing.paper_only,
                 'businessIdentifier': legal_entity.identifier,
-                #TODO: returning nothing for now until we get display name updated to find display name using new
-                # versioning model
-                'displayName': '',
-                # 'displayName': FilingMeta.display_name(legal_entity, filing=filing),
+                'displayName': FilingMeta.display_name(legal_entity, filing=filing),
                 'effectiveDate': filing.effective_date,
                 'filingId': filing.id,
                 'name': filing.filing_type,
@@ -519,12 +516,10 @@ class Filing:
                     documents['documents']['legalFilings'] = \
                         [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
 
-                # TODO: need to uncomment and get this updated to use new versioning model
                 # get extra outputs
-                # if filing.storage.transaction_id and \
-                #         (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                #         filing.storage.transaction_id, legal_entity)):
-                #     legal_entity = bus_rev_temp
+                if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(filing.storage,
+                                                                                             legal_entity.id):
+                    legal_entity = bus_rev_temp
 
                 adds = [FilingMeta.get_all_outputs(legal_entity.entity_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])

@@ -178,7 +178,6 @@ def upgrade():
     sa.Column('changed', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
-    sa.ForeignKeyConstraint(['office_id'], ['offices.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
