@@ -694,6 +694,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if business_revision.tax_id:
             business_json['taxId'] = business_revision.tax_id
         business_json['legalName'] = business_revision.legal_name
+        business_json['businessName'] = business_revision.business_name
         business_json['legalType'] = business_revision.entity_type
         business_json['naicsDescription'] = business_revision.naics_description
         return business_json

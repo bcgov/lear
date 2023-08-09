@@ -757,6 +757,7 @@ class ListFilingResource():
         }
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+        business_name = None
 
         if filing.filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
@@ -773,9 +774,9 @@ class ListFilingResource():
                 'legalType', LegalEntity.EntityTypes.BCOMP.value)
 
             try:
-                legal_entity.legal_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
+                business_name = filing.json['filing'][filing.filing_type]['nameRequest']['legalName']
             except KeyError:
-                legal_entity.legal_name = legal_entity.identifier
+                business_name = legal_entity.identifier
         elif filing.filing_type == Filing.FILINGS['conversion']['name']:
             if (mailing_address_json :=
                 filing.json['filing']['conversion']
@@ -795,7 +796,7 @@ class ListFilingResource():
             'businessInfo': {
                 'businessIdentifier': f'{legal_entity.identifier}',
                 'corpType': f'{corp_type}',
-                'businessName': f'{legal_entity.legal_name}',
+                'businessName': f'{business_name}' if business_name else f'{legal_entity.business_name}',
                 'contactInfo': {'city': mailing_address.city,
                                 'postalCode': mailing_address.postal_code,
                                 'province': mailing_address.region,

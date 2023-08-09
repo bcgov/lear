@@ -377,6 +377,7 @@ class Filing:
                 ledger_filing['filingSubType'] = filing.filing_sub_type
 
             # correction
+            # FUTURE: parent_filing should no longer be used for correction filings and will be removed
             if filing.parent_filing:
                 ledger_filing['correctionFilingId'] = filing.parent_filing.id
                 ledger_filing['correctionLink'] = \

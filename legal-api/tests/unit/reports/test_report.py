@@ -225,7 +225,7 @@ def test_alteration_name_change(session):
     named_company_report_template = named_company_report._get_template()
     assert named_company_report_template
     named_company_report_template_data = named_company_report._get_template_data()
-    assert named_company_report_template_data['toLegalName'] == named_company_name
+    assert named_company_report_template_data['toBusinessName'] == named_company_name
 
     # changes its name to a numbered company
     numbered_company_filing = filing_numbered_company(legal_entity, ALTERATION_FILING_TEMPLATE, numbered_company_name)
@@ -234,19 +234,19 @@ def test_alteration_name_change(session):
     # new legal_name can be retrieved from the versioned business (numbered company case)
     business_revision = \
         VersionedBusinessDetailsService.get_business_revision(numbered_company_filing, legal_entity)
-    assert business_revision['legalName'] == numbered_company_name
+    assert business_revision['businessName'] == numbered_company_name
     numbered_company_report = create_alteration_report(numbered_company_filing, legal_entity, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
     assert numbered_company_filename
     numbered_company_template = numbered_company_report._get_template()
     assert numbered_company_template
     numbered_company_template_data = numbered_company_report._get_template_data()
-    assert numbered_company_template_data['toLegalName'] == numbered_company_name
+    assert numbered_company_template_data['toBusinessName'] == numbered_company_name
 
 
 def update_business_legal_name(legal_entity, legal_name, filing):
     """Update business legal name."""
-    legal_entity.legal_name = legal_name
+    legal_entity._legal_name = legal_name
     legal_entity.change_filing_id = filing.id
     legal_entity.save()
 
@@ -258,8 +258,8 @@ def filing_named_company(legal_entity, template, legal_name):
     filing = factory_completed_filing(legal_entity, filing_json)
     filing._meta_data = {
         'alteration': {
-            'fromLegalName': legal_entity.legal_name,
-            'toLegalName': legal_name
+            'fromBusinessName': legal_entity.legal_name,
+            'toBusinessName': legal_name
         }
     }
     filing.save()
@@ -274,8 +274,8 @@ def filing_numbered_company(legal_entity, template, legal_name):
     filing = factory_completed_filing(legal_entity, filing_json)
     filing._meta_data = {
         'alteration': {
-            'fromLegalName': legal_entity.legal_name,
-            'toLegalName': legal_name
+            'fromBusinessName': legal_entity.legal_name,
+            'toBusinessName': legal_name
         }
     }
     filing.save()

@@ -319,7 +319,7 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
         business_name = 'Skinners Fine Saves'
 
         legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type='BC')
-        legal_entity.legal_name = business_name
+        legal_entity._legal_name = business_name
         legal_entity.save()
 
         filing = copy.deepcopy(FILING_HEADER)
@@ -359,7 +359,7 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
         business_name = 'The Truffle House'
 
         legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-        legal_entity.legal_name = business_name
+        legal_entity._legal_name = business_name
         legal_entity.save()
 
         filing = copy.deepcopy(FILING_HEADER)
@@ -368,13 +368,13 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
         filing['filing'][filing_name] = copy.deepcopy(INCORPORATION)
         filing['filing'][filing_name]['nameRequest']['nrNumber'] = nr_number
         filing['filing'][filing_name]['nameRequest']['legalType'] = entity_type
-        filing['filing'][filing_name]['legalName'] = business_name
+        filing['filing'][filing_name]['businessName'] = business_name
 
         f = factory_completed_filing(legal_entity, filing, filing_date=filing_date)
         today = filing_date.isoformat()
         ia_meta = {'legalFilings': [filing_name, ],
                 filing_name: {'nrNumber': nr_number,
-                                'legalName': business_name}
+                                'businessName': business_name}
                 }
         f._meta_data = {**{'applicationDate': today}, **ia_meta}
 
@@ -394,6 +394,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
         identifier = 'BC1234567'
         legal_entity, original = ledger_element_setup_help(identifier, 'incorporationApplication')
         correction = ledger_element_setup_filing(legal_entity, 'correction', filing_date=legal_entity.founding_date + datedelta.datedelta(months=3))
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
         original.parent_filing_id = correction.id
         original.save()
 
@@ -425,6 +426,7 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             'correction',
             filing_date=legal_entity.founding_date + datedelta.datedelta(months=3),
             filing_dict=ar_correction)
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
         original.parent_filing_id = correction.id
         original.save()
 
@@ -473,7 +475,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
             entity_type = LegalEntity.EntityTypes.BCOMP.value
 
             legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type)
-            legal_entity.legal_name = business_name
+            legal_entity._legal_name = business_name
             legal_entity.save()
 
             filing_name = 'specialResolution'
@@ -516,6 +518,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=sr_correction)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     original.parent_filing_id = correction.id
     original.save()
 
@@ -534,6 +537,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=sr_correction_2)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     correction.parent_filing_id = correction_2.id
     correction.save()
 
@@ -570,6 +574,7 @@ def test_ledger_display_non_special_resolution_correction_name(session, client, 
         'correction',
         filing_date=business.founding_date + datedelta.datedelta(months=3),
         filing_dict=correction)
+    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
     original.parent_filing_id = correction.id
     original.save()
 

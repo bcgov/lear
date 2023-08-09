@@ -51,7 +51,7 @@ AR_FILING = {
             'cacheId': 1,
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
+            'businessName': 'legal name - CP1234567'
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
@@ -142,7 +142,7 @@ def factory_legal_entity(identifier=None,
         last_ar_year = last_ar_date.year
 
     legal_name = f'legal_name-{identifier}' if identifier else None
-    legal_entity = LegalEntity(legal_name=legal_name,
+    legal_entity = LegalEntity(_legal_name=legal_name,
                                founding_date=founding_date,
                                last_ar_date=last_ar_date,
                                last_ar_year=last_ar_year,
@@ -347,7 +347,7 @@ def factory_party_role(delivery_address: Address,
         last_name=officer['lastName'],
         middle_initial=officer['middleInitial'],
         entity_type=officer['partyType'],
-        legal_name=officer['organizationName']
+        _legal_name=officer['organizationName']
     )
     legal_entity.entity_delivery_address = delivery_address
     legal_entity.entity_mailing_address = mailing_address

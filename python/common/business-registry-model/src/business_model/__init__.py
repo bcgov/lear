@@ -36,7 +36,6 @@ from .models.db import db  # noqa: I001
 from .models.address import Address
 from .models.alias import Alias
 from .models.alternate_name import AlternateName
-from .models.legal_entity import LegalEntity  # noqa: I001
 from .models.colin_entity import ColinEntity
 from .models.colin_update import ColinLastUpdate
 from .models.comment import Comment
@@ -48,6 +47,9 @@ from .models.dc_issued_credential import DCIssuedCredential
 from .models.document import Document, DocumentType
 from .models.entity_role import EntityRole
 from .models.filing import Filing
+from .models.legal_entity import LegalEntity
+from .models.legal_entity import LegalEntityIdentifier
+from .models.legal_entity import LegalEntityType
 from .models.naics_element import NaicsElement
 from .models.naics_structure import NaicsStructure
 from .models.office import Office, OfficeType
@@ -63,9 +65,10 @@ from .models.user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'AlternateName', 'ColinEntity', 'LegalEntity', 'ColinLastUpdate', 'Comment',
+           'Address', 'Alias', 'AlternateName', 'ColinEntity', 'ColinLastUpdate', 'Comment',
            'ConsentContinuationOut', 'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'Document',
-           'DocumentType', 'EntityRole', 'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap',
+           'DocumentType', 'EntityRole', 'Filing', 'LegalEntity', 'LegalEntityIdentifier', 'LegalEntityType',
+           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap',
            'RequestTracker', 'Resolution', 'RoleAddress', 'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles',
            'NaicsStructure', 'NaicsElement',
            )

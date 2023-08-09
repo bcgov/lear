@@ -33,6 +33,15 @@ from .db import db  # noqa: I001
 
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
+class DissolutionTypes(str, Enum):
+    """Dissolution types."""
+
+    ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
+    INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
+
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
@@ -338,7 +347,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'notice_date',
             'order_details',
             'paper_only',
-            'parent_filing_id',
+            'parent_filing_id', # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
             'payment_account',
             'submitter_id',
             'submitter_roles',
@@ -396,6 +405,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     documents = db.relationship('Document', lazy='dynamic')
     filing_entity_roles = db.relationship('EntityRole', lazy='dynamic', primaryjoin="(Filing.id==EntityRole.filing_id)")
 
+    # FUTURE: parent_filing_id and parent_filing should no longer be used for correction filings and will be removed
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
 
@@ -472,6 +482,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def status(self):
         """Property containing the filing status."""
         # pylint: disable=W0212; prevent infinite loop
+        # FUTURE: parent_filing_id and parent_filing should no longer be used for correction filings and will be removed
         if self._status == Filing.Status.COMPLETED \
             and self.parent_filing_id \
                 and self.parent_filing._status == Filing.Status.COMPLETED:
@@ -595,6 +606,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def is_corrected(self):
         """Has this filing been corrected."""
         if (
+                # FUTURE: parent_filing should no longer be used for correction filings and will be removed
                 self.parent_filing and
                 self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
                 self.parent_filing.status == Filing.Status.COMPLETED.value
@@ -606,6 +618,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def is_correction_pending(self):
         """Is there a pending correction for this filing."""
         if (
+                # FUTURE: parent_filing should no longer be used for correction filings and will be removed
                 self.parent_filing and
                 self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
                 self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value

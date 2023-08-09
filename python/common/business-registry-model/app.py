@@ -11,5 +11,5 @@ db.init_app(app)
 
 migrate = Migrate(app,
                   db,
-                  directory="src/migrations",
+                  directory="src/business_model_migrations",
                   **{'dialect_name': 'postgres'})

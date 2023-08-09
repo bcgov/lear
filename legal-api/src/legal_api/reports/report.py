@@ -473,21 +473,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_name_change_data(self, filing):
         meta_data = self._filing.meta_data or {}
-        from_legal_name = ''
-        to_legal_name = ''
+        from_business_name = ''
+        to_business_name = ''
         if self._filing.filing_type == 'alteration':
-            from_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
-            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+            from_business_name = meta_data.get('alteration', {}).get('fromBusinessName')
+            to_business_name = meta_data.get('alteration', {}).get('toBusinessName')
         if self._filing.filing_type == 'specialResolution' and 'changeOfName' in meta_data.get('legalFilings', []):
-            from_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
-            to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
-        filing['fromLegalName'] = from_legal_name
-        filing['toLegalName'] = to_legal_name
+            from_business_name = meta_data.get('changeOfName', {}).get('fromBusinessName')
+            to_business_name = meta_data.get('changeOfName', {}).get('toBusinessName')
+        filing['fromBusinessName'] = from_business_name
+        filing['toBusinessName'] = to_business_name
 
     def _format_certificate_of_restoration_data(self, filing):
         meta_data = self._filing.meta_data or {}
-        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
-        filing['toLegalName'] = meta_data.get('restoration', {}).get('toLegalName')
+        filing['fromBusinessName'] = meta_data.get('restoration', {}).get('fromBusinessName')
+        filing['toBusinessName'] = meta_data.get('restoration', {}).get('toBusinessName')
         if expiry_date_str := meta_data.get('restoration', {}).get('expiry'):
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date_str)
             filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
@@ -518,9 +518,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['parties'] = filing['restoration'].get('parties')
         filing['offices'] = filing['restoration']['offices']
         meta_data = self._filing.meta_data or {}
-        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
-        filing['numberedLegalNameSuffix'] = \
-            LegalEntity.BUSINESSES[self._legal_entity.entity_type]['numberedLegalNameSuffix']
+        filing['fromBusinessName'] = meta_data.get('restoration', {}).get('fromBusinessName')
+        filing['numberedBusinessNameSuffix'] = \
+            LegalEntity.BUSINESSES[self._legal_entity.entity_type]['numberedBusinessNameSuffix']
 
         if relationships := filing['restoration'].get('relationships'):
             filing['relationshipsDesc'] = ', '.join(relationships)
@@ -535,7 +535,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
             self._filing, self._legal_entity, is_dissolution_date=True)
-        filing['dissolutionLegalName'] = business_dissolution.legal_name
+        filing['dissolutionBusinessName'] = business_dissolution.business_name
 
         if expiry_date := meta_data.get('restoration', {}).get('expiry'):
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
@@ -573,25 +573,25 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
 
-        to_legal_name = None
+        to_business_name = None
         if self._filing.status == 'COMPLETED':
             meta_data = self._filing.meta_data or {}
             prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
             new_legal_type = meta_data.get('alteration', {}).get('toLegalType')
-            prev_legal_name = meta_data.get('alteration', {}).get('fromLegalName')
-            to_legal_name = meta_data.get('alteration', {}).get('toLegalName')
+            prev_business_name = meta_data.get('alteration', {}).get('fromBusinessName')
+            to_business_name = meta_data.get('alteration', {}).get('toBusinessName')
         else:
             prev_legal_type = filing.get('business').get('legalType')
             new_legal_type = filing.get('alteration').get('business').get('legalType')
-            prev_legal_name = filing.get('business').get('legalName')
+            prev_business_name = filing.get('business').get('businessName')
             identifier = filing.get('business').get('identifier')
             name_request_json = filing.get('alteration').get('nameRequest')
             if name_request_json:
-                to_legal_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
+                to_business_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
 
-        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = to_legal_name
+        if prev_business_name and to_business_name and prev_business_name != to_business_name:
+            filing['previousBusinessName'] = prev_business_name
+            filing['newBusinessName'] = to_business_name
         filing['nameRequest'] = filing.get('alteration').get('nameRequest', {})
         filing['provisionsRemoved'] = filing.get('alteration').get('provisionsRemoved')
 
@@ -608,14 +608,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                                                                                            self._legal_entity.id)
 
         # Change of Name
-        prev_legal_name = versioned_legal_entity.legal_name
+        prev_business_name = versioned_legal_entity.legal_name
         name_request_json = filing.get(filing_type).get('nameRequest')
         filing['nameRequest'] = name_request_json
         if name_request_json:
-            to_legal_name = name_request_json.get('legalName')
-            if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
-                filing['previousLegalName'] = prev_legal_name
-                filing['newLegalName'] = to_legal_name
+            to_business_name = name_request_json.get('legalName')
+            if prev_business_name and to_business_name and prev_business_name != to_business_name:
+                filing['previousBusinessName'] = prev_business_name
+                filing['newBusinessName'] = to_business_name
 
         # Change of Nature of Business
         prev_naics_description = versioned_legal_entity.naics_description
@@ -777,11 +777,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_name_request_data(self, filing, versioned_legal_entity: LegalEntity):
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
-        prev_legal_name = versioned_legal_entity.legal_name
+        prev_business_name = versioned_legal_entity.legal_name
         legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(self._filing, self._legal_entity.id)
-        if prev_legal_name != legal_entity.legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = legal_entity.legal_name
+        if prev_business_name != legal_entity.legal_name:
+            filing['previousBusinessName'] = prev_business_name
+            filing['newBusinessName'] = legal_entity.legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -949,11 +949,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_special_resolution_application(self, filing, filing_source):
         """For both special resolutions and special resolution corrections."""
         meta_data = self._filing.meta_data or {}
-        prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
-        to_legal_name = meta_data.get('changeOfName', {}).get('toLegalName')
-        if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
-            filing['fromLegalName'] = prev_legal_name
-            filing['toLegalName'] = to_legal_name
+        prev_business_name = meta_data.get('changeOfName', {}).get('fromBusinessName')
+        to_business_name = meta_data.get('changeOfName', {}).get('toBusinessName')
+        if prev_business_name and to_business_name and prev_business_name != to_business_name:
+            filing['fromBusinessName'] = prev_business_name
+            filing['toBusinessName'] = to_business_name
             filing['nrNumber'] = filing.get('changeOfName').get('nameRequest', {}).get('nrNumber', None)
         prev_association_type = meta_data.get(filing_source, {}).get('fromCooperativeAssociationType')
         to_association_type = meta_data.get(filing_source, {}).get('toCooperativeAssociationType')
@@ -984,7 +984,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._report_key == 'noticeOfArticles':
             filing['meta_subject'] = '{} ({})'.format(self._legal_entity.legal_name, self._legal_entity.identifier)
         else:
-            legal_name = self._filing.filing_json['filing'].get('business', {}).get('legalName', 'NA')
+            legal_name = self._filing.filing_json['filing'].get('business', {}).get('businessName', 'NA')
             filing['meta_subject'] = '{} ({})'.format(
                 legal_name,
                 self._filing.filing_json['filing'].get('business', {}).get('identifier', 'NA'))

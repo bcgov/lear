@@ -13,7 +13,7 @@
     </div>
     <div class="letter-copy">
       <div>{{ report_date }}</div>
-      <div class="mt-12">{{ business.legalName }}</div>
+      <div class="mt-12">{{ business.businessName }}</div>
       {% set office = offices.registeredOffice %}
       <div>{{ office.mailingAddress.streetAddress }}</div>
       <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
@@ -23,9 +23,9 @@
         &nbsp;{{ office.mailingAddress.postalCode }}
       </div>
       <div class="mt-7">Dear Applicant,</div>
-      <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+      <div class="mt-5">Re: <span class="underline">{{ business.businessName }} - {{ business.identifier }}</span></div>
       <div class="mt-5">
-        The above company was authorized on {{effective_date}} to continue out of British Columbia, 
+        The above company was authorized on {{effective_date}} to continue out of British Columbia,
         under section 308 of the Business Corporations Act, to the jurisdiction of {{ jurisdiction }}.
       </div>
       <div class="mt-5">

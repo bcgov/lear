@@ -30,7 +30,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
 
     # link to original filing
     original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
-    original_filing.parent_filing = correction_filing
+    # FUTURE: parent_filing should no longer be used for correction filings and will be removed
+    original_filing.parent_filing = correction_filing 
 
     # add comment to the original filing
     original_filing.comments.append(

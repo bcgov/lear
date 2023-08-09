@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -28,7 +29,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
 from ..exceptions import BusinessException
-from ..utils.enum import BaseEnum
+from ..utils.enum import BaseEnum, BaseMeta
 from ..utils.datetime import datetime, timezone
 from ..utils.legislation_datetime import LegislationDatetime
 
@@ -753,3 +754,47 @@ ASSOCIATION_TYPE_DESC: Final = {
     LegalEntity.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
     LegalEntity.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
 }
+
+class LegalEntityType(str, Enum, metaclass=BaseMeta):
+    """The business type."""
+
+    COOPERATIVE = 'CP'
+    INDIVIDUAL = 'FP'
+    PARTNERSHIP_AND_SOLE_PROP = 'FM'
+    TRUST = 'TRUST'
+    OTHER = 'OT'
+    DEFAULT = 'OT'
+
+    @classmethod
+    def get_enum_by_value(cls, value: str) -> Optional[str]:
+        """Return the enum by value."""
+        for enum_value in cls:
+            if enum_value.value == value:
+                return enum_value
+        return None
+
+
+MAX_IDENTIFIER_NUM_LENGTH: Final[int] = 7
+
+
+class LegalEntityIdentifier():
+    """The business identifier."""
+
+    @staticmethod
+    def validate_format(value: str) -> bool:
+        """Validate the business identifier."""
+        legal_type = value[:re.search(r'\d', value).start()]
+
+        if legal_type not in LegalEntityType or (not value[value.find(legal_type) + len(legal_type):].isdigit()):
+            return False
+
+        return True
+
+    @staticmethod
+    def next_identifier(legal_entity_type: LegalEntityType) -> Optional[str]:
+        """Get the next identifier."""
+        if not (legal_entity_type in LegalEntityType and
+                (sequence_val := LegalEntity.get_next_value_from_sequence(legal_entity_type))):
+            return None
+
+        return f'{legal_entity_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}'

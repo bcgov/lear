@@ -656,11 +656,11 @@ def test_correction(session, app):
     [
         ('COMPLETED', 12355, 'BC1234567', 2, {'nameRequest':
                                               {'nrNumber': 'NR 8798956',
-                                               'legalName': 'HAULER MEDIA INC.',
+                                               'businessName': 'HAULER MEDIA INC.',
                                                'legalType': 'BC'}}),
         ('COMPLETED', 12356, 'BC1234567', 3, {'nameRequest':
                                               {'nrNumber': 'NR 8798956',
-                                               'legalName': 'New Name.',
+                                               'businessName': 'New Name.',
                                                'legalType': 'BC'}}),
         ('COMPLETED', 12357, 'BC1234567', 2, {'contactPoint': {'email': 'no_one@never.get'}}),
         ('PENDING', 12358, 'BC1234567', 0, {})
@@ -685,7 +685,7 @@ def test_alteration(status, filing_id, business_identifier, expected_number, alt
                     },
                     'business': {
                         'identifier': business_identifier,
-                        'legalName': 'HAULER MEDIA INC.',
+                        'businessName': 'HAULER MEDIA INC.',
                         'legalType': 'BC'
                     },
                     'alteration': alteration_json
@@ -901,6 +901,7 @@ def test_ia_completed_bcomp_original(session, app):
                     }
                 }
             }
+            # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
             original_filing.parent_filing_id = corrected_filing.id
             original_filing.save()
             documents = document_meta.get_documents(filing)
