@@ -26,10 +26,13 @@ import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts wi
 from dateutil.parser import parse
 from dotenv import find_dotenv, load_dotenv
 from entity_queue_common.service import ServiceWorker
+from flask import current_app
 from flask import Flask
+from legal_api.services.queue import QueueService
 from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS # pylint: disable=unused-import
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
+from simple_cloudevent import SimpleCloudEvent
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 import config  # pylint: disable=import-error
@@ -95,6 +98,7 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
         stan_connection_options=default_stan_options,
         config=config.get_named_config('production')
     )
+    queue = QueueService()
 
     await queue_service.connect()
 
@@ -106,12 +110,23 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
             for filing in filings:
                 filing_id = filing['filing']['header']['filingId']
                 effective_date = filing['filing']['header']['effectiveDate']
+                cloud_event = SimpleCloudEvent(
+                  source=__name__[: __name__.find(".")],
+                  subject="filing",
+                  type="Filing",
+                  data={
+                      "filingId": filing_id,
+                      "filingType": subject,
+                      "filingEffectiveDate": effective_date,
+                    },
+                )
                 # NB: effective_date and now are both UTC
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
-                    msg = {'filing': {'id': filing_id}}
-                    await queue_service.publish(subject, msg)
+                    # Publish to new GCP Filer Q
+                    filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
+                    queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
         except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
