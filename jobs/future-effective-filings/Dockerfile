@@ -65,7 +65,7 @@ RUN groupadd -g "${GID}" -r web \
 # Copy only requirements, to cache them in docker layer
 COPY --chown=web:web ./poetry.lock ./pyproject.toml /code/
 
-COPY --chown=web:web ./src /code/src
+COPY --chown=web:web . /future-effective-filings
 COPY --chown=web:web ./README.md /code
 
 # Running as non-root user:
@@ -77,4 +77,4 @@ COPY --chown=web:web . /code
 
 # ENV PYTHONPATH=/opt/app-root/src
 
-CMD gunicorn --bind 0.0.0.0:${PORT} --config /code/gunicorn_config.py wsgi:app
+CMD [ "python", "./file_future_effective.py" ]

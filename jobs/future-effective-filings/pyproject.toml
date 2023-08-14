@@ -36,7 +36,6 @@ rsa = "4.6"
 sentry-sdk = "^1.24.0"
 six = "1.15.0"
 urllib3 = "1.26.11"
-legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "dev_legal_name_changes" }
 simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
 
 [tool.poetry.group.test.dependencies]
