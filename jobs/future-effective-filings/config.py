@@ -52,25 +52,24 @@ class Config(object):  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
-    ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
+    ENVIRONMENT = os.getenv('ENVIRONMENT', 'prod')
+    GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
+    ENTITY_FILER_TOPIC = os.getenv('ENTITY_FILER_TOPIC', 'filer')
     AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+        'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
     )
     PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+        'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     )
 
-    COLIN_URL = os.getenv("COLIN_URL", "")
-    LEGAL_URL = os.getenv("LEGAL_URL", "")
-    AUTH_URL = os.getenv("AUTH_URL", "")
-    USERNAME = os.getenv("AUTH_USERNAME", "")
-    PASSWORD = os.getenv("AUTH_PASSWORD", "")
-    SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+    COLIN_URL = os.getenv('COLIN_URL', '')
+    LEGAL_URL = os.getenv('LEGAL_URL', '')
+    AUTH_URL = os.getenv('AUTH_URL', '')
+    USERNAME = os.getenv('AUTH_USERNAME', '')
+    PASSWORD = os.getenv('AUTH_PASSWORD', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
-    SECRET_KEY = "a secret"
+    SECRET_KEY = 'a secret'
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
@@ -87,42 +86,42 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     TESTING = True
 
     NATS_CONNECTION_OPTIONS = {
-        "servers": os.getenv("NATS_SERVERS_TEST", "").split(","),
-        "name": os.getenv("NATS_CLIENT_NAME_TEST", "")
+        'servers': os.getenv('NATS_SERVERS_TEST', '').split(','),
+        'name': os.getenv('NATS_CLIENT_NAME_TEST', '')
     }
     STAN_CONNECTION_OPTIONS = {
-        "cluster_id": os.getenv("NATS_CLUSTER_ID_TEST", ""),
-        "client_id": str(random.SystemRandom().getrandbits(0x58)),
-        "ping_interval": 1,
-        "ping_max_out": 5
+        'cluster_id': os.getenv('NATS_CLUSTER_ID_TEST', ''),
+        'client_id': str(random.SystemRandom().getrandbits(0x58)),
+        'ping_interval': 1,
+        'ping_max_out': 5
     }
 
     SUBSCRIPTION_OPTIONS = {
-        "subject": os.getenv("NATS_SUBJECT_TEST", ""),
-        "queue": os.getenv("NATS_QUEUE_TEST", ""),
-        "durable_name": os.getenv("NATS_QUEUE_TEST", "") + "_durable"
+        'subject': os.getenv('NATS_SUBJECT_TEST', ''),
+        'queue': os.getenv('NATS_QUEUE_TEST', ''),
+        'durable_name': os.getenv('NATS_QUEUE_TEST', '') + '_durable'
     }
 
     FILER_PUBLISH_OPTIONS = {
-        "subject": os.getenv("NATS_FILER_SUBJECT_TEST", "")
+        'subject': os.getenv('NATS_FILER_SUBJECT_TEST', '')
     }
 
-    COLIN_URL = os.getenv("COLIN_URL_TEST", "")
-    LEGAL_URL = os.getenv("LEGAL_URL_TEST", "")
-    AUTH_URL = os.getenv("AUTH_URL_TEST", "")
-    USERNAME = os.getenv("AUTH_USERNAME_TEST", "")
-    PASSWORD = os.getenv("AUTH_PASSWORD_TEST", "")
-    SENTRY_DSN = os.getenv("SENTRY_DSN_TEST", "")
+    COLIN_URL = os.getenv('COLIN_URL_TEST', '')
+    LEGAL_URL = os.getenv('LEGAL_URL_TEST', '')
+    AUTH_URL = os.getenv('AUTH_URL_TEST', '')
+    USERNAME = os.getenv('AUTH_USERNAME_TEST', '')
+    PASSWORD = os.getenv('AUTH_PASSWORD_TEST', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
 
-    SECRET_KEY = os.getenv("SECRET_KEY", None)
+    SECRET_KEY = os.getenv('SECRET_KEY', None)
 
     if not SECRET_KEY:
         SECRET_KEY = os.urandom(24)
-        print("WARNING: SECRET_KEY being set as a one-shot", file=sys.stderr)
+        print('WARNING: SECRET_KEY being set as a one-shot', file=sys.stderr)
 
     TESTING = False
     DEBUG = False
