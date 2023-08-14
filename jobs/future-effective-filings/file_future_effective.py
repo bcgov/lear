@@ -28,12 +28,16 @@ from dotenv import find_dotenv, load_dotenv
 from entity_queue_common.service import ServiceWorker
 from flask import current_app
 from flask import Flask
-from legal_api.services.queue import QueueService
+from flask import request
+from http import HTTPStatus
 from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS # pylint: disable=unused-import
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 from simple_cloudevent import SimpleCloudEvent
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+
+from services import queue
+from services.logging import structured_log
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -98,7 +102,6 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
         stan_connection_options=default_stan_options,
         config=config.get_named_config('production')
     )
-    queue = QueueService()
 
     await queue_service.connect()
 
@@ -126,8 +129,10 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
                 if valid:
                     # Publish to new GCP Filer Q
                     filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
-                    queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
+                    ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
+                    structured_log(request, "INFO", f"publish to filer for id: {filing_id}")
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
+                    return {}, HTTPStatus.OK
         except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
 
