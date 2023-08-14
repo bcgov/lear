@@ -54,6 +54,7 @@ class Config(object):  # pylint: disable=too-few-public-methods
 
     ENVIRONMENT = os.getenv('ENVIRONMENT', 'prod')
     GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
+    ENTITY_MAILER_TOPIC = os.getenv('ENTITY_MAILER_TOPIC', 'mailer')
     ENTITY_FILER_TOPIC = os.getenv('ENTITY_FILER_TOPIC', 'filer')
     AUDIENCE = os.getenv(
         'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
