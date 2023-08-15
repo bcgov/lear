@@ -47,8 +47,6 @@ spec:
           value: $PUBLISHER_AUDIENCE
         - name: ENTITY_MAILER_TOPIC
           value: $ENTITY_MAILER_TOPIC
-        - name: ENTITY_FILER_TOPIC
-          value: $ENTITY_FILER_TOPIC
         resources:
           limits:
             cpu: 1000m
