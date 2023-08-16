@@ -65,16 +65,17 @@ RUN groupadd -g "${GID}" -r web \
 # Copy only requirements, to cache them in docker layer
 COPY --chown=web:web ./poetry.lock ./pyproject.toml /code/
 
-COPY --chown=web:web . /future-effective-filings
+# Create working directory
+RUN mkdir /opt/app-root && chmod 755 /opt/app-root
+WORKDIR /opt/app-root
+
+COPY . /opt/app-root
 COPY --chown=web:web ./README.md /code
+
+# Project initialization:
+RUN poetry install --no-root --no-dev
 
 # Running as non-root user:
 USER web
 
-# The following stage is only for production:
-FROM development_build AS production_build
-COPY --chown=web:web . /code
-
-# ENV PYTHONPATH=/opt/app-root/src
-
-CMD [ "python", "./file_future_effective.py" ]
+CMD python file_future_effective.py
