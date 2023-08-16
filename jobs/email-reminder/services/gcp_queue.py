@@ -62,7 +62,7 @@ class GcpQueue:
         self._publisher = None
 
         if app:
-            self.app_init(app)
+            self.init_app(app)
 
     def init_app(self, app: Flask):
         self.gcp_auth_key = app.config.get("GCP_AUTH_KEY")
