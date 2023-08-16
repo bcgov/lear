@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Email reminder job"
 authors = ["Hongjing Chen <Hongjing.Chen@gov.bc.ca>"]
 license = "Apache 2.0"
-# packages = [{include = "../email_reminder"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -35,6 +34,9 @@ six = "^1.16.0"
 urllib3 = "^1.22.0"
 legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "dev_legal_name_changes" }
 registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", branch = "dev_legal_name_changes"}
+simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
+google-auth = "^2.21.0"
+google-cloud-pubsub = "^2.17.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
