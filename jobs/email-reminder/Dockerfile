@@ -76,4 +76,4 @@ USER web
 FROM development_build AS production_build
 COPY --chown=web:web . /code
 
-CMD [ "python", "/code/email_reminder.py" ]
+CMD [ "/bin/sh", "run.sh" ]
