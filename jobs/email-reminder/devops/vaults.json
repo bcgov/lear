@@ -4,7 +4,6 @@
         "application": [
             "postgres-legal",
             "filings-jobs",
-            "nats-emailer",
             "entity-service-account",
             "sentry",
             "launchdarkly",
