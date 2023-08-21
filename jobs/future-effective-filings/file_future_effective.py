@@ -25,32 +25,20 @@ import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from dateutil.parser import parse
 from dotenv import find_dotenv, load_dotenv
-from entity_queue_common.service import ServiceWorker
+from flask import current_app
 from flask import Flask
-from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
-from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS # pylint: disable=unused-import
+from flask import request
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
-from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+from simple_cloudevent import SimpleCloudEvent
+
+from services import queue
+from services.logging import structured_log
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
-
-default_nats_options = {
-            'name': 'default_future_filing_job',
-            'servers':  os.getenv('NATS_SERVERS', '').split(','),
-            'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
-                                         DEFAULT_CONNECT_TIMEOUT)
-        }
-
-default_stan_options = {
-            'cluster_id': os.getenv('NATS_CLUSTER_ID'),
-            'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
-        }
-
-subject = os.getenv('NATS_FILER_SUBJECT', '')
 
 # this will load all the envars from a .env file located in the project root
 load_dotenv(find_dotenv())
@@ -89,15 +77,6 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
     if application is None:
         application = create_app()
 
-    queue_service = ServiceWorker(
-        loop=loop,
-        nats_connection_options=default_nats_options,
-        stan_connection_options=default_stan_options,
-        config=config.get_named_config('production')
-    )
-
-    await queue_service.connect()
-
     with application.app_context():
         try:
             filings = get_filings(app=application)
@@ -106,12 +85,29 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
             for filing in filings:
                 filing_id = filing['filing']['header']['filingId']
                 effective_date = filing['filing']['header']['effectiveDate']
+                filing_type = 'filing'
+                try:
+                    filing_type = filing['filing']['business']['legalType']
+                except:
+                    filing_type = filing['filing']['registration']['nameRequest']['legalType']
+                cloud_event = SimpleCloudEvent(
+                  source=__name__[: __name__.find(".")],
+                  subject="filing",
+                  type="Filing",
+                  data={
+                      "filingId": filing_id,
+                      "filingType": filing_type,
+                      "filingEffectiveDate": effective_date,
+                    },
+                )
                 # NB: effective_date and now are both UTC
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
-                    msg = {'filing': {'id': filing_id}}
-                    await queue_service.publish(subject, msg)
+                    # Publish to new GCP Filer Q
+                    filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
+                    queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
+                    structured_log(request, "INFO", f"publish to filer for id: {filing_id}")
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
         except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
