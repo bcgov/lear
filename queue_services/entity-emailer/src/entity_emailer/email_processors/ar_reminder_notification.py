@@ -34,7 +34,7 @@ def process(email_msg: dict, token: str) -> dict:
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html').read_text()
     filled_template = substitute_template_parts(template)
     business = LegalEntity.find_by_internal_id(email_msg['businessId'])
-    corp_type = CorpType.find_by_id(business.legal_type)
+    corp_type = CorpType.find_by_id(business.entity_type)
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

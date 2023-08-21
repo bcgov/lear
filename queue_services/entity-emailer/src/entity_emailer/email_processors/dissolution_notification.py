@@ -49,11 +49,11 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
-    legal_type = business.get('legalType', None)
+    entity_type = business.get('legalType', None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        if legal_type not in ['SP', 'GP']:
+        if entity_type not in ['SP', 'GP']:
             filing_pdf = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
                 headers=headers
@@ -99,7 +99,7 @@ def _get_pdfs(
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        if legal_type in ['SP', 'GP']:
+        if entity_type in ['SP', 'GP']:
             filing_pdf = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
                 headers=headers
@@ -139,7 +139,7 @@ def _get_pdfs(
                     )
                     attach_order += 1
 
-            if legal_type == LegalEntity.LegalTypes.COOP.value:
+            if entity_type == LegalEntity.EntityTypes.COOP.value:
                 # certifiedAffidavit
                 certified_affidavit = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -191,7 +191,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-    legal_type = business.get('legalType', None)
+    entity_type = business.get('legalType', None)
 
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/DIS-{status}.html'
@@ -226,7 +226,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     else:
         recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
-    if legal_type in ['SP', 'GP']:  # Send email to all proprietor, partner, completing party
+    if entity_type in ['SP', 'GP']:  # Send email to all proprietor, partner, completing party
         business_data = LegalEntity.find_by_internal_id(filing.business_id)
         for party in filing.filing_json['filing']['dissolution']['parties']:
             if party['officer'].get('email'):
@@ -246,13 +246,13 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # assign subject
     if status == Filing.Status.PAID.value:
-        if legal_type in ['SP', 'GP']:
+        if entity_type in ['SP', 'GP']:
             subject = 'Confirmation of Filing from the Business Registry'
         else:
             subject = 'Voluntary dissolution'
 
     elif status == Filing.Status.COMPLETED.value:
-        if legal_type in ['SP', 'GP']:
+        if entity_type in ['SP', 'GP']:
             subject = 'Dissolution Documents from the Business Registry'
         else:
             subject = 'Confirmation of Dissolution from the Business Registry'

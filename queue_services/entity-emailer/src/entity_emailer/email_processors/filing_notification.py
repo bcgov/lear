@@ -58,7 +58,7 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
-    legal_type = business.get('legalType', None)
+    entity_type = business.get('legalType', None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -116,7 +116,7 @@ def _get_pdfs(
             )
             attach_order += 1
     if status == Filing.Status.COMPLETED.value:
-        if legal_type != LegalEntity.LegalTypes.COOP.value:
+        if entity_type != LegalEntity.EntityTypes.COOP.value:
             # add notice of articles
             noa = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -159,7 +159,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
 
-            if legal_type == LegalEntity.LegalTypes.COOP.value:
+            if entity_type == LegalEntity.EntityTypes.COOP.value:
                 # Add rules
                 rules = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -237,7 +237,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
         business = (filing.json)['filing']['incorporationApplication']['nameRequest']
         business['identifier'] = filing.temp_reg
 
-    legal_type = business.get('legalType')
+    entity_type = business.get('legalType')
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
     template = Path(
@@ -245,7 +245,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
-    numbered_description = LegalEntity.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    numbered_description = LegalEntity.BUSINESSES.get(entity_type, {}).get('numberedDescription')
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     html_out = jnja_template.render(

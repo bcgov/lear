@@ -48,7 +48,7 @@ def _get_pdfs(
         'Accept': 'application/pdf',
         'Authorization': f'Bearer {token}'
     }
-    legal_type = business.get('legalType', None)
+    entity_type = business.get('legalType', None)
     is_cp_special_resolution = is_special_resolution_correction(
         filing.filing_json['filing'],
         business,
@@ -103,7 +103,7 @@ def _get_pdfs(
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        if legal_type in ('SP', 'GP'):
+        if entity_type in ('SP', 'GP'):
             # add corrected registration statement
             certificate = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -123,7 +123,7 @@ def _get_pdfs(
                     }
                 )
                 attach_order += 1
-        elif legal_type in ('BC', 'BEN', 'CC', 'ULC'):
+        elif entity_type in ('BC', 'BEN', 'CC', 'ULC'):
             # add notice of articles
             noa = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -221,12 +221,12 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
 
     prefix = 'BC'
-    legal_type = business.get('legalType', None)
+    entity_type = business.get('legalType', None)
     name_changed = False
 
-    if legal_type in ['SP', 'GP']:
+    if entity_type in ['SP', 'GP']:
         prefix = 'FIRM'
-    elif legal_type in ['BC', 'BEN', 'CC', 'ULC']:
+    elif entity_type in ['BC', 'BEN', 'CC', 'ULC']:
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None

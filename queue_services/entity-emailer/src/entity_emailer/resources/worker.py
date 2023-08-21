@@ -139,7 +139,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        structured_log(request, 'DEBUG', f'Attempting to process email: {email_msg}', email_msg)
+        structured_log(request, 'DEBUG', f'Attempting to process email: {email_msg}')
         token = AccountService.get_bearer_token()
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
