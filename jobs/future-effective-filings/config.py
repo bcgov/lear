@@ -69,7 +69,7 @@ class Config(object):  # pylint: disable=too-few-public-methods
         'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     )
 
-    LEGAL_URL = os.getenv('LEGAL_URL', 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v1/businesses')
+    LEGAL_URL = os.getenv('LEGAL_URL', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     SECRET_KEY = 'a secret'
@@ -88,7 +88,7 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
 
-    LEGAL_URL = os.getenv('LEGAL_URL', 'https://legal-api-test.apps.silver.devops.gov.bc.ca/api/v1/businesses')
+    LEGAL_URL = os.getenv('LEGAL_URL', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
 
 
