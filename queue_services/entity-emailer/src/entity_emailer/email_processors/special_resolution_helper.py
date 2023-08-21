@@ -16,9 +16,11 @@ import base64
 from http import HTTPStatus
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Business, Filing
+from flask import request
+from legal_api.models import LegalEntity, Filing
+
+from entity_emailer.services.logging import structured_log
 
 
 def get_completed_pdfs(
@@ -56,8 +58,7 @@ def get_completed_pdfs(
         )
         attach_order += 1
     else:
-        logger.error('Failed to get specialResolution pdf for filing: %s, status code: %s',
-                     filing.id, special_resolution.status_code)
+        structured_log(request, 'ERROR', f'Failed to get specialResolution pdf for filing: {filing.id}, status code: {special_resolution.status_code}')
 
     # Change of Name
     if name_changed:
@@ -79,8 +80,7 @@ def get_completed_pdfs(
             )
             attach_order += 1
         else:
-            logger.error('Failed to get certificateOfNameChange pdf for filing: %s, status code: %s',
-                         filing.id, name_change.status_code)
+            structured_log(request, 'ERROR', f'Failed to get certificateOfNameChange pdf for filing: {filing.id}, status code: {name_change.status_code}')
 
     # Certified Rules
     if rules_changed:
@@ -129,7 +129,7 @@ def get_paid_pdfs(
     )
 
     if sr_filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
     else:
         sr_filing_pdf_encoded = base64.b64encode(sr_filing_pdf.content)
         pdfs.append(
@@ -142,13 +142,13 @@ def get_paid_pdfs(
         )
         attach_order += 1
 
-    legal_name = business.get('legalName')
-    origin_business = Business.find_by_internal_id(filing.business_id)
+    business_name = business.get('businessName')
+    origin_business = LegalEntity.find_by_internal_id(filing.business_id)
 
     sr_receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
         json={
-            'corpName': legal_name,
+            'corpName': business_name,
             'filingDateTime': filing_date_time,
             'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
             'filingIdentifier': str(filing.id),
@@ -158,7 +158,7 @@ def get_paid_pdfs(
     )
 
     if sr_receipt.status_code != HTTPStatus.CREATED:
-        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
     else:
         receipt_encoded = base64.b64encode(sr_receipt.content)
         pdfs.append(

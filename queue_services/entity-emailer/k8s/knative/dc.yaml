@@ -1,0 +1,64 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: $NAME
+  generation: $GENERATION
+  labels:
+    cloud.googleapis.com/location: northamerica-northeast1
+spec:
+  template:
+    metadata:
+      labels:
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        run.googleapis.com/client-name: cloud-console
+        run.googleapis.com/cloudsql-instances: $CLOUDSQL_INSTANCES
+        autoscaling.knative.dev/maxScale: $MAXSCALE
+    spec:
+      containerConcurrency: $CONTAINER_CONCURRENCY
+      timeoutSeconds: $TIMEOUT_SECONDS
+      serviceAccountName: $SERVICE_ACCOUNTNAME
+      containers:
+      - image: >-
+          $CONTAINER_IMAGE
+        ports:
+        - name: http1
+          containerPort: $CONTAINER_PORT
+        env:
+        - name: DATABASE_HOST
+          value: $DATABASE_HOST
+        - name: DATABASE_NAME
+          value: $DATABASE_NAME
+        - name: DATABASE_PASSWORD
+          value: $DATABASE_PASSWORD
+        - name: DATABASE_PORT
+          value: $DATABASE_PORT
+        - name: GUNICORN_PROCESSES
+          value: $GUNICORN_PROCESSES
+        - name: GUNICORN_THREADS
+          value: GUNICORN_THREADS
+        - name: DATABASE_UNIX_SOCKET
+          value: $DATABASE_UNIX_SOCKET
+        - name: DATABASE_USERNAME
+          value: DATABASE_USERNAME
+        - name: AUDIENCE
+          value: $AUDIENCE
+        - name: PUBLISHER_AUDIENCE
+          value: $PUBLISHER_AUDIENCE
+        - name: ENTITY_MAILER_TOPIC
+          value: $ENTITY_MAILER_TOPIC
+        - name: ENTITY_FILER_TOPIC
+          value: $ENTITY_FILER_TOPIC
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        startupProbe:
+          timeoutSeconds: 240
+          periodSeconds: 240
+          failureThreshold: 1
+          tcpSocket:
+            port: 8080
+  traffic:
+  - percent: 100
+    latestRevision: true

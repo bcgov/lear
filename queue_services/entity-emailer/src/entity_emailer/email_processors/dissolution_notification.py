@@ -20,11 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import LegalEntity, Filing, UserRoles
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     get_filing_info,
     get_recipient_from_auth,
@@ -58,7 +59,7 @@ def _get_pdfs(
                 headers=headers
             )
             if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
@@ -72,7 +73,7 @@ def _get_pdfs(
                 attach_order += 1
 
         corp_name = business.get('legalName')
-        business_data = Business.find_by_internal_id(filing.business_id)
+        business_data = LegalEntity.find_by_internal_id(filing.business_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
@@ -85,7 +86,7 @@ def _get_pdfs(
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+            structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -104,7 +105,7 @@ def _get_pdfs(
                 headers=headers
             )
             if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
@@ -125,7 +126,7 @@ def _get_pdfs(
                     headers=headers
                 )
                 if certificate.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
+                    structured_log(request, 'ERROR', f'Failed to get certificateOfDissolution pdf for filing: {filing.id}')
                 else:
                     certificate_encoded = base64.b64encode(certificate.content)
                     pdfs.append(
@@ -138,7 +139,7 @@ def _get_pdfs(
                     )
                     attach_order += 1
 
-            if legal_type == Business.LegalTypes.COOP.value:
+            if legal_type == LegalEntity.LegalTypes.COOP.value:
                 # certifiedAffidavit
                 certified_affidavit = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -146,7 +147,7 @@ def _get_pdfs(
                     headers=headers
                 )
                 if certified_affidavit.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get affidavit pdf for filing: %s', filing.id)
+                    structured_log(request, 'ERROR', f'Failed to get affidavit pdf for filing: {filing.id}')
                 else:
                     certificate_encoded = base64.b64encode(certified_affidavit.content)
                     pdfs.append(
@@ -166,7 +167,7 @@ def _get_pdfs(
                     headers=headers
                 )
                 if special_resolution.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
+                    structured_log(request, 'ERROR', f'Failed to get specialResolution pdf for filing: {filing.id}')
                 else:
                     certificate_encoded = base64.b64encode(special_resolution.content)
                     pdfs.append(
@@ -184,7 +185,7 @@ def _get_pdfs(
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Dissolution notification."""
-    logger.debug('dissolution_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'dissolution_notification: {email_info}')
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -226,7 +227,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
     if legal_type in ['SP', 'GP']:  # Send email to all proprietor, partner, completing party
-        business_data = Business.find_by_internal_id(filing.business_id)
+        business_data = LegalEntity.find_by_internal_id(filing.business_id)
         for party in filing.filing_json['filing']['dissolution']['parties']:
             if party['officer'].get('email'):
                 recipients.append(party['officer']['email'])
@@ -259,8 +260,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    business_name = business.get('businessName', None)
+    subject = f'{business_name} - {subject}' if business_name else subject
 
     return {
         'recipients': recipients,

@@ -31,24 +31,20 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Supply version and commit hash info.
+"""Entity-Emailer module.
 
-When deployed in OKD, it adds the last commit hash onto the version info.
+This module is the service worker for sending emails about entity related events.
 """
-import os
-from importlib.metadata import version
+from flask import Flask
+
+from .worker import bp as worker_endpoint
 
 
-def _get_commit_hash():
-    """Return the containers ref if present."""
-    if (commit_hash := os.getenv("VCS_REF", None)) and commit_hash != "missing":
-        return commit_hash
-    return None
+def register_endpoints(app: Flask):
+    # Allow base route to match with, and without a trailing slash
+    app.url_map.strict_slashes = False
 
-
-def get_run_version():
-    """Return a formatted version string for this service."""
-    ver = version(__name__[: __name__.find(".")])
-    if commit_hash := _get_commit_hash():
-        return f"{ver}-{commit_hash}"
-    return ver
+    app.register_blueprint(
+        url_prefix="/",
+        blueprint=worker_endpoint,
+    )

@@ -20,11 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import LegalEntity, Filing, UserRoles
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     get_filing_info,
     get_recipients,
@@ -66,7 +67,7 @@ def _get_pdfs(
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
+            structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             file_name = filing.filing_type[0].upper() + \
@@ -102,7 +103,7 @@ def _get_pdfs(
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+            structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -115,7 +116,7 @@ def _get_pdfs(
             )
             attach_order += 1
     if status == Filing.Status.COMPLETED.value:
-        if legal_type != Business.LegalTypes.COOP.value:
+        if legal_type != LegalEntity.LegalTypes.COOP.value:
             # add notice of articles
             noa = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -123,7 +124,7 @@ def _get_pdfs(
                 headers=headers
             )
             if noa.status_code != HTTPStatus.OK:
-                logger.error('Failed to get noa pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get noa pdf for filing: {filing.id}')
             else:
                 noa_encoded = base64.b64encode(noa.content)
                 pdfs.append(
@@ -144,7 +145,7 @@ def _get_pdfs(
                 headers=headers
             )
             if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get certificate pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get certificate pdf for filing: {filing.id}')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 file_name = 'Incorporation Certificate.pdf'
@@ -158,7 +159,7 @@ def _get_pdfs(
                 )
                 attach_order += 1
 
-            if legal_type == Business.LegalTypes.COOP.value:
+            if legal_type == LegalEntity.LegalTypes.COOP.value:
                 # Add rules
                 rules = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
@@ -166,7 +167,7 @@ def _get_pdfs(
                     headers=headers
                 )
                 if rules.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certifiedRules pdf for filing: %s', filing.id)
+                    structured_log(request, 'ERROR', f'Failed to get certifiedRules pdf for filing: {filing.id}')
                 else:
                     certified_rules_encoded = base64.b64encode(rules.content)
                     pdfs.append(
@@ -186,7 +187,7 @@ def _get_pdfs(
                     headers=headers
                 )
                 if memorandum.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certifiedMemorandum pdf for filing: %s', filing.id)
+                    structured_log(request, 'ERROR', f'Failed to get certifiedMemorandum pdf for filing: {filing.id}')
                 else:
                     certified_memorandum_encoded = base64.b64encode(memorandum.content)
                     pdfs.append(
@@ -207,7 +208,7 @@ def _get_pdfs(
                 headers=headers
             )
             if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get certificateOfNameChange pdf for filing: {filing.id}')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 file_name = 'Certificate of Name Change.pdf'
@@ -227,7 +228,7 @@ def _get_pdfs(
 def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         email_info: dict, token: str) -> dict:
     """Build the email for Business Number notification."""
-    logger.debug('filing_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'filing_notification: {email_info}')
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -244,7 +245,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
-    numbered_description = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    numbered_description = LegalEntity.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     html_out = jnja_template.render(
@@ -301,12 +302,12 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
         subject = 'Notification from the BC Business Registry'
 
     if filing.filing_type == 'incorporationApplication':
-        legal_name = \
-            filing.filing_json['filing']['incorporationApplication']['nameRequest'].get('legalName', None)
+        business_name = \
+            filing.filing_json['filing']['incorporationApplication']['nameRequest'].get('businessName', None)
     else:
-        legal_name = business.get('legalName', None)
+        business_name = business.get('businessName', None)
 
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    subject = f'{business_name} - {subject}' if business_name else subject
 
     return {
         'recipients': recipients,

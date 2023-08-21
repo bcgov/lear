@@ -19,12 +19,13 @@ from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
 from legal_api.services import NameXService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import substitute_template_parts
 
 
@@ -44,14 +45,14 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     valid values of option: Option
     """
-    logger.debug('NR %s notification: %s', option, email_info)
+    structured_log(request, 'DEBUG', f'NR {option} notification: {email_info}')
     nr_number = email_info['identifier']
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
     filled_template = substitute_template_parts(template)
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
-        logger.error('Failed to get nr info for name request: %s', nr_number)
+        structured_log(request, 'ERROR', f'Failed to get nr info for name request: {nr_number}')
         return {}
 
     nr_data = nr_response.json()
@@ -66,10 +67,10 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     if option == Option.REFUND.value:
         refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
 
-    legal_name = ''
+    business_name = ''
     for n_item in nr_data['names']:
         if n_item['state'] in ('APPROVED', 'CONDITION'):
-            legal_name = n_item['name']
+            business_name = n_item['name']
             break
 
     # render template with vars
@@ -77,7 +78,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     html_out = mail_template.render(
         nr_number=nr_number,
         expiration_date=expiration_date,
-        legal_name=legal_name,
+        business_name=business_name,
         refund_value=refund_value
     )
 

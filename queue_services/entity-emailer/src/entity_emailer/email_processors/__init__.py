@@ -22,17 +22,18 @@ from pathlib import Path
 from typing import Tuple
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
-from legal_api.models import Business, Filing
+from flask import request
+from legal_api.models import LegalEntity, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from entity_emailer.services.logging import structured_log
 
 
 def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
     if filing.business_id:
-        business = Business.find_by_internal_id(filing.business_id)
+        business = LegalEntity.find_by_internal_id(filing.business_id)
         business_json = business.json()
     else:
         business_json = (filing.json)['filing'].get('business')
@@ -91,7 +92,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     contacts = contact_info.json()['contacts']
 
     if not contacts:
-        logger.error('Queue Error: No email in business (%s) profile to send output to.', identifier, exc_info=True)
+        structured_log(request, 'ERROR', f'Queue Error: No email in business {identifier} profile to send output to.')
         raise Exception
 
     return contacts[0]['email']

@@ -19,11 +19,12 @@ import re
 from http import HTTPStatus
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Environment, FileSystemLoader
-from legal_api.models import Business, CorpType, Filing
+from legal_api.models import LegalEntity, CorpType, Filing
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info
 
 
@@ -47,7 +48,7 @@ def _get_completed_pdfs(
         headers=headers
     )
     if noa.status_code != HTTPStatus.OK:
-        logger.error('Failed to get noa pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get noa pdf for filing: {filing.id}')
     else:
         noa_encoded = base64.b64encode(noa.content)
         pdfs.append(
@@ -66,7 +67,7 @@ def _get_completed_pdfs(
         headers=headers
     )
     if certificate.status_code != HTTPStatus.OK:
-        logger.error('Failed to get certificate pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get certificate pdf for filing: {filing.id}')
     else:
         certificate_encoded = base64.b64encode(certificate.content)
         pdfs.append(
@@ -102,7 +103,7 @@ def _get_paid_pdfs(
         headers=headers
     )
     if filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
     else:
         filing_pdf_encoded = base64.b64encode(filing_pdf.content)
         pdfs.append(
@@ -116,7 +117,7 @@ def _get_paid_pdfs(
         attach_order += 1
     name_request = filing.json['filing']['restoration']['nameRequest']
     corp_name = name_request.get('legalName')
-    business_data = Business.find_by_internal_id(filing.business_id)
+    business_data = LegalEntity.find_by_internal_id(filing.business_id)
     receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
         json={
@@ -129,7 +130,7 @@ def _get_paid_pdfs(
         headers=headers
     )
     if receipt.status_code != HTTPStatus.CREATED:
-        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
     else:
         receipt_encoded = base64.b64encode(receipt.content)
         pdfs.append(
@@ -147,7 +148,7 @@ def _get_paid_pdfs(
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Restoration notification."""
-    logger.debug('registration_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'registration_notification: {email_info}')
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -215,8 +216,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    business_name = business.get('businessName', None)
+    subject = f'{business_name} - {subject}' if business_name else subject
 
     return {
         'recipients': recipients,

@@ -17,10 +17,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
 from legal_api.models import Filing, UserRoles
+
+from entity_emailer.services.logging import structured_log
+
 
 from entity_emailer.email_processors import (
     get_filing_info,
@@ -33,7 +36,7 @@ from entity_emailer.email_processors.special_resolution_helper import get_comple
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for Special Resolution notification."""
-    logger.debug('special_resolution_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'special_resolution_notification: {email_info}')
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -90,8 +93,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     elif status == Filing.Status.COMPLETED.value:
         subject = 'Special Resolution Documents from the Business Registry'
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    business_name = business.get('businessName', None)
+    subject = f'{business_name} - {subject}' if business_name else subject
 
     return {
         'recipients': recipients,

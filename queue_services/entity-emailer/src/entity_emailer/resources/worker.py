@@ -1,16 +1,37 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the 'License');
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
 """The unique worker functionality for this service is contained here.
 
 The entry-point is the **cb_subscription_handler**
@@ -29,17 +50,20 @@ import json
 import os
 from http import HTTPStatus
 
-import nats
 import requests
-from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import EmailException, QueueException, logger
+from entity_queue_common.service_utils import EmailException, QueueException
+from flask import Blueprint
 from flask import Flask
+from flask import current_app
+from flask import request
 from legal_api import db
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
+from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
 
-from entity_emailer import config
+from entity_emailer.services import queue
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     affiliation_notification,
     ar_reminder_notification,
@@ -60,21 +84,24 @@ from entity_emailer.email_processors import (
 
 from .message_tracker import tracker as tracker_util
 
-
-qsm = QueueServiceManager()  # pylint: disable=invalid-name
-APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
-FLASK_APP = Flask(__name__)
-FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+bp = Blueprint("worker", __name__)
 
 
 async def publish_event(payload: dict):
     """Publish the email message onto the NATS event subject."""
     try:
-        subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
-        await qsm.service.publish(subject, payload)
+        cloud_event = SimpleCloudEvent(
+          source=__name__[: __name__.find(".")],
+          subject="entity.events",
+          type="Filing",
+          data=payload
+        )
+        mailer_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
+        ret = queue.publish(
+          topic=mailer_topic, payload=queue.to_queue_message(cloud_event)
+        )
     except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
-        logger.error('Queue Publish Event Error: err=%s email msg=%s', err, payload, exc_info=True)
+        structured_log(request, 'ERROR', f'Queue Publish Event Error: err={err} email msg={payload}')
 
 
 def send_email(email: dict, token: str):
@@ -84,17 +111,17 @@ def send_email(email: dict, token: str):
             or 'recipients' not in email \
             or 'content' not in email \
             or 'body' not in email['content']:
-        logger.debug('Send email: email object(s) is empty')
+        structured_log(request, 'DEBUG', 'Send email: email object(s) is empty')
         raise QueueException('Unsuccessful sending email - required email object(s) is empty.')
 
     if not email['recipients'] \
             or not email['content'] \
             or not email['content']['body']:
-        logger.debug('Send email: email object(s) is missing')
+        structured_log(request, 'DEBUG', 'Send email: email object(s) is missing')
         raise QueueException('Unsuccessful sending email - required email object(s) is missing. ')
 
     resp = requests.post(
-        f'{APP_CONFIG.NOTIFY_API_URL}',
+        f'{current_app.get("NOTIFY_API_URL", "")}',
         json=email,
         headers={
             'Content-Type': 'application/json',
@@ -112,7 +139,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
-        logger.debug('Attempting to process email: %s', email_msg)
+        structured_log(request, 'DEBUG', f'Attempting to process email: {email_msg}', email_msg)
         token = AccountService.get_bearer_token()
         etype = email_msg.get('type', None)
         if etype and etype == 'bc.registry.names.request':
@@ -171,38 +198,51 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
-                    logger.debug('No email to send for: %s', email_msg)
+                    structured_log(request, 'DEBUG', f'No email to send for: {email_msg}')
                 else:
                     email = filing_notification.process(email_msg['email'], token)
                     if email:
                         send_email(email, token)
                     else:
                         # should only be if this was for a a coops filing
-                        logger.debug('No email to send for: %s', email_msg)
+                        structured_log(request, 'DEBUG', f'No email to send for: {email_msg}')
             else:
-                logger.debug('No email to send for: %s', email_msg)
+                structured_log(request, 'DEBUG', f'No email to send for: {email_msg}')
 
 
-async def cb_subscription_handler(msg: nats.aio.client.Msg):
-    """Use Callback to process Queue Msg objects."""
-    with FLASK_APP.app_context():
+@bp.route("/", methods=("POST",))
+def worker():
+    """Process the incoming cloud event"""
+    structured_log(request, "INFO", f"Incoming raw msg: {request.data}")
+    
+    # Get cloud event
+    # ##
+    if not (ce := queue.get_simple_cloud_event(request)):
+        #
+        # Decision here is to return a 200,
+        # so the event is removed from the Queue
+        return {}, HTTPStatus.OK
+
+    structured_log(request, "INFO", f"received ce: {str(ce)}")
+
+    with current_app.app_context():
 
         try:
-            logger.info('Received raw message seq: %s, data=  %s', msg.sequence, msg.data.decode())
-            email_msg = json.loads(msg.data.decode('utf-8'))
-            logger.debug('Extracted email msg: %s', email_msg)
-            message_context_properties = tracker_util.get_message_context_properties(msg)
+            structured_log(request, 'INFO', f'Received raw message seq: {ce.sequence}, data=  {ce.data.decode()}')
+            email_msg = json.loads(ce.data.decode('utf-8'))
+            structured_log(request, 'DEBUG', f'Extracted email msg: {email_msg}')
+            message_context_properties = tracker_util.get_message_context_properties(ce)
             process_message, tracker_msg = tracker_util.is_processable_message(message_context_properties)
             if process_message:
                 tracker_msg = tracker_util.start_tracking_message(message_context_properties, email_msg, tracker_msg)
-                process_email(email_msg, FLASK_APP)
+                process_email(email_msg, current_app)
                 tracker_util.complete_tracking_message(tracker_msg)
             else:
                 # Skip processing of message due to message state - previously processed or currently being
                 # processed
-                logger.debug('Skipping processing of email_msg: %s', email_msg)
+                structured_log(request, 'DEBUG', f'Skipping processing of email_msg: {email_msg}')
         except OperationalError as err:
-            logger.error('Queue Blocked - Database Issue: %s', json.dumps(email_msg), exc_info=True)
+            structured_log(request, 'ERROR', f'Queue Blocked - Database Issue: {json.dumps(email_msg)}')
             error_details = f'OperationalError - {str(err)}'
             tracker_util.mark_tracking_message_as_failed(message_context_properties,
                                                          email_msg,
@@ -210,9 +250,8 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                                                          error_details)
             raise err  # We don't want to handle the error, as a DB down would drain the queue
         except EmailException as err:
-            logger.error('Queue Error - email failed to send: %s'
-                         '\n\nThis message has been put back on the queue for reprocessing.',
-                         json.dumps(email_msg), exc_info=True)
+            structured_log(request, 'ERROR', f'Queue Error - email failed to send: {json.dumps(email_msg)}'
+                         '\n\nThis message has been put back on the queue for reprocessing.')
             error_details = f'EmailException - {str(err)}'
             tracker_util.mark_tracking_message_as_failed(message_context_properties,
                                                          email_msg,
@@ -221,7 +260,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             raise err  # we don't want to handle the error, so that the message gets put back on the queue
         except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703;
             # Catch Exception so that any error is still caught and the message is removed from the queue
-            logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+            structured_log(request, 'ERROR', f'Queue Error: {json.dumps(email_msg)}')
             error_details = f'QueueException, Exception - {str(err)}'
             tracker_util.mark_tracking_message_as_failed(message_context_properties,
                                                          email_msg,

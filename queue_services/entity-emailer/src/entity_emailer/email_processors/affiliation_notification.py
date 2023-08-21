@@ -17,16 +17,17 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Affiliation notification."""
-    logger.debug('filing_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'filing_notification: {email_info}')
 
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = \
@@ -58,8 +59,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         return {}
 
     # assign subject
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - How to use BCRegistry.ca'
+    business_name = business.get('businessName', None)
+    subject = f'{business_name} - How to use BCRegistry.ca'
 
     return {
         'recipients': recipients,

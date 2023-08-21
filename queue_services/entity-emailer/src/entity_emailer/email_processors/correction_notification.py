@@ -21,12 +21,13 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
 from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.models import Filing
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
 
@@ -62,7 +63,7 @@ def _get_pdfs(
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
+            structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
@@ -89,7 +90,7 @@ def _get_pdfs(
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+            structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -110,7 +111,7 @@ def _get_pdfs(
                 headers=headers
             )
             if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get corrected registration statement pdf for filing: {filing.id}')
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
                 pdfs.append(
@@ -130,7 +131,7 @@ def _get_pdfs(
                 headers=headers
             )
             if noa.status_code != HTTPStatus.OK:
-                logger.error('Failed to get noa pdf for filing: %s', filing.id)
+                structured_log(request, 'ERROR', f'Failed to get noa pdf for filing: {filing.id}')
             else:
                 noa_encoded = base64.b64encode(noa.content)
                 pdfs.append(
@@ -205,15 +206,15 @@ def get_subject(status: str, prefix: str, business: dict) -> str:
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    business_name = business.get('businessName', None)
+    subject = f'{business_name} - {subject}' if business_name else subject
 
     return subject
 
 
 def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Correction notification."""
-    logger.debug('correction_notification: %s', email_info)
+    structured_log(request, 'DEBUG', f'correction_notification: {email_info}')
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing

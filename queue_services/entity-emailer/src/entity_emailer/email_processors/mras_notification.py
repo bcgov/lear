@@ -16,16 +16,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
 
 def process(email_msg: dict) -> dict:
     """Build the email for mras notification."""
-    logger.debug('mras_notification: %s', email_msg)
+    structured_log(request, 'DEBUG', f'mras_notification: {email_msg}')
     filing_type = email_msg['type']
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()

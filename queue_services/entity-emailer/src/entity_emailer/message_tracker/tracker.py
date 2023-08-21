@@ -15,15 +15,15 @@
 
 import json
 
-import nats
 from flask import current_app
+from simple_cloudevent import SimpleCloudEvent
 
 from entity_emailer.email_processors import filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
 
-def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: disable=too-many-return-statements
+def get_message_context_properties(queue_msg: SimpleCloudEvent):  # pylint: disable=too-many-return-statements
     """Get key message properties from a queue message."""
     # todo update this code to just use the cloud event message id when all
     #  publishers are publishing to emailer queue with cloud event format
