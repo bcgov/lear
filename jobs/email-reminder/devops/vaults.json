@@ -1,16 +1,9 @@
 [
     {
-        "vault": "shared",
-        "application": [
-            "nats"
-        ]
-    },
-    {
         "vault": "entity",
         "application": [
             "postgres-legal",
             "filings-jobs",
-            "nats-emailer",
             "entity-service-account",
             "sentry",
             "launchdarkly",
