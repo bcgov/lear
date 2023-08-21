@@ -105,9 +105,9 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
                 valid = effective_date and parse(effective_date) <= now
                 if valid:
                     # Publish to new GCP Filer Q
-                    #filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
-                    #queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
-                    #structured_log(request, "INFO", f"publish to filer for id: {filing_id}")
+                    filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
+                    queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))
+                    structured_log(request, "INFO", f"publish to filer for id: {filing_id}")
                     application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
         except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
