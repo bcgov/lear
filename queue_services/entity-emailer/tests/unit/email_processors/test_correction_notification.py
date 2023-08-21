@@ -229,7 +229,7 @@ def test_paid_special_resolution_correction_attachments(session, config):
         assert 'content' in output
         assert 'attachments' in output['content']
         assert len(output['content']['attachments']) == 2
-        assert output['content']['attachments'][0]['fileName'] == 'Special Resolution Correction Application.pdf'
+        assert output['content']['attachments'][0]['fileName'] == 'Register Correction Application.pdf'
         assert base64.b64decode(output['content']['attachments'][0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
         assert output['content']['attachments'][1]['fileName'] == 'Receipt.pdf'
         assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'

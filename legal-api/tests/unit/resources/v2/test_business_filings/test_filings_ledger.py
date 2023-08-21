@@ -535,7 +535,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
     assert rv.json['filings']
     for filing_json in rv.json['filings']:
         if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == 'Special Resolution Correction'
+            assert filing_json['displayName'] == 'Register Correction Application'
         elif filing_json['name'] == 'specialResolution':
             assert filing_json['displayName'] == 'Special Resolution'
         else:

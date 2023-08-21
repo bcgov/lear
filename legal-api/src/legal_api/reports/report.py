@@ -211,9 +211,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # Get template specific to legal type
             file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
-            if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
-                if is_special_resolution_correction_by_meta_data(self._filing):
-                    file_name = 'specialResolutionCorrectionApplication'
             if file_name is None:
                 # Fallback to default if specific template not found
                 file_name = specific_template['fileName'] if specific_template else \
