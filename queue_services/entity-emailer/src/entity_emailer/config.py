@@ -91,8 +91,7 @@ class Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
-    ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
+    ENTITY_EVENT_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "events")
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
