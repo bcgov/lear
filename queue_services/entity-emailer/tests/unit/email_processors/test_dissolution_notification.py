@@ -15,26 +15,26 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import dissolution_notification
 from tests.unit import prep_dissolution_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    ('PAID', Business.LegalTypes.COMP.value, None),
-    ('COMPLETED', Business.LegalTypes.COMP.value, None),
-    ('PAID', Business.LegalTypes.BCOMP.value, None),
-    ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
-    ('PAID', Business.LegalTypes.BC_CCC.value, None),
-    ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
-    ('PAID', Business.LegalTypes.BC_ULC_COMPANY.value, None),
-    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
-    ('PAID', Business.LegalTypes.COOP.value, None),
-    ('COMPLETED', Business.LegalTypes.COOP.value, None),
+    ('PAID', LegalEntity.EntityTypes.COMP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.COMP.value, None),
+    ('PAID', LegalEntity.EntityTypes.BCOMP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.BCOMP.value, None),
+    ('PAID', LegalEntity.EntityTypes.BC_CCC.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.BC_CCC.value, None),
+    ('PAID', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.BC_ULC_COMPANY.value, None),
+    ('PAID', LegalEntity.EntityTypes.COOP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.COOP.value, None),
 
-    ('PAID', Business.LegalTypes.COMP.value, 'staff'),
-    ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
+    ('PAID', LegalEntity.EntityTypes.COMP.value, 'staff'),
+    ('COMPLETED', LegalEntity.EntityTypes.COMP.value, 'staff'),
 ])
 def test_dissolution_notification(app, session, status, legal_type, submitter_role):
     """Assert that the dissolution email processor for corps works as expected."""
@@ -71,10 +71,10 @@ def test_dissolution_notification(app, session, status, legal_type, submitter_ro
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    ('PAID', Business.LegalTypes.SOLE_PROP.value, None),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value, None),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value, None),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value, None),
+    ('PAID', LegalEntity.EntityTypes.SOLE_PROP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.SOLE_PROP.value, None),
+    ('PAID', LegalEntity.EntityTypes.PARTNERSHIP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.PARTNERSHIP.value, None),
 ])
 def test_firms_dissolution_notification(app, session, status, legal_type, submitter_role):
     """Assert that the dissolution email processor for firms works as expected."""

@@ -14,7 +14,7 @@
 """The Unit Tests for the annual report reminder email processor."""
 from unittest.mock import patch
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import ar_reminder_notification
 from tests.unit import prep_incorp_filing
@@ -24,7 +24,7 @@ def test_ar_reminder_notification(app, session):
     """Assert that the ar reminder notification can be processed."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
-    business = Business.find_by_internal_id(filing.business_id)
+    business = LegalEntity.find_by_internal_id(filing.business_id)
     business.legal_type = 'BC'
     business.legal_name = 'test business'
     token = 'token'

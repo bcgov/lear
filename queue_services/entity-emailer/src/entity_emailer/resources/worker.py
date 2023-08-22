@@ -133,14 +133,8 @@ def worker():
         structured_log(request, 'INFO', 'Send email: email object(s) is missing')
         return {}, HTTPStatus.OK
 
-    resp = requests.post(
-        f'{current_app.get("NOTIFY_API_URL", "")}',
-        json=email,
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}'
-        }
-    )
+    resp = send_email(email, token)
+    
     if resp.status_code != HTTPStatus.OK:
         # log the error and put the email msg back on the queue
         structured_log(request, 'ERROR', f'Queue Error - email failed to send: {json.dumps(email_msg)}'
@@ -160,6 +154,8 @@ def worker():
         queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))
     except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
         structured_log(request, 'ERROR', f'Queue Publish Event Error: err={err} email={email}')
+    
+    return {}, HTTPStatus.OK
 
     
 def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-branches, too-many-statements
@@ -217,3 +213,12 @@ def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-bran
             return None
     return email
 
+def send_email(email: dict, token: str):
+    return requests.post(
+        f'{current_app.get("NOTIFY_API_URL", "")}',
+        json=email,
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'
+        }
+    )
