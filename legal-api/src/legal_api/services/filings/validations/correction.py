@@ -132,7 +132,7 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
         msg.extend(court_order_validation(filing_dict))
     if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('rulesFileKey', None):
         msg.extend(rules_change_validation(filing_dict))
-    if is_special_resolution_correction_by_filing_json(filing_dict):
+    if is_special_resolution_correction_by_filing_json(filing_dict.get('filing', {})):
         if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
             err = validate_roles(filing_dict, legal_type, filing_type)
             if err:
