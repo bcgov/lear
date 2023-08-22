@@ -38,7 +38,6 @@ Test-Suite to ensure that the Configuration Classes are working as expected.
 import pytest
 
 from flask import current_app
-from entity_emailer import config
 
 # testdata pattern is ({str: environment}, {expected return value})
 TEST_ENVIRONMENT_DATA = [

@@ -35,7 +35,6 @@
 """This Module processes simple cloud event messages for possible filing payments
 """
 import json
-import os
 from http import HTTPStatus
 
 import requests

@@ -1,6 +1,5 @@
 import base64
 from contextlib import suppress
-from http import HTTPStatus
 
 import pytest
 import flask
