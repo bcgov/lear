@@ -78,7 +78,6 @@ def worker():
     2. Get email message
     3. Process email
     4. Send email
-    5. Publish to event Q
 
     Decisions on returning a 2xx or failing value to
     the Queue should be noted here:
@@ -140,20 +139,7 @@ def worker():
                       '\n\nThis message has been put back on the queue for reprocessing.')
         return {}, HTTPStatus.NOT_FOUND
     
-    # 5. Publish to event Q
-    # ##
-    cloud_event = SimpleCloudEvent(
-          source=__name__[: __name__.find(".")],
-          subject="email",
-          type="Email",
-          data=email
-    )
-    try:
-        event_topic = current_app.config.get("ENTITY_EVENT_TOPIC", "events")
-        queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))
-    except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
-        structured_log(request, 'ERROR', f'Queue Publish Event Error: err={err} email={email}')
-    
+    structured_log(request, "INFO", f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
 
     

@@ -141,18 +141,6 @@ def app():
     return _app
 
 
-@pytest.fixture(scope='session')
-def tracker_app():
-    """Return a session-wide tracker app instance configured in TEST mode.
-
-    This is used only to reset the tracker test db.
-    """
-    _tracker_app = Flask(__name__)
-    _tracker_app.config.from_object(get_tracker_named_config('testing'))
-    _tracker_db.init_app(_tracker_app)
-    return _tracker_app
-
-
 @pytest.fixture
 def config(app):
     """Return the application config."""

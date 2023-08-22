@@ -45,8 +45,6 @@ spec:
           value: $AUDIENCE
         - name: PUBLISHER_AUDIENCE
           value: $PUBLISHER_AUDIENCE
-        - name: ENTITY_EVENT_TOPIC
-          value: $ENTITY_EVENT_TOPIC
         resources:
           limits:
             cpu: 1000m
