@@ -29,7 +29,9 @@ def process(
     legal_entity: LegalEntity, filing: Filing
 ):  # pylint: disable=too-many-branches
     """Process the incoming correction request."""
-    if filing.meta_data and filing.meta_data.get("correction", {}).get("toLegalName"):
+    if filing.meta_data and filing.meta_data.get("correction", {}).get(
+        "toBusinessName"
+    ):
         change_name(legal_entity, filing, RequestTracker.RequestType.CHANGE_NAME)
 
     with suppress(KeyError, ValueError):

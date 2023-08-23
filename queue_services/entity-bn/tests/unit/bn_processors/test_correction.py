@@ -51,7 +51,7 @@ def test_correction(app, session, client, mocker, legal_type):
         }
     }
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
-    filing._meta_data = {"correction": {"toLegalName": "new name"}}
+    filing._meta_data = {"correction": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 
@@ -156,7 +156,7 @@ def test_bn15_not_available_correction(app, session, client, mocker, legal_type,
         }
     }
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
-    filing._meta_data = {"correction": {"toLegalName": "new name"}}
+    filing._meta_data = {"correction": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 
@@ -257,7 +257,7 @@ def test_retry_correction(app, session, client, mocker, request_type, data):
     json_filing["filing"]["correction"] = data
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
     if request_type == RequestTracker.RequestType.CHANGE_NAME:
-        filing._meta_data = {"correction": {"toLegalName": "new name"}}
+        filing._meta_data = {"correction": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 

@@ -46,7 +46,7 @@ def process(
 ):  # pylint: disable=too-many-branches
     """Process the incoming change of registration request."""
     if filing.meta_data and filing.meta_data.get("changeOfRegistration", {}).get(
-        "toLegalName"
+        "toBusinessName"
     ):
         change_name(legal_entity, filing, RequestTracker.RequestType.CHANGE_NAME)
 

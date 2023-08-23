@@ -51,7 +51,7 @@ def test_change_of_registration(app, session, client, mocker, legal_type):
         }
     }
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
-    filing._meta_data = {"changeOfRegistration": {"toLegalName": "new name"}}
+    filing._meta_data = {"changeOfRegistration": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 
@@ -160,7 +160,7 @@ def test_bn15_not_available_change_of_registration(
         }
     }
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
-    filing._meta_data = {"changeOfRegistration": {"toLegalName": "new name"}}
+    filing._meta_data = {"changeOfRegistration": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 
@@ -268,7 +268,7 @@ def test_retry_change_of_registration(app, session, client, mocker, request_type
     json_filing["filing"]["changeOfRegistration"] = data
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
     if request_type == RequestTracker.RequestType.CHANGE_NAME:
-        filing._meta_data = {"changeOfRegistration": {"toLegalName": "new name"}}
+        filing._meta_data = {"changeOfRegistration": {"toBusinessName": "new name"}}
     filing.save()
     filing_id = filing.id
 
