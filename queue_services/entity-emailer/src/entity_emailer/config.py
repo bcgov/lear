@@ -48,20 +48,21 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 
-def get_named_config(config_name: str = 'production'):
+def get_named_config(config_name: str = "production"):
     """Return the configuration object based on the name.
 
     :raise: KeyError: if an unknown configuration is requested
     """
-    if config_name in ['production', 'staging', 'default']:
+    if config_name in ["production", "staging", "default"]:
         config = Production()
-    elif config_name == 'testing':
+    elif config_name == "testing":
         config = Testing()
-    elif config_name == 'development':
+    elif config_name == "development":
         config = Development()
     else:
-        raise KeyError(f'Unknown configuration: {config_name}')
+        raise KeyError(f"Unknown configuration: {config_name}")
     return config
+
 
 class Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
@@ -103,7 +104,9 @@ class Config:  # pylint: disable=too-few-public-methods
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
     else:
-        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        SQLALCHEMY_DATABASE_URI = (
+            f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
 
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(
@@ -112,6 +115,7 @@ class Config:  # pylint: disable=too-few-public-methods
     PUBLISHER_AUDIENCE = os.getenv(
         "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
+
 
 class Development(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
@@ -137,7 +141,10 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEPLOYMENT_ENV = "testing"
     LEGAL_API_URL = "https://legal-api-url/"
     PAY_API_URL = "https://pay-api-url/"
-    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    )
+
 
 class Production(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""

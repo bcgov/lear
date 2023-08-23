@@ -22,35 +22,46 @@ from flask import request
 from jinja2 import Template
 
 from entity_emailer.services.logging import structured_log
-from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
+from entity_emailer.email_processors import (
+    get_filing_info,
+    get_recipients,
+    substitute_template_parts,
+)
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(
+    email_info: dict, token: str
+) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Affiliation notification."""
-    structured_log(request, 'DEBUG', f'filing_notification: {email_info}')
+    structured_log(request, "DEBUG", f"filing_notification: {email_info}")
 
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = \
-        get_filing_info(email_info['data']['filing']['header']['filingId'])
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
+        email_info["data"]["filing"]["header"]["filingId"]
+    )
     filing_type = filing.filing_type
     status = filing.status
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    filing_name = filing.filing_type[0].upper() + " ".join(
+        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
+    )
 
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html').read_text()
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html'
+    ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
+        + (filing.json)["filing"]["business"].get("identifier", ""),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
     )
 
     # get recipients
@@ -59,14 +70,11 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         return {}
 
     # assign subject
-    business_name = business.get('businessName', None)
-    subject = f'{business_name} - How to use BCRegistry.ca'
+    business_name = business.get("businessName", None)
+    subject = f"{business_name} - How to use BCRegistry.ca"
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}'
-        }
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {"subject": subject, "body": f"{html_out}"},
     }

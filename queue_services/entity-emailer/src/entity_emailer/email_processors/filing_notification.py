@@ -35,83 +35,93 @@ from entity_emailer.email_processors import (
 
 
 FILING_TYPE_CONVERTER = {
-    'incorporationApplication': 'IA',
-    'annualReport': 'AR',
-    'changeOfDirectors': 'COD',
-    'changeOfAddress': 'COA',
-    'alteration': 'ALT'
+    "incorporationApplication": "IA",
+    "annualReport": "AR",
+    "changeOfDirectors": "COD",
+    "changeOfAddress": "COA",
+    "alteration": "ALT",
 }
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str,
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
-    }
-    entity_type = business.get('legalType', None)
+    headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
+    entity_type = business.get("legalType", None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
         filing_pdf = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
+            headers=headers,
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            structured_log(request, 'ERROR', f'Failed to get pdf for filing: {filing.id}')
+            structured_log(
+                request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
+            )
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
-            file_name = filing.filing_type[0].upper() + \
-                ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-            if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
-                file_name = f'{ar_date[:4]} {file_name}'
+            file_name = filing.filing_type[0].upper() + " ".join(
+                re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
+            )
+            if (
+                ar_date := filing.filing_json["filing"]
+                .get("annualReport", {})
+                .get("annualReportDate")
+            ):
+                file_name = f"{ar_date[:4]} {file_name}"
 
             pdfs.append(
                 {
-                    'fileName': f'{file_name}.pdf',
-                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": f"{file_name}.pdf",
+                    "fileBytes": filing_pdf_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
         # add receipt pdf
-        if filing.filing_type == 'incorporationApplication':
-            corp_name = filing.filing_json['filing']['incorporationApplication']['nameRequest'].get(
-                'legalName', 'Numbered Company')
+        if filing.filing_type == "incorporationApplication":
+            corp_name = filing.filing_json["filing"]["incorporationApplication"][
+                "nameRequest"
+            ].get("legalName", "Numbered Company")
         else:
-            corp_name = business.get('legalName')
+            corp_name = business.get("legalName")
 
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': corp_name,
-                'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business.get('taxId', '')
+                "corpName": corp_name,
+                "filingDateTime": filing_date_time,
+                "effectiveDateTime": effective_date
+                if effective_date != filing_date_time
+                else "",
+                "filingIdentifier": str(filing.id),
+                "businessNumber": business.get("taxId", ""),
             },
-            headers=headers
+            headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            structured_log(request, 'ERROR', f'Failed to get receipt pdf for filing: {filing.id}')
+            structured_log(
+                request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
+            )
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
                 {
-                    'fileName': 'Receipt.pdf',
-                    'fileBytes': receipt_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Receipt.pdf",
+                    "fileBytes": receipt_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -120,41 +130,47 @@ def _get_pdfs(
             # add notice of articles
             noa = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=noticeOfArticles',
-                headers=headers
+                "?type=noticeOfArticles",
+                headers=headers,
             )
             if noa.status_code != HTTPStatus.OK:
-                structured_log(request, 'ERROR', f'Failed to get noa pdf for filing: {filing.id}')
+                structured_log(
+                    request, "ERROR", f"Failed to get noa pdf for filing: {filing.id}"
+                )
             else:
                 noa_encoded = base64.b64encode(noa.content)
                 pdfs.append(
                     {
-                        'fileName': 'Notice of Articles.pdf',
-                        'fileBytes': noa_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
+                        "fileName": "Notice of Articles.pdf",
+                        "fileBytes": noa_encoded.decode("utf-8"),
+                        "fileUrl": "",
+                        "attachOrder": attach_order,
                     }
                 )
                 attach_order += 1
 
-        if filing.filing_type == 'incorporationApplication':
+        if filing.filing_type == "incorporationApplication":
             # add certificate
             certificate = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=certificate',
-                headers=headers
+                "?type=certificate",
+                headers=headers,
             )
             if certificate.status_code != HTTPStatus.OK:
-                structured_log(request, 'ERROR', f'Failed to get certificate pdf for filing: {filing.id}')
+                structured_log(
+                    request,
+                    "ERROR",
+                    f"Failed to get certificate pdf for filing: {filing.id}",
+                )
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
-                file_name = 'Incorporation Certificate.pdf'
+                file_name = "Incorporation Certificate.pdf"
                 pdfs.append(
                     {
-                        'fileName': file_name,
-                        'fileBytes': certificate_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
+                        "fileName": file_name,
+                        "fileBytes": certificate_encoded.decode("utf-8"),
+                        "fileUrl": "",
+                        "attachOrder": attach_order,
                     }
                 )
                 attach_order += 1
@@ -163,19 +179,23 @@ def _get_pdfs(
                 # Add rules
                 rules = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certifiedRules',
-                    headers=headers
+                    "?type=certifiedRules",
+                    headers=headers,
                 )
                 if rules.status_code != HTTPStatus.OK:
-                    structured_log(request, 'ERROR', f'Failed to get certifiedRules pdf for filing: {filing.id}')
+                    structured_log(
+                        request,
+                        "ERROR",
+                        f"Failed to get certifiedRules pdf for filing: {filing.id}",
+                    )
                 else:
                     certified_rules_encoded = base64.b64encode(rules.content)
                     pdfs.append(
                         {
-                            'fileName': 'Certified Rules.pdf',
-                            'fileBytes': certified_rules_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': attach_order
+                            "fileName": "Certified Rules.pdf",
+                            "fileBytes": certified_rules_encoded.decode("utf-8"),
+                            "fileUrl": "",
+                            "attachOrder": attach_order,
                         }
                     )
                     attach_order += 1
@@ -183,41 +203,51 @@ def _get_pdfs(
                 # Add memorandum
                 memorandum = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certifiedMemorandum',
-                    headers=headers
+                    "?type=certifiedMemorandum",
+                    headers=headers,
                 )
                 if memorandum.status_code != HTTPStatus.OK:
-                    structured_log(request, 'ERROR', f'Failed to get certifiedMemorandum pdf for filing: {filing.id}')
+                    structured_log(
+                        request,
+                        "ERROR",
+                        f"Failed to get certifiedMemorandum pdf for filing: {filing.id}",
+                    )
                 else:
                     certified_memorandum_encoded = base64.b64encode(memorandum.content)
                     pdfs.append(
                         {
-                            'fileName': 'Certified Memorandum.pdf',
-                            'fileBytes': certified_memorandum_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': attach_order
+                            "fileName": "Certified Memorandum.pdf",
+                            "fileBytes": certified_memorandum_encoded.decode("utf-8"),
+                            "fileUrl": "",
+                            "attachOrder": attach_order,
                         }
                     )
                     attach_order += 1
 
-        if filing.filing_type == 'alteration' and get_additional_info(filing).get('nameChange', False):
+        if filing.filing_type == "alteration" and get_additional_info(filing).get(
+            "nameChange", False
+        ):
             # add certificate of name change
             certificate = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=certificateOfNameChange',
-                headers=headers
+                "?type=certificateOfNameChange",
+                headers=headers,
             )
             if certificate.status_code != HTTPStatus.OK:
-                structured_log(request, 'ERROR', f'Failed to get certificateOfNameChange pdf for filing: {filing.id}')
+                structured_log(
+                    request,
+                    "ERROR",
+                    f"Failed to get certificateOfNameChange pdf for filing: {filing.id}",
+                )
             else:
                 certificate_encoded = base64.b64encode(certificate.content)
-                file_name = 'Certificate of Name Change.pdf'
+                file_name = "Certificate of Name Change.pdf"
                 pdfs.append(
                     {
-                        'fileName': file_name,
-                        'fileBytes': certificate_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
+                        "fileName": file_name,
+                        "fileBytes": certificate_encoded.decode("utf-8"),
+                        "fileUrl": "",
+                        "attachOrder": attach_order,
                     }
                 )
                 attach_order += 1
@@ -226,105 +256,120 @@ def _get_pdfs(
 
 
 def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
-        email_info: dict, token: str) -> dict:
+    email_info: dict, token: str
+) -> dict:
     """Build the email for Business Number notification."""
-    structured_log(request, 'DEBUG', f'filing_notification: {email_info}')
+    structured_log(request, "DEBUG", f"filing_notification: {email_info}")
     # get template and fill in parts
-    filing_type, status = email_info['type'], email_info['option']
+    filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-    if filing_type == 'incorporationApplication' and status == Filing.Status.PAID.value:
-        business = (filing.json)['filing']['incorporationApplication']['nameRequest']
-        business['identifier'] = filing.temp_reg
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
+        email_info["filingId"]
+    )
+    if filing_type == "incorporationApplication" and status == Filing.Status.PAID.value:
+        business = (filing.json)["filing"]["incorporationApplication"]["nameRequest"]
+        business["identifier"] = filing.temp_reg
 
-    entity_type = business.get('legalType')
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    entity_type = business.get("legalType")
+    filing_name = filing.filing_type[0].upper() + " ".join(
+        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
+    )
 
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
-    numbered_description = LegalEntity.BUSINESSES.get(entity_type, {}).get('numberedDescription')
+    numbered_description = LegalEntity.BUSINESSES.get(entity_type, {}).get(
+        "numberedDescription"
+    )
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         filing_status=status,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
+        + business.get("identifier", ""),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         numbered_description=numbered_description,
-        additional_info=get_additional_info(filing)
+        additional_info=get_additional_info(filing),
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    pdfs = _get_pdfs(
+        status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
+    )
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token)
-    if filing_type == 'alteration':
+    if filing_type == "alteration":
         if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
             # when staff do filing documentOptionalEmail may contain completing party email
-            optional_email = filing.filing_json['filing']['header'].get('documentOptionalEmail')
+            optional_email = filing.filing_json["filing"]["header"].get(
+                "documentOptionalEmail"
+            )
             if optional_email:
-                recipients = f'{recipients}, {optional_email}'
+                recipients = f"{recipients}, {optional_email}"
         else:
-            user_email = get_user_email_from_auth(filing.filing_submitter.username, token)
-            recipients = f'{recipients}, {user_email}'
+            user_email = get_user_email_from_auth(
+                filing.filing_submitter.username, token
+            )
+            recipients = f"{recipients}, {user_email}"
 
     if not recipients:
         return {}
 
     # assign subject
     if status == Filing.Status.PAID.value:
-        if filing_type == 'incorporationApplication':
-            subject = 'Confirmation of Filing from the Business Registry'
-        elif filing_type in ['changeOfAddress', 'changeOfDirectors']:
-            address_director = [x for x in ['Address', 'Director'] if x in filing_type][0]
-            subject = f'Confirmation of {address_director} Change'
-        elif filing_type == 'annualReport':
-            subject = 'Confirmation of Annual Report'
-        elif filing_type == 'alteration':
-            subject = 'Confirmation of Alteration from the Business Registry'
+        if filing_type == "incorporationApplication":
+            subject = "Confirmation of Filing from the Business Registry"
+        elif filing_type in ["changeOfAddress", "changeOfDirectors"]:
+            address_director = [x for x in ["Address", "Director"] if x in filing_type][
+                0
+            ]
+            subject = f"Confirmation of {address_director} Change"
+        elif filing_type == "annualReport":
+            subject = "Confirmation of Annual Report"
+        elif filing_type == "alteration":
+            subject = "Confirmation of Alteration from the Business Registry"
 
     elif status == Filing.Status.COMPLETED.value:
-        if filing_type == 'incorporationApplication':
-            subject = 'Incorporation Documents from the Business Registry'
-        elif filing_type in ['changeOfAddress', 'changeOfDirectors', 'alteration']:
-            subject = 'Notice of Articles'
+        if filing_type == "incorporationApplication":
+            subject = "Incorporation Documents from the Business Registry"
+        elif filing_type in ["changeOfAddress", "changeOfDirectors", "alteration"]:
+            subject = "Notice of Articles"
 
     if not subject:  # fallback case - should never happen
-        subject = 'Notification from the BC Business Registry'
+        subject = "Notification from the BC Business Registry"
 
-    if filing.filing_type == 'incorporationApplication':
-        business_name = \
-            filing.filing_json['filing']['incorporationApplication']['nameRequest'].get('businessName', None)
+    if filing.filing_type == "incorporationApplication":
+        business_name = filing.filing_json["filing"]["incorporationApplication"][
+            "nameRequest"
+        ].get("businessName", None)
     else:
-        business_name = business.get('businessName', None)
+        business_name = business.get("businessName", None)
 
-    subject = f'{business_name} - {subject}' if business_name else subject
+    subject = f"{business_name} - {subject}" if business_name else subject
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
-        }
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {"subject": subject, "body": f"{html_out}", "attachments": pdfs},
     }
 
 
 def get_additional_info(filing: Filing) -> dict:
     """Populate any additional info required for a filing type."""
     additional_info = {}
-    if filing.filing_type == 'alteration':
-        meta_data_alteration = filing.meta_data.get('alteration', {}) if filing.meta_data else {}
-        additional_info['nameChange'] = 'toLegalName' in meta_data_alteration
+    if filing.filing_type == "alteration":
+        meta_data_alteration = (
+            filing.meta_data.get("alteration", {}) if filing.meta_data else {}
+        )
+        additional_info["nameChange"] = "toLegalName" in meta_data_alteration
 
     return additional_info

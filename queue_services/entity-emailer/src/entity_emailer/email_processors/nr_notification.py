@@ -32,11 +32,11 @@ from entity_emailer.email_processors import substitute_template_parts
 class Option(Enum):
     """NR notification option."""
 
-    BEFORE_EXPIRY = 'before-expiry'
-    EXPIRED = 'expired'
-    RENEWAL = 'renewal'
-    UPGRADE = 'upgrade'
-    REFUND = 'refund'
+    BEFORE_EXPIRY = "before-expiry"
+    EXPIRED = "expired"
+    RENEWAL = "renewal"
+    UPGRADE = "upgrade"
+    REFUND = "refund"
 
 
 def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
@@ -45,32 +45,38 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     valid values of option: Option
     """
-    structured_log(request, 'DEBUG', f'NR {option} notification: {email_info}')
-    nr_number = email_info['identifier']
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
+    structured_log(request, "DEBUG", f"NR {option} notification: {email_info}")
+    nr_number = email_info["identifier"]
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html'
+    ).read_text()
     filled_template = substitute_template_parts(template)
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
-        structured_log(request, 'ERROR', f'Failed to get nr info for name request: {nr_number}')
+        structured_log(
+            request, "ERROR", f"Failed to get nr info for name request: {nr_number}"
+        )
         return {}
 
     nr_data = nr_response.json()
 
-    expiration_date = ''
-    if nr_data['expirationDate']:
-        exp_date = datetime.fromisoformat(nr_data['expirationDate'])
+    expiration_date = ""
+    if nr_data["expirationDate"]:
+        exp_date = datetime.fromisoformat(nr_data["expirationDate"])
         exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
         expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
 
-    refund_value = ''
+    refund_value = ""
     if option == Option.REFUND.value:
-        refund_value = email_info.get('data', {}).get('request', {}).get('refundValue', None)
+        refund_value = (
+            email_info.get("data", {}).get("request", {}).get("refundValue", None)
+        )
 
-    business_name = ''
-    for n_item in nr_data['names']:
-        if n_item['state'] in ('APPROVED', 'CONDITION'):
-            business_name = n_item['name']
+    business_name = ""
+    for n_item in nr_data["names"]:
+        if n_item["state"] in ("APPROVED", "CONDITION"):
+            business_name = n_item["name"]
             break
 
     # render template with vars
@@ -79,28 +85,28 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
         nr_number=nr_number,
         expiration_date=expiration_date,
         business_name=business_name,
-        refund_value=refund_value
+        refund_value=refund_value,
     )
 
     # get recipients
-    recipients = nr_data['applicants']['emailAddress']
+    recipients = nr_data["applicants"]["emailAddress"]
     if not recipients:
         return {}
 
     subjects = {
-        Option.BEFORE_EXPIRY.value: 'Expiring Soon',
-        Option.EXPIRED.value: 'Expired',
-        Option.RENEWAL.value: 'Confirmation of Renewal',
-        Option.UPGRADE.value: 'Confirmation of Upgrade',
-        Option.REFUND.value: 'Refund request confirmation'
+        Option.BEFORE_EXPIRY.value: "Expiring Soon",
+        Option.EXPIRED.value: "Expired",
+        Option.RENEWAL.value: "Confirmation of Renewal",
+        Option.UPGRADE.value: "Confirmation of Upgrade",
+        Option.REFUND.value: "Refund request confirmation",
     }
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': f'{nr_number} - {subjects[option]}',
-            'body': f'{html_out}',
-            'attachments': []
-        }
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": f"{nr_number} - {subjects[option]}",
+            "body": f"{html_out}",
+            "attachments": [],
+        },
     }
