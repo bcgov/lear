@@ -15,7 +15,7 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import filing_notification
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
@@ -71,7 +71,7 @@ def test_numbered_incorp_notification(app, session, legal_type):
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
         assert email['content']['body']
-        assert Business.BUSINESSES[legal_type]['numberedDescription'] in email['content']['body']
+        assert LegalEntity.BUSINESSES[legal_type]['numberedDescription'] in email['content']['body']
 
 
 @pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
@@ -111,7 +111,7 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
             assert mock_get_pdfs.call_args[0][0] == status
             assert mock_get_pdfs.call_args[0][1] == token
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
+            assert mock_get_pdfs.call_args[0][2]['legalType'] == LegalEntity.EntityTypes.BCOMP.value
             assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
             assert mock_get_pdfs.call_args[0][3] == filing
             assert mock_get_recipients.call_args[0][0] == status

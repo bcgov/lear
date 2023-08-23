@@ -31,24 +31,14 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Supply version and commit hash info.
-
-When deployed in OKD, it adds the last commit hash onto the version info.
+"""The configuration for gunicorn, which picks up the
+   runtime options from environment variables
 """
+
 import os
-from importlib.metadata import version
 
+workers = int(os.environ.get("GUNICORN_PROCESSES", "1"))  # pylint: disable=invalid-name
+threads = int(os.environ.get("GUNICORN_THREADS", "1"))  # pylint: disable=invalid-name
 
-def _get_commit_hash():
-    """Return the containers ref if present."""
-    if (commit_hash := os.getenv("VCS_REF", None)) and commit_hash != "missing":
-        return commit_hash
-    return None
-
-
-def get_run_version():
-    """Return a formatted version string for this service."""
-    ver = version(__name__[: __name__.find(".")])
-    if commit_hash := _get_commit_hash():
-        return f"{ver}-{commit_hash}"
-    return ver
+forwarded_allow_ips = "*"  # pylint: disable=invalid-name
+secure_scheme_headers = {"X-Forwarded-Proto": "https"}  # pylint: disable=invalid-name

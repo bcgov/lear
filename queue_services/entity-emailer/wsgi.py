@@ -31,24 +31,14 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Supply version and commit hash info.
-
-When deployed in OKD, it adds the last commit hash onto the version info.
+"""Provides the WSGI entry point for running the application
 """
 import os
-from importlib.metadata import version
 
+from entity_emailer import create_app
 
-def _get_commit_hash():
-    """Return the containers ref if present."""
-    if (commit_hash := os.getenv("VCS_REF", None)) and commit_hash != "missing":
-        return commit_hash
-    return None
+app = create_app()
 
-
-def get_run_version():
-    """Return a formatted version string for this service."""
-    ver = version(__name__[: __name__.find(".")])
-    if commit_hash := _get_commit_hash():
-        return f"{ver}-{commit_hash}"
-    return ver
+if __name__ == "__main__":
+    server_port = os.environ.get("PORT", "8080")
+    app.run(debug=False, port=server_port, host="0.0.0.0")

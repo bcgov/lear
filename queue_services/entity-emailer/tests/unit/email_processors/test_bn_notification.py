@@ -14,7 +14,7 @@
 """The Unit Tests for business number email processor."""
 from unittest.mock import patch
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import bn_notification
 from tests.unit import prep_incorp_filing, prep_registration_filing
@@ -25,7 +25,7 @@ def test_bn_notificaton(app, session):
     # setup filing + business for email
     identifier = 'BC1234567'
     filing = prep_incorp_filing(session, identifier, '1', 'bn')
-    business = Business.find_by_identifier(identifier)
+    business = LegalEntity.find_by_identifier(identifier)
     # sanity check
     assert filing.id
     assert business.id
@@ -45,9 +45,9 @@ def test_bn_move_notificaton(app, session):
     # setup filing + business for email
     identifier = 'FM1234567'
     filing = prep_registration_filing(session, identifier, '1', 'COMPLETED',
-                                      Business.LegalTypes.SOLE_PROP.value, 'test business')
+                                      LegalEntity.EntityTypes.SOLE_PROP.value, 'test business')
     token = 'token'
-    business = Business.find_by_identifier(identifier)
+    business = LegalEntity.find_by_identifier(identifier)
     # sanity check
     assert filing.id
     assert business.id

@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import correction_notification
 from tests.unit import (
@@ -35,10 +35,10 @@ SPECIAL_RESOLUTION_FILING_TYPE = 'specialResolution'
 
 
 @pytest.mark.parametrize('status,legal_type', [
-    ('PAID', Business.LegalTypes.SOLE_PROP.value),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value),
+    ('PAID', LegalEntity.EntityTypes.SOLE_PROP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.SOLE_PROP.value),
+    ('PAID', LegalEntity.EntityTypes.PARTNERSHIP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.PARTNERSHIP.value),
 ])
 def test_firm_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
@@ -58,7 +58,7 @@ def test_firm_correction_notification(app, session, status, legal_type):
 
         if status == 'COMPLETED':
             assert 'no_one@never.get' in email['recipients']
-            if legal_type == Business.LegalTypes.PARTNERSHIP.value:
+            if legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value:
                 assert 'party@email.com' in email['recipients']
 
         assert email['content']['body']
@@ -71,14 +71,14 @@ def test_firm_correction_notification(app, session, status, legal_type):
 
 
 @pytest.mark.parametrize('status,legal_type', [
-    ('PAID', Business.LegalTypes.COMP.value),
-    ('COMPLETED', Business.LegalTypes.COMP.value),
-    ('PAID', Business.LegalTypes.BCOMP.value),
-    ('COMPLETED', Business.LegalTypes.BCOMP.value),
-    ('PAID', Business.LegalTypes.BC_CCC.value),
-    ('COMPLETED', Business.LegalTypes.BC_CCC.value),
-    ('PAID', Business.LegalTypes.BC_ULC_COMPANY.value),
-    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value),
+    ('PAID', LegalEntity.EntityTypes.COMP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.COMP.value),
+    ('PAID', LegalEntity.EntityTypes.BCOMP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.BCOMP.value),
+    ('PAID', LegalEntity.EntityTypes.BC_CCC.value),
+    ('COMPLETED', LegalEntity.EntityTypes.BC_CCC.value),
+    ('PAID', LegalEntity.EntityTypes.BC_ULC_COMPANY.value),
+    ('COMPLETED', LegalEntity.EntityTypes.BC_ULC_COMPANY.value),
 ])
 def test_bc_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
@@ -86,7 +86,7 @@ def test_bc_correction_notification(app, session, status, legal_type):
     legal_name = 'test business'
     original_filing = prep_incorp_filing(session, 'BC1234567', '1', status, legal_type=legal_type)
     token = 'token'
-    business = Business.find_by_identifier('BC1234567')
+    business = LegalEntity.find_by_identifier('BC1234567')
     filing = prep_incorporation_correction_filing(session, business, original_filing.id, '1', status)
     # test processor
     with patch.object(correction_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -113,8 +113,8 @@ def test_bc_correction_notification(app, session, status, legal_type):
 
 
 @pytest.mark.parametrize('status,legal_type', [
-    ('PAID', Business.LegalTypes.COOP.value),
-    ('COMPLETED', Business.LegalTypes.COOP.value),
+    ('PAID', LegalEntity.EntityTypes.COOP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.COOP.value),
 ])
 def test_cp_special_resolution_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
@@ -122,7 +122,7 @@ def test_cp_special_resolution_correction_notification(app, session, status, leg
     legal_name = 'cp business'
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
     token = 'token'
-    business = Business.find_by_identifier(CP_IDENTIFIER)
+    business = LegalEntity.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     # test processor
@@ -151,12 +151,12 @@ def test_cp_special_resolution_correction_notification(app, session, status, leg
 def test_complete_special_resolution_correction_attachments(session, config):
     """Test completed special resolution correction notification."""
     # setup filing + business for email
-    legal_type = Business.LegalTypes.COOP.value
+    legal_type = LegalEntity.EntityTypes.COOP.value
     legal_name = 'test cp sr business'
     token = 'token'
     status = 'COMPLETED'
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
-    business = Business.find_by_identifier(CP_IDENTIFIER)
+    business = LegalEntity.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     with requests_mock.Mocker() as m:
@@ -201,12 +201,12 @@ def test_complete_special_resolution_correction_attachments(session, config):
 def test_paid_special_resolution_correction_attachments(session, config):
     """Test paid special resolution correction notification."""
     # setup filing + business for email
-    legal_type = Business.LegalTypes.COOP.value
+    legal_type = LegalEntity.EntityTypes.COOP.value
     legal_name = 'test cp sr business'
     token = 'token'
     status = 'PAID'
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
-    business = Business.find_by_identifier(CP_IDENTIFIER)
+    business = LegalEntity.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     with requests_mock.Mocker() as m:
@@ -236,9 +236,9 @@ def test_paid_special_resolution_correction_attachments(session, config):
 
 
 @pytest.mark.parametrize('legal_type, filing_type', [
-    (Business.LegalTypes.COOP.value, SPECIAL_RESOLUTION_FILING_TYPE),
-    (Business.LegalTypes.CCC_CONTINUE_IN.value, SPECIAL_RESOLUTION_FILING_TYPE),
-    (Business.LegalTypes.COOP.value, 'registration'),
+    (LegalEntity.EntityTypes.COOP.value, SPECIAL_RESOLUTION_FILING_TYPE),
+    (LegalEntity.EntityTypes.CCC_CONTINUE_IN.value, SPECIAL_RESOLUTION_FILING_TYPE),
+    (LegalEntity.EntityTypes.COOP.value, 'registration'),
 ])
 def test_paid_special_resolution_correction_on_correction(session, config, legal_type, filing_type):
     """Assert that email attributes are correct."""
@@ -247,7 +247,7 @@ def test_paid_special_resolution_correction_on_correction(session, config, legal
     original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type,
                                                         legal_name, submitter_role=None)
     token = 'token'
-    business = Business.find_by_identifier(CP_IDENTIFIER)
+    business = LegalEntity.find_by_identifier(CP_IDENTIFIER)
     filing_correction = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                                      '1', 'COMPLETED', filing_type)
     filing = prep_cp_special_resolution_correction_filing(session, business, filing_correction.id,
@@ -256,7 +256,7 @@ def test_paid_special_resolution_correction_on_correction(session, config, legal
     with patch.object(correction_notification, '_get_pdfs', return_value=[]):
         email = correction_notification.process(
             {'filingId': filing.id, 'type': 'correction', 'option': 'PAID'}, token)
-    if legal_type == Business.LegalTypes.COOP.value and filing_type == 'specialResolution':
+    if legal_type == LegalEntity.EntityTypes.COOP.value and filing_type == 'specialResolution':
         assert email['content']['subject'] == legal_name + ' - Confirmation of correction'
         assert 'cp_sr@test.com' in email['recipients']
         assert email['content']['body']

@@ -17,13 +17,13 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import special_resolution_notification
 from tests.unit import prep_cp_special_resolution_filing
 
 
-LEGAL_TYPE = Business.LegalTypes.COOP.value
+LEGAL_TYPE = LegalEntity.EntityTypes.COOP.value
 LEGAL_NAME = 'test business'
 IDENTIFIER = 'CP1234567'
 TOKEN = 'token'

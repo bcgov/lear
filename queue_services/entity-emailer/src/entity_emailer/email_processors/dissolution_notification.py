@@ -20,11 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import LegalEntity, Filing, UserRoles
 
+from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     get_filing_info,
     get_recipient_from_auth,
@@ -34,127 +35,143 @@ from entity_emailer.email_processors import (
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str,
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the dissolution output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
-    }
-    legal_type = business.get('legalType', None)
+    headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
+    entity_type = business.get("legalType", None)
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        if legal_type not in ['SP', 'GP']:
+        if entity_type not in ["SP", "GP"]:
             filing_pdf = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-                headers=headers
+                headers=headers,
             )
             if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
+                structured_log(
+                    request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
+                )
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
                     {
-                        'fileName': 'Voluntary Dissolution Application.pdf',
-                        'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
+                        "fileName": "Voluntary Dissolution Application.pdf",
+                        "fileBytes": filing_pdf_encoded.decode("utf-8"),
+                        "fileUrl": "",
+                        "attachOrder": attach_order,
                     }
                 )
                 attach_order += 1
 
-        corp_name = business.get('legalName')
-        business_data = Business.find_by_internal_id(filing.business_id)
+        corp_name = business.get("legalName")
+        business_data = LegalEntity.find_by_internal_id(filing.business_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': corp_name,
-                'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+                "corpName": corp_name,
+                "filingDateTime": filing_date_time,
+                "effectiveDateTime": effective_date
+                if effective_date != filing_date_time
+                else "",
+                "filingIdentifier": str(filing.id),
+                "businessNumber": business_data.tax_id
+                if business_data and business_data.tax_id
+                else "",
             },
-            headers=headers
+            headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+            structured_log(
+                request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
+            )
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
                 {
-                    'fileName': 'Receipt.pdf',
-                    'fileBytes': receipt_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Receipt.pdf",
+                    "fileBytes": receipt_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
-        if legal_type in ['SP', 'GP']:
+        if entity_type in ["SP", "GP"]:
             filing_pdf = requests.get(
                 f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-                headers=headers
+                headers=headers,
             )
             if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
+                structured_log(
+                    request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
+                )
             else:
                 filing_pdf_encoded = base64.b64encode(filing_pdf.content)
                 pdfs.append(
                     {
-                        'fileName': 'Statement of Dissolution.pdf',
-                        'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': attach_order
+                        "fileName": "Statement of Dissolution.pdf",
+                        "fileBytes": filing_pdf_encoded.decode("utf-8"),
+                        "fileUrl": "",
+                        "attachOrder": attach_order,
                     }
                 )
                 attach_order += 1
         else:
-            if filing.filing_sub_type != 'administrative':
+            if filing.filing_sub_type != "administrative":
                 # add certificateOfDissolution, suppress certificate of dissolution for admin dissolution
                 certificate = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certificateOfDissolution',
-                    headers=headers
+                    "?type=certificateOfDissolution",
+                    headers=headers,
                 )
                 if certificate.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
+                    structured_log(
+                        request,
+                        "ERROR",
+                        f"Failed to get certificateOfDissolution pdf for filing: {filing.id}",
+                    )
                 else:
                     certificate_encoded = base64.b64encode(certificate.content)
                     pdfs.append(
                         {
-                            'fileName': 'Certificate of Dissolution.pdf',
-                            'fileBytes': certificate_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': attach_order
+                            "fileName": "Certificate of Dissolution.pdf",
+                            "fileBytes": certificate_encoded.decode("utf-8"),
+                            "fileUrl": "",
+                            "attachOrder": attach_order,
                         }
                     )
                     attach_order += 1
 
-            if legal_type == Business.LegalTypes.COOP.value:
+            if entity_type == LegalEntity.EntityTypes.COOP.value:
                 # certifiedAffidavit
                 certified_affidavit = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=affidavit',
-                    headers=headers
+                    "?type=affidavit",
+                    headers=headers,
                 )
                 if certified_affidavit.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get affidavit pdf for filing: %s', filing.id)
+                    structured_log(
+                        request,
+                        "ERROR",
+                        f"Failed to get affidavit pdf for filing: {filing.id}",
+                    )
                 else:
                     certificate_encoded = base64.b64encode(certified_affidavit.content)
                     pdfs.append(
                         {
-                            'fileName': 'Certified Affidavit.pdf',
-                            'fileBytes': certificate_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': attach_order
+                            "fileName": "Certified Affidavit.pdf",
+                            "fileBytes": certificate_encoded.decode("utf-8"),
+                            "fileUrl": "",
+                            "attachOrder": attach_order,
                         }
                     )
                     attach_order += 1
@@ -162,19 +179,23 @@ def _get_pdfs(
                 # specialResolution
                 special_resolution = requests.get(
                     f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=specialResolution',
-                    headers=headers
+                    "?type=specialResolution",
+                    headers=headers,
                 )
                 if special_resolution.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
+                    structured_log(
+                        request,
+                        "ERROR",
+                        f"Failed to get specialResolution pdf for filing: {filing.id}",
+                    )
                 else:
                     certificate_encoded = base64.b64encode(special_resolution.content)
                     pdfs.append(
                         {
-                            'fileName': 'Certified Special Resolution.pdf',
-                            'fileBytes': certificate_encoded.decode('utf-8'),
-                            'fileUrl': '',
-                            'attachOrder': attach_order
+                            "fileName": "Certified Special Resolution.pdf",
+                            "fileBytes": certificate_encoded.decode("utf-8"),
+                            "fileUrl": "",
+                            "attachOrder": attach_order,
                         }
                     )
                     attach_order += 1
@@ -182,15 +203,21 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(
+    email_info: dict, token: str
+) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Dissolution notification."""
-    logger.debug('dissolution_notification: %s', email_info)
+    structured_log(request, "DEBUG", f"dissolution_notification: {email_info}")
     # get template and fill in parts
-    filing_type, status = email_info['type'], email_info['option']
+    filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-    legal_type = business.get('legalType', None)
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
+        email_info["filingId"]
+    )
+    filing_name = filing.filing_type[0].upper() + " ".join(
+        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
+    )
+    entity_type = business.get("legalType", None)
 
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/DIS-{status}.html'
@@ -198,76 +225,81 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
+        + (filing.json)["filing"]["business"].get("identifier", ""),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
     )
 
     # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    pdfs = _get_pdfs(
+        status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
+    )
 
     # get recipients
-    identifier = filing.filing_json['filing']['business']['identifier']
+    identifier = filing.filing_json["filing"]["business"]["identifier"]
     recipients = []
     recipients.append(get_recipient_from_auth(identifier, token))
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff file a dissolution documentOptionalEmail may contain completing party email
-        recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
+        recipients.append(
+            filing.filing_json["filing"]["header"].get("documentOptionalEmail")
+        )
     else:
-        recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
+        recipients.append(
+            get_user_email_from_auth(filing.filing_submitter.username, token)
+        )
 
-    if legal_type in ['SP', 'GP']:  # Send email to all proprietor, partner, completing party
-        business_data = Business.find_by_internal_id(filing.business_id)
-        for party in filing.filing_json['filing']['dissolution']['parties']:
-            if party['officer'].get('email'):
-                recipients.append(party['officer']['email'])
+    if entity_type in [
+        "SP",
+        "GP",
+    ]:  # Send email to all proprietor, partner, completing party
+        business_data = LegalEntity.find_by_internal_id(filing.business_id)
+        for party in filing.filing_json["filing"]["dissolution"]["parties"]:
+            if party["officer"].get("email"):
+                recipients.append(party["officer"]["email"])
         for party_role in business_data.party_roles.all():
             if party_role.party.email:
                 recipients.append(party_role.party.email)
     else:
-        for party in filing.filing_json['filing']['dissolution']['parties']:
-            for role in party['roles']:
-                if role['roleType'] == 'Custodian':
-                    recipients.append(party['officer']['email'])
+        for party in filing.filing_json["filing"]["dissolution"]["parties"]:
+            for role in party["roles"]:
+                if role["roleType"] == "Custodian":
+                    recipients.append(party["officer"]["email"])
                     break
 
     recipients = list(set(recipients))
-    recipients = ', '.join(filter(None, recipients)).strip()
+    recipients = ", ".join(filter(None, recipients)).strip()
 
     # assign subject
     if status == Filing.Status.PAID.value:
-        if legal_type in ['SP', 'GP']:
-            subject = 'Confirmation of Filing from the Business Registry'
+        if entity_type in ["SP", "GP"]:
+            subject = "Confirmation of Filing from the Business Registry"
         else:
-            subject = 'Voluntary dissolution'
+            subject = "Voluntary dissolution"
 
     elif status == Filing.Status.COMPLETED.value:
-        if legal_type in ['SP', 'GP']:
-            subject = 'Dissolution Documents from the Business Registry'
+        if entity_type in ["SP", "GP"]:
+            subject = "Dissolution Documents from the Business Registry"
         else:
-            subject = 'Confirmation of Dissolution from the Business Registry'
+            subject = "Confirmation of Dissolution from the Business Registry"
 
     if not subject:  # fallback case - should never happen
-        subject = 'Notification from the BC Business Registry'
+        subject = "Notification from the BC Business Registry"
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    business_name = business.get("businessName", None)
+    subject = f"{business_name} - {subject}" if business_name else subject
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
-        }
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {"subject": subject, "body": f"{html_out}", "attachments": pdfs},
     }

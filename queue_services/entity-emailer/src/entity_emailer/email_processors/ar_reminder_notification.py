@@ -16,24 +16,30 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
+from flask import request
 from jinja2 import Template
-from legal_api.models import Business, CorpType
+from legal_api.models import LegalEntity, CorpType
 
-from entity_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
+from entity_emailer.services.logging import structured_log
+from entity_emailer.email_processors import (
+    get_recipient_from_auth,
+    substitute_template_parts,
+)
 
 
 def process(email_msg: dict, token: str) -> dict:
     """Build the email for annual report reminder notification."""
-    logger.debug('ar_reminder_notification: %s', email_msg)
-    ar_fee = email_msg['arFee']
-    ar_year = email_msg['arYear']
+    structured_log(request, "DEBUG", f"ar_reminder_notification: {email_msg}")
+    ar_fee = email_msg["arFee"]
+    ar_year = email_msg["arYear"]
     # get template and fill in parts
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html').read_text()
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html'
+    ).read_text()
     filled_template = substitute_template_parts(template)
-    business = Business.find_by_internal_id(email_msg['businessId'])
-    corp_type = CorpType.find_by_id(business.legal_type)
+    business = LegalEntity.find_by_internal_id(email_msg["businessId"])
+    corp_type = CorpType.find_by_id(business.entity_type)
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -42,19 +48,16 @@ def process(email_msg: dict, token: str) -> dict:
         ar_fee=ar_fee,
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.identifier
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
+        + business.identifier,
     )
 
     # get recipients
     recipients = get_recipient_from_auth(business.identifier, token)
-    subject = f'{business.legal_name} {ar_year} Annual Report Reminder'
+    subject = f"{business.business_name} {ar_year} Annual Report Reminder"
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': []
-        }
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {"subject": subject, "body": f"{html_out}", "attachments": []},
     }

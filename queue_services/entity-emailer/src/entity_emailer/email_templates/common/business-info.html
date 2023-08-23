@@ -23,9 +23,9 @@
       <!-- add other cases here -->
       <td class="value bold">Unknown</td>
       {% endif %}
-    {% elif business.legalName %}
+    {% elif business.businessName %}
     <!-- try to get legal name from Business object -->
-    <td class="value bold">{{ business.legalName }}</td>
+    <td class="value bold">{{ business.businessName }}</td>
     {% endif %}
   </tr>
 

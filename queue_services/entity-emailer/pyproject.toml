@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "entity-emailer"
+version = "3.1.0"
+description = "This module is the service worker for sending emails about entity related events."
+authors = ["leodube <leo@dube.ca>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+packages = [{include = "entity_emailer", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Flask = "^2.3.2"
+python-dotenv = "^1.0.0"
+sentry-sdk = "^1.27.1"
+launchdarkly-server-sdk = "^8.1.4"
+legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "dev_legal_name_changes" }
+simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
+requests = "^2.31.0"
+google-auth = "^2.21.0"
+google-cloud-pubsub = "^2.17.1"
+pg8000 = "^1.29.8"
+jinja2 = "^3.1.2"
+werkzeug = "^2.3.7"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+requests-mock = "^1.11.0"
+psycopg2 = "^2.9.7"
+sqlalchemy = "^2.0.20"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

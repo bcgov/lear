@@ -15,22 +15,22 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import change_of_registration_notification
 from tests.unit import prep_change_of_registration_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    ('PAID', Business.LegalTypes.SOLE_PROP.value, None),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value, None),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value, None),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value, None),
+    ('PAID', LegalEntity.EntityTypes.SOLE_PROP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.SOLE_PROP.value, None),
+    ('PAID', LegalEntity.EntityTypes.PARTNERSHIP.value, None),
+    ('COMPLETED', LegalEntity.EntityTypes.PARTNERSHIP.value, None),
 
-    ('PAID', Business.LegalTypes.SOLE_PROP.value, 'staff'),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'staff'),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value, 'staff'),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value, 'staff'),
+    ('PAID', LegalEntity.EntityTypes.SOLE_PROP.value, 'staff'),
+    ('COMPLETED', LegalEntity.EntityTypes.SOLE_PROP.value, 'staff'),
+    ('PAID', LegalEntity.EntityTypes.PARTNERSHIP.value, 'staff'),
+    ('COMPLETED', LegalEntity.EntityTypes.PARTNERSHIP.value, 'staff'),
 ])
 def test_change_of_registration_notification(app, session, mocker, status, legal_type, submitter_role):
     """Assert that email attributes are correct."""
@@ -58,7 +58,7 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
 
         if status == 'COMPLETED':
             assert 'no_one@never.get' in email['recipients']
-            if legal_type == Business.LegalTypes.PARTNERSHIP.value:
+            if legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value:
                 assert 'party@email.com' in email['recipients']
 
         assert email['content']['body']

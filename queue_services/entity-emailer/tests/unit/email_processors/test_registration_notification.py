@@ -15,17 +15,17 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 
 from entity_emailer.email_processors import registration_notification
 from tests.unit import prep_registration_filing
 
 
 @pytest.mark.parametrize('status,legal_type', [
-    ('PAID', Business.LegalTypes.SOLE_PROP.value),
-    ('COMPLETED', Business.LegalTypes.SOLE_PROP.value),
-    ('PAID', Business.LegalTypes.PARTNERSHIP.value),
-    ('COMPLETED', Business.LegalTypes.PARTNERSHIP.value),
+    ('PAID', LegalEntity.EntityTypes.SOLE_PROP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.SOLE_PROP.value),
+    ('PAID', LegalEntity.EntityTypes.PARTNERSHIP.value),
+    ('COMPLETED', LegalEntity.EntityTypes.PARTNERSHIP.value),
 ])
 def test_registration_notification(app, session, status, legal_type):
     """Assert that the legal name is changed."""
@@ -46,7 +46,7 @@ def test_registration_notification(app, session, status, legal_type):
         assert 'joe@email.com' in email['recipients']
         if status == 'COMPLETED':
             assert 'no_one@never.get' in email['recipients']
-            if legal_type == Business.LegalTypes.PARTNERSHIP.value:
+            if legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value:
                 assert 'party@email.com' in email['recipients']
 
         assert email['content']['body']
