@@ -12,15 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests and the helper routines."""
+import base64
 import copy
+from datetime import datetime
+
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from tests import EPOCH_DATETIME
 
 
-def create_filing(token=None, json_filing=None, business_id=None,
-                  filing_date=EPOCH_DATETIME, transaction_id: str = None):
+def create_filing(
+    token=None,
+    json_filing=None,
+    legal_entity_id=None,
+    filing_date=EPOCH_DATETIME,
+):
     """Return a test filing."""
     from legal_api.models import Filing
+
     filing = Filing()
     filing.filing_date = filing_date
 
@@ -28,152 +37,214 @@ def create_filing(token=None, json_filing=None, business_id=None,
         filing.payment_token = str(token)
     if json_filing:
         filing.filing_json = json_filing
-    if business_id:
-        filing.business_id = business_id
-    if transaction_id:
-        filing.transaction_id = transaction_id
+    if legal_entity_id:
+        filing.legal_entity_id = legal_entity_id
 
     return filing
 
 
-def create_business(identifier, legal_type=None, legal_name=None):
-    """Return a test business."""
-    from legal_api.models import Business
-    business = Business()
-    business.identifier = identifier
-    business.legal_type = legal_type
-    business.legal_name = legal_name
-    office = create_business_address()
-    business.offices.append(office)
-    return business
+def create_legal_entity(
+    identifier,
+    legal_type=None,
+    legal_name=None,
+    bn9=None,
+    tax_id=None,
+    change_filing_id=None,
+):
+    """Return a test legal_entity."""
+    from legal_api.models import LegalEntity
+
+    legal_entity = LegalEntity()
+    legal_entity.identifier = identifier
+    legal_entity.entity_type = legal_type
+    legal_entity.bn9 = bn9
+    legal_entity.change_filing_id = change_filing_id
+
+    alternate_name = create_alternate_name(operating_name=legal_name, tax_id=tax_id)
+    alternate_name.change_filing_id = change_filing_id
+    legal_entity.alternate_names.append(alternate_name)
+
+    office = create_business_address(change_filing_id=change_filing_id)
+    legal_entity.offices.append(office)
+
+    return legal_entity
 
 
-def create_business_address(office_type='businessOffice'):
+def create_alternate_name(operating_name, tax_id=None):
+    """Create operating name."""
+    from legal_api.models import AlternateName
+
+    alternate_name = AlternateName(
+        # identifier="BC1234567",
+        name_type=AlternateName.NameType.OPERATING,
+        name=operating_name,
+        bn15=tax_id,
+        start_date=datetime.utcnow(),
+    )
+    return alternate_name
+
+
+def create_business_address(office_type="businessOffice", change_filing_id=None):
     """Create an address."""
     from legal_api.models import Address, Office
+
     office = Office(office_type=office_type)
+    office.change_filing_id = change_filing_id
+
     office.addresses.append(create_office(Address.DELIVERY))
     office.addresses.append(create_office(Address.MAILING))
+
     return office
 
 
 def create_office(type):
     """Create an office."""
     from legal_api.models import Address
+
     address = Address(
-        city='Test City',
-        street='Test Street',
-        postal_code='T3S3T3',
-        country='CA',
-        region='BC',
-        address_type=type
+        city="Test City",
+        street="Test Street",
+        postal_code="T3S3T3",
+        country="CA",
+        region="BC",
+        address_type=type,
     )
     return address
 
 
-def create_party(party_json):
+def create_related_entity(party_json):
     """Create a party."""
-    from legal_api.models import Address, Party
-    new_party = Party(
-        first_name=party_json['officer'].get('firstName', '').upper(),
-        last_name=party_json['officer'].get('lastName', '').upper(),
-        middle_initial=party_json['officer'].get('middleInitial', '').upper(),
-        title=party_json.get('title', '').upper(),
-        organization_name=party_json['officer'].get('organizationName', '').upper(),
-        email=party_json['officer'].get('email'),
-        identifier=party_json['officer'].get('identifier'),
-        tax_id=party_json['officer'].get('taxId'),
-        party_type=party_json['officer'].get('partyType')
-    )
-    if party_json.get('mailingAddress'):
+    from legal_api.models import Address, LegalEntity
+
+    new_party = LegalEntity()
+    new_party.first_name = party_json["officer"].get("firstName", "").upper()
+    new_party.last_name = party_json["officer"].get("lastName", "").upper()
+    new_party.middle_initial = party_json["officer"].get("middleInitial", "").upper()
+    new_party.title = party_json.get("title", "").upper()
+    new_party._legal_name = party_json["officer"].get("organizationName", "").upper()
+    new_party.email = party_json["officer"].get("email")
+    new_party.entity_type = party_json["officer"].get("entityType")
+    new_party.identifier = party_json["officer"].get("identifier")
+    new_party.tax_id = party_json["officer"].get("taxId")
+
+    if party_json.get("mailingAddress"):
         mailing_address = Address(
-            street=party_json['mailingAddress']['streetAddress'],
-            city=party_json['mailingAddress']['addressCity'],
-            country='CA',
-            postal_code=party_json['mailingAddress']['postalCode'],
-            region=party_json['mailingAddress']['addressRegion'],
-            delivery_instructions=party_json['mailingAddress'].get('deliveryInstructions', '').upper()
+            street=party_json["mailingAddress"]["streetAddress"],
+            city=party_json["mailingAddress"]["addressCity"],
+            country="CA",
+            postal_code=party_json["mailingAddress"]["postalCode"],
+            region=party_json["mailingAddress"]["addressRegion"],
+            delivery_instructions=party_json["mailingAddress"]
+            .get("deliveryInstructions", "")
+            .upper(),
         )
-        new_party.mailing_address = mailing_address
-    if party_json.get('deliveryAddress'):
+        new_party.entity_mailing_address = mailing_address
+    if party_json.get("deliveryAddress"):
         delivery_address = Address(
-            street=party_json['deliveryAddress']['streetAddress'],
-            city=party_json['deliveryAddress']['addressCity'],
-            country='CA',
-            postal_code=party_json['deliveryAddress']['postalCode'],
-            region=party_json['deliveryAddress']['addressRegion'],
-            delivery_instructions=party_json['deliveryAddress'].get('deliveryInstructions', '').upper()
+            street=party_json["deliveryAddress"]["streetAddress"],
+            city=party_json["deliveryAddress"]["addressCity"],
+            country="CA",
+            postal_code=party_json["deliveryAddress"]["postalCode"],
+            region=party_json["deliveryAddress"]["addressRegion"],
+            delivery_instructions=party_json["deliveryAddress"]
+            .get("deliveryInstructions", "")
+            .upper(),
         )
-        new_party.delivery_address = delivery_address
+        new_party.entity_delivery_address = delivery_address
     return new_party
 
 
-def create_party_role(business, party, roles, appointment_date=EPOCH_DATETIME):
+def create_entity_role(
+    legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME
+):
     """Create party roles."""
-    from legal_api.models import PartyRole
+    from legal_api.models import EntityRole
+
     for role in roles:
-        party_role = PartyRole(
-            role=role,
-            party=party,
+        entity_role = EntityRole(
+            role_type=role,
+            related_entity=related_entity,
             appointment_date=appointment_date,
-            cessation_date=None
+            cessation_date=None,
         )
-        business.party_roles.append(party_role)
+        legal_entity.entity_roles.append(entity_role)
 
 
-def create_registration_data(legal_type, identifier='FM1234567', tax_id=None):
+def create_registration_data(legal_type, identifier="FM1234567", bn9=None, tax_id=None):
     """Test data for registration."""
     person_json = {
-        'officer': {
-            'id': 2,
-            'firstName': 'Peter',
-            'lastName': 'Griffin',
-            'middleName': '',
-            'partyType': 'person'
+        "officer": {
+            "id": 2,
+            "firstName": "Peter",
+            "lastName": "Griffin",
+            "middleName": "",
+            "entityType": "person",
         },
-        'mailingAddress': {
-            'streetAddress': 'mailing_address - address line one',
-            'streetAddressAdditional': '',
-            'addressCity': 'mailing_address city',
-            'addressCountry': 'CA',
-            'postalCode': 'H0H0H0',
-            'addressRegion': 'BC'
-        }
+        "mailingAddress": {
+            "streetAddress": "mailing_address - address line one",
+            "streetAddressAdditional": "",
+            "addressCity": "mailing_address city",
+            "addressCountry": "CA",
+            "postalCode": "H0H0H0",
+            "addressRegion": "BC",
+        },
     }
 
     org_json = copy.deepcopy(person_json)
-    org_json['officer'] = {
-        'id': 2,
-        'organizationName': 'Xyz Inc.',
-        'identifier': 'BC1234567',
-        'taxId': '123456789',
-        'email': 'peter@email.com',
-        'partyType': 'organization'
+    org_json["officer"] = {
+        "id": 2,
+        "organizationName": "Xyz Inc.",
+        "identifier": "BC1234567",
+        "taxId": "123456789",
+        "email": "peter@email.com",
+        "entityType": "organization",
     }
 
-    business = create_business(identifier,
-                               legal_type=legal_type,
-                               legal_name='test-reg-' + legal_type)
-    if tax_id:
-        business.tax_id = tax_id
-
-    json_filing = {
-        'filing': {
-            'header': {
-                'name': 'registration'
-            },
-            'registration': {
-
-            }
-        }
-    }
+    json_filing = {"filing": {"header": {"name": "registration"}, "registration": {}}}
     filing = create_filing(json_filing=json_filing)
-    party = create_party(person_json if legal_type == 'SP' else org_json)
-    role = 'proprietor' if legal_type == 'SP' else 'partner'
-    create_party_role(business, party, [role])
-
-    business.save()
-    filing.business_id = business.id
     filing.save()
 
-    return filing.id, business.id
+    legal_entity = create_legal_entity(
+        identifier,
+        legal_type=legal_type,
+        legal_name="test-reg-" + legal_type,
+        tax_id=tax_id,
+        change_filing_id=filing.id,
+    )
+
+    related_entity = create_related_entity(
+        person_json if legal_type == "SP" else org_json
+    )
+    role = "proprietor" if legal_type == "SP" else "partner"
+    create_entity_role(legal_entity, related_entity, [role])
+    legal_entity.save()
+
+    filing.legal_entity_id = legal_entity.id
+    filing.save()
+
+    return filing.id, legal_entity.id
+
+
+def get_json_message(
+    filing_id, identifier, message_id, type, request_type=None, business_number=None
+):
+    CLOUD_EVENT = SimpleCloudEvent(
+        source="fake-for-tests",
+        subject="fake-subject",
+        id=message_id,
+        type=type,
+        data={
+            "filingId": filing_id,
+            "identifier": identifier,
+            "request": request_type,
+            "businessNumber": business_number,
+        },
+    )
+
+    json_data = {
+        "subscription": "projects/PUBSUB_PROJECT_ID/subscriptions/SUBSCRIPTION_ID",
+        "message": {
+            "data": base64.b64encode(to_queue_message(CLOUD_EVENT)).decode("utf-8"),
+        },
+    }
+    return json_data

@@ -16,33 +16,34 @@ import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
 
-from legal_api.models import Business, RequestTracker
+from legal_api.models import LegalEntity, RequestTracker
 from legal_api.utils.datetime import datetime
 
-from entity_bn.bn_processors import registration, request_bn_hub
+from entity_bn.bn_processors import Message, registration, request_bn_hub
 
 
-async def process(msg: dict):
+def process(msg: Message):
     """Process admin actions."""
-    business = Business.find_by_identifier(msg['data']['business']['identifier'])
-    if msg['data']['header']['request'] == 'BN15':
-        await registration.process(business, is_admin=True, msg=msg)
-    elif msg['data']['header']['request'] == 'RESUBMIT_INFORM_CRA':
+    legal_entity = LegalEntity.find_by_identifier(msg.identifier)
+    if msg.request == "BN15":
+        registration.process(legal_entity, is_admin=True, msg=msg)
+    elif msg.request == "RESUBMIT_INFORM_CRA":
         # Keeping it separate due to the colin-api call to get BN15
-        await registration.process(business, is_admin=True, msg=msg, skip_build=True)
-    elif msg['data']['header']['request'] in [
-            'RESUBMIT_CHANGE_DELIVERY_ADDRESS',
-            'RESUBMIT_CHANGE_MAILING_ADDRESS',
-            'RESUBMIT_CHANGE_NAME',
-            'RESUBMIT_CHANGE_STATUS',
-            'RESUBMIT_CHANGE_PARTY'
+        registration.process(legal_entity, is_admin=True, msg=msg, skip_build=True)
+    elif msg.request in [
+        "RESUBMIT_CHANGE_DELIVERY_ADDRESS",
+        "RESUBMIT_CHANGE_MAILING_ADDRESS",
+        "RESUBMIT_CHANGE_NAME",
+        "RESUBMIT_CHANGE_STATUS",
+        "RESUBMIT_CHANGE_PARTY",
     ]:
-        message_id = msg.get('id')
-        request_type = msg['data']['header']['request'].replace('RESUBMIT_', '')
-        request_trackers = RequestTracker.find_by(business.id,
-                                                  RequestTracker.ServiceName.BN_HUB,
-                                                  request_type=RequestTracker.RequestType[request_type],
-                                                  message_id=message_id)
+        request_type = msg.request.replace("RESUBMIT_", "")
+        request_trackers = RequestTracker.find_by(
+            legal_entity.id,
+            RequestTracker.ServiceName.BN_HUB,
+            request_type=RequestTracker.RequestType[request_type],
+            message_id=msg.id,
+        )
 
         request_tracker = request_trackers.pop()
         if request_tracker.is_processed:
@@ -55,7 +56,7 @@ async def process(msg: dict):
         if status_code == HTTPStatus.OK:
             with suppress(Et.ParseError):
                 root = Et.fromstring(response)
-                if root.tag == 'SBNAcknowledgement':
+                if root.tag == "SBNAcknowledgement":
                     request_tracker.is_processed = True
         request_tracker.response_object = response
         request_tracker.save()

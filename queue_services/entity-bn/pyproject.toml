@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "entity-bn"
+version = "2.82.0"
+description = "Communicate with CRA to get business number/ update details related to business."
+authors = ["Vysakh Menon"]
+license = "BSD-3-Clause"
+readme = "README.md"
+packages = [{include = "entity_bn", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Flask = "^2.3.3"
+python-dotenv = "^1.0.0"
+sentry-sdk = "^1.27.1"
+launchdarkly-server-sdk = "^8.1.4"
+#registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.10"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", branch = "dev_legal_name_changes"}
+sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "dev_legal_name_changes" }
+legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "dev_legal_name_changes" }
+simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
+requests = "^2.31.0"
+google-auth = "^2.21.0"
+google-cloud-pubsub = "^2.17.1"
+pg8000 = "^1.29.8"
+asyncio-nats-client = "^0.11.5"
+asyncio-nats-streaming = "^0.4.0"
+attrs = "^23.1.0"
+dpath = "^2.1.6"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+requests-mock = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
