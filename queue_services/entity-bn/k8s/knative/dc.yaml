@@ -47,8 +47,26 @@ spec:
           value: $PUBLISHER_AUDIENCE
         - name: ENTITY_MAILER_TOPIC
           value: $ENTITY_MAILER_TOPIC
-        - name: ENTITY_FILER_TOPIC
-          value: $ENTITY_FILER_TOPIC
+        - name: ENTITY_EVENT_TOPIC
+          value: $ENTITY_EVENT_TOPIC
+        - name: COLIN_API
+          value: $COLIN_API
+        - name: REGISTRIES_SEARCH_API_INTERNAL_URL
+          value: $REGISTRIES_SEARCH_API_INTERNAL_URL
+        - name: REGISTRIES_SEARCH_API_VERSION
+          value: $REGISTRIES_SEARCH_API_VERSION
+        - name: BN_HUB_API_URL
+          value: $BN_HUB_API_URL
+        - name: BN_HUB_CLIENT_ID
+          value: $BN_HUB_CLIENT_ID
+        - name: BN_HUB_CLIENT_SECRET
+          value: $BN_HUB_CLIENT_SECRET
+        - name: BN_HUB_MAX_RETRY
+          value: $BN_HUB_MAX_RETRY
+        - name: TEMPLATE_PATH
+          value: $TEMPLATE_PATH
+        - name: GCP_AUTH_KEY
+          value: $GCP_AUTH_KEY
         resources:
           limits:
             cpu: 1000m

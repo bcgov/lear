@@ -254,6 +254,7 @@ def change_address(
         )
 
 
+# TODO: Fix below functions (and add unit test) to check history data once we have clarity on the versioning changes
 def has_previous_address(
     transaction_id: int, office_id: int, address_type: str
 ) -> bool:

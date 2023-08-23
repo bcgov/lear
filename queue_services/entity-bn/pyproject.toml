@@ -22,8 +22,6 @@ requests = "^2.31.0"
 google-auth = "^2.21.0"
 google-cloud-pubsub = "^2.17.1"
 pg8000 = "^1.29.8"
-asyncio-nats-client = "^0.11.5"
-asyncio-nats-streaming = "^0.4.0"
 attrs = "^23.1.0"
 dpath = "^2.1.6"
 

@@ -156,7 +156,6 @@ def request_bn_hub(input_xml):
 
 def get_owners_legal_type(entity_role: EntityRole):
     """Get owners entity type."""
-    entity_role.is_related_colin_entity
     if not entity_role.is_related_colin_entity:
         return entity_role.related_entity.entity_type
 

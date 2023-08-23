@@ -264,7 +264,6 @@ def _get_bn(
     if status_code == HTTPStatus.OK:
         program_account_ref_no = str(response["program_account_ref_no"]).zfill(4)
         bn15 = f"{response['business_no']}{response['business_program_id']}{program_account_ref_no}"
-        # legal_entity.tax_id = bn15
         alternate_name = legal_entity.alternate_names.first()
         alternate_name.bn15 = bn15
         legal_entity.save()
