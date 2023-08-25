@@ -542,13 +542,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         corrected_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         corrected_filing_id = filing.filing_json['filing']['correction']['correctedFilingId']
 
-        if corrected_filing_type in ['annualReport', 'specialResolution']:
+        if corrected_filing_type in ['annualReport']:
             corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
             display_name = FilingMeta.display_name(business_revision, corrected_filing)
             if corrected_filing_type == 'annualReport':
                 return f'Correction - {display_name}'
-            else:
-                return f'{display_name} Correction'
         elif corrected_filing_type == 'correction':
             corrected_filing = FilingStorage.find_by_id(corrected_filing_id)
             return FilingMeta.get_corrected_filing_name(corrected_filing, business_revision, name)
