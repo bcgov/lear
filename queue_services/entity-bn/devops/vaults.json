@@ -6,13 +6,6 @@
         ]
     },
     {
-        "vault": "nats",
-        "application": [
-            "base",
-            "entity-bn"
-        ]
-    },
-    {
         "vault": "api",
         "application": [
             "colin-api-entity",

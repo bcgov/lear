@@ -16,19 +16,26 @@
 
 Test-Suite to ensure that the version utilities are working as expected.
 """
+from importlib.metadata import version
+
 from entity_bn import utils
-from entity_bn.version import __version__
+
+
+PACKAGE_NAME = "entity_bn"
 
 
 def test_get_version():
     """Assert that the version is returned correctly."""
     rv = utils.get_run_version()
-    assert rv == __version__
+    assert rv == version(PACKAGE_NAME)
 
 
 def test_get_version_hash(monkeypatch):
     """Assert that the version also contains the git commit hash."""
-    monkeypatch.setenv('OPENSHIFT_BUILD_COMMIT', 'openshift_git_hash')
+    from uuid import uuid4
+
+    fake_hash = str(uuid4())
+    monkeypatch.setenv("VCS_REF", fake_hash)
     rv = utils.get_run_version()
-    assert 'openshift_git_hash' in rv
-    assert __version__ in rv
+    assert fake_hash in rv
+    assert version(PACKAGE_NAME) in rv

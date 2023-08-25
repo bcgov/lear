@@ -33,13 +33,13 @@
       <effectiveDate>{{foundingDate}}</effectiveDate>
     </programAccountStatus>
     {% if isFirms %}
-    <legalName>{{legalNames}}</legalName>
+    <legalName>{{business.legalName}}</legalName>
     <operatingName>
-      <operatingName>{{business.legalName}}</operatingName>
+      <operatingName>{{business.businessName}}</operatingName>
       <operatingNamesequenceNumber>1</operatingNamesequenceNumber>
     </operatingName>
     {% elif isCorps %}
-    <legalName>{{business.legalName}}</legalName>
+    <legalName>{{business.businessName}}</legalName>
     {% endif %}
     <businessAddress>
       <foreignLegacy>
@@ -81,11 +81,11 @@
     {% for party in parties %}
     <owner>
       <ownerIndividual>
-        {% if party.officer.partyType == 'person' %}
+        {% if party.officer.organizationName is defined and party.officer.organizationName is not none %}
+        <lastName>{{party.officer.organizationName[0:30]}}</lastName>
+        {% else %}
         <lastName>{{party.officer.lastName}}</lastName>
         <givenName>{{party.officer.firstName}}</givenName>
-        {% elif party.officer.partyType == 'organization' %}
-        <lastName>{{party.officer.organizationName[0:30]}}</lastName>
         {% endif %}
       </ownerIndividual>
     </owner>
