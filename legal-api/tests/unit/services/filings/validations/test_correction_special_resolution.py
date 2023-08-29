@@ -14,14 +14,16 @@
 """Test Correction SPECIAL_RESOLUTION validations."""
 
 import copy
+from http import HTTPStatus
 
+import pytest
 from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
                                         CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.services.filings.validations import lists_are_equal
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
-
 
 def test_valid_special_resolution_correction(session):
     """Test that a valid SPECIAL_RESOLUTION correction passes validation."""
@@ -44,3 +46,72 @@ def test_valid_special_resolution_correction(session):
 
     # check that validation passed
     assert None is err
+
+
+@pytest.mark.parametrize('test_name, legal_type, correction_type, err_msg', [
+    ('valid_parties', 'CP', 'CLIENT', None),
+    ('valid_parties', 'CP', 'STAFF', None),
+    ('no_parties', 'CP', 'CLIENT', 
+     [{'error': 'Parties list cannot be empty or null', 'path': '/filing/correction/parties/roles'}]),
+    ('no_parties', 'CP', 'STAFF', 
+     [{'error': 'Parties list cannot be empty or null', 'path': '/filing/correction/parties/roles'}]),
+    ('empty_parties', 'CP', 'CLIENT', 
+     [{'error': 'Parties list cannot be empty or null', 'path': '/filing/correction/parties/roles'}]),
+    ('empty_parties', 'CP', 'STAFF', 
+     [{'error': 'Parties list cannot be empty or null', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CP', 'CLIENT',
+     [{'error': 'Must have a minimum of one completing party', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
+    ('no_roles', 'CP', 'STAFF',
+     [{'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
+    ('only_completing', 'CP', 'CLIENT', 
+     [{'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
+    ('only_completing', 'CP', 'STAFF', 
+     [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'}]),
+])
+def test_parties_special_resolution_correction(session, test_name, legal_type, correction_type, err_msg):
+    """Test that a valid NR correction passes validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+    corrected_filing = factory_completed_filing(business, CP_SPECIAL_RESOLUTION_APPLICATION)
+
+    correction_data = copy.deepcopy(FILING_HEADER)
+    correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data['filing']['header']['name'] = 'correction'
+    f = copy.deepcopy(correction_data)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    if test_name == 'no_roles':
+        f['filing']['correction']['parties'][0]['roles'] = []
+        f['filing']['correction']['parties'][1]['roles'] = []
+        f['filing']['correction']['parties'][2]['roles'] = []
+    elif test_name == "no_parties":
+        del f['filing']['correction']['parties']
+    elif test_name == "empty_parties":
+        f['filing']['correction']['parties'] = []
+    elif test_name == "only_completing":
+        del f['filing']['correction']['parties'][0]['roles'][1]
+        del f['filing']['correction']['parties'][1]
+        del f['filing']['correction']['parties'][2]
+    elif test_name == 'valid_parties':
+        if legal_type == 'CP':
+            director = copy.deepcopy(f['filing']['correction']['parties'][0])
+            del director['roles'][0]  # completing party
+            f['filing']['correction']['parties'].append(director)
+            f['filing']['correction']['parties'].append(director)
+
+        if correction_type == 'STAFF':
+            del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
+
+    err = validate(business, f)
+    if err:
+      print(err.msg)
+
+    if err_msg:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert lists_are_equal(err.msg, err_msg)
+    else:
+        assert None is err
