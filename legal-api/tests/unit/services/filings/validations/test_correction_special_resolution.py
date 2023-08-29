@@ -67,7 +67,8 @@ def test_valid_special_resolution_correction(session):
     ('only_completing', 'CP', 'CLIENT', 
      [{'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
     ('only_completing', 'CP', 'STAFF', 
-     [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'}]),
+     [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'},
+      {'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
 ])
 def test_parties_special_resolution_correction(session, test_name, legal_type, correction_type, err_msg):
     """Test parties for SPECIAL_RESOLUTION correction."""
@@ -96,12 +97,6 @@ def test_parties_special_resolution_correction(session, test_name, legal_type, c
         del f['filing']['correction']['parties'][1]
         del f['filing']['correction']['parties'][2]
     elif test_name == 'valid_parties':
-        if legal_type == 'CP':
-            director = copy.deepcopy(f['filing']['correction']['parties'][0])
-            del director['roles'][0]  # completing party
-            f['filing']['correction']['parties'].append(director)
-            f['filing']['correction']['parties'].append(director)
-
         if correction_type == 'STAFF':
             del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
 
