@@ -70,7 +70,7 @@ def test_valid_special_resolution_correction(session):
      [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'}]),
 ])
 def test_parties_special_resolution_correction(session, test_name, legal_type, correction_type, err_msg):
-    """Test that a valid NR correction passes validation."""
+    """Test parties for SPECIAL_RESOLUTION correction."""
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier)
