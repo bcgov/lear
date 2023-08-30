@@ -38,8 +38,10 @@ from .bp import bp
 def get_tasks(identifier):
     """Return a JSON object with meta information about the Service."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
-    temp_reg_filing = Filing.get_temp_reg_filing(identifier)
     is_nr = identifier.startswith('NR')
+    temp_reg_filing = Filing.get_temp_reg_filing(identifier)
+    has_temp_reg_filing_todo = temp_reg_filing and temp_reg_filing.status not in (Filing.Status.PAID.value, 
+                                                                                 Filing.Status.COMPLETED.value)
 
     # Check if this is a NR
     if is_nr:
@@ -55,17 +57,14 @@ def get_tasks(identifier):
             }), HTTPStatus.FORBIDDEN
 
     if not legal_entity:
+        # business does not exist and not an nr so return empty task list
+        rv = []
         # Create Incorporate using NR to-do item
         if is_nr:
-            rv = []
             rv.append(create_incorporate_nr_todo(nr_response.json(), 1, True))
-        # business does not exist and not an nr so return empty task list
-        elif temp_reg_filing and temp_reg_filing.status not in (Filing.Status.PAID.value,
-                                                                Filing.Status.COMPLETED.value):
-            rv = []
+        # Create temp_reg to-do item
+        elif has_temp_reg_filing_todo:
             rv.append(create_temp_reg_filing_todo(temp_reg_filing, 1, True))
-        else:
-            rv = []
     else:
         rv = construct_task_list(legal_entity)
         if not rv and is_nr:
@@ -228,7 +227,7 @@ def create_conversion_filing_todo(legal_entity, order, enabled):
     return todo
 
 def create_temp_reg_filing_todo(temp_reg_filing: Filing, order, enabled):
-    "" "Return a to-do JSON obJect."""
+    """Return a to-do JSON obJect."""
     todo = {
         'task': {
             'todo': {
