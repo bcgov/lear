@@ -24,6 +24,7 @@ from requests import exceptions  # noqa I001
 from flask import current_app, jsonify
 from flask_cors import cross_origin
 
+from legal_api.core import Filing as CoreFiling
 from legal_api.models import Filing, LegalEntity
 from legal_api.services import check_warnings, namex
 from legal_api.services.warnings.business.business_checks import WarningType
@@ -40,8 +41,8 @@ def get_tasks(identifier):
     legal_entity = LegalEntity.find_by_identifier(identifier)
     is_nr = identifier.startswith('NR')
     temp_reg_filing = Filing.get_temp_reg_filing(identifier)
-    has_temp_reg_filing_todo = temp_reg_filing and temp_reg_filing.status not in (Filing.Status.PAID.value, 
-                                                                                 Filing.Status.COMPLETED.value)
+    has_temp_reg_filing_todo = temp_reg_filing and temp_reg_filing.status not in (Filing.Status.PAID.value,
+                                                                                  Filing.Status.COMPLETED.value)
 
     # Check if this is a NR
     if is_nr:
@@ -228,16 +229,12 @@ def create_conversion_filing_todo(legal_entity, order, enabled):
 
 def create_temp_reg_filing_todo(temp_reg_filing: Filing, order, enabled):
     """Return a to-do JSON obJect."""
+    filing = CoreFiling()
+    filing._storage = temp_reg_filing
+    filing_json = filing.json
+
     todo = {
-        'task': {
-            'todo': {
-                'tempRegFiling': temp_reg_filing.temp_reg,
-                'header': {
-                    'name': temp_reg_filing.filing_type,
-                    'status': temp_reg_filing.status
-                }
-            }
-        },
+        'task': {**filing_json},
         'order': order,
         'enabled': enabled
     }

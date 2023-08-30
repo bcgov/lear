@@ -383,12 +383,12 @@ def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status):
         rv_json = rv.json
 
         if filing_status not in (Filing.Status.PAID.value, Filing.Status.COMPLETED.value):
-            to_do = any(x['task']['todo']['header']['name'] == 'incorporationApplication'
+            to_do = any(x['task']['filing']['header']['name'] == 'incorporationApplication'
                                 and x['task']['todo']['header']['status'] == filing_status
                                 for x in rv_json['tasks'])
             assert to_do
         else:
-            to_do = any(x['task']['todo']['header']['name'] == 'incorporationApplication'
+            to_do = any(x['task']['filing']['header']['name'] == 'incorporationApplication'
                                 and x['task']['todo']['header']['status'] == filing_status
                                 for x in rv_json['tasks'])
             assert not to_do
