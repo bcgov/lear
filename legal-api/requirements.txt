@@ -19,7 +19,7 @@ alembic==1.7.5
 aniso8601==9.0.1
 asyncio-nats-client==0.11.4
 asyncio-nats-streaming==0.4.0
-attrs==20.3.0
+attrs==23.1.0
 blinker==1.4
 cachelib==0.1.1
 certifi==2020.12.5
