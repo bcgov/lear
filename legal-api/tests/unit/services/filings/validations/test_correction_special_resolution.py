@@ -95,9 +95,9 @@ def test_parties_special_resolution_correction(session, test_name, legal_type, c
     elif test_name == "empty_parties":
         f['filing']['correction']['parties'] = []
     elif test_name == "only_completing":
-        del f['filing']['correction']['parties'][0]['roles'][1]
-        del f['filing']['correction']['parties'][1]
         del f['filing']['correction']['parties'][2]
+        del f['filing']['correction']['parties'][1]
+        del f['filing']['correction']['parties'][0]['roles'][1]
     elif test_name == 'valid_parties':
         if correction_type == 'STAFF':
             del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
