@@ -730,6 +730,8 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             LegalEntity.EntityTypes.COOP.value,
             LegalEntity.EntityTypes.SOLE_PROP.value,
             LegalEntity.EntityTypes.PARTNERSHIP.value,
+            LegalEntity.EntityTypes.PERSON.value,
+            LegalEntity.EntityTypes.ORGANIZATION.value
         ]
         legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities

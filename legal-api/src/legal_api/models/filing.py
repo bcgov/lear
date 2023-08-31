@@ -842,15 +842,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         from .legal_entity import LegalEntity  # noqa: F401; pylint: disable=import-outside-toplevel
-        filings = db.session.query(Filing).join(LegalEntity). \
-            filter(
-                ~LegalEntity.entity_type.in_([
-                    LegalEntity.EntityTypes.SOLE_PROP.value,
-                    LegalEntity.EntityTypes.PARTNERSHIP.value]),
-                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
-                Filing._status == Filing.Status.COMPLETED.value,
-                Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(Filing.filing_date).all()
+        filings = (
+            db.session.query(Filing).join(LegalEntity, Filing.legal_entity_id == LegalEntity.id) \
+                      .filter(
+                          ~LegalEntity.entity_type.in_([
+                              LegalEntity.EntityTypes.SOLE_PROP.value,
+                              LegalEntity.EntityTypes.PARTNERSHIP.value]),
+                          Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                          Filing._status == Filing.Status.COMPLETED.value,
+                          Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
+                      ).order_by(Filing.filing_date).all())
         return filings
 
     @staticmethod

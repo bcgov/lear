@@ -290,9 +290,6 @@ def factory_epoch_filing(legal_entity, filing_date=FROZEN_DATETIME):
     """Create an error filing."""
     filing = Filing()
     filing.legal_entity_id = legal_entity.id
-    uow = versioning_manager.unit_of_work(db.session)
-    transaction = uow.create_transaction(db.session)
-    filing.transaction_id = transaction.id
     filing.filing_date = filing_date
     filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
     filing.save()

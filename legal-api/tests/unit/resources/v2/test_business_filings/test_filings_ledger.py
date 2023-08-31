@@ -507,92 +507,94 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
 def test_ledger_display_special_resolution_correction(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
-    # setup
-    identifier = 'CP1234567'
-    business, original = ledger_element_setup_help(identifier, 'specialResolution')
-    sr_correction = copy.deepcopy(FILING_HEADER)
-    sr_correction['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-    sr_correction['filing']['correction']['correctedFilingId'] = original.id
-    correction = ledger_element_setup_filing(
-        business,
-        'correction',
-        filing_date=business.founding_date + datedelta.datedelta(months=3),
-        filing_dict=sr_correction)
-    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
-    original.parent_filing_id = correction.id
-    original.save()
+    with nested_session(session):
+        # setup
+        identifier = 'CP1234567'
+        business, original = ledger_element_setup_help(identifier, 'specialResolution')
+        sr_correction = copy.deepcopy(FILING_HEADER)
+        sr_correction['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+        sr_correction['filing']['correction']['correctedFilingId'] = original.id
+        correction = ledger_element_setup_filing(
+            business,
+            'correction',
+            filing_date=business.founding_date + datedelta.datedelta(months=3),
+            filing_dict=sr_correction)
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
+        original.parent_filing_id = correction.id
+        original.save()
 
-    today = date.today().isoformat()
-    correction_meta = {'legalFilings': ['specialResolution', 'correction']}
-    correction._meta_data = {**{'applicationDate': today}, **correction_meta}
-    correction.save()
+        today = date.today().isoformat()
+        correction_meta = {'legalFilings': ['specialResolution', 'correction']}
+        correction._meta_data = {**{'applicationDate': today}, **correction_meta}
+        correction.save()
 
-    # sr_correction_2 is a correction on sr correction
-    sr_correction_2 = copy.deepcopy(FILING_HEADER)
-    sr_correction_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-    sr_correction_2['filing']['correction']['correctedFilingId'] = correction.id
-    sr_correction_2['filing']['correction']['correctedFilingType'] = 'correction'
-    correction_2 = ledger_element_setup_filing(
-        business,
-        'correction',
-        filing_date=business.founding_date + datedelta.datedelta(months=3),
-        filing_dict=sr_correction_2)
-    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
-    correction.parent_filing_id = correction_2.id
-    correction.save()
+        # sr_correction_2 is a correction on sr correction
+        sr_correction_2 = copy.deepcopy(FILING_HEADER)
+        sr_correction_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+        sr_correction_2['filing']['correction']['correctedFilingId'] = correction.id
+        sr_correction_2['filing']['correction']['correctedFilingType'] = 'correction'
+        correction_2 = ledger_element_setup_filing(
+            business,
+            'correction',
+            filing_date=business.founding_date + datedelta.datedelta(months=3),
+            filing_dict=sr_correction_2)
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
+        correction.parent_filing_id = correction_2.id
+        correction.save()
 
-    correction_2_meta = {'legalFilings': ['correction']}
-    correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
-    correction_2.save()
+        correction_2_meta = {'legalFilings': ['correction']}
+        correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
+        correction_2.save()
 
-    # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+        # test
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=create_header(jwt, [UserRoles.system], identifier))
 
-    # validate
-    assert rv.json['filings']
-    for filing_json in rv.json['filings']:
-        if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == 'Special Resolution Correction'
-        elif filing_json['name'] == 'specialResolution':
-            assert filing_json['displayName'] == 'Special Resolution'
-        else:
-            assert False
+        # validate
+        assert rv.json['filings']
+        for filing_json in rv.json['filings']:
+            if filing_json['name'] == 'correction':
+                assert filing_json['displayName'] == 'Special Resolution Correction'
+            elif filing_json['name'] == 'specialResolution':
+                assert filing_json['displayName'] == 'Special Resolution'
+            else:
+                assert False
 
 
 def test_ledger_display_non_special_resolution_correction_name(session, client, jwt):
     """Assert that the ledger returns the correct number of comments."""
-    # setup
-    identifier = 'CP1234567'
-    business, original = ledger_element_setup_help(identifier, 'changeOfAddress')
-    correction = copy.deepcopy(FILING_HEADER)
-    correction['filing']['correction'] = copy.deepcopy(CHANGE_OF_ADDRESS)
-    correction['filing']['correction']['correctedFilingId'] = original.id
-    correction['filing']['correction']['correctedFilingType'] = 'changeOfAddress'
-    correction = ledger_element_setup_filing(
-        business,
-        'correction',
-        filing_date=business.founding_date + datedelta.datedelta(months=3),
-        filing_dict=correction)
-    # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
-    original.parent_filing_id = correction.id
-    original.save()
+    with nested_session(session):
+        # setup
+        identifier = 'CP1234567'
+        business, original = ledger_element_setup_help(identifier, 'changeOfAddress')
+        correction = copy.deepcopy(FILING_HEADER)
+        correction['filing']['correction'] = copy.deepcopy(CHANGE_OF_ADDRESS)
+        correction['filing']['correction']['correctedFilingId'] = original.id
+        correction['filing']['correction']['correctedFilingType'] = 'changeOfAddress'
+        correction = ledger_element_setup_filing(
+            business,
+            'correction',
+            filing_date=business.founding_date + datedelta.datedelta(months=3),
+            filing_dict=correction)
+        # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
+        original.parent_filing_id = correction.id
+        original.save()
 
-    today = date.today().isoformat()
-    correction_meta = {'legalFilings': ['correction']}
-    correction._meta_data = {**{'applicationDate': today}, **correction_meta}
-    correction.save()
+        today = date.today().isoformat()
+        correction_meta = {'legalFilings': ['correction']}
+        correction._meta_data = {**{'applicationDate': today}, **correction_meta}
+        correction.save()
 
-    # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+        # test
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=create_header(jwt, [UserRoles.system], identifier))
 
-    # validate
-    assert rv.json['filings']
-    for filing_json in rv.json['filings']:
-        if filing_json['name'] == 'correction':
-            assert filing_json['displayName'] == 'Register Correction Application'
-        elif filing_json['name'] == 'changeOfAddress':
-            assert filing_json['displayName'] == 'Address Change'
-        else:
-            assert False
+        # validate
+        assert rv.json['filings']
+        for filing_json in rv.json['filings']:
+            if filing_json['name'] == 'correction':
+                assert filing_json['displayName'] == 'Register Correction Application'
+            elif filing_json['name'] == 'changeOfAddress':
+                assert filing_json['displayName'] == 'Address Change'
+            else:
+                assert False
