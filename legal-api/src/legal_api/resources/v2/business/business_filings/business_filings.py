@@ -28,6 +28,7 @@ from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer  # noqa: I001
 from pydantic.generics import GenericModel
+from sqlalchemy import text
 from werkzeug.local import LocalProxy
 
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
@@ -36,7 +37,7 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import Address, ColinLastUpdate, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -49,7 +50,7 @@ from legal_api.services import (
     namex,
     queue,
 )
-from legal_api.services.authz import is_allowed
+from legal_api.services.authz import is_allowed, COLIN_SVC_ROLE
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -940,3 +941,117 @@ class ListFilingResource():
                 'value': f'{business_identifier}'
             }
         ]
+
+@bp.route('/internal/filings', methods=['GET'])
+@bp.route('/internal/filings/<string:status>', methods=['GET'])
+@cross_origin(origin='*')
+def get_internal_filings(status=None):
+    """Get filings by status formatted in json."""
+    pending_filings = []
+    filings = []
+
+    if status is None:
+        pending_filings = Filing.get_completed_filings_for_colin()
+        for filing in pending_filings:
+            filing_json = filing.filing_json
+            legal_entity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
+            if filing_json and filing.filing_type != 'lear_epoch' and \
+                    (filing.filing_type != 'correction' or
+                     legal_entity.entity_type != LegalEntity.EntityTypes.COOP.value):
+                filing_json['filingId'] = filing.id
+                filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
+                if not filing_json['filing'].get('business'):
+                    filing_json['filing']['business'] = legal_entity.json()
+                elif not filing_json['filing']['business'].get('legalName'):
+                    filing_json['filing']['business']['legalName'] = legal_entity.legal_name
+                if filing.filing_type == 'correction':
+                    colin_ids = \
+                        ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
+                    if not colin_ids:
+                        continue
+                    filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
+                filings.append(filing_json)
+        return jsonify(filings), HTTPStatus.OK
+
+    pending_filings = Filing.get_all_filings_by_status(status)
+    for filing in pending_filings:
+        filings.append(filing.json)
+    return jsonify(filings), HTTPStatus.OK
+
+@bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def patch(filing_id):
+    """Patch the colin_event_id for a filing."""
+    # check authorization
+    try:
+        if not jwt.validate_roles([COLIN_SVC_ROLE]):
+            return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
+
+        json_input = request.get_json()
+        if not json_input:
+            return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
+                HTTPStatus.BAD_REQUEST
+
+        colin_ids = json_input['colinIds']
+        filing = Filing.find_by_id(filing_id)
+        if not filing:
+            return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
+        for colin_id in colin_ids:
+            try:
+                colin_event_id_obj = ColinEventId()
+                colin_event_id_obj.colin_event_id = colin_id
+                filing.colin_event_ids.append(colin_event_id_obj)
+                filing.save()
+            except BusinessException as err:
+                current_app.logger.Error(f'Error adding colin event id {colin_id} to filing with id {filing_id}')
+                return None, None, {'message': err.error}, err.status_code
+
+        return jsonify(filing.json), HTTPStatus.ACCEPTED
+    except Exception as err:
+        current_app.logger.Error(f'Error patching colin event id for filing with id {filing_id}')
+        raise err
+
+@bp.route('/internal/filings/colin_id', methods=['GET'])
+@bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['GET'])
+@cross_origin(origin='*')
+def get(colin_id=None):
+    """Get the last colin id updated in legal."""
+    try:
+        if colin_id:
+            colin_id_obj = ColinEventId.get_by_colin_id(colin_id)
+            if not colin_id_obj:
+                return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
+            return {'colinId': colin_id_obj.colin_event_id}, HTTPStatus.OK
+    except Exception as err:
+        current_app.logger.Error(f'Failed to get last updated colin event id: {err}')
+        raise err
+
+    query = db.session.execute(text("""select last_event_id from colin_last_update
+                                       order by id desc"""))
+    last_event_id = query.fetchone()
+    if not last_event_id or not last_event_id[0]:
+        return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
+
+    return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+
+
+@bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['POST'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def post(colin_id):
+    """Add a row to the colin_last_update table."""
+    try:
+        # check authorization
+        if not jwt.validate_roles([COLIN_SVC_ROLE]):
+            return jsonify({'message': 'You are not authorized to update this table'}), HTTPStatus.UNAUTHORIZED
+        result = db.session.execute(text(f"""insert into colin_last_update (last_update, last_event_id) 
+                                             values (current_timestamp, {colin_id})
+                                             returning id"""))
+        db.session.commit()
+        colin_last_update_id = result.fetchone()[0]
+        colin_last_update = db.session.get(ColinLastUpdate, colin_last_update_id)
+        return jsonify(colin_last_update.json), HTTPStatus.CREATED
+    except Exception as err:  # pylint: disable=broad-except
+        current_app.logger.error(f'Error updating colin_last_update table in legal db: {err}')
+        return {'message: failed to update colin_last_update.', 500}
