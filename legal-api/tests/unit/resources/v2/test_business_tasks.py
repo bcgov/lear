@@ -24,9 +24,9 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT
+from registry_schemas.example_data import ANNUAL_REPORT, INCORPORATION_FILING_TEMPLATE
 
-from legal_api.models import LegalEntity
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit import nested_session
@@ -356,3 +356,39 @@ def test_conversion_filing_task(session, client, jwt, test_name, entity_type, id
                                 and x['task']['todo']['header']['status'] == 'NEW'
                                 for x in rv_json['tasks'])
             assert not conversion_to_do
+
+@pytest.mark.parametrize('test_name, filing_status', [
+    ('TODO_EXISTS_DRAFT_FILING', Filing.Status.DRAFT.value),
+    ('TODO_EXISTS_PENDING_FILING', Filing.Status.PENDING.value),
+    ('NO_TODO_PAID_FILING', Filing.Status.PAID.value),
+    ('NO_TODO_COMPLETED_FILING', Filing.Status.COMPLETED.value),
+])
+def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status):
+    """Assert conversion todo shows up for only SP/GPs with missing business info."""
+    with nested_session(session):
+        identifier = 'T1234567'
+        temp_reg = RegistrationBootstrap()
+        temp_reg._identifier = identifier
+        temp_reg.save()
+
+        filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+        filing = factory_filing(LegalEntity(), filing_json, filing_type='incorporationApplication')
+        filing.temp_reg = identifier
+        filing.status = filing_status
+        filing.save()
+
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+        assert rv.status_code == HTTPStatus.OK
+        rv_json = rv.json
+
+        if filing_status not in (Filing.Status.PAID.value, Filing.Status.COMPLETED.value):
+            to_do = any(x['task']['filing']['header']['name'] == 'incorporationApplication'
+                                and x['task']['todo']['header']['status'] == filing_status
+                                for x in rv_json['tasks'])
+            assert to_do
+        else:
+            to_do = any(x['task']['filing']['header']['name'] == 'incorporationApplication'
+                                and x['task']['todo']['header']['status'] == filing_status
+                                for x in rv_json['tasks'])
+            assert not to_do
