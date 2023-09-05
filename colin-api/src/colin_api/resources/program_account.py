@@ -19,8 +19,8 @@ from flask_restx import Namespace, Resource, cors
 
 from colin_api.exceptions import GenericException
 from colin_api.models import ProgramAccount
-from colin_api.utils.util import cors_preflight
-
+from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
+from colin_api.utils.util import cors_preflight, conditional_auth
 
 API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNI DB link data.')
 
@@ -33,6 +33,7 @@ class ProgramAccountInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
     def get(identifier: str, transaction_id: str = None):
         """Return the BNI DB link program account."""
         if not identifier:

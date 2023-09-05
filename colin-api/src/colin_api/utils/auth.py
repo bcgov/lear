@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,5 +13,8 @@
 # limitations under the License.
 """Bring in the common JWT Manager."""
 from flask_jwt_oidc import JwtManager
+
+
+COLIN_SVC_ROLE = 'colin'
 
 jwt = JwtManager()  # pylint: disable=invalid-name; lower case name as used by convention in most Flask apps

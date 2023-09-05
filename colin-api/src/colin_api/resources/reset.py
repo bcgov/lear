@@ -19,8 +19,8 @@ from flask import current_app, jsonify, request
 from flask_restx import Namespace, Resource, cors
 
 from colin_api.models.reset import Reset
-from colin_api.utils.util import cors_preflight
-
+from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
+from colin_api.utils.util import cors_preflight, conditional_auth
 
 API = Namespace('Reset', description='Reset endpoint for changes made by COOPER')
 
@@ -32,6 +32,7 @@ class ResetInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
     def post():
         """Reset the changes in COLIN made by COOPER."""
         try:

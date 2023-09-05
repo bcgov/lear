@@ -16,22 +16,20 @@
 This module is the API for the Legal Entity system.
 """
 import os
-
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
-from flask import Flask
-from flask_jwt_oidc import JwtManager
 
-from colin_api import config
+from flask import Flask
+from legal_api.services import flags
+from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
+
+from colin_api import config, errorhandlers
 from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
+from colin_api.utils.auth import jwt
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
 # noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
-
-# lower case name as used by convention in most Flask apps
-jwt = JwtManager()  # pylint: disable=invalid-name
 
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
@@ -44,9 +42,12 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             dsn=app.config.get('SENTRY_DSN'),
             integrations=[FlaskIntegration()]
         )
+
+    flags.init_app(app)
+    errorhandlers.init_app(app)
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
-    # setup_jwt_manager(app, jwt)
+    setup_jwt_manager(app, jwt)
 
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable

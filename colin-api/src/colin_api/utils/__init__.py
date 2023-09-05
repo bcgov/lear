@@ -16,6 +16,7 @@ import datetime
 
 from flask import current_app
 from pytz import timezone
+from .util import conditional_auth
 
 
 def convert_to_json_date(thedate: datetime.datetime) -> str:

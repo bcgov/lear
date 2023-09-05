@@ -24,7 +24,8 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business, Office
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
-from colin_api.utils.util import cors_preflight
+from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
+from colin_api.utils.util import cors_preflight, conditional_auth
 
 
 @cors_preflight('GET')
@@ -34,6 +35,7 @@ class OfficeInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return the registered and/or records office for a corporation."""
         if not identifier:
