@@ -17,6 +17,7 @@
 A simple decorator to add the options method to a Request Class.
 """
 from functools import wraps
+
 from legal_api.services import flags
 
 
@@ -35,7 +36,7 @@ def cors_preflight(methods: str = 'GET'):
 
 
 def conditional_auth(auth_decorator, roles):
-    """Decorator to authenticate an endpoint based off of the value of disable-colin-api-auth feature flag value.
+    """Authenticate an endpoint conditionally based off of the value of disable-colin-api-auth feature flag value.
 
     When disable-colin-api-auth feature flag value is True, auth_decorator function will not be called resulting in
     the endpoint using this decorator to run without authentication.

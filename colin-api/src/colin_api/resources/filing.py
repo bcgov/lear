@@ -19,7 +19,6 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_restx import Resource, cors
-# from registry_schemas import validate  # noqa: I001
 
 from colin_api.exceptions import GenericException
 from colin_api.models import Business
@@ -27,10 +26,7 @@ from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
 from colin_api.utils import convert_to_pacific_time
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
-from colin_api.utils.util import cors_preflight, conditional_auth
-
-
-# noqa: I003
+from colin_api.utils.util import conditional_auth, cors_preflight
 
 
 @cors_preflight('GET, POST')
