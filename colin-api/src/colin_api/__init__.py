@@ -23,7 +23,7 @@ from legal_api.services import flags
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 
 from colin_api import config, errorhandlers
-from colin_api.resources import API_BLUEPRINT, OPS_BLUEPRINT
+from colin_api.resources import API, API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.utils.auth import jwt
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
@@ -44,7 +44,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         )
 
     flags.init_app(app)
-    errorhandlers.init_app(app)
+    errorhandlers.init_app(API)
     app.register_blueprint(API_BLUEPRINT)
     app.register_blueprint(OPS_BLUEPRINT)
     setup_jwt_manager(app, jwt)
