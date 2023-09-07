@@ -22,7 +22,7 @@ http://flask.pocoo.org/docs/1.0/patterns/apierrors/
 import logging
 import sys
 
-from flask import jsonify
+from flask_jwt_oidc import AuthError
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
@@ -30,10 +30,17 @@ from werkzeug.routing import RoutingException
 logger = logging.getLogger(__name__)
 
 
-def init_app(app):
+def init_app(api):
     """Initialize the error handlers for the Flask app instance."""
-    app.register_error_handler(HTTPException, handle_http_error)
-    app.register_error_handler(Exception, handle_uncaught_error)
+    api.error_handlers[AuthError] = handle_auth_error
+    api.error_handlers[HTTPException] = handle_http_error
+    api.error_handlers[Exception] = handle_uncaught_error
+
+
+def handle_auth_error(error):
+    """Handle auth errors."""
+    error_details = error.error
+    return error_details, error.status_code
 
 
 def handle_http_error(error):
@@ -47,9 +54,8 @@ def handle_http_error(error):
     if isinstance(error, RoutingException):
         return error
 
-    response = jsonify({'message': error.description})
-    response.status_code = error.code
-    return response
+    error_details = error.response
+    return {'message': error.description}, error_details.status_code
 
 
 def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
@@ -59,6 +65,4 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
     ensure it's logged and recorded in Sentry.
     """
     logger.error('Uncaught exception', exc_info=sys.exc_info())
-    response = jsonify({'message': 'Internal server errors'})
-    response.status_code = 500
-    return response
+    return {'message': 'Internal server errors'}, 500
