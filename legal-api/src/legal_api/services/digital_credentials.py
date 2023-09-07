@@ -27,17 +27,34 @@ from legal_api.models import DCDefinition
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
 
-    business_schema = {
+    # business_schema = {
+    #     'attributes': [
+    #         'legalName',
+    #         'foundingDate',
+    #         'taxId',
+    #         'homeJurisdiction',
+    #         'legalType',
+    #         'identifier'
+    #     ],
+    #     'schema_name': 'business_schema',  # do not change schema name. this is the name registered in aca-py agent
+    #     'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
+    # }
+
+    digital_business_card_schema = {
         'attributes': [
-            'legalName',
-            'foundingDate',
-            'taxId',
-            'homeJurisdiction',
-            'legalType',
-            'identifier'
+            'business_name',
+            'company_status',
+            'credential_id',
+            'identifier',
+            'registered_on_dateint',
+            'role',
+            'cra_business_number',
+            'family_name',
+            'business_type',
+            'given_names',
         ],
-        'schema_name': 'business_schema',  # do not change schema name. this is the name registered in aca-py agent
-        'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
+        'schema_name': 'digital_business_card',
+        'schema_version': '1.0.0'
     }
 
     def __init__(self):
@@ -46,6 +63,7 @@ class DigitalCredentialsService:
 
         self.api_url = None
         self.api_key = None
+        self.api_token = None
         self.entity_did = None
 
     def init_app(self, app):
@@ -54,6 +72,7 @@ class DigitalCredentialsService:
 
         self.api_url = app.config.get('ACA_PY_ADMIN_API_URL')
         self.api_key = app.config.get('ACA_PY_ADMIN_API_KEY')
+        self.api_token = app.config.get('ACA_PY_ADMIN_API_TOKEN')
         self.entity_did = app.config.get('ACA_PY_ENTITY_DID')
         with suppress(Exception):
             self._register_business()
@@ -63,22 +82,22 @@ class DigitalCredentialsService:
         # check for the current schema definition.
         definition = DCDefinition.find_by(
             credential_type=DCDefinition.CredentialType.business,
-            schema_name=self.business_schema['schema_name'],
-            schema_version=self.business_schema['schema_version']
+            schema_name=self.digital_business_card_schema['schema_name'],
+            schema_version=self.digital_business_card_schema['schema_version']
         )
 
         if definition:
             if definition.is_deleted:
-                raise Exception('Digital Credentials: business_schema is marked as delete, fix it.')  # noqa: E501; pylint: disable=broad-exception-raised, line-too-long
+                raise Exception('Digital Credentials: digital_business_card_schema is marked as delete, fix it.')  # noqa: E501; pylint: disable=broad-exception-raised, line-too-long
         else:
             # deactivate any existing schema definition before registering new one
             DCDefinition.deactivate(DCDefinition.CredentialType.business)
 
-            schema_id = self._register_schema(self.business_schema)
+            schema_id = self._register_schema(self.digital_business_card_schema)
             definition = DCDefinition(
                 credential_type=DCDefinition.CredentialType.business,
-                schema_name=self.business_schema['schema_name'],
-                schema_version=self.business_schema['schema_version'],
+                schema_name=self.digital_business_card_schema['schema_name'],
+                schema_version=self.digital_business_card_schema['schema_version'],
                 schema_id=schema_id
             )
             definition.save()
@@ -110,7 +129,7 @@ class DigitalCredentialsService:
                                          'revocation_registry_size': 1000,
                                          'schema_id': schema_id,
                                          'support_revocation': True,
-                                         'tag': 'business_schema'
+                                         'tag': 'Digital Business Card'
                                      }))
             response.raise_for_status()
             return response.json()['credential_definition_id']
@@ -165,5 +184,5 @@ class DigitalCredentialsService:
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
-            'X-API-KEY': self.api_key
+            'Authorization': f'Bearer {self.api_token}'
         }
