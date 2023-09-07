@@ -146,6 +146,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     ACA_PY_ADMIN_API_URL = os.getenv('ACA_PY_ADMIN_API_URL')
     ACA_PY_ADMIN_API_KEY = os.getenv('ACA_PY_ADMIN_API_KEY')
+    ACA_PY_ADMIN_API_TOKEN = os.getenv('ACA_PY_ADMIN_API_TOKEN')
     ACA_PY_ENTITY_DID = os.getenv('ACA_PY_ENTITY_DID')
 
     TESTING = False
