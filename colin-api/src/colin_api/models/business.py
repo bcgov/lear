@@ -673,7 +673,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def find_by_corp_num(cls, corp_num: str) -> Business:
+    def find_by_corp_num(cls, corp_num: str, con=None) -> Business:
         """Return a Business by corp_num."""
         business = None
         try:
@@ -684,7 +684,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
 
             cursor = con.cursor()
             cursor.execute(
-                f"""
+                """
                 select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
                     filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
                     corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class

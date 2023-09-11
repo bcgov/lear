@@ -54,6 +54,7 @@ def test_get_business_new_corp(client):
     assert 200 == rv_cp.status_code
     assert 200 == rv_bc.status_code
 
+
 @oracle_integration
 def test_get_business_all_info(client):
     """Assert that a new corp number can be retrieved from COLIN."""

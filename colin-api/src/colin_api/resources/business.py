@@ -171,6 +171,7 @@ class InternalBusinessInfo(Resource):
             current_app.logger.error(err.with_traceback(None))
             return jsonify({'message': 'Something went wrong.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+
 @cors_preflight('GET')
 @API.route('<string:corp_num>', methods=['GET'])
 class BusinessAllInfo(Resource):
