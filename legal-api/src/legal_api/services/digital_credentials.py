@@ -27,20 +27,7 @@ from legal_api.models import DCDefinition
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
 
-    # business_schema = {
-    #     'attributes': [
-    #         'legalName',
-    #         'foundingDate',
-    #         'taxId',
-    #         'homeJurisdiction',
-    #         'legalType',
-    #         'identifier'
-    #     ],
-    #     'schema_name': 'business_schema',  # do not change schema name. this is the name registered in aca-py agent
-    #     'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
-    # }
-
-    digital_business_card_schema = {
+    business_schema = {
         'attributes': [
             'business_name',
             'company_status',
@@ -53,8 +40,8 @@ class DigitalCredentialsService:
             'business_type',
             'given_names',
         ],
-        'schema_name': 'digital_business_card',
-        'schema_version': '1.0.0'
+        'schema_name': 'digital_business_card', # do not change schema name. this is the name registered in aca-py agent
+        'schema_version': '1.0.0' # if attributes changes update schema_version to re-register
     }
 
     def __init__(self):
@@ -62,74 +49,110 @@ class DigitalCredentialsService:
         self.app = None
 
         self.api_url = None
-        self.api_key = None
         self.api_token = None
-        self.entity_did = None
+        self.public_did = None
 
     def init_app(self, app):
         """Initialize digital credentials using aca-py agent."""
         self.app = app
 
-        self.api_url = app.config.get('ACA_PY_ADMIN_API_URL')
-        self.api_key = app.config.get('ACA_PY_ADMIN_API_KEY')
-        self.api_token = app.config.get('ACA_PY_ADMIN_API_TOKEN')
-        self.entity_did = app.config.get('ACA_PY_ENTITY_DID')
+        self.api_url = app.config.get('TRACTION_API_URL')
+        self.api_token = app.config.get('TRACTION_API_TOKEN')
+        self.public_did = app.config.get('TRACTION_PUBLIC_DID')
         with suppress(Exception):
-            self._register_business()
+            self._register_business_definition()
 
-    def _register_business(self):
-        """Register business schema and credential definition."""
-        # check for the current schema definition.
+    def _register_business_definition(self):
+        """Publish Business schema and credential definition and save a Business definition."""
+        # check for the current Business definition.
         definition = DCDefinition.find_by(
             credential_type=DCDefinition.CredentialType.business,
-            schema_name=self.digital_business_card_schema['schema_name'],
-            schema_version=self.digital_business_card_schema['schema_version']
+            schema_name=self.business_schema['schema_name'],
+            schema_version=self.business_schema['schema_version']
         )
 
-        if definition:
-            if definition.is_deleted:
-                raise Exception('Digital Credentials: digital_business_card_schema is marked as delete, fix it.')  # noqa: E501; pylint: disable=broad-exception-raised, line-too-long
-        else:
-            # deactivate any existing schema definition before registering new one
+        if definition and not definition.is_deleted:
+            # deactivate any existing Business definition before creating new one
             DCDefinition.deactivate(DCDefinition.CredentialType.business)
 
-            schema_id = self._register_schema(self.digital_business_card_schema)
-            definition = DCDefinition(
-                credential_type=DCDefinition.CredentialType.business,
-                schema_name=self.digital_business_card_schema['schema_name'],
-                schema_version=self.digital_business_card_schema['schema_version'],
-                schema_id=schema_id
-            )
-            definition.save()
+        # look for a published schema first, if it's not there then register one.
+        schema_id = self._get_schema(self.business_schema) # TODO: This should look up the last updated definition in Traction storage
+        if not schema_id:
+            schema_id = self._publish_schema(self.business_schema)
 
+        # create a new definition and add the new schema_id
+        definition = DCDefinition(
+            credential_type=DCDefinition.CredentialType.business,
+            schema_name=self.business_schema['schema_name'],
+            schema_version=self.business_schema['schema_version'],
+            schema_id=schema_id
+        )
+
+        # look for a published credential definition first, if it's not there then register one.
         if not definition.credential_definition_id:
-            definition.credential_definition_id = self._register_credential_definitions(definition.schema_id)
-            definition.save()
+            schema_id = definition.schema_id
+            credential_definition_id = self._get_credential_definition(schema_id) # TODO: this should look up the last updated credential definition in Traction storage
+            if not credential_definition_id:
+                credential_definition_id = self._publish_credential_definition(schema_id)
 
-    def _register_schema(self, schema: dict) -> Optional[str]:
-        """Send a schema to the ledger."""
+        # add the new credential_definition_id
+        definition.credential_definition_id = credential_definition_id
+
+        # lastly, save the definition    
+        definition.save()
+
+    def _get_schema(self, schema: dict) -> Optional[str]:
+        """Find a published schema"""
+        try:
+            response = requests.get(self.api_url + '/schemas/created',
+                                    params={'schema_name': schema['schema_name'],
+                                            'schema_version': schema['schema_version']},
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()['schema_ids'][0]
+        except Exception as err:
+            self.app.logger.error(
+                f"Failed to find digital credential schema {schema['schema_name']}:{schema['schema_version']}")
+            self.app.logger.error(err)
+            raise err
+
+    def _publish_schema(self, schema: dict) -> Optional[str]:
+        """Publish a schema onto the ledger."""
         try:
             response = requests.post(self.api_url + '/schemas',
                                      headers=self._get_headers(),
                                      data=json.dumps(schema))
             response.raise_for_status()
-            return response.json()['schema_id']
+            return response.json()[0]['schema_id']
         except Exception as err:
             self.app.logger.error(
                 f"Failed to register digital credential schema {schema['schema_name']}:{schema['schema_version']}")
             self.app.logger.error(err)
             raise err
+        
+    def _get_credential_definition(self, schema_id: str) -> Optional[str]:
+        """Find a published credential definition"""
+        try:
+            response = requests.get(self.api_url + '/credential-definitions/created',
+                                    params={'schema_id': schema_id},
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()['credential_definition_ids'][0]
+        except Exception as err:
+            self.app.logger.error(f'Failed to find credential definition with schema_id:{schema_id}')
+            self.app.logger.error(err)
+            raise err
 
-    def _register_credential_definitions(self, schema_id: str) -> Optional[str]:
-        """Send a credential definition to the ledger."""
+    def _publish_credential_definition(self, schema_id: str) -> Optional[str]:
+        """Publish a credential definition onto the ledger."""
         try:
             response = requests.post(self.api_url + '/credential-definitions',
                                      headers=self._get_headers(),
                                      data=json.dumps({
-                                         'revocation_registry_size': 1000,
+                                        #  'revocation_registry_size': 1000,
                                          'schema_id': schema_id,
-                                         'support_revocation': True,
-                                         'tag': 'Digital Business Card'
+                                         'support_revocation': False,
+                                         'tag': 'DigitalBusinessCard'
                                      }))
             response.raise_for_status()
             return response.json()['credential_definition_id']
@@ -168,9 +191,9 @@ class DigitalCredentialsService:
                                              '@type': 'issue-credential/1.0/credential-preview',
                                              'attributes': data
                                          },
-                                         'issuer_did': self.entity_did,
+                                         'issuer_did': self.public_did,
                                          'schema_id': definition.schema_id,
-                                         'schema_issuer_did': self.entity_did,
+                                         'schema_issuer_did': self.public_did,
                                          'schema_name': definition.schema_name,
                                          'schema_version': definition.schema_version,
                                          'trace': True
