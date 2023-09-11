@@ -148,28 +148,44 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
     if credential_type == DCDefinition.CredentialType.business:
         return [
             {
-                'name': 'legalName',
-                'value': business.legal_name
-            },
-            {
-                'name': 'foundingDate',
-                'value': business.founding_date.isoformat()
-            },
-            {
-                'name': 'taxId',
-                'value': business.tax_id or ''
-            },
-            {
-                'name': 'homeJurisdiction',
-                'value': 'BC'  # for corp types that are not -xpro, the jurisdiction is BC
-            },
-            {
-                'name': 'legalType',
-                'value': business.legal_type
+                'name': 'credential_id',
+                'value': ''
             },
             {
                 'name': 'identifier',
                 'value': business.identifier
+            },
+            {
+                'name': 'business_name',
+                'value': business.legal_name
+            },
+            {
+                'name': 'business_type',
+                'value': business.legal_type
+            },
+            {
+                'name': 'cra_business_number',
+                'value': business.tax_id or ''
+            },
+            {
+                'name': 'registered_on_dateint',
+                'value': business.founding_date.isoformat()
+            },
+            {
+                'name': 'company_status',
+                'value': business.state
+            },
+            {
+                'name': 'family_name',
+                'value': ''
+            },
+            {
+                'name': 'given_names',
+                'value': ''
+            },
+            {
+                'name': 'role',
+                'value': ''
             }
         ]
 
@@ -178,7 +194,6 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
 
 @bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
-@jwt.requires_auth
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()
