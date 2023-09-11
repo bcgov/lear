@@ -256,9 +256,11 @@ def check_address(address: Address,
         result.append(get_address_business_warning(referer,
                                                    address_type,
                                                    BusinessWarnings.NO_ADDRESS_POSTAL_CODE))
-    if not address.region:
-        result.append(get_address_business_warning(referer,
+        
+    if referer != BusinessWarningReferers.BUSINESS_OFFICE:
+        if not address.region:
+            result.append(get_address_business_warning(referer,
                                                    address_type,
                                                    BusinessWarnings.NO_ADDRESS_REGION))
-
+            
     return result
