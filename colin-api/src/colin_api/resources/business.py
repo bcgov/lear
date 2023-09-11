@@ -170,3 +170,30 @@ class InternalBusinessInfo(Resource):
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(err.with_traceback(None))
             return jsonify({'message': 'Something went wrong.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@cors_preflight('GET')
+@API.route('<string:corp_num>', methods=['GET'])
+class BusinessAllInfo(Resource):
+    """Meta information about the overall service."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    def get(corp_num: str):
+        """Return the complete business info."""
+        try:
+            # get business
+            business = Business.find_by_corp_num(corp_num)
+            if not business:
+                return jsonify({'message': f'{corp_num} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify(business.as_dict()), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify({'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR

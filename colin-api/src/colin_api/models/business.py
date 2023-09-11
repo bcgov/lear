@@ -671,3 +671,93 @@ class Business:  # pylint: disable=too-many-instance-attributes
         except Exception as err:
             current_app.logger.error(f'Error in Business: Failed reset ended corp_state rows for events {event_ids}')
             raise err
+
+    @classmethod
+    def find_by_corp_num(cls, corp_num: str) -> Business:
+        """Return a Business by corp_num."""
+        business = None
+        try:
+            # get record
+            if not con:
+                con = DB.connection
+                # con.begin()
+
+            cursor = con.cursor()
+            cursor.execute(
+                f"""
+                select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
+                    filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
+                    corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class
+                from CORPORATION corp
+                    join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
+                    join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
+                    left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                    join event on corp.corp_num = event.corp_num
+                    left join filing on event.event_id = filing.event_id and filing.filing_typ_cd in ('OTANN', 'ANNBC')
+                where corp.CORP_NUM=:corp_num
+                order by filing.period_end_dt desc nulls last
+                """,
+                corp_num=corp_num
+            )
+            business = cursor.fetchone()
+            if not business:
+                raise BusinessNotFoundException(corp_num=corp_num)
+
+            # add column names to resultset to build out correct json structure and make manipulation below more robust
+            # (better than column numbers)
+            business = dict(zip([x[0].lower() for x in cursor.description], business))
+            # get all assumed, numbered/corporation, translation names
+            corp_names = CorpName.get_current(cursor=cursor, corp_num=corp_num)
+            assumed_name = None
+            corp_name = None
+            for name_obj in corp_names:
+                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:
+                    assumed_name = name_obj.corp_name
+                    break
+                elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
+                    corp_name = name_obj.corp_name
+
+            # get last ledger date from EVENT table and add to business record
+            # note - FILE event type is correct for new filings; CONVOTHER is for events/filings pulled over from COBRS
+            cursor.execute(
+                """
+                select max(EVENT_TIMESTMP) from EVENT
+                where EVENT_TYP_CD in ('FILE', 'CONVOTHER') and CORP_NUM=:corp_num
+                """,
+                corp_num=corp_num
+            )
+            last_ledger_timestamp = cursor.fetchone()[0]
+            business['last_ledger_timestamp'] = last_ledger_timestamp
+            # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
+            if business['corp_typ_cd'] == 'XCP':
+                business['jurisdiction'] = business['can_jur_typ_cd']
+                if business['can_jur_typ_cd'] == 'OT':
+                    business['jurisdiction'] = business['othr_juris_desc']
+            else:
+                business['jurisdiction'] = 'BC'
+
+            # convert to Business object
+            business_obj = Business()
+            business_obj.business_number = business['bn_15']
+            business_obj.corp_name = assumed_name if assumed_name else corp_name
+            business_obj.corp_num = business['corp_num']
+            business_obj.corp_state = business['corp_state']
+            business_obj.corp_state_class = business['corp_state_class']
+            business_obj.corp_type = business['corp_typ_cd']
+            business_obj.email = business['admin_email']
+            business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
+            business_obj.jurisdiction = business['jurisdiction']
+            business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])
+            business_obj.last_ar_date = convert_to_json_date(business['period_end_dt']) if business['period_end_dt'] \
+                else convert_to_json_date(business['last_agm_date'])
+            business_obj.last_ledger_timestamp = convert_to_json_datetime(business['last_ledger_timestamp'])
+            business_obj.status = business['state']
+
+            return business_obj
+
+        except Exception as err:
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+
+            # pass through exception to caller
+            raise err
