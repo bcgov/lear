@@ -34,6 +34,7 @@ from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
+from .colin import ColinService
 from .flags import Flags
 from .minio import MinioService
 from .naics import NaicsService
@@ -44,6 +45,7 @@ from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
 
+colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.

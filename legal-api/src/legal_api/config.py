@@ -115,6 +115,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
+    # COLIN
+    COLIN_URL = os.getenv('COLIN_URL', '')
+
     # NAMEX PROXY Settings
     NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', 'http://')
     NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('NAMEX_SERVICE_CLIENT_USERNAME')
