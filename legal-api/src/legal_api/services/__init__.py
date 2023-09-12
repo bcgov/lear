@@ -32,9 +32,9 @@ from .authz import (
 )
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
+from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
-from .colin import ColinService
 from .flags import Flags
 from .minio import MinioService
 from .naics import NaicsService
