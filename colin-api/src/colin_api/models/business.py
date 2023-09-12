@@ -698,7 +698,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             cursor = con.cursor()
             cursor.execute(
                 """
-                select corp.corp_num, corp_typ_cd, can_jur_typ_cd, othr_juris_desc, home_jurisdiction_num
+                select corp.corp_num, corp_typ_cd, can_jur_typ_cd, othr_juris_desc, home_juris_num
                 from CORPORATION corp
                     left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
                 where corp.CORP_NUM=:corp_num
@@ -746,7 +746,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business_obj.corp_num = business['corp_num']
             business_obj.corp_type = business['corp_typ_cd']
             business_obj.jurisdiction = business['jurisdiction']
-            business_obj.home_jurisdiction_num = business['home_jurisdiction_num']
+            business_obj.home_jurisdiction_num = business['home_juris_num']
 
             return business_obj
 
