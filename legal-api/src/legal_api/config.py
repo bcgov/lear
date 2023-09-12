@@ -144,10 +144,16 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
 
-    # digital credential configuration values
+    # Digital Credential configuration values
     TRACTION_API_URL = os.getenv('TRACTION_API_URL')
     TRACTION_API_TOKEN = os.getenv('TRACTION_API_TOKEN')
-    TRACTION_PUBLIC_DID = os.getenv('TRACTION_PUBLIC_DID')
+    TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID')
+    TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID')
+
+    BUSINESS_SCHEMA_NAME = os.getenv('BUSINESS_SCHEMA_NAME')
+    BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
+    BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
+    BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
 
     TESTING = False
     DEBUG = False
