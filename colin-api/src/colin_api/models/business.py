@@ -723,17 +723,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
                     corp_name = name_obj.corp_name
 
-            # get last ledger date from EVENT table and add to business record
-            # note - FILE event type is correct for new filings; CONVOTHER is for events/filings pulled over from COBRS
-            cursor.execute(
-                """
-                select max(EVENT_TIMESTMP) from EVENT
-                where EVENT_TYP_CD in ('FILE', 'CONVOTHER') and CORP_NUM=:corp_num
-                """,
-                corp_num=corp_num
-            )
             # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
-            if business['corp_typ_cd'] == 'A':
+            if business['corp_typ_cd'] in ('A', 'XCP'):
                 business['jurisdiction'] = business['can_jur_typ_cd']
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
