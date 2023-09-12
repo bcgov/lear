@@ -187,7 +187,7 @@ class BusinessAllInfo(Resource):
             business = Business.find_by_corp_num(corp_num)
             if not business:
                 return jsonify({'message': f'{corp_num} not found'}), HTTPStatus.NOT_FOUND
-            return jsonify(business.as_dict()), HTTPStatus.OK
+            return jsonify(business.as_dict_nr()), HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify({'message': err.error}), err.status_code

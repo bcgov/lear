@@ -90,6 +90,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     email = None
     founding_date = None
     jurisdiction = None
+    home_jurisdiction_num = None
     last_agm_date = None
     last_ar_date = None
     last_ledger_timestamp = None
@@ -115,6 +116,18 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 'legalName': self.corp_name,
                 'legalType': self.corp_type,
                 'status': self.status
+            }
+        }
+    
+    def as_dict_nr(self) -> Dict:
+        """Return dict version of self."""
+        return {
+            'business': {
+                'identifier': self.corp_num,
+                'legalName': self.corp_name,
+                'legalType': self.corp_type,
+                'jurisdiction': self.jurisdiction,
+                'jurisdictionIdentifier': self.home_jurisdiction_num,
             }
         }
 
@@ -685,17 +698,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
             cursor = con.cursor()
             cursor.execute(
                 """
-                select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
-                    filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
-                    corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class
+                select corp.corp_num, corp_typ_cd, can_jur_typ_cd, othr_juris_desc, home_jurisdiction_num
                 from CORPORATION corp
-                    join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
-                    join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
                     left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
-                    join event on corp.corp_num = event.corp_num
-                    left join filing on event.event_id = filing.event_id and filing.filing_typ_cd in ('OTANN', 'ANNBC')
                 where corp.CORP_NUM=:corp_num
-                order by filing.period_end_dt desc nulls last
                 """,
                 corp_num=corp_num
             )
@@ -726,10 +732,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 """,
                 corp_num=corp_num
             )
-            last_ledger_timestamp = cursor.fetchone()[0]
-            business['last_ledger_timestamp'] = last_ledger_timestamp
             # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
-            if business['corp_typ_cd'] == 'XCP':
+            if business['corp_typ_cd'] == 'A':
                 business['jurisdiction'] = business['can_jur_typ_cd']
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
@@ -738,20 +742,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
 
             # convert to Business object
             business_obj = Business()
-            business_obj.business_number = business['bn_15']
             business_obj.corp_name = assumed_name if assumed_name else corp_name
             business_obj.corp_num = business['corp_num']
-            business_obj.corp_state = business['corp_state']
-            business_obj.corp_state_class = business['corp_state_class']
             business_obj.corp_type = business['corp_typ_cd']
-            business_obj.email = business['admin_email']
-            business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
             business_obj.jurisdiction = business['jurisdiction']
-            business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])
-            business_obj.last_ar_date = convert_to_json_date(business['period_end_dt']) if business['period_end_dt'] \
-                else convert_to_json_date(business['last_agm_date'])
-            business_obj.last_ledger_timestamp = convert_to_json_datetime(business['last_ledger_timestamp'])
-            business_obj.status = business['state']
+            business_obj.home_jurisdiction_num = business['home_jurisdiction_num']
 
             return business_obj
 
