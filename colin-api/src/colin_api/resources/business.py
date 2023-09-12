@@ -173,7 +173,7 @@ class InternalBusinessInfo(Resource):
 
 
 @cors_preflight('GET')
-@API.route('<string:corp_num>', methods=['GET'])
+@API.route('/<string:corp_num>', methods=['GET'])
 class BusinessAllInfo(Resource):
     """Meta information about the overall service."""
 
@@ -190,7 +190,7 @@ class BusinessAllInfo(Resource):
             return jsonify(business.as_dict(slim=True)), HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code
-            return jsonify({'message': err.error}), err.status_code
+            return jsonify({'message': err.error}), HTTPStatus.NOT_FOUND
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

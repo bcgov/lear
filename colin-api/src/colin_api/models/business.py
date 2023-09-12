@@ -705,13 +705,14 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 select corp.corp_num, corp_typ_cd, can_jur_typ_cd, othr_juris_desc, home_juris_num
                 from CORPORATION corp
                     left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                      and JURISDICTION.end_event_id is null
                 where corp.CORP_NUM=:corp_num
                 """,
                 corp_num=corp_num
             )
             business = cursor.fetchone()
             if not business:
-                raise BusinessNotFoundException(corp_num=corp_num)
+                raise BusinessNotFoundException(identifier=corp_num)
 
             # add column names to resultset to build out correct json structure and make manipulation below more robust
             # (better than column numbers)
