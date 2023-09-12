@@ -118,7 +118,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 'status': self.status
             }
         }
-    
+
     def as_dict_nr(self) -> Dict:
         """Return dict version of self."""
         return {
