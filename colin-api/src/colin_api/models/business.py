@@ -131,10 +131,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             'jurisdiction': self.jurisdiction
         }
         if self.home_jurisdiction_num:
-            slim_json = {
-                'homeIdentifier': self.home_jurisdiction_num,
-                **slim_json
-            }
+            slim_json['homeIdentifier'] = self.home_jurisdiction_num
 
         return slim_json
 
