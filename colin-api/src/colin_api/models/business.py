@@ -124,13 +124,19 @@ class Business:  # pylint: disable=too-many-instance-attributes
 
     def _slim_json(self) -> Dict:
         """Return dict version of self."""
-        return {
+        slim_json = {
             'identifier': self.corp_num,
             'legalName': self.corp_name,
             'legalType': self.corp_type,
-            'jurisdiction': self.jurisdiction,
-            'homeIdentifier': self.home_jurisdiction_num
+            'jurisdiction': self.jurisdiction
         }
+        if self.home_jurisdiction_num:
+            slim_json = {
+                'homeIdentifier': self.home_jurisdiction_num,
+                **slim_json
+            }
+
+        return slim_json
 
     @classmethod
     def _get_bn_15s(cls, cursor, identifiers: List) -> Dict:
