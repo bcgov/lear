@@ -63,15 +63,17 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings')
+    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings',
+                       timeout=AccountService.timeout)
     if not req or req.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
     return req.json()
 
 
 def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
+    token = AccountService.get_bearer_token()
     clean_none(filing)
 
     filing_type = filing['filing']['header'].get('name', None)
@@ -83,7 +85,11 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     req = None
     if legal_type and identifier and filing_type:
-        req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}', json=filing)
+        req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
+                            headers={**AccountService.CONTENT_TYPE_JSON,
+                                     'Authorization': AccountService.BEARER + token},
+                            json=filing,
+                            timeout=AccountService.timeout)
 
     if not req or req.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
@@ -97,8 +103,9 @@ def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = 
     """Update the colin_id in the filings table."""
     req = requests.patch(
         f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={'colinIds': colin_ids},
-        headers={'Authorization': f'Bearer {token}'}
+        timeout=AccountService.timeout
     )
     if not req or req.status_code != 202:
         app.logger.error(f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
