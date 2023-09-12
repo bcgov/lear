@@ -21,7 +21,7 @@ import os
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from flask import Flask
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
@@ -76,14 +76,14 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     filing_type = filing['filing']['header'].get('name', None)
     identifier = filing['filing']['business'].get('identifier', None)
-    if identifier[:2] == Business.LegalTypes.COOP.value:
-        legal_type = Business.LegalTypes.COOP.value
+    if identifier[:2] == LegalEntity.EntityTypes.COOP.value:
+        entity_type = LegalEntity.EntityTypes.COOP.value
     else:
-        legal_type = filing['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
+        entity_type = filing['filing']['business'].get('legalType', LegalEntity.EntityTypes.BCOMP.value)
 
     req = None
-    if legal_type and identifier and filing_type:
-        req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}', json=filing)
+    if entity_type and identifier and filing_type:
+        req = requests.post(f'{app.config["COLIN_URL"]}/{entity_type}/{identifier}/filings/{filing_type}', json=filing)
 
     if not req or req.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')

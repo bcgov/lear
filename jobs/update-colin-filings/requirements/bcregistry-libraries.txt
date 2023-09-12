@@ -1,2 +1,0 @@
-git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
-git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
