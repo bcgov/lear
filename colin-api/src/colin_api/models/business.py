@@ -99,36 +99,37 @@ class Business:  # pylint: disable=too-many-instance-attributes
     def __init__(self):
         """Initialize with all values None."""
 
-    def as_dict(self) -> Dict:
+    def as_dict(self, slim=False) -> Dict:
         """Return dict version of self."""
+        slim_json = self._slim_json()
+        if slim:
+            return {
+                'business': {**slim_json}
+            }
+
         return {
             'business': {
+                **slim_json,
                 'businessNumber': self.business_number,
                 'corpState': self.corp_state,
                 'corpStateClass': self.corp_state_class,
                 'email': self.email,
                 'foundingDate': self.founding_date,
-                'identifier': self.corp_num,
-                'jurisdiction': self.jurisdiction,
                 'lastAgmDate': self.last_agm_date,
                 'lastArDate': self.last_ar_date,
                 'lastLedgerTimestamp': self.last_ledger_timestamp,
-                'legalName': self.corp_name,
-                'legalType': self.corp_type,
                 'status': self.status
             }
         }
 
-    def as_dict_nr(self) -> Dict:
+    def _slim_json(self) -> Dict:
         """Return dict version of self."""
         return {
-            'business': {
-                'identifier': self.corp_num,
-                'legalName': self.corp_name,
-                'legalType': self.corp_type,
-                'jurisdiction': self.jurisdiction,
-                'jurisdictionIdentifier': self.home_jurisdiction_num,
-            }
+            'identifier': self.corp_num,
+            'legalName': self.corp_name,
+            'legalType': self.corp_type,
+            'jurisdiction': self.jurisdiction,
+            'homeIdentifier': self.home_jurisdiction_num
         }
 
     @classmethod
