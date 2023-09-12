@@ -22,6 +22,7 @@ from legal_api.models import Business, Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
+from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
@@ -174,9 +175,11 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
     ('full 9 number', '1234567', 'BC1234567'),
     ('too big number', '12345678', None),
 ])
-def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
+def test_get_next_corp_num(requests_mock, mocker, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
     from flask import current_app
+
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_bearer_token', return_value='')
 
     with app.app_context():
         requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={'corpNum': response})
