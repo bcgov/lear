@@ -259,7 +259,7 @@ def check_address(address: Address,
 
     if (referer == BusinessWarningReferers.BUSINESS_OFFICE
         and address_type == Address.DELIVERY
-        and not address.region):
+            and not address.region):
         result.append(get_address_business_warning(referer,
                                                    address_type,
                                                    BusinessWarnings.NO_ADDRESS_REGION))
