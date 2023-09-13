@@ -54,8 +54,8 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_COUNTRY', 'Country is required for business office delivery address.'),
         ('FAIL_NO_POSTAL_CODE', 'delivery', 'postal_code', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_POSTAL_CODE', 'Postal code is required for business office delivery address.'),
-        ('SUCCESS', 'delivery', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
-         None, None),
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
+         'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for business office delivery address.'),
 
         # business office mailing address checks
         ('SUCCESS', 'mailing', None, BusinessWarningReferers.BUSINESS_PARTY, None, None),
