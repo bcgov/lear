@@ -19,23 +19,24 @@ from flask import Blueprint, abort, current_app, jsonify, make_response
 from flask_cors import cross_origin
 
 from legal_api.services import colin
-
+from legal_api.utils.auth import jwt
 
 bp = Blueprint('COLIN2', __name__, url_prefix='/api/v2/colin')
 
 
 @bp.route('/<string:corp_num>', methods=['GET'])
 @cross_origin(origin='*')
+@jwt.requires_auth
 def get(corp_num):
     """Return a JSON object."""
     try:
-        nr_response = colin.find_by_corp_num(corp_num)
+        response = colin.find_by_corp_num(corp_num)
         # Errors in general will just pass though,
         # 404 is overriden as it is giving colin-api specific messaging
-        if nr_response.status_code == 404:
+        if response.status_code == 404:
             return make_response(jsonify(message='{} not found.'.format(corp_num)), 404)
 
-        return jsonify(nr_response.json())
+        return jsonify(response.json())
     except Exception as err:
         current_app.logger.error(err)
         abort(500)
