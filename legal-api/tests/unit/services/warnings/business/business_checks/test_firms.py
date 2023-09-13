@@ -54,8 +54,8 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_COUNTRY', 'Country is required for business office delivery address.'),
         ('FAIL_NO_POSTAL_CODE', 'delivery', 'postal_code', BusinessWarningReferers.BUSINESS_OFFICE,
          'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_POSTAL_CODE', 'Postal code is required for business office delivery address.'),
-        ('SUCCESS', 'delivery', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
-         None, None),
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.BUSINESS_OFFICE,
+         'NO_BUSINESS_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for business office delivery address.'),
 
         # business office mailing address checks
         ('SUCCESS', 'mailing', None, BusinessWarningReferers.BUSINESS_PARTY, None, None),
@@ -67,8 +67,8 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY', 'Country is required for business party mailing address.'),
         ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', BusinessWarningReferers.BUSINESS_PARTY,
          'NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for business party mailing address.'),
-        ('FAIL_NO_REGION', 'mailing', 'region', BusinessWarningReferers.BUSINESS_PARTY,
-         'NO_BUSINESS_PARTY_MAILING_ADDRESS_REGION', 'Region is required for business party mailing address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.BUSINESS_PARTY,
+         None, None),
 
         # completing party mailing address checks
         ('SUCCESS', 'mailing', None, BusinessWarningReferers.COMPLETING_PARTY, None, None),
@@ -80,8 +80,8 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY', 'Country is required for completing party mailing address.'),
         ('FAIL_NO_POSTAL_CODE', 'mailing', 'postal_code', BusinessWarningReferers.COMPLETING_PARTY,
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for completing party mailing address.'),
-        ('FAIL_NO_REGION', 'mailing', 'region', BusinessWarningReferers.COMPLETING_PARTY,
-         'NO_COMPLETING_PARTY_MAILING_ADDRESS_REGION', 'Region is required for completing party mailing address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.COMPLETING_PARTY,
+         None, None),
     ])
 def test_check_address(session, test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg):
     """Assert that business address checks functions properly."""
