@@ -17,9 +17,11 @@ Currently this only provides API versioning information
 """
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
+from datedelta import datedelta
 from flask import current_app
 
 from colin_api.exceptions import BusinessNotFoundException
@@ -89,6 +91,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
     corp_state_class = None
     email = None
     founding_date = None
+    good_standing = None
     jurisdiction = None
     last_agm_date = None
     last_ar_date = None
@@ -107,6 +110,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 'corpStateClass': self.corp_state_class,
                 'email': self.email,
                 'foundingDate': self.founding_date,
+                'goodStanding': self.good_standing,
                 'identifier': self.corp_num,
                 'jurisdiction': self.jurisdiction,
                 'lastAgmDate': self.last_agm_date,
@@ -201,16 +205,18 @@ class Business:  # pylint: disable=too-many-instance-attributes
             cursor = con.cursor()
             cursor.execute(
                 f"""
-                select corp.corp_num, corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
+                select corp.corp_num, corp.corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
                     filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
-                    corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class
+                    corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class,
+                    corp.last_ar_filed_dt, corp.transition_dt, ct.corp_class
                 from CORPORATION corp
                     join CORP_STATE on CORP_STATE.corp_num = corp.corp_num and CORP_STATE.end_event_id is null
                     join CORP_OP_STATE on CORP_OP_STATE.state_typ_cd = CORP_STATE.state_typ_cd
                     left join JURISDICTION on JURISDICTION.corp_num = corp.corp_num
+                    join corp_type ct on ct.corp_typ_cd = corp.corp_typ_cd
                     join event on corp.corp_num = event.corp_num
                     left join filing on event.event_id = filing.event_id and filing.filing_typ_cd in ('OTANN', 'ANNBC')
-                where corp_typ_cd in ({stringify_list(corp_types)}) and corp.CORP_NUM=:corp_num
+                where corp.corp_typ_cd in ({stringify_list(corp_types)}) and corp.corp_num=:corp_num
                 order by filing.period_end_dt desc nulls last
                 """,
                 corp_num=identifier
@@ -244,12 +250,14 @@ class Business:  # pylint: disable=too-many-instance-attributes
             )
             last_ledger_timestamp = cursor.fetchone()[0]
             business['last_ledger_timestamp'] = last_ledger_timestamp
-            # if this is an XPRO, get correct jurisdiction; otherwise, it's BC
-            if business['corp_typ_cd'] == 'XCP':
+            # jurisdiction
+            if business.get('can_jur_typ_cd'):
+                # This is an XPRO, get correct jurisdiction
                 business['jurisdiction'] = business['can_jur_typ_cd']
                 if business['can_jur_typ_cd'] == 'OT':
                     business['jurisdiction'] = business['othr_juris_desc']
             else:
+                # This is NOT an XPRO so set to BC
                 business['jurisdiction'] = 'BC'
 
             # convert to Business object
@@ -262,6 +270,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business_obj.corp_type = business['corp_typ_cd']
             business_obj.email = business['admin_email']
             business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
+            business_obj.good_standing = cls.is_in_good_standing(business, cursor)
             business_obj.jurisdiction = business['jurisdiction']
             business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])
             business_obj.last_ar_date = convert_to_json_date(business['period_end_dt']) if business['period_end_dt'] \
@@ -383,7 +392,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def get_corp_restriction(cls, cursor, corp_num: str, event_id: str = None) -> Optional[bool, str]:
+    def get_corp_restriction(cls, cursor, corp_num: str, event_id: str = None):
         """Get provisions removed flag for this event."""
         try:
             if not event_id:
@@ -671,3 +680,37 @@ class Business:  # pylint: disable=too-many-instance-attributes
         except Exception as err:
             current_app.logger.error(f'Error in Business: Failed reset ended corp_state rows for events {event_ids}')
             raise err
+
+    @staticmethod
+    def is_in_good_standing(business: dict, cursor) -> Optional[bool]:
+        """Return the good standing value of the business."""
+        if business['corp_state_class'] != 'ACT' or business.get('xpro_jurisdiction', '') in ['AB', 'MB', 'SK']:
+            # good standing is irrelevant to non active and nwpta businesses
+            return None
+        if business['corp_class'] in ['BC'] or business['corp_typ_cd'] in ['LLC', 'LIC', 'A', 'B']:
+            if business.get('state_typ_cd') in ['D1A', 'D1F', 'D1T', 'D2A', 'D2F', 'D2T']:
+                # Dissolution state is not in good standing
+                #   - updates into this state occur irregularly via batch job
+                #   - updates out of this state occur immediately when filing is processed
+                #     (can rely on this for a business being NOT in good standing only)
+                return False
+
+            requires_transition = business['recognition_dts'] and business['recognition_dts'] < datetime(2004, 3, 29)
+            if requires_transition and business['transition_dt'] is None:
+                # Businesses incorporated prior to March 29th, 2004 must file a transition filing
+                cursor.execute(
+                    """
+                    SELECT max(f.effective_dt)
+                    FROM event e join filing f on f.event_id = e.event_id
+                    WHERE f.filing_typ_cd in ('RESTF','RESXF')
+                        and e.corp_num=:corp_num
+                    """, corp_num=business['corp_num'])
+                last_restoration_date = cursor.fetchone()
+                if last_restoration_date and last_restoration_date[0]:
+                    # restored businesses that require transition have 1 year to do so
+                    return last_restoration_date[0] + datedelta(years=1) > datetime.utcnow()
+                return False
+            if last_file_date := (business['last_ar_filed_dt'] or business['recognition_dts']):
+                # return if the last AR or founding date was within a year and 2 months
+                return last_file_date + datedelta(years=1, months=2, days=1) > datetime.utcnow()
+        return None
