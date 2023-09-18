@@ -21,6 +21,7 @@ import requests
 from entity_queue_common.service_utils import QueueException, logger
 from flask import current_app
 from legal_api.models import Business, Party, PartyRole, RequestTracker
+from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -228,8 +229,12 @@ def _get_program_account(identifier, transaction_id):
     try:
         # Note: Dev environment don’t have BNI link. So this will never work in Dev environment.
         # Use Test environment for testing.
+        token = AccountService.get_bearer_token()
         url = f'{current_app.config["COLIN_API"]}/programAccount/{identifier}/{transaction_id}'
-        response = requests.get(url)
+        response = requests.get(url,
+                                headers={**AccountService.CONTENT_TYPE_JSON,
+                                         'Authorization': AccountService.BEARER + token},
+                                timeout=AccountService.timeout)
         return response.status_code, response.json()
     except requests.exceptions.RequestException as err:
         logger.error(err, exc_info=True)

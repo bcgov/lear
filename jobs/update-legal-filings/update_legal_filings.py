@@ -42,6 +42,7 @@ SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 SET_EVENTS_MANUALLY = False
+CONTENT_TYPE_JSON = 'application/json'
 
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
@@ -82,7 +83,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                                    Business.TypeCodes.CCC_COMP.value]
 
     # get max colin event_id from legal
-    response = requests.get(f'{legal_url}/internal/filings/colin_id')
+    response = requests.get(f'{legal_url}/internal/filings/colin_id', timeout=AccountService.timeout)
     if response.status_code not in [200, 404]:
         application.logger.error(f'Error getting last updated colin id from \
             legal: {response.status_code} {response.json()}')
@@ -97,7 +98,10 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
             try:
                 for corp_type in corp_types:
                     # call colin api for ids + filing types list
-                    response = requests.get(f'{colin_url}/event/{corp_type}/{last_event_id}')
+                    response = requests.get(f'{colin_url}/event/{corp_type}/{last_event_id}',
+                                            headers={**AccountService.CONTENT_TYPE_JSON,
+                                                     'Authorization': AccountService.BEARER + token},
+                                            timeout=AccountService.timeout)
                     event_info = dict(response.json())
                     events = event_info.get('events')
                     if corp_type in no_corp_num_prefix_in_colin:
@@ -107,7 +111,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                     else:
                         colin_events = event_info
 
-            except Exception as err:
+            except Exception as err:  # noqa: B902
                 application.logger.error('Error getting event_ids from colin')
                 raise err
 
@@ -126,11 +130,13 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                 # check that event is associated with one of the coops loaded into legal db
                 response = requests.get(
                     f'{legal_url}/{info["corp_num"]}',
-                    headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                    headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                    timeout=AccountService.timeout
                 )
                 if response.status_code == 200:
                     # check legal table
-                    response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}')
+                    response = requests.get(f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
+                                            timeout=AccountService.timeout)
                     if response.status_code == 404:
                         id_list.append(info)
                     elif response.status_code != 200:
@@ -147,7 +153,8 @@ def append_corp_num_prefixes(events, corp_num_prefix):
         event['corp_num'] = corp_num_prefix + event['corp_num']
 
 
-def get_filing(event_info: dict = None, application: Flask = None):  # pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+def get_filing(event_info: dict = None, application: Flask = None, token: dict = None):
     """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info['corp_num'][:2]
@@ -157,13 +164,17 @@ def get_filing(event_info: dict = None, application: Flask = None):  # pylint: d
         next((x for x in filing_types if filing_typ_cd in Filing.FILING_TYPES.get(x).get('type_code_list')), None)
 
     if not filing_type:
+        # pylint: disable=consider-using-f-string
         application.logger.error('Error unknown filing type: {} for event id: {}'.format(
             event_info['filing_type'], event_info['event_id']))
 
     identifier = event_info['corp_num']
     event_id = event_info['event_id']
     response = requests.get(
-        f'{application.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}'
+        f'{application.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
+        headers={**AccountService.CONTENT_TYPE_JSON,
+                 'Authorization': AccountService.BEARER + token},
+        timeout=AccountService.timeout
     )
     filing = dict(response.json())
     return filing
@@ -189,14 +200,15 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
                 # Make sure this coop has no outstanding filings that failed to be applied.
                 # This ensures we don't apply filings out of order when one fails.
                 if event_info['corp_num'] not in corps_with_failed_filing:
-                    filing = get_filing(event_info, application)
+                    filing = get_filing(event_info, application, token)
 
                     # call legal api with filing
                     application.logger.debug(f'sending filing with event info: {event_info} to legal api.')
                     response = requests.post(
                         f'{application.config["LEGAL_URL"]}/{event_info["corp_num"]}/filings',
                         json=filing,
-                        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                        headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                        timeout=AccountService.timeout
                     )
                     if response.status_code != 201:
                         if not first_failed_id:
@@ -229,10 +241,11 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
             max_event_id = first_failed_id - 1
         if max_event_id > 0:
             # update max_event_id in legal_db
-            application.logger.debug('setting last_event_id in legal_db to {}'.format(max_event_id))
+            application.logger.debug(f'setting last_event_id in legal_db to {max_event_id}')
             response = requests.post(
                 f'{application.config["LEGAL_URL"]}/internal/filings/colin_id/{max_event_id}',
-                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                timeout=AccountService.timeout
             )
             if response.status_code != 201:
                 application.logger.error(
@@ -247,7 +260,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
         else:
             application.logger.debug('colin_last_update not updated in legal db.')
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         application.logger.error('Update-legal-filings: unhandled error %s', err)
 
 
@@ -271,7 +284,7 @@ async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: di
                 'source': 'update-legal-filings.publish_queue_events',
                 'id': str(uuid.uuid4()),
                 'time': datetime.utcnow().isoformat(),
-                'datacontenttype': 'application/json',
+                'datacontenttype': CONTENT_TYPE_JSON,
                 'identifier': identifier
             }
             await qsm.publish_json_to_subject(payload, subject)
@@ -292,11 +305,12 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
         response = requests.get(
             application.config['LEGAL_URL'] + '/internal/tax_ids',
-            headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+            headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+            timeout=AccountService.timeout
         )
         if response.status_code != 200:
             application.logger.error('legal-updater failed to get identifiers from legal-api.')
-            raise Exception
+            raise Exception  # pylint: disable=broad-exception-raised
         identifiers = response.json()
 
         if identifiers['identifiers']:
@@ -305,11 +319,12 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
             response = requests.get(
                 application.config['COLIN_URL'] + '/internal/tax_ids',
                 json=identifiers,
-                headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                timeout=AccountService.timeout
             )
             if response.status_code != 200:
                 application.logger.error('legal-updater failed to get tax_ids from colin-api.')
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
             tax_ids = response.json()
             if tax_ids.keys():
                 # update lear with new tax ids from colin
@@ -317,11 +332,12 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                 response = requests.post(
                     application.config['LEGAL_URL'] + '/internal/tax_ids',
                     json=tax_ids,
-                    headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {token}'}
+                    headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                    timeout=AccountService.timeout
                 )
                 if response.status_code != 201:
                     application.logger.error('legal-updater failed to update tax_ids in lear.')
-                    raise Exception
+                    raise Exception  # pylint: disable=broad-exception-raised
 
                 await publish_queue_events(tax_ids, application)
 
@@ -331,7 +347,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         else:
             application.logger.debug('No businesses in lear with outstanding tax ids.')
 
-    except Exception as err:
+    except Exception as err:  # noqa: B902
         application.logger.error(err)
 
 
