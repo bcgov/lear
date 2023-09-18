@@ -993,6 +993,27 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if (resolution_date_str := filing.get(filing_source, {}).get('resolutionDate', None)):
             resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
             filing[filing_source]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+        # Change of Address
+        if business_office := filing.get(filing_source).get('offices', {}).get('registeredOffice'):
+            filing['offices'] = {}
+            filing['offices']['registeredOffice'] = business_office
+            prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+            offices_json = VersionedBusinessDetailsService.get_office_revision(
+                prev_completed_filing.transaction_id,
+                self._filing.business_id)
+            filing['offices']['businessOffice']['mailingAddress']['changed'] = \
+                self._compare_address(business_office.get('mailingAddress'),
+                                      offices_json['businessOffice']['mailingAddress'])
+            filing['offices']['businessOffice']['deliveryAddress']['changed'] = \
+                self._compare_address(business_office.get('deliveryAddress'),
+                                      offices_json['businessOffice']['deliveryAddress'])
+            filing['offices']['businessOffice']['changed'] = \
+                filing['offices']['businessOffice']['mailingAddress']['changed']\
+                or filing['offices']['businessOffice']['deliveryAddress']['changed']
+            with suppress(KeyError):
+                self._format_address(filing[filing_source]['offices']['businessOffice']['deliveryAddress'])
+            with suppress(KeyError):
+                self._format_address(filing[filing_source]['offices']['businessOffice']['mailingAddress'])
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
