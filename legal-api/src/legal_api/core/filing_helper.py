@@ -4,20 +4,6 @@
 from typing import Dict
 
 
-def is_special_resolution_correction_by_meta_data(filing):
-    """Check whether it is a special resolution correction."""
-    # Check by using the meta_data, this is more permanent than the filing json.
-    # This is used by reports (after the filer).
-    if filing.meta_data and (correction_meta_data := filing.meta_data.get('correction')):
-        # Note these come from the corrections filer.
-        sr_correction_meta_data_keys = ['hasResolution', 'memorandumInResolution', 'rulesInResolution',
-                                        'uploadNewRules', 'toCooperativeAssociationType', 'toLegalName']
-        for key in sr_correction_meta_data_keys:
-            if key in correction_meta_data:
-                return True
-    return False
-
-
 def is_special_resolution_correction_by_filing_json(filing: Dict):
     """Check whether it is a special resolution correction."""
     # Note this relies on the filing data once. This is acceptable inside of the filer (which runs once)
