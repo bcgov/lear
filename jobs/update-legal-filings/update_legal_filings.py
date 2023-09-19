@@ -88,7 +88,6 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
         application.logger.error(f'Error getting last updated colin id from \
             legal: {response.status_code} {response.json()}')
     else:
-        application.logger.debug(f'response.status_code, response json: {response.status_code}, {response.json()}')
         if response.status_code == 404:
             last_event_id = 'earliest'
         else:
@@ -100,26 +99,20 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
             try:
                 for corp_type in corp_types:
                     application.logger.debug(f'corp_type: {corp_type}')
-                    headers = {**AccountService.CONTENT_TYPE_JSON,
-                               'Authorization': AccountService.BEARER + token}
-                    application.logger.debug(f'headers, timeout: {headers}, {AccountService.timeout}')
                     url = f'{colin_url}/event/{corp_type}/{last_event_id}'
                     application.logger.debug(f'url: {url}')
                     # call colin api for ids + filing types list
                     response = requests.get(url,
-                                            headers=headers,
+                                            headers={**AccountService.CONTENT_TYPE_JSON,
+                                                     'Authorization': AccountService.BEARER + token},
                                             timeout=AccountService.timeout)
-                    application.logger.debug(f'r.status_code, r.json: {response.status_code}, {response.json()}')
                     event_info = dict(response.json())
                     events = event_info.get('events')
                     if corp_type in no_corp_num_prefix_in_colin:
-                        application.logger.debug('no_corp_num_prefix_in_colin flow')
                         append_corp_num_prefixes(events, 'BC')
                     if colin_events:
-                        application.logger.debug('colin_events extend')
                         colin_events.get('events').extend(events)
                     else:
-                        application.logger.debug('colin_events no extend')
                         colin_events = event_info
 
             except Exception as err:  # noqa: B902
