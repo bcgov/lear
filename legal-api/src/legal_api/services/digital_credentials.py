@@ -80,10 +80,10 @@ class DigitalCredentialsService:
             if (self.business_schema_id is None):
                 self.app.logger.error(f'Environment variable: BUSINESS_SCHEMA_ID must be configured')
                 raise Exception(f'Environment variable: BUSINESS_SCHEMA_ID must be configured')
-            
+
             if (self.business_cred_def_id is None):
                 self.app.logger.error(f'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
-                raise Exception(f'Environment variable: BUSINESS_CRED_DEF_ID must be configured')            
+                raise Exception(f'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
             """Fetch schema and credential definition and save a Business definition."""
             # Check for the current Business definition.
@@ -120,7 +120,7 @@ class DigitalCredentialsService:
                 schema_id=schema_id,
                 credential_definition_id=credential_definition_id
             )
-            # Lastly, save the definition    
+            # Lastly, save the definition
             definition.save()
         except Exception as err:
             self.app.logger.error(err)
@@ -157,9 +157,12 @@ class DigitalCredentialsService:
     def create_invitation(self) -> Optional[dict]:
         """Create a new connection invitation."""
         try:
-            response = requests.post(self.api_url + '/connections/create-invitation',
+            response = requests.post(self.api_url + '/out-of-band/create-invitation',
                                      headers=self._get_headers(),
-                                     data={})
+                                     params={'auto_accept': 'true'},
+                                     data=json.dumps({
+                                         'handshake_protocols': ['https://didcomm.org/connections/1.0']
+                                     }))
             response.raise_for_status()
             return response.json()
         except Exception as err:

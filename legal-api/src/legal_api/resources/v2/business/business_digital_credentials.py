@@ -52,7 +52,7 @@ def create_invitation(identifier):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
         connection = DCConnection(
-            connection_id=invitation['connection_id'],
+            connection_id=invitation['invitation']['@id'],
             invitation_url=invitation['invitation_url'],
             is_active=False,
             connection_state='invitation',
@@ -199,11 +199,15 @@ def webhook_notification(topic_name: str):
     json_input = request.get_json()
     try:
         if topic_name == 'connections':
-            connection = DCConnection.find_by_connection_id(json_input['connection_id'])
-            # Trinsic Wallet will send `active` only when it’s used the first time.
-            # Looking for `response` state to handle it.
-            if connection and not connection.is_active and json_input['state'] in ('response', 'active'):
-                connection.connection_state = 'active'
+            if 'invitation' in json_input and json_input['invitation'] != None:
+                connection = DCConnection.find_by_connection_id(json_input['invitation']['@id'])
+            else:
+                connection = DCConnection.find_by_connection_id(json_input['invitation_msg_id'])
+            # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
+            # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
+            if connection and not connection.is_active and json_input['state'] in ('active', 'completed'):
+                connection.connection_id = json_input['connection_id']
+                connection.connection_state = json_input['state']
                 connection.is_active = True
                 connection.save()
         elif topic_name == 'issue_credential':
