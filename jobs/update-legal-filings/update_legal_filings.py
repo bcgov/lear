@@ -26,11 +26,12 @@ from colin_api.models.business import Business
 from colin_api.models.filing import Filing
 from flask import Flask
 from legal_api.services.bootstrap import AccountService
-from legal_api.services.queue import QueueService
 from legal_api.utils.datetime import datetime
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
+from simple_cloudevent import SimpleCloudEvent
 
 import config  # pylint: disable=import-error
+from services import GcpQueue
 from utils.logging import setup_logging  # pylint: disable=import-error
 
 # noqa: I003
@@ -255,26 +256,38 @@ async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: di
     """Publish events for all businesses with new tax ids (for email + entity listeners)."""
     for identifier in tax_ids.keys():
         try:
-            subject = application.config['NATS_EMAILER_SUBJECT']
-            payload = {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': identifier}}
-            await qsm.publish_json_to_subject(payload, subject)
+            cloud_event = SimpleCloudEvent(
+                source=__name__[: __name__.find('.')],
+                subject='email',
+                type='Email',
+                data={'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': identifier}
+            )
+            mail_topic = application.config.get('ENTITY_EMAILER_TOPIC', 'mailer')
+            qsm.publish(topic=mail_topic, payload=qsm.to_queue_message(cloud_event))
         except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
             # mark any failure for human review
             application.logger.debug(err)
             # NB: error log will trigger sentry message
             application.logger.error('Update-legal-filings: Failed to publish bn email event for %s.', identifier)
         try:
-            subject = application.config['NATS_ENTITY_EVENTS_SUBJECT']
-            payload = {
-                'specversion': '1.0.1',
-                'type': 'bc.registry.business.bn',
-                'source': 'update-legal-filings.publish_queue_events',
-                'id': str(uuid.uuid4()),
-                'time': datetime.utcnow().isoformat(),
-                'datacontenttype': 'application/json',
-                'identifier': identifier
-            }
-            await qsm.publish_json_to_subject(payload, subject)
+            cloud_event = SimpleCloudEvent(
+                source=__name__[: __name__.find('.')],
+                subject='events',
+                type='Events',
+                data={
+                    'specversion': '1.0.1',
+                    'type': 'bc.registry.business.bn',
+                    'source': 'update-legal-filings.publish_queue_events',
+                    'id': str(uuid.uuid4()),
+                    'time': datetime.utcnow().isoformat(),
+                    'datacontenttype': 'application/json',
+                    'identifier': identifier
+                }
+            )
+            mail_topic = application.config.get('ENTITY_EVENTS_TOPIC', 'events')
+            qsm.publish(
+                topic=mail_topic, payload=qsm.to_queue_message(cloud_event)
+            )
         except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
             # mark any failure for human review
             application.logger.debug(err)
@@ -340,5 +353,5 @@ if __name__ == '__main__':
     with application.app_context():
         update_filings(application)
         event_loop = asyncio.get_event_loop()
-        qsm = QueueService(app=application, loop=event_loop)
+        qsm = GcpQueue(app=application)
         event_loop.run_until_complete(update_business_nos(application))
