@@ -960,7 +960,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return changed
 
     def _format_special_resolution(self, filing):
-        """For special resolutions"""
+        """For special resolutions."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
