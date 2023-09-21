@@ -108,6 +108,9 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
     await process_filing(correction_filing_msg, app)
 
     # Assertions
+
+    business = Business.find_by_internal_id(business_id)
+
     assert len(business.resolutions.all()) == 1
     resolution = business.resolutions.first()
     assert business.association_type == 'HC'
