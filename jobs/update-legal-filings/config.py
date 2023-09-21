@@ -47,20 +47,6 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     ALEMBIC_INI = 'migrations/alembic.ini'
 
-    # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
-
-    if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
-        SQLALCHEMY_DATABASE_URI = f'postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432'
-    else:
-        SQLALCHEMY_DATABASE_URI = (
-            f'postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-        )
-
     # GCP QUEUE
     GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
     ENTITY_MAILER_TOPIC = os.getenv('ENTITY_MAILER_TOPIC', 'mailer')
@@ -92,19 +78,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     COLIN_URL = os.getenv('COLIN_URL_TEST', '')
     LEGAL_URL = os.getenv('LEGAL_URL_TEST', '')
 
-    # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
-    DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
-    DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql+pg8000://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
-    )
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
