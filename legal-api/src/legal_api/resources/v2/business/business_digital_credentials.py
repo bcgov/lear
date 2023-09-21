@@ -137,7 +137,7 @@ def send_credential(identifier, credential_type):
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,
-        credential_exchange_id=response['credential_exchange_id']
+        credential_exchange_id=response['cred_ex_id']
     )
     issued_credential.save()
 
@@ -210,9 +210,9 @@ def webhook_notification(topic_name: str):
                 connection.connection_state = json_input['state']
                 connection.is_active = True
                 connection.save()
-        elif topic_name == 'issue_credential':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['credential_exchange_id'])
-            if issued_credential and json_input['state'] == 'credential_issued':
+        elif topic_name == 'issue_credential_v2_0':
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
+            if issued_credential and json_input['state'] in ('credential-issued', 'done'):
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
