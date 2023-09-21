@@ -10,10 +10,14 @@ def is_special_resolution_correction_by_filing_json(filing: Dict):
     # and emailer (runs on PAID which is before the filer and runs on COMPLETED).
     # For filing data that persists in the database, attempt to use the meta_data instead.
     sr_correction_keys = ['rulesInResolution', 'resolution', 'rulesFileKey',
-                          'memorandumInResolution', 'cooperativeAssociationType', 'offices']
+                          'memorandumInResolution', 'cooperativeAssociationType']
     for key in sr_correction_keys:
         if key in filing.get('correction'):
             return True
+    # following if allowing address correction for special resolution
+    # can't add 'offices' to sr_correction_keys because we need to prevent COA for now
+    if filing.get('correction', {}).get('correctedFilingType', {}) == 'specialResolution':
+        return True
     if 'requestType' in filing.get('correction', {}).get('nameRequest', {}):
         return True
     return False

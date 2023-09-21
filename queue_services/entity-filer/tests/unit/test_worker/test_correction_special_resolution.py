@@ -111,7 +111,6 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
     # Assertions
     business = Business.find_by_internal_id(business_id)
-
     if test_name == 'non_sr_correction':
         origin_filing = Filing.find_by_id(correction_filing_id)
         assert origin_filing.status == Filing.Status.PENDING_CORRECTION.value
