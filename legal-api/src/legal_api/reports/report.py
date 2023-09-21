@@ -994,8 +994,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing['nrNumber'] = filing.get(filing_source).get('nameRequest', {}).get('nrNumber', None)
         self._format_resolution_data(filing)
 
-        # self._format_office_data(filing, filing_source, 'registeredOffice')
-
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
