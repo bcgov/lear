@@ -40,8 +40,8 @@ class DigitalCredentialsService:
             'business_type',
             'given_names',
         ],
-        'schema_name': 'digital_business_card', # do not change schema name. this is the name registered in aca-py agent
-        'schema_version': '1.0.0' # if attributes changes update schema_version to re-register
+        'schema_name': 'digital_business_card',  # do not change schema name. this is the name registered in aca-py agent
+        'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
     }
 
     def __init__(self):
@@ -176,22 +176,26 @@ class DigitalCredentialsService:
                          comment: str = '') -> Optional[dict]:
         """Send holder a credential, automating entire flow."""
         try:
-            response = requests.post(self.api_url + '/issue-credential/send',
+            response = requests.post(self.api_url + '/issue-credential-2.0/send',
                                      headers=self._get_headers(),
                                      data=json.dumps({
-                                         'auto_remove': True,
+                                         'auto_remove': 'true',
                                          'comment': comment,
                                          'connection_id': connection_id,
-                                         'cred_def_id': definition.credential_definition_id,
-                                         'credential_proposal': {
-                                             '@type': 'issue-credential/1.0/credential-preview',
+                                         'credential_preview': {
+                                             '@type': 'issue-credential/2.0/credential-preview',
                                              'attributes': data
                                          },
-                                         'issuer_did': self.public_issuer_did,
-                                         'schema_id': definition.schema_id,
-                                         'schema_issuer_did': self.public_schema_did,
-                                         'schema_name': definition.schema_name,
-                                         'schema_version': definition.schema_version,
+                                         'filter': {
+                                             'indy': {
+                                                 'cred_def_id': definition.credential_definition_id,
+                                                 'issuer_did': self.public_issuer_did,
+                                                 'schema_id': definition.schema_id,
+                                                 'schema_issuer_did': self.public_schema_did,
+                                                 'schema_name': definition.schema_name,
+                                                 'schema_version': definition.schema_version,
+                                             }
+                                         },
                                          'trace': True
                                      }))
             response.raise_for_status()
