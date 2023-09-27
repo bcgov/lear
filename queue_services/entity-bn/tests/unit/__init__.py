@@ -62,7 +62,7 @@ def create_legal_entity(
 
     alternate_name = create_alternate_name(operating_name=legal_name, tax_id=tax_id)
     alternate_name.change_filing_id = change_filing_id
-    legal_entity.alternate_names.append(alternate_name)
+    legal_entity._alternate_names.append(alternate_name)
 
     office = create_business_address(change_filing_id=change_filing_id)
     legal_entity.offices.append(office)

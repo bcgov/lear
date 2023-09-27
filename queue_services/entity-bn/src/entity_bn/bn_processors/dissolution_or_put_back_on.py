@@ -65,7 +65,7 @@ def process(
     program_account_status_code = {"putBackOn": "01", "dissolution": "02"}
     program_account_reason_code = {"putBackOn": None, "dissolution": "105"}
 
-    alternate_name = legal_entity.alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(

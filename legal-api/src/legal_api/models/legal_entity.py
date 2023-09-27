@@ -22,11 +22,11 @@ from typing import Final, Optional
 import datedelta
 from flask import current_app
 from sql_versioning import Versioned
-from sqlalchemy import event, text, case, alias, union
+from sqlalchemy import event, text, case, alias, union, not_, or_, table
 from sqlalchemy.dialects.postgresql import dialect
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, aliased
+from sqlalchemy.orm import backref, aliased, joinedload, load_only
 from sqlalchemy.sql import label
 from sqlalchemy.sql.functions import concat, coalesce, func
 
@@ -299,7 +299,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     entity_roles = db.relationship('EntityRole', foreign_keys='EntityRole.legal_entity_id', lazy='dynamic',
                                    overlaps='legal_entity')
-    alternate_names = db.relationship('AlternateName', lazy='dynamic')
+    _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy='dynamic')
     role_addresses = db.relationship('RoleAddress', lazy='dynamic')
     entity_delivery_address = db.relationship('Address', back_populates='legal_entity_delivery_address',
                                               foreign_keys=[delivery_address_id])
@@ -479,10 +479,42 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         if not self.is_firm:
             return self._legal_name
 
-        if alternate_name := self.alternate_names.first():
+        if alternate_name := self._alternate_names.filter_by(identifier=self.identifier).one_or_none():
             return alternate_name.name
 
         return None
+
+    @property
+    def alternate_names(self):
+        """Return operating names for a business if any."""
+        le_alias = aliased(LegalEntity)
+        alternate_names = (
+            db.session.query(AlternateName.identifier,
+                             AlternateName.name,
+                             AlternateName.start_date,
+                             le_alias.entity_type,
+                             le_alias.founding_date)
+            .join(le_alias, AlternateName.identifier == le_alias.identifier)
+            .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
+            .filter(AlternateName.legal_entity_id == self.id)
+            .all()
+        )
+
+        if alternate_names:
+            names = [
+                {
+                    'identifier': alternate_name.identifier,
+                    'operatingName': alternate_name.name,
+                    'entityType': alternate_name.entity_type,
+                    'nameStartDate': LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
+                    'nameRegisteredDate': alternate_name.founding_date.isoformat()
+                }
+                for alternate_name in alternate_names
+            ]
+            return names
+
+        return []
+
 
     def save(self):
         """Render a Business to the local cache."""
@@ -544,13 +576,15 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'legalName': self.legal_name,
-            'businessName': self.business_name,
             'legalType': self.entity_type,
             'state': self.state.name if self.state else LegalEntity.State.ACTIVE.name
         }
 
         if self.tax_id:
             d['taxId'] = self.tax_id
+
+        if self.alternate_names:
+            d['alternateNames'] = self.alternate_names
 
         return d
 

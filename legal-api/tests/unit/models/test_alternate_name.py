@@ -50,7 +50,7 @@ def test_valid_alternate_name_save(session):
     # verify
     assert alternate_name_1.id
     assert alternate_name_2.id
-    alternate_names = legal_entity.alternate_names.all()
+    alternate_names = legal_entity._alternate_names.all()
     assert len(alternate_names) == 2
     assert all(alternate_name.name_type == AlternateName.NameType.OPERATING for alternate_name in alternate_names)
     assert any(alternate_name.name == 'XYZ Test BC LTD' for alternate_name in alternate_names)

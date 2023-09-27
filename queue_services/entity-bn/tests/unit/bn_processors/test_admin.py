@@ -125,7 +125,7 @@ def test_admin_bn15(app, session, client, mocker, request_type, business_number)
 
     legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
     assert (
-        legal_entity.alternate_names.first().bn15
+        legal_entity._alternate_names.first().bn15
         == f"{business_number or new_bn}{business_program_id}{str(program_account_ref_no).zfill(4)}"
     )
 
