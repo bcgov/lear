@@ -688,10 +688,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
             # good standing is irrelevant to non active and nwpta businesses
             return None
         if business['corp_class'] in ['BC'] or business['corp_typ_cd'] in ['LLC', 'LIC', 'A', 'B']:
-            if business.get('state_typ_cd') in ['D1A', 'D1F', 'D1T', 'D2A', 'D2F', 'D2T']:
-                # Dissolution state is not in good standing
-                #   - updates into this state occur irregularly via batch job
-                #   - updates out of this state occur immediately when filing is processed
+            if business.get('state_typ_cd') in ['D1A', 'D1F', 'D1T', 'D2A', 'D2F', 'D2T', 'LIQ', 'LRL', 'LRS']:
+                # Dissolution state or Liquidation or Limited Restoration or  is NOT in good standing
+                #   - updates into Dissolution states occur irregularly via batch job
+                #   - updates out of these states occur immediately when filing is processed
                 #     (can rely on this for a business being NOT in good standing only)
                 return False
 
