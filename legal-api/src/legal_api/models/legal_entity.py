@@ -22,13 +22,11 @@ from typing import Final, Optional
 import datedelta
 from flask import current_app
 from sql_versioning import Versioned
-from sqlalchemy import event, text, case, alias, union, not_, or_, table
-from sqlalchemy.dialects.postgresql import dialect
+from sqlalchemy import event, text, case
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, aliased, joinedload, load_only
-from sqlalchemy.sql import label
-from sqlalchemy.sql.functions import concat, coalesce, func
+from sqlalchemy.orm import backref, aliased
+from sqlalchemy.sql.functions import func
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
