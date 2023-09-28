@@ -124,7 +124,7 @@ def change_name(
     elif name_type == RequestTracker.RequestType.CHANGE_PARTY:
         new_name = legal_entity.legal_name
 
-    alternate_name = legal_entity.alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(
@@ -210,7 +210,7 @@ def change_address(
         else legal_entity.office_mailing_address
     )
 
-    alternate_name = legal_entity.alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(

@@ -70,19 +70,16 @@ def test_filing_comment_dump_json(session):
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f, 'a comment')
 
-    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
-    with freeze_time(now):
-
-        assert c.json == {
-            'comment': {
-                'id': c.id,
-                'submitterDisplayName': None,
-                'comment': 'a comment',
-                'filingId': f.id,
-                'businessId': None,
-                'timestamp': now.isoformat()
-            }
+    assert c.json == {
+        'comment': {
+            'id': c.id,
+            'submitterDisplayName': None,
+            'comment': 'a comment',
+            'filingId': f.id,
+            'businessId': None,
+            'timestamp': c.timestamp.isoformat()
         }
+    }
 
 
 def test_comment_save_to_session(session):

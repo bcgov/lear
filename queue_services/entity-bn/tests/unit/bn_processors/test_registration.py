@@ -100,7 +100,7 @@ def test_registration(app, session, client, mocker, legal_type):
 
     legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
     assert (
-        legal_entity.alternate_names.first().bn15
+        legal_entity._alternate_names.first().bn15
         == f"{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}"
     )
 

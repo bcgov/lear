@@ -17,7 +17,8 @@
 Test-Suite to ensure that the Business Model is working as expected.
 """
 import uuid
-from datetime import datetime, timedelta
+from contextlib import suppress
+from datetime import datetime, timedelta, date
 from flask import current_app
 
 import datedelta
@@ -28,6 +29,17 @@ from legal_api.models import LegalEntity, EntityRole, ColinEntity, AlternateName
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
+
+
+ALTERNATE_NAME_1 = 'operating name 1'
+ALTERNATE_NAME_1_IDENTIFIER = 'FM1111111'
+ALTERNATE_NAME_1_START_DATE = '2023-09-02'
+ALTERNATE_NAME_1_REGISTERED_DATE = '2000-01-01T00:00:00+00:00'
+
+ALTERNATE_NAME_2 = 'operating name 2'
+ALTERNATE_NAME_2_IDENTIFIER = 'FM2222222'
+ALTERNATE_NAME_2_START_DATE = '2023-09-05'
+ALTERNATE_NAME_2_REGISTERED_DATE = '2005-01-01T00:00:00+00:00'
 
 
 def factory_legal_entity(designation: str = '001'):
@@ -271,7 +283,6 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
-        'businessName': 'legal_name',
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'legalName': 'legal_name',
@@ -743,11 +754,177 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
             start_date=datetime.utcnow(),
             legal_entity_id=le.id)
         alternate_name.save()
-        le.alternate_names.append(alternate_name)
+        le._alternate_names.append(alternate_name)
 
     le.save()
 
     assert le.business_name == expected_business_name
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_entities_info, alternate_names_info, expected_alternate_names',
+    [
+        # no operating names tests
+        ('NO_ALTERNATE_NAMES_NON_FIRMS',
+         [{ 'identifier': 'CP1234567', 'entityType': 'CP', 'legalName': 'CP Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'BEN', 'legalName': 'BEN Test XYZ'},
+          { 'identifier': 'BC1234567', 'entityType': 'BC', 'legalName': 'BC Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'ULC', 'legalName': 'ULC Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'CC', 'legalName': 'CCC Test XYZ' }],
+         None, []),
+
+        # one or more operating names tests
+        ('ALTERNATE_NAMES_NON_FIRMS',
+         # legal_entity_info
+         [{ 'identifier': 'CP1234567', 'entityType': 'CP', 'legalName': 'CP Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'BEN', 'legalName': 'BEN Test XYZ'},
+          { 'identifier': 'BC1234567', 'entityType': 'BC', 'legalName': 'BC Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'ULC', 'legalName': 'ULC Test XYZ' },
+          { 'identifier': 'BC1234567', 'entityType': 'CC', 'legalName': 'CCC Test XYZ' }],
+         # alternate_names_info
+         [{ 'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+            'entityType': 'SP',
+            'operatingName': ALTERNATE_NAME_1,
+            'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_1_START_DATE},
+          { 'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+            'entityType': 'GP',
+            'operatingName': ALTERNATE_NAME_2,
+            'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_2_START_DATE}],
+         # expected_alternate_names
+         [{'entityType': 'SP',
+           'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_1_START_DATE,
+           'operatingName': ALTERNATE_NAME_1},
+          {'entityType': 'GP',
+           'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_2_START_DATE,
+           'operatingName': ALTERNATE_NAME_2},
+          ]
+        ),
+
+        ('ALTERNATE_NAMES_FIRMS_SP',
+         # legal_entity_info
+         [{ 'identifier': ALTERNATE_NAME_1_IDENTIFIER, 'entityType': 'SP', 'legalName': None,
+            'foundingDate': ALTERNATE_NAME_1_REGISTERED_DATE }],
+         # alternate_names_info
+         [{ 'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+            'entityType': 'SP',
+            'operatingName': ALTERNATE_NAME_1,
+            'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_1_START_DATE}],
+         # expected_alternate_names
+         [{'entityType': 'SP',
+           'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_1_START_DATE,
+           'operatingName': ALTERNATE_NAME_1}
+          ]
+         ),
+
+        ('ALTERNATE_NAMES_FIRMS_GP',
+         # legal_entity_info
+         [{ 'identifier': ALTERNATE_NAME_2_IDENTIFIER, 'entityType': 'GP', 'legalName': None,
+            'foundingDate': ALTERNATE_NAME_2_REGISTERED_DATE }],
+         # alternate_names_info
+         [{ 'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+            'entityType': 'GP',
+            'operatingName': ALTERNATE_NAME_2,
+            'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_2_START_DATE}],
+         # expected_alternate_names
+         [{'entityType': 'GP',
+           'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_2_START_DATE,
+           'operatingName': ALTERNATE_NAME_2}
+          ]
+         ),
+
+        # tests scenario where GP has 2 operating names:
+        # 1. operating name for GP when firm first created
+        # 2. operating name for SP that it owns
+        ('ALTERNATE_NAMES_FIRMS_GP_MULTIPLE_NAMES',
+         # legal_entity_info
+         [{ 'identifier': ALTERNATE_NAME_1_IDENTIFIER, 'entityType': 'GP', 'legalName': None,
+            'foundingDate': ALTERNATE_NAME_1_REGISTERED_DATE }],
+         # alternate_names_info
+         [{ 'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+            'entityType': 'GP',
+            'operatingName': ALTERNATE_NAME_1,
+            'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_1_START_DATE},
+          { 'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+            'entityType': 'SP',
+            'operatingName': ALTERNATE_NAME_2,
+            'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+            'startDate': ALTERNATE_NAME_2_START_DATE}],
+         # expected_alternate_names
+         [{'entityType': 'GP',
+           'identifier': ALTERNATE_NAME_1_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_1_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_1_START_DATE,
+           'operatingName': ALTERNATE_NAME_1},
+          {'entityType': 'SP',
+           'identifier': ALTERNATE_NAME_2_IDENTIFIER,
+           'nameRegisteredDate': ALTERNATE_NAME_2_REGISTERED_DATE,
+           'nameStartDate': ALTERNATE_NAME_2_START_DATE,
+           'operatingName': ALTERNATE_NAME_2}
+          ]
+         )
+    ])
+def test_alternate_names(session, test_name, legal_entities_info, alternate_names_info, expected_alternate_names):
+    """Assert that correct alternate name is returned."""
+    for le_info in legal_entities_info:
+        sess = session.begin_nested()
+        founding_date_str = le_info.get('foundingDate')
+        if founding_date_str:
+            founding_date = datetime.strptime(founding_date_str,"%Y-%m-%dT%H:%M:%S%z")
+        else:
+            founding_date = datetime.utcfromtimestamp(0)
+
+        le = LegalEntity(
+            _legal_name=le_info['legalName'],
+            entity_type=le_info['entityType'],
+            founding_date=founding_date,
+            identifier=le_info['identifier'],
+            state=LegalEntity.State.ACTIVE
+        )
+        session.add(le)
+
+        if alternate_names_info:
+            for alternate_name_info in alternate_names_info:
+                start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(alternate_name_info['startDate'])
+                alternate_name_identifier = alternate_name_info['identifier']
+
+                if alternate_name_identifier != le.identifier:
+                    le_an_founding_date = datetime.strptime(alternate_name_info['nameRegisteredDate'],
+                                                            "%Y-%m-%dT%H:%M:%S%z")
+                    le_alternate_name = LegalEntity(
+                        entity_type=alternate_name_info['entityType'],
+                        founding_date=le_an_founding_date,
+                        identifier=alternate_name_identifier,
+                        state=LegalEntity.State.ACTIVE
+                    )
+                    session.add(le_alternate_name)
+
+                alternate_name = AlternateName(
+                    identifier=alternate_name_identifier,
+                    name_type=AlternateName.NameType.OPERATING,
+                    name=alternate_name_info['operatingName'],
+                    bn15='111111100BC1111',
+                    start_date=start_date,
+                    legal_entity_id=le.id)
+                le._alternate_names.append(alternate_name)
+
+        session.flush()
+        assert le.alternate_names == expected_alternate_names
+        # if no rollback, test data conflicts between parametrized test runs
+        sess.rollback()
+
 
 
 

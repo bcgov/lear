@@ -55,6 +55,10 @@ class AlternateName(Versioned, db.Model):
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
     change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
+    # relationships
+    legal_entity = db.relationship("LegalEntity", back_populates="_alternate_names")
+
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)

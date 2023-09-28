@@ -22,7 +22,6 @@ import json
 from http import HTTPStatus
 
 import datedelta
-import pg8000
 import pytest
 import registry_schemas
 from flask import current_app
@@ -37,13 +36,13 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
 )
 from sqlalchemy.exc import DataError
+from sqlalchemy_continuum import versioning_manager
 
-from business_model import Filing, LegalEntity, User
-from business_model.exceptions import BusinessException
+from legal_api.exceptions import BusinessException
+from legal_api.models import Filing, LegalEntity, User
 from tests import EPOCH_DATETIME
-from tests import nested_session
 from tests.conftest import not_raises
-from tests.models import (
+from tests.unit.models import (
     factory_legal_entity,
     factory_legal_entity_mailing_address,
     factory_completed_filing,
@@ -70,67 +69,62 @@ def test_minimal_filing_json(session):
 
 def test_filing_orm_delete_allowed_for_in_progress_filing(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
-    from business_model.exceptions import BusinessException
-    with nested_session(session):
+    from legal_api.exceptions import BusinessException
 
-        b = factory_legal_entity('CP1234567')
+    b = factory_legal_entity('CP1234567')
 
-        filing = Filing()
-        filing.legal_entity_id = b.id
-        filing.filing_date = datetime.datetime.utcnow()
-        filing.filing_json = ANNUAL_REPORT
-        filing.save()
+    filing = Filing()
+    filing.legal_entity_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.save()
 
-        with not_raises(BusinessException):
-            session.delete(filing)
-            session.commit()
+    with not_raises(BusinessException):
+        session.delete(filing)
+        session.commit()
 
 
 def test_filing_orm_delete_blocked_if_invoiced(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
-    from business_model.exceptions import BusinessException
+    from legal_api.exceptions import BusinessException
 
-    with nested_session(session):
+    b = factory_legal_entity('CP1234567')
 
-        b = factory_legal_entity('CP1234567')
+    filing = Filing()
+    filing.legal_entity_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.save()
 
-        filing = Filing()
-        filing.legal_entity_id = b.id
-        filing.filing_date = datetime.datetime.utcnow()
-        filing.filing_json = ANNUAL_REPORT
-        filing.payment_token = 'a token'
-        filing.save()
+    with pytest.raises(BusinessException) as excinfo:
+        session.delete(filing)
+        session.commit()
 
-        with pytest.raises(BusinessException) as excinfo:
-            session.delete(filing)
-            session.commit()
-
-        assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-        assert excinfo.value.error == 'Deletion not allowed.'
+    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
+    assert excinfo.value.error == 'Deletion not allowed.'
 
 
 def test_filing_orm_delete_blocked_if_completed(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
-    from business_model.exceptions import BusinessException
+    from legal_api.exceptions import BusinessException
 
-    with nested_session(session):
+    b = factory_legal_entity('CP1234567')
 
-        b = factory_legal_entity('CP1234567')
+    filing = Filing()
+    filing.legal_entity_id = b.id
+    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_json = ANNUAL_REPORT
+    filing.payment_token = 'a token'
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.save()
 
-        filing = Filing()
-        filing.legal_entity_id = b.id
-        filing.filing_date = datetime.datetime.utcnow()
-        filing.filing_json = ANNUAL_REPORT
-        filing.payment_token = 'a token'
-        filing.payment_completion_date = datetime.datetime.utcnow()
-        filing.save()
+    with pytest.raises(BusinessException) as excinfo:
+        session.delete(filing)
+        session.commit()
 
-        with pytest.raises(BusinessException) as excinfo:
-            session.delete(filing)
-            session.commit()
-
-        assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-        assert excinfo.value.error == 'Deletion not allowed.'
+    assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
+    assert excinfo.value.error == 'Deletion not allowed.'
 
 
 def test_filing_json(session):
@@ -500,34 +494,33 @@ TEST_FILING_GO_LIVE_DATE = [
 @pytest.mark.parametrize('test_type,days,expected,status', TEST_FILING_GO_LIVE_DATE)
 def test_get_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
     """Assert that a filing can be retrieved by status."""
-    with nested_session(session):
-        import copy
-        legal_entity =factory_legal_entity('CP1234567')
-        payment_token = '1000'
-        ar = copy.deepcopy(ANNUAL_REPORT)
+    import copy
+    legal_entity =factory_legal_entity('CP1234567')
+    payment_token = '1000'
+    ar = copy.deepcopy(ANNUAL_REPORT)
 
-        go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
-        filing_date = go_live_date + datetime.timedelta(days=days)
+    go_live_date = datetime.date.fromisoformat(current_app.config.get('GO_LIVE_DATE'))
+    filing_date = go_live_date + datetime.timedelta(days=days)
 
-        filing = Filing()
-        filing.filing_date = filing_date
-        filing.legal_entity_id = legal_entity.id
-        filing.filing_json = ar
-        filing.payment_token = payment_token
-        filing.payment_completion_date = datetime.datetime.utcnow()
-        filing.save()
+    filing = Filing()
+    filing.filing_date = filing_date
+    filing.legal_entity_id = legal_entity.id
+    filing.filing_json = ar
+    filing.payment_token = payment_token
+    filing.payment_completion_date = datetime.datetime.utcnow()
+    filing.save()
 
-        rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value], go_live_date)
+    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value], go_live_date)
 
-        assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
-        if rv:
-            assert rv[0].status == status
+    assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
+    if rv:
+        assert rv[0].status == status
 
 
 def test_get_a_businesses_most_recent_filing_of_a_type(session):
     """Assert that the most recent completed filing of a specified type is returned."""
-    from business_model import Filing
-    from tests.models import factory_completed_filing
+    from legal_api.models import Filing
+    from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
     b = factory_legal_entity(identifier)
@@ -549,7 +542,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
 
 def test_save_filing_with_colin_id(session):
     """Assert that saving a filing from the coops-updater-job user is set to paid and source is colin."""
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
@@ -563,7 +556,7 @@ def test_save_filing_with_colin_id(session):
 
 def test_save_filing_colin_only(session):
     """Assert that the in colin only flag is retrieved and saved."""
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = FILING_HEADER
@@ -576,7 +569,7 @@ def test_save_filing_colin_only(session):
 
 def test_uncorrected_filing(session):
     """Assert that a uncorrected filing is unaffected."""
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
@@ -591,7 +584,7 @@ def test_is_corrected_filing(session):
 
     Assert linkage is set from parent to child and otherway.
     """
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
@@ -599,7 +592,7 @@ def test_is_corrected_filing(session):
 
     b = factory_legal_entity('CP1234567')
     filing2 = factory_completed_filing(b, CORRECTION_AR)
-    
+
     # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     filing1.parent_filing = filing2
     filing1.save()
@@ -617,7 +610,7 @@ def test_is_pending_correction_filing(session):
 
     Assert linkage is set from parent to child and otherway.
     """
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
@@ -643,7 +636,7 @@ def test_is_pending_correction_filing(session):
 
 def test_linked_not_correction(session):
     """Assert that if a filing has a parent that is not a correction, the isCorrected flag is not set."""
-    from business_model import Filing
+    from legal_api.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
@@ -703,20 +696,17 @@ def test_alteration_filing_with_court_order(session):
 def test_validate_invalid_court_orders(session, invalid_court_order):
     """Assert not valid court orders."""
     identifier = 'BC1156677'
+    b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
+    factory_legal_entity_mailing_address(b)
+    filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
+    filing.court_order_file_number = invalid_court_order['fileNumber']
+    filing.court_order_date = invalid_court_order['orderDate']
+    filing.court_order_effect_of_order = invalid_court_order['effectOfOrder']
 
-    with nested_session(session):
-        b = factory_legal_entity(identifier, datetime.datetime.utcnow(), None, LegalEntity.EntityTypes.COMP.value)
-        factory_legal_entity_mailing_address(b)
-        filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
-        filing.court_order_file_number = invalid_court_order['fileNumber']
-        filing.court_order_date = invalid_court_order['orderDate']
-        filing.court_order_effect_of_order = invalid_court_order['effectOfOrder']
+    with pytest.raises(DataError) as excinfo:
+        filing.save()
 
-        # with pytest.raises(DataError, pg8000.dbapi.ProgrammingError) as excinfo:
-        with pytest.raises(pg8000.dbapi.ProgrammingError) as excinfo:
-            filing.save()
-
-        assert excinfo
+    assert excinfo
 
 # @pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 
