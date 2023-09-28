@@ -39,7 +39,7 @@ def test_naics_find_by_search_term(session):
     assert len(results_with_3_elements) == 2
 
 
-def test_exact_match_search_naics(app, session, client):
+def test_exact_match_search_naics(app, session, client, jwt):
     """Assert that search results are returned when searching with exact search term."""
 
     # test
@@ -53,7 +53,7 @@ def test_exact_match_search_naics(app, session, client):
     assert results[0].version == int(app.config.get('NAICS_VERSION'))
 
 
-def test_non_exact_match_search_naics(session, client):
+def test_non_exact_match_search_naics(session, client, jwt):
     """Assert that search results are returned when searching with non-exact search term."""
 
     # test

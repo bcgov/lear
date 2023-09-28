@@ -15,7 +15,6 @@
 
 The Business class and Schema are held in this module
 """
-import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -23,10 +22,11 @@ from typing import Final, Optional
 import datedelta
 from flask import current_app
 from sql_versioning import Versioned
-from sqlalchemy import event, text
+from sqlalchemy import event, text, case
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import backref, aliased
+from sqlalchemy.sql.functions import func
 
 from ..exceptions import BusinessException
 from ..utils.enum import BaseEnum, BaseMeta
@@ -138,6 +138,9 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                   EntityTypes.ULC_CO_1890,
                                   EntityTypes.ULC_CO_1897]
 
+    NON_BUSINESS_ENTITY_TYPES: Final = [EntityTypes.PERSON,
+                                        EntityTypes.ORGANIZATION]
+
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
 
@@ -150,19 +153,19 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
     BUSINESSES = {
         EntityTypes.BCOMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedBusinessNameSuffix': 'B.C. LTD.',
             'numberedDescription': 'Numbered Benefit Company'
         },
         EntityTypes.COMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.',
+            'numberedBusinessNameSuffix': 'B.C. LTD.',
             'numberedDescription': 'Numbered Limited Company'
         },
         EntityTypes.BC_ULC_COMPANY: {
-            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY',
+            'numberedBusinessNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY',
             'numberedDescription': 'Numbered Unlimited Liability Company'
         },
         EntityTypes.BC_CCC: {
-            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
+            'numberedBusinessNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
             'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
@@ -229,7 +232,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
     last_coa_date = db.Column('last_coa_date', db.DateTime(timezone=True))
     last_cod_date = db.Column('last_cod_date', db.DateTime(timezone=True))
-    legal_name = db.Column('legal_name', db.String(1000), index=True)
+    _legal_name = db.Column('legal_name', db.String(1000), index=True)
     entity_type = db.Column('entity_type', db.String(15), index=True)
     founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column('start_date', db.DateTime(timezone=True))
@@ -291,11 +294,10 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic', foreign_keys='Resolution.legal_entity_id')
     documents = db.relationship('Document', lazy='dynamic')
-    # TODO: GET on LE fails when this relationship is uncommented.  Need to figure out why
-    # consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
+    consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     entity_roles = db.relationship('EntityRole', foreign_keys='EntityRole.legal_entity_id', lazy='dynamic',
                                    overlaps='legal_entity')
-    alternate_names = db.relationship('AlternateName', lazy='dynamic')
+    _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy='dynamic')
     role_addresses = db.relationship('RoleAddress', lazy='dynamic')
     entity_delivery_address = db.relationship('Address', back_populates='legal_entity_delivery_address',
                                               foreign_keys=[delivery_address_id])
@@ -388,7 +390,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     @property
     def is_firm(self):
         """Return if is firm, otherwise false."""
-        return self.entity_type in (self.EntityTypes.SOLE_PROP, self.EntityTypes.PARTNERSHIP)
+        return self.entity_type in [self.EntityTypes.SOLE_PROP.value, self.EntityTypes.PARTNERSHIP.value]
 
     @property
     def good_standing(self):
@@ -405,6 +407,112 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             else:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
+
+
+    @property
+    def legal_name(self):
+        """Return legal name for entity.
+
+        For non-firms, just return the value in _legal_name field.
+        For SPs, return the legal name of the proprietor or the organization that owns the firm.
+        For SP/GPs:
+          1. Union the proprietor/partner that owns the firm and sort by legal name(individual or organization's name).
+          2. Take the first two proprietor/partner legal names and concatenate them with a comma.
+          3. If there are more than two matching proprietor/partners, append ', et al'
+          4. Return final legal_name result
+        """
+        from . import ColinEntity
+
+        if self.is_firm:
+
+            related_le_alias = aliased(LegalEntity, name='related_le_alias')
+            related_le_stmt = (db.session
+                       .query(case((related_le_alias.entity_type == 'person',
+                                           func.concat_ws(' ',
+                                                          func.nullif(related_le_alias.last_name, ''),
+                                                          func.nullif(related_le_alias.middle_initial, ''),
+                                                          func.nullif(related_le_alias.first_name, ''))),
+                                           (related_le_alias.entity_type == 'organization',
+                                            related_le_alias._legal_name),
+                                           else_ = None).label('sortName'),
+                                      case((related_le_alias.entity_type == 'person',
+                                            func.concat_ws(' ',
+                                                           func.nullif(related_le_alias.first_name, ''),
+                                                           func.nullif(related_le_alias.middle_initial, ''),
+                                                           func.nullif(related_le_alias.last_name, ''))),
+                                           (related_le_alias.entity_type == 'organization',
+                                            related_le_alias._legal_name),
+                                           else_ = None).label('legalName'))
+                       .select_from(LegalEntity)
+                       .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id) \
+                       .join(related_le_alias, related_le_alias.id == EntityRole.related_entity_id) \
+                       .filter(LegalEntity.id == self.id))
+
+            related_colin_entity_stmt = (db.session
+                        .query(ColinEntity.organization_name.label('sortName'),
+                               ColinEntity.organization_name.label('legalName'))
+                       .select_from(LegalEntity)
+                       .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id) \
+                       .join(ColinEntity, ColinEntity.id == EntityRole.related_colin_entity_id) \
+                       .filter(LegalEntity.id == self.id))
+
+            result_query = (related_le_stmt
+                            .union(related_colin_entity_stmt)
+                            .order_by('sortName'))
+
+            results = result_query.all()
+            if results and len(results) > 2:
+                legal_name_str = ', '.join([r.legalName for r in results[:2]])
+                legal_name_str = f"{legal_name_str}, et al"
+            else:
+                legal_name_str =  ', '.join([r.legalName for r in results])
+            return legal_name_str
+
+        return self._legal_name
+
+    @property
+    def business_name(self):
+        """Return operating name for firms and legal name for non-firm entities."""
+
+        if not self.is_firm:
+            return self._legal_name
+
+        if alternate_name := self._alternate_names.filter_by(identifier=self.identifier).one_or_none():
+            return alternate_name.name
+
+        return None
+
+    @property
+    def alternate_names(self):
+        """Return operating names for a business if any."""
+        le_alias = aliased(LegalEntity)
+        alternate_names = (
+            db.session.query(AlternateName.identifier,
+                             AlternateName.name,
+                             AlternateName.start_date,
+                             le_alias.entity_type,
+                             le_alias.founding_date)
+            .join(le_alias, AlternateName.identifier == le_alias.identifier)
+            .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
+            .filter(AlternateName.legal_entity_id == self.id)
+            .all()
+        )
+
+        if alternate_names:
+            names = [
+                {
+                    'identifier': alternate_name.identifier,
+                    'operatingName': alternate_name.name,
+                    'entityType': alternate_name.entity_type,
+                    'nameStartDate': LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
+                    'nameRegisteredDate': alternate_name.founding_date.isoformat()
+                }
+                for alternate_name in alternate_names
+            ]
+            return names
+
+        return []
+
 
     def save(self):
         """Render a Business to the local cache."""
@@ -472,6 +580,9 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
         if self.tax_id:
             d['taxId'] = self.tax_id
+
+        if self.alternate_names:
+            d['alternateNames'] = self.alternate_names
 
         return d
 
@@ -609,7 +720,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         legal_entity = None
         if legal_name:
             try:
-                legal_entity = cls.query.filter_by(legal_name=legal_name).\
+                legal_entity = cls.query.filter_by(_legal_name=legal_name).\
                     filter_by(dissolution_date=None).one_or_none()
             except (OperationalError, ResourceClosedError):
                 # TODO: This usually means a misconfigured database.
@@ -622,7 +733,10 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         """Return a Business by the id assigned by the Registrar."""
         legal_entity = None
         if identifier:
-            legal_entity = cls.query.filter_by(identifier=identifier).one_or_none()
+            non_entity_types = [LegalEntity.EntityTypes.PERSON.value, LegalEntity.EntityTypes.ORGANIZATION.value]
+            legal_entity = (cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types)).
+                            filter_by(identifier=identifier).one_or_none())
+
         return legal_entity
 
     @classmethod
@@ -648,6 +762,8 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             LegalEntity.EntityTypes.COOP.value,
             LegalEntity.EntityTypes.SOLE_PROP.value,
             LegalEntity.EntityTypes.PARTNERSHIP.value,
+            LegalEntity.EntityTypes.PERSON.value,
+            LegalEntity.EntityTypes.ORGANIZATION.value
         ]
         legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities

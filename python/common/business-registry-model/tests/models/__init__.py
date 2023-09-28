@@ -18,14 +18,17 @@ import uuid
 
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
+from sqlalchemy_continuum import versioning_manager
+from legal_api.exceptions.error_messages import ErrorCode
 
-from business_model import (
+from legal_api.models import (
     Address,
     Alias,
     LegalEntity,
     Comment,
     Filing,
     Office,
+    OfficeType,
     Party,
     PartyRole,
     ShareClass,
@@ -33,8 +36,8 @@ from business_model import (
     User,
     db, ColinEntity, EntityRole,
 )
-from business_model.models.colin_event_id import ColinEventId
-from business_model.utils.datetime import datetime, timezone
+from legal_api.models.colin_event_id import ColinEventId
+from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 
@@ -48,7 +51,7 @@ AR_FILING = {
             'cacheId': 1,
             'foundingDate': '2007-04-08',
             'identifier': 'CP1234567',
-            'legalName': 'legal name - CP1234567'
+            'businessName': 'legal name - CP1234567'
         },
         'annualReport': {
             'annualGeneralMeetingDate': '2019-04-08',
@@ -122,23 +125,24 @@ def factory_user(username: str, firstname: str = None, lastname: str = None):
 
 
 def factory_legal_entity(identifier=None,
-                     founding_date=EPOCH_DATETIME,
-                     last_ar_date=None,
-                     entity_type=LegalEntity.EntityTypes.COOP.value,
-                     state=LegalEntity.State.ACTIVE,
-                     naics_code=None,
-                     naics_desc=None,
-                     admin_freeze=False,
-                     first_name=None,
-                     middle_initial=None,
-                     last_name=None):
+                         founding_date=EPOCH_DATETIME,
+                         last_ar_date=None,
+                         entity_type=LegalEntity.EntityTypes.COOP.value,
+                         state=LegalEntity.State.ACTIVE,
+                         naics_code=None,
+                         naics_desc=None,
+                         admin_freeze=False,
+                         first_name=None,
+                         middle_initial=None,
+                         last_name=None,
+                         change_filing_id=None):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
 
     legal_name = f'legal_name-{identifier}' if identifier else None
-    legal_entity = LegalEntity(legal_name=legal_name,
+    legal_entity = LegalEntity(_legal_name=legal_name,
                                founding_date=founding_date,
                                last_ar_date=last_ar_date,
                                last_ar_year=last_ar_year,
@@ -154,7 +158,8 @@ def factory_legal_entity(identifier=None,
                                admin_freeze=admin_freeze,
                                first_name=first_name,
                                middle_initial=middle_initial,
-                               last_name=last_name)
+                               last_name=last_name,
+                               change_filing_id=change_filing_id)
 
     # Versioning business
     # uow = versioning_manager.unit_of_work(db.session)
@@ -285,9 +290,6 @@ def factory_epoch_filing(legal_entity, filing_date=FROZEN_DATETIME):
     """Create an error filing."""
     filing = Filing()
     filing.legal_entity_id = legal_entity.id
-    uow = versioning_manager.unit_of_work(db.session)
-    transaction = uow.create_transaction(db.session)
-    filing.transaction_id = transaction.id
     filing.filing_date = filing_date
     filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
     filing.save()
@@ -297,7 +299,7 @@ def factory_epoch_filing(legal_entity, filing_date=FROZEN_DATETIME):
 def factory_legal_entity_comment(legal_entity: LegalEntity = None, comment_text: str = 'some text', user: User = None):
     """Create a comment."""
     if not legal_entity:
-        legal_entity =factory_legal_entity('CP1234567')
+        legal_entity = factory_legal_entity('CP1234567')
 
     c = Comment()
     c.legal_entity_id = legal_entity.id
@@ -314,7 +316,7 @@ def factory_comment(
         legal_entity: LegalEntity = None, filing: Filing = None, comment_text: str = 'some text', user: User = None):
     """Create a comment."""
     if not legal_entity:
-        legal_entity =factory_legal_entity('CP1234567')
+        legal_entity = factory_legal_entity('CP1234567')
 
     if not filing:
         filing = factory_filing(legal_entity, ANNUAL_REPORT)
@@ -342,7 +344,7 @@ def factory_party_role(delivery_address: Address,
         last_name=officer['lastName'],
         middle_initial=officer['middleInitial'],
         entity_type=officer['partyType'],
-        legal_name=officer['organizationName']
+        _legal_name=officer['organizationName']
     )
     legal_entity.entity_delivery_address = delivery_address
     legal_entity.entity_mailing_address = mailing_address
@@ -358,7 +360,7 @@ def factory_party_role(delivery_address: Address,
 
 def factory_share_class(business_identifier: str):
     """Create a share class."""
-    legal_entity =factory_legal_entity(business_identifier)
+    legal_entity = factory_legal_entity(business_identifier)
     share_class = ShareClass(
         name='Share Class 1',
         priority=1,
@@ -382,12 +384,12 @@ def factory_share_class(business_identifier: str):
     return share_class
 
 
-def factory_incomplete_statuses(unknown_statuses:list = []):
+def factory_incomplete_statuses(unknown_statuses: list = []):
     result = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
-                       Filing.Status.PENDING_CORRECTION.value,
-                       Filing.Status.ERROR.value,
-                       Filing.Status.PAID.value]
+              Filing.Status.PENDING.value,
+              Filing.Status.PENDING_CORRECTION.value,
+              Filing.Status.ERROR.value,
+              Filing.Status.PAID.value]
 
     if unknown_statuses:
         result.extend(unknown_statuses)
@@ -407,3 +409,26 @@ def factory_address(address_type=Address.MAILING):
     )
     address.save()
     return address
+
+
+def factory_offices(legal_entity, office_types=[OfficeType.REGISTERED], change_filing=None):
+    """Create factory offices."""
+    for office_type in office_types:
+        office = Office(office_type=office_type,
+                        change_filing_id=change_filing.id)
+        office.addresses.append(Address(city='Test City',
+                                        street=f'{change_filing._filing_type} {office_type} Mailing Street',
+                                        postal_code='T3S3T3',
+                                        country='TA',
+                                        region='BC',
+                                        address_type=Address.MAILING,
+                                        change_filing_id=change_filing.id))
+
+        office.addresses.append(Address(city='Test City',
+                                        street=f'{change_filing._filing_type} {office_type} Delivery Street',
+                                        postal_code='T3S3T3',
+                                        country='TA',
+                                        region='BC',
+                                        address_type=Address.DELIVERY,
+                                        change_filing_id=change_filing.id))
+        legal_entity.offices.append(office)

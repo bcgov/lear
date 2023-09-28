@@ -44,7 +44,7 @@ class Office(Versioned, db.Model):  # pylint: disable=too-few-public-methods
     # Parent Keys
     change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
     legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
-    
+
     # Relationships
     addresses = db.relationship('Address', lazy='dynamic', cascade='all, delete, delete-orphan')
 
