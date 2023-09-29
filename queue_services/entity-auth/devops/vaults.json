@@ -1,0 +1,20 @@
+[
+    {
+        "vault": "database",
+        "application": [
+            "entity-db"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "entity-auth"
+        ]
+    }
+]
