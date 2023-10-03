@@ -73,7 +73,7 @@ SQLAlchemy-Utils==0.37.1
 strict-rfc3339==0.7
 typing-extensions==4.5.0
 uri-template==1.2.0
-urllib3==1.26.11
+urllib3==1.26.17
 webcolors==1.13
 Werkzeug==1.0.1
 yarl==1.8.2
