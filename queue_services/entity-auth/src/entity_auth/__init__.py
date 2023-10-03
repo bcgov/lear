@@ -17,10 +17,8 @@ This module is the service worker for updating auth with business data.
 """
 from __future__ import annotations
 
-import sentry_sdk
 from flask import Flask
 from business_model import db
-from sentry_sdk.integrations.flask import FlaskIntegration
 
 from .config import Config
 from .config import Production
@@ -33,15 +31,6 @@ def create_app(environment: Config = Production, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            release=f"legal-api@{get_run_version()}",
-            send_default_pii=False,
-        )
 
     db.init_app(app)
     queue.init_app(app)

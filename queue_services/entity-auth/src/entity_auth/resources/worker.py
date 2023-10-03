@@ -41,7 +41,6 @@ from typing import Optional
 
 from flask import Blueprint, current_app
 from flask import request
-from sentry_sdk import capture_message
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
 
@@ -113,7 +112,6 @@ def worker():
         return {}, HTTPStatus.BAD_REQUEST
     except Exception as err:  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message("Queue Error:" + str(ce), level="error")
         structured_log(request, "ERROR", f"Queue Error: {err}, {str(ce)}")
         return {}, HTTPStatus.OK  # Event is removed from the Queue
 

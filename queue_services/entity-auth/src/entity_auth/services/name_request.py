@@ -16,11 +16,11 @@ import json
 from http import HTTPStatus
 
 import requests
-import sentry_sdk
-from flask import current_app
+from flask import current_app, request
 from business_model import Filing, LegalEntity, RegistrationBootstrap
 
 from entity_auth.exceptions import NamexException
+from entity_auth.services.logging import structured_log
 from .bootstrap import AccountService
 
 
@@ -59,6 +59,8 @@ def consume_nr(legal_entity: LegalEntity, filing: Filing):
     except (
         Exception
     ):  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        sentry_sdk.capture_message(
-            f"Queue Error: Consume NR error for filing:{filing.id}", level="error"
+        structured_log(
+            request,
+            "ERROR",
+            f"Queue Error: Consume NR error for filing:{filing.id}",
         )
