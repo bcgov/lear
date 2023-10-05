@@ -15,10 +15,10 @@
 from typing import Dict
 
 from flask_babel import _ as babel  # noqa: N813
-from legal_api.models import Alias, Business
+from business_model import Alias, LegalEntity
 
 
-def update_aliases(business: Business, aliases) -> Dict:
+def update_aliases(business: LegalEntity, aliases) -> Dict:
     """Update the aliases of the business."""
     if not business:
         return {'error': babel('Business required before alternate names can be set.')}

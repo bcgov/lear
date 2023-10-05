@@ -46,10 +46,16 @@ class ColinEntity(Versioned, db.Model):
     mailing_address_id = db.Column('mailing_address_id', db.Integer, db.ForeignKey('addresses.id'))
 
     # relationships
-    delivery_address = db.relationship('Address', foreign_keys=[delivery_address_id],
-                                       cascade='all, delete')
-    mailing_address = db.relationship('Address', foreign_keys=[mailing_address_id],
-                                      cascade='all, delete')
+    delivery_address = db.relationship('Address', foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship('Address', foreign_keys=[mailing_address_id])
+
+    @classmethod
+    def find_by_identifier(cls, identifier: str = None):
+        """Return a Business by the id assigned by the Registrar."""
+        colin_entity = None
+        if identifier:
+            colin_entity = cls.query.filter_by(identifier=identifier).one_or_none()
+        return colin_entity
 
     def save(self):
         """Save the object to the database immediately."""

@@ -19,7 +19,7 @@ from registry_schemas.example_data import SPECIAL_RESOLUTION as special_resoluti
 
 from entity_filer.filing_processors import special_resolution
 from tests.unit import create_business, create_filing
-from legal_api.models import  Resolution
+from business_model import  Resolution
 
 
 @pytest.mark.parametrize('legal_type,identifier,special_resolution_type', [

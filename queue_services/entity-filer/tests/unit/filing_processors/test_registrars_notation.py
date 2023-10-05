@@ -15,14 +15,14 @@
 import copy
 import random
 
-from legal_api.models import Filing
+from business_model import Filing
 from registry_schemas.example_data import REGISTRARS_NOTATION_FILING_TEMPLATE
 
-from entity_filer.worker import process_filing
+from entity_filer.resources.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
-async def test_worker_registrars_notation(app, session):
+def test_worker_registrars_notation(app, session):
     """Assert that the registrars notation object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
@@ -36,7 +36,7 @@ async def test_worker_registrars_notation(app, session):
     filing_msg = {'filing': {'id': filing_id}}
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)

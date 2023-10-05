@@ -14,17 +14,20 @@
 """The Unit Tests for the Incorporation filing."""
 
 import copy
+import random
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Filing
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.utils.datetime import datetime
+from business_model import Filing
+from business_model.models.colin_event_id import ColinEventId
+from business_model.utils.datetime import datetime
 from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import conversion
+
 from tests.unit import create_filing
+from tests.unit import nested_session
 
 
 def test_conversion_process_with_nr(app, session):
@@ -48,7 +51,7 @@ def test_conversion_process_with_nr(app, session):
     # Assertions
     assert business.identifier == identifier
     assert business.founding_date == effective_date
-    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
+    assert business.entity_type == filing['filing']['conversion']['nameRequest']['legalType']
     assert business.legal_name == filing['filing']['conversion']['nameRequest']['legalName']
     assert len(business.share_classes.all()) == 2
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
@@ -71,7 +74,7 @@ def test_conversion_process_no_nr(app, session):
     # Assertions
     assert business.identifier == identifier
     assert business.founding_date == effective_date
-    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
+    assert business.entity_type == filing['filing']['conversion']['nameRequest']['legalType']
     assert business.legal_name == business.identifier[2:] + ' B.C. LTD.'
     assert len(business.share_classes.all()) == 2
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
@@ -112,7 +115,7 @@ def test_conversion_coop_from_colin(app, session):
     # Assertions
     assert business.identifier == identifier
     assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
-    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
+    assert business.entity_type == filing['filing']['conversion']['nameRequest']['legalType']
     assert business.legal_name == 'Test'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
@@ -124,37 +127,38 @@ def test_conversion_coop_from_colin(app, session):
 ])
 def test_conversion_bc_company_from_colin(app, session, legal_type, legal_name_suffix):
     """Assert that an existing bc company(LTD, ULC, CCC) incorporation is loaded corrrectly."""
-    # setup
-    identifier = 'BC0000001'
-    colind_id = 1
-    filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
+    with nested_session(session):
+        # setup
+        identifier = 'BC0000001'
+        colind_id = random.randint(1,1000)
+        filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
 
-    # Change the template to be LTD, ULC or CCC
-    filing['filing']['business']['legalType'] = legal_type
-    filing['filing']['business']['identifier'] = identifier
-    filing['filing']['conversion']['nameRequest']['legalType'] = legal_type
-    effective_date = datetime.utcnow()
-    # Create the Filing object in the DB
-    filing_rec = Filing(effective_date=effective_date,
-                        filing_json=filing)
-    colin_event = ColinEventId()
-    colin_event.colin_event_id=colind_id
-    filing_rec.colin_event_ids.append(colin_event)
-    # Override the state setting mechanism
-    filing_rec.skip_status_listener = True
-    filing_rec._status = 'PENDING'
-    filing_rec.save()
-    filing_meta = FilingMeta(application_date=effective_date)
+        # Change the template to be LTD, ULC or CCC
+        filing['filing']['business']['legalType'] = legal_type
+        filing['filing']['business']['identifier'] = identifier
+        filing['filing']['conversion']['nameRequest']['legalType'] = legal_type
+        effective_date = datetime.utcnow()
+        # Create the Filing object in the DB
+        filing_rec = Filing(effective_date=effective_date,
+                            filing_json=filing)
+        colin_event = ColinEventId()
+        colin_event.colin_event_id=colind_id
+        filing_rec.colin_event_ids.append(colin_event)
+        # Override the state setting mechanism
+        filing_rec.skip_status_listener = True
+        filing_rec._status = 'PENDING'
+        filing_rec.save()
+        filing_meta = FilingMeta(application_date=effective_date)
 
-    # test
-    business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
+        # test
+        business, filing_rec = conversion.process(None, filing, filing_rec, filing_meta)
 
-    # Assertions
-    assert business.identifier == identifier
-    assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
-    assert business.legal_type == filing['filing']['conversion']['nameRequest']['legalType']
-    assert business.legal_name == f'{business.identifier[2:]} {legal_name_suffix}'
-    assert len(business.offices.all()) == 2  # One office is created in create_business method.
-    assert len(business.share_classes.all()) == 2
-    assert len(business.party_roles.all()) == 1
-    assert len(filing_rec.filing_party_roles.all()) == 2
+        # Assertions
+        assert business.identifier == identifier
+        assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
+        assert business.entity_type == filing['filing']['conversion']['nameRequest']['legalType']
+        assert business.legal_name == f'{business.identifier[2:]} {legal_name_suffix}'
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
+        assert len(business.share_classes.all()) == 2
+        assert len(business.entity_roles.all()) == 2
+        assert len(filing_rec.filing_entity_roles.all()) == 3

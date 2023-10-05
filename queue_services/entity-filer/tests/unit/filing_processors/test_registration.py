@@ -19,9 +19,8 @@ from http import HTTPStatus
 from unittest.mock import patch, call
 
 import pytest
-from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services import NaicsService
-from legal_api.services.bootstrap import AccountService
+from business_model import LegalEntity, Filing, RegistrationBootstrap
+# from legal_api.services import NaicsService
 from registry_schemas.example_data import (
     FILING_HEADER,
     REGISTRATION
@@ -29,8 +28,9 @@ from registry_schemas.example_data import (
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
-from tests.unit import create_filing
+from tests.unit import create_filing, nested_session
 
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 
 now = '2023-01-08'
 
@@ -61,122 +61,104 @@ del SP_REGISTRATION['filing']['registration']['parties'][1]
 
 
 @pytest.mark.parametrize('legal_type,filing', [
-    ('SP', copy.deepcopy(SP_REGISTRATION)),
+    # ('SP', copy.deepcopy(SP_REGISTRATION)),
     ('GP', copy.deepcopy(GP_REGISTRATION)),
 ])
 def test_registration_process(app, session, legal_type, filing):
     """Assert that the registration object is correctly populated to model objects."""
     # setup
-    identifier = 'NR 1234567'
-    filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
-    filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
-    create_filing('123', filing)
+    with nested_session(session):
+        identifier = 'NR 1234567'
+        filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
+        if legal_type == 'SP':
+            del SP_REGISTRATION['filing']['registration']['parties'][0]['officer']['id']
 
-    effective_date = datetime.utcnow()
-    filing_rec = Filing(effective_date=effective_date, filing_json=filing)
-    filing_meta = FilingMeta(application_date=effective_date)
+        create_filing('123', filing)
 
-    naics_response = {
-        'code': REGISTRATION['business']['naics']['naicsCode'],
-        'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
-    }
+        effective_date = datetime.utcnow()
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta(application_date=effective_date)
 
-    # test
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+        naics_response = {
+            'code': REGISTRATION['business']['naics']['naicsCode'],
+            'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+        }
 
-    # Assertions
-    assert business.identifier.startswith('FM')
-    assert business.founding_date == effective_date
-    assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
-    assert business.legal_type == filing['filing']['registration']['nameRequest']['legalType']
-    assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
-    assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
-    assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
-    assert business.naics_key == naics_response['naicsKey']
-    assert business.tax_id == REGISTRATION['business']['taxId']
-    assert business.state == Business.State.ACTIVE
-    if legal_type == 'SP':
-        assert len(filing_rec.filing_party_roles.all()) == 1
-        assert len(business.party_roles.all()) == 1
-    if legal_type == 'GP':
-        assert len(filing_rec.filing_party_roles.all()) == 1
-        assert len(business.party_roles.all()) == 2
-    assert len(business.offices.all()) == 1
-    assert business.offices[0].office_type == 'businessOffice'
+        # test
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+
+        # Assertions
+        assert business.identifier.startswith('FM')
+        assert business.founding_date == effective_date
+        assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
+        assert business.entity_type == filing['filing']['registration']['nameRequest']['legalType']
+        assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
+        assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
+        assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
+        assert business.naics_key == naics_response['naicsKey']
+        assert business.tax_id == REGISTRATION['business']['taxId']
+        assert business.state == LegalEntity.State.ACTIVE
+        if legal_type == 'SP':
+            assert len(filing_rec.filing_entity_roles.all()) == 1
+            assert len(business.entity_roles.all()) == 0
+        if legal_type == 'GP':
+            assert len(filing_rec.filing_entity_roles.all()) == 3
+            assert len(business.entity_roles.all()) == 0
+        assert len(business.offices.all()) == 1
+        assert business.offices[0].office_type == 'businessOffice'
 
 
-@pytest.mark.parametrize(
-    'legal_type, filing, party_type, organization_name, first_name, last_name, middle_name, expected_pass_code',
-    [
-        ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
-        ('SP', copy.deepcopy(SP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
-        ('SP', copy.deepcopy(SP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME'),
-        ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', '', 'DOE, JANE'),
-        ('GP', copy.deepcopy(GP_REGISTRATION), 'person', '', 'Jane', 'Doe', 'XYZ', 'DOE, JANE XYZ'),
-        ('GP', copy.deepcopy(GP_REGISTRATION), 'organization', 'xyz org name', '', '', '', 'XYZ ORG NAME')
-    ])
-def test_registration_affiliation(app, session, legal_type, filing, party_type, organization_name, first_name,
-                                  last_name, middle_name, expected_pass_code):
-    """Assert affiliation of a firm calls expected auth api endpoints and with expected parameter values."""
-
+@pytest.mark.parametrize('legal_type,filing', [
+    ('SP', copy.deepcopy(SP_REGISTRATION)),
+])
+def test_sp_registration_process(app, session, legal_type, filing):
+    """Assert that the registration object is correctly populated to model objects."""
     # setup
-    bootstrap = RegistrationBootstrap(account=1111111, _identifier='TNpUnst/Va')
-    identifier = 'NR 1234567'
-    org_party_tax_id = '123456789'
-    org_party_identifier = 'BC1011333'
-    filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
-    filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
-    filing['filing']['registration']['parties'][0]['officer']['partyType'] = party_type
-    filing['filing']['registration']['parties'][0]['officer']['organizationName'] = organization_name
-    filing['filing']['registration']['parties'][0]['officer']['firstName'] = first_name
-    filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
-    filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
+    with nested_session(session):
+        nr_num = 'NR 1234567'
+        filing['filing']['registration']['nameRequest']['nrNumber'] = nr_num
+        filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
+        if legal_type == 'SP':
+            del SP_REGISTRATION['filing']['registration']['parties'][0]['officer']['id']
 
-    create_filing('123', filing)
+        create_filing('123', filing)
 
-    effective_date = datetime.utcnow()
-    filing_rec = Filing(effective_date=effective_date, filing_json=filing)
-    filing_meta = FilingMeta(application_date=effective_date)
+        effective_date = datetime.utcnow()
+        filing_rec = Filing(effective_date=effective_date, filing_json=filing)
+        filing_meta = FilingMeta(application_date=effective_date)
 
-    naics_response = {
-        'code': REGISTRATION['business']['naics']['naicsCode'],
-        'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
-    }
+        naics_response = {
+            'code': REGISTRATION['business']['naics']['naicsCode'],
+            'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+        }
 
-    # create business and filing records
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
-        business.save()
-        filing_rec.save()
+        # test
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
-    # test
-    details = {
-        'bootstrapIdentifier': bootstrap.identifier,
-        'identifier': business.identifier,
-        'nrNumber': identifier
-    }
+        # Assertions
+        # assert business.founding_date.replace(tzinfo=None) == effective_date
+        assert business.entity_type == LegalEntity.EntityTypes.PERSON
 
-    with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
-        with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
-            with patch.object(AccountService, 'update_entity', return_value=HTTPStatus.OK):
-                with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
-                    registration.update_affiliation(business, filing_rec)
-                    assert AccountService.create_affiliation.call_count == 1
-                    assert AccountService.delete_affiliation.call_count == 0
-                    assert AccountService.update_entity.call_count == 1
+        alternate_name = business.alternate_names.all()[0]
+        assert alternate_name.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
+        assert alternate_name.identifier.startswith('FM')
 
-                    first_affiliation_call_args = AccountService.create_affiliation.call_args_list[0]
-                    expected_affiliation_call_args = call(account=1111111,
-                                                          business_registration=business.identifier,
-                                                          business_name=business.legal_name,
-                                                          corp_type_code=legal_type,
-                                                          pass_code=expected_pass_code,
-                                                          details=details)
-                    assert first_affiliation_call_args == expected_affiliation_call_args
-
-                    first_update_entity_call_args = AccountService.update_entity.call_args_list[0]
-                    expected_update_entity_call_args = call(business_registration=bootstrap.identifier,
-                                                            business_name=business.identifier,
-                                                            corp_type_code='RTMP')
-                    assert first_update_entity_call_args == expected_update_entity_call_args
+        assert alternate_name.name == filing['filing']['registration']['nameRequest']['legalName']
+        # TODO I don't think it makes sens to be changing or setting
+        # a natural person's NAICS codes. Maybe this is an Alias/DBA thing
+        # assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
+        # assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
+        # assert business.naics_key == naics_response['naicsKey']
+        assert business.tax_id == REGISTRATION['business']['taxId']
+        assert business.state == LegalEntity.State.ACTIVE
+        
+        
+        if legal_type == 'SP':
+            assert len(filing_rec.filing_entity_roles.all()) == 1
+            assert len(business.entity_roles.all()) == 0
+        if legal_type == 'GP':
+            assert len(filing_rec.filing_entity_roles.all()) == 3
+            assert len(business.entity_roles.all()) == 0

@@ -33,6 +33,15 @@ from .db import db  # noqa: I001
 
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 
+class DissolutionTypes(str, Enum):
+    """Dissolution types."""
+
+    ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
+    INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
+
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
@@ -58,6 +67,39 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         COLIN = 'COLIN'
         LEAR = 'LEAR'
+
+    class FilingTypes(str, Enum):
+        """Render an Enum of all Filing Types."""
+
+        ADMIN_FREEZE = 'adminFreeze'
+        ALTERATION = 'alteration'
+        AMALGAMATIONAPPLICATION = 'amalgamationApplication'
+        AMENDEDAGM = 'amendedAGM'
+        AMENDEDANNUALREPORT = 'amendedAnnualReport'
+        AMENDEDCHANGEOFDIRECTORS = 'amendedChangeOfDirectors'
+        ANNUALREPORT = 'annualReport'
+        APPOINTRECEIVER = 'appointReceiver'
+        CHANGEOFADDRESS = 'changeOfAddress'
+        CHANGEOFDIRECTORS = 'changeOfDirectors'
+        CHANGEOFNAME = 'changeOfName'
+        CHANGEOFREGISTRATION = 'changeOfRegistration'
+        CONSENTCONTINUATIONOUT = 'consentContinuationOut'
+        CONTINUATIONOUT = 'continuationOut'
+        CONTINUEDOUT = 'continuedOut'
+        CONVERSION = 'conversion'
+        CORRECTION = 'correction'
+        COURTORDER = 'courtOrder'
+        DISSOLUTION = 'dissolution'
+        DISSOLVED = 'dissolved'
+        INCORPORATIONAPPLICATION = 'incorporationApplication'
+        PUTBACKON = 'putBackOn'
+        REGISTRARSNOTATION = 'registrarsNotation'
+        REGISTRARSORDER = 'registrarsOrder'
+        REGISTRATION = 'registration'
+        RESTORATION = 'restoration'
+        RESTORATIONAPPLICATION = 'restorationApplication'
+        SPECIALRESOLUTION = 'specialResolution'
+        TRANSITION = 'transition'
 
     # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
@@ -572,6 +614,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
+            self._status = Filing.Status.COMPLETED.value
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
                 self.effective_date is None or (
                     self.payment_completion_date
@@ -977,7 +1020,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
 
-    elif filing.transaction_id:
+    elif filing._completion_date:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
 
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:

@@ -18,10 +18,11 @@ Test-Suite to ensure that the Business Model is working as expected.
 """
 import uuid
 from datetime import datetime, timedelta
-from flask import current_app
 
 import datedelta
 import pytest
+from flask import current_app
+from sql_versioning import history_cls
 
 from business_model.exceptions import BusinessException
 from business_model import LegalEntity
@@ -82,6 +83,26 @@ def test_business(session):
     assert legal_entity.id is not None
     assert legal_entity.state == LegalEntity.State.ACTIVE
     assert legal_entity.admin_freeze is False
+
+def test_business_history(session):
+    """Assert a valid business is stored correctly.
+
+    Start with a blank database.
+    """
+    legal_entity =factory_legal_entity('001')
+    legal_entity.save()
+
+    legal_entity.admin_freeze = False
+    legal_entity.save()
+
+    entity_history_cls = history_cls(LegalEntity)
+    entity_history = session.query(entity_history_cls).all()
+
+    for en in entity_history:
+        print(en)
+    # assert legal_entity.id is not None
+    # assert legal_entity.state == LegalEntity.State.ACTIVE
+    # assert legal_entity.admin_freeze is False
 
 
 def test_business_find_by_legal_name_pass(session):

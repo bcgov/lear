@@ -17,14 +17,13 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from legal_api.models import Business, Filing
+from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
-    business_info,
-    business_profile,
     filings,
+    legal_entity_info,
     name_request,
     rules_and_memorandum,
     shares,
@@ -32,7 +31,7 @@ from entity_filer.filing_processors.filing_components import (
 
 
 def process(
-    business: Business,
+    business: LegalEntity,
     filing_submission: Filing,
     filing: Dict,
     filing_meta: FilingMeta,
@@ -42,19 +41,19 @@ def process(
     filing_meta.alteration = {}
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
-        if business.legal_type == Business.LegalTypes.COOP.value:
+        if business.entity_type == LegalEntity.EntityTypes.COOP.value:
             alteration_json = dpath.util.get(filing, '/alteration')
             coop_association_type = alteration_json.get('cooperativeAssociationType')
             filing_meta.alteration = {**filing_meta.alteration,
                                       **{'fromCooperativeAssociationType': business.association_type,
                                          'toCooperativeAssociationType': coop_association_type}}
-            business_info.set_association_type(business, coop_association_type)
+            legal_entity_info.set_association_type(business, coop_association_type)
         else:
             business_json = dpath.util.get(filing, '/alteration/business')
             filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalType': business.legal_type,
+                                      **{'fromLegalType': business.entity_type,
                                          'toLegalType': business_json.get('legalType')}}
-            business_info.set_corp_type(business, business_json)
+            legal_entity_info.set_corp_type(business, business_json)
 
     # Alter the business name, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -62,7 +61,7 @@ def process(
         # from name -> numbered OR name -> name OR numbered to name
         business_json = dpath.util.get(filing, '/alteration/nameRequest')
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, business_json)
+        legal_entity_info.set_legal_name(business.identifier, business, business_json)
         if from_legal_name != business.legal_name:
             filing_meta.alteration = {**filing_meta.alteration,
                                       **{'fromLegalName': from_legal_name,
@@ -103,19 +102,10 @@ def process(
         rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key)
 
 
-def post_process(business: Business, filing: Filing, correction: bool = False):
+def post_process(business: LegalEntity, filing: Filing, correction: bool = False):
     """Post processing activities for incorporations.
 
     THIS SHOULD NOT ALTER THE MODEL
     """
     if not correction:
         name_request.consume_nr(business, filing, 'alteration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['alteration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

@@ -18,22 +18,21 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from legal_api.models import Address, Business, Filing, Party, PartyRole
+from business_model import Address, LegalEntity, Filing, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
-    business_info,
-    business_profile,
     create_address,
-    create_party,
+    merge_party,
     create_role,
     filings,
+    legal_entity_info,
     name_request,
     update_address,
 )
 
 
-def process(business: Business, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
+def process(business: LegalEntity, change_filing_rec: Filing, change_filing: Dict, filing_meta: FilingMeta):
     """Render the change of registration filing onto the business model objects."""
     filing_meta.change_of_registration = {}
     # Update business legalName if present
@@ -41,12 +40,12 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
         name_request_json = dpath.util.get(change_filing, '/changeOfRegistration/nameRequest')
         if name_request_json.get('legalName'):
             from_legal_name = business.legal_name
-            business_info.set_legal_name(business.identifier, business, name_request_json)
+            legal_entity_info.set_legal_name(business.identifier, business, name_request_json)
             if from_legal_name != business.legal_name:
                 filing_meta.change_of_registration = {**filing_meta.change_of_registration,
                                                       **{'fromLegalName': from_legal_name,
                                                          'toLegalName': business.legal_name}}
-    # Update Nature of Business
+    # Update Nature of LegalEntity
     if (naics := change_filing.get('changeOfRegistration', {}).get('business', {}).get('naics')) and \
             (naics_code := naics.get('naicsCode')):
         if business.naics_code != naics_code:
@@ -54,7 +53,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
                                                   **{'fromNaicsCode': business.naics_code,
                                                      'toNaicsCode': naics_code,
                                                      'naicsDescription': naics.get('naicsDescription')}}
-            business_info.update_naics_info(business, naics)
+            legal_entity_info.update_naics_info(business, naics)
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
@@ -76,7 +75,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
 
-def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
+def update_parties(business: LegalEntity, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
     end_date_time = datetime.datetime.utcnow()
@@ -128,7 +127,7 @@ def _update_party(party_info):
 
 
 def _create_party_info(business, change_filing_rec, party_info):
-    party = create_party(business_id=business.id, party_info=party_info, create=False)
+    party = merge_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
         role = {
@@ -143,18 +142,9 @@ def _create_party_info(business, change_filing_rec, party_info):
             business.party_roles.append(party_role)
 
 
-def post_process(business: Business, filing: Filing):
+def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for change of registration.
 
     THIS SHOULD NOT ALTER THE MODEL
     """
     name_request.consume_nr(business, filing, 'changeOfRegistration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['changeOfRegistration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

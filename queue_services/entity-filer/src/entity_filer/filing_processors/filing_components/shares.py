@@ -17,10 +17,10 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 from dateutil.parser import parse
-from legal_api.models import Business, Resolution, ShareClass, ShareSeries
+from business_model import LegalEntity, Resolution, ShareClass, ShareSeries
 
 
-def update_share_structure(business: Business, share_structure: Dict) -> Optional[List]:
+def update_share_structure(business: LegalEntity, share_structure: Dict) -> Optional[List]:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -71,7 +71,7 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
     return err
 
 
-def update_share_structure_correction(business: Business, share_structure: Dict) -> Optional[List]:
+def update_share_structure_correction(business: LegalEntity, share_structure: Dict) -> Optional[List]:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -136,7 +136,7 @@ def update_share_structure_correction(business: Business, share_structure: Dict)
     return err
 
 
-def delete_existing_shares(business: Business):
+def delete_existing_shares(business: LegalEntity):
     """Delete the existing share classes and series for a business."""
     if existing_shares := business.share_classes.all():
         for share_class in existing_shares:
@@ -169,7 +169,7 @@ def create_share_class(share_class_info: dict) -> ShareClass:
     return share_class
 
 
-def update_business_share_class(share_classes: list, business: Business, exclusion_entries: list):
+def update_business_share_class(share_classes: list, business: LegalEntity, exclusion_entries: list):
     """Update existing ones in both db if they are present in json."""
     share_class_db_ids = [item.id for item in business.share_classes]
 

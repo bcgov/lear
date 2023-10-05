@@ -16,15 +16,15 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Comment, Filing
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_model import LegalEntity, Comment, Filing
+from ..utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business, continuation_out_filing: Filing, filing: Dict, filing_meta: FilingMeta):
-    """Render the continuation out filing into the business model objects."""
+def process(legal_entity: LegalEntity, continuation_out_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+    """Render the continuation out filing into the legal_entity model objects."""
     # update continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(filing, '/continuationOut/courtOrder')
@@ -46,18 +46,18 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
         )
     )
 
-    business.state = Business.State.HISTORICAL
-    business.state_filing_id = continuation_out_filing.id
-    business.dissolution_date = continuation_out_date
+    legal_entity.state = LegalEntity.State.HISTORICAL
+    legal_entity.state_filing_id = continuation_out_filing.id
+    legal_entity.dissolution_date = continuation_out_date
 
-    business.jurisdiction = foreign_jurisdiction_country
-    business.foreign_legal_name = legal_name
-    business.continuation_out_date = continuation_out_date
+    legal_entity.jurisdiction = foreign_jurisdiction_country
+    legal_entity.foreign_legal_name = legal_name
+    legal_entity.continuation_out_date = continuation_out_date
 
     with suppress(IndexError, KeyError, TypeError):
         foreign_jurisdiction_region = foreign_jurisdiction.get('region')
         foreign_jurisdiction_region = foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
-        business.foreign_jurisdiction_region = foreign_jurisdiction_region
+        legal_entity.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}
     filing_meta.continuation_out = {
