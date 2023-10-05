@@ -17,42 +17,46 @@ from __future__ import annotations
 from tokenize import String
 from typing import List, Optional
 
-from legal_api.models import Business, Document, Filing
-from legal_api.models.document import DocumentType
-from legal_api.services.minio import MinioService
+from business_model import LegalEntity, Document, Filing
+# from business_model.document import DocumentType
+# from legal_api.services.minio import MinioService
 
-from entity_filer.utils import replace_file_with_certified_copy
+# from entity_filer.utils import replace_file_with_certified_copy
 
 
 def update_rules(
-    business: Business,
+    business: LegalEntity,
     filing: Filing,
     rules_file_key: String,
     file_name: String = None
 ) -> Optional[List]:
     """Updtes rules if any.
 
-    Assumption: rules file key and name have already been validated
-    """
-    if not business or not rules_file_key:
-        # if nothing is passed in, we don't care and it's not an error
-        return None
+    # TODO Document stamping?
+    raise Exception
 
-    rules_file = MinioService.get_file(rules_file_key)
-    replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date, file_name)
 
-    document = Document()
-    document.type = DocumentType.COOP_RULES.value
-    document.file_key = rules_file_key
-    document.business_id = business.id
-    document.filing_id = filing.id
-    business.documents.append(document)
+    # Assumption: rules file key and name have already been validated
+    # """
+    # if not business or not rules_file_key:
+    #     # if nothing is passed in, we don't care and it's not an error
+    #     return None
+
+    # rules_file = MinioService.get_file(rules_file_key)
+    # replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date, file_name)
+
+    # document = Document()
+    # document.type = DocumentType.COOP_RULES.value
+    # document.file_key = rules_file_key
+    # document.business_id = business.id
+    # document.filing_id = filing.id
+    # business.documents.append(document)
 
     return None
 
 
 def update_memorandum(
-    business: Business,
+    business: LegalEntity,
     filing: Filing,
     memorandum_file_key: String
 ) -> Optional[List]:
@@ -65,14 +69,14 @@ def update_memorandum(
         return None
 
     # create certified copy for memorandum document
-    memorandum_file = MinioService.get_file(memorandum_file_key)
-    replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
+    # memorandum_file = MinioService.get_file(memorandum_file_key)
+    # replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
 
-    document = Document()
-    document.type = DocumentType.COOP_MEMORANDUM.value
-    document.file_key = memorandum_file_key
-    document.business_id = business.id
-    document.filing_id = filing.id
-    business.documents.append(document)
+    # document = Document()
+    # document.type = DocumentType.COOP_MEMORANDUM.value
+    # document.file_key = memorandum_file_key
+    # document.business_id = business.id
+    # document.filing_id = filing.id
+    # business.documents.append(document)
 
     return None

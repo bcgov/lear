@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -913,4 +914,8 @@ class LegalEntityIdentifier():
                 (sequence_val := LegalEntity.get_next_value_from_sequence(legal_entity_type))):
             return None
 
+<<<<<<< HEAD
         return f'{legal_entity_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}'
+=======
+        return f'{legal_entity_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}'
+>>>>>>> cf6b0eea (large changes to filer for model and queue changes)

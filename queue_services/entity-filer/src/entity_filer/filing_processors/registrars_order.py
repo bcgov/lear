@@ -16,7 +16,7 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
-from legal_api.models import Filing
+from business_model import Filing
 
 from entity_filer.filing_meta import FilingMeta
 

@@ -17,44 +17,47 @@ from http import HTTPStatus
 
 import requests
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException
+#from entity_filer.exceptions import DefaultException
 from flask import current_app
-from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services.bootstrap import AccountService
-from legal_api.services.utils import get_str
+from business_model import LegalEntity, Filing, RegistrationBootstrap
+# from legal_api.services.bootstrap import AccountService
+from entity_filer.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, filing_type='incorporationApplication'):
+def consume_nr(business: LegalEntity, filing: Filing, filing_type='incorporationApplication'):
     """Update the nr to a consumed state."""
     try:
         # skip this if none (nrNumber will not be available for numbered company)
         if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
+            pass
 
-            namex_svc_url = current_app.config.get('NAMEX_API')
-            token = AccountService.get_bearer_token()
+            # TODO Consume NR
 
-            # Create an entity record
-            data = json.dumps({'consume': {'corpNum': business.identifier}})
-            rv = requests.patch(
-                url=''.join([namex_svc_url, nr_num]),
-                headers={**AccountService.CONTENT_TYPE_JSON,
-                         'Authorization': AccountService.BEARER + token},
-                data=data,
-                timeout=AccountService.timeout
-            )
-            if not rv.status_code == HTTPStatus.OK:
-                raise QueueException
+            # namex_svc_url = current_app.config.get('NAMEX_API')
+            # token = AccountService.get_bearer_token()
 
-            # remove the NR from the account
-            if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
-                AccountService.delete_affiliation(bootstrap.account, nr_num)
+            # # Create an entity record
+            # data = json.dumps({'consume': {'corpNum': business.identifier}})
+            # rv = requests.patch(
+            #     url=''.join([namex_svc_url, nr_num]),
+            #     headers={**AccountService.CONTENT_TYPE_JSON,
+            #              'Authorization': AccountService.BEARER + token},
+            #     data=data,
+            #     timeout=AccountService.timeout
+            # )
+            # if not rv.status_code == HTTPStatus.OK:
+            #     raise DefaultException
+
+            # # remove the NR from the account
+            # if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
+            #     AccountService.delete_affiliation(bootstrap.account, nr_num)
     except KeyError:
         pass  # return
     except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        sentry_sdk.capture_message(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
+        sentry_sdk.print(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
 
 
-def set_legal_name(business: Business, name_request_info: dict):
+def set_legal_name(business: LegalEntity, name_request_info: dict):
     """Set the legal_name in the business object."""
     if legal_name := name_request_info.get('legalName', None):
         business.legal_name = legal_name

@@ -14,13 +14,14 @@
 """The Unit Tests and the helper routines."""
 import base64
 import uuid
+from contextlib import contextmanager
 
+import sqlalchemy
 from freezegun import freeze_time
-from sqlalchemy_continuum import versioning_manager
-from legal_api.utils.datetime import datetime, timezone
+from entity_filer.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from legal_api.models import db, Filing
-from legal_api.models.colin_event_id import ColinEventId
+from business_model import db, Filing
+from business_model.models.colin_event_id import ColinEventId
 
 AR_FILING = {
     'filing': {
@@ -368,15 +369,18 @@ COMBINED_FILING = {
 
 def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
-    from legal_api.models import Filing
+    from business_model import Filing
     filing = Filing()
     filing.payment_token = str(token)
     filing.filing_date = filing_date
 
     if json_filing:
-        filing.filing_json = json_filing
+        # filing.filing_json = json_filing
+        filing._filing_json = json_filing
+        filing._filing_type = json_filing.get('filing',{}).get('header',{}).get('name')
+        filing._filing_sub_type = filing.get_filings_sub_type(filing._filing_type, json_filing)
     if business_id:
-        filing.business_id = business_id
+        filing.legal_entity_id = business_id
     if bootstrap_id:
         filing.temp_reg = bootstrap_id
 
@@ -386,10 +390,10 @@ def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_D
 
 def create_business(identifier, legal_type=None, legal_name=None):
     """Return a test business."""
-    from legal_api.models import Address, Business
-    business = Business()
+    from business_model import Address, LegalEntity
+    business = LegalEntity()
     business.identifier = identifier
-    business.legal_type = legal_type
+    business.entity_type = legal_type
     business.legal_name = legal_name
     business = create_business_address(business, Address.DELIVERY)
     # business = create_business_address(business, Address.MAILING)
@@ -399,7 +403,7 @@ def create_business(identifier, legal_type=None, legal_name=None):
 
 def create_business_address(business, type):
     """Create an address."""
-    from legal_api.models import Address, Office
+    from business_model import Address, Office
     address = Address(
         city='Test City',
         street=f'{business.identifier}-Test Street',
@@ -421,7 +425,7 @@ def create_business_address(business, type):
 
 def create_user(username='temp_user', firstname='firstname', lastname='lastname', sub='sub', iss='iss'):
     """Create a user."""
-    from legal_api.models import User
+    from business_model import User
 
     new_user = User(
         username=username,
@@ -437,10 +441,10 @@ def create_user(username='temp_user', firstname='firstname', lastname='lastname'
 
 def create_entity(identifier, legal_type, legal_name):
     """Return a test business."""
-    from legal_api.models import Address, Business
-    business = Business()
+    from business_model import Address, LegalEntity
+    business = LegalEntity()
     business.identifier = identifier
-    business.legal_type = legal_type
+    business.entity_type = legal_type
     business.legal_name = legal_name
     business.save()
     return business
@@ -448,7 +452,7 @@ def create_entity(identifier, legal_type, legal_name):
 
 def create_office(business, office_type: str):
     """Create office."""
-    from legal_api.models import Address, Office
+    from business_model import Address, Office
     office = Office(office_type=office_type)
     business.offices.append(office)
     business.save()
@@ -457,7 +461,7 @@ def create_office(business, office_type: str):
 
 def create_alias(business, alias):
     """Create alias."""
-    from legal_api.models import Alias
+    from business_model import Alias
     alias = Alias(alias=alias, type=Alias.AliasType.TRANSLATION.value)
     business.aliases.append(alias)
     business.save()
@@ -466,7 +470,7 @@ def create_alias(business, alias):
 
 def create_office_address(business, office, address_type):
     """Create an address."""
-    from legal_api.models import Address, Office
+    from business_model import Address, Office
     address = Address(
         city='Test City',
         street=f'{business.identifier}-Test Street',
@@ -485,7 +489,7 @@ def create_office_address(business, office, address_type):
 
 def create_party(party_json):
     """Create a director."""
-    from legal_api.models import Address, Party
+    from business_model import Address, Party
     new_party = Party(
         first_name=party_json['officer'].get('firstName', '').upper(),
         last_name=party_json['officer'].get('lastName', '').upper(),
@@ -517,7 +521,7 @@ def create_party(party_json):
 
 def create_party_role(business, party, roles, appointment_date):
     """Create a director."""
-    from legal_api.models import PartyRole
+    from business_model import PartyRole
     for role in roles:
         party_role = PartyRole(
             role=role,
@@ -530,7 +534,7 @@ def create_party_role(business, party, roles, appointment_date):
     return business
 
 
-def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
+def factory_completed_filing(legal_entity, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
     """Create a completed filing."""
     if not payment_token:
         payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
@@ -538,14 +542,11 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
     with freeze_time(filing_date):
 
         filing = Filing()
-        filing.business_id = business.id
+        filing.legal_entity_id = legal_entity.id
         filing.filing_date = filing_date
         filing.filing_json = data_dict
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
@@ -555,4 +556,23 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
             colin_event.filing_id = filing.id
             colin_event.save()
         filing.save()
+
+        legal_entity.change_filing_id = filing.id
+        legal_entity.save()
+
     return filing
+
+
+@contextmanager
+def nested_session(session):
+    try:
+        sess = session.begin_nested()
+        yield sess
+        sess.rollback()
+    except sqlalchemy.exc.ResourceClosedError:
+        print("couldn't rollback, as the session is closed.")
+    except Exception as err:
+        print(err)
+        raise Exception() from err
+    finally:
+        pass

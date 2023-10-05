@@ -17,13 +17,18 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
+from business_model import Address
+from business_model import EntityRole
+from business_model import LegalEntity
+from business_model import Office
+from business_model import Party
+from business_model import ShareClass
+from business_model import ShareSeries
 
 from entity_filer.filing_processors.filing_components import (
     aliases,
-    business_info,
-    business_profile,
     filings,
+    legal_entity_info,
     name_request,
     resolutions,
     shares,
@@ -31,13 +36,13 @@ from entity_filer.filing_processors.filing_components import (
 
 
 JSON_ROLE_CONVERTER = {
-    'custodian': PartyRole.RoleTypes.CUSTODIAN.value,
-    'completing party': PartyRole.RoleTypes.COMPLETING_PARTY.value,
-    'director': PartyRole.RoleTypes.DIRECTOR.value,
-    'incorporator': PartyRole.RoleTypes.INCORPORATOR.value,
-    'proprietor': PartyRole.RoleTypes.PROPRIETOR.value,
-    'partner': PartyRole.RoleTypes.PARTNER.value,
-    'applicant': PartyRole.RoleTypes.APPLICANT.value,
+    'custodian': EntityRole.RoleTypes.custodian.value,
+    'completing party': EntityRole.RoleTypes.completing_party.value,
+    'director': EntityRole.RoleTypes.director.value,
+    'incorporator': EntityRole.RoleTypes.incorporator.value,
+    'proprietor': EntityRole.RoleTypes.proprietor.value,
+    'partner': EntityRole.RoleTypes.partner.value,
+    'applicant': EntityRole.RoleTypes.applicant.value,
 }
 
 
@@ -73,7 +78,7 @@ def update_address(address: Address, new_info: dict) -> Address:
     return address
 
 
-def create_office(business, office_type, addresses) -> Office:
+def create_office(legal_entity, office_type, addresses) -> Office:
     """Create a new office for incorporation."""
     office = Office()
     office.office_type = office_type
@@ -81,21 +86,21 @@ def create_office(business, office_type, addresses) -> Office:
     # Iterate addresses and add to this office
     for k, v in addresses.items():
         address = create_address(v, k)
-        address.business_id = business.id
+        address.legal_entity_id = legal_entity.id
         if address:
             office.addresses.append(address)
     return office
 
 
-def create_party(business_id: int, party_info: dict, create: bool = True) -> Party:
+def merge_party(legal_entity_id: int, party_info: dict, create: bool = True) -> Party:
     """Create a new party or get them if they already exist."""
     party = None
     if not (middle_initial := party_info['officer'].get('middleInitial')):
         middle_initial = party_info['officer'].get('middleName', '')
 
     if create:
-        party = PartyRole.find_party_by_name(
-            business_id=business_id,
+        party = EntityRole.find_party_by_name(
+            legal_entity_id=legal_entity_id,
             first_name=party_info['officer'].get('firstName', '').upper(),
             last_name=party_info['officer'].get('lastName', '').upper(),
             middle_initial=middle_initial.upper(),
@@ -122,10 +127,45 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
         party.mailing_address = mailing_address
     return party
 
+def create_entity_party(legal_entity_id: int, party_info: dict, create: bool = True) -> LegalEntity:
+    """Create a new party or get them if they already exist."""
+    # HERE
+    legal_entity = None
+    if not (middle_initial := party_info['officer'].get('middleInitial')):
+        middle_initial = party_info['officer'].get('middleName', '')
 
-def create_role(party: Party, role_info: dict) -> PartyRole:
+    if create:
+        party = EntityRole.find_party_by_name(
+            legal_entity_id=legal_entity_id,
+            first_name=party_info['officer'].get('firstName', '').upper(),
+            last_name=party_info['officer'].get('lastName', '').upper(),
+            middle_initial=middle_initial.upper(),
+            org_name=party_info['officer'].get('organizationName', '').upper()
+        )
+    if not party:
+        party = Party(
+            first_name=party_info['officer'].get('firstName', '').upper(),
+            last_name=party_info['officer'].get('lastName', '').upper(),
+            middle_initial=middle_initial.upper(),
+            title=party_info.get('title', '').upper(),
+            organization_name=party_info['officer'].get('organizationName', '').upper(),
+            email=party_info['officer'].get('email'),
+            identifier=party_info['officer'].get('identifier'),
+            party_type=party_info['officer'].get('partyType')
+        )
+
+    # add addresses to party
+    if party_info.get('deliveryAddress', None):
+        address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
+        party.delivery_address = address
+    if party_info.get('mailingAddress', None):
+        mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
+        party.mailing_address = mailing_address
+    return party
+
+def create_role(party: Party, role_info: dict) -> EntityRole:
     """Create a new party role and link to party."""
-    party_role = PartyRole(
+    party_role = EntityRole(
         role=JSON_ROLE_CONVERTER.get(role_info.get('roleType').lower(), ''),
         appointment_date=role_info['appointmentDate'],
         cessation_date=role_info['cessationDate'],
@@ -133,8 +173,17 @@ def create_role(party: Party, role_info: dict) -> PartyRole:
     )
     return party_role
 
+def create_entity_role(legal_entity: LegalEntity, role_info: dict) -> EntityRole:
+    """Create a new party role and link to party."""
+    entity_role = EntityRole(
+        role=JSON_ROLE_CONVERTER.get(role_info.get('roleType').lower(), ''),
+        appointment_date=role_info['appointmentDate'],
+        cessation_date=role_info['cessationDate'],
+        party=legal_entity
+    )
+    return entity_role
 
-def update_director(director: PartyRole, new_info: dict) -> PartyRole:
+def update_director(director: EntityRole, new_info: dict) -> EntityRole:
     """Update director with new info."""
     director.party.first_name = new_info['officer'].get('firstName', '').upper()
     director.party.middle_initial = new_info['officer'].get('middleInitial', '').upper()

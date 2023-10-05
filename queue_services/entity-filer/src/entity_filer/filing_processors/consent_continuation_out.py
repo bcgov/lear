@@ -17,15 +17,15 @@ from typing import Dict
 
 import datedelta
 import dpath
-from legal_api.models import Business, ConsentContinuationOut, Filing
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_model import LegalEntity, ConsentContinuationOut, Filing
+from ..utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
-    """Render the consent continuation out filing into the business model objects."""
+def process(legal_entity: LegalEntity, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+    """Render the consent continuation out filing into the legal_entity model objects."""
     # update consent continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         consent_continuation_out_json = dpath.util.get(filing, '/consentContinuationOut/courtOrder')
@@ -47,8 +47,8 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     consent_continuation_out.expiry_date = expiry_date
 
     consent_continuation_out.filing_id = cco_filing.id
-    consent_continuation_out.business_id = business.id
-    business.consent_continuation_outs.append(consent_continuation_out)
+    consent_continuation_out.legal_entity_id = legal_entity.id
+    legal_entity.consent_continuation_outs.append(consent_continuation_out)
 
     filing_meta.consent_continuation_out = {}
     filing_meta.consent_continuation_out = {**filing_meta.consent_continuation_out,

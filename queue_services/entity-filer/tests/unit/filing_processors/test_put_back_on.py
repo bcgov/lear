@@ -15,12 +15,12 @@
 import copy
 import random
 
-from legal_api.models import Business, Filing
+from business_model import LegalEntity, Filing
 from registry_schemas.example_data import PUT_BACK_ON, FILING_HEADER
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import put_back_on
-from entity_filer.worker import process_filing
+from entity_filer.resources.worker import process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -48,7 +48,7 @@ def test_worker_put_back_on(app, session):
     # Check outcome
     final_filing = Filing.find_by_id(filing.id)
 
-    assert business.state == Business.State.ACTIVE
+    assert business.state == LegalEntity.State.ACTIVE
     assert business.state_filing_id is None
     assert business.dissolution_date is None
     assert filing_json['filing']['putBackOn']['details'] == final_filing.order_details

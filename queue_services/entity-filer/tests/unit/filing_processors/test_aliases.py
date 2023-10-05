@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the aliases processor."""
-from legal_api.models import Alias
+from business_model import Alias
 
 from entity_filer.filing_processors.filing_components import aliases
 from tests.unit import create_business

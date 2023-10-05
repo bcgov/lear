@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Manages the  names of a Business."""
+"""Manages the  names of a LegalEntity."""
 from contextlib import suppress
 from typing import Dict, Optional
 
 from flask_babel import _ as babel  # noqa: N813
-from legal_api.models import Filing
-from legal_api.utils.datetime import datetime
+from business_model import Filing
+from ...utils.datetime import datetime
 
 
 def update_filing_court_order(filing_submission: Filing, court_order_json: Dict) -> Optional[Dict]:

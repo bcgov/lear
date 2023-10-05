@@ -18,12 +18,12 @@ import random
 from unittest.mock import patch
 
 from freezegun import freeze_time
-from legal_api.models import Business, Filing
+from business_model import LegalEntity, Filing
 from registry_schemas.example_data import ANNUAL_REPORT
 
 # from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.worker import process_filing
+from entity_filer.resources.worker import process_filing
 from tests.unit import (
     create_business,
     create_filing,
@@ -32,7 +32,6 @@ from tests.unit import (
 
 def test_process_ar_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
-    from entity_filer.worker import APP_CONFIG
     from entity_filer.filing_processors import annual_report
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -64,14 +63,15 @@ def test_process_ar_filing(app, session):
     assert str(business.last_ar_date) == str(agm_date)
 
 
-async def test_process_ar_filing_no_agm(app, session):
+def test_process_ar_filing_no_agm(app, session):
     """Assert that a no agm AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
 
     # setup
-    business = create_business(identifier)
+    business = create_business(identifier,
+                               legal_type=LegalEntity.EntityTypes.COOP.value)
     business_id = business.id
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)
@@ -86,15 +86,14 @@ async def test_process_ar_filing_no_agm(app, session):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
         filing_msg = {'filing': {'id': filing_id}}
-        await process_filing(filing_msg, app)
+        process_filing(filing_msg)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(business_id)
+    business = LegalEntity.find_by_internal_id(business_id)
 
     # check it out
-    assert filing.transaction_id
-    assert filing.business_id == business_id
+    assert filing.legal_entity_id == business_id
     assert filing.status == Filing.Status.COMPLETED.value
     assert business.last_agm_date == agm_date
     assert datetime.datetime.date(business.last_ar_date) == ar_date

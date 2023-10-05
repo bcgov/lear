@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Application Common Error Messages."""
+from entity_filer.common.enum import BaseEnum
+from entity_filer.common.enum import auto
 
-"""Version of this service in PEP440.
 
-[N!]N(.N)*[{a|b|rc}N][.postN][.devN]
-Epoch segment: N!
-Release segment: N(.N)*
-Pre-release segment: {a|b|rc}N
-Post-release segment: .postN
-Development release segment: .devN
-"""
+class ErrorCode(BaseEnum):
+    """Enum of the system error codes."""
 
-__version__ = '2.85.0'  # pylint: disable=invalid-name
+    FILING_NOT_FOUND = auto()
+    GENERAL_UNRECOVERABLE_ERROR = auto()
+    MISSING_BUSINESS = auto()
+    NOT_AUTHORIZED = auto()
+    RESOURCE_NOT_AVAILABLE = auto()

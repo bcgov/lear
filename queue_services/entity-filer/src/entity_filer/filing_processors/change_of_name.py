@@ -14,16 +14,16 @@
 """File processing rules and actions for the Change of Name filing."""
 from typing import Dict
 
-from entity_queue_common.service_utils import logger
-from legal_api.models import Business, Filing
+# from entity_queue_common.service_utils import logger
+from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import name_request
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):
     """Render the change of name into the business model objects."""
-    logger.debug('processing Change of Name: %s', filing)
+    print('processing Change of Name: %s', filing)
 
     if name_request_json := filing['changeOfName'].get('nameRequest'):
         new_name = name_request_json.get('legalName')
@@ -36,7 +36,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     business.legal_name = new_name
 
 
-def post_process(business: Business, filing: Filing):
+def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for change of name.
 
     THIS SHOULD NOT ALTER THE MODEL

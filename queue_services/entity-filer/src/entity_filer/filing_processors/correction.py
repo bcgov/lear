@@ -17,15 +17,15 @@ from typing import Dict
 
 import pytz
 import sentry_sdk
-from legal_api.core.filing_helper import is_special_resolution_correction
-from legal_api.models import Business, Comment, Filing
+# from legal_api.core.filing_helper import is_special_resolution_correction
+from business_model import LegalEntity, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_profile, name_request
+from entity_filer.filing_processors.filing_components import name_request
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
-def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):
+def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: LegalEntity):
     """Render the correction filing onto the business model objects."""
     local_timezone = pytz.timezone('US/Pacific')
 
@@ -52,10 +52,12 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     )
 
     corrected_filing_type = filing['correction']['correctedFilingType']
-    is_sr_correction = is_special_resolution_correction(filing, business, original_filing)
-    if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
-            is_sr_correction) and \
-            corrected_filing_type != 'conversion':
+    # TODO i think we can remove this -> is_special_resolution_correction
+    # is_sr_correction = is_special_resolution_correction(filing, business, original_filing)
+    # if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
+    #         is_sr_correction) and \
+    if business.entity_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC']  \
+            and corrected_filing_type != 'conversion':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
@@ -67,18 +69,9 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     return correction_filing
 
 
-def post_process(business: Business, filing: Filing):
+def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for correction.
 
     THIS SHOULD NOT ALTER THE MODEL
     """
     name_request.consume_nr(business, filing, 'correction')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['correction']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

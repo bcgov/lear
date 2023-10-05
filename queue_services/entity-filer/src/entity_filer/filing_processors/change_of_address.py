@@ -14,13 +14,13 @@
 """File processing rules and actions for the change of address."""
 from typing import Dict
 
-from legal_api.models import Business
+from business_model import LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_address, update_address
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):
     """Render the change_of_address onto the business model objects."""
     # offices_array = json.dumps(filing['changeOfAddress']['offices'])
     # Only retrieve the offices component from the filing json

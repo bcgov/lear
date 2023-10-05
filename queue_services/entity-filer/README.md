@@ -6,14 +6,8 @@
 
 BC Registries Names Entity Filer Service
 
-## Technology Stack Used
-* NATS-streaming
-* Python, Flask
-* Postgres -  SQLAlchemy, psycopg2-binary & alembic
-
-## Project Status
-
 ## Documnentation
+
 
 ## Security
 

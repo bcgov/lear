@@ -16,36 +16,42 @@ import datetime
 from contextlib import suppress
 from typing import Dict
 
-from entity_queue_common.service_utils import logger
-from legal_api.models import Business
-from legal_api.services.filings import validations
+# TODO use structured logger
+# from entity_queue_common.service_utils import logger
+from business_model import LegalEntity
+# from legal_api.services.filings import validations
 
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
-    """Render the annual_report onto the business model objects."""
+def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):
+    """Render the annual_report onto the legal_entity model objects."""
     legal_filing_name = 'annualReport'
-    agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
+    # agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
     ar_date = filing[legal_filing_name].get('annualReportDate')
 
     if ar_date:
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
-        logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
+        print('No annualReportDate given for in annual report. Filing id: %s', filing.id)
 
-    business.last_ar_date = ar_date
-    if agm_date and validations.annual_report.requires_agm(business):
+    legal_entity.last_ar_date = ar_date
+    # Validations are on input
+    # if there is an AGM set, assume it is required and valid,
+    # otherwise the Validator has failed.
+    # TODO remove this
+    # if agm_date and validations.annual_report.requires_agm(legal_entity):
+    if agm_date := filing[legal_filing_name].get('annualGeneralMeetingDate'):
         with suppress(ValueError):
             agm_date = datetime.date.fromisoformat(agm_date)
-            business.last_agm_date = agm_date
-            business.last_ar_date = agm_date
+            legal_entity.last_agm_date = agm_date
+            legal_entity.last_ar_date = agm_date
 
-    business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1
+    legal_entity.last_ar_year = legal_entity.last_ar_year + 1 if legal_entity.last_ar_year else legal_entity.founding_date.year + 1
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date
     filing_meta.annual_report = {'annualReportDate': ar_date.isoformat(),
                                  'annualGeneralMeetingDate': agm_date,
-                                 'annualReportFilingYear': business.last_ar_year}
+                                 'annualReportFilingYear': legal_entity.last_ar_year}
