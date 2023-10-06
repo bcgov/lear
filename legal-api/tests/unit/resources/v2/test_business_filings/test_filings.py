@@ -1028,7 +1028,7 @@ RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRe
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
-# FUTURE: use AGM_LOCATION_CHANGE_FILING from business schema data when restoration filing work has been done
+# FUTURE: use AGM_LOCATION_CHANGE_FILING from business schema data when AGM location change filing work has been done
 AGM_LOCATION_CHANGE_FILING = copy.deepcopy(FILING_HEADER)
 AGM_LOCATION_CHANGE_FILING['filing']['agmLocationChange'] = {}
 
