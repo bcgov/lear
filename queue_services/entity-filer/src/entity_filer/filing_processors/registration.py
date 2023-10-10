@@ -87,7 +87,11 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
             filing_meta: FilingMeta):  # pylint: disable=too-many-branches
     """Process the incoming registration filing."""
     # Extract the filing information for registration
-    registration_filing = filing.get('filing', {}).get('registration')
+    if business:
+        raise DefaultException(f'Business Already Exist: Registration legal_filing:registration {filing_rec.id}')
+
+    if not (registration_filing := filing.get('filing', {}).get('registration')):
+        raise DefaultException(f'Registration legal_filing:registration missing from {filing_rec.id}')
 
     legal_type = registration_filing.get('businessType') \
       or registration_filing.get('nameRequest',{}).get('legalType')
@@ -96,11 +100,6 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
         raise DefaultException(f'{filing_rec.id} has no valid legatype for a Registration.')
     
     filing_meta.registration = {}
-
-    if not registration_filing:
-        raise DefaultException(f'Registration legal_filing:registration missing from {filing_rec.id}')
-    if business:
-        raise DefaultException(f'Business Already Exist: Registration legal_filing:registration {filing_rec.id}')
 
     business_info_obj = registration_filing.get('nameRequest')
 
@@ -116,7 +115,7 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
 
         case LegalEntity.EntityTypes.PARTNERSHIP:
             # Create Partnership
-            raise Exception
+            business = merge_partnership_registration(firm_reg_num, filing, filing_rec, registration_filing)
     
         case _ :
             # Default and failed
@@ -124,34 +123,20 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
             raise DefaultException(
                   f'registration {filing_rec.id} had no valid Firm type.')
 
-    # Initial insert of the business record
-    # business = LegalEntity()
-    # business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
-    # business.start_date = \
-    #     LegislationDatetime.as_utc_timezone_from_legislation_date_str(registration_filing.get('startDate'))
 
-    # TODO Check, Registrations should not reset a persons NAICS code,
-    # if that even makes sense for a person, maybe the DBA has a NAICS?
-    #
-    if business_obj := registration_filing.get('business'):
-    # if business.entity_type != LegalEntity.EntityTypes.PERSON:
-    #     if (naics := business_obj.get('naics')) and naics.get('naicsCode'):
-    #         legal_entity_info.update_naics_info(business, naics)
-        # Assuming we should not reset this from a filing
-        if not business.tax_id:
-            business.tax_id = business_obj.get('taxId', None)
-    # business.state = LegalEntity.State.ACTIVE
+    # Assuming we should not reset this from a filing
+    if not business.tax_id:
+        business.tax_id = registration_filing.get('business',{}).get('taxId', None)
+
+    business.state = LegalEntity.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):
         filing_meta.registration = {**filing_meta.registration,
                                     **{'nrNumber': nr_number,
                                        'legalName': business_info_obj.get('legalName', None)}}
 
-    # if not business:
-    #     raise DefaultException(f'Registration {filing_rec.id}, Unable to create business.')
-
-    # if offices := registration_filing['offices']:
-    #     update_offices(business, offices)
+    if offices := registration_filing['offices']:
+        update_offices(business, offices)
 
     if parties := registration_filing.get('parties'):
         merge_all_parties(business, filing_rec, {'parties': parties})
@@ -165,7 +150,7 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
     registration_json = copy.deepcopy(filing_rec.filing_json)
     registration_json['filing']['business'] = {}
     registration_json['filing']['business']['identifier'] = business.identifier
-    # registration_json['filing']['registration']['business']['identifier'] = business.identifier
+    registration_json['filing']['registration']['business']['identifier'] = business.identifier
     registration_json['filing']['business']['legalType'] = business.entity_type
     # registration_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
@@ -178,20 +163,51 @@ def post_process(business: LegalEntity, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
+    pass
+
+
+def merge_partnership_registration(registration_num: str,
+                          filing: Dict,
+                          filing_rec: Filing,
+                          registration_filing: dict,
+                          ):
+    # Initial insert of the business record
+    business_info_obj = registration_filing.get('nameRequest')
+    business = LegalEntity()
+    business = legal_entity_info.update_legal_entity_info(registration_num, business, business_info_obj, filing_rec)
+    business.start_date = \
+        LegislationDatetime.as_utc_timezone_from_legislation_date_str(registration_filing.get('startDate'))
+    
+    if naics_dict := registration_filing.get('business',{}).get('naics'):
+        set_naics(business, naics_dict)
+    
+    business.legal_name = get_partnership_name(registration_filing.get('parties'))
+
+    alternate_name = AlternateName(
+        bn15=registration_filing.get('business',{}).get('taxId'),
+        change_filing_id=filing_rec.id,
+        end_date=registration_filing.get('endDate'),
+        identifier=registration_num,
+        name=registration_filing.get('nameRequest',{}).get('legalName'),
+        name_type=AlternateName.NameType.OPERATING,
+        start_date=registration_filing.get('startDate'),
+    )
+    business.alternate_names.append(alternate_name)
+
+    return business
+
 
 def merge_sp_registration(registration_num: str,
                           filing: Dict,
-                          filing_rec: Filing):
+                          filing_rec: Filing) -> LegalEntity:
     # find or create the LE for the SP Owner
     
     if not (parties_dict := filing['filing']['registration']['parties']):
         raise DefaultException(f'Missing parties in the SP registration for filing:{filing_rec.id}')
 
-    # parties_dict = SP_REGISTRATION['filing']['registration']['parties'][0]['roles']
     # Find the Proprietor
     proprietor = None
     for party in parties_dict:
-        print(party)
         for role in party.get('roles'):
             if role.get('roleType') == 'Proprietor':
                 proprietor_dict = party
@@ -225,3 +241,36 @@ def merge_sp_registration(registration_num: str,
     proprietor.alternate_names.append(alternate_name)
 
     return proprietor
+
+def set_naics(legal_entity: LegalEntity, naics_dict: dict):
+    """Set the NAICS fields for a business."""
+    legal_entity.naics_code = naics_dict['naicsCode']
+    legal_entity.naics_description = naics_dict['naicsDescription']
+
+def get_partnership_name(parties_dict: dict):
+    """Set the legal_name of the partnership."""
+    parties = []
+    # get all parties in an array
+    for party in parties_dict:
+        if officer := party.get('officer'):
+            if org_name := officer.get('organizationName'):
+                parties.append(org_name.upper())
+                continue
+
+            name = officer['lastName']
+            if first_name := officer.get('firstName'):
+                name = f'{name} {first_name}'
+            if middle_name := officer.get('middleName'):
+                name = f'{name} {middle_name}'
+            parties.append(name.upper())
+
+    if len(parties) < 2:
+        return parties[0]
+
+    parties.sort()
+    if parties and len(parties) > 2:
+        legal_name_str = ', '.join(parties[:2])
+        legal_name_str = f"{legal_name_str}, et al"
+    else:
+        legal_name_str =  ', '.join(parties)
+    return legal_name_str

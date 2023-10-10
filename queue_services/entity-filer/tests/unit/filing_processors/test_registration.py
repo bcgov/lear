@@ -71,8 +71,6 @@ def test_registration_process(app, session, legal_type, filing):
         identifier = 'NR 1234567'
         filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
         filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
-        if legal_type == 'SP':
-            del SP_REGISTRATION['filing']['registration']['parties'][0]['officer']['id']
 
         create_filing('123', filing)
 
@@ -90,24 +88,27 @@ def test_registration_process(app, session, legal_type, filing):
             business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
+        # Legal Entity
         assert business.identifier.startswith('FM')
         assert business.founding_date == effective_date
         assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
         assert business.entity_type == filing['filing']['registration']['nameRequest']['legalType']
-        assert business.legal_name == filing['filing']['registration']['nameRequest']['legalName']
-        assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
-        assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
-        assert business.naics_key == naics_response['naicsKey']
         assert business.tax_id == REGISTRATION['business']['taxId']
         assert business.state == LegalEntity.State.ACTIVE
-        if legal_type == 'SP':
-            assert len(filing_rec.filing_entity_roles.all()) == 1
-            assert len(business.entity_roles.all()) == 0
-        if legal_type == 'GP':
-            assert len(filing_rec.filing_entity_roles.all()) == 3
-            assert len(business.entity_roles.all()) == 0
+        assert len(filing_rec.filing_entity_roles.all()) == 3
+        assert len(business.entity_roles.all()) == 0
         assert len(business.offices.all()) == 1
         assert business.offices[0].office_type == 'businessOffice'
+        assert business.legal_name == 'Griffin Peter, Swanson Joe P'.upper()
+
+        # NAICS
+        assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
+        assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
+
+        # AlternateNames
+        assert len(business.alternate_names.all()) > 0
+        alternate_name = business.alternate_names[0]
+        assert alternate_name.name == filing['filing']['registration']['nameRequest']['legalName']
 
 
 @pytest.mark.parametrize('legal_type,filing', [
@@ -141,6 +142,7 @@ def test_sp_registration_process(app, session, legal_type, filing):
         # Assertions
         # assert business.founding_date.replace(tzinfo=None) == effective_date
         assert business.entity_type == LegalEntity.EntityTypes.PERSON
+        assert business.identifier.startswith('P')
 
         alternate_name = business.alternate_names.all()[0]
         assert alternate_name.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
