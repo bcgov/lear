@@ -30,6 +30,7 @@ from entity_filer.exceptions import get_error_message
 from entity_filer.filing_processors.filing_components import create_address
 from entity_filer.filing_processors.filing_components import create_role
 from entity_filer.filing_processors.filing_components import merge_party
+from entity_filer.filing_processors.filing_components import legal_entity_info
 
 
 def update_parties(legal_entity: LegalEntity, parties_structure: Dict, filing: Filing, delete_existing=True) -> Optional[List]:
@@ -359,13 +360,15 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
        raise Exception 
 
     if party_type == 'person':
+        person_reg_num = legal_entity_info.get_next_corp_num('P')
         new_party = LegalEntity(
             first_name=party_dict['officer'].get('firstName', '').upper(),
             last_name=party_dict['officer'].get('lastName', '').upper(),
             middle_initial=party_dict['officer'].get('middleInitial', 
                             party_dict['officer'].get('middleName', '')).upper(),
             email=party_dict['officer'].get('email'),
-            entity_type=LegalEntity.EntityTypes.PERSON
+            entity_type=LegalEntity.EntityTypes.PERSON,
+            identifier=person_reg_num,
         )
     elif party_type == 'organization':
         new_party = ColinEntity(

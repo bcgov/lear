@@ -668,6 +668,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         sequence_mapping = {
             'CP': 'legal_entity_identifier_coop',
             'FM': 'legal_entity_identifier_sp_gp',
+            'P': 'legal_entity_identifier_person',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
             return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
@@ -686,7 +687,9 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             ie: CP1234567 or XCP1234567
 
         """
-        if entity_type and entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if entity_type \
+        and entity_type == LegalEntity.EntityTypes.PERSON.value \
+        and identifier.startswith('P'):
             return True
 
         if identifier[:2] == 'NR':
@@ -702,7 +705,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         except ValueError:
             return False
         # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ('CP', 'XCP', 'BC', 'FM'):
+        if identifier[:-7] not in ('BC', 'CP', 'FM', 'P', 'XCP'):
             return False
 
         return True
@@ -761,6 +764,7 @@ class LegalEntityType(str, Enum, metaclass=BaseMeta):
     COOPERATIVE = 'CP'
     INDIVIDUAL = 'FP'
     PARTNERSHIP_AND_SOLE_PROP = 'FM'
+    PERSON = 'P'
     TRUST = 'TRUST'
     OTHER = 'OT'
     DEFAULT = 'OT'
