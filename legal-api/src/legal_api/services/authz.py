@@ -121,12 +121,7 @@ ALLOWABLE_FILINGS: Final = {
             'agmLocationChange': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
-                    'business': [
-                        BusinessBlocker.DEFAULT,
-                        BusinessBlocker.BUSINESS_FROZEN,
-                        BusinessBlocker.DRAFT_PENDING,
-                        BusinessBlocker.NOT_IN_GOOD_STANDING
-                    ]
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
             'alteration': {
@@ -281,12 +276,7 @@ ALLOWABLE_FILINGS: Final = {
             'agmLocationChange': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
-                    'business': [
-                        BusinessBlocker.DEFAULT,
-                        BusinessBlocker.BUSINESS_FROZEN,
-                        BusinessBlocker.DRAFT_PENDING,
-                        BusinessBlocker.NOT_IN_GOOD_STANDING
-                    ]
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                 }
             },
             'alteration': {
