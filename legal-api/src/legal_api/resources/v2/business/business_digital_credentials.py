@@ -13,15 +13,18 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
+import json
 from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
+from flask_socketio import emit
 
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
+from legal_api.extensions import socketio
 
 from .bp import bp
 
@@ -60,23 +63,26 @@ def create_invitation(identifier):
         )
         connection.save()
 
-    return jsonify({'invitationUrl': connection.invitation_url}), HTTPStatus.OK
+    return jsonify(connection.json), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['GET', 'OPTIONS'], strict_slashes=False)
+@bp.route('/<string:identifier>/digitalCredentials/connections', methods=['GET', 'OPTIONS'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_active_connection(identifier):
+def get_connections(identifier):
     """Get active connection for this business."""
     business = Business.find_by_identifier(identifier)
     if not business:
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
-    if not connection:
-        return jsonify({'message': 'No active connection found.'}), HTTPStatus.NOT_FOUND
+    connections = DCConnection.find_by(business_id=business.id)
+    if len(connections) == 0:
+        return jsonify({'connections': []}), HTTPStatus.OK
 
-    return jsonify(connection.json), HTTPStatus.OK
+    response = []
+    for connection in connections:
+        response.append(connection.json)
+    return jsonify({'connections': response}), HTTPStatus.OK
 
 
 @bp.route('/<string:identifier>/digitalCredentials', methods=['GET', 'OPTIONS'], strict_slashes=False)
@@ -210,12 +216,14 @@ def webhook_notification(topic_name: str):
                 connection.connection_state = json_input['state']
                 connection.is_active = True
                 connection.save()
+                socketio.emit('connections', connection.json)
         elif topic_name == 'issue_credential_v2_0':
             issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
             if issued_credential and json_input['state'] in ('credential-issued', 'done'):
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
+                socketio.emit('issue_credential_v2_0', issued_credential.json)
     except Exception as err:
         current_app.logger.error(err)
         raise err
