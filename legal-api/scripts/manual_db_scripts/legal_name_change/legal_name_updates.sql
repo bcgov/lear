@@ -101,7 +101,7 @@ $$;
 -- query logic to determine correct end transaction ids/dates so that they can be used for
 -- alternate_names/alternate_names_history entries.  This table is also used to update the existing entities_history
 -- records.
-CREATE TEMP TABLE temp_legal_name_changes AS
+CREATE TABLE temp_legal_name_changes AS
 select le.id,
        le.identifier,
        le.tax_id,
@@ -291,7 +291,7 @@ where le.entity_type in ('SP', 'GP')
 ;
 
 
-CREATE TEMP TABLE temp_parties_legal_name AS
+CREATE TABLE temp_parties_legal_name AS
 select distinct ph.id                 as                                             party_id,
                 CAST(NULL AS INTEGER) as                                             new_legal_entity_id,
                 ph.party_type,
@@ -556,7 +556,7 @@ where sq.version != mv.max_version;
 -- PARTY_ROLES/PARTY_ROLES_history -> ENTIYTY_ROLES/ENTITY_ROLES_history
 -- ************************************************************************************************
 
-CREATE TEMP TABLE temp_party_roles_legal_name AS
+CREATE TABLE temp_party_roles_legal_name AS
 select pr.id                 as party_role_id,
        CAST(NULL AS INTEGER) as new_entity_role_id,
        pr.role::roletypes    as role_type,
