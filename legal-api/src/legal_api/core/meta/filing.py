@@ -82,6 +82,13 @@ FILINGS: Final = {
             'CP': 'AFDVT'
         }
     },
+    'agmLocationChange': {
+        'name': 'agmLocationChange',
+        'title': 'agmLocationChange',
+        'codes': {
+
+        }
+    },
     'alteration': {
         'name': 'alteration',
         'title': 'Notice of Alteration Filing',

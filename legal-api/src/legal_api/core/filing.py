@@ -57,6 +57,7 @@ class Filing:
         """Render an Enum of all Filing Types."""
 
         ADMIN_FREEZE = 'adminFreeze'
+        AGMLOCATIONCHANGE = 'agmLocationChange'
         ALTERATION = 'alteration'
         AMALGAMATIONAPPLICATION = 'amalgamationApplication'
         AMENDEDAGM = 'amendedAGM'
