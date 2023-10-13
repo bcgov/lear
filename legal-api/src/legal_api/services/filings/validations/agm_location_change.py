@@ -35,10 +35,10 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     agm_year_path: Final = '/filing/agmLocationChange/year'
     year = get_int(filing, agm_year_path)
     if year:
-        expected_min = LegislationDatetime.now().year - 1
+        expected_min = LegislationDatetime.now().year - 2
         expected_max = LegislationDatetime.now().year + 1
         if expected_min > year or year > expected_max:
-            msg.append({'error': 'AGM year must be between -1 or +1 year from current year.', 'path': agm_year_path})
+            msg.append({'error': 'AGM year must be between -2 or +1 year from current year.', 'path': agm_year_path})
     else:
         msg.append({'error': 'Invalid AGM year.', 'path': agm_year_path})
 
@@ -50,8 +50,8 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     country = pycountry.countries.get(alpha_2=country_code)
     if not country:
         msg.append({'error': 'Invalid country.', 'path': f'{agm_location_path}/addressCountry'})
-    elif country_code == 'CA':
-        if region == 'BC':
+    elif country_code in ('CA', 'US'):
+        if country_code == 'CA' and region == 'BC':
             msg.append({'error': 'Region should not be BC.', 'path': f'{agm_location_path}/addressRegion'})
         elif not pycountry.subdivisions.get(code=f'{country_code}-{region}'):
             msg.append({'error': 'Invalid region.', 'path': f'{agm_location_path}/addressRegion'})
