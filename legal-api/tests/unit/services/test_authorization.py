@@ -24,10 +24,11 @@ from enum import Enum
 from http import HTTPStatus
 
 import pytest
+from unittest.mock import patch
 from flask import jsonify
-from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, CORRECTION_AR, \
-    CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, CONTINUATION_IN, \
-    CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
+from registry_schemas.example_data import AGM_LOCATION_CHANGE, ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, \
+    CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
+    CONTINUATION_IN, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
 from legal_api.models import Filing
 from legal_api.models.business import Business
@@ -120,6 +121,7 @@ class FilingKey(str, Enum):
     REGISTRARS_NOTATION = 'REGISTRARS_NOTATION'
     REGISTRARS_ORDER = 'REGISTRARS_ORDER'
     SPECIAL_RESOLUTION = 'SPECIAL_RESOLUTION'
+    AGM_LOCATION_CHANGE = 'AGM_LOCATION_CHANGE'
     ALTERATION = 'ALTERATION'
     CONSENT_CONTINUATION_OUT = 'CONSENT_CONTINUATION_OUT'
     CONTINUATION_OUT = 'CONTINUATION_OUT'
@@ -159,6 +161,7 @@ EXPECTED_DATA = {
                                     'name': 'registrarsNotation'},
     FilingKey.REGISTRARS_ORDER: {'displayName': "Registrar's Order", 'feeCode': 'NOFEE', 'name': 'registrarsOrder'},
     FilingKey.SPECIAL_RESOLUTION: {'displayName': 'Special Resolution', 'feeCode': 'SPRLN', 'name': 'specialResolution'},
+    FilingKey.AGM_LOCATION_CHANGE: {'displayName': 'AGM Location Change', 'feeCode': 'AGMLC', 'name': 'agmLocationChange'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
     FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                  'name': 'consentContinuationOut'},
@@ -201,6 +204,9 @@ BLOCKER_FILING_STATUSES_AND_ADDITIONAL = factory_incomplete_statuses(['unknown_s
                                                                       'unknown_status_2'])
 BLOCKER_FILING_TYPES = ['alteration', 'correction']
 
+AGM_LOCATION_CHANGE_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+AGM_LOCATION_CHANGE_FILING_TEMPLATE['filing']['agmLocationChange'] = AGM_LOCATION_CHANGE
+
 RESTORATION_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 RESTORATION_FILING_TEMPLATE['filing']['restoration'] = RESTORATION
 
@@ -220,6 +226,7 @@ CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
 FILING_DATA = {
+    'agmLocationChange': AGM_LOCATION_CHANGE_FILING_TEMPLATE,
     'alteration': ALTERATION_FILING_TEMPLATE,
     'correction': CORRECTION_AR,
     'changeOfRegistration': CHANGE_OF_REGISTRATION_TEMPLATE,
@@ -401,9 +408,11 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut', 'continuationOut',
-          'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
-          'registrarsNotation', 'registrarsOrder', 'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
+         ['adminFreeze', 'agmLocationChange', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
+          'consentContinuationOut', 'continuationOut', 'correction', 'courtOrder',
+          {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
+          'registrarsNotation', 'registrarsOrder', 'transition',
+          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
@@ -414,8 +423,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'specialResolution']),
         ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         ['alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-          {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition']),
+         ['agmLocationChange', 'alteration', 'annualReport', 'changeOfAddress', 'changeOfDirectors',
+          'consentContinuationOut', {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition']),
         ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('user_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['changeOfRegistration', {'dissolution': ['voluntary']}, 'registration']),
@@ -452,6 +461,11 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
     'test_name,state,filing_type,sub_filing_type,legal_types,username,roles,expected',
     [
         # active business
+        ('staff_active_allowed', Business.State.ACTIVE, 'agmLocationChange', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'agmLocationChange', None,
+         ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
+
         ('staff_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'alteration', None,
@@ -533,6 +547,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
 
+        ('user_active_allowed', Business.State.ACTIVE, 'agmLocationChange', None,
+         ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
+        ('user_active', Business.State.ACTIVE, 'agmLocationChange', None,
+         ['CP', 'LLC'], 'general', [BASIC_USER], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'alteration', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
@@ -749,6 +767,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.SPECIAL_RESOLUTION])),
         ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -781,7 +800,8 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.ALTERATION,
+         expected_lookup([FilingKey.AGM_LOCATION_CHANGE,
+                          FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
@@ -892,6 +912,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.SPECIAL_RESOLUTION])),
         ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -924,7 +945,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.ALTERATION,
+         expected_lookup([FilingKey.AGM_LOCATION_CHANGE,
+                          FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
@@ -1061,7 +1083,7 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
             filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
 
-
+            
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,filing_statuses,expected',
     [
@@ -1269,6 +1291,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.SPECIAL_RESOLUTION])),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -1297,7 +1320,8 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.ALTERATION,
+         expected_lookup([FilingKey.AGM_LOCATION_CHANGE,
+                          FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
@@ -1372,6 +1396,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         ('staff_active_corps_valid_state_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -1389,6 +1414,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -1430,7 +1456,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         ('general_user_corps_unaffected', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
-         expected_lookup([FilingKey.ALTERATION,
+         expected_lookup([FilingKey.AGM_LOCATION_CHANGE,
+                          FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
@@ -1572,6 +1599,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, True],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -1603,6 +1631,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
         ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, None], [None, None], [False, False],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,

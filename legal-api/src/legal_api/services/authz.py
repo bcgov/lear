@@ -118,6 +118,12 @@ ALLOWABLE_FILINGS: Final = {
             'adminFreeze': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
             },
+            'agmLocationChange': {
+                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                }
+            },
             'alteration': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
@@ -267,6 +273,12 @@ ALLOWABLE_FILINGS: Final = {
     },
     'general': {
         Business.State.ACTIVE: {
+            'agmLocationChange': {
+                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                'blockerChecks': {
+                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                }
+            },
             'alteration': {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
