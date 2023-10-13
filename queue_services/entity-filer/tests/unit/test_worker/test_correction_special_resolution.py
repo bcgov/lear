@@ -36,9 +36,7 @@ from tests.utils import upload_file, assert_pdf_contains_text
     'test_name, correct_filing_type, filing_template, correction_template',
     [
         ('sr_correction', 'specialResolution',
-         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION),
-        ('non_sr_correction', 'changeOfAddress',
-         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_COA)
+         CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
     ]
 )
 async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
@@ -113,68 +111,64 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
     business = Business.find_by_internal_id(business_id)
 
-    if test_name == 'non_sr_correction':
-        origin_filing = Filing.find_by_id(correction_filing_id)
-        assert origin_filing.status == Filing.Status.PENDING_CORRECTION.value
-    else:
-        assert len(business.resolutions.all()) == 1
-        resolution = business.resolutions.first()
-        assert business.association_type == 'HC'
-        assert resolution is not None, 'Resolution should exist'
-        assert resolution.resolution == '<p>xxxx</p>', 'Resolution text should be corrected'
+    assert len(business.resolutions.all()) == 1
+    resolution = business.resolutions.first()
+    assert business.association_type == 'HC'
+    assert resolution is not None, 'Resolution should exist'
+    assert resolution.resolution == '<p>xxxx</p>', 'Resolution text should be corrected'
 
-        # # # Check if the signatory was updated
-        party = resolution.party
-        assert party is not None, 'Party should exist'
-        assert party.first_name == 'JOEY', 'First name should be corrected'
-        assert party.last_name == 'DOE', 'Last name should be corrected'
+    # # # Check if the signatory was updated
+    party = resolution.party
+    assert party is not None, 'Party should exist'
+    assert party.first_name == 'JOEY', 'First name should be corrected'
+    assert party.last_name == 'DOE', 'Last name should be corrected'
 
-        # Check outcome
-        final_filing = Filing.find_by_id(correction_filing_id)
-        alteration = final_filing.meta_data.get('correction', {})
-        assert business.association_type == coop_associate_type
-        assert alteration.get('fromCooperativeAssociationType') == 'OC'
-        assert alteration.get('toCooperativeAssociationType') == coop_associate_type
+    # Check outcome
+    final_filing = Filing.find_by_id(correction_filing_id)
+    alteration = final_filing.meta_data.get('correction', {})
+    assert business.association_type == coop_associate_type
+    assert alteration.get('fromCooperativeAssociationType') == 'OC'
+    assert alteration.get('toCooperativeAssociationType') == coop_associate_type
 
-        # Simulate another correction filing on previous correction
-        resolution_date = '2023-06-16'
-        signing_date = '2023-06-17'
-        correction_data_2 = copy.deepcopy(FILING_HEADER)
-        correction_data_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-        correction_data_2['filing']['header']['name'] = 'correction'
-        correction_data_2['filing']['business'] = {'identifier': identifier}
-        correction_data_2['filing']['correction']['correctedFilingType'] = 'correction'
-        correction_data_2['filing']['correction']['resolution'] = '<p>yyyy</p>'
-        correction_data_2['filing']['correction']['resolutionDate'] = resolution_date
-        correction_data_2['filing']['correction']['signingDate'] = signing_date
-        correction_data_2['filing']['correction']['signatory'] = {
-            'givenName': 'Sarah',
-            'familyName': 'Doe',
-            'additionalName': ''
-        }
-        # Update correction data to point to the original special resolution filing
-        if 'correction' not in correction_data_2['filing']:
-            correction_data_2['filing']['correction'] = {}
-        correction_data_2['filing']['correction']['correctedFilingId'] = correction_filing_id
-        correction_payment_id_2 = str(random.SystemRandom().getrandbits(0x58))
-        correction_filing_id_2 = (create_filing(correction_payment_id_2, correction_data_2, business_id=business_id)).id
-        # Mock the correction filing message
-        correction_filing_msg_2 = {'filing': {'id': correction_filing_id_2}}
-        await process_filing(correction_filing_msg_2, app)
+    # Simulate another correction filing on previous correction
+    resolution_date = '2023-06-16'
+    signing_date = '2023-06-17'
+    correction_data_2 = copy.deepcopy(FILING_HEADER)
+    correction_data_2['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data_2['filing']['header']['name'] = 'correction'
+    correction_data_2['filing']['business'] = {'identifier': identifier}
+    correction_data_2['filing']['correction']['correctedFilingType'] = 'correction'
+    correction_data_2['filing']['correction']['resolution'] = '<p>yyyy</p>'
+    correction_data_2['filing']['correction']['resolutionDate'] = resolution_date
+    correction_data_2['filing']['correction']['signingDate'] = signing_date
+    correction_data_2['filing']['correction']['signatory'] = {
+        'givenName': 'Sarah',
+        'familyName': 'Doe',
+        'additionalName': ''
+    }
+    # Update correction data to point to the original special resolution filing
+    if 'correction' not in correction_data_2['filing']:
+        correction_data_2['filing']['correction'] = {}
+    correction_data_2['filing']['correction']['correctedFilingId'] = correction_filing_id
+    correction_payment_id_2 = str(random.SystemRandom().getrandbits(0x58))
+    correction_filing_id_2 = (create_filing(correction_payment_id_2, correction_data_2, business_id=business_id)).id
+    # Mock the correction filing message
+    correction_filing_msg_2 = {'filing': {'id': correction_filing_id_2}}
+    await process_filing(correction_filing_msg_2, app)
 
-        # Assertions
-        business = Business.find_by_internal_id(business_id)
-        resolution = business.resolutions.first()
-        assert resolution is not None, 'Resolution should exist'
-        assert resolution.resolution == '<p>yyyy</p>', 'Resolution text should be corrected'
-        assert resolution.resolution_date == parse(resolution_date).date()
-        assert resolution.signing_date == parse(signing_date).date()
+    # Assertions
+    business = Business.find_by_internal_id(business_id)
+    resolution = business.resolutions.first()
+    assert resolution is not None, 'Resolution should exist'
+    assert resolution.resolution == '<p>yyyy</p>', 'Resolution text should be corrected'
+    assert resolution.resolution_date == parse(resolution_date).date()
+    assert resolution.signing_date == parse(signing_date).date()
 
-        # # # Check if the signatory was updated
-        party = resolution.party
-        assert party is not None, 'Party should exist'
-        assert party.first_name == 'SARAH', 'First name should be corrected'
-        assert party.last_name == 'DOE', 'Last name should be corrected'
+    # # # Check if the signatory was updated
+    party = resolution.party
+    assert party is not None, 'Party should exist'
+    assert party.first_name == 'SARAH', 'First name should be corrected'
+    assert party.last_name == 'DOE', 'Last name should be corrected'
 
 
 def test_correction_coop_rules(app, session, minio_server):

@@ -23,7 +23,6 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.core.filing_helper import is_special_resolution_correction_by_meta_data
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
@@ -144,8 +143,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
+            'correction/associateType',
             'correction/directors',
             'correction/legalNameChange',
+            'correction/resolution',
+            'correction/rulesMemorandum',
             'change-of-registration/legal-name',
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
@@ -187,7 +189,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
             'special-resolution/resolutionApplication',
-            'special-resolution/resolutionApplicationCorrection',
             'addresses',
             'certification',
             'directors',
@@ -211,9 +212,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # Get template specific to legal type
             file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
-            if self._business.legal_type == 'CP' and self._filing.filing_type == 'correction':
-                if is_special_resolution_correction_by_meta_data(self._filing):
-                    file_name = 'specialResolutionCorrectionApplication'
             if file_name is None:
                 # Fallback to default if specific template not found
                 file_name = specific_template['fileName'] if specific_template else \
@@ -775,8 +773,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_correction_data(self, filing):
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
-        elif self._business.legal_type == 'CP' and is_special_resolution_correction_by_meta_data(self._filing):
-            self._format_special_resolution_application(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
@@ -787,6 +783,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_office_data(filing, prev_completed_filing)
             self._format_party_data(filing, prev_completed_filing)
             self._format_share_class_data(filing, prev_completed_filing)
+            self._format_resolution_data(filing)
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
@@ -935,6 +932,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if ceased_share_series:
                 filing['shareClassesChange'] = True
 
+    def _format_resolution_data(self, filing: Filing):
+        meta_data = self._filing.meta_data or {}
+        filing_source = 'correction'
+        prev_association_type = meta_data.get(filing_source, {}).get('fromCooperativeAssociationType')
+        to_association_type = meta_data.get(filing_source, {}).get('toCooperativeAssociationType')
+        if prev_association_type and to_association_type and prev_association_type != to_association_type:
+            filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
+            filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
+        filing['rulesInResolution'] = filing.get(filing_source, {}).get('rulesInResolution')
+        filing['uploadNewRules'] = meta_data.get(filing_source, {}).get('uploadNewRules')
+        filing['memorandumInResolution'] = filing.get(filing_source, {}).get('memorandumInResolution')
+        if (resolution_date_str := filing.get(filing_source, {}).get('resolutionDate', None)):
+            resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
+            filing[filing_source]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+
     @staticmethod
     def _compare_json(new_json, existing_json, excluded_keys):
         if not new_json and not existing_json:
@@ -950,7 +962,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return changed
 
     def _format_special_resolution(self, filing):
-        """For both special resolutions and special resolution corrections."""
+        """For special resolutions."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get('displayName')
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
@@ -966,7 +978,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing[filing_source]['signingDate'] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_special_resolution_application(self, filing, filing_source):
-        """For both special resolutions and special resolution corrections."""
+        """For special resolutions."""
         meta_data = self._filing.meta_data or {}
         if filing_source == 'alteration':
             prev_legal_name = meta_data.get('changeOfName', {}).get('fromLegalName')
@@ -982,17 +994,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing['fromLegalName'] = prev_legal_name
                 filing['toLegalName'] = to_legal_name
                 filing['nrNumber'] = filing.get(filing_source).get('nameRequest', {}).get('nrNumber', None)
-        prev_association_type = meta_data.get(filing_source, {}).get('fromCooperativeAssociationType')
-        to_association_type = meta_data.get(filing_source, {}).get('toCooperativeAssociationType')
-        if prev_association_type and to_association_type and prev_association_type != to_association_type:
-            filing['prevCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(prev_association_type, '')
-            filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
-        filing['rulesInResolution'] = filing.get(filing_source, {}).get('rulesInResolution')
-        filing['uploadNewRules'] = meta_data.get(filing_source, {}).get('uploadNewRules')
-        filing['memorandumInResolution'] = filing.get(filing_source, {}).get('memorandumInResolution')
-        if (resolution_date_str := filing.get(filing_source, {}).get('resolutionDate', None)):
-            resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
-            filing[filing_source]['resolutionDate'] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+        self._format_resolution_data(filing)
 
     def _format_noa_data(self, filing):
         filing['header'] = {}
