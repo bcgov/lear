@@ -32,9 +32,9 @@ async def test_worker_agm_location_change(app, session, mocker):
     filing_json['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing_json, business_id=business.id)).id
+    filing = create_filing(payment_id, filing_json, business_id=business.id)
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = {'filing': {'id': filing.id}}
 
         # mock out the email sender and event publishing
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -43,7 +43,7 @@ async def test_worker_agm_location_change(app, session, mocker):
     await process_filing(filing_msg, app)
 
     # Check outcome
-    final_filing = Filing.find_by_id(filing_id)
+    final_filing = Filing.find_by_id(filing.id)
 
     agm_location_change = final_filing.meta_data.get('agmLocationChange')
     assert filing_json['filing']['agmLocationChange']['year'] == agm_location_change.get('year')
