@@ -24,7 +24,7 @@ from enum import Enum
 from http import HTTPStatus
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 from flask import jsonify
 from registry_schemas.example_data import AGM_LOCATION_CHANGE, ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, \
     CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
@@ -1082,6 +1082,109 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                                             admin_freeze=True)
             filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'test_name,business_exists,state,legal_types,username,roles,expected',
+    [
+        # active business - staff user
+        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+                  expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.CONV_FIRMS,
+                          FilingKey.CORRCTN_FIRMS,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS_FIRMS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+
+        # active business - general user
+        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+                  expected_lookup([FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+                  expected_lookup([FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.TRANSITION])),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+                  expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
+
+        # historical business - staff user
+        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+                  expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+                  expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.RESTRN_FULL_CORPS,
+                          FilingKey.RESTRN_LTD_CORPS])),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+                  expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+
+        # historical business - general user
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+         [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+    ]
+)
+def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, session, jwt, test_name, business_exists, state,
+                                                  legal_types, username, roles, expected):
+    """Assert that get allowed returns valid filings when business is not in good standing."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            business = None
+            identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+            business = factory_business(identifier=identifier,
+                                        entity_type=legal_type,
+                                        state=state)
+            with patch.object(type(business), 'good_standing', new_callable=PropertyMock) as mock_good_standing:
+                mock_good_standing.return_value = False
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                assert filing_types == expected
 
             
 @pytest.mark.parametrize(
