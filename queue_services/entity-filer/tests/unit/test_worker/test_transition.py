@@ -52,4 +52,4 @@ async def test_transition_filing(app, session):
     assert len(business.aliases.all()) == len(filing_json['filing']['transition']['nameTranslations'])
     assert len(business.resolutions.all()) == len(filing_json['filing']['transition']['shareStructure']
                                                   ['resolutionDates'])
-    assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 2
+    assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 1

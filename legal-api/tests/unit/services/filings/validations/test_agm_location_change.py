@@ -29,9 +29,9 @@ from tests.unit.models import factory_business
     'test_name, expected_code, message',
     [
         ('INVALID_YEAR', HTTPStatus.BAD_REQUEST, 'Invalid AGM year.'),
-        ('FAIL_YEAR-2', HTTPStatus.BAD_REQUEST, 'AGM year must be between -1 or +1 year from current year.'),
-        ('FAIL_YEAR+2', HTTPStatus.BAD_REQUEST, 'AGM year must be between -1 or +1 year from current year.'),
-        ('SUCCESS-1', None, None),
+        ('FAIL_YEAR-3', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
+        ('FAIL_YEAR+2', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
+        ('SUCCESS-2', None, None),
         ('SUCCESS+1', None, None),
         ('SUCCESS', None, None)
     ]
@@ -45,12 +45,12 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message):
 
     if test_name == 'INVALID_YEAR':
         filing['filing']['agmLocationChange']['year'] = 'invalid'
-    elif test_name == 'FAIL_YEAR-2':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 2)
+    elif test_name == 'FAIL_YEAR-3':
+        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 3)
     elif test_name == 'FAIL_YEAR+2':
         filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year + 2)
-    elif test_name == 'SUCCESS-1':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 1)
+    elif test_name == 'SUCCESS-2':
+        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 2)
     elif test_name == 'SUCCESS+1':
         filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year + 1)
     elif test_name == 'SUCCESS':
@@ -73,6 +73,7 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message):
         ('FAIL_INVALID_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
         ('FAIL_REGION_BC', HTTPStatus.BAD_REQUEST, 'Region should not be BC.'),
         ('FAIL_INVALID_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('FAIL_INVALID_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
         ('SUCCESS', None, None)
     ]
 )
@@ -90,6 +91,9 @@ def test_validate_agm_location(session, mocker, test_name, expected_code, messag
     elif test_name == 'FAIL_REGION_BC':
         filing['filing']['agmLocationChange']['newAgmLocation']['addressRegion'] = 'BC'
     elif test_name == 'FAIL_INVALID_REGION':
+        filing['filing']['agmLocationChange']['newAgmLocation']['addressRegion'] = ''
+    elif test_name == 'FAIL_INVALID_US_REGION':
+        filing['filing']['agmLocationChange']['newAgmLocation']['addressCountry'] = 'US'
         filing['filing']['agmLocationChange']['newAgmLocation']['addressRegion'] = ''
 
     filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year)

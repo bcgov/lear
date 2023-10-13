@@ -48,6 +48,7 @@ from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
     admin_freeze,
+    agm_location_change,
     alteration,
     annual_report,
     change_of_address,
@@ -236,6 +237,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('continuationOut'):
                     continuation_out.process(business, filing_submission, filing, filing_meta)
+
+                elif filing.get('agmLocationChange'):
+                    agm_location_change.process(filing, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
