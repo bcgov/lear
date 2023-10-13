@@ -88,7 +88,9 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -151,7 +153,9 @@ def test_worker_proprietor_new_address(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     mocker.patch('entity_filer.worker.publish_email_message', return_value=None)

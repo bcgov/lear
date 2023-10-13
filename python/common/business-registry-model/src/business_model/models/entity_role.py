@@ -299,6 +299,26 @@ class EntityRole(Versioned, db.Model):
         entity_roles = entity_roles.all()
         return entity_roles
 
+    @classmethod
+    def get_entity_roles_history_for_entity(cls, entity_id: int, end_date: datetime = None, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        history_version = history_cls(cls)
+        entity_roles = db.session.query(history_version). \
+            filter(history_version.legal_entity_id == entity_id)
+
+        if end_date:
+            entity_roles = entity_roles.filter(cast(history_version.appointment_date, Date) <= end_date)
+
+        if role:
+            try:
+                _ = EntityRole.RoleTypes[role.lower()]
+            except KeyError:
+                return []
+            entity_roles = entity_roles.filter(history_version.role_type == role.lower())
+
+        entity_roles = entity_roles.all()
+        return entity_roles
+
     @property
     def is_related_colin_entity(self):
         """Return if entity role is for a colin entity."""

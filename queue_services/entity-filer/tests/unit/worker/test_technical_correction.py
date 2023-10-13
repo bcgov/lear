@@ -19,6 +19,7 @@ from business_model import LegalEntity, Filing, PartyRole
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, SPECIAL_RESOLUTION
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
@@ -42,7 +43,9 @@ def test_technical_correction_ar(app, session):
     filing = (create_filing(payment_id, filing_data, business.id))
     filing_id = filing.id
 
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing.id,
+    )
 
     # sanity check
     # that it is an AR, and it is based on the ANNUAL_REPORT template

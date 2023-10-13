@@ -131,6 +131,7 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
     business.state = LegalEntity.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):
+        # TODO check how this is getting used, may need operating name?
         filing_meta.registration = {**filing_meta.registration,
                                     **{'nrNumber': nr_number,
                                        'legalName': business_info_obj.get('legalName', None)}}

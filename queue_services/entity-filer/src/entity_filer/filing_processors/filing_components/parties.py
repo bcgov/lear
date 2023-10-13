@@ -390,7 +390,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         )
         # mailing_address.save()
         # new_party.mailing_address_id = mailing_address.id
-        new_party.mailing_address = mailing_address
+        new_party.entity_mailing_address = mailing_address
 
     if party_dict.get('deliveryAddress'):
         delivery_address = Address(
@@ -403,7 +403,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         )
         # delivery_address.save()
         # new_party.delivery_address_id = delivery_address.id
-        new_party.delivery_address = delivery_address
+        new_party.entity_delivery_address = delivery_address
 
         new_party.save()
     return new_party

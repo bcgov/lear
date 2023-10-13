@@ -94,7 +94,11 @@ def _update_parties(business: LegalEntity, parties: dict, filing_rec: Filing):
                                                       EntityRole.RoleTypes.custodian.value)
     for party_role in custodian_party_roles:
         party_role.cessation_date = end_date_time
-        business.entity_roles.remove(party_role)
+        # business.entity_roles.remove(party_role)
+
+        # add fields we need in the historical record (relink business)
+        party_role.change_filing_id = filing_rec.id
+        # party_role.legal_entity_id = 12 #business.id
         party_role.delete()
 
     merge_all_parties(business, filing_rec, {'parties': parties})

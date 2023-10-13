@@ -30,6 +30,8 @@ sql-versioning = {path = "../../python/common/sql-versioning"}
 ##business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "dev_legal_name_changes" }
 business-model = {path = "../../python/common/business-registry-model"}
 cattrs = "^23.1.2"
+google-cloud-pubsub = "^2.18.4"
+google-auth = "^2.23.3"
 
 
 [tool.poetry.group.dev.dependencies]

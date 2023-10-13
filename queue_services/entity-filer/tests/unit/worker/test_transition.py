@@ -19,6 +19,7 @@ from business_model import LegalEntity, Filing, EntityRole
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE, FILING_HEADER, TRANSITION
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
@@ -38,7 +39,9 @@ def test_transition_filing(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = (create_filing(payment_id, filing_data, business.id))
 
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing.id,
+    )
 
     # Test
     process_filing(filing_msg)

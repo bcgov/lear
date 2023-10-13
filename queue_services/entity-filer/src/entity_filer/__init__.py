@@ -43,8 +43,8 @@ from business_model import db
 from .config import Config
 from .config import Production
 from .resources import register_endpoints
+from .services import queue
 from .translations import babel
-# from .services import queue
 
 
 def create_app(environment: Config = Production, **kwargs) -> Flask:
@@ -63,7 +63,7 @@ def create_app(environment: Config = Production, **kwargs) -> Flask:
 
     babel.init_app(app)
     db.init_app(app)
-    # queue.init_app(app)
+    queue.init_app(app)
     register_endpoints(app)
 
     return app

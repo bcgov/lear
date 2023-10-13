@@ -31,6 +31,7 @@ from business_model import LegalEntity, Filing, EntityRole, RegistrationBootstra
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 # from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
 from tests.unit import create_filing
 
@@ -58,7 +59,9 @@ def test_incorporation_filing(app, session, bootstrap, requests_mock):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # Test
     response = '1234567'

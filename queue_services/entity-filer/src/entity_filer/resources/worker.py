@@ -35,9 +35,13 @@
 """
 import json
 import os
+import re
 import uuid
+from contextlib import suppress
+from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Dict
+from typing import Optional
 
 from flask import Blueprint
 from flask import request
@@ -48,9 +52,14 @@ from business_model import LegalEntity, Filing
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.utils.datetime import datetime
 from sqlalchemy.exc import OperationalError
+from simple_cloudevent import SimpleCloudEvent
+from werkzeug.exceptions import UnsupportedMediaType
+from werkzeug.exceptions import BadRequest
 
+from entity_filer.services import queue
 from entity_filer.services.logging import structured_log
 from entity_filer.exceptions import BusinessException
+from entity_filer.exceptions import DefaultException
 from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
@@ -89,35 +98,57 @@ def worker():
 
     # 1. Get cloud event
     # ##
-    # if not (ce := queue.get_simple_cloud_event(request)):
-        #
-        # Decision here is to return a 200,
-        # so the event is removed from the Queue
-        # return {}, HTTPStatus.OK
+    if not (ce := queue.get_simple_cloud_event(request)):
+        
+        # Decision here is to return a 4xx,
+        # so the event is errored off the Queue
+        return {'error': 'no cloud event'}, HTTPStatus.BAD_REQUEST
     
-    # try:
-    #     print('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-    #     filing_msg = json.loads(msg.data.decode('utf-8'))
-    #     print('Extracted filing msg: %s', filing_msg)
-    #     await process_filing(filing_msg, FLASK_APP)
-    # except OperationalError as err:
-    #     print('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
-    #     raise err  # We don't want to handle the error, as a DB down would drain the queue
-    # except FilingException as err:
-    #     print('Queue Error - cannot find filing: %s'
-    #                  '\n\nThis message has been put back on the queue for reprocessing.',
-    #                  json.dumps(filing_msg), exc_info=True)
-    #     raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    # except (BusinessException, Exception):  # pylint: disable=broad-except
-    #     # Catch Exception so that any error is still caught and the message is removed from the queue
-    #     print('Queue Error:' + json.dumps(filing_msg), level='error')
-    #     print('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+    # 2. Get filing_message information
+    # ##
+    if not (filing_message := get_filing_message(ce)):
+        # no filing_message info, error off Q
+        return {'error': 'no filing info in cloud event'}, HTTPStatus.BAD_REQUEST
+    
+    # 3. Process Filing
+    # ##
+    try:
+        process_filing(filing_message)
+    except (AttributeError ,BusinessException, DefaultException) as err:
+        return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.BAD_REQUEST
 
-    # structured_log(request, "INFO", f"received ce: {str(ce)}")
-    return {}, 500
+    structured_log(request, "INFO", f"completed ce: {str(ce)}")
+    return {}, HTTPStatus.OK
 
 
+@dataclass
+class FilingMessage:
+    id: Optional[str] = None
+    status_code: Optional[str] = None
+    filing_identifier: Optional[str] = None
+    corp_type_code: Optional[str] = None
 
+
+def get_filing_message(ce: SimpleCloudEvent):
+    """Return a PaymentToken if enclosed in the cloud event."""
+    if (
+        (ce.type == "filingMessage")
+        and (data := ce.data)
+        and isinstance(data, dict)
+        and (filing_message := data.get("filingMessage", {}))
+    ):
+        converted = dict_keys_to_snake_case(filing_message)
+        fm = FilingMessage(**converted)
+        return fm
+    return None
+
+def dict_keys_to_snake_case(d: dict):
+    """Convert the keys of a dict to snake_case"""
+    pattern = re.compile(r"(?<!^)(?=[A-Z])")
+    converted = {}
+    for k, v in d.items():
+        converted[pattern.sub("_", k).lower()] = v
+    return converted
 
 def get_filing_types(legal_filings: dict):
     """Get the filing type fee codes for the filing.
@@ -168,17 +199,17 @@ async def publish_event(business: LegalEntity, filing: Filing):
         print('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
-def process_filing(filing_msg: Dict):  # pylint: disable=too-many-branches,too-many-statements
+def process_filing(filing_message: FilingMessage):  # pylint: disable=too-many-branches,too-many-statements
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
     """
-    if not (filing_submission := Filing.find_by_id(filing_msg['filing']['id'])):
-        raise BusinessException
+    if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
+        raise DefaultException(error_text=f'filing not found for {filing_message.filing_identifier}')
 
     if filing_submission.status == Filing.Status.COMPLETED:
-        print('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
-                        filing_submission.legal_entity_id, filing_submission.id, filing_msg)
+        print('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s',
+                        filing_submission.legal_entity_id, filing_submission.id)
         return None, None
 
     # if legal_filings := filing_submission.legal_filings():

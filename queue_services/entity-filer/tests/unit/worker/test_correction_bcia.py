@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
 )
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_party, \
     create_party_role, factory_completed_filing
 
@@ -258,7 +259,9 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -326,7 +329,9 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -387,7 +392,9 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -445,7 +452,9 @@ def test_worker_correction_court_order(app, session, mocker, test_name, legal_ty
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -528,7 +537,9 @@ def test_worker_director_name_and_address_change(app, session, mocker, test_name
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -625,7 +636,9 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -755,7 +768,9 @@ def test_worker_share_class_and_series_change(app, session, mocker, test_name, l
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
