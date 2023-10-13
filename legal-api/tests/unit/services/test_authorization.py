@@ -160,7 +160,7 @@ EXPECTED_DATA = {
                                     'name': 'registrarsNotation'},
     FilingKey.REGISTRARS_ORDER: {'displayName': "Registrar's Order", 'feeCode': 'NOFEE', 'name': 'registrarsOrder'},
     FilingKey.SPECIAL_RESOLUTION: {'displayName': 'Special Resolution', 'feeCode': 'SPRLN', 'name': 'specialResolution'},
-    FilingKey.AGM_LOCATION_CHANGE: {'displayName': '', 'feeCode': '', 'name': ''},
+    FilingKey.AGM_LOCATION_CHANGE: {'displayName': 'agmLocationChange', 'feeCode': 'AGMLC', 'name': 'AGM Location Change'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
     FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                  'name': 'consentContinuationOut'},
