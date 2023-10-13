@@ -1084,6 +1084,60 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
 
 
 @pytest.mark.parametrize(
+    'test_name,business_exists,state,legal_types,username,roles,expected',
+    [
+        # active business - staff user
+        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],[]),
+        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],[]),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],[]),
+
+        # active business - general user
+        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],[]),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
+
+        # historical business - staff user
+        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],[]),
+        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],[]),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],[]),
+
+        # historical business - general user
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+         [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+    ]
+)
+def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, session, jwt, test_name, business_exists, state,
+                                                  legal_types, username, roles, expected):
+    """Assert that get allowed returns valid filings when business is not in good standing."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            business = None
+            if business_exists:
+                identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+                business = factory_business(identifier=identifier,
+                                            entity_type=legal_type,
+                                            state=state)
+                business.good_standing = False
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            print("test:")
+            print(filing_types)
+            assert filing_types == expected
+
+@pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,filing_statuses,expected',
     [
         # active business - staff user
