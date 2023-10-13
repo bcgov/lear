@@ -239,7 +239,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     continuation_out.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('agmLocationChange'):
-                    agm_location_change.process(business, filing_submission, filing, filing_meta)
+                    agm_location_change.process(filing, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
