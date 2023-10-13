@@ -1082,8 +1082,8 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                                             admin_freeze=True)
             filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
-            
 
+            
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,filing_statuses,expected',
     [
@@ -1414,6 +1414,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -1630,6 +1631,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
         ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, None], [None, None], [False, False],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
