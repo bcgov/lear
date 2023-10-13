@@ -258,6 +258,7 @@ from subquery sq
 where sq.version != mv.max_version;
 
 
+vset transfer.threads=3
 -- addresses -> addresses
 transfer public.addresses from lear_old using
 SELECT a.id,
@@ -326,6 +327,7 @@ from subquery sq
 where sq.version != mv.max_version;
 
 
+vset transfer.threads=8
 -- aliases -> aliases
 transfer public.aliases from lear_old using
 SELECT a.id,
@@ -522,6 +524,7 @@ where sq.deactivated_date is not null
    or sq.version != mv.max_version;
 
 
+vset transfer.threads=3
 -- parties -> parties
 transfer public.parties from lear_old using
 SELECT p.id,
@@ -650,6 +653,7 @@ from subquery sq
 where sq.version != mv.max_version;
 
 
+vset transfer.threads=8
 -- request_tracker -> request_tracker
 CREATE CAST (varchar AS requesttype) WITH INOUT AS IMPLICIT;
 CREATE CAST (varchar AS servicename) WITH INOUT AS IMPLICIT;
