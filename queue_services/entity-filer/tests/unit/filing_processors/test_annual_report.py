@@ -24,6 +24,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 # from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import (
     create_business,
     create_filing,
@@ -54,7 +55,9 @@ def test_process_ar_filing(app, session):
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
-        filing_msg = {'filing': {'id': filing_id}}
+        filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
         annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta)
 
     # check it out
@@ -85,7 +88,9 @@ def test_process_ar_filing_no_agm(app, session):
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
-        filing_msg = {'filing': {'id': filing_id}}
+        filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
         process_filing(filing_msg)
 
     # Get modified data

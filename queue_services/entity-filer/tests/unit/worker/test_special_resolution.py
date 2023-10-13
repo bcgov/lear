@@ -22,6 +22,7 @@ from business_model import LegalEntity, Filing
 from registry_schemas.example_data import CP_SPECIAL_RESOLUTION_TEMPLATE
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_entity, create_filing
 
 
@@ -47,7 +48,9 @@ def test_special_resolution(app, session, mocker, test_name, legal_name, new_leg
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)

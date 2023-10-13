@@ -22,6 +22,7 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
@@ -53,7 +54,9 @@ def test_worker_consent_continuation_out(app, session, mocker, test_name, effect
 
     cco_filing.effective_date = LegislationDatetime.as_utc_timezone(effective_date)
     cco_filing.save()
-    filing_msg = {'filing': {'id': cco_filing.id}}
+    filing_msg = FilingMessage(
+        filing_identifier=cco_filing.id,
+    )
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)

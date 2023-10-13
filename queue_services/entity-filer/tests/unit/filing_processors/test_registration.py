@@ -99,6 +99,7 @@ def test_registration_process(app, session, legal_type, filing):
         assert len(business.entity_roles.all()) == 0
         assert len(business.offices.all()) == 1
         assert business.offices[0].office_type == 'businessOffice'
+        # TODO Check if deisplay and sorting are the same, or should be differnet here
         assert business.legal_name == 'Griffin Peter, Swanson Joe P'.upper()
 
         # NAICS
@@ -108,6 +109,7 @@ def test_registration_process(app, session, legal_type, filing):
         # AlternateNames
         assert len(business.alternate_names.all()) > 0
         alternate_name = business.alternate_names[0]
+        assert alternate_name.identifier.startswith('FM')
         assert alternate_name.name == filing['filing']['registration']['nameRequest']['legalName']
 
 

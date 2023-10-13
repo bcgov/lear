@@ -19,6 +19,7 @@ from business_model import Filing
 from registry_schemas.example_data import REGISTRARS_NOTATION_FILING_TEMPLATE
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
@@ -33,7 +34,9 @@ def test_worker_registrars_notation(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # Test
     process_filing(filing_msg)

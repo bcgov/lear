@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
@@ -95,7 +96,9 @@ def test_worker_alteration(app, session, mocker, orig_legal_type, new_legal_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # TODO
@@ -141,7 +144,9 @@ def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # TODO
@@ -189,7 +194,9 @@ def test_worker_alteration_court_order(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     # mock out the email sender and event publishing
     # TODO

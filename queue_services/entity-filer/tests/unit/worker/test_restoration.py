@@ -16,14 +16,17 @@ import copy
 import random
 
 import pytest
-from business_model import LegalEntity, Filing, Party, PartyRole
+from business_model import LegalEntity, Filing, EntityRole, OfficeType, Address
 from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
+from sql_versioning import versioned_session
+from tests.unit import nested_session
 
 legal_name = 'old name'
 legal_type = 'BC'
@@ -53,7 +56,9 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
@@ -97,7 +102,9 @@ def test_restoration_legal_name(app, session, mocker, test_name):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
@@ -133,18 +140,34 @@ def test_restoration_office_addresses(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
     process_filing(filing_msg)
 
     # Check outcome
-    changed_delivery_address = business.delivery_address.one_or_none()
+    # changed_delivery_address = business.entity_delivery_address.one_or_none()
+    offices = business.offices.all()
+    registered_office = None
+    for office in offices:
+        if office.office_type == OfficeType.REGISTERED:
+            registered_office = office
+            break
+    assert registered_office
+
+    for address in registered_office.addresses.all():
+        if address.address_type == Address.DELIVERY:
+            changed_delivery_address = address
+        if address.address_type == Address.MAILING:
+            changed_mailing_address = address
+
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_delivery_address.json[key] == \
             filing['filing']['restoration']['offices']['registeredOffice']['deliveryAddress'][key]
-    changed_mailing_address = business.mailing_address.one_or_none()
+    # changed_mailing_address = business.entity_mailing_address.one_or_none()
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
             filing['filing']['restoration']['offices']['registeredOffice']['mailingAddress'][key]
@@ -170,7 +193,9 @@ def test_restoration_court_order(app, session, mocker, approval_type):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
@@ -211,7 +236,9 @@ def test_restoration_registrar(app, session, mocker, approval_type):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
@@ -243,7 +270,9 @@ def test_restoration_name_translations(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(
+        filing_identifier=filing_id
+    )
 
     _mock_out(mocker)
 
@@ -256,57 +285,67 @@ def test_restoration_name_translations(app, session, mocker):
 
 def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""
-    identifier = 'BC1234567'
-    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
-    business_id = business.id
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
-    filing['filing']['header']['name'] = 'restoration'
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    versioned_session(session)
+    with nested_session(session):
+        identifier = 'BC1234567'
+        business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+        business.save()
+        business_id = business.id
+        filing = copy.deepcopy(FILING_HEADER)
+        filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+        filing['filing']['header']['name'] = 'restoration'
+        del filing['filing']['restoration']['parties'][0]['officer']['id']
 
-    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+        payment_id = str(random.SystemRandom().getrandbits(0x58))
 
-    _mock_out(mocker)
+        filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+        filing_msg = FilingMessage(
+            filing_identifier=filing_id
+        )
 
-    member = Party(
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP',
-    )
-    member.save()
-    assert member.id
+        _mock_out(mocker)
 
-    party_role = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
-        appointment_date=datetime(2017, 5, 17),
-        cessation_date=None,
-        party_id=member.id,
-        business_id=business_id
-    )
-    party_role.save()
+        member = LegalEntity(
+            first_name='Michael',
+            last_name='Crane',
+            middle_initial='Joe',
+            title='VP',
+            entity_type=LegalEntity.EntityTypes.PERSON,
+        )
+        member.save()
+        assert member.id
 
-    process_filing(filing_msg)
+        party_role = EntityRole(
+            role_type=EntityRole.RoleTypes.custodian.value,
+            appointment_date=datetime(2017, 5, 17),
+            cessation_date=None,
+            related_entity_id=member.id,
+            legal_entity_id=business_id,
+            change_filing_id=None,
+            filing_id=None,
+        )
+        party_role.save()
 
-    # Check outcome
-    party_roles = LegalEntity.find_by_internal_id(business_id).party_roles.all()
-    assert len(party_roles) == 1
-    custodian = party_roles[0]
-    assert custodian.cessation_date
+        process_filing(filing_msg)
 
-    filing_rec = Filing.find_by_id(filing_id)
-    party_roles = filing_rec.filing_party_roles.all()
-    assert len(party_roles) == 1
-    party_role = party_roles[0]
-    assert party_role.role == PartyRole.RoleTypes.APPLICANT.value
-    assert party_role.party.first_name == filing['filing']['restoration']['parties'][0]['officer']['firstName'].upper()
-    assert party_role.party.delivery_address.street ==\
-        filing['filing']['restoration']['parties'][0]['deliveryAddress']['streetAddress']
-    assert party_role.party.mailing_address.street == \
-        filing['filing']['restoration']['parties'][0]['mailingAddress']['streetAddress']
+        # Check outcome
+        # TODO by business not filing
+        historical_roles = EntityRole.get_entity_roles_history_for_entity(entity_id=business_id)
+        number_of_historical_roles = len(historical_roles)
+        assert number_of_historical_roles == 2
+        assert historical_roles[1].cessation_date
+
+        filing_rec = Filing.find_by_id(filing_id)
+        party_roles = filing_rec.filing_entity_roles.all()
+        assert len(party_roles) == 1
+        party_role = party_roles[0]
+        assert party_role.role_type == EntityRole.RoleTypes.applicant.value
+        assert party_role.related_entity.first_name == filing['filing']['restoration']['parties'][0]['officer']['firstName'].upper()
+        assert party_role.delivery_address.street ==\
+            filing['filing']['restoration']['parties'][0]['deliveryAddress']['streetAddress']
+        assert party_role.mailing_address.street == \
+            filing['filing']['restoration']['parties'][0]['mailingAddress']['streetAddress']
 
 
 def _mock_out(mocker):
