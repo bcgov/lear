@@ -24,7 +24,7 @@ from enum import Enum
 from http import HTTPStatus
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 from flask import jsonify
 from registry_schemas.example_data import AGM_LOCATION_CHANGE, ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, \
     CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
@@ -1095,22 +1095,18 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_LOCATION_CHANGE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
@@ -1122,7 +1118,6 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                           FilingKey.CONV_FIRMS,
                           FilingKey.CORRCTN_FIRMS,
                           FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS_FIRMS,
                           FilingKey.ADM_DISS_FIRMS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
@@ -1132,21 +1127,16 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                   expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-                  expected_lookup([FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
+                  expected_lookup([FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
                           FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
-                  expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.VOL_DISS_FIRMS])),
+                  expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
 
         # historical business - staff user
         ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -1187,12 +1177,12 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
 
         for legal_type in legal_types:
             business = None
-            with patch.object(Business, 'good_standing', return_value=False):
-                if business_exists:
-                    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
-                    business = factory_business(identifier=identifier,
-                                                entity_type=legal_type,
-                                                state=state)
+            identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+            business = factory_business(identifier=identifier,
+                                        entity_type=legal_type,
+                                        state=state)
+            with patch.object(type(business), 'good_standing', new_callable=PropertyMock) as mock_good_standing:
+                mock_good_standing.return_value = False
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
