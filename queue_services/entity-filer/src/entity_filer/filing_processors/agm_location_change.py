@@ -15,8 +15,6 @@
 
 from typing import Dict
 
-from legal_api.models import Business, Filing
-
 from entity_filer.filing_meta import FilingMeta
 
 
