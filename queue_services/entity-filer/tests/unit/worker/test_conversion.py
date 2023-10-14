@@ -29,7 +29,7 @@ from registry_schemas.example_data import (
 )
 
 from entity_filer.resources.worker import process_filing
-from tests.unit import create_entity, create_filing, create_party, create_party_role
+from tests.unit import create_entity, create_filing, create_entity_person, create_entity_role
 
 
 CONTACT_POINT = {
@@ -132,7 +132,7 @@ def test_worker_proprietor_new_address(app, session, mocker):
     business = create_entity(identifier, 'SP', 'Test Entity')
     business_id = business.id
 
-    party = create_party(SP_CONVERSION['filing']['conversion']['parties'][0])
+    party = create_entity_person(SP_CONVERSION['filing']['conversion']['parties'][0])
     party_id = party.id
     party.delivery_address = None
     party.mailing_address = None
@@ -140,7 +140,7 @@ def test_worker_proprietor_new_address(app, session, mocker):
     assert party.delivery_address_id is None
     assert party.mailing_address_id is None
 
-    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+    create_entity_role(business, party, ['proprietor'], datetime.utcnow())
 
     filing = copy.deepcopy(SP_CONVERSION)
     filing['filing']['conversion']['contactPoint'] = CONTACT_POINT

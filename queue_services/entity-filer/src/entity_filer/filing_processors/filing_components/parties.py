@@ -160,6 +160,7 @@ def merge_all_parties (legal_entity: LegalEntity,
         # An existing person can have a different set of addresses
         # for this set of roles
         if existing_party and party_type == 'person':
+            update_person_info(party_le, party_dict)
             delivery_address = get_address_for_filing(
                                     party_le.entity_delivery_address,
                                     party_dict.get('deliveryAddress'))
@@ -503,6 +504,13 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     
     return party_le, delivery_address, mailing_address
 
+
+def update_person_info(party_le, party_dict):
+    party_le.first_name = party_dict['officer'].get('firstName', '').upper()
+    party_le.last_name = party_dict['officer'].get('lastName', '').upper()
+    party_le.middle_initial = party_dict['officer'].get('middleInitial', 
+                            party_dict['officer'].get('middleName', '')).upper()
+    party_le.email = party_dict['officer'].get('email')
 
 def map_schema_role_to_enum(role_type: str) -> EntityRole.RoleTypes:
     """Map schema_role name to Entity RoleTypes."""

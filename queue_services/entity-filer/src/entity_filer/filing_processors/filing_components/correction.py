@@ -23,7 +23,6 @@ from entity_filer.utils.legislation_datetime import LegislationDatetime
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
-    merge_party,
     create_role,
     filings,
     legal_entity_info,
@@ -32,6 +31,7 @@ from entity_filer.filing_processors.filing_components import (
     shares,
     update_address,
 )
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
 def correct_business_data(business: LegalEntity,  # pylint: disable=too-many-locals, too-many-statements
@@ -86,7 +86,7 @@ def correct_business_data(business: LegalEntity,  # pylint: disable=too-many-loc
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
-        update_parties(business, party_json, correction_filing_rec)
+        merge_all_parties(business, correction_filing_rec, {'parties': party_json})
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):

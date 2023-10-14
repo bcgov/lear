@@ -487,13 +487,14 @@ def create_office_address(business, office, address_type):
     return address
 
 
-def create_party(party_json):
+def create_entity_person(party_json):
     """Create a director."""
-    from business_model import Address, Party
-    new_party = Party(
+    from business_model import Address, LegalEntity
+    new_party = LegalEntity(
         first_name=party_json['officer'].get('firstName', '').upper(),
         last_name=party_json['officer'].get('lastName', '').upper(),
-        middle_initial=party_json['officer'].get('middleInitial', '').upper()
+        middle_initial=party_json['officer'].get('middleInitial', '').upper(),
+        entity_type=LegalEntity.EntityTypes.PERSON,
     )
     if party_json.get('mailingAddress'):
         mailing_address = Address(
@@ -504,7 +505,7 @@ def create_party(party_json):
             region=party_json['mailingAddress']['addressRegion'],
             delivery_instructions=party_json['mailingAddress'].get('deliveryInstructions', '').upper()
         )
-        new_party.mailing_address = mailing_address
+        new_party.entity_mailing_address = mailing_address
     if party_json.get('deliveryAddress'):
         delivery_address = Address(
             street=party_json['deliveryAddress']['streetAddress'],
@@ -514,22 +515,28 @@ def create_party(party_json):
             region=party_json['deliveryAddress']['addressRegion'],
             delivery_instructions=party_json['deliveryAddress'].get('deliveryInstructions', '').upper()
         )
-        new_party.delivery_address = delivery_address
+        new_party.entity_delivery_address = delivery_address
     new_party.save()
     return new_party
 
 
-def create_party_role(business, party, roles, appointment_date):
-    """Create a director."""
-    from business_model import PartyRole
+def create_entity_role(business, party, roles, appointment_date):
+    """Create a role for an entity."""
+    from business_model import EntityRole
     for role in roles:
-        party_role = PartyRole(
-            role=role,
-            party=party,
+        party_role = EntityRole(
             appointment_date=appointment_date,
-            cessation_date=None
+            cessation_date=None,
+            change_filing_id=None,
+            delivery_address_id=None,
+            filing_id=None,
+            # legal_entity_id=business.id,
+            mailing_address_id=None,
+            related_colin_entity_id=None,
+            related_entity_id=party.id,
+            role_type=role
         )
-        business.party_roles.append(party_role)
+        business.entity_roles.append(party_role)
 
     return business
 
