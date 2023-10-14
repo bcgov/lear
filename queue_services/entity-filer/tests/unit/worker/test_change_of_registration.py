@@ -31,7 +31,7 @@ from registry_schemas.example_data import (
 
 from entity_filer.resources.worker import process_filing
 from entity_filer.resources.worker import FilingMessage
-from tests.unit import create_entity, create_office, create_office_address, create_party, create_party_role, \
+from tests.unit import create_entity, create_office, create_office_address, create_entity_person, create_entity_role, \
     create_filing
 
 
@@ -241,10 +241,10 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
     business = create_entity(identifier, 'SP', 'Test Entity')
     business_id = business.id
 
-    party = create_party(SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
+    party = create_entity_person(SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
     party_id = party.id
 
-    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+    create_entity_role(business, party, ['proprietor'], datetime.utcnow())
 
     filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
     filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
@@ -299,13 +299,13 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     business = create_entity(identifier, 'GP', 'Test Entity')
     business_id = business.id
 
-    party1 = create_party(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
+    party1 = create_entity_person(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
     party_id_1 = party1.id
-    party2 = create_party(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][1])
+    party2 = create_entity_person(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][1])
     party_id_2 = party2.id
 
-    create_party_role(business, party1, ['partner'], datetime.utcnow())
-    create_party_role(business, party2, ['partner'], datetime.utcnow())
+    create_entity_role(business, party1, ['partner'], datetime.utcnow())
+    create_entity_role(business, party2, ['partner'], datetime.utcnow())
 
     filing = copy.deepcopy(GP_CHANGE_OF_REGISTRATION)
     filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT

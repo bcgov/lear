@@ -20,7 +20,7 @@ from unittest.mock import patch
 from dateutil.parser import parse
 
 import pytest
-from business_model import Address, Alias, LegalEntity, Filing, PartyRole
+from business_model import Address, Alias, LegalEntity, Filing, EntityRole
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 from registry_schemas.example_data import (
@@ -30,8 +30,10 @@ from registry_schemas.example_data import (
 
 from entity_filer.resources.worker import process_filing
 from entity_filer.resources.worker import FilingMessage
-from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_party, \
-    create_party_role, factory_completed_filing
+from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_entity_person, \
+    create_entity_role, factory_completed_filing
+from tests.unit import nested_session
+from sql_versioning import versioned_session
 
 CONTACT_POINT = {
     'email': 'no_one@never.get',
@@ -495,87 +497,106 @@ def test_worker_correction_court_order(app, session, mocker, test_name, legal_ty
 def test_worker_director_name_and_address_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
     identifier = 'BC1234567'
-    business = create_entity(identifier, legal_type, 'Test Entity')
-    business_id = business.id
+    versioned_session(session)
+    with nested_session(session):
+        # Setup
+        business = create_entity(identifier, legal_type, 'Test Entity')
+        business_id = business.id
 
-    party1 = create_party(BC_CORRECTION['filing']['correction']['parties'][0])
-    party_id_1 = party1.id
-    party2 = create_party(BC_CORRECTION['filing']['correction']['parties'][1])
-    party_id_2 = party2.id
+        party1 = create_entity_person(BC_CORRECTION['filing']['correction']['parties'][0])
+        party_id_1 = party1.id
+        party2 = create_entity_person(BC_CORRECTION['filing']['correction']['parties'][1])
+        party_id_2 = party2.id
 
-    create_party_role(business, party1, ['director'], datetime.utcnow())
-    create_party_role(business, party2, ['director'], datetime.utcnow())
+        create_entity_role(business, party1, ['director'], datetime.utcnow())
+        create_entity_role(business, party2, ['director'], datetime.utcnow())
 
-    filing = copy.deepcopy(BC_CORRECTION)
+        filing = copy.deepcopy(BC_CORRECTION)
 
-    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
-    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+        corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
+        filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
+        filing['filing']['correction']['contactPoint'] = CONTACT_POINT
 
-    if 'add_director' in test_name:
         filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
         filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
-        new_party_json = copy.deepcopy(BC_CORRECTION['filing']['correction']['parties'][1])
-        del new_party_json['officer']['id']
-        new_party_json['officer']['firstName'] = 'New Name'
-        filing['filing']['correction']['parties'].append(new_party_json)
 
-    if 'edit_director_name_and_address' in test_name:
-        filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
-        filing['filing']['correction']['parties'][0]['officer']['firstName'] = 'New Name a'
-        filing['filing']['correction']['parties'][0]['officer']['middleInitial'] = 'New Name a'
-        filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
-        filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
-        filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
+        if 'add_director' in test_name:
+            # filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
+            # filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
+            new_party_json = copy.deepcopy(BC_CORRECTION['filing']['correction']['parties'][1])
+            del new_party_json['officer']['id']
+            new_party_json['officer']['firstName'] = 'New Name'
+            filing['filing']['correction']['parties'].append(new_party_json)
 
-    if 'delete_director' in test_name:
-        del filing['filing']['correction']['parties'][1]
+        if 'edit_director_name_and_address' in test_name:
+            # filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
+            filing['filing']['correction']['parties'][0]['officer']['firstName'] = 'New Name a'
+            filing['filing']['correction']['parties'][0]['officer']['middleInitial'] = 'New Name a'
+            filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
+            filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
+            # filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
 
-    del filing['filing']['correction']['nameRequest']
+        if 'delete_director' in test_name:
+            del filing['filing']['correction']['parties'][1]
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+        del filing['filing']['correction']['nameRequest']
 
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+        payment_id = str(random.SystemRandom().getrandbits(0x58))
+        filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    # mock out the email sender and event publishing
-    # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    # mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    # mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-    #              return_value=None)
-    # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+        filing_msg = FilingMessage(
+            filing_identifier=filing_id
+        )
 
-    # Test
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        process_filing(filing_msg)
+        # mock out the email sender and event publishing
+        # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+        # mocker.patch('entity_filer.worker.publish_event', return_value=None)
+        mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+        # mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+        #              return_value=None)
+        # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
-    # Check outcome
-    business = LegalEntity.find_by_internal_id(business_id)
+        # Test
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            process_filing(filing_msg)
 
-    if 'add_director' in test_name:
-        assert len(PartyRole.get_parties_by_role(business_id, 'director')) == 2
-        assert len(business.party_roles.all()) == 2
-        for party_role in business.party_roles.all():
-            assert party_role.cessation_date is None
+        # Check outcome
+        business = LegalEntity.find_by_internal_id(business_id)
 
-    if 'edit_director_name_and_address' in test_name:
-        party = business.party_roles.all()[0].party
-        assert party.first_name == \
-            filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
-        assert party.delivery_address.street == \
-            filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
-        assert party.mailing_address.street == \
-            filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
-        assert business.party_roles.all()[0].cessation_date is None
-        assert business.party_roles.all()[1].cessation_date is None
+        if 'add_director' in test_name:
+            assert len(EntityRole.get_parties_by_role(business_id, 'director')) == 2
+            assert len(business.entity_roles.all()) == 2
+            for party_role in business.entity_roles.all():
+                assert party_role.cessation_date is None
 
-    if 'delete_director' in test_name:
-        deleted_role = PartyRole.get_party_roles_by_party_id(business_id, party_id_2)[0]
-        assert deleted_role.cessation_date is not None
+        if 'edit_director_name_and_address' in test_name:
+            for candidate in business.entity_roles.all():
+                if candidate.related_entity_id == party_id_1:
+                    party = candidate.related_entity
+                    party_role = candidate
+                    break
+
+            assert party.first_name == \
+                filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
+            assert party_role.delivery_address.street == \
+                filing['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress']
+            assert party_role.mailing_address.street == \
+                filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
+            assert business.entity_roles.all()[0].cessation_date is None
+            assert business.entity_roles.all()[1].cessation_date is None
+
+        if 'delete_director' in test_name:
+            # check the remaining director
+            parties = business.entity_roles.all()
+            assert len(parties) == 1
+            party = parties[0]
+            assert party.cessation_date is None
+            assert party.role_type  == EntityRole.RoleTypes.director
+            # historical roles
+            historical_directors = EntityRole.get_entity_roles_history_for_entity(business.id,role=EntityRole.RoleTypes.director)
+            for director in historical_directors:
+                director.cessation_date is not None
 
 
 @pytest.mark.parametrize(
