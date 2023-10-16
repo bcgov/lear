@@ -517,10 +517,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if filing.meta_data.get('correction', {}).get('hasResolution'):
                 outputs.add('specialResolution')
         return outputs
-    
+
     @staticmethod
     def alter_outputs_dissolution(filing, outputs):
-        if filing.filing_type == 'dissolution': 
+        """Handle output file list modification for dissolution."""
+        if filing.filing_type == 'dissolution':
             # Suppress Certificate of Dissolution for Admin Dissolution
             if filing.filing_sub_type == 'administrative':
                 outputs.remove('certificateOfDissolution')
