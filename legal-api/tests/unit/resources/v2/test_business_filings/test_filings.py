@@ -1032,6 +1032,10 @@ CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 AGM_LOCATION_CHANGE_FILING = copy.deepcopy(FILING_HEADER)
 AGM_LOCATION_CHANGE_FILING['filing']['agmLocationChange'] = {}
 
+# FUTURE: use AGM_EXTENSION_FILING from business schema data when AGM Extension filing work has been done
+AGM_EXTENSION_FILING = copy.deepcopy(FILING_HEADER)
+AGM_EXTENSION_FILING['filing']['agmExtension'] = {}
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1100,6 +1104,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
         ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.COMP.value, False, []),
         ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_CCC.value, False, []),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_CCC.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(

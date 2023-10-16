@@ -68,6 +68,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'AFDVT'
             }
         },
+        'agmExtension': {
+            'name': 'agmExtension',
+            'title': 'AGM Extension',
+            'codes': {
+                'BC': 'AGMDT',
+                'BEN': 'AGMDT',
+                'ULC': 'AGMDT',
+                'CC': 'AGMDT'
+            }
+        },
         'agmLocationChange': {
             'name': 'agmLocationChange',
             'title': 'AGM Change of Location',
