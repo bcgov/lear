@@ -474,7 +474,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_party_name(self, parties):
         for party in parties:
-            party['officer']['fullName'] = self._get_party_name(party)
+            party['officer']['name'] = self._get_party_name(party)
 
     def _format_registration_data(self, filing):
         with suppress(KeyError):
@@ -713,10 +713,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         party_name = ''
         if party_json.get('officer').get('partyType') == 'person':
             last_name = party_json['officer'].get('lastName')
-            first_name = party_json['officer'].get('firstName')\
-                if party_json['officer'].get('firstName') else ''
-            middle_name = party_json['officer'].get('middleName')\
-                if party_json['officer'].get('middleName') else ''
+            first_name = party_json['officer'].get('firstName', '')
+            middle_name = party_json['officer'].get('middleName', party_json['officer'].
+                                                        get('middleInitial', ''))
             if not middle_name and not first_name:
                 party_name = f'{last_name}'
             else:
