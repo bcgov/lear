@@ -524,7 +524,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             # Suppress Certificate of Dissolution for Admin Dissolution
             if filing.filing_sub_type == 'administrative':
                 outputs.remove('certificateOfDissolution')
-            # Suppress Certified Memorandum and Certified Rules
+            # Suppress Certified Memorandum and Certified Rules for Coop Voluntary Dissolution
             if filing.filing_sub_type == 'voluntary' and filing.json_legal_type == Business.LegalTypes.COOP:
                 outputs.remove('certifiedRules')
                 outputs.remove('certifiedMemorandum')
