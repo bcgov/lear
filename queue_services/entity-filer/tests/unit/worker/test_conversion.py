@@ -20,7 +20,7 @@ from datetime import datetime
 from unittest.mock import patch
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
-from business_model import Address, LegalEntity, Filing, PartyRole
+from business_model import Address, LegalEntity, Filing, EntityRole
 from registry_schemas.example_data import (
     CONVERSION_FILING_TEMPLATE,
     FIRMS_CONVERSION,
@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
 )
 
 from entity_filer.resources.worker import process_filing
+from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_entity, create_filing, create_entity_person, create_entity_role
 
 
@@ -93,12 +94,12 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
     )
 
     # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    # mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+    #              return_value=None)
+    # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
     process_filing(filing_msg)
@@ -129,18 +130,16 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
 def test_worker_proprietor_new_address(app, session, mocker):
     """Assert the worker process the party new address correctly."""
     identifier = 'FM1234567'
-    business = create_entity(identifier, 'SP', 'Test Entity')
-    business_id = business.id
 
     party = create_entity_person(SP_CONVERSION['filing']['conversion']['parties'][0])
     party_id = party.id
-    party.delivery_address = None
-    party.mailing_address = None
+    party.entity_delivery_address = None
+    party.entity_mailing_address = None
     party.save()
-    assert party.delivery_address_id is None
-    assert party.mailing_address_id is None
+    assert party.entity_delivery_address is None
+    assert party.entity_mailing_address is None
 
-    create_entity_role(business, party, ['proprietor'], datetime.utcnow())
+    create_entity_role(party, None, ['proprietor'], datetime.utcnow())
 
     filing = copy.deepcopy(SP_CONVERSION)
     filing['filing']['conversion']['contactPoint'] = CONTACT_POINT
@@ -151,30 +150,30 @@ def test_worker_proprietor_new_address(app, session, mocker):
     del filing['filing']['conversion']['nameRequest']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+    filing_id = (create_filing(payment_id, filing, business_id=party.id)).id
 
     filing_msg = FilingMessage(
         filing_identifier=filing_id
     )
 
     # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    # mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+    #              return_value=None)
+    # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
     with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
         process_filing(filing_msg)
 
     # Check outcome
-    business = LegalEntity.find_by_internal_id(business_id)
-    party = business.entity_roles.all()[0].party
-    assert party.delivery_address.street ==\
+    party = LegalEntity.find_by_internal_id(party_id)
+    assert party.entity_roles.all()[0].role_type == EntityRole.RoleTypes.proprietor
+    assert party.entity_delivery_address.street ==\
         filing['filing']['conversion']['parties'][0]['deliveryAddress']['streetAddress']
-    assert party.mailing_address.street == \
+    assert party.entity_mailing_address.street == \
         filing['filing']['conversion']['parties'][0]['mailingAddress']['streetAddress']
 
 
