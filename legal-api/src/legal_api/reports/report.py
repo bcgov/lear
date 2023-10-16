@@ -470,12 +470,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             cooperative['associationTypeName'] = \
                 ASSOCIATION_TYPE_DESC.get(cooperative['cooperativeAssociationType'], '')
 
+    def _set_party_name(self, parties):
+        for party in parties:
+            party['officer']['name'] = self._get_party_name(party)
+
     def _format_registration_data(self, filing):
         with suppress(KeyError):
             self._format_address(filing['registration']['offices']['businessOffice']['deliveryAddress'])
         with suppress(KeyError):
             self._format_address(filing['registration']['offices']['businessOffice']['mailingAddress'])
         self._format_directors(filing['registration']['parties'])
+        self._set_party_name(filing['registration']['parties'])
 
         start_date = LegislationDatetime.as_legislation_timezone_from_date_str(filing['registration']['startDate'])
         filing['registration']['startDate'] = start_date.strftime(OUTPUT_DATE_FORMAT)
@@ -706,10 +711,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         party_name = ''
         if party_json.get('officer').get('partyType') == 'person':
             last_name = party_json['officer'].get('lastName')
-            first_name = party_json['officer'].get('firstName')
-            middle_initial = party_json['officer'].get('middleInitial')\
-                if party_json['officer'].get('middleInitial') else ''
-            party_name = f'{last_name}, {first_name} {middle_initial}'
+            first_name = party_json['officer'].get('firstName', '')
+            middle_name = party_json['officer'].get('middleName', party_json['officer'].get('middleInitial', ''))
+            if not middle_name and not first_name:
+                party_name = f'{last_name}'
+            else:
+                party_name = f'{last_name}, {first_name} {middle_name}'
         elif party_json.get('officer').get('partyType') == 'organization':
             party_name = party_json['officer'].get('organizationName')
         return party_name
