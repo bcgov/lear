@@ -84,9 +84,13 @@ FILINGS: Final = {
     },
     'agmLocationChange': {
         'name': 'agmLocationChange',
-        'title': 'agmLocationChange',
+        'title': 'AGM Location Change',
+        'displayName': 'AGM Location Change',
         'codes': {
-
+            'BC': 'AGMLC',
+            'BEN': 'AGMLC',
+            'ULC': 'AGMLC',
+            'CC': 'AGMLC'
         }
     },
     'alteration': {
