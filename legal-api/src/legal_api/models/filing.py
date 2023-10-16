@@ -37,7 +37,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     Manages the filing ledger for the associated business.
     """
-    
+
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
