@@ -12,20 +12,7 @@
                         {% if party.officer.partyType == 'organization' %}
                            <span class="capitalize-text">{{ party.officer.organizationName }}</span>
                         {% else %}
-                           {% if party.officer.firstName %}
-                              <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                              <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                              {% if party.officer.middleName %}
-                                 <span class="capitalize-text">{{ party.officer.middleName }}</span>
-                              {% endif %}
-                           {% else %}
-                              {% if party.officer.middleName %}
-                                 <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-                                 <span class="capitalize-text">{{ party.officer.middleName }}</span>
-                              {% else %}
-                                 <span class="capitalize-text">{{ party.officer.lastName }}</span>
-                              {% endif %}
-                           {% endif %}
+                           <span class="capitalize-text">{{ party.officer.fullName }}</span>
                         {% endif %}
                      </div>
                   </td>
