@@ -30,9 +30,7 @@ from legal_api.utils.util import build_schema_error_response
 
 from .db import db  # noqa: I001
 
-
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
-
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
@@ -40,7 +38,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     Manages the filing ledger for the associated business.
     """
-
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
@@ -989,19 +986,14 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # because it's been set to PENDING_CORRECTION by the entity filer.
     if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
         return
-
     # changes are part of the class and are not externalized
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
-
     elif filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
-
     elif filing.payment_token:
         filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
