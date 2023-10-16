@@ -82,6 +82,16 @@ FILINGS: Final = {
             'CP': 'AFDVT'
         }
     },
+    'agmExtension': {
+            'name': 'agmExtension',
+            'title': 'AGM Extension',
+            'codes': {
+                'BC': 'AGMDT',
+                'BEN': 'AGMDT',
+                'ULC': 'AGMDT',
+                'CC': 'AGMDT'
+            }
+        },
     'agmLocationChange': {
         'name': 'agmLocationChange',
         'title': 'AGM Location Change',

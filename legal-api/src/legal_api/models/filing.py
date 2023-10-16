@@ -1,11 +1,8 @@
 # Copyright © 2019 Province of British Columbia
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -66,6 +63,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'title': 'Affidavit',
             'codes': {
                 'CP': 'AFDVT'
+            }
+        },
+        'agmExtension': {
+            'name': 'agmExtension',
+            'title': 'AGM Extension',
+            'codes': {
+                'BC': 'AGMDT',
+                'BEN': 'AGMDT',
+                'ULC': 'AGMDT',
+                'CC': 'AGMDT'
             }
         },
         'agmLocationChange': {
@@ -979,19 +986,14 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # because it's been set to PENDING_CORRECTION by the entity filer.
     if hasattr(filing, 'skip_status_listener') and filing.skip_status_listener:
         return
-
     # changes are part of the class and are not externalized
     if filing.filing_type == 'lear_epoch':
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
-
     elif filing.transaction_id:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
-
     elif filing.payment_token:
         filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access
