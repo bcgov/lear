@@ -30,7 +30,7 @@ import dpath
 from business_model import LegalEntity, Filing
 from entity_filer.utils.legislation_datetime import LegislationDatetime
 
-from entity_filer.exceptions import BusinessException
+from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.change_of_registration import update_parties as upsert_parties
 from entity_filer.filing_processors.filing_components import (
@@ -52,7 +52,11 @@ def process(legal_entity: LegalEntity,  # pylint: disable=too-many-branches
     filing_meta.conversion = {}
     if not (conversion_filing := filing.get('filing', {}).get('conversion')):
         raise BusinessException(f'CONVL legal_filing:conversion missing from {filing_rec.id}')
-    if legal_entity and legal_entity.entity_type in ['SP', 'GP']:
+    # if legal_entity and legal_entity.entity_type in ['SP', 'GP']:
+    if filing['filing']['business']['legalType'] in ['SP', 'GP']:
+        if legal_entity \
+          and not legal_entity.entity_type in [LegalEntity.EntityTypes.PERSON, LegalEntity.EntityTypes.PARTNERSHIP]:
+            raise DefaultException(f"Filing business type and entity don't match, filing{filing_rec.id}")
         _process_firms_conversion(legal_entity, filing, filing_rec, filing_meta)
     else:
         legal_entity = _process_corps_conversion(legal_entity, conversion_filing, filing, filing_rec)

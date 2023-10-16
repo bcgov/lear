@@ -150,7 +150,12 @@ def common_setup():
 
 def helper_create_person(person_dict: dict) -> LegalEntity:
     # identifier= person_dict['officer'].get('identifier')
-    entity = LegalEntity()
+    entity = LegalEntity(
+        first_name=person_dict.get('officer',{}).get('firstName'),
+        last_name=person_dict.get('officer',{}).get('lastName'),
+        middle_initial=person_dict.get('officer',{}).get('middleName'),
+        entity_type=LegalEntity.EntityTypes.PERSON,
+    )
     mail = Address(address_type=Address.MAILING)
     mail.save()
     delivery = Address(address_type=Address.DELIVERY)

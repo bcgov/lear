@@ -68,7 +68,7 @@ def test_registration_process(app, session, legal_type, filing):
     """Assert that the registration object is correctly populated to model objects."""
     # setup
     with nested_session(session):
-        identifier = 'NR 1234567'
+        identifier = 'NR 7654321'
         filing['filing']['registration']['nameRequest']['nrNumber'] = identifier
         filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
 

@@ -533,7 +533,7 @@ def create_entity_role(business, party, roles, appointment_date):
             # legal_entity_id=business.id,
             mailing_address_id=None,
             related_colin_entity_id=None,
-            related_entity_id=party.id,
+            related_entity_id=party.id if party else None,
             role_type=role
         )
         business.entity_roles.append(party_role)
