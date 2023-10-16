@@ -35,6 +35,8 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
     date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
 
     is_revoked = db.Column('is_revoked', db.Boolean, default=False)
+    credential_revocation_id = db.Column('credential_revocation_id', db.String(10))
+    revocation_registry_id = db.Column('revocation_registry_id', db.String(200))
 
     @property
     def json(self):
@@ -46,7 +48,9 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             'credentialExchangeId': self.credential_exchange_id,
             'isIssued': self.is_issued,
             'dateOfIssue': self.date_of_issue.isoformat(),
-            'isRevoked': self.is_revoked
+            'isRevoked': self.is_revoked,
+            'credentialRevocationId': self.credential_revocation_id,
+            'revocationRegistryId': self.revocation_registry_id
         }
         return dc_issued_credential
 
