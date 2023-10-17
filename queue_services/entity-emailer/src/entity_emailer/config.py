@@ -140,6 +140,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     NAME_REQUEST_URL = os.getenv('NAME_REQUEST_URL', '')
     DECIDE_BUSINESS_URL = os.getenv('DECIDE_BUSINESS_URL', '')
+    COLIN_URL = os.getenv('COLIN_URL', '')
+    CORP_FORMS_URL = os.getenv('CORP_FORMS_URL', '')
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
