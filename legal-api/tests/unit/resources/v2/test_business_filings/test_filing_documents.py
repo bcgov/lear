@@ -430,9 +430,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                      f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
              'certificateOfDissolution':
              f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
-
-            'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
-            'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
             'legalFilings': [
                 {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
                 {'specialResolution':

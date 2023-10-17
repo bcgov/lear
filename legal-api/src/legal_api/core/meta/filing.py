@@ -506,9 +506,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         outputs = FilingMeta.alter_outputs_alteration(filing, outputs)
         outputs = FilingMeta.alter_outputs_correction(filing, business, outputs)
         outputs = FilingMeta.alter_outputs_special_resolution(filing, outputs)
-        if filing.filing_type == 'dissolution' and filing.filing_sub_type == 'administrative':
-            # Supress Certificate of Dissolution for Admin Dissolution
-            outputs.remove('certificateOfDissolution')
+        outputs = FilingMeta.alter_outputs_dissolution(filing, outputs)
 
     @staticmethod
     def alter_outputs_alteration(filing, outputs):
@@ -528,6 +526,19 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certifiedRules')
             if filing.meta_data.get('correction', {}).get('hasResolution'):
                 outputs.add('specialResolution')
+        return outputs
+
+    @staticmethod
+    def alter_outputs_dissolution(filing, outputs):
+        """Handle output file list modification for dissolution."""
+        if filing.filing_type == 'dissolution':
+            # Suppress Certificate of Dissolution for Admin Dissolution
+            if filing.filing_sub_type == 'administrative':
+                outputs.remove('certificateOfDissolution')
+            # Suppress Certified Memorandum and Certified Rules for Coop Voluntary Dissolution
+            if filing.filing_sub_type == 'voluntary' and filing.json_legal_type == Business.LegalTypes.COOP:
+                outputs.remove('certifiedRules')
+                outputs.remove('certifiedMemorandum')
         return outputs
 
     @staticmethod
