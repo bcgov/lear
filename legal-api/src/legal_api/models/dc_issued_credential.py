@@ -30,7 +30,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
     dc_connection_id = db.Column('dc_connection_id', db.Integer, db.ForeignKey('dc_connections.id'))
 
     credential_exchange_id = db.Column('credential_exchange_id', db.String(100))
-    credential_id = db.Column('credential_id', db.String(100))  # not in use
+    credential_id = db.Column('credential_id', db.String(10))
     is_issued = db.Column('is_issued', db.Boolean, default=False)
     date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
 
@@ -46,6 +46,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             'dcDefinitionId': self.dc_definition_id,
             'dcConnectionId': self.dc_connection_id,
             'credentialExchangeId': self.credential_exchange_id,
+            "credentialId": self.credential_id,
             'isIssued': self.is_issued,
             'dateOfIssue': self.date_of_issue.isoformat(),
             'isRevoked': self.is_revoked,
@@ -69,11 +70,20 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     def find_by_credential_exchange_id(cls, credential_exchange_id: str) -> DCIssuedCredential:
-        """Return the issued credential matching the id."""
+        """Return the issued credential matching the credential exchange id."""
         dc_issued_credential = None
         if credential_exchange_id:
             dc_issued_credential = cls.query. \
                 filter(DCIssuedCredential.credential_exchange_id == credential_exchange_id).one_or_none()
+        return dc_issued_credential
+
+    @classmethod
+    def find_by_credential_id(cls, credential_id: str) -> DCIssuedCredential:
+        """Return the issued credential matching the credential id."""
+        dc_issued_credential = None
+        if credential_id:
+            dc_issued_credential = cls.query. \
+                filter(DCIssuedCredential.credential_id == credential_id).one_or_none()
         return dc_issued_credential
 
     @classmethod
