@@ -45,7 +45,6 @@ def create_invitation(identifier):
     if active_connection:
         return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
 
-    # check whether this business has an existing connection which is not active
     connections = DCConnection.find_by(business_id=business.id, connection_state='invitation')
     if connections:
         connection = connections[0]
@@ -108,6 +107,7 @@ def get_issued_credentials(identifier):
         response.append({
             'legalName': business.legal_name,
             'credentialType': definition.credential_type.name,
+            'credentialId': issued_credential.credential_id,
             'isIssued': issued_credential.is_issued,
             'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
             'isRevoked': issued_credential.is_revoked
@@ -143,11 +143,82 @@ def send_credential(identifier, credential_type):
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,
-        credential_exchange_id=response['cred_ex_id']
+        credential_exchange_id=response['cred_ex_id'],
+        # TODO: Add a real ID
+        credential_id='123456'
     )
     issued_credential.save()
 
-    return jsonify({'message': 'Issue Credential is initiated.'}), HTTPStatus.OK
+    return jsonify({'message': 'Credential offer has been sent.'}), HTTPStatus.OK
+
+
+@bp.route('/<string:identifier>/digitalCredentials/<int:credential_id>/revoke', methods=['POST'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+def revoke_credential(identifier, credential_id):
+    """Revoke a credential."""
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    connection = DCConnection.find_active_by(business_id=business.id)
+    if not connection:
+        return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
+
+    # TODO: Use a real ID
+    issued_credential = DCIssuedCredential.find_by_credential_id(credential_id='123456')
+    if not issued_credential or issued_credential.is_revoked:
+        return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
+    
+    revoked = digital_credentials.revoke_credential(connection.connection_id,
+                                                    issued_credential.credential_revocation_id,
+                                                    issued_credential.revocation_registry_id)
+    if revoked == None:
+        return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+        
+    issued_credential.is_revoked = True
+    issued_credential.save()
+    return jsonify({'message': 'Credential has been revoked.'}), HTTPStatus.OK
+
+
+@bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
+@cross_origin(origin='*')
+def webhook_notification(topic_name: str):
+    """To receive notification from aca-py admin api."""
+    json_input = request.get_json()
+    try:
+        if topic_name == 'connections':
+            if 'invitation' in json_input and json_input['invitation'] != None:
+                connection = DCConnection.find_by_connection_id(json_input['invitation']['@id'])
+            else:
+                connection = DCConnection.find_by_connection_id(json_input['invitation_msg_id'])
+            # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
+            # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
+            if connection and not connection.is_active and json_input['state'] in ('active', 'completed'):
+                connection.connection_id = json_input['connection_id']
+                connection.connection_state = json_input['state']
+                connection.is_active = True
+                connection.save()
+                socketio.emit('connections', connection.json)
+        elif topic_name == 'issuer_cred_rev':
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
+            if issued_credential and json_input['state'] == 'issued':
+                issued_credential.credential_revocation_id=json_input['cred_rev_id'],
+                issued_credential.revocation_registry_id=json_input['rev_reg_id']
+                issued_credential.save()
+        elif topic_name == 'issue_credential_v2_0':
+            # TODO: We want to deactivate the connection once the credential is issued
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
+            if issued_credential and json_input['state'] == 'done':
+                issued_credential.date_of_issue = datetime.utcnow()
+                issued_credential.is_issued = True
+                issued_credential.save()
+                socketio.emit('issue_credential_v2_0', issued_credential.json)
+    except Exception as err:
+        current_app.logger.error(err)
+        raise err
+
+    return jsonify({'message': 'Webhook received.'}), HTTPStatus.OK
 
 
 def _get_data_for_credential(credential_type: DCDefinition.CredentialType, business: Business):
@@ -196,36 +267,3 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
         ]
 
     return None
-
-
-@bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
-@cross_origin(origin='*')
-def webhook_notification(topic_name: str):
-    """To receive notification from aca-py admin api."""
-    json_input = request.get_json()
-    try:
-        if topic_name == 'connections':
-            if 'invitation' in json_input and json_input['invitation'] != None:
-                connection = DCConnection.find_by_connection_id(json_input['invitation']['@id'])
-            else:
-                connection = DCConnection.find_by_connection_id(json_input['invitation_msg_id'])
-            # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
-            # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
-            if connection and not connection.is_active and json_input['state'] in ('active', 'completed'):
-                connection.connection_id = json_input['connection_id']
-                connection.connection_state = json_input['state']
-                connection.is_active = True
-                connection.save()
-                socketio.emit('connections', connection.json)
-        elif topic_name == 'issue_credential_v2_0':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
-            if issued_credential and json_input['state'] in ('credential-issued', 'done'):
-                issued_credential.date_of_issue = datetime.utcnow()
-                issued_credential.is_issued = True
-                issued_credential.save()
-                socketio.emit('issue_credential_v2_0', issued_credential.json)
-    except Exception as err:
-        current_app.logger.error(err)
-        raise err
-
-    return jsonify({'message': 'Webhook received.'}), HTTPStatus.OK

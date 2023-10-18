@@ -41,7 +41,7 @@ class DigitalCredentialsService:
             'given_names',
         ],
         'schema_name': 'digital_business_card',  # do not change schema name. this is the name registered in aca-py agent
-        'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
+        'schema_version': '1.0.0'  # if attributes change update schema_version to re-register
     }
 
     def __init__(self):
@@ -193,10 +193,29 @@ class DigitalCredentialsService:
                                                  'schema_id': definition.schema_id,
                                                  'schema_issuer_did': self.public_schema_did,
                                                  'schema_name': definition.schema_name,
-                                                 'schema_version': definition.schema_version,
+                                                 'schema_version': definition.schema_version
                                              }
                                          },
                                          'trace': True
+                                     }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str) -> Optional[dict]:
+        """Revoke a credential."""
+        try:
+            response = requests.post(self.api_url + '/revocation/revoke',
+                                     headers=self._get_headers(),
+                                     data=json.dumps({
+                                         'connection_id': connection_id,
+                                         'cred_rev_id': cred_rev_id,
+                                         'rev_reg_id': rev_reg_id,
+                                         'publish': True,
+                                         "notify": True,
+                                         "notify_version": "v1_0"
                                      }))
             response.raise_for_status()
             return response.json()
