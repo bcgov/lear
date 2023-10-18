@@ -15,10 +15,13 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
-from flask import Blueprint, abort, current_app, jsonify, make_response
+from http import HTTPStatus
+
+from flask import Blueprint, abort, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
 from legal_api.services import namex
+from legal_api.services.bootstrap import AccountService
 
 
 bp = Blueprint('NAMEREQUEST2', __name__, url_prefix='/api/v2/nameRequests')
@@ -35,7 +38,27 @@ def get(identifier):
         if nr_response.status_code == 404:
             return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
 
-        return jsonify(nr_response.json())
+        nr_json = nr_response.json()
+
+        account_id = request.args.get('account_id', None)
+        affiliate = None
+
+        # Check the NR is affiliated with this account
+        if account_id:
+            affiliate = AccountService.get_org_affiliation_by_business_identifier(account_id, identifier)
+
+        if affiliate.status_code == HTTPStatus.OK:
+            return jsonify(nr_json)
+
+        email = request.args.get('email', None)
+        phone = request.args.get('phone', None)
+        nr_phone = nr_json.get('applicants').get('phoneNumber')
+        nr_email = nr_json.get('applicants').get('emailAddress')
+
+        if (phone and phone != nr_phone) or (email and email != nr_email):
+            return make_response(jsonify(message='Invalid email or phone number.'), 400)
+
+        return jsonify(nr_json)
     except Exception as err:
         current_app.logger.error(err)
         abort(500)
