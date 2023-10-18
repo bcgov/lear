@@ -37,25 +37,23 @@ class Option(Enum):
     UPGRADE = 'upgrade'
     REFUND = 'refund'
 
-def is_modernized(legal_type):
+
+def __is_modernized(legal_type):
     modernized_list = ['GP', 'DBA', 'FR', 'CP', 'BC']
-    if legal_type in modernized_list:
-        return True
+    return legal_type in modernized_list
 
 
-def is_colin(legal_type):
+def __is_colin(legal_type):
     colin_list = ['CR', 'UL', 'CC', 'XCR', 'XUL', 'RLC']
-    if legal_type in colin_list:
-        return True
+    return legal_type in colin_list
 
 
-def get_instruction_group(legal_type):
-    if is_modernized(legal_type):
+def __get_instruction_group(legal_type):
+    if __is_modernized(legal_type):
         return 'modernized'
-    elif is_colin(legal_type):
+    if __is_colin(legal_type):
         return 'colin'
-    else:
-        return ''
+    return ''
 
 
 def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
@@ -97,10 +95,12 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     file_name_suffix = option.upper()
     if option == Option.BEFORE_EXPIRY.value:
-        legal_type = nr_data['legalType']
-        if get_instruction_group(legal_type):
-            instruction_group = '-' + get_instruction_group(legal_type)
-            file_name_suffix += instruction_group.upper()
+        if 'legalType' in nr_data:
+            legal_type = nr_data['legalType']
+            group = __get_instruction_group(legal_type)
+            if group:
+                instruction_group = '-' + group
+                file_name_suffix += instruction_group.upper()
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{file_name_suffix}.html').read_text()
     filled_template = substitute_template_parts(template)
