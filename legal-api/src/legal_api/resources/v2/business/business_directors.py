@@ -55,8 +55,6 @@ def get_directors(identifier, director_id=None):
     active_directors = PartyRole.get_active_directors(business.id, end_date)
     for director in active_directors:
         director_json = director.json
-        if business.legal_type == Business.LegalTypes.COOP.value:
-            del director_json['mailingAddress']
         party_list.append(director_json)
 
     return jsonify(directors=party_list)
