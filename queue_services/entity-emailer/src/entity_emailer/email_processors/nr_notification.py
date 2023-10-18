@@ -98,8 +98,9 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     file_name_suffix = option.upper()
     if option == Option.BEFORE_EXPIRY.value:
         legal_type = nr_data['legalType']
-        instruction_group = '-' + get_instruction_group(legal_type)
-        file_name_suffix += instruction_group.upper()
+        if get_instruction_group(legal_type):
+            instruction_group = '-' + get_instruction_group(legal_type)
+            file_name_suffix += instruction_group.upper()
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{file_name_suffix}.html').read_text()
     filled_template = substitute_template_parts(template)
