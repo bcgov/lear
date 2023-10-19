@@ -53,6 +53,11 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        """Delete the object from the database immediately."""
+        db.session.delete(self)
+        db.session.commit()
+
     @classmethod
     def find_by_id(cls, dc_connection_id: str) -> DCConnection:
         """Return the digital credential connection matching the id."""
