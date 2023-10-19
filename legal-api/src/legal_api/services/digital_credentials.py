@@ -40,8 +40,10 @@ class DigitalCredentialsService:
             'business_type',
             'given_names',
         ],
-        'schema_name': 'digital_business_card',  # do not change schema name. this is the name registered in aca-py agent
-        'schema_version': '1.0.0'  # if attributes change update schema_version to re-register
+        # do not change schema name. this is the name registered in aca-py agent
+        'schema_name': 'digital_business_card',
+        # if attributes change update schema_version to re-register
+        'schema_version': '1.0.0'
     }
 
     def __init__(self):
@@ -76,16 +78,16 @@ class DigitalCredentialsService:
             self._register_business_definition()
 
     def _register_business_definition(self):
+        """Fetch schema and credential definition and save a Business definition."""
         try:
-            if (self.business_schema_id is None):
-                self.app.logger.error(f'Environment variable: BUSINESS_SCHEMA_ID must be configured')
-                raise Exception(f'Environment variable: BUSINESS_SCHEMA_ID must be configured')
+            if self.business_schema_id is None:
+                self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
-            if (self.business_cred_def_id is None):
-                self.app.logger.error(f'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
-                raise Exception(f'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+            if self.business_cred_def_id is None:
+                self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
-            """Fetch schema and credential definition and save a Business definition."""
             # Check for the current Business definition.
             definition = DCDefinition.find_by(
                 credential_type=DCDefinition.CredentialType.business,
@@ -98,19 +100,23 @@ class DigitalCredentialsService:
                 DCDefinition.deactivate(DCDefinition.CredentialType.business)
 
             ###
-            # The following just a sanity check to make sure the schema and credential definition are stored in Traction tenant
-            # These calls also include a ledger lookup to see if the schema and credential definition are published
+            # The following just a sanity check to make sure the schema and
+            # credential definition are stored in Traction tenant.
+            # These calls also include a ledger lookup to see if the schema
+            # and credential definition are published.
             ###
 
             # Look for a schema first, and copy it into the Traction tenant if it's not there
             schema_id = self._fetch_schema(self.business_schema_id)
             if not schema_id:
-                raise Exception(f'Schema with id:{self.business_schema_id} must be available in Traction tenant storage')
+                raise ValueError(f'Schema with id:{self.business_schema_id}' +
+                                 ' must be available in Traction tenant storage')
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
             credential_definition_id = self._fetch_credential_definition(self.business_cred_def_id)
             if not credential_definition_id:
-                raise Exception(f'Credential Definition with id:{self.business_cred_def_id} must be avaible in Traction tenant storage')
+                raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
+                                 ' must be avaible in Traction tenant storage')
 
             # Create a new definition and add the new schema_id
             definition = DCDefinition(
@@ -122,12 +128,13 @@ class DigitalCredentialsService:
             )
             # Lastly, save the definition
             definition.save()
+            return None
         except Exception as err:
             self.app.logger.error(err)
             return None
 
     def _fetch_schema(self, schema_id: str) -> Optional[str]:
-        """Find a schema in Traction storage"""
+        """Find a schema in Traction storage."""
         try:
             response = requests.get(self.api_url + '/schema-storage',
                                     params={'schema_id': schema_id},
@@ -136,12 +143,12 @@ class DigitalCredentialsService:
             first_or_default = next((x for x in response.json()['results'] if x['schema_id'] == schema_id), None)
             return first_or_default['schema_id'] if first_or_default else None
         except Exception as err:
-            self.app.logger.error(f"Failed to fetch schema with id:{schema_id} from Traction tenant storage")
+            self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
-        """Find a published credential definition"""
+        """Find a published credential definition."""
         try:
             response = requests.get(self.api_url + '/credential-definition-storage',
                                     params={'cred_def_id': cred_def_id},
@@ -150,7 +157,8 @@ class DigitalCredentialsService:
             first_or_default = next((x for x in response.json()['results'] if x['cred_def_id'] == cred_def_id), None)
             return first_or_default['cred_def_id'] if first_or_default else None
         except Exception as err:
-            self.app.logger.error(f'Failed to find credential definition with id:{cred_def_id} from Traction tenant storage')
+            self.app.logger.error(f'Failed to find credential definition with id:{cred_def_id}' +
+                                  ' from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
@@ -214,8 +222,8 @@ class DigitalCredentialsService:
                                          'cred_rev_id': cred_rev_id,
                                          'rev_reg_id': rev_reg_id,
                                          'publish': True,
-                                         "notify": True,
-                                         "notify_version": "v1_0"
+                                         'notify': True,
+                                         'notify_version': 'v1_0'
                                      }))
             response.raise_for_status()
             return response.json()

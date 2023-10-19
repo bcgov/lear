@@ -13,18 +13,16 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
-import json
 from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
-from flask_socketio import emit
 
+from legal_api.extensions import socketio
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
-from legal_api.extensions import socketio
 
 from .bp import bp
 
@@ -82,6 +80,7 @@ def get_connections(identifier):
     for connection in connections:
         response.append(connection.json)
     return jsonify({'connections': response}), HTTPStatus.OK
+
 
 @bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
@@ -168,7 +167,8 @@ def send_credential(identifier, credential_type):
     return jsonify({'message': 'Credential offer has been sent.'}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>/revoke', methods=['POST'], strict_slashes=False)
+@bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>/revoke',
+          methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
 def revoke_credential(identifier, credential_id):
@@ -185,13 +185,13 @@ def revoke_credential(identifier, credential_id):
     issued_credential = DCIssuedCredential.find_by_credential_id(credential_id='123456')
     if not issued_credential or issued_credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
-    
+
     revoked = digital_credentials.revoke_credential(connection.connection_id,
                                                     issued_credential.credential_revocation_id,
                                                     issued_credential.revocation_registry_id)
-    if revoked == None:
+    if revoked is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
-        
+
     issued_credential.is_revoked = True
     issued_credential.save()
     return jsonify({'message': 'Credential has been revoked.'}), HTTPStatus.OK
@@ -222,7 +222,7 @@ def webhook_notification(topic_name: str):
     json_input = request.get_json()
     try:
         if topic_name == 'connections':
-            if 'invitation' in json_input and json_input['invitation'] != None:
+            if 'invitation' in json_input and json_input['invitation'] is not None:
                 connection = DCConnection.find_by_connection_id(json_input['invitation']['@id'])
             else:
                 connection = DCConnection.find_by_connection_id(json_input['invitation_msg_id'])
@@ -237,8 +237,8 @@ def webhook_notification(topic_name: str):
         elif topic_name == 'issuer_cred_rev':
             issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'issued':
-                issued_credential.credential_revocation_id=json_input['cred_rev_id'],
-                issued_credential.revocation_registry_id=json_input['rev_reg_id']
+                issued_credential.credential_revocation_id = json_input['cred_rev_id']
+                issued_credential.revocation_registry_id = json_input['rev_reg_id']
                 issued_credential.save()
         elif topic_name == 'issue_credential_v2_0':
             # TODO: We want to deactivate the connection once the credential is issued
