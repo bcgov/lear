@@ -83,6 +83,22 @@ def get_connections(identifier):
         response.append(connection.json)
     return jsonify({'connections': response}), HTTPStatus.OK
 
+@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_connection(identifier):
+    """Delete an active connection for this business."""
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    connection = DCConnection.find_active_by(business_id=business.id)
+    if not connection:
+        return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
+
+    connection.delete()
+    return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
+
 
 @bp.route('/<string:identifier>/digitalCredentials', methods=['GET', 'OPTIONS'], strict_slashes=False)
 @cross_origin(origin='*')
@@ -152,7 +168,7 @@ def send_credential(identifier, credential_type):
     return jsonify({'message': 'Credential offer has been sent.'}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/<int:credential_id>/revoke', methods=['POST'], strict_slashes=False)
+@bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>/revoke', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
 def revoke_credential(identifier, credential_id):
@@ -179,6 +195,24 @@ def revoke_credential(identifier, credential_id):
     issued_credential.is_revoked = True
     issued_credential.save()
     return jsonify({'message': 'Credential has been revoked.'}), HTTPStatus.OK
+
+
+@bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>', methods=['DELETE'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_credential(identifier, credential_id):
+    """Delete a credential."""
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    # TODO: Use a real ID
+    issued_credential = DCIssuedCredential.find_by_credential_id(credential_id='123456')
+    if not issued_credential:
+        return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
+
+    issued_credential.delete()
+    return jsonify({'message': 'Credential has been deleted.'}), HTTPStatus.OK
 
 
 @bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
