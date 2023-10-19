@@ -24,6 +24,7 @@ from registry_schemas import __version__ as registry_schemas_version  # noqa: I0
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, models
+from legal_api.extensions import socketio
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
@@ -32,7 +33,6 @@ from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
-from legal_api.extensions import socketio
 # noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first

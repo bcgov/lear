@@ -88,7 +88,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
                 ) -> DCDefinition:
         """Return the digital credential definition matching the filter."""
         query = db.session.query(DCDefinition). \
-            filter(DCDefinition.is_deleted == False). \
+            filter(DCDefinition.is_deleted is False). \
             filter(DCDefinition.credential_type == credential_type). \
             filter(DCDefinition.schema_id == schema_id). \
             filter(DCDefinition.credential_definition_id == credential_definition_id)
