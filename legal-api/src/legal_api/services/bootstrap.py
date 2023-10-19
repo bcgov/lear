@@ -184,11 +184,10 @@ class AccountService:
 
     @classmethod
     # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name;
-    def get_org_affiliation_by_business_identifier(cls, account: int,
-                                                   business_identifier: str):
+    def get_org_details_by_affiliation(cls, business_identifier: str):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations/{business_identifier}'
+        account_svc_affiliate_url = f'{auth_url}/orgs/affiliation/{business_identifier}'
 
         token = cls.get_bearer_token()
 

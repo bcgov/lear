@@ -40,16 +40,12 @@ def get(identifier):
 
         nr_json = nr_response.json()
 
-        account_id = request.args.get('account_id', None)
-        affiliate = None
-
         # Check the NR is affiliated with this account
-        if account_id:
-            affiliate = AccountService.get_org_affiliation_by_business_identifier(account_id, identifier)
-
+        affiliate = AccountService.get_org_details_by_affiliation(identifier)
         if affiliate.status_code == HTTPStatus.OK:
             return jsonify(nr_json)
 
+        # If NR is not affiliated, validate the email and phone
         email = request.args.get('email', None)
         phone = request.args.get('phone', None)
         nr_phone = nr_json.get('applicants').get('phoneNumber')
