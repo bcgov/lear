@@ -49,6 +49,8 @@ def validate_with_contact_info(identifier):
     """Return a JSON object with name request information."""
     try:
         # The request must include email or phone number
+        email = request.args.get('email', None)
+        phone = request.args.get('phone', None)
         if not (email or phone):
             return make_response(jsonify(message='The request must include email or phone number.'), 403)
 
@@ -66,8 +68,6 @@ def validate_with_contact_info(identifier):
             return jsonify(nr_json)
 
         # If NR is not affiliated, validate the email and phone
-        email = request.args.get('email', None)
-        phone = request.args.get('phone', None)
         nr_phone = nr_json.get('applicants').get('phoneNumber')
         nr_email = nr_json.get('applicants').get('emailAddress')
         if (phone and phone != nr_phone) or (email and email != nr_email):
