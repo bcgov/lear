@@ -65,8 +65,7 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    'fileName': 'Special Resolution Correction Application.pdf' if is_cp_special_resolution else
-                                'Register Correction Application.pdf',
+                    'fileName': 'Register Correction Application.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order

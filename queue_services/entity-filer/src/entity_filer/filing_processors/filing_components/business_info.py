@@ -21,7 +21,7 @@ from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import NaicsService
+from legal_api.services import AccountService, NaicsService
 
 
 def set_corp_type(business: Business, business_info: Dict) -> Dict:
@@ -108,7 +108,12 @@ def get_next_corp_num(legal_type: str):
             business_type = 'BC'
         else:
             business_type = legal_type
-        resp = requests.post(f'{current_app.config["COLIN_API"]}/{business_type}')
+        token = AccountService.get_bearer_token()
+        resp = requests.post(
+            f'{current_app.config["COLIN_API"]}/{business_type}',
+            headers={**AccountService.CONTENT_TYPE_JSON,
+                     'Authorization': AccountService.BEARER + token}
+        )
     except requests.exceptions.ConnectionError:
         current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
         return None

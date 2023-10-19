@@ -66,6 +66,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     SEARCH_API = \
         f"{os.getenv('REGISTRIES_SEARCH_API_INTERNAL_URL', '')}{os.getenv('REGISTRIES_SEARCH_API_VERSION', '/api/v1')}"
 
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
+    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+
     BN_HUB_API_URL = os.getenv('BN_HUB_API_URL', None)
     BN_HUB_CLIENT_ID = os.getenv('BN_HUB_CLIENT_ID', None)
     BN_HUB_CLIENT_SECRET = os.getenv('BN_HUB_CLIENT_SECRET', None)

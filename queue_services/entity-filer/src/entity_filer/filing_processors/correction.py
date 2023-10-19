@@ -17,7 +17,6 @@ from typing import Dict
 
 import pytz
 import sentry_sdk
-from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
@@ -51,9 +50,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     )
 
     corrected_filing_type = filing['correction']['correctedFilingType']
-    is_sr_correction = business.legal_type == 'CP' and is_special_resolution_correction_by_filing_json(filing)
-    if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
-            is_sr_correction) and \
+    # added CP, change of directors / change of address for CP is allowed
+    if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC', 'CP'] and \
             corrected_filing_type != 'conversion':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:

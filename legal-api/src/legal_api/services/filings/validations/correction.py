@@ -19,6 +19,7 @@ from typing import Dict, Final
 from dateutil.relativedelta import relativedelta
 from flask_babel import _
 
+from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
@@ -131,6 +132,22 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
         msg.extend(court_order_validation(filing_dict))
     if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('rulesFileKey', None):
         msg.extend(rules_change_validation(filing_dict))
+    if is_special_resolution_correction_by_filing_json(filing_dict.get('filing', {})):
+        if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
+            err = validate_roles(filing_dict, legal_type, filing_type)
+            if err:
+                msg.extend(err)
+            # FUTURE: this should be removed when COLIN sync back is no longer required.
+            err = validate_parties_names(filing_dict, legal_type, filing_type)
+            if err:
+                msg.extend(err)
+
+            err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+            if err:
+                msg.extend(err)
+        else:
+            err_path = f'/filing/{filing_type}/parties/roles'
+            msg.append({'error': 'Parties list cannot be empty or null', 'path': err_path})
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
