@@ -32,7 +32,7 @@ ecdsa==0.14.1
 expiringdict==1.1.4
 flask-jwt-oidc==0.3.0
 flask-restx==0.3.0
-git+https://github.com/bcgov/business-schemas.git@2.18.10#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.18.13#egg=registry_schemas
 gunicorn==20.1.0
 html-sanitizer==1.9.3
 idna==2.10
