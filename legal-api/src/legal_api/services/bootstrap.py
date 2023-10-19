@@ -183,28 +183,6 @@ class AccountService:
         return HTTPStatus.OK
 
     @classmethod
-    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name;
-    def get_org_details_by_affiliation(cls, business_identifier: str):
-        """Affiliate a business to an account."""
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_affiliate_url = f'{auth_url}/orgs/affiliation/{business_identifier}'
-
-        token = cls.get_bearer_token()
-
-        if not token:
-            return HTTPStatus.UNAUTHORIZED
-
-        # Get an account:business affiliation
-        affiliate = requests.get(
-            url=account_svc_affiliate_url,
-            headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
-            timeout=cls.timeout
-        )
-
-        return affiliate
-
-    @classmethod
     def update_entity(cls,
                       business_registration: str,
                       business_name: str,

@@ -15,8 +15,6 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
-from http import HTTPStatus
-
 from flask import Blueprint, abort, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
@@ -41,8 +39,8 @@ def get(identifier):
         nr_json = nr_response.json()
 
         # Check the NR is affiliated with this account
-        affiliate = AccountService.get_org_details_by_affiliation(identifier)
-        if affiliate.status_code == HTTPStatus.OK:
+        orgs_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        if len(orgs_response['orgs']):
             return jsonify(nr_json)
 
         # If NR is not affiliated, validate the email and phone
