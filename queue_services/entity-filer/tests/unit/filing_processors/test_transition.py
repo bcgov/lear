@@ -28,6 +28,8 @@ def test_transition_filing_process(app, session):
     """Assert that the transition object is correctly populated to model objects."""
     # setup
     filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    del filing['filing']['transition']['parties'][0]['officer']['id']
+    del filing['filing']['transition']['parties'][1]['officer']['id']
 
     business = create_business(filing['filing']['business']['identifier'])
     create_filing('123', filing)

@@ -251,6 +251,8 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
 
     corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     if test_name == 'name_change':
         filing['filing']['correction']['nameRequest']['legalName'] = new_legal_name
@@ -327,6 +329,8 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
     del filing['filing']['correction']['business']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -385,6 +389,8 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     filing['filing']['correction']['offices']['registeredOffice']['deliveryAddress'] = \
         Address.find_by_id(office_delivery_address_id).json
@@ -450,6 +456,8 @@ def test_worker_correction_court_order(app, session, mocker, test_name, legal_ty
     filing['filing']['correction']['courtOrder']['effectOfOrder'] = effect_of_order
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -644,6 +652,8 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
         del filing['filing']['correction']['shareStructure']['resolutionDates'][0]
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -747,6 +757,8 @@ def test_worker_share_class_and_series_change(app, session, mocker, test_name, l
         del filing['filing']['correction']['shareStructure']['shareClasses'][0]
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['parties'][0]['officer']['id']
+    del filing['filing']['correction']['parties'][1]['officer']['id']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id

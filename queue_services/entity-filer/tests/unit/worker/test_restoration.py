@@ -54,6 +54,7 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         filing['filing']['restoration']['expiry'] = expiry_date
     payment_id = str(random.SystemRandom().getrandbits(0x58))
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = FilingMessage(
@@ -98,6 +99,8 @@ def test_restoration_legal_name(app, session, mocker, test_name):
     if test_name == 'name':
         filing['filing']['restoration']['nameRequest']['legalName'] = new_legal_name
         filing['filing']['restoration']['nameRequest']['nrNumber'] = 'NR 123456'
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -136,6 +139,8 @@ def test_restoration_office_addresses(app, session, mocker):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -189,6 +194,8 @@ def test_restoration_court_order(app, session, mocker, approval_type):
     filing['filing']['restoration']['approvalType'] = approval_type
     if approval_type == 'registrar':
         del filing['filing']['restoration']['courtOrder']
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -232,6 +239,8 @@ def test_restoration_registrar(app, session, mocker, approval_type):
     if approval_type == 'courtOrder':
         del filing['filing']['restoration']['applicationDate']
         del filing['filing']['restoration']['noticeDate']
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -266,6 +275,8 @@ def test_restoration_name_translations(app, session, mocker):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
