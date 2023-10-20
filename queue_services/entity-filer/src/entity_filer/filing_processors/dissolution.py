@@ -17,26 +17,29 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Document, Filing
-from legal_api.models.document import DocumentType
-from legal_api.services.filings.validations.dissolution import DissolutionTypes
-from legal_api.services.minio import MinioService
-from legal_api.utils.legislation_datetime import LegislationDatetime
+#from entity_filer.exceptions import DefaultException, logger
+from business_model import LegalEntity, Document, Filing
+# from business_model.document import DocumentType
+from business_model.models.filing import DissolutionTypes
+# from legal_api.services.minio import MinioService
+from entity_filer.utils.legislation_datetime import LegislationDatetime
+from entity_filer.exceptions import BusinessException, get_error_message, ErrorCode
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
-from entity_filer.filing_processors.filing_components.parties import update_parties
-from entity_filer.utils import replace_file_with_certified_copy
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+# from entity_filer.utils import replace_file_with_certified_copy
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
-        logger.error('Could not find Dissolution in: %s', filing)
-        raise QueueException(f'legal_filing:Dissolution missing from {filing}')
+        print('Could not find Dissolution in: %s', filing)
+        raise BusinessException(f'legal_filing:Dissolution missing from {filing}',
+                    get_error_message(ErrorCode.GENERAL_UNRECOVERABLE_ERROR,
+                                      **{'filing_id': filing_rec.id}))
 
-    logger.debug('processing dissolution: %s', filing)
+    print('processing dissolution: %s', filing)
 
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
@@ -49,26 +52,26 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # dissolution_statement_type = filing['dissolution'].get('dissolutionStatementType')
     dissolution_date = filing_rec.effective_date
     if dissolution_type == DissolutionTypes.VOLUNTARY and \
-            business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
-                                    Business.LegalTypes.PARTNERSHIP.value):
+            business.entity_type in (LegalEntity.EntityTypes.SOLE_PROP.value,
+                                    LegalEntity.EntityTypes.PARTNERSHIP.value):
         dissolution_date_str = dissolution_filing.get('dissolutionDate')
         dissolution_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date_str)
     business.dissolution_date = dissolution_date
 
-    business.state = Business.State.HISTORICAL
+    business.state = LegalEntity.State.HISTORICAL
     business.state_filing_id = filing_rec.id
 
     # add custodial party if in filing
     if parties := dissolution_filing.get('parties'):
-        update_parties(business, parties, filing_rec, False)
+        merge_all_parties(business, filing_rec, {'parties': parties})
 
     # add custodial office if provided
     if custodial_office := dissolution_filing.get('custodialOffice'):
         if office := create_office(business, 'custodialOffice', custodial_office):
             business.offices.append(office)
         else:
-            logger.error('Could not create custodial office for Dissolution in: %s', filing)
-            sentry_sdk.capture_message(
+            print('Could not create custodial office for Dissolution in: %s', filing)
+            sentry_sdk.print(
                 f'Queue Error: Could not create custodial office for Dissolution filing:{filing.id}',
                 level='error')
 
@@ -79,7 +82,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    if business.legal_type == Business.LegalTypes.COOP:
+    if business.entity_type == LegalEntity.EntityTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
 
     with suppress(IndexError, KeyError, TypeError):
@@ -90,28 +93,30 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         }
 
 
-def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):
+def _update_cooperative(dissolution_filing: Dict, business: LegalEntity, filing: Filing, dissolution_type):
     """Update COOP data.
 
     This should not be updated for administrative dissolution
     """
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
-        return
+    # TODO remove tis?
+    pass
+    # if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    #     return
 
-    # create certified copy for affidavit document
-    affidavit_file_key = dissolution_filing.get('affidavitFileKey')
-    affidavit_file = MinioService.get_file(affidavit_file_key)
-    replace_file_with_certified_copy(affidavit_file.data, business, affidavit_file_key, filing.effective_date)
+    # # create certified copy for affidavit document
+    # affidavit_file_key = dissolution_filing.get('affidavitFileKey')
+    # affidavit_file = MinioService.get_file(affidavit_file_key)
+    # replace_file_with_certified_copy(affidavit_file.data, business, affidavit_file_key, filing.effective_date)
 
-    document = Document()
-    document.type = DocumentType.AFFIDAVIT.value
-    document.file_key = affidavit_file_key
-    document.business_id = business.id
-    document.filing_id = filing.id
-    business.documents.append(document)
+    # document = Document()
+    # document.type = DocumentType.AFFIDAVIT.value
+    # document.file_key = affidavit_file_key
+    # document.business_id = business.id
+    # document.filing_id = filing.id
+    # business.documents.append(document)
 
 
-def post_process(business: Business, filing: Filing, correction: bool = False):  # pylint: disable=W0613
+def post_process(business: LegalEntity, filing: Filing, correction: bool = False):  # pylint: disable=W0613
     """Post processing activities for incorporations.
 
     THIS SHOULD NOT ALTER THE MODEL

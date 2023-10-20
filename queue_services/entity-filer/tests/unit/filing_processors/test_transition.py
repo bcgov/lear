@@ -16,7 +16,7 @@
 import copy
 import datetime
 
-from legal_api.models import Filing
+from business_model import Filing
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
@@ -28,6 +28,8 @@ def test_transition_filing_process(app, session):
     """Assert that the transition object is correctly populated to model objects."""
     # setup
     filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    del filing['filing']['transition']['parties'][0]['officer']['id']
+    del filing['filing']['transition']['parties'][1]['officer']['id']
 
     business = create_business(filing['filing']['business']['identifier'])
     create_filing('123', filing)
@@ -45,5 +47,5 @@ def test_transition_filing_process(app, session):
     assert len(business.offices.all()) == len(filing['filing']['transition']['offices'])
     assert len(business.aliases.all()) == len(filing['filing']['transition']['nameTranslations'])
     assert len(business.resolutions.all()) == len(filing['filing']['transition']['shareStructure']['resolutionDates'])
-    assert len(business.party_roles.all()) == 2
-    assert len(filing_rec.filing_party_roles.all()) == 0
+    assert len(business.entity_roles.all()) == 1
+    assert len(filing_rec.filing_entity_roles.all()) == 1

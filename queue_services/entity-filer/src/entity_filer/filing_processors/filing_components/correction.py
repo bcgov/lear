@@ -17,24 +17,24 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Address, Business, Filing, Party, PartyRole
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_model import Address, LegalEntity, Filing, Party, PartyRole
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
-    business_info,
-    create_party,
     create_role,
     filings,
+    legal_entity_info,
     resolutions,
     rules_and_memorandum,
     shares,
     update_address,
 )
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
-def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
+def correct_business_data(business: LegalEntity,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing_rec: Filing,
                           correction_filing: Dict,
                           filing_meta: FilingMeta):
@@ -45,7 +45,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, name_request_json)
+        legal_entity_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
             filing_meta.correction = {**filing_meta.correction,
                                       **{'fromLegalName': from_legal_name,
@@ -56,7 +56,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
         coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
         from_association_type = business.association_type
         if coop_association_type:
-            business_info.set_association_type(business, coop_association_type)
+            legal_entity_info.set_association_type(business, coop_association_type)
             filing_meta.correction = {**filing_meta.correction,
                                       **{'fromCooperativeAssociationType': from_association_type,
                                          'toCooperativeAssociationType': business.association_type}}
@@ -71,7 +71,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                 **{'fromNaicsCode': business.naics_code,
                    'toNaicsCode': to_naics_code,
                    'naicsDescription': to_naics_description}}
-            business_info.update_naics_info(business, naics)
+            legal_entity_info.update_naics_info(business, naics)
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -86,7 +86,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.util.get(correction_filing, '/correction/parties')
-        update_parties(business, party_json, correction_filing_rec)
+        merge_all_parties(business, correction_filing_rec, {'parties': party_json})
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -135,7 +135,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                                       **{'uploadNewRules': True}}
 
 
-def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
+def update_parties(business: LegalEntity, parties: list, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
     end_date_time = datetime.datetime.utcnow()
@@ -178,7 +178,7 @@ def _update_party(party_info):
 
 
 def _create_party_info(business, correction_filing_rec, party_info):
-    party = create_party(business_id=business.id, party_info=party_info, create=False)
+    party = merge_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get('roles'):
         role_str = role_type.get('roleType', '').lower()
         role = {

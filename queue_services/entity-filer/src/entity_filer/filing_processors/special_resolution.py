@@ -13,13 +13,13 @@
 from typing import Dict
 
 from dateutil.parser import parse
-from entity_queue_common.service_utils import logger
-from legal_api.models import Business, Filing, Party, Resolution
+# from entity_queue_common.service_utils import logger
+from business_model import LegalEntity, Filing, Resolution
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing):
     """Render the special resolution filing unto the model objects."""
-    logger.debug('Processing Special Resolution : %s', filing)
+    print('Processing Special Resolution : %s', filing)
     if (resolution_filing := filing.get('specialResolution')):
         resolution = Resolution(
             resolution=resolution_filing.get('resolution'),
@@ -28,12 +28,13 @@ def process(business: Business, filing: Dict, filing_rec: Filing):
         )
 
         if (signatory := resolution_filing.get('signatory')):
-            party = Party(
-                first_name=signatory.get('givenName', '').upper(),
+            signatory_le = LegalEntity(
+                first_name=signatory.get('givenName').upper() if signatory.get('givenName') else None,
                 last_name=signatory.get('familyName', '').upper(),
-                middle_initial=(signatory.get('additionalName', '') or '').upper()
+                middle_initial=signatory.get('additionalName').upper() if signatory.get('additionalName') else None,
+                entity_type=LegalEntity.EntityTypes.PERSON,
             )
-            resolution.party = party
+            resolution.signing_legal_entity = signatory_le
 
         if resolution_filing.get('resolutionDate'):
             resolution.resolution_date = parse(resolution_filing.get('resolutionDate')).date()

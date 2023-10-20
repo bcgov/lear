@@ -16,12 +16,12 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Dict
 
-from legal_api.models import Business, Document, DocumentType, Filing
+from business_model import LegalEntity, Document, DocumentType, Filing
 
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, court_order_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(business: LegalEntity, court_order_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
     court_order_filing.court_order_file_number = filing['courtOrder'].get('fileNumber')
     court_order_filing.court_order_effect_of_order = filing['courtOrder'].get('effectOfOrder')

@@ -13,7 +13,7 @@
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
 import pytest
-from legal_api.models import Business
+from business_model import LegalEntity
 
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from tests import strip_keys_from_dict
@@ -72,7 +72,7 @@ def test_manage_office_structure__offices(
         app, session,
         test_name, office_structure, expected_error):
     """Assert that the corp offices gets set."""
-    business = Business()
+    business = LegalEntity()
     business.save()
     update_and_validate_office(business, office_structure)
 
@@ -83,7 +83,7 @@ def test_manage_office_structure__offices(
 def test_manage_office_structure__delete_and_recreate_offices(app, session, test_name, office_structure,
                                                               expected_error):
     """Assert that the corp offices gets deleted and recreated."""
-    business = Business()
+    business = LegalEntity()
     business.save()
 
     update_and_validate_office(business, office_structure)
@@ -96,7 +96,7 @@ def update_and_validate_office(business, office_structure):
     """Validate that office gets created."""
     err = update_offices(business, office_structure['offices'])
     business.save()
-    check_business = Business.find_by_internal_id(business.id)
+    check_business = LegalEntity.find_by_internal_id(business.id)
     check_offices = check_business.offices.all()
     assert len(check_offices) == 2
     check_office_structure = {'offices': {}}

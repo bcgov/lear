@@ -13,7 +13,7 @@
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
 import pytest
-from legal_api.models import Business
+from business_model import LegalEntity
 
 from entity_filer.filing_processors.filing_components import shares
 from tests import strip_keys_from_dict
@@ -34,12 +34,12 @@ def test_manage_share_structure__resolution_dates(
         'resolutionDates': resolution_dates
     }}
 
-    business = Business()
+    business = LegalEntity()
     business.save()
     err = shares.update_share_structure(business, new_data['shareStructure'])
     business.save()
 
-    check_business = Business.find_by_internal_id(business.id)
+    check_business = LegalEntity.find_by_internal_id(business.id)
     check_resolution = check_business.resolutions.all()
 
     if err:
@@ -80,12 +80,12 @@ def test_manage_share_structure__share_classes(
         app, session,
         test_name, share_structure, expected_error):
     """Assert that the corp share classes gets set."""
-    business = Business()
+    business = LegalEntity()
     business.save()
     err = shares.update_share_structure(business, share_structure['shareStructure'])
     business.save()
 
-    check_business = Business.find_by_internal_id(business.id)
+    check_business = LegalEntity.find_by_internal_id(business.id)
     check_share_classes = check_business.share_classes.all()
 
     check_share_structure = {'shareStructure': {'shareClasses': []}}
@@ -99,10 +99,10 @@ def test_manage_share_structure__share_classes(
 
 def test_manage_share_structure__delete_shares(app, session):
     """Assert that the share structures are deleted."""
-    from legal_api.models import ShareClass, ShareSeries
+    from business_model import ShareClass, ShareSeries
 
     # setup
-    business = Business()
+    business = LegalEntity()
     for i in range(5):
         share_class = ShareClass(name=f'share class {i}')
         for j in range(5):
@@ -117,7 +117,7 @@ def test_manage_share_structure__delete_shares(app, session):
     business.save()
 
     # check
-    check_business = Business.find_by_internal_id(business_id)
+    check_business = LegalEntity.find_by_internal_id(business_id)
     share_classes = check_business.share_classes.all()
 
     assert not share_classes

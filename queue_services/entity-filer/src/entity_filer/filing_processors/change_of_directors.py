@@ -15,14 +15,14 @@
 from datetime import datetime
 from typing import Dict
 
-from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, PartyRole
+#from entity_filer.exceptions import DefaultException, logger
+from business_model import LegalEntity, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import create_party, create_role, update_director
+from entity_filer.filing_processors.filing_components import merge_party, create_role, update_director
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylint: disable=too-many-branches;
+def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):  # pylint: disable=too-many-branches;
     """Render the change_of_directors onto the business model objects."""
     if not (new_directors := filing['changeOfDirectors'].get('directors')):
         return
@@ -61,7 +61,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
         if 'appointed' in new_director['actions']:
 
             # add new diretor party role to the business
-            party = create_party(business_id=business.id, party_info=new_director)
+            party = merge_party(business_id=business.id, party_info=new_director)
             role = {
                 'roleType': 'Director',
                 'appointmentDate': new_director.get('appointmentDate'),
@@ -79,8 +79,8 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
                 else new_director['officer'].get('prevFirstName') + \
                 new_director['officer'].get('prevMiddleInitial') + new_director['officer'].get('prevLastName')
             if not new_director_name:
-                logger.error('Could not resolve director name from json %s.', new_director)
-                raise QueueException
+                print('Could not resolve director name from json %s.', new_director)
+                raise DefaultException
 
             for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
                 # get name of director in database for comparison *

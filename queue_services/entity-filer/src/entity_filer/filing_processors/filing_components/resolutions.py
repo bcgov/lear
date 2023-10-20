@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Manages the resolutions of a Business."""
+"""Manages the resolutions of a LegalEntity."""
 from typing import Dict, Optional
 
 from dateutil.parser import parse
-from legal_api.models import Business, Party
+from business_model import LegalEntity, Party
 
 
 def find_resolution_with_largest_id(resolutions) -> Optional[Dict]:
@@ -23,7 +23,7 @@ def find_resolution_with_largest_id(resolutions) -> Optional[Dict]:
     return max(resolutions, key=lambda resolution: resolution.id, default=None)
 
 
-def update_resolution(business: Business, resolution_correction) -> Optional[Dict]:
+def update_resolution(business: LegalEntity, resolution_correction) -> Optional[Dict]:
     """Update the resolution with the largest id."""
     if not business or not resolution_correction:
         return None
@@ -36,7 +36,7 @@ def update_resolution(business: Business, resolution_correction) -> Optional[Dic
     return largest_resolution
 
 
-def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
+def update_signatory(business: LegalEntity, signatory: Dict) -> Optional[Dict]:
     """Update the signatory with the largest id."""
     if not business or not signatory:
         return None
@@ -55,7 +55,7 @@ def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
     return largest_resolution
 
 
-def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
+def update_resolution_date(business: LegalEntity, date: str) -> Optional[Dict]:
     """Update the resolution_date with the largest id."""
     if not business or not date:
         return None
@@ -69,7 +69,7 @@ def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
     return largest_resolution
 
 
-def update_signing_date(business: Business, date: str) -> Optional[Dict]:
+def update_signing_date(business: LegalEntity, date: str) -> Optional[Dict]:
     """Update the signing_date with the largest id."""
     if not business or not date:
         return None

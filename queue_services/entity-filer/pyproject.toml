@@ -1,0 +1,55 @@
+[tool.poetry]
+name = "entity-filer"
+version = "3.0.1"
+description = "Processes already validated filings to apply them to the Businness Model, and notify downstream services."
+authors = ["thor <thor@wolpert.ca>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+packages = [{include = "entity_filer", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Flask = "^2.3.2"
+dpath = "^2.1.6"
+jsonschema = "^4.18.3"
+python-dateutil = "^2.8.2"
+python-dotenv = "^1.0.0"
+sentry-sdk = "^1.28.1"
+pycountry = "^22.3.5"
+minio = "^7.1.15"
+PyPDF2 = "^3.0.1"
+reportlab = "^4.0.4"
+pg8000 = "^1.29.8"
+flask-babel = "^3.1.0"
+
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.10"}
+simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
+
+##sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "dev_legal_name_changes" }
+sql-versioning = {path = "../../python/common/sql-versioning"}
+##business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "dev_legal_name_changes" }
+business-model = {path = "../../python/common/business-registry-model"}
+cattrs = "^23.1.2"
+google-cloud-pubsub = "^2.18.4"
+google-auth = "^2.23.3"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+flask-migrate = "^4.0.4"
+freezegun = "^1.2.2"
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.1"
+pytest-mock = "^3.11.1"
+requests = "^2.31.0"
+requests-mock = "^1.11.0"
+
+
+[[tool.poetry.source]]
+name = "local-pypi"
+url = "http://localhost:9191/"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

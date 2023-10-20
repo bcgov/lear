@@ -14,19 +14,19 @@
 """The Unit Tests for the Continuation Out filing."""
 import copy
 import random
-
 from datetime import datetime
-from legal_api.models import Business, Filing
 
+from business_model import LegalEntity, Filing
+from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import continuation_out
+
 from tests.unit import create_business, create_filing
 
 
-async def test_worker_continuation_out(app, session):
+def test_worker_continuation_out(app, session):
     """Assert that the continuation out object is correctly populated to model objects."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='CP')
@@ -56,7 +56,7 @@ async def test_worker_continuation_out(app, session):
     assert filing_json['filing']['continuationOut']['details'] == final_filing.comments[0].comment
     assert final_filing.submitter_id == final_filing.comments[0].staff_id
 
-    assert business.state == Business.State.HISTORICAL
+    assert business.state == LegalEntity.State.HISTORICAL
     assert business.state_filing_id == final_filing.id
     assert business.jurisdiction == foreign_jurisdiction_json['country'].upper()
     assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region'].upper()

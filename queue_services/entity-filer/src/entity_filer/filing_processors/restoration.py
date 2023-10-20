@@ -18,18 +18,18 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from legal_api.models import Business, Filing, PartyRole
-from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_model import LegalEntity, Filing, EntityRole
+from entity_filer.utils.datetime import datetime
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components import filings, legal_entity_info, name_request
 from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import update_parties
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Process restoration filing."""
     restoration_filing = filing.get('restoration')
     filing_meta.restoration = {}
@@ -37,7 +37,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     from_legal_name = business.legal_name
 
     if name_request_json := restoration_filing.get('nameRequest'):
-        business_info.set_legal_name(business.identifier, business, name_request_json)
+        legal_entity_info.set_legal_name(business.identifier, business, name_request_json)
         if nr_number := name_request_json.get('nrNumber', None):
             filing_meta.restoration = {
                 **filing_meta.restoration,
@@ -61,7 +61,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     else:  # fullRestoration, limitedRestorationToFull
         business.restoration_expiry_date = None
 
-    business.state = Business.State.ACTIVE
+    business.state = LegalEntity.State.ACTIVE
     business.dissolution_date = None
     business.state_filing_id = filing_rec.id
 
@@ -87,30 +87,26 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
             filing_rec.notice_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(notice_date)
 
 
-def _update_parties(business: Business, parties: dict, filing_rec: Filing):
+def _update_parties(business: LegalEntity, parties: dict, filing_rec: Filing):
     """Create applicant party and cease custodian if exist."""
     end_date_time = datetime.utcnow()
-    custodian_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date(),
-                                                      PartyRole.RoleTypes.CUSTODIAN.value)
+    custodian_party_roles = EntityRole.get_entity_roles(business.id, end_date_time.date(),
+                                                      EntityRole.RoleTypes.custodian.value)
     for party_role in custodian_party_roles:
         party_role.cessation_date = end_date_time
-        business.party_roles.append(party_role)
+        # business.entity_roles.remove(party_role)
 
-    update_parties(business, parties, filing_rec, False)
+        # add fields we need in the historical record (relink business)
+        party_role.change_filing_id = filing_rec.id
+        # party_role.legal_entity_id = 12 #business.id
+        party_role.delete()
+
+    merge_all_parties(business, filing_rec, {'parties': parties})
 
 
-def post_process(business: Business, filing: Filing):
+def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for restoration.
 
     THIS SHOULD NOT ALTER THE MODEL
     """
     name_request.consume_nr(business, filing, 'restoration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['restoration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

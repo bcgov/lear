@@ -13,9 +13,9 @@
 # limitations under the License.
 """The Unit Tests for the business filing component processors."""
 import pytest
-from legal_api.models import Business
+from business_model import LegalEntity
 
-from entity_filer.filing_processors.filing_components import business_info
+from entity_filer.filing_processors.filing_components import legal_entity_info
 
 
 @pytest.mark.parametrize('test_name,original_legal_type,new_legal_type,expected_legal_type,expected_error', [
@@ -30,8 +30,8 @@ def test_set_corp_type(app, session,
         'legalType': new_legal_type
     }
 
-    business = Business(legal_type=original_legal_type)
-    err = business_info.set_corp_type(business, new_data)
+    legal_entity = LegalEntity(entity_type=original_legal_type)
+    err = legal_entity_info.set_corp_type(legal_entity, new_data)
 
-    assert business.legal_type == expected_legal_type
+    assert legal_entity.entity_type == expected_legal_type
     assert err == expected_error
