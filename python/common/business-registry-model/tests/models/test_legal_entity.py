@@ -25,6 +25,7 @@ import datedelta
 import pytest
 from flask import current_app
 from sql_versioning import history_cls
+from sql_versioning import versioned_history
 
 from business_model.exceptions import BusinessException
 from business_model import LegalEntity, EntityRole, ColinEntity, AlternateName

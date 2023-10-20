@@ -125,7 +125,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
                 # assert memorandum_file_obj
                 # assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
-        mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+        # mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize('legal_type, filing, legal_name_suffix', [

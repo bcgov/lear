@@ -57,6 +57,9 @@ def test_incorporation_filing(app, session, bootstrap, requests_mock):
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 0000021'
     payment_id = str(random.SystemRandom().getrandbits(0x58))
+    del filing['filing']['incorporationApplication']['parties'][0]['officer']['id']
+    del filing['filing']['incorporationApplication']['parties'][1]['officer']['id']
+
     filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap)).id
 
     filing_msg = FilingMessage(

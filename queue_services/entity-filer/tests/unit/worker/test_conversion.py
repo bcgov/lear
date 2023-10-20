@@ -85,6 +85,8 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
     filing['filing']['business']['legalType'] = legal_type
     # Name Change
     filing['filing']['conversion']['nameRequest']['legalName'] = new_legal_name
+    del filing['filing']['restoration']['parties'][0]['officer']['id']
+
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
