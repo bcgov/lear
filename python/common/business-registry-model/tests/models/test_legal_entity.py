@@ -948,8 +948,3 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
         assert le.alternate_names == expected_alternate_names
         # if no rollback, test data conflicts between parametrized test runs
         sess.rollback()
-
-
-
-
-
