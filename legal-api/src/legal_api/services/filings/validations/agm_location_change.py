@@ -15,7 +15,6 @@
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I003
 from legal_api.errors import Error
