@@ -84,8 +84,7 @@ def company_name_validation(filing):
 
         error_msg = """The name type associated with the name request number entered cannot be used for this
                        transaction type."""
-        if not nr_response['requestTypeCd'] in \
-            ('CCR', 'CCP', 'BEC', 'BECR', 'BECV', 'CCV', 'UC', 'ULCB', 'ULBE'):
+        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECR', 'BECV', 'CCV', 'UC', 'ULCB', 'ULBE'):
             msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
                         'path': nr_path})
 
