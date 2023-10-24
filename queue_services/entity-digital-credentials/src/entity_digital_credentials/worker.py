@@ -31,11 +31,11 @@ from http import HTTPStatus
 
 import nats
 from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import EmailException, QueueException, logger
+from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
 from legal_api import db
-from legal_api.models import Filing
-from legal_api.services.bootstrap import AccountService
+from legal_api.core import Filing as FilingCore
+from legal_api.models import Business
 from legal_api.services.flags import Flags
 from sqlalchemy.exc import OperationalError
 
@@ -54,7 +54,58 @@ if FLASK_APP.config.get('LD_SDK_KEY', None):
 
 
 def process_digital_credential(dc_msg: dict, flask_app: Flask):  # pylint: disable=too-many-branches, too-many-statements
-    pass
+    """Process any digital credential messages in queue"""
+    if not flask_app:
+        raise QueueException('Flask App not available.')
+
+    with flask_app.app_context():
+        logger.debug('Attempting to process digital credential message: %s', dc_msg)
+
+        if dc_msg is None:
+            raise QueueException
+
+        if dc_msg['type'] is None:
+            raise QueueException('Digital credential message is missing type.')
+
+        if dc_msg['type'] == 'bc.registry.business.bn':
+            # When a BN is added or changed the queue message does not have a data object.
+            # We queue the Busines information using the identifier and revoke/reissue the credential immediately.
+            # TODO:
+            pass
+        else:
+            if (dc_msg['data'] is None
+                or dc_msg['data']['filing'] is None
+                or dc_msg['data']['filing']['header'] is None
+                    or dc_msg['data']['filing']['header']['filingId'] is None):
+                raise QueueException('Digital credential message is missing data.')
+
+            filing_id = dc_msg['data']['filing']['header']['filingId']
+            filing_core = FilingCore.find_by_id(filing_id)
+            if not filing_core:
+                raise QueueException(f'Filing not found for id: {filing_id}.')
+
+            filing = filing_core.storage
+            if not filing:
+                raise QueueException(f'Filing not found for id: {filing_id}.')
+
+            if filing.status != FilingCore.Status.COMPLETED.value:
+                raise QueueException(f'Filing with id: {filing_id} processing not complete.')
+
+            identifier = filing.business_id
+            business = Business.find_by_internal_id(identifier)
+            if not business:
+                raise QueueException(f'Business with identifiter: {identifier} not found for filing.')
+
+            # Process individual filing events
+            if filing.filing_type == FilingCore.FilingTypes.CHANGEOFREGISTRATION.value:
+                # TODO:
+                pass
+            if filing.filing_type == FilingCore.FilingTypes.DISSOLUTION.value:
+                # TODO:
+                pass
+            if filing.filing_type == FilingCore.FilingTypes.PUTBACKON.value:
+                # TODO:
+                pass
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
