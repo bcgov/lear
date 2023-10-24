@@ -49,10 +49,5 @@ async def test_worker_agm_location_change(app, session, mocker):
     
     agm_location_change = final_filing.meta_data.get('agmLocationChange')
     assert filing_json['filing']['agmLocationChange']['year'] == agm_location_change.get('year')
-    agm_location = agm_location_change.get('newAgmLocation')
-    assert filing_json['filing']['agmLocationChange']['newAgmLocation']['addressCountry'] == \
-        agm_location.get('addressCountry')
-    assert filing_json['filing']['agmLocationChange']['newAgmLocation']['addressRegion'] == \
-        agm_location.get('addressRegion')
-    assert filing_json['filing']['agmLocationChange']['newAgmLocation']['addressCity'] == \
-        agm_location.get('addressCity')
+    assert filing_json['filing']['agmLocationChange']['agmLocation'] == agm_location_change.get('agmLocation')
+    assert filing_json['filing']['agmLocationChange']['reason'] == agm_location_change.get('reason')
