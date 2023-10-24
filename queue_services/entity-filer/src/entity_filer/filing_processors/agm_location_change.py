@@ -20,12 +20,8 @@ from entity_filer.filing_meta import FilingMeta
 
 def process(filing: Dict, filing_meta: FilingMeta):
     """Render the agm location change filing into the model objects."""
-    address = filing['agmLocationChange']['newAgmLocation']
     filing_meta.agm_location_change = {
         'year': filing['agmLocationChange']['year'],
-        'newAgmLocation': {
-            'addressCountry': address.get('addressCountry').upper(),
-            'addressRegion': (address.get('addressRegion') or '').upper(),
-            'addressCity': address.get('addressCity')
-        }
+        'agmLocation': filing['agmLocationChange']['agmLocation'],
+        'reason': filing['agmLocationChange']['reason']
     }
