@@ -20,6 +20,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.extensions import socketio
+from legal_api.helpers.digital_credentials import DCRevocationReason, get_digital_credential_data
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
@@ -150,7 +151,7 @@ def send_credential(identifier, credential_type):
     response = digital_credentials.issue_credential(
         connection_id=connection.connection_id,
         definition=definition,
-        data=_get_data_for_credential(definition.credential_type, business)
+        data=get_digital_credential_data(business, definition.credential_type)
     )
     if not response:
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
@@ -253,51 +254,3 @@ def webhook_notification(topic_name: str):
         raise err
 
     return jsonify({'message': 'Webhook received.'}), HTTPStatus.OK
-
-
-def _get_data_for_credential(credential_type: DCDefinition.CredentialType, business: Business):
-    if credential_type == DCDefinition.CredentialType.business:
-        return [
-            {
-                'name': 'credential_id',
-                'value': ''
-            },
-            {
-                'name': 'identifier',
-                'value': business.identifier
-            },
-            {
-                'name': 'business_name',
-                'value': business.legal_name
-            },
-            {
-                'name': 'business_type',
-                'value': business.legal_type
-            },
-            {
-                'name': 'cra_business_number',
-                'value': business.tax_id or ''
-            },
-            {
-                'name': 'registered_on_dateint',
-                'value': business.founding_date.isoformat()
-            },
-            {
-                'name': 'company_status',
-                'value': business.state
-            },
-            {
-                'name': 'family_name',
-                'value': ''
-            },
-            {
-                'name': 'given_names',
-                'value': ''
-            },
-            {
-                'name': 'role',
-                'value': ''
-            }
-        ]
-
-    return None

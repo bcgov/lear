@@ -27,21 +27,23 @@ to be pursued.
 """
 import json
 import os
-from http import HTTPStatus
 
 import nats
-from entity_digital_credentials.digital_credentials_processors import business_number, change_of_registration, dissolution, put_back_on
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
 from legal_api import db
 from legal_api.core import Filing as FilingCore
-from legal_api.models import Business
 from legal_api.services.flags import Flags
-from legal_api.services import digital_credentials
 from sqlalchemy.exc import OperationalError
 
 from entity_digital_credentials import config
+from entity_digital_credentials.digital_credentials_processors import (  # noqa: I001
+    business_number,
+    change_of_registration,
+    dissolution,
+    put_back_on,
+)
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -55,8 +57,9 @@ if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
 
 
-def process_digital_credential(dc_msg: dict, flask_app: Flask):  # pylint: disable=too-many-branches, too-many-statements
-    """Process any digital credential messages in queue"""
+def process_digital_credential(dc_msg: dict, flask_app: Flask):
+    # pylint: disable=too-many-branches, too-many-statements
+    """Process any digital credential messages in queue."""
     if not flask_app:
         raise QueueException('Flask App not available.')
 
@@ -71,17 +74,17 @@ def process_digital_credential(dc_msg: dict, flask_app: Flask):  # pylint: disab
 
         if dc_msg['type'] == 'bc.registry.business.bn':
             # When a BN is added or changed the queue message does not have a data object.
-            # We queue the Busines information using the identifier and revoke/reissue the credential immediately.
-            if (dc_msg['identifiler'] is None):
+            # We queue the business information using the identifier and revoke/reissue the credential immediately.
+            if dc_msg['identifiler'] is None:
                 raise QueueException('Digital credential message is missing identifier')
 
             identifier = dc_msg['identifier']
             business_number.process(identifier)
         else:
-            if (dc_msg['data'] is None
-                or dc_msg['data']['filing'] is None
-                or dc_msg['data']['filing']['header'] is None
-                    or dc_msg['data']['filing']['header']['filingId'] is None):
+            if dc_msg['data'] is None \
+                    or dc_msg['data']['filing'] is None \
+                    or dc_msg['data']['filing']['header'] is None \
+                    or dc_msg['data']['filing']['header']['filingId'] is None:
                 raise QueueException('Digital credential message is missing data.')
 
             filing_id = dc_msg['data']['filing']['header']['filingId']
@@ -103,7 +106,7 @@ def process_digital_credential(dc_msg: dict, flask_app: Flask):  # pylint: disab
                 change_of_registration.process(identifier)
             if filing.filing_type == FilingCore.FilingTypes.DISSOLUTION.value:
                 filing_sub_type = filing.filing_sub_type
-                dissolution.process(identifier, filing_sub_type)
+                dissolution.process(identifier, filing_sub_type)  # pylint: disable=too-many-function-args
             if filing.filing_type == FilingCore.FilingTypes.PUTBACKON.value:
                 put_back_on.process(identifier)
 
