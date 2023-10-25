@@ -3,7 +3,7 @@ Flask-Script==2.0.6
 Flask==1.1.2
 Jinja2==2.11.3
 MarkupSafe==1.1.1
-Werkzeug==1.0.1
+Werkzeug==3.0.1
 aniso8601==9.0.1
 attrs==20.3.0
 blinker==1.4
