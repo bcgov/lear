@@ -48,12 +48,6 @@ def get(identifier):
 def validate_with_contact_info(identifier):
     """Return a JSON object with name request information."""
     try:
-        # The request must include email or phone number
-        email = request.args.get('email', None)
-        phone = request.args.get('phone', None)
-        if not (email or phone):
-            return make_response(jsonify(message='The request must include email or phone number.'), 403)
-
         nr_response = namex.query_nr_number(identifier)
         # Errors in general will just pass though,
         # 404 is overriden as it is giving namex-api specific messaging
@@ -66,6 +60,12 @@ def validate_with_contact_info(identifier):
         orgs_response = AccountService.get_account_by_affiliated_identifier(identifier)
         if len(orgs_response['orgs']):
             return jsonify(nr_json)
+        
+        # The request must include email or phone number
+        email = request.args.get('email', None)
+        phone = request.args.get('phone', None)
+        if not (email or phone):
+            return make_response(jsonify(message='The request must include email or phone number.'), 403)
 
         # If NR is not affiliated, validate the email and phone
         nr_phone = nr_json.get('applicants').get('phoneNumber')
