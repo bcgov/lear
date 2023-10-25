@@ -60,7 +60,7 @@ def validate_with_contact_info(identifier):
         orgs_response = AccountService.get_account_by_affiliated_identifier(identifier)
         if len(orgs_response['orgs']):
             return jsonify(nr_json)
-        
+
         # The request must include email or phone number
         email = request.args.get('email', None)
         phone = request.args.get('phone', None)
