@@ -21,7 +21,7 @@ from typing import Optional
 
 import requests
 
-from legal_api.decorators import requires_traction_auth
+from legal_api.helpers.digital_credentials import DCRevocationReason
 from legal_api.models import DCDefinition
 
 
@@ -210,7 +210,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str) -> Optional[dict]:
+    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str, reason: DCRevocationReason) -> Optional[dict]:
         """Revoke a credential."""
         try:
             response = requests.post(self.api_url + '/revocation/revoke',
@@ -221,7 +221,8 @@ class DigitalCredentialsService:
                                          'rev_reg_id': rev_reg_id,
                                          'publish': True,
                                          'notify': True,
-                                         'notify_version': 'v1_0'
+                                         'notify_version': 'v1_0',
+                                         'comment': reason.value if reason else ''
                                      }))
             response.raise_for_status()
             return response.json()

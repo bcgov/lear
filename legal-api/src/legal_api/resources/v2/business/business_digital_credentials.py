@@ -13,23 +13,20 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
+import json
 from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
+from flask_socketio import emit
 
-from legal_api.models import (
-    Business,
-    CorpType,
-    DCConnection,
-    DCDefinition,
-    DCIssuedBusinessUserCredential,
-    DCIssuedCredential,
-    User,
-)
+from legal_api.extensions import socketio
+from legal_api.helpers.digital_credentials import DCRevocationReason, get_digital_credential_data
+from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
+from legal_api.extensions import socketio
 
 from .bp import bp
 
@@ -87,6 +84,7 @@ def get_connections(identifier):
     for connection in connections:
         response.append(connection.json)
     return jsonify({'connections': response}), HTTPStatus.OK
+
 
 @bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
@@ -247,7 +245,7 @@ def revoke_credential(identifier, credential_id):
     revoked = digital_credentials.revoke_credential(connection.connection_id,
                                                     issued_credential.credential_revocation_id,
                                                     issued_credential.revocation_registry_id)
-    if revoked is None:
+    if not revoked:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True
@@ -301,90 +299,16 @@ def webhook_notification(topic_name: str):
                 issued_credential.credential_revocation_id = json_input['cred_rev_id']
                 issued_credential.revocation_registry_id = json_input['rev_reg_id']
                 issued_credential.save()
+                socketio.emit('connections', connection.json)
         elif topic_name == 'issue_credential_v2_0':
             issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'done':
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
+                socketio.emit('issue_credential_v2_0', issued_credential.json)
     except Exception as err:
         current_app.logger.error(err)
         raise err
 
     return jsonify({'message': 'Webhook received.'}), HTTPStatus.OK
-
-
-def _get_data_for_credential(credential_type: DCDefinition.CredentialType, business: Business, user: User):
-    if credential_type == DCDefinition.CredentialType.business:
-
-        # Find the credential id from dc_issued_business_user_credentials and if there isn't one create one
-        issued_business_user_credential = DCIssuedBusinessUserCredential.find_by(
-            business_id=business.id, user_id=user.id)
-        if not issued_business_user_credential:
-            issued_business_user_credential = DCIssuedBusinessUserCredential(business_id=business.id, user_id=user.id)
-            issued_business_user_credential.save()
-
-        credential_id = f'{issued_business_user_credential.id:08}'
-
-        business_type = CorpType.find_by_id(business.legal_type)
-        if business_type:
-            business_type = business_type.full_desc
-        else:
-            business_type = business.legal_type
-
-        registered_on_dateint = ''
-        if business.founding_date:
-            registered_on_dateint = business.founding_date.strftime('%Y%m%d')
-
-        company_status = Business.State(business.state).name
-
-        family_name = (user.lastname or '').upper()
-
-        given_names = (user.firstname + (' ' + user.middlename if user.middlename else '') or '').upper()
-
-        roles = ', '.join([party_role.role.title() for party_role in business.party_roles.all() if party_role.role])
-
-        return [
-            {
-                'name': 'credential_id',
-                'value':  credential_id or ''
-            },
-            {
-                'name': 'identifier',
-                'value': business.identifier or ''
-            },
-            {
-                'name': 'business_name',
-                'value': business.legal_name or ''
-            },
-            {
-                'name': 'business_type',
-                'value': business_type or ''
-            },
-            {
-                'name': 'cra_business_number',
-                'value': business.tax_id or ''
-            },
-            {
-                'name': 'registered_on_dateint',
-                'value': registered_on_dateint or ''
-            },
-            {
-                'name': 'company_status',
-                'value': company_status or ''
-            },
-            {
-                'name': 'family_name',
-                'value': family_name or ''
-            },
-            {
-                'name': 'given_names',
-                'value': given_names or ''
-            },
-            {
-                'name': 'role',
-                'value': roles or ''
-            }
-        ]
-
-    return None
