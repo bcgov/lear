@@ -189,7 +189,7 @@ def revoke_credential(identifier, credential_id):
     revoked = digital_credentials.revoke_credential(connection.connection_id,
                                                     issued_credential.credential_revocation_id,
                                                     issued_credential.revocation_registry_id)
-    if revoked is None:
+    if not revoked:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True
