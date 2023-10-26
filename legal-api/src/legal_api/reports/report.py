@@ -584,7 +584,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_agm_location_change_data(self, filing):
-        
         filing['agm_year'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('year', '')
 
         filing['location'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('agmLocation', '')
