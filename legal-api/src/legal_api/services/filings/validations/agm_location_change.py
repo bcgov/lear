@@ -15,7 +15,6 @@
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I003
 from legal_api.errors import Error
@@ -42,19 +41,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     else:
         msg.append({'error': 'Invalid AGM year.', 'path': agm_year_path})
 
-    address = filing['filing']['agmLocationChange']['newAgmLocation']
-    country_code = address.get('addressCountry').upper()  # country is a required field in schema
-    region = (address.get('addressRegion') or '').upper()
-
-    agm_location_path: Final = '/filing/agmLocationChange/newAgmLocation'
-    country = pycountry.countries.get(alpha_2=country_code)
-    if not country:
-        msg.append({'error': 'Invalid country.', 'path': f'{agm_location_path}/addressCountry'})
-    elif country_code in ('CA', 'US'):
-        if country_code == 'CA' and region == 'BC':
-            msg.append({'error': 'Region should not be BC.', 'path': f'{agm_location_path}/addressRegion'})
-        elif not pycountry.subdivisions.get(code=f'{country_code}-{region}'):
-            msg.append({'error': 'Invalid region.', 'path': f'{agm_location_path}/addressRegion'})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
