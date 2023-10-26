@@ -21,6 +21,7 @@ from typing import Optional
 
 import requests
 
+from legal_api.decorators import requires_traction_auth
 from legal_api.models import DCDefinition
 
 
@@ -65,7 +66,6 @@ class DigitalCredentialsService:
         self.app = app
 
         self.api_url = app.config.get('TRACTION_API_URL')
-        self.api_token = app.config.get('TRACTION_API_TOKEN')
         self.public_schema_did = app.config.get('TRACTION_PUBLIC_SCHEMA_DID')
         self.public_issuer_did = app.config.get('TRACTION_PUBLIC_ISSUER_DID')
 
@@ -133,6 +133,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def _fetch_schema(self, schema_id: str) -> Optional[str]:
         """Find a schema in Traction storage."""
         try:
@@ -147,6 +148,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             raise err
 
+    @requires_traction_auth
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
         """Find a published credential definition."""
         try:
@@ -162,6 +164,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             raise err
 
+    @requires_traction_auth
     def create_invitation(self) -> Optional[dict]:
         """Create a new connection invitation."""
         try:
@@ -177,6 +180,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def issue_credential(self,
                          connection_id: str,
                          definition: DCDefinition,
@@ -212,6 +216,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str) -> Optional[dict]:
         """Revoke a credential."""
         try:
@@ -234,5 +239,5 @@ class DigitalCredentialsService:
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.api_token}'
+            'Authorization': f'Bearer {self.app.api_token}'
         }
