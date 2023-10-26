@@ -64,6 +64,8 @@ jobs:
       NATS_QUEUE: entity-filer-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
       GO_LIVE_DATE: 2019-08-12
+      BUSINESS_SCHEMA_ID: test_business_schema_id
+      BUSINESS_CRED_DEF_ID: test_credential_definition_id
 
     runs-on: ubuntu-20.04
 
