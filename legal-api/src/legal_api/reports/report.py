@@ -595,7 +595,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
-
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
         if 'nameTranslations' in filing['alteration']:
