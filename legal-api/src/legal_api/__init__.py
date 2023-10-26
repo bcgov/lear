@@ -69,7 +69,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     register_shellcontext(app)
 
     ws_allowed_origins = app.config.get('WS_ALLOWED_ORIGINS', [])
-    if type(ws_allowed_origins) == str and ws_allowed_origins != '*':
+    if isinstance(ws_allowed_origins, str) and ws_allowed_origins != '*':
         ws_allowed_origins = ws_allowed_origins.split(',')
     socketio.init_app(app, cors_allowed_origins=ws_allowed_origins)
 
