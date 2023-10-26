@@ -1174,7 +1174,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
         },
-        'agmLocationChange':{
+        'agmLocationChange': {
             'filingDescription': 'Letter Of AGM Location Change',
             'fileName': 'agmLocationChange'
         }
