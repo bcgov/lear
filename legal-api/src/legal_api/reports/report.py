@@ -272,6 +272,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_transition_data(filing)
         elif self._report_key == 'dissolution':
             self._format_dissolution_data(filing)
+        elif self._report_key == 'agmLocationChange':
+            self._format_agm_location_change_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -580,6 +582,19 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
+
+    def _format_agm_location_change_data(self, filing):
+        
+        filing['agm_year'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('year', '')
+
+        filing['location'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('agmLocation', '')
+
+        filing['offices'] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+
+        with suppress(KeyError):
+            self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
+
 
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
@@ -1160,6 +1175,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'letterOfConsent': {
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
+        },
+        'agmLocationChange':{
+            'filingDescription': 'Letter Of AGM Location Change',
+            'fileName': 'agmLocationChange'
         }
     }
 
