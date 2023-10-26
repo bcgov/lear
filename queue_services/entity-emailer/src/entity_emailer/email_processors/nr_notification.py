@@ -38,6 +38,24 @@ class Option(Enum):
     REFUND = 'refund'
 
 
+def __is_modernized(legal_type):
+    modernized_list = ['GP', 'DBA', 'FR', 'CP', 'BC']
+    return legal_type in modernized_list
+
+
+def __is_colin(legal_type):
+    colin_list = ['CR', 'UL', 'CC', 'XCR', 'XUL', 'RLC']
+    return legal_type in colin_list
+
+
+def __get_instruction_group(legal_type):
+    if __is_modernized(legal_type):
+        return 'modernized'
+    if __is_colin(legal_type):
+        return 'colin'
+    return ''
+
+
 def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
     """
     Build the email for Name Request notification.
@@ -46,8 +64,6 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     """
     logger.debug('NR %s notification: %s', option, email_info)
     nr_number = email_info['identifier']
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{option.upper()}.html').read_text()
-    filled_template = substitute_template_parts(template)
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
@@ -74,6 +90,20 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     name_request_url = current_app.config.get('NAME_REQUEST_URL')
     decide_business_url = current_app.config.get('DECIDE_BUSINESS_URL')
+    corp_online_url = current_app.config.get('COLIN_URL')
+    form_page_url = current_app.config.get('CORP_FORMS_URL')
+
+    file_name_suffix = option.upper()
+    if option == Option.BEFORE_EXPIRY.value:
+        if 'legalType' in nr_data:
+            legal_type = nr_data['legalType']
+            group = __get_instruction_group(legal_type)
+            if group:
+                instruction_group = '-' + group
+                file_name_suffix += instruction_group.upper()
+
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{file_name_suffix}.html').read_text()
+    filled_template = substitute_template_parts(template)
 
     # render template with vars
     mail_template = Template(filled_template, autoescape=True)
@@ -83,7 +113,9 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
         legal_name=legal_name,
         refund_value=refund_value,
         name_request_url=name_request_url,
-        decide_business_url=decide_business_url
+        decide_business_url=decide_business_url,
+        corp_online_url=corp_online_url,
+        form_page_url=form_page_url
     )
 
     # get recipients
