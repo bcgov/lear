@@ -19,6 +19,7 @@ import pytest
 from entity_emailer.email_processors import agm_location_change_notification
 from tests.unit import prep_agm_location_change_filing
 
+
 @pytest.mark.parametrize('status,legal_name,is_numbered', [
     ('COMPLETED', 'test business', False),
     ('COMPLETED', 'BC1234567', True),
@@ -36,13 +37,13 @@ def test_agm_location_change_notification(app, session, status, legal_name, lega
                           return_value='recipient@email.com'):
             email = agm_location_change_notification.process(
                 {'filingId': filing.id, 'type': 'agmLocationChange', 'option': status}, token)
-            
+
             if (is_numbered):
-              assert email['content']['subject'] == \
-                'Numbered Company - AGM Location Change Documents from the Business Registry'
+                assert email['content']['subject'] == \
+                    'Numbered Company - AGM Location Change Documents from the Business Registry'
             else:
-              assert email['content']['subject'] == \
-                legal_name + ' - AGM Location Change Documents from the Business Registry'
+                assert email['content']['subject'] == \
+                    legal_name + ' - AGM Location Change Documents from the Business Registry'
 
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']

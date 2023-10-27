@@ -23,7 +23,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 
@@ -136,7 +136,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     subject = 'AGM Location Change Documents from the Business Registry'
 
     legal_name = business.get('legalName', None)
-    legal_name = "Numbered Company" if legal_name.startswith(identifier) else legal_name
+    legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
     return {

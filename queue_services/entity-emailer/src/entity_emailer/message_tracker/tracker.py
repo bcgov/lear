@@ -23,7 +23,8 @@ from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
 
-def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: disable=too-many-return-statements
+def get_message_context_properties(queue_msg: nats.aio.client.Msg):
+    # pylint: disable=too-many-return-statements, too-many-branches
     """Get key message properties from a queue message."""
     # todo update this code to just use the cloud event message id when all
     #  publishers are publishing to emailer queue with cloud event format
@@ -87,7 +88,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):  # pylint: d
                 and (business_id := email.get('businessId', None)):
             message_id = f'{etype}_{option}_{ar_year}_{business_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
-        
+
         if etype == 'agmLocationChange' \
                 and (option := email.get('option', None)) \
                 and option == 'COMPLETED' \

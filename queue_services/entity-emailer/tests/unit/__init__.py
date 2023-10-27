@@ -410,6 +410,7 @@ def prep_agm_location_change_filing(session, identifier, payment_id, legal_type,
     filing.save()
     return filing
 
+
 def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None):
     """Return a new maintenance filing prepped for email notification."""
     business = create_business(identifier, Business.LegalTypes.BCOMP.value, LEGAL_NAME)
