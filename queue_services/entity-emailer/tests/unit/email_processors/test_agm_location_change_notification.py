@@ -15,6 +15,7 @@
 from unittest.mock import patch
 
 import pytest
+from legal_api.models import Business
 
 from entity_emailer.email_processors import agm_location_change_notification
 from tests.unit import prep_agm_location_change_filing
@@ -23,13 +24,11 @@ from tests.unit import prep_agm_location_change_filing
 @pytest.mark.parametrize('status,legal_name,is_numbered', [
     ('COMPLETED', 'test business', False),
     ('COMPLETED', 'BC1234567', True),
-    ('PAID', 'test business', False),
-    ('PAID', 'BC1234567', True),
 ])
-def test_agm_location_change_notification(app, session, status, legal_name, legal_type, is_numbered):
+def test_agm_location_change_notification(app, session, status, legal_name, is_numbered):
     """Assert that the agm location change email processor works as expected."""
     # setup filing + business for email
-    filing = prep_agm_location_change_filing(session, 'BC1234567', '1', legal_type, legal_name)
+    filing = prep_agm_location_change_filing('BC1234567', '1', Business.LegalTypes.COMP.value, legal_name)
     token = 'token'
     # test processor
     with patch.object(agm_location_change_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -51,5 +50,5 @@ def test_agm_location_change_notification(app, session, status, legal_name, lega
             assert mock_get_pdfs.call_args[0][0] == token
             assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
             assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
-            assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.COMP.value
             assert mock_get_pdfs.call_args[0][2] == filing

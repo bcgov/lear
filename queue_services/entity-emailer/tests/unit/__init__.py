@@ -385,7 +385,7 @@ def prep_alteration_filing(session, identifier, option, company_name):
     return filing
 
 
-def prep_agm_location_change_filing(session, identifier, payment_id, legal_type, legal_name):
+def prep_agm_location_change_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new AGM location change filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)

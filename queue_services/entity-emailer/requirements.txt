@@ -37,7 +37,7 @@ isoduration==20.11.0
 itsdangerous==1.1.0
 Jinja2==2.11.3
 jsonpointer==2.3
-jsonschema==4.17.3
+jsonschema==4.19
 launchdarkly-server-sdk==7.1.0
 Mako==1.1.4
 MarkupSafe==1.1.1
