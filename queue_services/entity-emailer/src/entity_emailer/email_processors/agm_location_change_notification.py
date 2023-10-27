@@ -140,7 +140,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
     return {
-        'recipients': 'leo.dube@aot-technologies.com',
+        'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',
         'content': {
             'subject': subject,
