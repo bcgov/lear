@@ -33,7 +33,7 @@ def test_agm_location_change_notification(app, session, status, legal_name, lega
     # test processor
     with patch.object(agm_location_change_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(agm_location_change_notification, 'get_recipient_from_auth',
-                          return_value='leo.dube@aot-technologies.com'):
+                          return_value='recipient@email.com'):
             email = agm_location_change_notification.process(
                 {'filingId': filing.id, 'type': 'agmLocationChange', 'option': status}, token)
             
