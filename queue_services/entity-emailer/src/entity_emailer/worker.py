@@ -152,7 +152,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 flag_on = flags.is_on('disable-specific-service-provider')
                 email = ar_reminder_notification.process(email_msg['email'], token, flag_on)
                 send_email(email, token)
-            elif etype == 'agmLocationChange':
+            elif etype == 'agmLocationChange' and option == Filing.Status.COMPLETED.value:
                 email = agm_location_change_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype == 'dissolution':
