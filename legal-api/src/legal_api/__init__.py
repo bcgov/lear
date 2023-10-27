@@ -24,6 +24,7 @@ from registry_schemas import __version__ as registry_schemas_version  # noqa: I0
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, models
+from legal_api.extensions import socketio
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
@@ -66,6 +67,11 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     setup_jwt_manager(app, jwt)
 
     register_shellcontext(app)
+
+    ws_allowed_origins = app.config.get('WS_ALLOWED_ORIGINS', [])
+    if isinstance(ws_allowed_origins, str) and ws_allowed_origins != '*':
+        ws_allowed_origins = ws_allowed_origins.split(',')
+    socketio.init_app(app, cors_allowed_origins=ws_allowed_origins)
 
     return app
 

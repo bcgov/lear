@@ -64,9 +64,9 @@ def test_find_by(session):
     """Assert that the method returns correct value."""
     definition = create_dc_definition()
 
-    res = DCDefinition.find_by(DCDefinition.CredentialType.business,
-                               'business_schema',
-                               schema_version='1.0.0'
+    res = DCDefinition.find_by(credential_type=DCDefinition.CredentialType.business,
+                               schema_id='test_schema_id',
+                               credential_definition_id='test_credential_definition_id',
                                )
     assert res
     assert res.id == definition.id
@@ -76,10 +76,10 @@ def create_dc_definition():
     """Create new dc_definition object."""
     definition = DCDefinition(
         credential_type=DCDefinition.CredentialType.business,
-        schema_name='business_schema',
+        schema_name='test_business_schema',
         schema_version='1.0.0',
-        schema_id='3ENKbWGgUBXXzDHnG11phS:2:business_schema:1.0.0',
-        credential_definition_id='3ENKbWGgUBXXzDHnG11phS:3:CL:146949:business_schema'
+        schema_id='test_schema_id',
+        credential_definition_id='test_credential_definition_id'
     )
     definition.save()
     return definition
