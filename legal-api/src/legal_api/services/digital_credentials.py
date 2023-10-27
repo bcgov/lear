@@ -28,25 +28,6 @@ from legal_api.models import DCDefinition
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
 
-    business_schema = {
-        'attributes': [
-            'business_name',
-            'company_status',
-            'credential_id',
-            'identifier',
-            'registered_on_dateint',
-            'role',
-            'cra_business_number',
-            'family_name',
-            'business_type',
-            'given_names',
-        ],
-        # do not change schema name. this is the name registered in aca-py agent
-        'schema_name': 'digital_business_card',
-        # if attributes change update schema_version to re-register
-        'schema_version': '1.0.0'
-    }
-
     def __init__(self):
         """Initialize this object."""
         self.app = None
@@ -88,17 +69,6 @@ class DigitalCredentialsService:
                 self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
-            # Check for the current Business definition.
-            definition = DCDefinition.find_by(
-                credential_type=DCDefinition.CredentialType.business,
-                schema_id=self.business_schema_id,
-                credential_definition_id=self.business_cred_def_id
-            )
-
-            if definition and not definition.is_deleted:
-                # Deactivate any existing Business definition before creating new one
-                DCDefinition.deactivate(DCDefinition.CredentialType.business)
-
             ###
             # The following just a sanity check to make sure the schema and
             # credential definition are stored in Traction tenant.
@@ -117,6 +87,16 @@ class DigitalCredentialsService:
             if not credential_definition_id:
                 raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
                                  ' must be avaible in Traction tenant storage')
+
+            # Check for the current Business definition.
+            definition = DCDefinition.find_by(
+                credential_type=DCDefinition.CredentialType.business,
+                schema_id=self.business_schema_id,
+                credential_definition_id=self.business_cred_def_id
+            )
+
+            if definition and not definition.is_deleted:
+                return None
 
             # Create a new definition and add the new schema_id
             definition = DCDefinition(
