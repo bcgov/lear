@@ -88,7 +88,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
                 and (business_id := email.get('businessId', None)):
             message_id = f'{etype}_{option}_{ar_year}_{business_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
-        
+
         if etype == 'agmLocationChange' \
                 and (option := email.get('option', None)) \
                 and option == 'COMPLETED' \
