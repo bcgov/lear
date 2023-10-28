@@ -82,10 +82,28 @@ def get_connections(identifier):
     return jsonify({'connections': response}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
+@bp.route('/<string:identifier>/digitalCredentials/connections/<string:connection_id>',
+          methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
-def delete_connection(identifier):
+def delete_connection(identifier, connection_id):
+    """Delete a connection."""
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    connection = DCConnection.find_by_connection_id(connection_id=connection_id)
+    if not connection:
+        return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
+
+    connection.delete()
+    return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
+
+
+@bp.route('/<string:identifier>/digitalCredentials/activeConnection', methods=['DELETE'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_active_connection(identifier):
     """Delete an active connection for this business."""
     business = Business.find_by_identifier(identifier)
     if not business:
@@ -164,7 +182,7 @@ def send_credential(identifier, credential_type):
     )
     issued_credential.save()
 
-    return jsonify({'message': 'Credential offer has been sent.'}), HTTPStatus.OK
+    return jsonify(issued_credential.json), HTTPStatus.OK
 
 
 @bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>/revoke',

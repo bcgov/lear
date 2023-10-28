@@ -48,7 +48,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             'credentialExchangeId': self.credential_exchange_id,
             'credentialId': self.credential_id,
             'isIssued': self.is_issued,
-            'dateOfIssue': self.date_of_issue.isoformat(),
+            'dateOfIssue': self.date_of_issue.isoformat() if self.date_of_issue else None,
             'isRevoked': self.is_revoked,
             'credentialRevocationId': self.credential_revocation_id,
             'revocationRegistryId': self.revocation_registry_id
