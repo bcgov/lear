@@ -19,14 +19,17 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify, request, _request_ctx_stack
 from flask_cors import cross_origin
 
+from legal_api.core import Filing as FilingCore
 from legal_api.extensions import socketio
 from legal_api.models import (
     Business,
     CorpType,
+    Filing,
     DCConnection,
     DCDefinition,
     DCIssuedCredential,
     DCIssuedBusinessUserCredential,
+    PartyRole,
     User
 )
 from legal_api.services import digital_credentials
@@ -189,8 +192,6 @@ def send_credential(identifier, credential_type):
     )
     if not response:
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
-    
-    print(_request_ctx_stack.top.current_user)
 
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
@@ -315,6 +316,8 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
 
         given_names = (user.firstname + (' ' + user.middlename if user.middlename else '') or '').upper()
 
+        roles = ', '.join([party_role.role.title() for party_role in business.party_roles.all() if party_role.role])
+
         return [
             {
                 'name': 'credential_id',
@@ -354,7 +357,7 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
             },
             {
                 'name': 'role',
-                'value': ''
+                'value': roles or ''
             }
         ]
 
