@@ -507,7 +507,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         outputs = FilingMeta.alter_outputs_correction(filing, business, outputs)
         outputs = FilingMeta.alter_outputs_special_resolution(filing, outputs)
         outputs = FilingMeta.alter_outputs_dissolution(filing, outputs)
-        outputs = FilingMeta.alter_outputs_agmLocationChange(filing, outputs)
+        outputs = FilingMeta.alter_outputs_agm_location_change(filing, outputs)
 
     @staticmethod
     def alter_outputs_alteration(filing, outputs):
@@ -552,9 +552,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if not filing.meta_data.get('alteration', {}).get('uploadNewRules'):
                 outputs.remove('certifiedRules')
         return outputs
-    
+
     @staticmethod
-    def alter_outputs_agmLocationChange(filing, outputs):
+    def alter_outputs_agm_location_change(filing, outputs):
         """Handle output file list modification for agm location change."""
         if filing.filing_type == 'agmLocationChange':
             outputs.add('letterOfAgmLocationChange')
