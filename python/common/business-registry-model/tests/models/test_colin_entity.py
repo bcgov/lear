@@ -27,15 +27,13 @@ def test_valid_colin_entity_save(session):
     delivery_address = factory_address(Address.DELIVERY)
 
     colin_entity = ColinEntity(
-        organization_name='XYZ BC LTD',
-        identifier='BC1234567',
-        email='no_one@never.get',
+        organization_name="XYZ BC LTD",
+        identifier="BC1234567",
+        email="no_one@never.get",
         mailing_address_id=mailing_address.id,
-        delivery_address_id=delivery_address.id
+        delivery_address_id=delivery_address.id,
     )
     colin_entity.save()
 
     # verify
     assert colin_entity.id
-
-

@@ -27,43 +27,55 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     class ResolutionType(Enum):
         """Render an Enum of the types of resolutions."""
 
-        ORDINARY = 'ORDINARY'
-        SPECIAL = 'SPECIAL'
+        ORDINARY = "ORDINARY"
+        SPECIAL = "SPECIAL"
 
-    __tablename__ = 'resolutions'
+    __tablename__ = "resolutions"
     __mapper_args__ = {
-        'include_properties': [
-            'id',
-            'change_filing_id',
-            'legal_entity_id',
-            'resolution',
-            'resolution_date',
-            'resolution_sub_type',
-            'resolution_type',
-            'signing_date',
-            'signing_party_id',
-            'signing_legal_entity_id',
+        "include_properties": [
+            "id",
+            "change_filing_id",
+            "legal_entity_id",
+            "resolution",
+            "resolution_date",
+            "resolution_sub_type",
+            "resolution_type",
+            "signing_date",
+            "signing_party_id",
+            "signing_legal_entity_id",
         ]
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    resolution_date = db.Column('resolution_date', db.Date, nullable=False)
-    resolution_type = db.Column('type', db.String(20), default=ResolutionType.SPECIAL, nullable=False)
-    resolution_sub_type = db.Column('sub_type', db.String(20))
-    signing_date = db.Column('signing_date', db.Date)
+    resolution_date = db.Column("resolution_date", db.Date, nullable=False)
+    resolution_type = db.Column(
+        "type", db.String(20), default=ResolutionType.SPECIAL, nullable=False
+    )
+    resolution_sub_type = db.Column("sub_type", db.String(20))
+    signing_date = db.Column("signing_date", db.Date)
     resolution = db.Column(db.Text)
 
     # parent keys
-    change_filing_id = db.Column('change_filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
-    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
-    signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
-    signing_legal_entity_id = db.Column('signing_legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    change_filing_id = db.Column(
+        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
+    )
+    legal_entity_id = db.Column(
+        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
+    )
+    signing_party_id = db.Column(
+        "signing_party_id", db.Integer, db.ForeignKey("parties.id")
+    )
+    signing_legal_entity_id = db.Column(
+        "signing_legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
+    )
 
     # relationships
-    party = db.relationship('Party')
-    signing_legal_entity = db.relationship('LegalEntity',
-                                           back_populates='resolution_signing_legal_entity',
-                                           foreign_keys=[signing_legal_entity_id])
+    party = db.relationship("Party")
+    signing_legal_entity = db.relationship(
+        "LegalEntity",
+        back_populates="resolution_signing_legal_entity",
+        foreign_keys=[signing_legal_entity_id],
+    )
 
     def save(self):
         """Save the object to the database immediately."""
@@ -74,22 +86,28 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         resolution_json = {
-            'id': self.id,
-            'type': self.resolution_type,
-            'date': self.resolution_date.isoformat()
+            "id": self.id,
+            "type": self.resolution_type,
+            "date": self.resolution_date.isoformat(),
         }
         if self.resolution:
-            resolution_json['resolution'] = self.resolution
+            resolution_json["resolution"] = self.resolution
         if self.resolution_sub_type:
-            resolution_json['subType'] = self.resolution_sub_type
+            resolution_json["subType"] = self.resolution_sub_type
         if self.signing_date:
-            resolution_json['signingDate'] = self.signing_date.isoformat()
+            resolution_json["signingDate"] = self.signing_date.isoformat()
         if self.signing_legal_entity_id:
-            resolution_json['signatory'] = {}
-            resolution_json['signatory']['givenName'] = self.signing_legal_entity.first_name
-            resolution_json['signatory']['familyName'] = self.signing_legal_entity.last_name
+            resolution_json["signatory"] = {}
+            resolution_json["signatory"][
+                "givenName"
+            ] = self.signing_legal_entity.first_name
+            resolution_json["signatory"][
+                "familyName"
+            ] = self.signing_legal_entity.last_name
             if self.signing_legal_entity.middle_initial:
-                resolution_json['signatory']['additionalName'] = self.signing_legal_entity.middle_initial
+                resolution_json["signatory"][
+                    "additionalName"
+                ] = self.signing_legal_entity.middle_initial
         return resolution_json
 
     @classmethod
@@ -103,8 +121,10 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     @classmethod
     def find_by_type(cls, legal_entity_id: int, resolution_type: str):
         """Return the resolutions matching the type."""
-        resolutions = db.session.query(Resolution). \
-            filter(Resolution.legal_entity_id == legal_entity_id). \
-            filter(Resolution.resolution_type == resolution_type). \
-            all()
+        resolutions = (
+            db.session.query(Resolution)
+            .filter(Resolution.legal_entity_id == legal_entity_id)
+            .filter(Resolution.resolution_type == resolution_type)
+            .all()
+        )
         return resolutions

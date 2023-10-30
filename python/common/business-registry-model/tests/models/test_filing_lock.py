@@ -29,7 +29,7 @@ def test_unsaved_filing_lock(session):
     """Assert that an unsaved filing, even with an invoice, is not locked."""
     # not locked
     filing = Filing()
-    filing.payment_token = 'payment_token'
+    filing.payment_token = "payment_token"
     assert not filing.locked
 
 
@@ -38,7 +38,7 @@ def test_saved_uninvoiced_filing_locked(session):
     # not locked
     filing = Filing()
     filing.save()
-    filing.payment_token = 'payment_token'
+    filing.payment_token = "payment_token"
     assert not filing.locked
 
 
@@ -46,7 +46,7 @@ def test_invoiced_filing_is_locked(session):
     """Assert a filing is locked once invoiced and saved."""
     # locked
     filing = Filing()
-    filing.payment_token = 'payment_token'
+    filing.payment_token = "payment_token"
     filing.save()
     assert filing.locked
 
@@ -55,17 +55,17 @@ def test_invoiced_filing_raises_exception_when_changed(session):
     """Assert a BusinessException is raised if a locked filing is altered."""
     # locked
     filing = Filing()
-    filing.payment_token = 'payment_token'
+    filing.payment_token = "payment_token"
     filing.save()
     with pytest.raises(BusinessException):
-        filing.payment_token = 'should raise exception'
+        filing.payment_token = "should raise exception"
 
 
 def test_changing_unsaved_filing_is_unlocked(session):
     """Assert an unlocked, but saved filing, can be changed."""
     # should succeed
     filing = Filing()
-    filing.payment_token = 'payment_token'
+    filing.payment_token = "payment_token"
     filing.filing_date = EPOCH_DATETIME
     filing.filing_json = ANNUAL_REPORT
     assert not filing.locked
@@ -84,10 +84,13 @@ def test_changing_uninvoiced_saved_filing_is_unlocked(session):
     assert not filing.locked
 
 
-@pytest.mark.parametrize('test_name, deletion_lock', [
-    ('with_deletion_lock', True),
-    ('without_deletion_lock', False),
-])
+@pytest.mark.parametrize(
+    "test_name, deletion_lock",
+    [
+        ("with_deletion_lock", True),
+        ("without_deletion_lock", False),
+    ],
+)
 def test_filing_deletion_lock(session, test_name, deletion_lock):
     """Assert that a filing can be deleted."""
     filing = Filing()

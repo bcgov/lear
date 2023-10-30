@@ -24,7 +24,7 @@ from tests.models import factory_address, factory_legal_entity
 
 def test_valid_role_address_save(session):
     """Assert that a valid role address can be saved."""
-    identifier = 'BC1234567'
+    identifier = "BC1234567"
     legal_entity = factory_legal_entity(identifier)
     mailing_address = factory_address(Address.MAILING)
     delivery_address = factory_address(Address.DELIVERY)
@@ -33,7 +33,7 @@ def test_valid_role_address_save(session):
         role_type=EntityRole.RoleTypes.partner,
         legal_entity_id=legal_entity.id,
         mailing_address_id=mailing_address.id,
-        delivery_address_id=delivery_address.id
+        delivery_address_id=delivery_address.id,
     )
     role_address_1.save()
 
@@ -41,7 +41,7 @@ def test_valid_role_address_save(session):
         role_type=EntityRole.RoleTypes.director,
         legal_entity_id=legal_entity.id,
         mailing_address_id=mailing_address.id,
-        delivery_address_id=delivery_address.id
+        delivery_address_id=delivery_address.id,
     )
     role_address_2.save()
 
@@ -51,6 +51,11 @@ def test_valid_role_address_save(session):
     legal_entity.role_addresses.all()
     role_addresses = legal_entity.role_addresses.all()
     assert len(role_addresses) == 2
-    assert any(role_address.role_type == EntityRole.RoleTypes.partner for role_address in role_addresses)
-    assert any(role_address.role_type == EntityRole.RoleTypes.director for role_address in role_addresses)
-
+    assert any(
+        role_address.role_type == EntityRole.RoleTypes.partner
+        for role_address in role_addresses
+    )
+    assert any(
+        role_address.role_type == EntityRole.RoleTypes.director
+        for role_address in role_addresses
+    )

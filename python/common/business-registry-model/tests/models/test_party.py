@@ -28,34 +28,31 @@ def test_party_json(session):
     """Assert the json format of party member."""
     person = LegalEntity(
         entity_type=LegalEntity.EntityTypes.PERSON.value,
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP'
+        first_name="Michael",
+        last_name="Crane",
+        middle_initial="Joe",
+        title="VP",
     )
     person.save()
     person_json = {
-        'officer': {
-            'id': person.id,
-            'partyType': LegalEntity.EntityTypes.PERSON.value,
-            'firstName': person.first_name,
-            'lastName': person.last_name,
-            'middleInitial': person.middle_initial,
-            'email': None
+        "officer": {
+            "id": person.id,
+            "partyType": LegalEntity.EntityTypes.PERSON.value,
+            "firstName": person.first_name,
+            "lastName": person.last_name,
+            "middleInitial": person.middle_initial,
+            "email": None,
         },
-        'title': person.title
+        "title": person.title,
     }
-    organization = ColinEntity(
-        organization_name='organization',
-        identifier='BC1234567'
-    )
+    organization = ColinEntity(organization_name="organization", identifier="BC1234567")
     organization.save()
     organization_json = {
-        'officer': {
-            'id': organization.id,
-            'organizationName': organization.organization_name,
-            'identifier': 'BC1234567',
-            'email': None
+        "officer": {
+            "id": organization.id,
+            "organizationName": organization.organization_name,
+            "identifier": "BC1234567",
+            "email": None,
         },
     }
 
@@ -67,15 +64,12 @@ def test_party_save(session):
     """Assert that the party member saves correctly."""
     member1 = LegalEntity(
         entity_type=LegalEntity.EntityTypes.PERSON.value,
-        first_name='Michael',
-        last_name='Crane',
-        middle_initial='Joe',
-        title='VP'
+        first_name="Michael",
+        last_name="Crane",
+        middle_initial="Joe",
+        title="VP",
     )
-    member2 = ColinEntity(
-        organization_name='organization',
-        identifier='BC1234567'
-    )
+    member2 = ColinEntity(organization_name="organization", identifier="BC1234567")
 
     member1.save()
     member2.save()
@@ -87,21 +81,20 @@ def test_invalid_org_party_type(session):
     """Assert the party model validates the party type correctly."""
     member1 = LegalEntity(
         entity_type=LegalEntity.EntityTypes.BCOMP.value,
-        first_name='invalid',
-        last_name='name',
-        middle_initial='test',
-        title='INV'
+        first_name="invalid",
+        last_name="name",
+        middle_initial="test",
+        title="INV",
     )
     member2 = LegalEntity(
-        entity_type=LegalEntity.EntityTypes.PERSON.value,
-        _legal_name='BC1234567 LTD'
+        entity_type=LegalEntity.EntityTypes.PERSON.value, _legal_name="BC1234567 LTD"
     )
     with pytest.raises(BusinessException) as party_type_err1:
         member1.save()
     session.rollback()
     with pytest.raises(BusinessException) as party_type_err2:
         member2.save()
-        print('herhe')
+        print("herhe")
 
     assert party_type_err1 and party_type_err2
     assert party_type_err1.value.status_code == HTTPStatus.BAD_REQUEST

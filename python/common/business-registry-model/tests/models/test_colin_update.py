@@ -24,7 +24,7 @@ def test_last_update(session):
 
     Start with a blank database.
     """
-    entry = ColinLastUpdate(last_update='2019-01-01', last_event_id=1234)
+    entry = ColinLastUpdate(last_update="2019-01-01", last_event_id=1234)
 
     session.add(entry)
     session.commit()

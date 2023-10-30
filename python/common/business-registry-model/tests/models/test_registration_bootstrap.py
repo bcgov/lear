@@ -24,7 +24,7 @@ from business_model import RegistrationBootstrap
 
 def test_only_one_registration_bootstrap(session):
     """Assert that the identifier cannot be used more than once."""
-    identifier = 'Tabc123'
+    identifier = "Tabc123"
 
     r = RegistrationBootstrap(identifier=identifier, account=12)
     r.save()
@@ -36,7 +36,7 @@ def test_only_one_registration_bootstrap(session):
 
 def test_create_bootstrap_registrations(session):
     """Assert the service creates registrations."""
-    identifier_base = 'Tabc123'
+    identifier_base = "Tabc123"
 
     for i in range(5):
         r = RegistrationBootstrap(identifier=identifier_base + str(i), account=12)

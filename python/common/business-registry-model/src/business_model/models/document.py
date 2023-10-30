@@ -38,24 +38,28 @@ class DocumentType(BaseEnum):
 class Document(Versioned, db.Model):
     """This is the model for a document."""
 
-    __tablename__ = 'documents'
+    __tablename__ = "documents"
     __mapper_args__ = {
-        'include_properties': [
-            'id',
-            'file_key',
-            'filing_id',
-            'legal_entity_id',
-            'type',
+        "include_properties": [
+            "id",
+            "file_key",
+            "filing_id",
+            "legal_entity_id",
+            "type",
         ]
     }
 
     id = Column(db.Integer, primary_key=True)
-    type = Column('type', String(30), nullable=False)
-    file_key = Column('file_key', String(100), nullable=False)
+    type = Column("type", String(30), nullable=False)
+    file_key = Column("file_key", String(100), nullable=False)
 
     # parent keys
-    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'), index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+    legal_entity_id = db.Column(
+        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
+    )
+    filing_id = db.Column(
+        "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
+    )
 
     def save(self):
         """Save the object to the database immediately."""
@@ -68,8 +72,13 @@ class Document(Versioned, db.Model):
         return cls.query.filter_by(id=document_id).one_or_none()
 
     @classmethod
-    def find_by_legal_entity_id_and_type(cls, legal_entity_id: int, document_type: String):
+    def find_by_legal_entity_id_and_type(
+        cls, legal_entity_id: int, document_type: String
+    ):
         """Return the document matching the business id and type."""
-        return cls.query.filter_by(
-            legal_entity_id=legal_entity_id, type=document_type
-        ).order_by(desc(Document.id)).limit(1).one_or_none()
+        return (
+            cls.query.filter_by(legal_entity_id=legal_entity_id, type=document_type)
+            .order_by(desc(Document.id))
+            .limit(1)
+            .one_or_none()
+        )
