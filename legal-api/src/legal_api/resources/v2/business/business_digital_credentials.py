@@ -16,21 +16,18 @@
 from datetime import datetime
 from http import HTTPStatus
 
-from flask import Blueprint, current_app, jsonify, request, _request_ctx_stack
+from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.core import Filing as FilingCore
 from legal_api.extensions import socketio
 from legal_api.models import (
     Business,
     CorpType,
-    Filing,
     DCConnection,
     DCDefinition,
-    DCIssuedCredential,
     DCIssuedBusinessUserCredential,
-    PartyRole,
-    User
+    DCIssuedCredential,
+    User,
 )
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
@@ -167,21 +164,21 @@ def send_credential(identifier, credential_type):
     business = Business.find_by_identifier(identifier)
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-    
+
     user = User.find_by_jwt_token(_request_ctx_stack.top.current_user)
     if not user:
         return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
 
     connection = DCConnection.find_active_by(business_id=business.id)
     definition = DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
-                                      digital_credentials.business_schema_id, 
+                                      digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
 
     issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id,
                                                     dc_definition_id=definition.id)
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
-    
+
     credential_data = _get_data_for_credential(definition.credential_type, business, user)
     credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
@@ -293,7 +290,8 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
     if credential_type == DCDefinition.CredentialType.business:
 
         # Find the credential id from dc_issued_business_user_credentials and if there isn't one create one
-        issued_business_user_credential = DCIssuedBusinessUserCredential.find_by(business_id=business.id, user_id=user.id)
+        issued_business_user_credential = DCIssuedBusinessUserCredential.find_by(
+            business_id=business.id, user_id=user.id)
         if not issued_business_user_credential:
             issued_business_user_credential = DCIssuedBusinessUserCredential(business_id=business.id, user_id=user.id)
             issued_business_user_credential.save()
@@ -308,7 +306,7 @@ def _get_data_for_credential(credential_type: DCDefinition.CredentialType, busin
 
         registered_on_dateint = ''
         if business.founding_date:
-            registered_on_dateint = business.founding_date.strftime(f'%Y%m%d')
+            registered_on_dateint = business.founding_date.strftime('%Y%m%d')
 
         company_status = Business.State(business.state).name
 
