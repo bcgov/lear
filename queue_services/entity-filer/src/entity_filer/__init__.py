@@ -38,6 +38,7 @@ This module is the service worker for applying filings to the Business Database 
 import sentry_sdk
 from flask import Flask
 from business_model import db
+
 # from sentry_sdk.integrations.flask import FlaskIntegration
 
 from .config import Config

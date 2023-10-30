@@ -56,21 +56,21 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
+    PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
-    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    REPORT_TEMPLATE_PATH = os.getenv("REPORT_PATH", "report-templates")
 
-    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
+    FONTS_PATH = os.getenv("FONTS_PATH", "fonts")
 
     # POSTGRESQL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
+    DB_USER = os.getenv("DATABASE_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_NAME", "")
+    DB_HOST = os.getenv("DATABASE_HOST", "")
+    DB_PORT = os.getenv("DATABASE_PORT", "5432")
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
     else:
@@ -78,32 +78,32 @@ class Config:  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    COLIN_API = os.getenv('COLIN_API', '')
+    COLIN_API = os.getenv("COLIN_API", "")
 
     # service accounts
-    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
-    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
-    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
-    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "https://")
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
 
     # BCRegistry Services
-    ACCOUNT_SVC_ENTITY_URL = os.getenv('ACCOUNT_SVC_ENTITY_URL')
-    ACCOUNT_SVC_AFFILIATE_URL = os.getenv('ACCOUNT_SVC_AFFILIATE_URL')
-    LEGAL_API_URL = os.getenv('LEGAL_API_URL')
-    NAMEX_API = os.getenv('NAMEX_API')
+    ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
+    ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
+    LEGAL_API_URL = os.getenv("LEGAL_API_URL")
+    NAMEX_API = os.getenv("NAMEX_API")
 
     # legislative timezone for future effective dating
-    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
 
     # Minio configuration values
-    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
-    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
-    MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
-    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
+    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
+    MINIO_ACCESS_SECRET = os.getenv("MINIO_ACCESS_SECRET")
+    MINIO_BUCKET_BUSINESSES = os.getenv("MINIO_BUCKET_BUSINESSES", "businesses")
     MINIO_SECURE = True
 
-    NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
+    NAICS_API_URL = os.getenv("NAICS_API_URL", "https://NAICS_API_URL/api/v2/naics")
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
@@ -122,21 +122,21 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
-    DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
-    DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
+    DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
+    DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
+    DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     # Minio variables
-    MINIO_ENDPOINT = 'localhost:9000'
-    MINIO_ACCESS_KEY = 'minio'
-    MINIO_ACCESS_SECRET = 'minio123'
-    MINIO_BUCKET_BUSINESSES = 'businesses'
+    MINIO_ENDPOINT = "localhost:9000"
+    MINIO_ACCESS_KEY = "minio"
+    MINIO_ACCESS_SECRET = "minio123"
+    MINIO_BUCKET_BUSINESSES = "businesses"
     MINIO_SECURE = False
 
-    NAICS_API_URL = 'https://NAICS_API_URL/api/v2/naics'
+    NAICS_API_URL = "https://NAICS_API_URL/api/v2/naics"
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods

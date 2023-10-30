@@ -47,9 +47,9 @@ def update_signatory(business: LegalEntity, signatory: Dict) -> Optional[Dict]:
 
     # Update the resolution with the largest id
     party = Party(
-        first_name=signatory.get('givenName', '').upper(),
-        last_name=signatory.get('familyName', '').upper(),
-        middle_initial=(signatory.get('additionalName', '') or '').upper()
+        first_name=signatory.get("givenName", "").upper(),
+        last_name=signatory.get("familyName", "").upper(),
+        middle_initial=(signatory.get("additionalName", "") or "").upper(),
     )
     largest_resolution.party = party
     return largest_resolution

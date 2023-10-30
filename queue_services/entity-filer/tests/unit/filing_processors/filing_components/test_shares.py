@@ -19,24 +19,33 @@ from entity_filer.filing_processors.filing_components import shares
 from tests import strip_keys_from_dict
 
 
-@pytest.mark.parametrize('test_name,resolution_dates,expected_error', [
-    ('valid resolution_dates', [], None),
-    ('valid resolution_dates', ['2020-05-23'], None),
-    ('valid resolution_dates', ['2020-05-23', '2020-06-01'], None),
-    ('invalid resolution_dates', ['2020-05-23', 'error'],
-     [{'error_code': 'FILER_INVALID_RESOLUTION_DATE', 'error_message': "Filer: invalid resolution date:'error'"}])
-])
+@pytest.mark.parametrize(
+    "test_name,resolution_dates,expected_error",
+    [
+        ("valid resolution_dates", [], None),
+        ("valid resolution_dates", ["2020-05-23"], None),
+        ("valid resolution_dates", ["2020-05-23", "2020-06-01"], None),
+        (
+            "invalid resolution_dates",
+            ["2020-05-23", "error"],
+            [
+                {
+                    "error_code": "FILER_INVALID_RESOLUTION_DATE",
+                    "error_message": "Filer: invalid resolution date:'error'",
+                }
+            ],
+        ),
+    ],
+)
 def test_manage_share_structure__resolution_dates(
-        app, session,
-        test_name, resolution_dates, expected_error):
+    app, session, test_name, resolution_dates, expected_error
+):
     """Assert that the corp share resolution date gets set."""
-    new_data = {'shareStructure': {
-        'resolutionDates': resolution_dates
-    }}
+    new_data = {"shareStructure": {"resolutionDates": resolution_dates}}
 
     business = LegalEntity()
     business.save()
-    err = shares.update_share_structure(business, new_data['shareStructure'])
+    err = shares.update_share_structure(business, new_data["shareStructure"])
     business.save()
 
     check_business = LegalEntity.find_by_internal_id(business.id)
@@ -46,53 +55,59 @@ def test_manage_share_structure__resolution_dates(
         assert err == expected_error
     else:
         assert len(check_resolution) == len(resolution_dates)
-        assert set(resolution_dates) == \
-            set([x.resolution_date.isoformat() for x in check_resolution])
+        assert set(resolution_dates) == set(
+            [x.resolution_date.isoformat() for x in check_resolution]
+        )
 
 
 SINGLE_SHARE_CLASS = {
-    'shareStructure': {
-        'shareClasses': [{
-            'name': 'class1',
-            'priority': 1,
-            'maxNumberOfShares': 600,
-            'parValue': 1,
-            'currency': 'CAD',
-            'hasMaximumShares': True,
-            'hasParValue': True,
-            'hasRightsOrRestrictions': False,
-            'series': [{
-                    'name': 'series1',
-                    'priority': 1,
-                    'maxNumberOfShares': 600,
-                    'hasMaximumShares': True,
-                    'hasRightsOrRestrictions': False
-            }]
-        }]
+    "shareStructure": {
+        "shareClasses": [
+            {
+                "name": "class1",
+                "priority": 1,
+                "maxNumberOfShares": 600,
+                "parValue": 1,
+                "currency": "CAD",
+                "hasMaximumShares": True,
+                "hasParValue": True,
+                "hasRightsOrRestrictions": False,
+                "series": [
+                    {
+                        "name": "series1",
+                        "priority": 1,
+                        "maxNumberOfShares": 600,
+                        "hasMaximumShares": True,
+                        "hasRightsOrRestrictions": False,
+                    }
+                ],
+            }
+        ]
     },
 }
 
 
-@pytest.mark.parametrize('test_name,share_structure,expected_error', [
-    ('valid single_share_class', SINGLE_SHARE_CLASS, None)
-])
+@pytest.mark.parametrize(
+    "test_name,share_structure,expected_error",
+    [("valid single_share_class", SINGLE_SHARE_CLASS, None)],
+)
 def test_manage_share_structure__share_classes(
-        app, session,
-        test_name, share_structure, expected_error):
+    app, session, test_name, share_structure, expected_error
+):
     """Assert that the corp share classes gets set."""
     business = LegalEntity()
     business.save()
-    err = shares.update_share_structure(business, share_structure['shareStructure'])
+    err = shares.update_share_structure(business, share_structure["shareStructure"])
     business.save()
 
     check_business = LegalEntity.find_by_internal_id(business.id)
     check_share_classes = check_business.share_classes.all()
 
-    check_share_structure = {'shareStructure': {'shareClasses': []}}
+    check_share_structure = {"shareStructure": {"shareClasses": []}}
     for s in check_share_classes:
-        check_share_structure['shareStructure']['shareClasses'].append(s.json)
+        check_share_structure["shareStructure"]["shareClasses"].append(s.json)
 
-    stripped_dict = strip_keys_from_dict(check_share_structure, ['id'])
+    stripped_dict = strip_keys_from_dict(check_share_structure, ["id"])
     assert stripped_dict == share_structure
     assert not err
 
@@ -104,9 +119,9 @@ def test_manage_share_structure__delete_shares(app, session):
     # setup
     business = LegalEntity()
     for i in range(5):
-        share_class = ShareClass(name=f'share class {i}')
+        share_class = ShareClass(name=f"share class {i}")
         for j in range(5):
-            share_series = ShareSeries(name=f'share series {j}')
+            share_series = ShareSeries(name=f"share series {j}")
             share_class.series.append(share_series)
         business.share_classes.append(share_class)
     business.save()

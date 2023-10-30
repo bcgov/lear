@@ -20,12 +20,12 @@ from tests.unit import create_business
 def test_change_of_name_process(app, session):
     """Assert that the legal name is changed."""
     # setup
-    new_name = 'new legal_name'
-    identifier = 'CP1234567'
-    con = {'changeOfName': {'legalName': new_name}}
+    new_name = "new legal_name"
+    identifier = "CP1234567"
+    con = {"changeOfName": {"legalName": new_name}}
 
     business = create_business(identifier)
-    business.legal_name = 'original name'
+    business.legal_name = "original name"
 
     filing_meta = FilingMeta()
 
@@ -39,20 +39,20 @@ def test_change_of_name_process(app, session):
 def test_change_of_name_with_nr_process(app, session):
     """Assert that the legal name is changed."""
     # setup
-    new_name = 'new legal_name'
-    identifier = 'CP1234567'
+    new_name = "new legal_name"
+    identifier = "CP1234567"
     con = {
-        'changeOfName': {
-            'nameRequest': {
-                'nrNumber': 'NR 8798956',
-                'legalName': new_name,
-                'legalType': 'BC'
+        "changeOfName": {
+            "nameRequest": {
+                "nrNumber": "NR 8798956",
+                "legalName": new_name,
+                "legalType": "BC",
             }
         }
     }
 
     business = create_business(identifier)
-    business.legal_name = 'original name'
+    business.legal_name = "original name"
 
     filing_meta = FilingMeta()
 

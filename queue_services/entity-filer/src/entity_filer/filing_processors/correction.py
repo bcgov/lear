@@ -17,53 +17,65 @@ from typing import Dict
 
 import pytz
 import sentry_sdk
+
 # from legal_api.core.filing_helper import is_special_resolution_correction
 from business_model import LegalEntity, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import name_request
-from entity_filer.filing_processors.filing_components.correction import correct_business_data
+from entity_filer.filing_processors.filing_components.correction import (
+    correct_business_data,
+)
 
 
-def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: LegalEntity):
+def process(
+    correction_filing: Filing,
+    filing: Dict,
+    filing_meta: FilingMeta,
+    business: LegalEntity,
+):
     """Render the correction filing onto the business model objects."""
-    local_timezone = pytz.timezone('US/Pacific')
+    local_timezone = pytz.timezone("US/Pacific")
 
     # link to original filing
-    original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
+    original_filing = Filing.find_by_id(filing["correction"]["correctedFilingId"])
     # FUTURE: parent_filing should no longer be used for correction filings and will be removed
     original_filing.parent_filing = correction_filing
 
     # add comment to the original filing
     original_filing.comments.append(
         Comment(
-            comment=f'This filing was corrected on '
-                    f'{correction_filing.filing_date.astimezone(local_timezone).date().isoformat()}.',
-            staff_id=correction_filing.submitter_id
+            comment=f"This filing was corrected on "
+            f"{correction_filing.filing_date.astimezone(local_timezone).date().isoformat()}.",
+            staff_id=correction_filing.submitter_id,
         )
     )
 
     # add comment to the correction filing
     correction_filing.comments.append(
         Comment(
-            comment=filing['correction']['comment'],
-            staff_id=correction_filing.submitter_id
+            comment=filing["correction"]["comment"],
+            staff_id=correction_filing.submitter_id,
         )
     )
 
-    corrected_filing_type = filing['correction']['correctedFilingType']
+    corrected_filing_type = filing["correction"]["correctedFilingType"]
     # TODO i think we can remove this -> is_special_resolution_correction
     # is_sr_correction = is_special_resolution_correction(filing, business, original_filing)
     # if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
     #         is_sr_correction) and \
-    if business.entity_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC']  \
-            and corrected_filing_type != 'conversion':
+    if (
+        business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC"]
+        and corrected_filing_type != "conversion"
+    ):
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
         # - include flag so that listener in Filing model does not change state automatically to COMPLETE
-        correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
-        setattr(correction_filing, 'skip_status_listener', True)
+        correction_filing._status = (
+            Filing.Status.PENDING_CORRECTION.value
+        )  # pylint: disable=protected-access
+        setattr(correction_filing, "skip_status_listener", True)
 
     original_filing.save_to_session()
     return correction_filing
@@ -74,4 +86,4 @@ def post_process(business: LegalEntity, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    name_request.consume_nr(business, filing, 'correction')
+    name_request.consume_nr(business, filing, "correction")

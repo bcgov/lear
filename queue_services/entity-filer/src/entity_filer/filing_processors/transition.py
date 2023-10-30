@@ -14,7 +14,7 @@
 """File processing rules and actions for the transition of a business."""
 from typing import Dict
 
-#from entity_filer.exceptions import DefaultException
+# from entity_filer.exceptions import DefaultException
 from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta
@@ -23,28 +23,36 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
-def process(business: LegalEntity, filing_rec: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(
+    business: LegalEntity, filing_rec: Filing, filing: Dict, filing_meta: FilingMeta
+):
     # pylint: disable=too-many-locals; 1 extra
     """Process the incoming transition filing."""
     # Extract the filing information for transition application
-    if not (transition_filing := filing.get('transition')):  # pylint: disable=superfluous-parens;
-        raise DefaultException(f'legal_filing:transition data missing from {filing_rec.id}')
+    if not (
+        transition_filing := filing.get("transition")
+    ):  # pylint: disable=superfluous-parens;
+        raise DefaultException(
+            f"legal_filing:transition data missing from {filing_rec.id}"
+        )
     if not business:
-        raise DefaultException(f'Business does not exist: legal_filing:transitionApplication {filing_rec.id}')
+        raise DefaultException(
+            f"Business does not exist: legal_filing:transitionApplication {filing_rec.id}"
+        )
 
     # Initial insert of the business record
-    business.restriction_ind = transition_filing.get('hasProvisions')
+    business.restriction_ind = transition_filing.get("hasProvisions")
 
-    if offices := transition_filing['offices']:
+    if offices := transition_filing["offices"]:
         update_offices(business, offices)
 
-    if parties := transition_filing.get('parties'):
-        merge_all_parties(business, filing_rec, {'parties': parties})
+    if parties := transition_filing.get("parties"):
+        merge_all_parties(business, filing_rec, {"parties": parties})
 
-    if share_structure := transition_filing['shareStructure']:
+    if share_structure := transition_filing["shareStructure"]:
         shares.update_share_structure(business, share_structure)
 
-    if name_translations := transition_filing.get('nameTranslations'):
+    if name_translations := transition_filing.get("nameTranslations"):
         aliases.update_aliases(business, name_translations)
 
     return filing_rec

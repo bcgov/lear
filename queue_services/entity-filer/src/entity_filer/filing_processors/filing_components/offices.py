@@ -39,8 +39,10 @@ def update_offices(business: LegalEntity, offices_structure: Dict) -> Optional[L
             delete_existing_offices(business)
         except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_DELETE_OFFICES',
-                 'error_message': f"Filer: unable to delete offices for :'{business.identifier}'"}
+                {
+                    "error_code": "FILER_UNABLE_TO_DELETE_OFFICES",
+                    "error_message": f"Filer: unable to delete offices for :'{business.identifier}'",
+                }
             )
             return err
 
@@ -50,8 +52,10 @@ def update_offices(business: LegalEntity, offices_structure: Dict) -> Optional[L
                 business.offices.append(office)
         except KeyError:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_SAVE_OFFICES',
-                 'error_message': f"Filer: unable to save new offices for :'{business.identifier}'"}
+                {
+                    "error_code": "FILER_UNABLE_TO_SAVE_OFFICES",
+                    "error_message": f"Filer: unable to save new offices for :'{business.identifier}'",
+                }
             )
     return err
 

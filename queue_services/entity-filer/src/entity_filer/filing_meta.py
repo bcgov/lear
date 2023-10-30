@@ -52,9 +52,10 @@ def to_camel(string: str) -> Optional[str]:
     if not isinstance(string, str):
         return None
 
-    return ''.join(word.lower() if idx == 0 else
-                   word.capitalize()
-                   for idx, word in enumerate(string.split('_')))
+    return "".join(
+        word.lower() if idx == 0 else word.capitalize()
+        for idx, word in enumerate(string.split("_"))
+    )
 
 
 def to_snake(string: str) -> Optional[str]:
@@ -65,14 +66,14 @@ def to_snake(string: str) -> Optional[str]:
     if not isinstance(string, str):
         return None
 
-    return re.sub(r'([A-Z])', r'_\1', string).lower()
+    return re.sub(r"([A-Z])", r"_\1", string).lower()
 
 
 def json_serial(obj):
     """JSON serializer for datetime and dates."""
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
-    raise TypeError(f'Type {type(obj)} not serializable')
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 @dataclass

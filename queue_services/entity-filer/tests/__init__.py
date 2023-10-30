@@ -57,6 +57,7 @@ def add_years(d, years):
 
 def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
     """Return a deep copy of the dict with the keys stripped out."""
+
     def del_key_in_dict(orig_dict, keys):
         """Remove keys from dictionaires."""
         modified_dict = {}
@@ -68,7 +69,9 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
                     if rv := scan_list(value, keys):
                         modified_dict[key] = rv
                 else:
-                    modified_dict[key] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
+                    modified_dict[
+                        key
+                    ] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
         return modified_dict
 
     def scan_list(orig_list, keys):
@@ -91,6 +94,7 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
 
     key_set = set(keys)
     return del_key_in_dict(orig_dict, key_set)
+
 
 def has_expected_date_str_format(date_str: str, format: str) -> bool:
     "Determine if date string confirms to expected format"

@@ -16,7 +16,11 @@ import copy
 import random
 
 from business_model import LegalEntity, Filing, EntityRole
-from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE, FILING_HEADER, TRANSITION
+from registry_schemas.example_data import (
+    TRANSITION_FILING_TEMPLATE,
+    FILING_HEADER,
+    TRANSITION,
+)
 
 from entity_filer.resources.worker import process_filing
 from entity_filer.resources.worker import FilingMessage
@@ -26,18 +30,18 @@ from tests.unit import create_business, create_filing
 def test_transition_filing(app, session):
     """Assert we can create a business based on transition filing."""
     filing_data = copy.deepcopy(FILING_HEADER)
-    filing_data['filing']['transition'] = copy.deepcopy(TRANSITION)
+    filing_data["filing"]["transition"] = copy.deepcopy(TRANSITION)
 
-    filing_data['filing']['transition']['parties'][0]['officer'].pop('id')
-    filing_data['filing']['transition']['parties'][1]['officer'].pop('id')
+    filing_data["filing"]["transition"]["parties"][0]["officer"].pop("id")
+    filing_data["filing"]["transition"]["parties"][1]["officer"].pop("id")
 
-    identifier = 'BC2020202'
+    identifier = "BC2020202"
 
-    filing_data['filing']['business']['identifier'] = identifier
+    filing_data["filing"]["business"]["identifier"] = identifier
     business = create_business(identifier)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = (create_filing(payment_id, filing_data, business.id))
+    filing = create_filing(payment_id, filing_data, business.id)
 
     filing_msg = FilingMessage(
         filing_identifier=filing.id,
@@ -55,11 +59,17 @@ def test_transition_filing(app, session):
     assert filing
     assert filing.status == Filing.Status.COMPLETED.value
     assert business.restriction_ind is False
-    assert len(business.share_classes.all()) == len(filing_json['filing']['transition']['shareStructure']
-                                                    ['shareClasses'])
-    assert len(business.offices.all()) == len(filing_json['filing']['transition']['offices'])
-    assert len(business.aliases.all()) == len(filing_json['filing']['transition']['nameTranslations'])
-    assert len(business.resolutions.all()) == len(filing_json['filing']['transition']['shareStructure']
-                                                  ['resolutionDates'])
-    director_entity_roles = EntityRole.get_entity_roles(business.id, role='director')
+    assert len(business.share_classes.all()) == len(
+        filing_json["filing"]["transition"]["shareStructure"]["shareClasses"]
+    )
+    assert len(business.offices.all()) == len(
+        filing_json["filing"]["transition"]["offices"]
+    )
+    assert len(business.aliases.all()) == len(
+        filing_json["filing"]["transition"]["nameTranslations"]
+    )
+    assert len(business.resolutions.all()) == len(
+        filing_json["filing"]["transition"]["shareStructure"]["resolutionDates"]
+    )
+    director_entity_roles = EntityRole.get_entity_roles(business.id, role="director")
     assert len(director_entity_roles) == 1

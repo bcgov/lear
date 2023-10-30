@@ -16,9 +16,9 @@ from .codes import ErrorCode
 
 
 ERROR_MESSAGES: dict = {
-   ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',
-   ErrorCode.GENERAL_UNRECOVERABLE_ERROR: 'Unrecoverable error for Filing: {filing_id}',
-   ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
-   ErrorCode.NOT_AUTHORIZED: 'Not authorized to access business: {identifier}',
-   ErrorCode.RESOURCE_NOT_AVAILABLE: 'Resource unavailable for Filing: {filing_id}'
+    ErrorCode.FILING_NOT_FOUND: "Filing: {filing_id} not found for: {identifier}",
+    ErrorCode.GENERAL_UNRECOVERABLE_ERROR: "Unrecoverable error for Filing: {filing_id}",
+    ErrorCode.MISSING_BUSINESS: "Business not found for identifier: {identifier}",
+    ErrorCode.NOT_AUTHORIZED: "Not authorized to access business: {identifier}",
+    ErrorCode.RESOURCE_NOT_AVAILABLE: "Resource unavailable for Filing: {filing_id}",
 }

@@ -15,4 +15,6 @@
 from flask_babel import Babel
 
 
-babel = Babel()  # pylint: disable=invalid-name; by convention our external services are lower case
+babel = (
+    Babel()
+)  # pylint: disable=invalid-name; by convention our external services are lower case

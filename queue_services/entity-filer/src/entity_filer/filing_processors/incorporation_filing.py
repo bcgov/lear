@@ -18,16 +18,24 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-#from entity_filer.exceptions import DefaultException
+
+# from entity_filer.exceptions import DefaultException
 from business_model import LegalEntity, Document, Filing, RegistrationBootstrap
 from business_model.models.document import DocumentType
+
 # from legal_api.services.bootstrap import AccountService
 # from legal_api.services.minio import MinioService
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
+from entity_filer.filing_processors.filing_components import (
+    aliases,
+    filings,
+    legal_entity_info,
+    shares,
+)
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+
 # from entity_filer.utils import replace_file_with_certified_copy
 
 
@@ -71,7 +79,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
 
 
 def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Filing):
-    cooperative_obj = incorp_filing.get('cooperative', None)
+    cooperative_obj = incorp_filing.get("cooperative", None)
     # TODO remove all this
     # if cooperative_obj:
     #     # create certified copy for rules document
@@ -102,69 +110,88 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
     return business
 
 
-def process(business: LegalEntity,  # pylint: disable=too-many-branches,too-many-locals
-            filing: Dict,
-            filing_rec: Filing,
-            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
+def process(
+    business: LegalEntity,  # pylint: disable=too-many-branches,too-many-locals
+    filing: Dict,
+    filing_rec: Filing,
+    filing_meta: FilingMeta,
+):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
-    incorp_filing = filing.get('filing', {}).get('incorporationApplication')
+    incorp_filing = filing.get("filing", {}).get("incorporationApplication")
     filing_meta.incorporation_application = {}
 
     if not incorp_filing:
-        raise DefaultException(f'IA legal_filing:incorporationApplication missing from {filing_rec.id}')
+        raise DefaultException(
+            f"IA legal_filing:incorporationApplication missing from {filing_rec.id}"
+        )
     if business:
-        raise DefaultException(f'Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}')
+        raise DefaultException(
+            f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}"
+        )
 
-    business_info_obj = incorp_filing.get('nameRequest')
+    business_info_obj = incorp_filing.get("nameRequest")
 
     if filing_rec.colin_event_ids:
-        corp_num = filing['filing']['business']['identifier']
+        corp_num = filing["filing"]["business"]["identifier"]
     else:
         # Reserve the Corp Number for this entity
-        corp_num = legal_entity_info.get_next_corp_num(business_info_obj['legalType'])
+        corp_num = legal_entity_info.get_next_corp_num(business_info_obj["legalType"])
         if not corp_num:
             raise DefaultException(
-                f'incorporationApplication {filing_rec.id} unable to get a business registration number.')
+                f"incorporationApplication {filing_rec.id} unable to get a business registration number."
+            )
 
     # Initial insert of the business record
     business = LegalEntity()
-    business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
+    business = legal_entity_info.update_legal_entity_info(
+        corp_num, business, business_info_obj, filing_rec
+    )
     business = _update_cooperative(incorp_filing, business, filing_rec)
     business.state = LegalEntity.State.ACTIVE
 
-    if nr_number := business_info_obj.get('nrNumber', None):
-        filing_meta.incorporation_application = {**filing_meta.incorporation_application,
-                                                 **{'nrNumber': nr_number,
-                                                    'legalName': business_info_obj.get('legalName', None)}}
+    if nr_number := business_info_obj.get("nrNumber", None):
+        filing_meta.incorporation_application = {
+            **filing_meta.incorporation_application,
+            **{
+                "nrNumber": nr_number,
+                "legalName": business_info_obj.get("legalName", None),
+            },
+        }
 
     if not business:
-        raise DefaultException(f'IA incorporationApplication {filing_rec.id}, Unable to create business.')
+        raise DefaultException(
+            f"IA incorporationApplication {filing_rec.id}, Unable to create business."
+        )
 
-    if offices := incorp_filing['offices']:
+    if offices := incorp_filing["offices"]:
         update_offices(business, offices)
 
-    if parties := incorp_filing.get('parties'):
-        merge_all_parties(business, filing_rec, {'parties': parties})
+    if parties := incorp_filing.get("parties"):
+        merge_all_parties(business, filing_rec, {"parties": parties})
 
-    if share_structure := incorp_filing.get('shareStructure'):
+    if share_structure := incorp_filing.get("shareStructure"):
         shares.update_share_structure(business, share_structure)
 
-    if name_translations := incorp_filing.get('nameTranslations'):
+    if name_translations := incorp_filing.get("nameTranslations"):
         aliases.update_aliases(business, name_translations)
 
-    if court_order := incorp_filing.get('courtOrder'):
+    if court_order := incorp_filing.get("courtOrder"):
         filings.update_filing_court_order(filing_rec, court_order)
 
     if not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
         ia_json = copy.deepcopy(filing_rec.filing_json)
-        if not ia_json['filing'].get('business'):
-            ia_json['filing']['business'] = {}
-        ia_json['filing']['business']['identifier'] = business.identifier
-        ia_json['filing']['business']['legalType'] = business.entity_type
-        ia_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
-        filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
+        if not ia_json["filing"].get("business"):
+            ia_json["filing"]["business"] = {}
+        ia_json["filing"]["business"]["identifier"] = business.identifier
+        ia_json["filing"]["business"]["legalType"] = business.entity_type
+        ia_json["filing"]["business"][
+            "foundingDate"
+        ] = business.founding_date.isoformat()
+        filing_rec._filing_json = (
+            ia_json  # pylint: disable=protected-access; bypass to update filing data
+        )
     return business, filing_rec, filing_meta
 
 

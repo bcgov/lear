@@ -15,33 +15,41 @@
 import copy
 import pytest
 
-from registry_schemas.example_data import SPECIAL_RESOLUTION as special_resolution_json, FILING_HEADER
+from registry_schemas.example_data import (
+    SPECIAL_RESOLUTION as special_resolution_json,
+    FILING_HEADER,
+)
 
 from entity_filer.filing_processors import special_resolution
 from tests.unit import create_business, create_filing
-from business_model import  Resolution
+from business_model import Resolution
 
 
-@pytest.mark.parametrize('legal_type,identifier,special_resolution_type', [
-    ('CP', 'CP1234567', 'specialResolution'),
-])
-def test_special_resolution(app, session, legal_type, identifier, special_resolution_type):
+@pytest.mark.parametrize(
+    "legal_type,identifier,special_resolution_type",
+    [
+        ("CP", "CP1234567", "specialResolution"),
+    ],
+)
+def test_special_resolution(
+    app, session, legal_type, identifier, special_resolution_type
+):
     """Assert that the resolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['header']['name'] = special_resolution_type
+    filing_json["filing"]["header"]["name"] = special_resolution_type
 
-    filing_json['filing']['business']['identifier'] = identifier
-    filing_json['filing']['business']['legalType'] = legal_type
+    filing_json["filing"]["business"]["identifier"] = identifier
+    filing_json["filing"]["business"]["legalType"] = legal_type
 
-    filing_json['filing']['specialResolution'] = special_resolution_json
+    filing_json["filing"]["specialResolution"] = special_resolution_json
 
     business = create_business(identifier, legal_type=legal_type)
 
-    filing = create_filing('123', filing_json)
+    filing = create_filing("123", filing_json)
 
     # test
-    special_resolution.process(business, filing_json['filing'], filing)
+    special_resolution.process(business, filing_json["filing"], filing)
 
     business.save()
 
