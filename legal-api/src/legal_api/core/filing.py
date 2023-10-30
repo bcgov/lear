@@ -507,6 +507,7 @@ class Filing:
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                 ]
                 if filing.filing_type not in no_legal_filings:
                     documents['documents']['legalFilings'] = \
