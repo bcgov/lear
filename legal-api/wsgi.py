@@ -19,8 +19,8 @@ from legal_api import create_app
 from legal_api.extensions import socketio
 
 # Openshift s2i expects a lower case name of application
-application = create_app() # pylint: disable=invalid-name
+application = create_app()  # pylint: disable=invalid-name
 
 if __name__ == "__main__":
     server_port = os.environ.get('PORT', '8080')
-    socketio.run(application, port=server_port, host='0.0.0.0')
+    socketio.run(application, debug=False, port=server_port, host='0.0.0.0')

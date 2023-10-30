@@ -22,30 +22,12 @@ from typing import Optional
 import requests
 
 from legal_api.helpers.digital_credentials import DCRevocationReason
+from legal_api.decorators import requires_traction_auth
 from legal_api.models import DCDefinition
 
 
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
-
-    business_schema = {
-        'attributes': [
-            'business_name',
-            'company_status',
-            'credential_id',
-            'identifier',
-            'registered_on_dateint',
-            'role',
-            'cra_business_number',
-            'family_name',
-            'business_type',
-            'given_names',
-        ],
-        # do not change schema name. this is the name registered in aca-py agent
-        'schema_name': 'digital_business_card',
-        # if attributes change update schema_version to re-register
-        'schema_version': '1.0.0'
-    }
 
     def __init__(self):
         """Initialize this object."""
@@ -66,7 +48,6 @@ class DigitalCredentialsService:
         self.app = app
 
         self.api_url = app.config.get('TRACTION_API_URL')
-        self.api_token = app.config.get('TRACTION_API_TOKEN')
         self.public_schema_did = app.config.get('TRACTION_PUBLIC_SCHEMA_DID')
         self.public_issuer_did = app.config.get('TRACTION_PUBLIC_ISSUER_DID')
 
@@ -89,17 +70,6 @@ class DigitalCredentialsService:
                 self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
-            # Check for the current Business definition.
-            definition = DCDefinition.find_by(
-                credential_type=DCDefinition.CredentialType.business,
-                schema_id=self.business_schema_id,
-                credential_definition_id=self.business_cred_def_id
-            )
-
-            if definition and not definition.is_deleted:
-                # Deactivate any existing Business definition before creating new one
-                DCDefinition.deactivate(DCDefinition.CredentialType.business)
-
             ###
             # The following just a sanity check to make sure the schema and
             # credential definition are stored in Traction tenant.
@@ -119,6 +89,16 @@ class DigitalCredentialsService:
                 raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
                                  ' must be avaible in Traction tenant storage')
 
+            # Check for the current Business definition.
+            definition = DCDefinition.find_by(
+                credential_type=DCDefinition.CredentialType.business,
+                schema_id=self.business_schema_id,
+                credential_definition_id=self.business_cred_def_id
+            )
+
+            if definition and not definition.is_deleted:
+                return None
+
             # Create a new definition and add the new schema_id
             definition = DCDefinition(
                 credential_type=DCDefinition.CredentialType.business,
@@ -134,6 +114,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def _fetch_schema(self, schema_id: str) -> Optional[str]:
         """Find a schema in Traction storage."""
         try:
@@ -148,6 +129,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             raise err
 
+    @requires_traction_auth
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
         """Find a published credential definition."""
         try:
@@ -163,6 +145,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             raise err
 
+    @requires_traction_auth
     def create_invitation(self) -> Optional[dict]:
         """Create a new connection invitation."""
         try:
@@ -178,6 +161,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def issue_credential(self,
                          connection_id: str,
                          definition: DCDefinition,
@@ -213,6 +197,7 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str, reason: DCRevocationReason) -> Optional[dict]:
         """Revoke a credential."""
         try:
@@ -236,5 +221,5 @@ class DigitalCredentialsService:
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.api_token}'
+            'Authorization': f'Bearer {self.app.api_token}'
         }
