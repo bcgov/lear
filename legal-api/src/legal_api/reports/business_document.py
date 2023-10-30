@@ -122,7 +122,7 @@ class BusinessDocument:
             # get document data
             business_json['reportType'] = self._document_key
             business_json['business'] = self._legal_entity.json()
-            business_json['business']['businessName'] = business_json['business']['alternateNames'][0]['operatingName']
+            business_json['business']['businessName'] = self._legal_entity.business_name
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
