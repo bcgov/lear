@@ -21,7 +21,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from legal_api.services.authz import BASIC_USER
-from legal_api.models import DCDefinition
+from legal_api.models import DCDefinition, User
 from legal_api.services.digital_credentials import DigitalCredentialsService
 
 from tests.unit.models import factory_business
@@ -89,17 +89,20 @@ def test_send_credential(session, client, jwt):  # pylint:disable=unused-argumen
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
     business = factory_business(identifier)
-
-    create_dc_definition()
+    definition = create_dc_definition()
+    test_user = User(username='test-user', firstname='test', lastname='test')
+    test_user.save()
     create_dc_connection(business, is_active=True)
+    cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
 
-    with patch.object(DigitalCredentialsService, 'issue_credential', return_value={
-            'cred_ex_id': '3fa85f64-5717-4562-b3fc-2c963f66afa6'}):
-        rv = client.post(
-            f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
-            headers=headers, content_type=content_type)
-        assert rv.status_code == HTTPStatus.OK
-        assert rv.json.get('message') == 'Credential offer has been sent.'
+    with patch.object(User, 'find_by_jwt_token', return_value=test_user):
+        with patch.object(DCDefinition, 'find_by', return_value=definition):
+            with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
+                rv = client.post(
+                    f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
+                    headers=headers, content_type=content_type)
+                assert rv.status_code == HTTPStatus.OK
+                assert rv.json.get('credentialExchangeId') == cred_ex_id
 
 
 def test_get_issued_credentials(session, client, jwt):  # pylint:disable=unused-argument

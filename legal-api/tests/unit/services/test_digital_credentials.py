@@ -31,7 +31,7 @@ def test_init_app(session, app):  # pylint:disable=unused-argument
             digital_credentials.init_app(app)
             definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
             assert definition.schema_id == schema_id
-            assert definition.schema_name == digital_credentials.business_schema['schema_name']
-            assert definition.schema_version == digital_credentials.business_schema['schema_version']
+            assert definition.schema_name == digital_credentials.business_schema_name
+            assert definition.schema_version == digital_credentials.business_schema_version
             assert definition.credential_definition_id == cred_def_id
             assert not definition.is_deleted
