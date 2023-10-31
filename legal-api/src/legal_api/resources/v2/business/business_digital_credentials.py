@@ -185,7 +185,7 @@ def send_credential(identifier, credential_type):
     response = digital_credentials.issue_credential(
         connection_id=connection.connection_id,
         definition=definition,
-        data=_get_data_for_credential(definition.credential_type, business, user)
+        data=credential_data
     )
     if not response:
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
