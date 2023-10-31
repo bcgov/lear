@@ -99,7 +99,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # do not process if status is not COMPLETED
-    if status is not Filing.Status.COMPLETED: return {}
+    if status is not Filing.Status.COMPLETED:
+        return {}
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
