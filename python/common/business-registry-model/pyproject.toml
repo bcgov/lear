@@ -16,8 +16,8 @@ pycountry = "^22.3.5"
 datedelta = "^1.4"
 registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.10"}
 
-sql-versioning = {path = "../sql-versioning"}
-##sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "dev_legal_name_changes" }
+## sql-versioning = {path = "../sql-versioning"}
+sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "dev_legal_name_changes" }
 
 [tool.poetry.group.dev.dependencies]
 Flask = "^2.3.2"
