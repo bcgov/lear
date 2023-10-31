@@ -16,24 +16,26 @@
 from typing import Dict
 
 import dpath
-#from entity_filer.exceptions import DefaultException, logger
+
+# from entity_filer.exceptions import DefaultException, logger
 from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(business: LegalEntity,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(
+    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
+):
     """Render the admin freeze filing unto the model objects."""
-    if not (admin_freeze_filing := filing.get('adminFreeze')):
-        print('Could not find adminFreeze in: %s', filing)
-        raise DefaultException(f'legal_filing:adminFreeze missing from {filing}')
+    if not (admin_freeze_filing := filing.get("adminFreeze")):
+        print("Could not find adminFreeze in: %s", filing)
+        raise DefaultException(f"legal_filing:adminFreeze missing from {filing}")
 
-    print('processing adminFreeze: %s', filing)
+    print("processing adminFreeze: %s", filing)
 
-    freeze = bool(dpath.util.get(admin_freeze_filing, '/freeze'))
-    filing_rec.order_details = admin_freeze_filing.get('details')
+    freeze = bool(dpath.util.get(admin_freeze_filing, "/freeze"))
+    filing_rec.order_details = admin_freeze_filing.get("details")
     business.admin_freeze = freeze
 
     filing_meta.admin_freeze = {}
-    filing_meta.admin_freeze = {**filing_meta.admin_freeze,
-                                **{'freeze': freeze}}
+    filing_meta.admin_freeze = {**filing_meta.admin_freeze, **{"freeze": freeze}}

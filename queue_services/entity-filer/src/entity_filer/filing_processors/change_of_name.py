@@ -23,15 +23,17 @@ from entity_filer.filing_processors.filing_components import name_request
 
 def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):
     """Render the change of name into the business model objects."""
-    print('processing Change of Name: %s', filing)
+    print("processing Change of Name: %s", filing)
 
-    if name_request_json := filing['changeOfName'].get('nameRequest'):
-        new_name = name_request_json.get('legalName')
+    if name_request_json := filing["changeOfName"].get("nameRequest"):
+        new_name = name_request_json.get("legalName")
     else:
-        new_name = filing['changeOfName'].get('legalName')
+        new_name = filing["changeOfName"].get("legalName")
 
-    filing_meta.change_of_name = {'fromLegalName': business.legal_name,
-                                  'toLegalName': new_name}
+    filing_meta.change_of_name = {
+        "fromLegalName": business.legal_name,
+        "toLegalName": new_name,
+    }
 
     business.legal_name = new_name
 
@@ -41,4 +43,4 @@ def post_process(business: LegalEntity, filing: Filing):
 
     THIS SHOULD NOT ALTER THE MODEL
     """
-    name_request.consume_nr(business, filing, 'changeOfName')
+    name_request.consume_nr(business, filing, "changeOfName")

@@ -18,6 +18,7 @@ from tokenize import String
 from typing import List, Optional
 
 from business_model import LegalEntity, Document, Filing
+
 # from business_model.document import DocumentType
 # from legal_api.services.minio import MinioService
 
@@ -28,7 +29,7 @@ def update_rules(
     business: LegalEntity,
     filing: Filing,
     rules_file_key: String,
-    file_name: String = None
+    file_name: String = None,
 ) -> Optional[List]:
     """Updtes rules if any.
 
@@ -37,7 +38,7 @@ def update_rules(
 
 
     # Assumption: rules file key and name have already been validated
-    # """
+    #"""
     # if not business or not rules_file_key:
     #     # if nothing is passed in, we don't care and it's not an error
     #     return None
@@ -56,9 +57,7 @@ def update_rules(
 
 
 def update_memorandum(
-    business: LegalEntity,
-    filing: Filing,
-    memorandum_file_key: String
+    business: LegalEntity, filing: Filing, memorandum_file_key: String
 ) -> Optional[List]:
     """Updtes memorandum if any.
 

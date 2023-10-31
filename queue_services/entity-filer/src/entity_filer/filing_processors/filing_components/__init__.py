@@ -36,13 +36,13 @@ from entity_filer.filing_processors.filing_components import (
 
 
 JSON_ROLE_CONVERTER = {
-    'custodian': EntityRole.RoleTypes.custodian.value,
-    'completing party': EntityRole.RoleTypes.completing_party.value,
-    'director': EntityRole.RoleTypes.director.value,
-    'incorporator': EntityRole.RoleTypes.incorporator.value,
-    'proprietor': EntityRole.RoleTypes.proprietor.value,
-    'partner': EntityRole.RoleTypes.partner.value,
-    'applicant': EntityRole.RoleTypes.applicant.value,
+    "custodian": EntityRole.RoleTypes.custodian.value,
+    "completing party": EntityRole.RoleTypes.completing_party.value,
+    "director": EntityRole.RoleTypes.director.value,
+    "incorporator": EntityRole.RoleTypes.incorporator.value,
+    "proprietor": EntityRole.RoleTypes.proprietor.value,
+    "partner": EntityRole.RoleTypes.partner.value,
+    "applicant": EntityRole.RoleTypes.applicant.value,
 }
 
 
@@ -51,29 +51,34 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     if not address_info:
         return Address()
 
-    db_address_type = address_type.replace('Address', '')
+    db_address_type = address_type.replace("Address", "")
 
-    address = Address(street=address_info.get('streetAddress'),
-                      street_additional=address_info.get('streetAddressAdditional'),
-                      city=address_info.get('addressCity'),
-                      region=address_info.get('addressRegion'),
-                      country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
-                      postal_code=address_info.get('postalCode'),
-                      delivery_instructions=address_info.get('deliveryInstructions'),
-                      address_type=db_address_type
-                      )
+    address = Address(
+        street=address_info.get("streetAddress"),
+        street_additional=address_info.get("streetAddressAdditional"),
+        city=address_info.get("addressCity"),
+        region=address_info.get("addressRegion"),
+        country=pycountry.countries.search_fuzzy(address_info.get("addressCountry"))[
+            0
+        ].alpha_2,
+        postal_code=address_info.get("postalCode"),
+        delivery_instructions=address_info.get("deliveryInstructions"),
+        address_type=db_address_type,
+    )
     return address
 
 
 def update_address(address: Address, new_info: dict) -> Address:
     """Update address with new info."""
-    address.street = new_info.get('streetAddress')
-    address.street_additional = new_info.get('streetAddressAdditional')
-    address.city = new_info.get('addressCity')
-    address.region = new_info.get('addressRegion')
-    address.country = pycountry.countries.search_fuzzy(new_info.get('addressCountry'))[0].alpha_2
-    address.postal_code = new_info.get('postalCode')
-    address.delivery_instructions = new_info.get('deliveryInstructions')
+    address.street = new_info.get("streetAddress")
+    address.street_additional = new_info.get("streetAddressAdditional")
+    address.city = new_info.get("addressCity")
+    address.region = new_info.get("addressRegion")
+    address.country = pycountry.countries.search_fuzzy(new_info.get("addressCountry"))[
+        0
+    ].alpha_2
+    address.postal_code = new_info.get("postalCode")
+    address.delivery_instructions = new_info.get("deliveryInstructions")
 
     return address
 
@@ -95,115 +100,126 @@ def create_office(legal_entity, office_type, addresses) -> Office:
 def merge_party(legal_entity_id: int, party_info: dict, create: bool = True) -> Party:
     """Create a new party or get them if they already exist."""
     party = None
-    if not (middle_initial := party_info['officer'].get('middleInitial')):
-        middle_initial = party_info['officer'].get('middleName', '')
+    if not (middle_initial := party_info["officer"].get("middleInitial")):
+        middle_initial = party_info["officer"].get("middleName", "")
 
     if create:
         party = EntityRole.find_party_by_name(
             legal_entity_id=legal_entity_id,
-            first_name=party_info['officer'].get('firstName', '').upper(),
-            last_name=party_info['officer'].get('lastName', '').upper(),
+            first_name=party_info["officer"].get("firstName", "").upper(),
+            last_name=party_info["officer"].get("lastName", "").upper(),
             middle_initial=middle_initial.upper(),
-            org_name=party_info['officer'].get('organizationName', '').upper()
+            org_name=party_info["officer"].get("organizationName", "").upper(),
         )
     if not party:
         party = Party(
-            first_name=party_info['officer'].get('firstName', '').upper(),
-            last_name=party_info['officer'].get('lastName', '').upper(),
+            first_name=party_info["officer"].get("firstName", "").upper(),
+            last_name=party_info["officer"].get("lastName", "").upper(),
             middle_initial=middle_initial.upper(),
-            title=party_info.get('title', '').upper(),
-            organization_name=party_info['officer'].get('organizationName', '').upper(),
-            email=party_info['officer'].get('email'),
-            identifier=party_info['officer'].get('identifier'),
-            party_type=party_info['officer'].get('partyType')
+            title=party_info.get("title", "").upper(),
+            organization_name=party_info["officer"].get("organizationName", "").upper(),
+            email=party_info["officer"].get("email"),
+            identifier=party_info["officer"].get("identifier"),
+            party_type=party_info["officer"].get("partyType"),
         )
 
     # add addresses to party
-    if party_info.get('deliveryAddress', None):
-        address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
+    if party_info.get("deliveryAddress", None):
+        address = create_address(party_info["deliveryAddress"], Address.DELIVERY)
         party.delivery_address = address
-    if party_info.get('mailingAddress', None):
-        mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
+    if party_info.get("mailingAddress", None):
+        mailing_address = create_address(party_info["mailingAddress"], Address.MAILING)
         party.mailing_address = mailing_address
     return party
 
-def create_entity_party(legal_entity_id: int, party_info: dict, create: bool = True) -> LegalEntity:
+
+def create_entity_party(
+    legal_entity_id: int, party_info: dict, create: bool = True
+) -> LegalEntity:
     """Create a new party or get them if they already exist."""
     # HERE
     legal_entity = None
-    if not (middle_initial := party_info['officer'].get('middleInitial')):
-        middle_initial = party_info['officer'].get('middleName', '')
+    if not (middle_initial := party_info["officer"].get("middleInitial")):
+        middle_initial = party_info["officer"].get("middleName", "")
 
     if create:
         party = EntityRole.find_party_by_name(
             legal_entity_id=legal_entity_id,
-            first_name=party_info['officer'].get('firstName', '').upper(),
-            last_name=party_info['officer'].get('lastName', '').upper(),
+            first_name=party_info["officer"].get("firstName", "").upper(),
+            last_name=party_info["officer"].get("lastName", "").upper(),
             middle_initial=middle_initial.upper(),
-            org_name=party_info['officer'].get('organizationName', '').upper()
+            org_name=party_info["officer"].get("organizationName", "").upper(),
         )
     if not party:
         party = Party(
-            first_name=party_info['officer'].get('firstName', '').upper(),
-            last_name=party_info['officer'].get('lastName', '').upper(),
+            first_name=party_info["officer"].get("firstName", "").upper(),
+            last_name=party_info["officer"].get("lastName", "").upper(),
             middle_initial=middle_initial.upper(),
-            title=party_info.get('title', '').upper(),
-            organization_name=party_info['officer'].get('organizationName', '').upper(),
-            email=party_info['officer'].get('email'),
-            identifier=party_info['officer'].get('identifier'),
-            party_type=party_info['officer'].get('partyType')
+            title=party_info.get("title", "").upper(),
+            organization_name=party_info["officer"].get("organizationName", "").upper(),
+            email=party_info["officer"].get("email"),
+            identifier=party_info["officer"].get("identifier"),
+            party_type=party_info["officer"].get("partyType"),
         )
 
     # add addresses to party
-    if party_info.get('deliveryAddress', None):
-        address = create_address(party_info['deliveryAddress'], Address.DELIVERY)
+    if party_info.get("deliveryAddress", None):
+        address = create_address(party_info["deliveryAddress"], Address.DELIVERY)
         party.delivery_address = address
-    if party_info.get('mailingAddress', None):
-        mailing_address = create_address(party_info['mailingAddress'], Address.MAILING)
+    if party_info.get("mailingAddress", None):
+        mailing_address = create_address(party_info["mailingAddress"], Address.MAILING)
         party.mailing_address = mailing_address
     return party
+
 
 def create_role(party: Party, role_info: dict) -> EntityRole:
     """Create a new party role and link to party."""
     party_role = EntityRole(
-        role=JSON_ROLE_CONVERTER.get(role_info.get('roleType').lower(), ''),
-        appointment_date=role_info['appointmentDate'],
-        cessation_date=role_info['cessationDate'],
-        party=party
+        role=JSON_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
+        appointment_date=role_info["appointmentDate"],
+        cessation_date=role_info["cessationDate"],
+        party=party,
     )
     return party_role
+
 
 def create_entity_role(legal_entity: LegalEntity, role_info: dict) -> EntityRole:
     """Create a new party role and link to party."""
     entity_role = EntityRole(
-        role=JSON_ROLE_CONVERTER.get(role_info.get('roleType').lower(), ''),
-        appointment_date=role_info['appointmentDate'],
-        cessation_date=role_info['cessationDate'],
-        party=legal_entity
+        role=JSON_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
+        appointment_date=role_info["appointmentDate"],
+        cessation_date=role_info["cessationDate"],
+        party=legal_entity,
     )
     return entity_role
 
+
 def update_director(director: EntityRole, new_info: dict) -> EntityRole:
     """Update director with new info."""
-    director.party.first_name = new_info['officer'].get('firstName', '').upper()
-    director.party.middle_initial = new_info['officer'].get('middleInitial', '').upper()
-    director.party.last_name = new_info['officer'].get('lastName', '').upper()
-    director.party.title = new_info.get('title', '').upper()
+    director.party.first_name = new_info["officer"].get("firstName", "").upper()
+    director.party.middle_initial = new_info["officer"].get("middleInitial", "").upper()
+    director.party.last_name = new_info["officer"].get("lastName", "").upper()
+    director.party.title = new_info.get("title", "").upper()
 
     if director.party.delivery_address:
         director.party.delivery_address = update_address(
-            director.party.delivery_address, new_info['deliveryAddress'])
+            director.party.delivery_address, new_info["deliveryAddress"]
+        )
     else:
-        director.party.delivery_address = create_address(new_info['deliveryAddress'], Address.DELIVERY)
+        director.party.delivery_address = create_address(
+            new_info["deliveryAddress"], Address.DELIVERY
+        )
 
-    if new_info.get('mailingAddress', None):
+    if new_info.get("mailingAddress", None):
         if director.party.mailing_address is None:
-            director.party.mailing_address = create_address(new_info['mailingAddress'], Address.MAILING)
+            director.party.mailing_address = create_address(
+                new_info["mailingAddress"], Address.MAILING
+            )
         else:
             director.party.mailing_address = update_address(
-                director.party.mailing_address, new_info['mailingAddress']
+                director.party.mailing_address, new_info["mailingAddress"]
             )
-    director.cessation_date = new_info.get('cessationDate')
+    director.cessation_date = new_info.get("cessationDate")
 
     return director
 
@@ -211,23 +227,23 @@ def update_director(director: EntityRole, new_info: dict) -> EntityRole:
 def create_share_class(share_class_info: dict) -> ShareClass:
     """Create a new share class and associated series."""
     share_class = ShareClass(
-        name=share_class_info['name'],
-        priority=share_class_info['priority'],
-        max_share_flag=share_class_info['hasMaximumShares'],
-        max_shares=share_class_info.get('maxNumberOfShares', None),
-        par_value_flag=share_class_info['hasParValue'],
-        par_value=share_class_info.get('parValue', None),
-        currency=share_class_info.get('currency', None),
-        special_rights_flag=share_class_info['hasRightsOrRestrictions']
+        name=share_class_info["name"],
+        priority=share_class_info["priority"],
+        max_share_flag=share_class_info["hasMaximumShares"],
+        max_shares=share_class_info.get("maxNumberOfShares", None),
+        par_value_flag=share_class_info["hasParValue"],
+        par_value=share_class_info.get("parValue", None),
+        currency=share_class_info.get("currency", None),
+        special_rights_flag=share_class_info["hasRightsOrRestrictions"],
     )
     share_class.series = []
-    for series in share_class_info['series']:
+    for series in share_class_info["series"]:
         share_series = ShareSeries(
-            name=series['name'],
-            priority=series['priority'],
-            max_share_flag=series['hasMaximumShares'],
-            max_shares=series.get('maxNumberOfShares', None),
-            special_rights_flag=series['hasRightsOrRestrictions']
+            name=series["name"],
+            priority=series["priority"],
+            max_share_flag=series["hasMaximumShares"],
+            max_shares=series.get("maxNumberOfShares", None),
+            special_rights_flag=series["hasRightsOrRestrictions"],
         )
         share_class.series.append(share_series)
 

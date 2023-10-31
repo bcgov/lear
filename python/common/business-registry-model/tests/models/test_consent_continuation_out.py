@@ -38,16 +38,18 @@ from tests.models import (
 
 def test_consent_continuation_out_save(session):
     """Assert that the consent_continuation_out was saved."""
-    business = factory_legal_entity('BC1234567')
+    business = factory_legal_entity("BC1234567")
     filing_dict = copy.deepcopy(FILING_HEADER)
-    filing_dict['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+    filing_dict["filing"]["consentContinuationOut"] = copy.deepcopy(
+        CONSENT_CONTINUATION_OUT
+    )
     filing = factory_completed_filing(business, filing_dict)
 
     expiry_date = get_cco_expiry_date(filing.effective_date)
 
     consent_continuation_out = ConsentContinuationOut()
-    consent_continuation_out.foreign_jurisdiction = 'CA'
-    consent_continuation_out.foreign_jurisdiction_region = 'AB'
+    consent_continuation_out.foreign_jurisdiction = "CA"
+    consent_continuation_out.foreign_jurisdiction_region = "AB"
     consent_continuation_out.expiry_date = expiry_date
     consent_continuation_out.legal_entity_id = business.id
     consent_continuation_out.filing_id = filing.id
@@ -59,29 +61,37 @@ def test_consent_continuation_out_save(session):
 def test_get_active_cco(session):
     """Assert that the active consent_continuation_out can be retrieved."""
     with nested_session(session):
-        business = factory_legal_entity('BC1234567')
+        business = factory_legal_entity("BC1234567")
         filing_dict = copy.deepcopy(FILING_HEADER)
-        filing_dict['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+        filing_dict["filing"]["consentContinuationOut"] = copy.deepcopy(
+            CONSENT_CONTINUATION_OUT
+        )
         filing = factory_completed_filing(business, filing_dict)
 
         expiry_date = get_cco_expiry_date(filing.effective_date)
 
         consent_continuation_out = ConsentContinuationOut()
-        consent_continuation_out.foreign_jurisdiction = 'CA'
-        consent_continuation_out.foreign_jurisdiction_region = 'AB'
+        consent_continuation_out.foreign_jurisdiction = "CA"
+        consent_continuation_out.foreign_jurisdiction_region = "AB"
         consent_continuation_out.expiry_date = expiry_date
         consent_continuation_out.legal_entity_id = business.id
         consent_continuation_out.filing_id = filing.id
         consent_continuation_out.save()
 
-        cco = consent_continuation_out.get_active_cco(business.id, filing.effective_date)
+        cco = consent_continuation_out.get_active_cco(
+            business.id, filing.effective_date
+        )
         assert cco
         cco = consent_continuation_out.get_active_cco(business.id, expiry_date)
         assert cco
-        cco = consent_continuation_out.get_active_cco(business.id, expiry_date, 'CA', 'AB')
+        cco = consent_continuation_out.get_active_cco(
+            business.id, expiry_date, "CA", "AB"
+        )
         assert cco
 
-        cco = consent_continuation_out.get_active_cco(business.id, expiry_date + datedelta.datedelta(days=1))
+        cco = consent_continuation_out.get_active_cco(
+            business.id, expiry_date + datedelta.datedelta(days=1)
+        )
         assert not cco
 
 

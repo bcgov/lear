@@ -34,20 +34,21 @@ from tests.unit import (
 def test_process_ar_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_filer.filing_processors import annual_report
+
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
 
     # setup
-    business = create_business(identifier, 'CP')
+    business = create_business(identifier, "CP")
     business_id = business.id
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)
     agm_date = datetime.date(2020, 7, 1)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
+    ar["filing"]["business"]["identifier"] = identifier
+    ar["filing"]["annualReport"]["annualReportDate"] = ar_date.isoformat()
+    ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = agm_date.isoformat()
 
     filing_meta = FilingMeta()
 
@@ -55,10 +56,10 @@ def test_process_ar_filing(app, session):
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
-        filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
-        annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta)
+        filing_msg = FilingMessage(filing_identifier=filing_id)
+        annual_report.process(
+            business, filing.filing_json["filing"], filing_meta=filing_meta
+        )
 
     # check it out
     # NOTE: until we save or convert the dates, they are FakeDate objects, so casting to str()
@@ -70,27 +71,26 @@ def test_process_ar_filing_no_agm(app, session):
     """Assert that a no agm AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
 
     # setup
-    business = create_business(identifier,
-                               legal_type=LegalEntity.EntityTypes.COOP.value)
+    business = create_business(
+        identifier, legal_type=LegalEntity.EntityTypes.COOP.value
+    )
     business_id = business.id
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)
     agm_date = None
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+    ar["filing"]["business"]["identifier"] = identifier
+    ar["filing"]["annualReport"]["annualReportDate"] = ar_date.isoformat()
+    ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = None
 
     # TEST
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
-        filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+        filing_msg = FilingMessage(filing_identifier=filing_id)
         process_filing(filing_msg)
 
     # Get modified data

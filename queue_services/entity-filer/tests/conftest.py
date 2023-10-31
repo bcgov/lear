@@ -27,6 +27,7 @@ import business_model_migrations
 from flask import Flask, current_app
 from flask_migrate import Migrate, upgrade
 from business_model import db as _db
+
 # from legal_api import db as _db
 # from legal_api import jwt as _jwt
 from sqlalchemy import event, text
@@ -47,22 +48,23 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
 
 # fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
 def freeze_datetime_utcnow(monkeypatch):
     """Fixture to return a static time for utcnow()."""
+
     class _Datetime:
         @classmethod
         def utcnow(cls):
             return FROZEN_DATETIME
 
-    monkeypatch.setattr(datetime, 'datetime', _Datetime)
+    monkeypatch.setattr(datetime, "datetime", _Datetime)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
     """Return a session-wide application configured in TEST mode."""
     # _app = create_app('testing')
@@ -76,7 +78,7 @@ def config(app):
     return app.config
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
@@ -88,18 +90,19 @@ def client(app):  # pylint: disable=redefined-outer-name
 #     return _jwt
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client_ctx(app):  # pylint: disable=redefined-outer-name
     """Return session-wide Flask test client."""
     with app.test_client() as _client:
         yield _client
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def account(app):
     """Create an account to be used for testing."""
     import uuid
-    account_id = random.randint(1,1000000)
+
+    account_id = random.randint(1, 1000000)
     yield account_id
 
 
@@ -186,38 +189,41 @@ def account(app):
 
 #         return _db
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
     Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
-
-        create_test_db(database=app.config.get('DB_NAME'),
-                       database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        create_test_db(
+            database=app.config.get("DB_NAME"),
+            database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
+        )
 
         sess = _db.session()
         sess.execute(text("SET TIME ZONE 'UTC';"))
 
-        dir_path = business_model_migrations.__file__[: \
-                        business_model_migrations.__file__.rfind('/')]
+        dir_path = business_model_migrations.__file__[
+            : business_model_migrations.__file__.rfind("/")
+        ]
 
-        migrate = Migrate(app,
-                _db,
-                directory=dir_path,
-                **{'dialect_name': 'postgres'})
+        migrate = Migrate(app, _db, directory=dir_path, **{"dialect_name": "postgres"})
         upgrade()
 
         yield _db
 
         try:
-            drop_test_db(database=app.config.get('DB_NAME'),
-                     database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+            drop_test_db(
+                database=app.config.get("DB_NAME"),
+                database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
+            )
         except sqlalchemy.exc.InterfaceError:
-            print('dropped database before all connections closed')
+            print("dropped database before all connections closed")
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
@@ -230,23 +236,25 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
             sess = db._make_scoped_session(options=options)
         except Exception as err:
             print(err)
-            print('done')
+            print("done")
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()
 
-        @event.listens_for(sess(), 'after_transaction_end')
+        @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
-            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
+            if (
+                trans.nested and not trans._parent.nested
+            ):  # pylint: disable=protected-access
                 # Handle where test DOESN'T session.commit(),
                 sess2.expire_all()
                 sess.begin_nested()
 
         db.session = sess
 
-        sql = text('select 1')
+        sql = text("select 1")
         sess.execute(sql)
 
         yield sess
@@ -256,6 +264,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
+
 
 # @pytest.fixture(scope='session')
 # def stan_server(docker_services):
@@ -343,12 +352,14 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
 #     time.sleep(10)
 
 
-def create_test_db(user: str = None,
-                   password: str = None,
-                   database: str = None,
-                   host: str = "localhost",
-                   port: int = 1521,
-                   database_uri: str = None) -> bool:
+def create_test_db(
+    user: str = None,
+    password: str = None,
+    database: str = None,
+    host: str = "localhost",
+    port: int = 1521,
+    database_uri: str = None,
+) -> bool:
     """Create the database in our .devcontainer launched postgres DB.
 
     Parameters
@@ -373,10 +384,12 @@ def create_test_db(user: str = None,
     else:
         DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
+    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
 
     try:
-        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+        with sqlalchemy.create_engine(
+            DATABASE_URI, isolation_level="AUTOCOMMIT"
+        ).connect() as conn:
             conn.execute(text(f"CREATE DATABASE {database}"))
 
         return True
@@ -384,28 +397,32 @@ def create_test_db(user: str = None,
         print(err)  # used in the test suite, so on failure print something
         return False
 
-def drop_test_db(user: str = None,
-                   password: str = None,
-                   database: str = None,
-                   host: str = "localhost",
-                   port: int = 1521,
-                   database_uri: str = None) -> bool:
+
+def drop_test_db(
+    user: str = None,
+    password: str = None,
+    database: str = None,
+    host: str = "localhost",
+    port: int = 1521,
+    database_uri: str = None,
+) -> bool:
     """Delete the database in our .devcontainer launched postgres DB."""
     if database_uri:
         DATABASE_URI = database_uri
     else:
         DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
-    
-    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
-    
+
+    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+
     close_all = f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid)
         FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with suppress(sqlalchemy.exc.ProgrammingError,
-                             Exception):
-        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+    with suppress(sqlalchemy.exc.ProgrammingError, Exception):
+        with sqlalchemy.create_engine(
+            DATABASE_URI, isolation_level="AUTOCOMMIT"
+        ).connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))

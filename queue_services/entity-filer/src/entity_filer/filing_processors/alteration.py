@@ -35,71 +35,89 @@ def process(
     filing_submission: Filing,
     filing: Dict,
     filing_meta: FilingMeta,
-    correction: bool = False
+    correction: bool = False,
 ):  # pylint: disable=W0613, R0914
     """Render the Alteration onto the model objects."""
     filing_meta.alteration = {}
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         if business.entity_type == LegalEntity.EntityTypes.COOP.value:
-            alteration_json = dpath.util.get(filing, '/alteration')
-            coop_association_type = alteration_json.get('cooperativeAssociationType')
-            filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromCooperativeAssociationType': business.association_type,
-                                         'toCooperativeAssociationType': coop_association_type}}
+            alteration_json = dpath.util.get(filing, "/alteration")
+            coop_association_type = alteration_json.get("cooperativeAssociationType")
+            filing_meta.alteration = {
+                **filing_meta.alteration,
+                **{
+                    "fromCooperativeAssociationType": business.association_type,
+                    "toCooperativeAssociationType": coop_association_type,
+                },
+            }
             legal_entity_info.set_association_type(business, coop_association_type)
         else:
-            business_json = dpath.util.get(filing, '/alteration/business')
-            filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalType': business.entity_type,
-                                         'toLegalType': business_json.get('legalType')}}
+            business_json = dpath.util.get(filing, "/alteration/business")
+            filing_meta.alteration = {
+                **filing_meta.alteration,
+                **{
+                    "fromLegalType": business.entity_type,
+                    "toLegalType": business_json.get("legalType"),
+                },
+            }
             legal_entity_info.set_corp_type(business, business_json)
 
     # Alter the business name, if any
     with suppress(IndexError, KeyError, TypeError):
         # if nameRequest is present then there could be a name change
         # from name -> numbered OR name -> name OR numbered to name
-        business_json = dpath.util.get(filing, '/alteration/nameRequest')
+        business_json = dpath.util.get(filing, "/alteration/nameRequest")
         from_legal_name = business.legal_name
         legal_entity_info.set_legal_name(business.identifier, business, business_json)
         if from_legal_name != business.legal_name:
-            filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalName': from_legal_name,
-                                         'toLegalName': business.legal_name}}
+            filing_meta.alteration = {
+                **filing_meta.alteration,
+                **{
+                    "fromLegalName": from_legal_name,
+                    "toLegalName": business.legal_name,
+                },
+            }
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/alteration/courtOrder')
+        court_order_json = dpath.util.get(filing, "/alteration/courtOrder")
         filings.update_filing_court_order(filing_submission, court_order_json)
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
-        alias_json = dpath.util.get(filing, '/alteration/nameTranslations')
+        alias_json = dpath.util.get(filing, "/alteration/nameTranslations")
         aliases.update_aliases(business, alias_json)
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.util.get(filing, '/alteration/shareStructure')
+        share_structure = dpath.util.get(filing, "/alteration/shareStructure")
         shares.update_share_structure(business, share_structure)
 
     # update provisionsRemoved, if any
     with suppress(IndexError, KeyError, TypeError):
-        provisions_removed = dpath.util.get(filing, '/alteration/provisionsRemoved')
+        provisions_removed = dpath.util.get(filing, "/alteration/provisionsRemoved")
         if bool(provisions_removed):
             business.restriction_ind = False
 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
-        rules_file_key = dpath.util.get(filing, '/alteration/rulesFileKey')
-        rules_file_name = dpath.util.get(filing, '/alteration/rulesFileName')
+        rules_file_key = dpath.util.get(filing, "/alteration/rulesFileKey")
+        rules_file_name = dpath.util.get(filing, "/alteration/rulesFileName")
         if rules_file_key:
-            rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
-            filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'uploadNewRules': True}}
+            rules_and_memorandum.update_rules(
+                business, filing_submission, rules_file_key, rules_file_name
+            )
+            filing_meta.alteration = {
+                **filing_meta.alteration,
+                **{"uploadNewRules": True},
+            }
 
     with suppress(IndexError, KeyError, TypeError):
-        memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
-        rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key)
+        memorandum_file_key = dpath.util.get(filing, "/alteration/memorandumFileKey")
+        rules_and_memorandum.update_memorandum(
+            business, filing_submission, memorandum_file_key
+        )
 
 
 def post_process(business: LegalEntity, filing: Filing, correction: bool = False):
@@ -108,4 +126,4 @@ def post_process(business: LegalEntity, filing: Filing, correction: bool = False
     THIS SHOULD NOT ALTER THE MODEL
     """
     if not correction:
-        name_request.consume_nr(business, filing, 'alteration')
+        name_request.consume_nr(business, filing, "alteration")

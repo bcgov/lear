@@ -17,27 +17,30 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-#from entity_filer.exceptions import DefaultException, logger
+
+# from entity_filer.exceptions import DefaultException, logger
 from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(business: LegalEntity,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(
+    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
+):
     """Render the put back on filing unto the model objects."""
-    if not (put_back_on_filing := filing.get('putBackOn')):
-        print('Could not find putBackOn in: %s', filing)
-        raise DefaultException(f'legal_filing:putBackOn missing from {filing}')
+    if not (put_back_on_filing := filing.get("putBackOn")):
+        print("Could not find putBackOn in: %s", filing)
+        raise DefaultException(f"legal_filing:putBackOn missing from {filing}")
 
-    print('processing putBackOn: %s', filing)
+    print("processing putBackOn: %s", filing)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(put_back_on_filing, '/courtOrder')
+        court_order_json = dpath.util.get(put_back_on_filing, "/courtOrder")
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    filing_rec.order_details = put_back_on_filing.get('details')
+    filing_rec.order_details = put_back_on_filing.get("details")
 
     business.state = LegalEntity.State.ACTIVE
     business.dissolution_date = None

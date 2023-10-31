@@ -20,90 +20,97 @@ from tests import strip_keys_from_dict
 
 
 OFFICE_STRUCTURE = {
-    'offices': {
-        'recordsOffice': {
-            'mailingAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
+    "offices": {
+        "recordsOffice": {
+            "mailingAddress": {
+                "postalCode": "L6M 4M6",
+                "addressCity": "Oakville",
+                "addressRegion": "BC",
+                "streetAddress": "23-1489 Heritage Way",
+                "addressCountry": "CA",
+                "deliveryInstructions": "",
+                "streetAddressAdditional": "",
             },
-            'deliveryAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            }
+            "deliveryAddress": {
+                "postalCode": "L6M 4M6",
+                "addressCity": "Oakville",
+                "addressRegion": "BC",
+                "streetAddress": "23-1489 Heritage Way",
+                "addressCountry": "CA",
+                "deliveryInstructions": "",
+                "streetAddressAdditional": "",
+            },
         },
-        'registeredOffice': {
-            'mailingAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
+        "registeredOffice": {
+            "mailingAddress": {
+                "postalCode": "L6M 4M6",
+                "addressCity": "Oakville",
+                "addressRegion": "BC",
+                "streetAddress": "23-1489 Heritage Way",
+                "addressCountry": "CA",
+                "deliveryInstructions": "",
+                "streetAddressAdditional": "",
             },
-            'deliveryAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            }
-        }
+            "deliveryAddress": {
+                "postalCode": "L6M 4M6",
+                "addressCity": "Oakville",
+                "addressRegion": "BC",
+                "streetAddress": "23-1489 Heritage Way",
+                "addressCountry": "CA",
+                "deliveryInstructions": "",
+                "streetAddressAdditional": "",
+            },
+        },
     }
 }
 
 
-@pytest.mark.parametrize('test_name,office_structure,expected_error', [
-    ('valid office', OFFICE_STRUCTURE, None)
-])
+@pytest.mark.parametrize(
+    "test_name,office_structure,expected_error",
+    [("valid office", OFFICE_STRUCTURE, None)],
+)
 def test_manage_office_structure__offices(
-        app, session,
-        test_name, office_structure, expected_error):
+    app, session, test_name, office_structure, expected_error
+):
     """Assert that the corp offices gets set."""
     business = LegalEntity()
     business.save()
     update_and_validate_office(business, office_structure)
 
 
-@pytest.mark.parametrize('test_name,office_structure,expected_error', [
-    ('delete and recreate office', OFFICE_STRUCTURE, None)
-])
-def test_manage_office_structure__delete_and_recreate_offices(app, session, test_name, office_structure,
-                                                              expected_error):
+@pytest.mark.parametrize(
+    "test_name,office_structure,expected_error",
+    [("delete and recreate office", OFFICE_STRUCTURE, None)],
+)
+def test_manage_office_structure__delete_and_recreate_offices(
+    app, session, test_name, office_structure, expected_error
+):
     """Assert that the corp offices gets deleted and recreated."""
     business = LegalEntity()
     business.save()
 
     update_and_validate_office(business, office_structure)
     # Change the value of address to recreate
-    office_structure['offices']['recordsOffice']['mailingAddress']['postalCode'] = 'L6M 5M7'
+    office_structure["offices"]["recordsOffice"]["mailingAddress"][
+        "postalCode"
+    ] = "L6M 5M7"
     update_and_validate_office(business, office_structure)
 
 
 def update_and_validate_office(business, office_structure):
     """Validate that office gets created."""
-    err = update_offices(business, office_structure['offices'])
+    err = update_offices(business, office_structure["offices"])
     business.save()
     check_business = LegalEntity.find_by_internal_id(business.id)
     check_offices = check_business.offices.all()
     assert len(check_offices) == 2
-    check_office_structure = {'offices': {}}
+    check_office_structure = {"offices": {}}
     for s in check_offices:
-        check_office_structure['offices'][s.office_type] = {}
+        check_office_structure["offices"][s.office_type] = {}
         for address in s.addresses:
-            check_office_structure['offices'][s.office_type][f'{address.address_type}Address'] = address.json
-    stripped_dict = strip_keys_from_dict(check_office_structure, ['id', 'addressType'])
+            check_office_structure["offices"][s.office_type][
+                f"{address.address_type}Address"
+            ] = address.json
+    stripped_dict = strip_keys_from_dict(check_office_structure, ["id", "addressType"])
     assert stripped_dict == office_structure
     assert not err

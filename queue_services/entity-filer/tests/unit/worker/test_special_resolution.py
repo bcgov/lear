@@ -27,54 +27,69 @@ from tests.unit import create_entity, create_filing
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_name, new_legal_name,legal_type, filing_template',
+    "test_name, legal_name, new_legal_name,legal_type, filing_template",
     [
-        ('name_change', 'Test Resolution', 'New Name', 'CP', CP_SPECIAL_RESOLUTION_TEMPLATE),
-        ('no_change', 'Test Resolution', None, 'CP', CP_SPECIAL_RESOLUTION_TEMPLATE)
-    ]
+        (
+            "name_change",
+            "Test Resolution",
+            "New Name",
+            "CP",
+            CP_SPECIAL_RESOLUTION_TEMPLATE,
+        ),
+        ("no_change", "Test Resolution", None, "CP", CP_SPECIAL_RESOLUTION_TEMPLATE),
+    ],
 )
-def test_special_resolution(app, session, mocker, test_name, legal_name, new_legal_name,
-                                  legal_type, filing_template):
+def test_special_resolution(
+    app,
+    session,
+    mocker,
+    test_name,
+    legal_name,
+    new_legal_name,
+    legal_type,
+    filing_template,
+):
     """Assert the worker process calls the legal name change correctly."""
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     business = create_entity(identifier, legal_type, legal_name)
     business_id = business.id
     filing = copy.deepcopy(filing_template)
-    if test_name == 'name_change':
-        filing['filing']['changeOfName']['nameRequest']['legalName'] = new_legal_name
+    if test_name == "name_change":
+        filing["filing"]["changeOfName"]["nameRequest"]["legalName"] = new_legal_name
     else:
-        del filing['filing']['changeOfName']
+        del filing["filing"]["changeOfName"]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
     # mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch(
+        "entity_filer.filing_processors.filing_components.name_request.consume_nr",
+        return_value=None,
+    )
 
     # Test
     process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    change_of_name = final_filing.meta_data.get('changeOfName', {})
+    change_of_name = final_filing.meta_data.get("changeOfName", {})
     business = LegalEntity.find_by_internal_id(business_id)
 
     assert len(business.resolutions.all()) == 1
     resolution = business.resolutions.first()
     assert resolution.id
-    assert resolution.resolution_type == 'SPECIAL'
-    assert resolution.resolution_sub_type == 'specialResolution'
+    assert resolution.resolution_type == "SPECIAL"
+    assert resolution.resolution_sub_type == "specialResolution"
 
     if new_legal_name:
         assert business.legal_name == new_legal_name
-        assert change_of_name.get('toLegalName') == new_legal_name
-        assert change_of_name.get('fromLegalName') == legal_name
+        assert change_of_name.get("toLegalName") == new_legal_name
+        assert change_of_name.get("fromLegalName") == legal_name
     else:
         assert business.legal_name == legal_name
         assert change_of_name == {}

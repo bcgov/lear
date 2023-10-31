@@ -47,19 +47,17 @@ from tests.unit import create_business, create_filing
 
 def test_worker_admin_freeze(app, session, mocker):
     """Assert that the admin freeze object is correctly populated to model objects."""
-    identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC')
+    identifier = "BC1234567"
+    business = create_business(identifier, legal_type="BC")
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['business']['identifier'] = identifier
-    filing_json['filing']['adminFreeze'] = copy.deepcopy(ADMIN_FREEZE)
+    filing_json["filing"]["business"]["identifier"] = identifier
+    filing_json["filing"]["adminFreeze"] = copy.deepcopy(ADMIN_FREEZE)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing_json, business_id=business.id)).id
 
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -73,7 +71,7 @@ def test_worker_admin_freeze(app, session, mocker):
     assert business.admin_freeze == True
     assert business.state_filing_id is None
     assert business.dissolution_date is None
-    assert filing_json['filing']['adminFreeze']['details'] == final_filing.order_details
+    assert filing_json["filing"]["adminFreeze"]["details"] == final_filing.order_details
 
-    adminFreeze = final_filing.meta_data.get('adminFreeze')
-    assert filing_json['filing']['adminFreeze']['freeze'] == adminFreeze.get('freeze')
+    adminFreeze = final_filing.meta_data.get("adminFreeze")
+    assert filing_json["filing"]["adminFreeze"]["freeze"] == adminFreeze.get("freeze")

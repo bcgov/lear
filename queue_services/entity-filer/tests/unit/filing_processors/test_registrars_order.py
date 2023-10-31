@@ -25,24 +25,31 @@ from tests.unit import create_business, create_filing
 
 def test_worker_registrars_order(app, session):
     """Assert that the registrars order object is correctly populated to model objects."""
-    identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC')
+    identifier = "BC1234567"
+    business = create_business(identifier, legal_type="BC")
 
     filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)
-    filing['filing']['business']['identifier'] = identifier
+    filing["filing"]["business"]["identifier"] = identifier
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # Test
     process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['registrarsOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing['filing']['registrarsOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing['filing']['registrarsOrder']['orderDetails'] == final_filing.order_details
+    assert (
+        filing["filing"]["registrarsOrder"]["fileNumber"]
+        == final_filing.court_order_file_number
+    )
+    assert (
+        filing["filing"]["registrarsOrder"]["effectOfOrder"]
+        == final_filing.court_order_effect_of_order
+    )
+    assert (
+        filing["filing"]["registrarsOrder"]["orderDetails"]
+        == final_filing.order_details
+    )

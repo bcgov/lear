@@ -69,7 +69,7 @@ from entity_filer.filing_processors.filing_components.parties import (
 )
 
 
-BASE_TEMPLATE ={
+BASE_TEMPLATE = {
     "roles": [],
     "mailingAddress": {
         "postalCode": "N2E 3J7",
@@ -98,7 +98,8 @@ PERSON_TEMPLATE = {
         "firstName": "Test abc",
         "partyType": "person",
         "middleName": "",
-    }, **BASE_TEMPLATE
+    },
+    **BASE_TEMPLATE,
 }
 
 ORG_TEMPLATE = {
@@ -110,7 +111,8 @@ ORG_TEMPLATE = {
         "firstName": None,
         "partyType": "organization",
         "middleName": None,
-    }, **BASE_TEMPLATE
+    },
+    **BASE_TEMPLATE,
 }
 
 PARTY_TEMPLATE = {
@@ -126,34 +128,46 @@ PARTY_TEMPLATE = {
     },
 }
 #        test_name,   schema_role, is_person, is_org, person_actions, org_actions
-TEST_SCHEMA_ROLES =[
-        ('Applicant', 'Applicant', True, False, ['C',], []),
-        # ('Completing Party', 'Completing Party', True, True, ['C',], []),
-        # ('Custodian', 'Custodian', True, True, ['C',], []),
-        # ('Director', 'Director', True, False, ['C',], []),
-        # ('Incorporator', 'Incorporator', True, True, ['C',], []),
-        # ('Liquidator', 'Liquidator', True, False, ['C',], []),
-        # ('Partner', 'Partner', True, True, ['C',], []),
-        # ('Proprietor', 'Proprietor', True, True, ['C',], []),
+TEST_SCHEMA_ROLES = [
+    (
+        "Applicant",
+        "Applicant",
+        True,
+        False,
+        [
+            "C",
+        ],
+        [],
+    ),
+    # ('Completing Party', 'Completing Party', True, True, ['C',], []),
+    # ('Custodian', 'Custodian', True, True, ['C',], []),
+    # ('Director', 'Director', True, False, ['C',], []),
+    # ('Incorporator', 'Incorporator', True, True, ['C',], []),
+    # ('Liquidator', 'Liquidator', True, False, ['C',], []),
+    # ('Partner', 'Partner', True, True, ['C',], []),
+    # ('Proprietor', 'Proprietor', True, True, ['C',], []),
 ]
-def common_setup():
-        base_legal_entity = LegalEntity()
-        base_legal_entity.save()
-        # setup Filing
-        filing = Filing()
-        filing.legal_entity_id = base_legal_entity.id
-        filing.save() 
-        base_legal_entity.change_filing_id = filing.id
-        base_legal_entity.save()
 
-        return base_legal_entity, filing
+
+def common_setup():
+    base_legal_entity = LegalEntity()
+    base_legal_entity.save()
+    # setup Filing
+    filing = Filing()
+    filing.legal_entity_id = base_legal_entity.id
+    filing.save()
+    base_legal_entity.change_filing_id = filing.id
+    base_legal_entity.save()
+
+    return base_legal_entity, filing
+
 
 def helper_create_person(person_dict: dict) -> LegalEntity:
     # identifier= person_dict['officer'].get('identifier')
     entity = LegalEntity(
-        first_name=person_dict.get('officer',{}).get('firstName'),
-        last_name=person_dict.get('officer',{}).get('lastName'),
-        middle_initial=person_dict.get('officer',{}).get('middleName'),
+        first_name=person_dict.get("officer", {}).get("firstName"),
+        last_name=person_dict.get("officer", {}).get("lastName"),
+        middle_initial=person_dict.get("officer", {}).get("middleName"),
         entity_type=LegalEntity.EntityTypes.PERSON,
     )
     mail = Address(address_type=Address.MAILING)
@@ -164,31 +178,28 @@ def helper_create_person(person_dict: dict) -> LegalEntity:
     entity.delivery_address_id = delivery.id
     entity.save()
     return entity
-     
+
 
 #        test_name,   schema_role, is_person, is_org, person_actions, org_actions
-TEST_PARTY_ROLES =[
-        ('Applicant-Person', 'Applicant', PERSON_TEMPLATE),
-        ('Completing Party', 'Completing Party', PERSON_TEMPLATE),
-        ('Custodian', 'Custodian', PERSON_TEMPLATE),
-        ('Director', 'Director', PERSON_TEMPLATE),
-        ('Incorporator', 'Incorporator', PERSON_TEMPLATE),
-        ('Liquidator', 'Liquidator', PERSON_TEMPLATE),
-        ('Partner', 'Partner', PERSON_TEMPLATE),
-        ('Proprietor', 'Proprietor', PERSON_TEMPLATE), # This role does nothing
+TEST_PARTY_ROLES = [
+    ("Applicant-Person", "Applicant", PERSON_TEMPLATE),
+    ("Completing Party", "Completing Party", PERSON_TEMPLATE),
+    ("Custodian", "Custodian", PERSON_TEMPLATE),
+    ("Director", "Director", PERSON_TEMPLATE),
+    ("Incorporator", "Incorporator", PERSON_TEMPLATE),
+    ("Liquidator", "Liquidator", PERSON_TEMPLATE),
+    ("Partner", "Partner", PERSON_TEMPLATE),
+    ("Proprietor", "Proprietor", PERSON_TEMPLATE),  # This role does nothing
 ]
 
 
-@pytest.mark.parametrize(
-        "test_name,schema_role,template",
-        TEST_PARTY_ROLES
-)
+@pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
 def test_person_and_role_doesnt_exist(session, test_name, schema_role, template):
     """Test where no role or person exists.
-    
+
     Assumption: Entity exists.
     """
-    print(f' test_name: {test_name}')
+    print(f" test_name: {test_name}")
     with nested_session(session):
         base_legal_entity, filing = common_setup()
 
@@ -207,23 +218,22 @@ def test_person_and_role_doesnt_exist(session, test_name, schema_role, template)
         errors = merge_all_parties(base_legal_entity, filing, wrapper)
 
     assert not errors
-    
-    if schema_role not in ['Proprietor',]:
+
+    if schema_role not in [
+        "Proprietor",
+    ]:
         entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
         assert len(entity_roles) == len(le_test["roles"])
         assert entity_roles[0].role_type == map_schema_role_to_enum(schema_role)
 
 
-@pytest.mark.parametrize(
-        "test_name,schema_role,template",
-        TEST_PARTY_ROLES
-)
+@pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
 def test_person_exists_but_role_doesnt_exist(session, test_name, schema_role, template):
     """Test where the person exists but no role exists.
-    
+
     Assumption: Entity exists.
     """
-    print(f' test_name: {test_name}')
+    print(f" test_name: {test_name}")
     with nested_session(session):
         base_legal_entity, filing = common_setup()
 
@@ -244,28 +254,30 @@ def test_person_exists_but_role_doesnt_exist(session, test_name, schema_role, te
         # session.commit()
 
         assert not errors
-        
-        if schema_role not in ['Proprietor',]:
+
+        if schema_role not in [
+            "Proprietor",
+        ]:
             entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
             assert len(entity_roles) == 1
             assert len(entity_roles) == len(le_test["roles"])
             assert entity_roles[0].role_type == map_schema_role_to_enum(schema_role)
             assert entity_roles[0].related_entity == person
 
-@pytest.mark.parametrize(
-        "test_name,schema_role,template",
-        TEST_PARTY_ROLES
-)
+
+@pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
 def test_person_and_role_exists(session, test_name, schema_role, template):
     """Test where the person and role exists.
-    
+
     Assumption: Entity exists.
     """
-    print(f' test_name: {test_name}')
-    if schema_role in ['Completing Party',]:
+    print(f" test_name: {test_name}")
+    if schema_role in [
+        "Completing Party",
+    ]:
         # Skip test if EntityRole couldn't exist for role
         pytest.skip()
-    
+
     with nested_session(session):
         base_legal_entity, filing = common_setup()
         person = helper_create_person(PERSON_TEMPLATE)
@@ -276,7 +288,7 @@ def test_person_and_role_exists(session, test_name, schema_role, template):
             legal_entity_id=base_legal_entity.id,
             mailing_address_id=person.entity_mailing_address.id,
             related_entity_id=person.id,
-            role_type=map_schema_role_to_enum(schema_role)
+            role_type=map_schema_role_to_enum(schema_role),
         )
         entity_role.save()
 
@@ -294,25 +306,29 @@ def test_person_and_role_exists(session, test_name, schema_role, template):
         errors = merge_all_parties(base_legal_entity, filing, wrapper)
 
     assert not errors
-    
-    if schema_role not in ['Proprietor',]:
+
+    if schema_role not in [
+        "Proprietor",
+    ]:
         entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
         assert len(entity_roles) == 1
         assert len(entity_roles) == len(le_test["roles"])
         assert entity_roles[0].role_type == map_schema_role_to_enum(schema_role)
         assert entity_roles[0].related_entity_id == person.id
 
-@pytest.mark.parametrize(
-        "test_name,schema_role,template",
-        TEST_PARTY_ROLES
-)
-def test_person_and_role_exists_cessation_date_set(session, test_name, schema_role, template):
+
+@pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
+def test_person_and_role_exists_cessation_date_set(
+    session, test_name, schema_role, template
+):
     """Test where the person and role exists and the role is ceased.
-    
+
     Assumption: Entity exists.
     """
-    print(f' test_name: {test_name}')
-    if schema_role in ['Completing Party',]:
+    print(f" test_name: {test_name}")
+    if schema_role in [
+        "Completing Party",
+    ]:
         # Skip test if EntityRole couldn't exist for role
         pytest.skip()
 
@@ -327,7 +343,7 @@ def test_person_and_role_exists_cessation_date_set(session, test_name, schema_ro
             legal_entity_id=base_legal_entity.id,
             mailing_address_id=person.entity_mailing_address.id,
             related_entity_id=person.id,
-            role_type=map_schema_role_to_enum(schema_role)
+            role_type=map_schema_role_to_enum(schema_role),
         )
         entity_role.save()
 
@@ -337,9 +353,10 @@ def test_person_and_role_exists_cessation_date_set(session, test_name, schema_ro
         le_test["officer"]["id"] = person.id
         le_test["officer"]["lastName"] = "le_test"
         le_test["roles"] = [
-            {"roleType": schema_role,
-             "appointmentDate": "2020-08-05",
-             "cessationDate": cessation_date.isoformat()
+            {
+                "roleType": schema_role,
+                "appointmentDate": "2020-08-05",
+                "cessationDate": cessation_date.isoformat(),
             },
         ]
         wrapper = {
@@ -352,32 +369,46 @@ def test_person_and_role_exists_cessation_date_set(session, test_name, schema_ro
         # session.commit()
 
         assert not errors
-    
-        if schema_role not in ['Proprietor',]:
+
+        if schema_role not in [
+            "Proprietor",
+        ]:
             entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
             assert len(entity_roles) == 0
 
-            historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
+            historical_roles = EntityRole.get_entity_roles_history_by_filing(
+                filing_id=filing.id
+            )
             number_of_historical_roles = len(historical_roles)
-            assert  number_of_historical_roles >= 2
-            assert historical_roles[number_of_historical_roles-1].role_type == map_schema_role_to_enum(schema_role)
-            assert historical_roles[number_of_historical_roles-1].related_entity_id == person.id
-            assert historical_roles[number_of_historical_roles-1].cessation_date.replace(tzinfo=None) == cessation_date
+            assert number_of_historical_roles >= 2
+            assert historical_roles[
+                number_of_historical_roles - 1
+            ].role_type == map_schema_role_to_enum(schema_role)
+            assert (
+                historical_roles[number_of_historical_roles - 1].related_entity_id
+                == person.id
+            )
+            assert (
+                historical_roles[number_of_historical_roles - 1].cessation_date.replace(
+                    tzinfo=None
+                )
+                == cessation_date
+            )
 
 
 def test_directors_exist_but_not_in_filing(session):
     """Test where the directors (can only be natural persons) but aren't in the filing.
-    
+
     This will mean existing directors are deleted, and available in the history,
     along with a cessation date of the filing.
     """
-    schema_role = 'Director'
+    schema_role = "Director"
     versioned_session(session)
     with nested_session(session):
         base_legal_entity, filing = common_setup()
         for i in range(2):
             person_proto = deepcopy(PERSON_TEMPLATE)
-            person_proto['officer']['lastName'] = f'director {i}'
+            person_proto["officer"]["lastName"] = f"director {i}"
             person = helper_create_person(person_proto)
             entity_role = EntityRole(
                 appointment_date=filing.effective_date,
@@ -386,16 +417,17 @@ def test_directors_exist_but_not_in_filing(session):
                 legal_entity_id=base_legal_entity.id,
                 mailing_address_id=person.entity_mailing_address.id,
                 related_entity_id=person.id,
-                role_type=map_schema_role_to_enum(schema_role)
+                role_type=map_schema_role_to_enum(schema_role),
             )
             entity_role.save()
-        
+
         le_test = deepcopy(PERSON_TEMPLATE)
         le_test["officer"].pop("id")
         le_test["officer"]["lastName"] = "le_test"
         le_test["roles"] = [
-            {"roleType": schema_role,
-             "appointmentDate": "2020-08-05",
+            {
+                "roleType": schema_role,
+                "appointmentDate": "2020-08-05",
             },
         ]
         wrapper = {
@@ -407,14 +439,18 @@ def test_directors_exist_but_not_in_filing(session):
 
         assert not errors
 
-        current_entity_roles = EntityRole.get_parties_by_role(base_legal_entity.id, map_schema_role_to_enum(schema_role))
+        current_entity_roles = EntityRole.get_parties_by_role(
+            base_legal_entity.id, map_schema_role_to_enum(schema_role)
+        )
 
         assert len(current_entity_roles) == 1
-        
-        historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
+
+        historical_roles = EntityRole.get_entity_roles_history_by_filing(
+            filing_id=filing.id
+        )
         number_of_historical_roles = len(historical_roles)
         # Should be at least 2 records for each historical role.
-        assert  number_of_historical_roles == 4
+        assert number_of_historical_roles == 4
 
 
 # def test_add_entity_role_to_filing(session):

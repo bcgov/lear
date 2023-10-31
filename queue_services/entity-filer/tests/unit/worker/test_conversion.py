@@ -18,8 +18,11 @@ import random
 import pytest
 from datetime import datetime
 from unittest.mock import patch
+
 # from legal_api.services import NaicsService
-from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
+from entity_filer.filing_processors.filing_components.legal_entity_info import (
+    NaicsService,
+)
 from business_model import Address, LegalEntity, Filing, EntityRole
 from registry_schemas.example_data import (
     CONVERSION_FILING_TEMPLATE,
@@ -30,70 +33,70 @@ from registry_schemas.example_data import (
 
 from entity_filer.resources.worker import process_filing
 from entity_filer.resources.worker import FilingMessage
-from tests.unit import create_entity, create_filing, create_entity_person, create_entity_role
+from tests.unit import (
+    create_entity,
+    create_filing,
+    create_entity_person,
+    create_entity_role,
+)
 
 
-CONTACT_POINT = {
-    'email': 'no_one@never.get',
-    'phone': '123-456-7890'
-}
+CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 
 naics_response = {
-    'code': REGISTRATION['business']['naics']['naicsCode'],
-    'naicsKey': 'a4667c26-d639-42fa-8af3-7ec73e392569'
+    "code": REGISTRATION["business"]["naics"]["naicsCode"],
+    "naicsKey": "a4667c26-d639-42fa-8af3-7ec73e392569",
 }
 
 GP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-GP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
-GP_CONVERSION['filing']['business']['legalType'] = 'GP'
-GP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'GP'
+GP_CONVERSION["filing"]["conversion"] = copy.deepcopy(FIRMS_CONVERSION)
+GP_CONVERSION["filing"]["business"]["legalType"] = "GP"
+GP_CONVERSION["filing"]["conversion"]["nameRequest"]["legalType"] = "GP"
 
 SP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-SP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
-SP_CONVERSION['filing']['business']['legalType'] = 'SP'
-SP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'SP'
-del SP_CONVERSION['filing']['conversion']['parties'][1]
-SP_CONVERSION['filing']['conversion']['parties'][0]['roles'] = [
-    {
-        'roleType': 'Completing Party',
-        'appointmentDate': '2022-01-01'
-
-    },
-    {
-        'roleType': 'Proprietor',
-        'appointmentDate': '2022-01-01'
-
-    }
+SP_CONVERSION["filing"]["conversion"] = copy.deepcopy(FIRMS_CONVERSION)
+SP_CONVERSION["filing"]["business"]["legalType"] = "SP"
+SP_CONVERSION["filing"]["conversion"]["nameRequest"]["legalType"] = "SP"
+del SP_CONVERSION["filing"]["conversion"]["parties"][1]
+SP_CONVERSION["filing"]["conversion"]["parties"][0]["roles"] = [
+    {"roleType": "Completing Party", "appointmentDate": "2022-01-01"},
+    {"roleType": "Proprietor", "appointmentDate": "2022-01-01"},
 ]
 
+
 @pytest.mark.parametrize(
-    'test_name, legal_name, new_legal_name,legal_type, filing_template',
+    "test_name, legal_name, new_legal_name,legal_type, filing_template",
     [
-        ('conversion_gp', 'Test Firm', 'New Name', 'GP', GP_CONVERSION),
-        ('conversion_sp', 'Test Firm', 'New Name', 'SP', SP_CONVERSION)
-    ]
+        ("conversion_gp", "Test Firm", "New Name", "GP", GP_CONVERSION),
+        ("conversion_sp", "Test Firm", "New Name", "SP", SP_CONVERSION),
+    ],
 )
-def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
-                                                 legal_type, filing_template):
+def test_conversion(
+    app,
+    session,
+    mocker,
+    test_name,
+    legal_name,
+    new_legal_name,
+    legal_type,
+    filing_template,
+):
     """Assert the worker process conversion  filing correctly."""
 
-    identifier = 'FM1234567'
+    identifier = "FM1234567"
     business = create_entity(identifier, legal_type, legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(filing_template)
-    filing['filing']['business']['legalType'] = legal_type
+    filing["filing"]["business"]["legalType"] = legal_type
     # Name Change
-    filing['filing']['conversion']['nameRequest']['legalName'] = new_legal_name
-    del filing['filing']['restoration']['parties'][0]['officer']['id']
-
+    filing["filing"]["conversion"]["nameRequest"]["legalName"] = new_legal_name
+    # del filing["filing"]["conversion"]["parties"][0]["officer"]["id"]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -114,26 +117,30 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
     assert business.legal_name == new_legal_name
 
     # Parties
-    if legal_type == 'SP':
+    if legal_type == "SP":
         assert len(final_filing.filing_entity_roles.all()) == 1
         assert len(business.entity_roles.all()) == 1
-    if legal_type == 'GP':
+    if legal_type == "GP":
         assert len(final_filing.filing_entity_roles.all()) == 1
         assert len(business.entity_roles.all()) == 2
 
     # Offices
     assert len(business.offices.all()) == 1
-    assert business.offices.first().office_type == 'businessOffice'
+    assert business.offices.first().office_type == "businessOffice"
 
-    assert business.naics_description == \
-           filing_template['filing']['conversion']['business']['naics']['naicsDescription']
+    assert (
+        business.naics_description
+        == filing_template["filing"]["conversion"]["business"]["naics"][
+            "naicsDescription"
+        ]
+    )
 
 
 def test_worker_proprietor_new_address(app, session, mocker):
     """Assert the worker process the party new address correctly."""
-    identifier = 'FM1234567'
+    identifier = "FM1234567"
 
-    party = create_entity_person(SP_CONVERSION['filing']['conversion']['parties'][0])
+    party = create_entity_person(SP_CONVERSION["filing"]["conversion"]["parties"][0])
     party_id = party.id
     party.entity_delivery_address = None
     party.entity_mailing_address = None
@@ -141,22 +148,24 @@ def test_worker_proprietor_new_address(app, session, mocker):
     assert party.entity_delivery_address is None
     assert party.entity_mailing_address is None
 
-    create_entity_role(party, None, ['proprietor'], datetime.utcnow())
+    create_entity_role(party, None, ["proprietor"], datetime.utcnow())
 
     filing = copy.deepcopy(SP_CONVERSION)
-    filing['filing']['conversion']['contactPoint'] = CONTACT_POINT
-    filing['filing']['conversion']['parties'][0]['officer']['id'] = party_id
-    filing['filing']['conversion']['parties'][0]['mailingAddress']['streetAddress'] = 'New Name'
-    filing['filing']['conversion']['parties'][0]['deliveryAddress']['streetAddress'] = 'New Name'
+    filing["filing"]["conversion"]["contactPoint"] = CONTACT_POINT
+    filing["filing"]["conversion"]["parties"][0]["officer"]["id"] = party_id
+    filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
+        "streetAddress"
+    ] = "New Name"
+    filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
+        "streetAddress"
+    ] = "New Name"
 
-    del filing['filing']['conversion']['nameRequest']
+    del filing["filing"]["conversion"]["nameRequest"]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=party.id)).id
 
-    filing_msg = FilingMessage(
-        filing_identifier=filing_id
-    )
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
@@ -167,15 +176,21 @@ def test_worker_proprietor_new_address(app, session, mocker):
     # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+    with patch.object(NaicsService, "find_by_code", return_value=naics_response):
         process_filing(filing_msg)
 
     # Check outcome
     party = LegalEntity.find_by_internal_id(party_id)
     assert party.entity_roles.all()[0].role_type == EntityRole.RoleTypes.proprietor
-    assert party.entity_delivery_address.street ==\
-        filing['filing']['conversion']['parties'][0]['deliveryAddress']['streetAddress']
-    assert party.entity_mailing_address.street == \
-        filing['filing']['conversion']['parties'][0]['mailingAddress']['streetAddress']
-
-
+    assert (
+        party.entity_delivery_address.street
+        == filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
+            "streetAddress"
+        ]
+    )
+    assert (
+        party.entity_mailing_address.street
+        == filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
+            "streetAddress"
+        ]
+    )

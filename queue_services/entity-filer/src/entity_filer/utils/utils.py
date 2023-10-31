@@ -39,6 +39,7 @@ import io
 import os
 
 import PyPDF2
+
 # from legal_api.reports.registrar_meta import RegistrarInfo
 # from legal_api.services import PdfService
 # from legal_api.services.minio import MinioService
@@ -63,9 +64,13 @@ def get_run_version():
     return ver
 
 
-def replace_file_with_certified_copy(_bytes, business, key, certify_date, file_name=None):
+def replace_file_with_certified_copy(
+    _bytes, business, key, certify_date, file_name=None
+):
     raise Exception
     # TODO we shouldn't do this anymore
+
+
 #     """Create a certified copy and replace it into Minio server."""
 #     open_pdf_file = io.BytesIO(_bytes)
 #     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)

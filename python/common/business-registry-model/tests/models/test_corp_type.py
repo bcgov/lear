@@ -21,12 +21,12 @@ from business_model import LegalEntity, CorpType
 
 
 corp_type_json = {
-    'corp_type_cd': 'BEN',
-    'colin_ind': 'Y',
-    'corp_class': 'BC',
-    'short_desc': 'BENEFIT COMPANY',
-    'full_desc': 'BC Benefit Company',
-    'legislation': 'BC Business Corporations Act'
+    "corp_type_cd": "BEN",
+    "colin_ind": "Y",
+    "corp_class": "BC",
+    "short_desc": "BENEFIT COMPANY",
+    "full_desc": "BC Benefit Company",
+    "legislation": "BC Business Corporations Act",
 }
 
 
@@ -47,7 +47,17 @@ def test_find_corp_type_by_id(session):
 def test_find_all(session):
     """Assert that the method returns all corp types."""
     corp_types = CorpType.find_all()
-    entity_types = [key for key in LegalEntity.EntityTypes if key.name not in (LegalEntity.EntityTypes.PERSON.name,
-                                                                               LegalEntity.EntityTypes.ORGANIZATION.name)]
+    entity_types = [
+        key
+        for key in LegalEntity.EntityTypes
+        if key.name
+        not in (
+            LegalEntity.EntityTypes.PERSON.name,
+            LegalEntity.EntityTypes.ORGANIZATION.name,
+        )
+    ]
     assert len(corp_types) == len(entity_types)
-    assert all(corp_type.corp_type_cd in LegalEntity.EntityTypes._value2member_map_ for corp_type in corp_types)
+    assert all(
+        corp_type.corp_type_cd in LegalEntity.EntityTypes._value2member_map_
+        for corp_type in corp_types
+    )

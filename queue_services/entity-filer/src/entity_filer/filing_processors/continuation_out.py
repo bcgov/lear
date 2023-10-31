@@ -23,27 +23,33 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(legal_entity: LegalEntity, continuation_out_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(
+    legal_entity: LegalEntity,
+    continuation_out_filing: Filing,
+    filing: Dict,
+    filing_meta: FilingMeta,
+):
     """Render the continuation out filing into the legal_entity model objects."""
     # update continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/continuationOut/courtOrder')
+        court_order_json = dpath.util.get(filing, "/continuationOut/courtOrder")
         filings.update_filing_court_order(continuation_out_filing, court_order_json)
 
-    continuation_out_json = filing['continuationOut']
+    continuation_out_json = filing["continuationOut"]
 
-    details = continuation_out_json.get('details')
-    legal_name = continuation_out_json.get('legalName')
-    continuation_out_date_str = continuation_out_json.get('continuationOutDate')
-    continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
-    foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
-    foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
+    details = continuation_out_json.get("details")
+    legal_name = continuation_out_json.get("legalName")
+    continuation_out_date_str = continuation_out_json.get("continuationOutDate")
+    continuation_out_date = (
+        LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+            continuation_out_date_str
+        )
+    )
+    foreign_jurisdiction = continuation_out_json.get("foreignJurisdiction")
+    foreign_jurisdiction_country = foreign_jurisdiction.get("country").upper()
 
     continuation_out_filing.comments.append(
-        Comment(
-            comment=details,
-            staff_id=continuation_out_filing.submitter_id
-        )
+        Comment(comment=details, staff_id=continuation_out_filing.submitter_id)
     )
 
     legal_entity.state = LegalEntity.State.HISTORICAL
@@ -55,15 +61,17 @@ def process(legal_entity: LegalEntity, continuation_out_filing: Filing, filing: 
     legal_entity.continuation_out_date = continuation_out_date
 
     with suppress(IndexError, KeyError, TypeError):
-        foreign_jurisdiction_region = foreign_jurisdiction.get('region')
-        foreign_jurisdiction_region = foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
+        foreign_jurisdiction_region = foreign_jurisdiction.get("region")
+        foreign_jurisdiction_region = (
+            foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
+        )
         legal_entity.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}
     filing_meta.continuation_out = {
         **filing_meta.continuation_out,
-        'country': foreign_jurisdiction_country,
-        'region': foreign_jurisdiction_region,
-        'legalName': legal_name,
-        'continuationOutDate': continuation_out_date_str
+        "country": foreign_jurisdiction_country,
+        "region": foreign_jurisdiction_region,
+        "legalName": legal_name,
+        "continuationOutDate": continuation_out_date_str,
     }

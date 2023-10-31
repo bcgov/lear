@@ -14,11 +14,18 @@
 """Date time utilities."""
 # from datetime import datetime, timezone
 import time as _time
-from datetime import date, datetime as _datetime, timezone  # pylint: disable=unused-import # noqa: F401, I001, I005
+from datetime import (
+    date,
+    datetime as _datetime,
+    timezone,
+)  # pylint: disable=unused-import # noqa: F401, I001, I005
+
 # noqa: I003,I005
 
 
-class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+class datetime(
+    _datetime
+):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
 
     @classmethod

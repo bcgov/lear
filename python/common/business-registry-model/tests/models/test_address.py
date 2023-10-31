@@ -22,26 +22,26 @@ from tests.models import factory_legal_entity
 
 def test_address_json(session):
     """Assert that the address renders our json format correctly."""
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     address = Address(
-        city='Test City',
-        street=f'{identifier}-Test Street',
-        postal_code='T3S3T3',
-        country='TA',
-        region='BC',
-        address_type=Address.MAILING
+        city="Test City",
+        street=f"{identifier}-Test Street",
+        postal_code="T3S3T3",
+        country="TA",
+        region="BC",
+        address_type=Address.MAILING,
     )
     address.save()
     address_json = {
-        'id': address.id,
-        'streetAddress': address.street,
-        'streetAddressAdditional': address.street_additional,
-        'addressType': address.address_type,
-        'addressCity': address.city,
-        'addressRegion': address.region,
-        'addressCountry': address.country,
-        'postalCode': address.postal_code,
-        'deliveryInstructions': address.delivery_instructions
+        "id": address.id,
+        "streetAddress": address.street,
+        "streetAddressAdditional": address.street_additional,
+        "addressType": address.address_type,
+        "addressCity": address.city,
+        "addressRegion": address.region,
+        "addressCountry": address.country,
+        "postalCode": address.postal_code,
+        "deliveryInstructions": address.delivery_instructions,
     }
 
     assert address.json == address_json
@@ -49,14 +49,14 @@ def test_address_json(session):
 
 def test_address_save(session):
     """Assert that the address saves correctly."""
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     address = Address(
-        city='Test City',
-        street=f'{identifier}-Test Street',
-        postal_code='T3S3T3',
-        country='TA',
-        region='BC',
-        address_type=Address.MAILING
+        city="Test City",
+        street=f"{identifier}-Test Street",
+        postal_code="T3S3T3",
+        country="TA",
+        region="BC",
+        address_type=Address.MAILING,
     )
 
     address.save()
@@ -65,18 +65,18 @@ def test_address_save(session):
 
 def test_mailing_address_save_to_business(session):
     """Assert that the address saves correctly."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
 
     address = Address(
-        city='Test City',
-        street=f'{identifier}-Test Street',
-        postal_code='T3S3T3',
-        country='TA',
-        region='BC',
-        address_type=Address.MAILING
+        city="Test City",
+        street=f"{identifier}-Test Street",
+        postal_code="T3S3T3",
+        country="TA",
+        region="BC",
+        address_type=Address.MAILING,
     )
-    office = Office(office_type='registeredOffice')
+    office = Office(office_type="registeredOffice")
     office.addresses.append(address)
     legal_entity.offices.append(office)
     legal_entity.save()

@@ -26,23 +26,23 @@ from tests.unit import create_business, create_filing
 
 def test_worker_put_back_on(app, session):
     """Assert that the put back on object is correctly populated to model objects."""
-    identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC')
+    identifier = "BC1234567"
+    business = create_business(identifier, legal_type="BC")
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['business']['identifier'] = identifier
-    filing_json['filing']['putBackOn'] = copy.deepcopy(PUT_BACK_ON)
+    filing_json["filing"]["business"]["identifier"] = identifier
+    filing_json["filing"]["putBackOn"] = copy.deepcopy(PUT_BACK_ON)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing = (create_filing(payment_id, filing_json, business_id=business.id))
+    filing = create_filing(payment_id, filing_json, business_id=business.id)
 
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = {"filing": {"id": filing.id}}
 
     filing_meta = FilingMeta()
-    filing = create_filing('123', filing_json)
+    filing = create_filing("123", filing_json)
 
     # Test
-    put_back_on.process(business, filing_json['filing'], filing, filing_meta)
+    put_back_on.process(business, filing_json["filing"], filing, filing_meta)
     business.save()
 
     # Check outcome
@@ -51,4 +51,4 @@ def test_worker_put_back_on(app, session):
     assert business.state == LegalEntity.State.ACTIVE
     assert business.state_filing_id is None
     assert business.dissolution_date is None
-    assert filing_json['filing']['putBackOn']['details'] == final_filing.order_details
+    assert filing_json["filing"]["putBackOn"]["details"] == final_filing.order_details

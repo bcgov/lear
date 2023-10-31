@@ -22,29 +22,31 @@ from .db import db
 class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials connection."""
 
-    __tablename__ = 'dc_connections'
+    __tablename__ = "dc_connections"
 
     id = db.Column(db.Integer, primary_key=True)
-    connection_id = db.Column('connection_id', db.String(100))
-    invitation_url = db.Column('invitation_url', db.String(4096))
-    is_active = db.Column('is_active', db.Boolean, default=False)
+    connection_id = db.Column("connection_id", db.String(100))
+    invitation_url = db.Column("invitation_url", db.String(4096))
+    is_active = db.Column("is_active", db.Boolean, default=False)
 
     # connection_state values we recieve in webhook, but we may not need all of it
     # [init / invitation / request / response / active / error / inactive]
-    connection_state = db.Column('connection_state', db.String(50))
+    connection_state = db.Column("connection_state", db.String(50))
 
-    legal_entity_id = db.Column('legal_entity_id', db.Integer, db.ForeignKey('legal_entities.id'))
+    legal_entity_id = db.Column(
+        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
+    )
 
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
-            'id': self.id,
-            'businessId': self.legal_entity_id,
-            'connectionId': self.connection_id,
-            'invitationUrl': self.invitation_url,
-            'isActive': self.is_active,
-            'connectionState': self.connection_state
+            "id": self.id,
+            "businessId": self.legal_entity_id,
+            "connectionId": self.connection_id,
+            "invitationUrl": self.invitation_url,
+            "isActive": self.is_active,
+            "connectionState": self.connection_state,
         }
         return dc_connection
 
@@ -66,7 +68,9 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
+            dc_connection = cls.query.filter(
+                DCConnection.connection_id == connection_id
+            ).one_or_none()
         return dc_connection
 
     @classmethod
@@ -75,16 +79,18 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         dc_connection = None
         if legal_entity_id:
             dc_connection = (
-              cls.query
-                 .filter(DCConnection.legal_entity_id == legal_entity_id)
-                 .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
-                 .one_or_none())
+                cls.query.filter(DCConnection.legal_entity_id == legal_entity_id)
+                .filter(
+                    DCConnection.is_active == True
+                )  # noqa: E712 # pylint: disable=singleton-comparison
+                .one_or_none()
+            )
         return dc_connection
 
     @classmethod
-    def find_by(cls,
-                legal_entity_id: int = None,
-                connection_state: str = None) -> List[DCConnection]:
+    def find_by(
+        cls, legal_entity_id: int = None, connection_state: str = None
+    ) -> List[DCConnection]:
         """Return the digital credential connection matching the filter."""
         query = db.session.query(DCConnection)
 
