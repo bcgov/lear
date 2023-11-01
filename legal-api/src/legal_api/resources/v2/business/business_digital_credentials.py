@@ -104,6 +104,11 @@ def delete_connection(identifier, connection_id):
     if not connection:
         return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
 
+    try:
+        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
     connection.delete()
     return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
 
@@ -120,6 +125,11 @@ def delete_active_connection(identifier):
     connection = DCConnection.find_active_by(business_id=business.id)
     if not connection:
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
+
+    try:
+        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     connection.delete()
     return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
@@ -242,6 +252,11 @@ def delete_credential(identifier, credential_id):
     issued_credential = DCIssuedCredential.find_by_credential_id(credential_id=credential_id)
     if not issued_credential:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
+
+    try:
+        digital_credentials.remove_credential_exchange_record(issued_credential.credential_exchange_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove credential exchange record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.delete()
     return jsonify({'message': 'Credential has been deleted.'}), HTTPStatus.OK

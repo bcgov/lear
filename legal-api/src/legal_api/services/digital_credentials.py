@@ -216,6 +216,30 @@ class DigitalCredentialsService:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
+    def remove_connection_record(self, connection_id: str) -> Optional[dict]:
+        """Delete a connection."""
+        try:
+            response = requests.delete(self.api_url + '/connections/' + connection_id,
+                                       headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def remove_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+        """Delete a credential exchange."""
+        try:
+            response = requests.delete(self.api_url + '/issue-credential-2.0/records/' + cred_ex_id,
+                                       headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
