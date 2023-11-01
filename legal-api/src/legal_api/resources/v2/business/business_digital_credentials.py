@@ -19,7 +19,6 @@ from http import HTTPStatus
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.extensions import socketio
 from legal_api.models import (
     Business,
     CorpType,
@@ -104,6 +103,11 @@ def delete_connection(identifier, connection_id):
     if not connection:
         return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
 
+    try:
+        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
     connection.delete()
     return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
 
@@ -120,6 +124,11 @@ def delete_active_connection(identifier):
     connection = DCConnection.find_active_by(business_id=business.id)
     if not connection:
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
+
+    try:
+        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     connection.delete()
     return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
@@ -243,6 +252,11 @@ def delete_credential(identifier, credential_id):
     if not issued_credential:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
+    try:
+        digital_credentials.remove_credential_exchange_record(issued_credential.credential_exchange_id)
+    except Exception:
+        return jsonify({'message': 'Failed to remove credential exchange record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
     issued_credential.delete()
     return jsonify({'message': 'Credential has been deleted.'}), HTTPStatus.OK
 
@@ -265,7 +279,6 @@ def webhook_notification(topic_name: str):
                 connection.connection_state = json_input['state']
                 connection.is_active = True
                 connection.save()
-                socketio.emit('connections', connection.json)
         elif topic_name == 'issuer_cred_rev':
             issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'issued':
@@ -278,7 +291,6 @@ def webhook_notification(topic_name: str):
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
-                socketio.emit('issue_credential_v2_0', issued_credential.json)
     except Exception as err:
         current_app.logger.error(err)
         raise err

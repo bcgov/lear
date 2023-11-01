@@ -131,10 +131,7 @@ tag: push ## tag image
 # COMMANDS - Local                                                              #
 #################################################################################
 run: ## Run the project in local
-	. venv/bin/activate && python -m flask run -p 5050
-
-run-websockets: ## Run the project in local with websockets
-	. venv/bin/activate && python -m gunicorn --threads 100 --bind :5050 wsgi
+	. venv/bin/activate && python -m flask run -p 5000
 
 #################################################################################
 # Self Documenting Commands                                                     #
