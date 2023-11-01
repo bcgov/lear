@@ -26,17 +26,13 @@ def requires_traction_auth(f):
     """Check for a valid Traction token and refresh if needed."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        traction_api_url = current_app.config['TRACTION_API_URL']
-        traction_tenant_id = current_app.config['TRACTION_TENANT_ID']
-        traction_api_key = current_app.config['TRACTION_API_KEY']
-
-        if traction_api_url is None:
+        if not (traction_api_url := current_app.config['TRACTION_API_URL']):
             raise EnvironmentError('TRACTION_API_URL environment vairable is not set')
 
-        if traction_tenant_id is None:
+        if not (traction_tenant_id := current_app.config['TRACTION_TENANT_ID']):
             raise EnvironmentError('TRACTION_TENANT_ID environment vairable is not set')
 
-        if traction_api_key is None:
+        if not (traction_api_key := current_app.config['TRACTION_API_KEY']):
             raise EnvironmentError('TRACTION_API_KEY environment vairable is not set')
 
         try:

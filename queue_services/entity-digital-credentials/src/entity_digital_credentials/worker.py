@@ -88,12 +88,11 @@ def process_digital_credential(dc_msg: dict, flask_app: Flask):
                 raise QueueException('Digital credential message is missing data.')
 
             filing_id = dc_msg['data']['filing']['header']['filingId']
-            filing_core = FilingCore.find_by_id(filing_id)
-            if not filing_core:
+
+            if not (filing_core := FilingCore.find_by_id(filing_id)):
                 raise QueueException(f'Filing not found for id: {filing_id}.')
 
-            filing = filing_core.storage
-            if not filing:
+            if not (filing := filing_core.storage):
                 raise QueueException(f'Filing not found for id: {filing_id}.')
 
             if filing.status != FilingCore.Status.COMPLETED.value:

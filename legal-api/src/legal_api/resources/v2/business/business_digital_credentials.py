@@ -13,20 +13,16 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
-import json
 from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
-from flask_socketio import emit
 
-from legal_api.extensions import socketio
 from legal_api.helpers.digital_credentials import DCRevocationReason, get_digital_credential_data
-from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential
+from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, User
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
-from legal_api.extensions import socketio
 
 from .bp import bp
 
@@ -39,20 +35,16 @@ bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCr
 @jwt.requires_auth
 def create_invitation(identifier):
     """Create a new connection invitation."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    active_connection = DCConnection.find_active_by(business_id=business.id)
-    if active_connection:
+    if DCConnection.find_active_by(business_id=business.id):
         return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
 
-    connections = DCConnection.find_by(business_id=business.id, connection_state='invitation')
-    if connections:
+    if (connections := DCConnection.find_by(business_id=business.id, connection_state='invitation')):
         connection = connections[0]
     else:
-        invitation = digital_credentials.create_invitation()
-        if not invitation:
+        if not (invitation := digital_credentials.create_invitation()):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
         connection = DCConnection(
@@ -72,8 +64,7 @@ def create_invitation(identifier):
 @jwt.requires_auth
 def get_connections(identifier):
     """Get active connection for this business."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
     connections = DCConnection.find_by(business_id=business.id)
@@ -86,35 +77,16 @@ def get_connections(identifier):
     return jsonify({'connections': response}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
-@cross_origin(origin='*')
-@jwt.requires_auth
-def delete_connection(identifier):
-    """Delete an active connection for this business."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
-
-    connection = DCConnection.find_active_by(business_id=business.id)
-    if not connection:
-        return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
-
-    connection.delete()
-    return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
-
-
 @bp.route('/<string:identifier>/digitalCredentials/connections/<string:connection_id>',
           methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
 def delete_connection(identifier, connection_id):
     """Delete a connection."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not Business.find_by_identifier(identifier):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_by_connection_id(connection_id=connection_id)
-    if not connection:
+    if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
         return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
 
     try:
@@ -131,12 +103,10 @@ def delete_connection(identifier, connection_id):
 @jwt.requires_auth
 def delete_active_connection(identifier):
     """Delete an active connection for this business."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
-    if not connection:
+    if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
     try:
@@ -153,16 +123,13 @@ def delete_active_connection(identifier):
 @jwt.requires_auth
 def get_issued_credentials(identifier):
     """Get all issued credentials."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
-    if not connection:
+    if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
-    issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id)
-    if not issued_credentials:
+    if not (issued_credentials := DCIssuedCredential.find_by(dc_connection_id=connection.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
     response = []
@@ -184,12 +151,10 @@ def get_issued_credentials(identifier):
 @jwt.requires_auth
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    user = User.find_by_jwt_token(_request_ctx_stack.top.current_user)
-    if not user:
+    if not (user := User.find_by_jwt_token(_request_ctx_stack.top.current_user)):
         return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
 
     connection = DCConnection.find_active_by(business_id=business.id)
@@ -202,15 +167,14 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential_data = _get_data_for_credential(definition.credential_type, business, user)
+    credential_data = get_digital_credential_data(business, user, definition.credential_type)
     credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
-    response = digital_credentials.issue_credential(
+    if not (response := digital_credentials.issue_credential(
         connection_id=connection.connection_id,
         definition=definition,
         data=credential_data
-    )
-    if not response:
+    )):
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential = DCIssuedCredential(
@@ -230,12 +194,10 @@ def send_credential(identifier, credential_type):
 @jwt.requires_auth
 def revoke_credential(identifier, credential_id):
     """Revoke a credential."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connection = DCConnection.find_active_by(business_id=business.id)
-    if not connection:
+    if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
     issued_credential = DCIssuedCredential.find_by_credential_id(credential_id=credential_id)
@@ -244,8 +206,9 @@ def revoke_credential(identifier, credential_id):
 
     revoked = digital_credentials.revoke_credential(connection.connection_id,
                                                     issued_credential.credential_revocation_id,
-                                                    issued_credential.revocation_registry_id)
-    if not revoked:
+                                                    issued_credential.revocation_registry_id,
+                                                    DCRevocationReason.SELF_REVOCATION)
+    if revoked is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True
@@ -258,12 +221,10 @@ def revoke_credential(identifier, credential_id):
 @jwt.requires_auth
 def delete_credential(identifier, credential_id):
     """Delete a credential."""
-    business = Business.find_by_identifier(identifier)
-    if not business:
+    if not Business.find_by_identifier(identifier):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    issued_credential = DCIssuedCredential.find_by_credential_id(credential_id=credential_id)
-    if not issued_credential:
+    if not (issued_credential := DCIssuedCredential.find_by_credential_id(credential_id=credential_id)):
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
     try:
@@ -299,14 +260,12 @@ def webhook_notification(topic_name: str):
                 issued_credential.credential_revocation_id = json_input['cred_rev_id']
                 issued_credential.revocation_registry_id = json_input['rev_reg_id']
                 issued_credential.save()
-                socketio.emit('connections', connection.json)
         elif topic_name == 'issue_credential_v2_0':
             issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'done':
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
-                socketio.emit('issue_credential_v2_0', issued_credential.json)
     except Exception as err:
         current_app.logger.error(err)
         raise err

@@ -21,6 +21,7 @@ from typing import Optional
 
 import requests
 
+from legal_api.decorators import requires_traction_auth
 from legal_api.helpers.digital_credentials import DCRevocationReason
 from legal_api.models import DCDefinition
 
@@ -61,11 +62,11 @@ class DigitalCredentialsService:
     def _register_business_definition(self):
         """Fetch schema and credential definition and save a Business definition."""
         try:
-            if self.business_schema_id is None:
+            if not self.business_schema_id:
                 self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
-            if self.business_cred_def_id is None:
+            if not self.business_cred_def_id:
                 self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
@@ -77,14 +78,12 @@ class DigitalCredentialsService:
             ###
 
             # Look for a schema first, and copy it into the Traction tenant if it's not there
-            schema_id = self._fetch_schema(self.business_schema_id)
-            if not schema_id:
+            if not (schema_id := self._fetch_schema(self.business_schema_id)):
                 raise ValueError(f'Schema with id:{self.business_schema_id}' +
                                  ' must be available in Traction tenant storage')
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
-            credential_definition_id = self._fetch_credential_definition(self.business_cred_def_id)
-            if not credential_definition_id:
+            if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
                 raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
                                  ' must be avaible in Traction tenant storage')
 
@@ -94,7 +93,6 @@ class DigitalCredentialsService:
                 schema_id=self.business_schema_id,
                 credential_definition_id=self.business_cred_def_id
             )
-
             if definition and not definition.is_deleted:
                 return None
 
@@ -125,19 +123,6 @@ class DigitalCredentialsService:
             return first_or_default['schema_id'] if first_or_default else None
         except Exception as err:
             self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
-            self.app.logger.error(err)
-            raise err
-        
-    def _get_credential_definition(self, schema_id: str) -> Optional[str]:
-        """Find a published credential definition"""
-        try:
-            response = requests.get(self.api_url + '/credential-definitions/created',
-                                    params={'schema_id': schema_id},
-                                    headers=self._get_headers())
-            response.raise_for_status()
-            return response.json()['credential_definition_ids'][0]
-        except Exception as err:
-            self.app.logger.error(f'Failed to find credential definition with schema_id:{schema_id}')
             self.app.logger.error(err)
             raise err
 
@@ -210,7 +195,10 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str, reason: DCRevocationReason) -> Optional[dict]:
+    def revoke_credential(self, connection_id,
+                          cred_rev_id: str,
+                          rev_reg_id: str,
+                          reason: DCRevocationReason) -> Optional[dict]:
         """Revoke a credential."""
         try:
             response = requests.post(self.api_url + '/revocation/revoke',
