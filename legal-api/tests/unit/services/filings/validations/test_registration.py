@@ -21,6 +21,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
+from legal_api.models import NaicsStructure
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -96,10 +97,8 @@ DBA_REGISTRATION['filing']['registration']['parties'][1] = {
     ]
 }
 
-naics_response = {
-    'code': REGISTRATION['business']['naics']['naicsCode'],
-    'classTitle': REGISTRATION['business']['naics']['naicsDescription']
-}
+mock_naics_structure = NaicsStructure(code=REGISTRATION['business']['naics']['naicsCode'],
+                                      class_title=REGISTRATION['business']['naics']['naicsDescription'])
 
 
 class MockResponse:
@@ -138,7 +137,7 @@ def test_gp_registration(monkeypatch, app, session, jwt):
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('GP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, GP_REGISTRATION)
 
         assert not err
@@ -155,7 +154,7 @@ def test_sp_registration(monkeypatch, app, session, jwt):
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, SP_REGISTRATION)
 
         assert not err
@@ -172,7 +171,7 @@ def test_dba_registration(monkeypatch, app, session, jwt):
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, DBA_REGISTRATION)
 
         assert not err
@@ -185,7 +184,7 @@ def test_invalid_nr_registration(monkeypatch, app, session, jwt):
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing = copy.deepcopy(SP_REGISTRATION)
     invalid_nr_response = {
         'state': 'INPROGRESS',
@@ -199,7 +198,7 @@ def test_invalid_nr_registration(monkeypatch, app, session, jwt):
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         assert err
@@ -213,7 +212,7 @@ def test_business_type_required(monkeypatch, app, session, jwt):
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing = copy.deepcopy(SP_REGISTRATION)
     del filing['filing']['registration']['businessType']
 
@@ -221,7 +220,7 @@ def test_business_type_required(monkeypatch, app, session, jwt):
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         assert err
@@ -242,7 +241,7 @@ def test_validate_tax_id(monkeypatch, app, session, jwt, test_name, tax_id, expe
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['business']['taxId'] = tax_id
 
@@ -250,7 +249,7 @@ def test_validate_tax_id(monkeypatch, app, session, jwt, test_name, tax_id, expe
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         if expected:
@@ -267,7 +266,7 @@ def test_naics_invalid(monkeypatch, app, session, jwt):
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing = copy.deepcopy(SP_REGISTRATION)
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
@@ -296,14 +295,14 @@ def test_invalid_party(monkeypatch, app, session, jwt, test_name, filing, expect
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing['filing']['registration']['parties'] = []
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         assert err
@@ -333,7 +332,7 @@ def test_invalid_business_address(monkeypatch, app, session, jwt, test_name, fil
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         assert err
@@ -371,11 +370,11 @@ def test_validate_start_date(monkeypatch, app, session, jwt, test_name, username
     filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    
+
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         if is_valid:
@@ -398,7 +397,7 @@ def test_registration_court_orders(monkeypatch, app, session, jwt, test_status, 
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     filing = copy.deepcopy(GP_REGISTRATION)
 
     court_order = {'effectOfOrder': effect_of_order}
@@ -410,7 +409,7 @@ def test_registration_court_orders(monkeypatch, app, session, jwt, test_status, 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(None, filing)
 
         # validate outcomes

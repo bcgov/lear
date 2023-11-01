@@ -14,7 +14,6 @@
 """Test Firms Correction validations."""
 
 import copy
-from http import HTTPStatus
 from unittest.mock import patch
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -22,7 +21,8 @@ from dateutil.relativedelta import relativedelta
 import pytest
 from registry_schemas.example_data import CORRECTION_REGISTRATION, CHANGE_OF_REGISTRATION_TEMPLATE
 
-from legal_api.services import NaicsService, NameXService
+from legal_api.models import NaicsStructure
+from legal_api.services import NameXService
 from legal_api.services.filings import validate
 from legal_api.services.authz import STAFF_ROLE, BASIC_USER
 from tests.unit.models import factory_business, factory_completed_filing
@@ -66,10 +66,10 @@ nr_response = {
     }]
 }
 
-naics_response = {
-    'code': CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsCode'],
-    'classTitle': CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsDescription']
-}
+mock_naics_structure = (
+    NaicsStructure(code=CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsCode'],
+                   class_title=CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsDescription'])
+)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +86,7 @@ def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filin
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
@@ -103,7 +103,7 @@ def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filin
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(business, f)
 
                 if err:
@@ -127,7 +127,7 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     # setup
     identifier = 'FM1234567'
     business = factory_business(identifier)
@@ -144,7 +144,7 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(business, f)
 
                 if err:
@@ -160,11 +160,11 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
     [
         # SP tests
         ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
-         '112910', 'Apiculture', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         '112910', 'Apiculture', '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
-         None, None, '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         None, None, '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('sp_naics_new_valid_naics_code_and_desc', SP_CORRECTION_REGISTRATION_APPLICATION,
-         None, 'some desc', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         None, 'some desc', '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, '112910', 'Apiculture', '112910', 'Apiculture',
          None, None),
         ('sp_no_naics_changes', SP_CORRECTION_REGISTRATION_APPLICATION, None, '112910', None, '112910', None, None),
@@ -173,15 +173,15 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
         ('sp_naics_change_no_code_match', SP_CORRECTION_REGISTRATION_APPLICATION,
          '112910', 'Apiculture', '111111', 'desc 23434', None, 'Invalid naics code or description.'),
         ('sp_naics_change_desc_mismatch', SP_CORRECTION_REGISTRATION_APPLICATION,
-         '112910', 'Apiculture', '112910', 'wrong desc', {'code': '112910', 'classTitle': 'Apiculture'},
+         '112910', 'Apiculture', '112910', 'wrong desc', NaicsStructure(code='112910', class_title='Apiculture'),
          'Invalid naics code or description.'),
         # GP tests
         ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
-         '112910', 'Apiculture', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         '112910', 'Apiculture', '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
-         None, None, '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         None, None, '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('gp_naics_new_valid_naics_code_and_desc', GP_CORRECTION_REGISTRATION_APPLICATION,
-         None, 'some desc', '112510', 'Aquaculture', {'code': '112510', 'classTitle': 'Aquaculture'}, None),
+         None, 'some desc', '112510', 'Aquaculture', NaicsStructure(code='112510', class_title='Aquaculture'), None),
         ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, '112910', 'Apiculture', '112910', 'Apiculture',
          None, None),
         ('gp_no_naics_changes', GP_CORRECTION_REGISTRATION_APPLICATION, None, '112910', None, '112910', None, None),
@@ -190,7 +190,7 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
         ('gp_naics_change_no_code_match', GP_CORRECTION_REGISTRATION_APPLICATION,
          '112910', 'Apiculture', '111111', 'desc 23434', None, 'Invalid naics code or description.'),
         ('gp_naics_change_desc_mismatch', GP_CORRECTION_REGISTRATION_APPLICATION,
-         '112910', 'Apiculture', '112910', 'wrong desc', {'code': '112910', 'classTitle': 'Apiculture'},
+         '112910', 'Apiculture', '112910', 'wrong desc', NaicsStructure(code='112910', class_title='Apiculture'),
          'Invalid naics code or description.'),
     ]
 )
@@ -202,7 +202,7 @@ def test_firms_correction_naics(monkeypatch, app, session, jwt, test_name, filin
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
@@ -227,7 +227,7 @@ def test_firms_correction_naics(monkeypatch, app, session, jwt, test_name, filin
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=naics_response):
                 err = validate(business, f)
 
                 if err:
@@ -241,7 +241,7 @@ def test_firms_correction_naics(monkeypatch, app, session, jwt, test_name, filin
             assert None is err
 
 
-@pytest.mark.parametrize('test_name, filing, username, roles, founding_date_str, delta_date, is_valid', 
+@pytest.mark.parametrize('test_name, filing, username, roles, founding_date_str, delta_date, is_valid',
                          [
                              ('sp_no_correction_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
                              ('gp_no_correction_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
@@ -270,7 +270,7 @@ def test_firms_correction_start_date(monkeypatch, app, session, jwt, test_name, 
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     identifier = 'FM1234567'
     founding_date = datetime.strptime(founding_date_str, '%Y-%m-%d')
     business = factory_business(identifier=identifier, founding_date=founding_date)
@@ -292,7 +292,7 @@ def test_firms_correction_start_date(monkeypatch, app, session, jwt, test_name, 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
                 err = validate(business, f)
 
         if is_valid:

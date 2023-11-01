@@ -20,6 +20,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
+from legal_api.models import NaicsStructure
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings.validations.change_of_registration import validate
 
@@ -72,10 +73,10 @@ nr_response = {
     }]
 }
 
-naics_response = {
-    'code': REGISTRATION['business']['naics']['naicsCode'],
-    'classTitle': REGISTRATION['business']['naics']['naicsDescription']
-}
+
+mock_naics_structure = NaicsStructure(code=REGISTRATION['business']['naics']['naicsCode'],
+                                      class_title=REGISTRATION['business']['naics']['naicsDescription'])
+
 
 
 class MockResponse:
@@ -93,7 +94,7 @@ class MockResponse:
 def test_gp_change_of_registration(session):
     """Assert that the general partnership change of registration is valid."""
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(GP_CHANGE_OF_REGISTRATION)
     assert not err
 
@@ -103,7 +104,7 @@ def test_sp_change_of_registration(session):
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = 'SP'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(SP_CHANGE_OF_REGISTRATION)
 
     assert not err
@@ -114,7 +115,7 @@ def test_dba_change_of_registration(session):
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = 'SP'
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(DBA_CHANGE_OF_REGISTRATION)
 
     assert not err
@@ -133,7 +134,7 @@ def test_invalid_nr_change_of_registration(session):
         }]
     }
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(filing)
 
     assert err
@@ -157,7 +158,7 @@ def test_invalid_party(session, test_name, filing, expected_msg):
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = filing['filing']['changeOfRegistration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(filing)
 
     assert err
@@ -182,7 +183,7 @@ def test_invalid_business_address(session, test_name, filing):
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = filing['filing']['changeOfRegistration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(filing)
 
     assert err
@@ -209,7 +210,7 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
     filing['filing']['changeOfRegistration']['courtOrder'] = court_order
 
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with patch.object(NaicsStructure, 'find_by_code', return_value=mock_naics_structure):
             err = validate(filing)
 
     # validate outcomes

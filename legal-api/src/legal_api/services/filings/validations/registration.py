@@ -21,8 +21,8 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
-from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.models import Business, NaicsStructure, PartyRole
+from legal_api.services import STAFF_ROLE
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -84,8 +84,8 @@ def validate_naics(filing: Dict, filing_type='registration') -> list:
     naics_code_path = f'/filing/{filing_type}/business/naics/naicsCode'
     naics_desc = get_str(filing, f'/filing/{filing_type}/business/naics/naicsDescription')
     if naics_code := get_str(filing, naics_code_path):
-        naics = NaicsService.find_by_code(naics_code)
-        if not naics or naics['classTitle'] != naics_desc:
+        naics = NaicsStructure.find_by_code(naics_code)
+        if not naics or naics.class_title != naics_desc:
             msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
 
     return msg

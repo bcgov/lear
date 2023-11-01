@@ -21,8 +21,8 @@ from flask_babel import _
 
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
-from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.models import Business, Filing, NaicsStructure, PartyRole
+from legal_api.services import STAFF_ROLE
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
@@ -193,8 +193,8 @@ def validate_naics(business: Business, filing: Dict, filing_type: str) -> list:
 
     # Note: if existing naics code and description has not changed, no NAICS validation is required
     if naics_code and (business.naics_code != naics_code or business.naics_description != naics_desc):
-        naics = NaicsService.find_by_code(naics_code)
-        if not naics or naics['classTitle'] != naics_desc:
+        naics = NaicsStructure.find_by_code(naics_code)
+        if not naics or naics.class_title != naics_desc:
             msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
 
     return msg
