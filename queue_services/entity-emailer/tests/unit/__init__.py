@@ -20,6 +20,7 @@ from unittest.mock import Mock
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
+    AGM_LOCATION_CHANGE,
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -381,6 +382,32 @@ def prep_alteration_filing(session, identifier, option, company_name):
     filing = create_filing(filing_json=filing_template, business_id=business.id)
     filing.save()
 
+    return filing
+
+
+def prep_agm_location_change_filing(identifier, payment_id, legal_type, legal_name):
+    """Return a new AGM location change filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'agmLocationChange'
+
+    filing_template['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+
+    filing.save()
     return filing
 
 
