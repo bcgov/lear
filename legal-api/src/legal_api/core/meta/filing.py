@@ -85,13 +85,16 @@ FILINGS: Final = {
     'agmExtension': {
             'name': 'agmExtension',
             'title': 'AGM Extension',
-            'displayName': 'AGM Extension',
+            'displayName': 'Request for AGM Extension',
             'codes': {
                 'BC': 'AGMDT',
                 'BEN': 'AGMDT',
                 'ULC': 'AGMDT',
                 'CC': 'AGMDT'
-            }
+            },
+            'additional': [
+                {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmExtension', ]},
+            ],
         },
     'agmLocationChange': {
         'name': 'agmLocationChange',
