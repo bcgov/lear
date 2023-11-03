@@ -24,14 +24,14 @@ from legal_api.services.digital_credentials import DigitalCredentialsService
 
 def test_init_app(session, app):  # pylint:disable=unused-argument
     """Assert that the init app register schema and credential definition."""
-    schema_id = '3ENKbWGgUBXXzDHnG11phS:2:business_schema:1.0.0'
-    cred_def_id = '3ENKbWGgUBXXzDHnG11phS:3:CL:146949:business_schema'
-    with patch.object(DigitalCredentialsService, '_register_schema', return_value=schema_id):
-        with patch.object(DigitalCredentialsService, '_register_credential_definitions', return_value=cred_def_id):
+    schema_id = 'test_schema_id'
+    cred_def_id = 'test_credential_definition_id'
+    with patch.object(DigitalCredentialsService, '_fetch_schema', return_value=schema_id):
+        with patch.object(DigitalCredentialsService, '_fetch_credential_definition', return_value=cred_def_id):
             digital_credentials.init_app(app)
             definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
             assert definition.schema_id == schema_id
-            assert definition.schema_name == digital_credentials.business_schema['schema_name']
-            assert definition.schema_version == digital_credentials.business_schema['schema_version']
+            assert definition.schema_name == digital_credentials.business_schema_name
+            assert definition.schema_version == digital_credentials.business_schema_version
             assert definition.credential_definition_id == cred_def_id
             assert not definition.is_deleted
