@@ -272,7 +272,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_transition_data(filing)
         elif self._report_key == 'dissolution':
             self._format_dissolution_data(filing)
-        elif self._report_key == 'agmLocationChange':
+        elif self._report_key == 'letterOfAgmLocationChange':
             self._format_agm_location_change_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
@@ -1174,9 +1174,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
         },
-        'agmLocationChange': {
+        'letterOfAgmLocationChange': {
             'filingDescription': 'Letter Of AGM Location Change',
-            'fileName': 'agmLocationChange'
+            'fileName': 'letterOfAgmLocationChange'
         }
     }
 

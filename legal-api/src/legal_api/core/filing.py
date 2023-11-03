@@ -474,6 +474,7 @@ class Filing:
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
+            Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
         if filing.status == Filing.Status.PAID and \
             not (filing.filing_type in no_legal_filings_in_paid_status
@@ -507,6 +508,7 @@ class Filing:
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                 ]
                 if filing.filing_type not in no_legal_filings:
                     documents['documents']['legalFilings'] = \
