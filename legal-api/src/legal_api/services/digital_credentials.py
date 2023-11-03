@@ -21,116 +21,146 @@ from typing import Optional
 
 import requests
 
+from legal_api.decorators import requires_traction_auth
 from legal_api.models import DCDefinition
 
 
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
 
-    business_schema = {
-        'attributes': [
-            'legalName',
-            'foundingDate',
-            'taxId',
-            'homeJurisdiction',
-            'legalType',
-            'identifier'
-        ],
-        'schema_name': 'business_schema',  # do not change schema name. this is the name registered in aca-py agent
-        'schema_version': '1.0.0'  # if attributes changes update schema_version to re-register
-    }
-
     def __init__(self):
         """Initialize this object."""
         self.app = None
 
         self.api_url = None
-        self.api_key = None
-        self.entity_did = None
+        self.api_token = None
+        self.public_schema_did = None
+        self.public_issuer_did = None
+
+        self.business_schema_name = None
+        self.business_schema_version = None
+        self.business_schema_id = None
+        self.business_cred_def_id = None
 
     def init_app(self, app):
         """Initialize digital credentials using aca-py agent."""
         self.app = app
 
-        self.api_url = app.config.get('ACA_PY_ADMIN_API_URL')
-        self.api_key = app.config.get('ACA_PY_ADMIN_API_KEY')
-        self.entity_did = app.config.get('ACA_PY_ENTITY_DID')
+        self.api_url = app.config.get('TRACTION_API_URL')
+        self.public_schema_did = app.config.get('TRACTION_PUBLIC_SCHEMA_DID')
+        self.public_issuer_did = app.config.get('TRACTION_PUBLIC_ISSUER_DID')
+
+        self.business_schema_name = app.config.get('BUSINESS_SCHEMA_NAME')
+        self.business_schema_version = app.config.get('BUSINESS_SCHEMA_VERSION')
+        self.business_schema_id = app.config.get('BUSINESS_SCHEMA_ID')
+        self.business_cred_def_id = app.config.get('BUSINESS_CRED_DEF_ID')
+
         with suppress(Exception):
-            self._register_business()
+            self._register_business_definition()
 
-    def _register_business(self):
-        """Register business schema and credential definition."""
-        # check for the current schema definition.
-        definition = DCDefinition.find_by(
-            credential_type=DCDefinition.CredentialType.business,
-            schema_name=self.business_schema['schema_name'],
-            schema_version=self.business_schema['schema_version']
-        )
+    def _register_business_definition(self):
+        """Fetch schema and credential definition and save a Business definition."""
+        try:
+            if self.business_schema_id is None:
+                self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
-        if definition:
-            if definition.is_deleted:
-                raise Exception('Digital Credentials: business_schema is marked as delete, fix it.')  # noqa: E501; pylint: disable=broad-exception-raised, line-too-long
-        else:
-            # deactivate any existing schema definition before registering new one
-            DCDefinition.deactivate(DCDefinition.CredentialType.business)
+            if self.business_cred_def_id is None:
+                self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
-            schema_id = self._register_schema(self.business_schema)
+            ###
+            # The following just a sanity check to make sure the schema and
+            # credential definition are stored in Traction tenant.
+            # These calls also include a ledger lookup to see if the schema
+            # and credential definition are published.
+            ###
+
+            # Look for a schema first, and copy it into the Traction tenant if it's not there
+            schema_id = self._fetch_schema(self.business_schema_id)
+            if not schema_id:
+                raise ValueError(f'Schema with id:{self.business_schema_id}' +
+                                 ' must be available in Traction tenant storage')
+
+            # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
+            credential_definition_id = self._fetch_credential_definition(self.business_cred_def_id)
+            if not credential_definition_id:
+                raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
+                                 ' must be avaible in Traction tenant storage')
+
+            # Check for the current Business definition.
+            definition = DCDefinition.find_by(
+                credential_type=DCDefinition.CredentialType.business,
+                schema_id=self.business_schema_id,
+                credential_definition_id=self.business_cred_def_id
+            )
+
+            if definition and not definition.is_deleted:
+                return None
+
+            # Create a new definition and add the new schema_id
             definition = DCDefinition(
                 credential_type=DCDefinition.CredentialType.business,
-                schema_name=self.business_schema['schema_name'],
-                schema_version=self.business_schema['schema_version'],
-                schema_id=schema_id
+                schema_name=self.business_schema_name,
+                schema_version=self.business_schema_version,
+                schema_id=schema_id,
+                credential_definition_id=credential_definition_id
             )
+            # Lastly, save the definition
             definition.save()
-
-        if not definition.credential_definition_id:
-            definition.credential_definition_id = self._register_credential_definitions(definition.schema_id)
-            definition.save()
-
-    def _register_schema(self, schema: dict) -> Optional[str]:
-        """Send a schema to the ledger."""
-        try:
-            response = requests.post(self.api_url + '/schemas',
-                                     headers=self._get_headers(),
-                                     data=json.dumps(schema))
-            response.raise_for_status()
-            return response.json()['schema_id']
+            return None
         except Exception as err:
-            self.app.logger.error(
-                f"Failed to register digital credential schema {schema['schema_name']}:{schema['schema_version']}")
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def _fetch_schema(self, schema_id: str) -> Optional[str]:
+        """Find a schema in Traction storage."""
+        try:
+            response = requests.get(self.api_url + '/schema-storage',
+                                    params={'schema_id': schema_id},
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            first_or_default = next((x for x in response.json()['results'] if x['schema_id'] == schema_id), None)
+            return first_or_default['schema_id'] if first_or_default else None
+        except Exception as err:
+            self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
-    def _register_credential_definitions(self, schema_id: str) -> Optional[str]:
-        """Send a credential definition to the ledger."""
+    @requires_traction_auth
+    def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
+        """Find a published credential definition."""
         try:
-            response = requests.post(self.api_url + '/credential-definitions',
-                                     headers=self._get_headers(),
-                                     data=json.dumps({
-                                         'revocation_registry_size': 1000,
-                                         'schema_id': schema_id,
-                                         'support_revocation': True,
-                                         'tag': 'business_schema'
-                                     }))
+            response = requests.get(self.api_url + '/credential-definition-storage',
+                                    params={'cred_def_id': cred_def_id},
+                                    headers=self._get_headers())
             response.raise_for_status()
-            return response.json()['credential_definition_id']
+            first_or_default = next((x for x in response.json()['results'] if x['cred_def_id'] == cred_def_id), None)
+            return first_or_default['cred_def_id'] if first_or_default else None
         except Exception as err:
-            self.app.logger.error(f'Failed to register credential definition schema_id:{schema_id}')
+            self.app.logger.error(f'Failed to find credential definition with id:{cred_def_id}' +
+                                  ' from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
+    @requires_traction_auth
     def create_invitation(self) -> Optional[dict]:
         """Create a new connection invitation."""
         try:
-            response = requests.post(self.api_url + '/connections/create-invitation',
+            response = requests.post(self.api_url + '/out-of-band/create-invitation',
                                      headers=self._get_headers(),
-                                     data={})
+                                     params={'auto_accept': 'true'},
+                                     data=json.dumps({
+                                         'handshake_protocols': ['https://didcomm.org/connections/1.0']
+                                     }))
             response.raise_for_status()
             return response.json()
         except Exception as err:
             self.app.logger.error(err)
             return None
 
+    @requires_traction_auth
     def issue_credential(self,
                          connection_id: str,
                          definition: DCDefinition,
@@ -138,24 +168,72 @@ class DigitalCredentialsService:
                          comment: str = '') -> Optional[dict]:
         """Send holder a credential, automating entire flow."""
         try:
-            response = requests.post(self.api_url + '/issue-credential/send',
+            response = requests.post(self.api_url + '/issue-credential-2.0/send',
                                      headers=self._get_headers(),
                                      data=json.dumps({
-                                         'auto_remove': True,
+                                         'auto_remove': 'true',
                                          'comment': comment,
                                          'connection_id': connection_id,
-                                         'cred_def_id': definition.credential_definition_id,
-                                         'credential_proposal': {
-                                             '@type': 'issue-credential/1.0/credential-preview',
+                                         'credential_preview': {
+                                             '@type': 'issue-credential/2.0/credential-preview',
                                              'attributes': data
                                          },
-                                         'issuer_did': self.entity_did,
-                                         'schema_id': definition.schema_id,
-                                         'schema_issuer_did': self.entity_did,
-                                         'schema_name': definition.schema_name,
-                                         'schema_version': definition.schema_version,
+                                         'filter': {
+                                             'indy': {
+                                                 'cred_def_id': definition.credential_definition_id,
+                                                 'issuer_did': self.public_issuer_did,
+                                                 'schema_id': definition.schema_id,
+                                                 'schema_issuer_did': self.public_schema_did,
+                                                 'schema_name': definition.schema_name,
+                                                 'schema_version': definition.schema_version
+                                             }
+                                         },
                                          'trace': True
                                      }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str) -> Optional[dict]:
+        """Revoke a credential."""
+        try:
+            response = requests.post(self.api_url + '/revocation/revoke',
+                                     headers=self._get_headers(),
+                                     data=json.dumps({
+                                         'connection_id': connection_id,
+                                         'cred_rev_id': cred_rev_id,
+                                         'rev_reg_id': rev_reg_id,
+                                         'publish': True,
+                                         'notify': True,
+                                         'notify_version': 'v1_0'
+                                     }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def remove_connection_record(self, connection_id: str) -> Optional[dict]:
+        """Delete a connection."""
+        try:
+            response = requests.delete(self.api_url + '/connections/' + connection_id,
+                                       headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def remove_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+        """Delete a credential exchange."""
+        try:
+            response = requests.delete(self.api_url + '/issue-credential-2.0/records/' + cred_ex_id,
+                                       headers=self._get_headers())
             response.raise_for_status()
             return response.json()
         except Exception as err:
@@ -165,5 +243,5 @@ class DigitalCredentialsService:
     def _get_headers(self) -> dict:
         return {
             'Content-Type': 'application/json',
-            'X-API-KEY': self.api_key
+            'Authorization': f'Bearer {self.app.api_token}'
         }

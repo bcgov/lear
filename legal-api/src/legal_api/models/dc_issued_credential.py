@@ -30,11 +30,13 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
     dc_connection_id = db.Column('dc_connection_id', db.Integer, db.ForeignKey('dc_connections.id'))
 
     credential_exchange_id = db.Column('credential_exchange_id', db.String(100))
-    credential_id = db.Column('credential_id', db.String(100))  # not in use
+    credential_id = db.Column('credential_id', db.String(10))
     is_issued = db.Column('is_issued', db.Boolean, default=False)
     date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
 
     is_revoked = db.Column('is_revoked', db.Boolean, default=False)
+    credential_revocation_id = db.Column('credential_revocation_id', db.String(10))
+    revocation_registry_id = db.Column('revocation_registry_id', db.String(200))
 
     @property
     def json(self):
@@ -44,15 +46,23 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             'dcDefinitionId': self.dc_definition_id,
             'dcConnectionId': self.dc_connection_id,
             'credentialExchangeId': self.credential_exchange_id,
+            'credentialId': self.credential_id,
             'isIssued': self.is_issued,
-            'dateOfIssue': self.date_of_issue.isoformat(),
-            'isRevoked': self.is_revoked
+            'dateOfIssue': self.date_of_issue.isoformat() if self.date_of_issue else None,
+            'isRevoked': self.is_revoked,
+            'credentialRevocationId': self.credential_revocation_id,
+            'revocationRegistryId': self.revocation_registry_id
         }
         return dc_issued_credential
 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete the object from the database immediately."""
+        db.session.delete(self)
         db.session.commit()
 
     @classmethod
@@ -65,11 +75,20 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     def find_by_credential_exchange_id(cls, credential_exchange_id: str) -> DCIssuedCredential:
-        """Return the issued credential matching the id."""
+        """Return the issued credential matching the credential exchange id."""
         dc_issued_credential = None
         if credential_exchange_id:
             dc_issued_credential = cls.query. \
                 filter(DCIssuedCredential.credential_exchange_id == credential_exchange_id).one_or_none()
+        return dc_issued_credential
+
+    @classmethod
+    def find_by_credential_id(cls, credential_id: str) -> DCIssuedCredential:
+        """Return the issued credential matching the credential id."""
+        dc_issued_credential = None
+        if credential_id:
+            dc_issued_credential = cls.query. \
+                filter(DCIssuedCredential.credential_id == credential_id).one_or_none()
         return dc_issued_credential
 
     @classmethod
