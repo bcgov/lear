@@ -127,6 +127,19 @@ class DigitalCredentialsService:
             self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
+        
+    def _get_credential_definition(self, schema_id: str) -> Optional[str]:
+        """Find a published credential definition"""
+        try:
+            response = requests.get(self.api_url + '/credential-definitions/created',
+                                    params={'schema_id': schema_id},
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()['credential_definition_ids'][0]
+        except Exception as err:
+            self.app.logger.error(f'Failed to find credential definition with schema_id:{schema_id}')
+            self.app.logger.error(err)
+            raise err
 
     @requires_traction_auth
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:

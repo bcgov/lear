@@ -101,7 +101,10 @@ FILINGS: Final = {
             'BEN': 'AGMLC',
             'ULC': 'AGMLC',
             'CC': 'AGMLC'
-        }
+        },
+        'additional': [
+            {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmLocationChange', ]},
+        ]
     },
     'alteration': {
         'name': 'alteration',

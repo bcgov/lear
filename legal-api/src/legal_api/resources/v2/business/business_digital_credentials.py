@@ -88,6 +88,22 @@ def get_connections(identifier):
         response.append(connection.json)
     return jsonify({'connections': response}), HTTPStatus.OK
 
+@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['DELETE'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_connection(identifier):
+    """Delete an active connection for this business."""
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    connection = DCConnection.find_active_by(business_id=business.id)
+    if not connection:
+        return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
+
+    connection.delete()
+    return jsonify({'message': 'Connection has been deleted.'}), HTTPStatus.OK
+
 
 @bp.route('/<string:identifier>/digitalCredentials/connections/<string:connection_id>',
           methods=['DELETE'], strict_slashes=False)

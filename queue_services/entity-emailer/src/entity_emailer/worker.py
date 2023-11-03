@@ -43,6 +43,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import config
 from entity_emailer.email_processors import (
     affiliation_notification,
+    agm_location_change_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -150,6 +151,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'annualReport' and option == 'reminder':
                 flag_on = flags.is_on('disable-specific-service-provider')
                 email = ar_reminder_notification.process(email_msg['email'], token, flag_on)
+                send_email(email, token)
+            elif etype == 'agmLocationChange' and option == Filing.Status.COMPLETED.value:
+                email = agm_location_change_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype == 'dissolution':
                 email = dissolution_notification.process(email_msg['email'], token)
