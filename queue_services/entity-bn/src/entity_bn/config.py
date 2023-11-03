@@ -61,7 +61,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv('SENTRY_DSN', None)
-    COLIN_API = f"{os.getenv('COLIN_SVC_URL', '')}{os.getenv('COLIN_SVC_VERSION', '')}"
+    COLIN_API = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
 
     SEARCH_API = \
         f"{os.getenv('REGISTRIES_SEARCH_API_INTERNAL_URL', '')}{os.getenv('REGISTRIES_SEARCH_API_VERSION', '/api/v1')}"
