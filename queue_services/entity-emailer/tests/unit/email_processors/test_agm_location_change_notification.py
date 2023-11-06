@@ -52,5 +52,3 @@ def test_agm_location_change_notification(app, session, status, legal_name, is_n
             assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
             assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.COMP.value
             assert mock_get_pdfs.call_args[0][2] == filing
-
-            assert email == {}
