@@ -737,7 +737,7 @@ class ListFilingResource():
                             'priority': priority,
                             'waiveFees': waive_fees_flag
                         })
-                    else: 
+                    else:
                         filing_types.append({
                             'filingTypeCode': filing_type_code,
                             'priority': priority,
