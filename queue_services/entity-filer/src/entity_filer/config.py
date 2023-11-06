@@ -1,6 +1,6 @@
 # Copyright © 2023 Province of British Columbia
 #
-# Licensed under the BSD 3 Clause License, (the "License");
+# Licensed under the BSD 3 Clause License, (the 'License');
 # you may not use this file except in compliance with the License.
 # The template for the license can be found here
 #    https://opensource.org/license/bsd-3-clause/
@@ -56,54 +56,64 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
+    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN", None)
-
-    REPORT_TEMPLATE_PATH = os.getenv("REPORT_PATH", "report-templates")
-
-    FONTS_PATH = os.getenv("FONTS_PATH", "fonts")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # POSTGRESQL
+    DB_USER = os.getenv('DATABASE_USERNAME', '')
+    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
+    DB_NAME = os.getenv('DATABASE_NAME', '')
+    DB_HOST = os.getenv('DATABASE_HOST', '')
+    DB_PORT = os.getenv('DATABASE_PORT', '5432')
 
     # POSTGRESQL
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DB_USER = os.getenv("DATABASE_USERNAME", "")
-    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
-    DB_NAME = os.getenv("DATABASE_NAME", "")
-    DB_HOST = os.getenv("DATABASE_HOST", "")
-    DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
+    if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
+        SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}'
     else:
-        SQLALCHEMY_DATABASE_URI = (
-            f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        )
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
-    COLIN_API = os.getenv("COLIN_API", "")
+    # API Endpoints
+    AUTH_API_URL = os.getenv('AUTH_API_URL', '')
+    AUTH_API_VERSION = os.getenv('AUTH_API_VERSION', '')
+    COLIN_API_URL = os.getenv('COLIN_API_URL', '')
+    COLIN_API_VERSION = os.getenv('COLIN_API_VERSION', '')
+    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
+    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION2', '')
+    NAMEX_API_URL = os.getenv('NAMEX_API_URL', '')
+    NAMEX_API_VERSION = os.getenv('NAMEX_API_VERSION', '')
+    PAY_API_URL = os.getenv('PAY_API_URL', '')
+    PAY_API_VERSION = os.getenv('PAY_API_VERSION', '')
+    REPORT_API_URL = os.getenv('REPORT_API_URL', '')
+    REPORT_API_VERSION = os.getenv('REPORT_API_VERSION', '')
+
+    LEGAL_API_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}'
+    COLIN_API = f'{COLIN_API_URL + AUTH_API_VERSION}'
+    NAMEX_API = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
+    PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-request'
+    AUTH_SVC_URL = f'{AUTH_API_URL + AUTH_API_VERSION}'
+    REPORT_SVC_URL = f'{REPORT_API_URL + REPORT_API_VERSION}/reports'
+    NAICS_API_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/naics'
+
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
     # service accounts
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "https://")
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
-    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
-
-    # BCRegistry Services
-    ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
-    ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL")
-    NAMEX_API = os.getenv("NAMEX_API")
+    ACCOUNT_SVC_AUTH_URL = os.getenv('KEYCLOAK_AUTH_TOKEN_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_TIMEOUT = os.getenv('KEYCLOAK_TIMEOUT')
 
     # legislative timezone for future effective dating
-    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
     # Minio configuration values
-    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
-    MINIO_ACCESS_SECRET = os.getenv("MINIO_ACCESS_SECRET")
-    MINIO_BUCKET_BUSINESSES = os.getenv("MINIO_BUCKET_BUSINESSES", "businesses")
+    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
+    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
+    MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
+    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
     MINIO_SECURE = True
 
-    NAICS_API_URL = os.getenv("NAICS_API_URL", "https://NAICS_API_URL/api/v2/naics")
+
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
@@ -122,21 +132,21 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
     # POSTGRESQL
-    DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
-    DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")
-    DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
-    DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
-    DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')
+    DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', '')
+    DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
+    DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
+    DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
+    SQLALCHEMY_DATABASE_URI = f'postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}'
 
     # Minio variables
-    MINIO_ENDPOINT = "localhost:9000"
-    MINIO_ACCESS_KEY = "minio"
-    MINIO_ACCESS_SECRET = "minio123"
-    MINIO_BUCKET_BUSINESSES = "businesses"
+    MINIO_ENDPOINT = 'localhost:9000'
+    MINIO_ACCESS_KEY = 'minio'
+    MINIO_ACCESS_SECRET = 'minio123'
+    MINIO_BUCKET_BUSINESSES = 'businesses'
     MINIO_SECURE = False
 
-    NAICS_API_URL = "https://NAICS_API_URL/api/v2/naics"
+    NAICS_API_URL = 'https://NAICS_API_URL/api/v2/naics'
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods

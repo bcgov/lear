@@ -1,0 +1,30 @@
+name: Business API CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "legal-api/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy To"
+        required: true
+        type: choice
+        options:
+        - dev
+        - test
+        - sandbox
+        - prod
+
+jobs:
+  business-api-cd:
+    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "business-api"
+      working_directory: "./legal-api"
+    secrets:
+      WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

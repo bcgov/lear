@@ -1,15 +1,16 @@
-name: Legal API CI
+name: Business Pay CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "legal-api/**"
+      - "queue_services/entity-pay/**"
+      - "queue_services/common/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./legal-api
+    working-directory: ./queue_services/entity-pay
 
 jobs:
   setup-job:
@@ -27,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.8]
 
     steps:
       - uses: actions/checkout@v3
@@ -50,7 +51,6 @@ jobs:
   testing:
     needs: setup-job
     env:
-      IMAGE_NAME: business-create
       DATABASE_TEST_USERNAME: postgres
       DATABASE_TEST_PASSWORD: postgres
       DATABASE_TEST_NAME: postgres
@@ -58,12 +58,16 @@ jobs:
       DATABASE_HOST: localhost
       DATABASE_PASSWORD: postgres
       NATS_SERVERS: "nats://nats:4222"
-      NATS_CLIENT_NAME: entity.legal_api
+      NATS_CLIENT_NAME: entity.filing.worker
       NATS_CLUSTER_ID: test-cluster
       NATS_FILER_SUBJECT: entity.filing.filer
-      NATS_QUEUE: entity-filer-worker
+      NATS_QUEUE: filing-worker
       JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
+      TEST_NATS_DOCKER: True
+      STAN_CLUSTER_NAME: test-cluster
       GO_LIVE_DATE: 2019-08-12
+      NATS_SUBJECT: entity.filings
+      NATS_EMAILER_SUBJECT: entity.email
 
     runs-on: ubuntu-20.04
 
@@ -95,9 +99,9 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./legal-api/coverage.xml
-          flags: legalapi
-          name: codecov-legal-api
+          file: ./queue_services/entity-pay/coverage.xml
+          flags: entitypay
+          name: codecov-entity-pay
           fail_ci_if_error: true
 
   build-check:

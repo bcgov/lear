@@ -1442,7 +1442,7 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "dev_legal_name_changes"
+reference = "feature-legal-name"
 resolved_reference = "46fe42057ce8b8f7136ea2817b044b3a58d6939e"
 
 [[package]]
@@ -1764,7 +1764,7 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "dev_legal_name_changes"
+reference = "feature-legal-name"
 resolved_reference = "ff4f152c9f934311a9605e0690a6ee033754a8de"
 subdirectory = "python/common/sql-versioning"
 

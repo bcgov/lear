@@ -13,7 +13,7 @@ Flask = "^2.3.3"
 python-dotenv = "^1.0.0"
 sentry-sdk = "^1.27.1"
 launchdarkly-server-sdk = "^8.1.4"
-business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "dev_legal_name_changes" }
+business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "feature-legal-name" }
 simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
 requests = "^2.31.0"
 google-auth = "^2.21.0"

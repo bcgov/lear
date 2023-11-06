@@ -57,21 +57,10 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     Used as the base for all the other configurations.
     """
-
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-
-    LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://PAYMENT_BASE/api/v1/payment-request')
-    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
-    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
-    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
-    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
+    SECRET_KEY = 'a secret'
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
-
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
-    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
-    SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     ALEMBIC_INI = 'migrations/alembic.ini'
@@ -93,9 +82,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     JWT_OIDC_ALGORITHMS = os.getenv('JWT_OIDC_ALGORITHMS')
     JWT_OIDC_JWKS_URI = os.getenv('JWT_OIDC_JWKS_URI')
     JWT_OIDC_ISSUER = os.getenv('JWT_OIDC_ISSUER')
-    JWT_OIDC_AUDIENCE = os.getenv('JWT_OIDC_AUDIENCE')
+    JWT_OIDC_AUDIENCE = os.getenv('KEYCLOAK_CLIENT_ID')
     JWT_OIDC_CLIENT_SECRET = os.getenv('JWT_OIDC_CLIENT_SECRET')
-    JWT_OIDC_CACHING_ENABLED = os.getenv('JWT_OIDC_CACHING_ENABLED')
+    JWT_OIDC_CACHING_ENABLED = os.getenv('KEYCLOAK_CLIENT_SECRET')
     JWT_OIDC_USERNAME = os.getenv('JWT_OIDC_USERNAME', 'username')
     JWT_OIDC_FIRSTNAME = os.getenv('JWT_OIDC_FIRSTNAME', 'firstname')
     JWT_OIDC_LASTNAME = os.getenv('JWT_OIDC_LASTNAME', 'lastname')
@@ -106,26 +95,37 @@ class _Config():  # pylint: disable=too-few-public-methods
     except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
-    # NATS / STAN
-    NATS_SERVERS = os.getenv('NATS_SERVERS')
-    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', 'entity.legal_api')
-    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
-    NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
-    NATS_ENTITY_EVENT_SUBJECT = os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events')
-    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
-    NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
+    # API Endpoints
+    AUTH_API_URL = os.getenv('AUTH_API_URL', '')
+    AUTH_API_VERSION = os.getenv('AUTH_API_VERSION', '')
+    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
+    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION2', '')
+    NAMEX_API_URL = os.getenv('NAMEX_API_URL', '')
+    NAMEX_API_VERSION = os.getenv('NAMEX_API_VERSION', '')
+    PAY_API_URL = os.getenv('PAY_API_URL', '')
+    PAY_API_VERSION = os.getenv('PAY_API_VERSION', '')
+    REPORT_API_URL = os.getenv('REPORT_API_URL', '')
+    REPORT_API_VERSION = os.getenv('REPORT_API_VERSION', '')
+
+    LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+    NAMEX_SVC_URL = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
+    PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-request'
+    AUTH_SVC_URL = f'{AUTH_API_URL + AUTH_API_VERSION}'
+    REPORT_SVC_URL = f'{REPORT_API_URL + REPORT_API_VERSION}/reports'
+
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
     # NAMEX PROXY Settings
-    NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', 'http://')
-    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('NAMEX_SERVICE_CLIENT_USERNAME')
-    NAMEX_SERVICE_CLIENT_SECRET = os.getenv('NAMEX_SERVICE_CLIENT_SECRET')
-    NAMEX_SVC_URL = os.getenv('NAMEX_SVC_URL', 'http://')
+    NAMEX_AUTH_SVC_URL = os.getenv('KEYCLOAK_AUTH_TOKEN_URL', 'http://')
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('KEYCLOAK_CLIENT_ID')
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_SECRET')
 
     # service accounts
-    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
-    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
-    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+    ACCOUNT_SVC_AUTH_URL = os.getenv('KEYCLOAK_AUTH_TOKEN_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_TIMEOUT = os.getenv('KEYCLOAK_TIMEOUT')
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
@@ -141,12 +141,30 @@ class _Config():  # pylint: disable=too-few-public-methods
     NAICS_YEAR = int(os.getenv('NAICS_YEAR', '2022'))
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = int(os.getenv('NAICS_VERSION', '1'))
-
-    NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
+    NAICS_API_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/naics'
 
     ACA_PY_ADMIN_API_URL = os.getenv('ACA_PY_ADMIN_API_URL')
     ACA_PY_ADMIN_API_KEY = os.getenv('ACA_PY_ADMIN_API_KEY')
     ACA_PY_ENTITY_DID = os.getenv('ACA_PY_ENTITY_DID')
+
+    # Traction ACA-Py tenant settings to issue credentials from
+    # TRACTION_API_URL = os.getenv('TRACTION_API_URL')
+    # TRACTION_TENANT_ID = os.getenv('TRACTION_TENANT_ID')
+    # TRACTION_API_KEY = os.getenv('TRACTION_API_KEY')
+    # TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID')
+    # TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID')
+
+    # Web socket settings
+    # WS_ALLOWED_ORIGINS = os.getenv('WS_ALLOWED_ORIGINS')
+
+    # Digital Business Card configuration values (required to issue credentials)
+    # BUSINESS_SCHEMA_NAME = os.getenv('BUSINESS_SCHEMA_NAME')
+    # BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
+    # BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
+    # BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
+
+    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    LD_SDK_KEY = os.getenv('BUSINESS_API_LD_SDK_KEY', None)
 
     TESTING = False
     DEBUG = False
