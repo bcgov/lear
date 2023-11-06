@@ -15,7 +15,7 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from entity_emailer.email_processors import agm_location_change_notification
 from tests.unit import prep_agm_location_change_filing
