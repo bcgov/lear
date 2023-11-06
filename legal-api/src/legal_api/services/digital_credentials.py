@@ -195,6 +195,18 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
+    def fetch_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+        """Fetch a credential exchange record."""
+        try:
+            response = requests.get(self.api_url + '/issue-credential-2.0/records/' + cred_ex_id,
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
     def revoke_credential(self, connection_id,
                           cred_rev_id: str,
                           rev_reg_id: str,

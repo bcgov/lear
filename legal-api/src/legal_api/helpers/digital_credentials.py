@@ -191,3 +191,12 @@ def get_digital_credential_data(business: Business, user: User, credential_type:
         ]
 
     return None
+
+
+def extract_invitation_message_id(json_message: dict):
+    """Extract the invitation message id from the json message."""
+    if 'invitation' in json_message and json_message['invitation'] is not None:
+        invitation_message_id = json_message['invitation']['@id']
+    else:
+        invitation_message_id = json_message['invitation_msg_id']
+    return invitation_message_id

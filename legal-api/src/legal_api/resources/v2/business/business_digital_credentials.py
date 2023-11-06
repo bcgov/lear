@@ -19,7 +19,11 @@ from http import HTTPStatus
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.helpers.digital_credentials import DCRevocationReason, get_digital_credential_data
+from legal_api.helpers.digital_credentials import (
+    DCRevocationReason,
+    extract_invitation_message_id,
+    get_digital_credential_data,
+)
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, User
 from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
@@ -44,14 +48,16 @@ def create_invitation(identifier):
     if (connections := DCConnection.find_by(business_id=business.id, connection_state='invitation')):
         connection = connections[0]
     else:
-        if not (invitation := digital_credentials.create_invitation()):
+        if not (response := digital_credentials.create_invitation()):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+        invitation_message_id = extract_invitation_message_id(response)
+
         connection = DCConnection(
-            connection_id=invitation['invitation']['@id'],
-            invitation_url=invitation['invitation_url'],
+            connection_id=invitation_message_id,
+            invitation_url=response['invitation_url'],
             is_active=False,
-            connection_state='invitation',
+            connection_state=DCConnection.State.INVITATION.value,
             business_id=business.id
         )
         connection.save()
@@ -89,9 +95,8 @@ def delete_connection(identifier, connection_id):
     if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
         return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
 
-    try:
-        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
-    except Exception:
+    if (connection.connection_state != DCConnection.State.INVITATION.value and
+            digital_credentials.remove_connection_record(connection_id=connection.connection_id) is None):
         return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     connection.delete()
@@ -109,9 +114,7 @@ def delete_active_connection(identifier):
     if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
-    try:
-        digital_credentials.remove_connection_record(connection_id=connection.connection_id)
-    except Exception:
+    if digital_credentials.remove_connection_record(connection_id=connection.connection_id) is None:
         return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     connection.delete()
@@ -204,11 +207,10 @@ def revoke_credential(identifier, credential_id):
     if not issued_credential or issued_credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
-    revoked = digital_credentials.revoke_credential(connection.connection_id,
-                                                    issued_credential.credential_revocation_id,
-                                                    issued_credential.revocation_registry_id,
-                                                    DCRevocationReason.SELF_REVOCATION)
-    if revoked is None:
+    if digital_credentials.revoke_credential(connection.connection_id,
+                                             issued_credential.credential_revocation_id,
+                                             issued_credential.revocation_registry_id,
+                                             DCRevocationReason.SELF_REVOCATION) is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True
@@ -227,9 +229,8 @@ def delete_credential(identifier, credential_id):
     if not (issued_credential := DCIssuedCredential.find_by_credential_id(credential_id=credential_id)):
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
-    try:
-        digital_credentials.remove_credential_exchange_record(issued_credential.credential_exchange_id)
-    except Exception:
+    if (digital_credentials.fetch_credential_exchange_record(issued_credential.credential_exchange_id) is not None and
+            digital_credentials.remove_credential_exchange_record(issued_credential.credential_exchange_id) is None):
         return jsonify({'message': 'Failed to remove credential exchange record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.delete()
@@ -243,13 +244,11 @@ def webhook_notification(topic_name: str):
     json_input = request.get_json()
     try:
         if topic_name == 'connections':
-            if 'invitation' in json_input and json_input['invitation'] is not None:
-                connection = DCConnection.find_by_connection_id(json_input['invitation']['@id'])
-            else:
-                connection = DCConnection.find_by_connection_id(json_input['invitation_msg_id'])
+            connection = DCConnection.find_by_connection_id(extract_invitation_message_id(json_input))
             # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
             # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
-            if connection and not connection.is_active and json_input['state'] in ('active', 'completed'):
+            if connection and not connection.is_active and json_input['state'] in (
+                    DCConnection.State.ACTIVE.value, DCConnection.State.COMPLETED.value):
                 connection.connection_id = json_input['connection_id']
                 connection.connection_state = json_input['state']
                 connection.is_active = True
