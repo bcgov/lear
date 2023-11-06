@@ -85,6 +85,7 @@ FILINGS: Final = {
     'agmExtension': {
             'name': 'agmExtension',
             'title': 'AGM Extension',
+            'displayName': 'AGM Extension',
             'codes': {
                 'BC': 'AGMDT',
                 'BEN': 'AGMDT',
