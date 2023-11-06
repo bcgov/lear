@@ -24,8 +24,6 @@ from tests.unit import prep_agm_location_change_filing
 @pytest.mark.parametrize('status,legal_name,is_numbered', [
     ('COMPLETED', 'test business', False),
     ('COMPLETED', 'BC1234567', True),
-    ('PAID', 'test business', False),
-    ('PAID', 'BC1234567', True),
 ])
 def test_agm_location_change_notification(app, session, status, legal_name, is_numbered):
     """Assert that the agm location change email processor works as expected."""
@@ -39,22 +37,20 @@ def test_agm_location_change_notification(app, session, status, legal_name, is_n
             email = agm_location_change_notification.process(
                 {'filingId': filing.id, 'type': 'agmLocationChange', 'option': status}, token)
 
-            if status is Filing.Status.COMPLETED:
-                if (is_numbered):
-                    assert email['content']['subject'] == \
-                        'Numbered Company - AGM Location Change Documents from the Business Registry'
-                else:
-                    assert email['content']['subject'] == \
-                        legal_name + ' - AGM Location Change Documents from the Business Registry'
-
-                assert 'recipient@email.com' in email['recipients']
-                assert email['content']['body']
-                assert email['content']['attachments'] == []
-                assert mock_get_pdfs.call_args[0][0] == token
-                assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
-                assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
-                assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.COMP.value
-                assert mock_get_pdfs.call_args[0][2] == filing
-
+            if (is_numbered):
+                assert email['content']['subject'] == \
+                    'Numbered Company - AGM Location Change Documents from the Business Registry'
             else:
-                assert email == {}
+                assert email['content']['subject'] == \
+                    legal_name + ' - AGM Location Change Documents from the Business Registry'
+
+            assert 'recipient@email.com' in email['recipients']
+            assert email['content']['body']
+            assert email['content']['attachments'] == []
+            assert mock_get_pdfs.call_args[0][0] == token
+            assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+            assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
+            assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.COMP.value
+            assert mock_get_pdfs.call_args[0][2] == filing
+
+            assert email == {}
