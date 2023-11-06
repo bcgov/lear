@@ -19,14 +19,10 @@ metadata:
 description: Dev Environment
 deployParameters:
   deploy-project-id: "a083gt-dev"
-  service-name: "business-email-reminder-dev"
-  container-name: "business-email-reminder-dev"
+  job-name: "business-email-reminder-dev"
   app-env: "dev"
   cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
-  max-scale: "1"
-  container-concurrency: "2"
-  timeout-seconds: "300"
-  container-port: "8080"
+  run-command: "./run.sh"
 run:
  location: projects/a083gt-dev/locations/northamerica-northeast1
 executionConfigs:
@@ -41,14 +37,10 @@ metadata:
 description: Test Environment
 deployParameters:
   deploy-project-id: "a083gt-test"
-  service-name: "business-email-reminder-test"
-  container-name: "business-email-reminder-test"
+  job-name: "business-email-reminder-test"
   app-env: "test"
   cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
-  max-scale: "2"
-  container-concurrency: "3"
-  timeout-seconds: "300"
-  container-port: "8080"
+  run-command: "./run.sh"
 run:
  location: projects/a083gt-test/locations/northamerica-northeast1
 executionConfigs:
@@ -64,14 +56,10 @@ description: Sandbox Environment
 requireApproval: true
 deployParameters:
   deploy-project-id: "a083gt-integration"
-  service-name: "business-email-reminder-sandbox"
-  container-name: "business-email-reminder-sandbox"
+  job-name: "business-email-reminder-sandbox"
   app-env: "sandbox"
   cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
-  max-scale: "3"
-  container-concurrency: "7"
-  timeout-seconds: "300"
-  container-port: "8080"
+  run-command: "./run.sh"
 run:
  location: projects/a083gt-integration/locations/northamerica-northeast1
 executionConfigs:
@@ -87,14 +75,10 @@ description: Production Environment
 requireApproval: true
 deployParameters:
   deploy-project-id: "a083gt-prod"
-  service-name: "business-email-reminder-prod"
-  container-name: "business-email-reminder-prod"
+  job-name: "business-email-reminder-prod"
   app-env: "production"
   cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
-  max-scale: "3"
-  container-concurrency: "7"
-  timeout-seconds: "300"
-  container-port: "8080"
+  run-command: "./run.sh"
 run:
  location: projects/a083gt-prod/locations/northamerica-northeast1
 executionConfigs:
