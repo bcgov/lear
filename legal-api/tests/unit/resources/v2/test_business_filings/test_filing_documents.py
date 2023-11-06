@@ -29,6 +29,8 @@ from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
+    AGM_EXTENSION,
+    AGM_LOCATION_CHANGE,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
@@ -877,6 +879,30 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
                     ]
                     }
       },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_agmExtension_completed', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, 
+     None, None, Filing.Status.COMPLETED,
+     {'documents': None},
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_agmLocationChange_paid', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, 
+     None, None, Filing.Status.PAID,
+     {'documents': None},
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_agmLocationChange_completed', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, 
+     None, None, Filing.Status.COMPLETED,
+     {'documents': None},
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_agmLocationChange_paid', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, 
+     None, None, Filing.Status.PAID,
+     {'documents': None},
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_changeOfAddress', 'BC7654321', Business.LegalTypes.BCOMP.value,
