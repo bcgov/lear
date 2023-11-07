@@ -884,25 +884,39 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('ben_agmExtension_completed', 'BC7654321', 
      Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, 
      None, None, Filing.Status.COMPLETED,
-     {'documents': None},
+     {'documents': {
+         'letterOfAgmExtension': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_agmLocationChange_paid', 'BC7654321', 
      Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, 
      None, None, Filing.Status.PAID,
-     {'documents': None},
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_agmLocationChange_completed', 'BC7654321', 
      Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, 
      None, None, Filing.Status.COMPLETED,
-     {'documents': None},
+     {'documents': {
+         'letterOfAgmLocationChange': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_agmLocationChange_paid', 'BC7654321', 
      Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, 
      None, None, Filing.Status.PAID,
-     {'documents': None},
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+        }
+     },
      HTTPStatus.OK, '2017-10-01'
      ),
     ('ben_changeOfAddress', 'BC7654321', Business.LegalTypes.BCOMP.value,
