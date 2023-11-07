@@ -61,3 +61,4 @@ PyPDF2==1.26.0
 reportlab==3.6.12
 html-sanitizer==1.9.3
 git+https://github.com/bcgov/business-schemas.git@2.18.15#egg=registry_schemas
+
