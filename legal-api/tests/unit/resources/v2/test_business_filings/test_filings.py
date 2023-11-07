@@ -1130,7 +1130,6 @@ def _get_expect_fed(filing_name, filing_json: dict, future_effective_date):
             False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value,
             False, [], True),
-        
     ]
 )
 def test_get_correct_fee_codes(
@@ -1149,7 +1148,7 @@ def test_get_correct_fee_codes(
     filing['filing']['header']['name'] = filing_name
 
     if has_fed:
-        filing['filing']['header']['effectiveDate'] = datetime.utcnow() + datedelta.datedelta(days=1)
+        filing['filing']['header']['effectiveDate'] = "2999-01-01T00:00:00+00:00"
 
     if filing_name == 'alteration':
         filing['filing'][filing_name]['business']['legalType'] = orig_legal_type
