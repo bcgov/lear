@@ -66,19 +66,19 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
             raise Exception(f'{Business.identifier} active connection not found.')
 
-        if not (issued := digital_credentials.issue_credential(
-            connection_id=connection.connection_id,
-            definition=definition,
-            credential_data=get_digital_credential_data(business, user, definition.credential_type)
-        )):
+        credential_data = get_digital_credential_data(business, user, definition.credential_type)
+        credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
+
+        if (issued := digital_credentials.issue_credential(connection_id=connection.connection_id,
+                                                           definition=definition,
+                                                           credential_data=credential_data) is None):
             raise Exception('Failed to issue credential.')
 
         issued_credential = DCIssuedCredential(
             dc_definition_id=definition.id,
             dc_connection_id=connection.id,
             credential_exchange_id=issued['cred_ex_id'],
-            # TODO: Add a real ID
-            credential_id='123456'
+            credential_id=credential_id
         )
         issued_credential.save()
 
@@ -95,10 +95,10 @@ def revoke_issued_digital_credential(business: Business,
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
             raise Exception(f'{Business.identifier} active connection not found.')
 
-        if not (revoked := digital_credentials.revoke_credential(connection.connection_id,
-                                                                 issued_credential.credential_revocation_id,
-                                                                 issued_credential.revocation_registry_id,
-                                                                 reason)):
+        if (revoked := digital_credentials.revoke_credential(connection.connection_id,
+                                                             issued_credential.credential_revocation_id,
+                                                             issued_credential.revocation_registry_id,
+                                                             reason) is None):
             raise Exception('Failed to revoke credential.')
 
         return revoked
@@ -113,6 +113,13 @@ def replace_issued_digital_credential(business: Business,
     """Replace an issued digital credential for a business."""
     try:
         revoke_issued_digital_credential(business, issued_credential, reason)
+
+        if (digital_credentials.fetch_credential_exchange_record(
+            issued_credential.credential_exchange_id) is not None and
+                digital_credentials.remove_credential_exchange_record(
+                issued_credential.credential_exchange_id) is None):
+            raise Exception('Failed to remove credential exchange record.')
+
         issued_credential.delete()
 
         return issue_digital_credential(business, credential_type)

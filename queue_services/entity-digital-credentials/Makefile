@@ -131,7 +131,7 @@ tag: push ## tag image
 #################################################################################
 
 run: ## Run the project in local
-	. venv/bin/activate && python entity_digital_credentials_service.py
+	. venv/bin/activate && python digital_credentials_service.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
