@@ -19,8 +19,9 @@ from http import HTTPStatus
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, User
+from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
+from legal_api.services.digital_credentials import DigitalCredentialsHelpers
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -46,7 +47,7 @@ def create_invitation(identifier):
         if not (response := digital_credentials.create_invitation()):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-        invitation_message_id = digital_credentials.extract_invitation_message_id(response)
+        invitation_message_id = DigitalCredentialsHelpers.extract_invitation_message_id(response)
 
         connection = DCConnection(
             connection_id=invitation_message_id,
@@ -165,7 +166,7 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential_data = digital_credentials.get_digital_credential_data(business, user, definition.credential_type)
+    credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business, user, definition.credential_type)
     credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(
@@ -205,7 +206,7 @@ def revoke_credential(identifier, credential_id):
     if digital_credentials.revoke_credential(connection.connection_id,
                                              issued_credential.credential_revocation_id,
                                              issued_credential.revocation_registry_id,
-                                             digital_credentials.DCRevocationReason.SELF_REVOCATION) is None:
+                                             DCRevocationReason.SELF_REVOCATION) is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True
@@ -240,7 +241,7 @@ def webhook_notification(topic_name: str):
     try:
         if topic_name == 'connections':
             connection = DCConnection.find_by_connection_id(
-                digital_credentials.extract_invitation_message_id(json_input))
+                DigitalCredentialsHelpers.extract_invitation_message_id(json_input))
             # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
             # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
             if connection and not connection.is_active and json_input['state'] in (

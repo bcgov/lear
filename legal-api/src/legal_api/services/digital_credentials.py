@@ -17,32 +17,16 @@
 
 import json
 from contextlib import suppress
-from enum import Enum
 from typing import Optional
 
 import requests
 
 from legal_api.decorators import requires_traction_auth
-from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, User
+from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, DCRevocationReason, User
 
 
 class DigitalCredentialsService:
     """Provides services to do digital credentials using aca-py agent."""
-
-    class DCRevocationReason(Enum):
-        """Digital Credential Revocation Reasons."""
-
-        UPDATED_INFORMATION = 'You were offered a new credential with updated information \
-            and that revoked all previous copies.'
-        VOLUNTARY_DISSOLUTION = 'You chose to dissolve your business. \
-            A new credential was offered that reflects the new company status and that revoked all previous copies.'
-        ADMINISTRATIVE_DISSOLUTION = 'Your business was dissolved by the Registrar.'
-        PUT_BACK_ON = 'Your business was put back on the Registry.'
-        RESTORATION = 'Your business was put back on the Registry. \
-            A new credential was offered that reflects the new company status and that revoked all previous copies.'
-        ACCESS_REMOVED = 'Your role in the business was changed and you no longer have system access to the business.'
-        SELF_REISSUANCE = 'You chose to issue yourself a new credential and that revoked all previous copies.'
-        SELF_REVOCATION = 'You chose to revoke your own credential.'
 
     def __init__(self):
         """Initialize this object."""
@@ -275,7 +259,12 @@ class DigitalCredentialsService:
             'Authorization': f'Bearer {self.app.api_token}'
         }
 
-    def get_digital_credential_data(self, business: Business, user: User, credential_type: DCDefinition.CredentialType):
+
+class DigitalCredentialsHelpers:
+    """Provides helper functions for digital credentials."""
+
+    @staticmethod
+    def get_digital_credential_data(business: Business, user: User, credential_type: DCDefinition.CredentialType):
         """Get the data for a digital credential."""
         if credential_type == DCDefinition.CredentialType.business:
 
@@ -348,7 +337,8 @@ class DigitalCredentialsService:
 
         return None
 
-    def extract_invitation_message_id(self, json_message: dict):
+    @staticmethod
+    def extract_invitation_message_id(json_message: dict):
         """Extract the invitation message id from the json message."""
         if 'invitation' in json_message and json_message['invitation'] is not None:
             invitation_message_id = json_message['invitation']['@id']
