@@ -1050,68 +1050,91 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
+def _get_expect_fed(filing_name, filing_json: dict, future_effective_date):
+    """Return future effective date."""
+    filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
+    if filing_sub_type:
+        return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('codes', {}).get()
+
+    return Filing.FILINGS[filing_name].get('codes', {}).get()
+
 
 @pytest.mark.parametrize(
-    'identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes',
+    'identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed',
     [
-        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, True, []),
-        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, False, []),
-        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, False, []),
-        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, False, []),
-        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, True, []),
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, True, [], False),
+        ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, False, [], False),
+        ('CP1234567', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.COOP.value, False, [], False),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, False, [], False),
+        ('CP1234567', CORRECTION_AR, 'correction', Business.LegalTypes.COOP.value, False, [], False),
+        ('CP1234567', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.COOP.value, True, [], False),
         ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
-         Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, []),
+         Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, [], False),
         ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, False,
-            ['AFDVT', 'SPRLN']),
+            ['AFDVT', 'SPRLN'], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value,
-            False, []),
+            False, [], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value,
-            False, []),
+            False, [], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value,
-            False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_CCC.value, False, []),
-        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
-        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_CCC.value, False, []),
+            False, [], False),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', RESTORATION_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_EXT_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', AGM_LOCATION_CHANGE_FILING, 'agmLocationChange', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, [], True),
+        ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, [], True),
+        ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication', 
+         Business.LegalTypes.BCOMP.value, False, [], True),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, [], True),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, [], True),
+        ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, False,
+            ['AFDVT', 'SPRLN'], True),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value,
+            False, [], True),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value,
+            False, [], True),
+        ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value,
+            False, [], True),
+        
     ]
 )
 def test_get_correct_fee_codes(
-        session, identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes):
+        session, identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     # setup
     expected_fee_code = _get_expected_fee_code(free, filing_name, base_filing, orig_legal_type)
@@ -1124,6 +1147,9 @@ def test_get_correct_fee_codes(
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['business']['legalType'] = orig_legal_type
     filing['filing']['header']['name'] = filing_name
+
+    if has_fed:
+        filing['filing']['header']['effectiveDate'] = datetime.utcnow() + datedelta.datedelta(days=1)
 
     if filing_name == 'alteration':
         filing['filing'][filing_name]['business']['legalType'] = orig_legal_type
@@ -1142,11 +1168,20 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][0]['actions'] = ['ceased', 'nameChanged']
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
-    # get fee code
-    fee_code = ListFilingResource._get_filing_types(business, filing)[0]['filingTypeCode']
+    # get fee code and future effective date
+    filing_type = ListFilingResource._get_filing_types(business, filing)[0]
+    fee_code = filing_type['filingTypeCode']
+    future_effective = filing_type.get('futureEffective')
 
-    # verify fee code
+    # verify fee code and future effective date
     assert fee_code == expected_fee_code
+    if has_fed:
+        assert future_effective is True
+    else:
+        if filing_name in ['incorporationApplication', 'alteration', 'dissolution']:
+            assert future_effective is False
+        else:
+            assert future_effective is None 
 
     assert all(elem in
                map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
