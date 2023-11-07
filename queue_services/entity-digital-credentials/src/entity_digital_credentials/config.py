@@ -136,9 +136,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID')
     TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID')
 
-    # Web socket settings
-    WS_ALLOWED_ORIGINS = os.getenv('WS_ALLOWED_ORIGINS')
-
     # Digital Business Card configuration values (required to issue credentials)
     BUSINESS_SCHEMA_NAME = os.getenv('BUSINESS_SCHEMA_NAME')
     BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
