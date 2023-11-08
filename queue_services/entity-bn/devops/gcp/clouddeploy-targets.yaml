@@ -88,7 +88,7 @@ requireApproval: true
 deployParameters:
   deploy-project-id: "a083gt-prod"
   service-name: "business-bn-prod"
-  container-name: "business-bn-sandbox"
+  container-name: "business-bn-prod"
   app-env: "production"
   cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
   max-scale: "3"

@@ -62,23 +62,25 @@ class Config:  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
+    DB_USER = os.getenv("DATABASE_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_NAME", "")
+    DB_HOST = os.getenv("DATABASE_HOST", "")
+    DB_PORT = os.getenv("DATABASE_PORT", "5432")
 
     # POSTGRESQL
-    if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
-        SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}'
+    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
     else:
-        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+        SQLALCHEMY_DATABASE_URI = (
+            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
 
     # API Endpoints
-    PAY_API_URL = os.getenv('PAY_API_URL', '')
-    PAY_API_VERSION = os.getenv('PAY_API_VERSION', '')
+    PAY_API_URL = os.getenv("PAY_API_URL", "")
+    PAY_API_VERSION = os.getenv("PAY_API_VERSION", "")
 
-    PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-request'
+    PAYMENT_SVC_URL = f"{PAY_API_URL + PAY_API_VERSION}/payment-request"
 
     # pub/sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)

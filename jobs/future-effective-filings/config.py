@@ -48,10 +48,10 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 CONFIGURATION = {
-    'development': 'config.Development',
-    'testing': 'config.Testing',
-    'production': 'config.Production',
-    'default': 'config.Production'
+    "development": "config.Development",
+    "testing": "config.Testing",
+    "production": "config.Production",
+    "default": "config.Production",
 }
 
 
@@ -60,26 +60,26 @@ class Config(object):  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    SENTRY_DSN = os.getenv("SENTRY_DSN", "")
 
-    SECRET_KEY = 'a secret'
+    SECRET_KEY = "a secret"
 
-    ENVIRONMENT = os.getenv('APP_ENV', 'prod')
+    ENVIRONMENT = os.getenv("APP_ENV", "prod")
 
-    GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
-    ENTITY_FILER_TOPIC = os.getenv('ENTITY_FILER_TOPIC', 'filer')
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
     AUDIENCE = os.getenv(
-        'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
     PUBLISHER_AUDIENCE = os.getenv(
-        'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
 
     # API Endpoints
-    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
-    BUSINESS_API_VERSION2 = os.getenv('BUSINESS_API_VERSION2', '')
+    BUSINESS_API_URL = os.getenv("BUSINESS_API_URL", "")
+    BUSINESS_API_VERSION2 = os.getenv("BUSINESS_API_VERSION2", "")
 
-    LEGAL_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION2}'
+    LEGAL_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION2}"
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
@@ -95,18 +95,18 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
 
-    LEGAL_URL = os.getenv('LEGAL_URL', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
+    LEGAL_URL = os.getenv("LEGAL_URL", "")
+    SENTRY_DSN = os.getenv("SENTRY_DSN_TEST", "")
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
 
-    SECRET_KEY = os.getenv('SECRET_KEY', None)
+    SECRET_KEY = os.getenv("SECRET_KEY", None)
 
     if not SECRET_KEY:
         SECRET_KEY = os.urandom(24)
-        print('WARNING: SECRET_KEY being set as a one-shot', file=sys.stderr)
+        print("WARNING: SECRET_KEY being set as a one-shot", file=sys.stderr)
 
     TESTING = False
     DEBUG = False
