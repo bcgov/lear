@@ -57,7 +57,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
         now = LegislationDatetime.now()
         latest_ext_date = founding_date + relativedelta(months=18, days=5)
         if now > latest_ext_date:
-            msg.append({'error': 'Company failed to request the extension in time.',
+            msg.append({'error': 'Allotted period to request extension has expired.',
                         'path': f'{agm_extension_path}/isFirstAgm'})
     else:
         # first AGM, second extension or more
@@ -69,7 +69,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
                         'path': f'{agm_extension_path}/expireDateCurrExt'})
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({'error': 'Company failed to request the extension in time.',
+            msg.append({'error': 'Allotted period to request extension has expired.',
                         'path': f'{agm_extension_path}/expireDateCurrExt'})
 
     return msg
@@ -89,7 +89,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
         now = LegislationDatetime.now()
         latest_ext_date = prev_agm_ref_date + relativedelta(months=15, days=5)
         if now > latest_ext_date:
-            msg.append({'error': 'Company failed to request the extension in time.',
+            msg.append({'error': 'Allotted period to request extension has expired.',
                         'path': f'{agm_extension_path}/prevAgmRefDate'})
     else:
         # subsequent AGM, second extension or more
@@ -103,7 +103,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
                         'path': f'{agm_extension_path}/expireDateCurrExt'})
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({'error': 'Company failed to request the extension in time.',
+            msg.append({'error': 'Allotted period to request extension has expired.',
                         'path': f'{agm_extension_path}/expireDateCurrExt'})
 
     return msg
