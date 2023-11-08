@@ -46,7 +46,7 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, UserRoles
-from legal_api.resources.v1.business.business_filings import ListFilingResource
+from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from legal_api.services.minio import MinioService
@@ -1168,7 +1168,7 @@ def test_get_correct_fee_codes(
             filing['filing']['changeOfDirectors']['directors'][1]['actions'] = ['nameChanged', 'addressChanged']
 
     # get fee code and future effective date
-    filing_type = ListFilingResource._get_filing_types(business, filing)[0]
+    filing_type = ListFilingResource.get_filing_types(business, filing)[0]
     fee_code = filing_type['filingTypeCode']
     future_effective = filing_type.get('futureEffective')
 
@@ -1183,7 +1183,7 @@ def test_get_correct_fee_codes(
             assert future_effective is None 
 
     assert all(elem in
-               map(lambda x: x['filingTypeCode'], ListFilingResource._get_filing_types(business, filing))
+               map(lambda x: x['filingTypeCode'], ListFilingResource.get_filing_types(business, filing))
                for elem in additional_fee_codes)
 
 
