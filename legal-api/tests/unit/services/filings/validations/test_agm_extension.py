@@ -52,7 +52,7 @@ from tests.unit.models import factory_business
     ]
 )
 def test_validate_agm_extension(session, mocker, test_name, founding_date, agm_ext_json, expected_code, message):
-    """Assert vakudate agm extension."""
+    """Assert validate AGM extension."""
     business = factory_business(
         identifier='BC1234567', entity_type='BC', founding_date=LegislationDatetime.as_legislation_timezone_from_date_str(founding_date)
     )

@@ -25,7 +25,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
-    """Validate the Agm Extension filing."""
+    """Validate the AGM Extension filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
