@@ -13,7 +13,19 @@
 # limitations under the License.
 """Processing business number actions."""
 
+from legal_api.models import Business, DCDefinition, DCRevocationReason
 
-async def process(msg: dict):
+from entity_digital_credentials.helpers import get_issued_digital_credentials, replace_issued_digital_credential
+
+
+async def process(business: Business):
     """Process business number actions."""
-    pass
+    issued_credentials = get_issued_digital_credentials(business=business)
+
+    if not (issued_credentials and len(issued_credentials)):
+        raise Exception('No issued credentials found.')
+
+    return replace_issued_digital_credential(business=business,
+                                             issued_credential=issued_credentials[0],
+                                             credential_type=DCDefinition.CredentialType.business.name,
+                                             reason=DCRevocationReason.UPDATED_INFORMATION)

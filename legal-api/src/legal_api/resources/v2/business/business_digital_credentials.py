@@ -203,10 +203,13 @@ def revoke_credential(identifier, credential_id):
     if not issued_credential or issued_credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
+    reissue = request.get_json().get('reissue', False)
+    reason = DCRevocationReason.SELF_REISSUANCE if reissue else DCRevocationReason.SELF_REVOCATION
+
     if digital_credentials.revoke_credential(connection.connection_id,
                                              issued_credential.credential_revocation_id,
                                              issued_credential.revocation_registry_id,
-                                             DCRevocationReason.SELF_REVOCATION) is None:
+                                             reason) is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential.is_revoked = True

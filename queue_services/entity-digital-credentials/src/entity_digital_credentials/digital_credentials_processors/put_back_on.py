@@ -14,6 +14,18 @@
 """Processing put back on actions."""
 
 
-async def process(msg: dict):
+from legal_api.models import Business, DCRevocationReason
+
+from entity_digital_credentials.helpers import get_issued_digital_credentials, revoke_issued_digital_credential
+
+
+async def process(business: Business):
     """Process put back on actions."""
-    pass
+    issued_credentials = get_issued_digital_credentials(business=business)
+
+    if not (issued_credentials and len(issued_credentials)):
+        raise Exception('No issued credentials found.')
+
+    return revoke_issued_digital_credential(business=business,
+                                            issued_credential=issued_credentials[0],
+                                            reason=DCRevocationReason.PUT_BACK_ON)

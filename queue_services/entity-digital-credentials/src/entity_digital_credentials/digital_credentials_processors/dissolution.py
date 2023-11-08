@@ -13,7 +13,32 @@
 # limitations under the License.
 """Processing dissolution actions."""
 
+from legal_api.models import Business, DCDefinition, DCRevocationReason
 
-async def process(msg: dict):
+from entity_digital_credentials.helpers import (
+    get_issued_digital_credentials,
+    replace_issued_digital_credential,
+    revoke_issued_digital_credential,
+)
+
+
+async def process(business: Business, filing_sub_type: str):
     """Process dissolution actions."""
-    pass
+    issued_credentials = get_issued_digital_credentials(business=business)
+
+    if not (issued_credentials and len(issued_credentials)):
+        raise Exception('No issued credentials found.')
+
+    if filing_sub_type == 'voluntary':
+        reason = DCRevocationReason.VOLUNTARY_DISSOLUTION
+        return replace_issued_digital_credential(business=business,
+                                                 issued_credential=issued_credentials[0],
+                                                 credential_type=DCDefinition.CredentialType.business.name,
+                                                 reason=reason)
+    elif filing_sub_type == 'administrative':
+        reason = DCRevocationReason.ADMINISTRATIVE_DISSOLUTION
+        return revoke_issued_digital_credential(business=business,
+                                                issued_credential=issued_credentials[0],
+                                                reason=reason)
+    else:
+        raise Exception('Invalid filing sub type.')
