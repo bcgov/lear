@@ -14,9 +14,9 @@ python-dotenv = "^1.0.0"
 sentry-sdk = "^1.27.1"
 launchdarkly-server-sdk = "^8.1.4"
 #registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.10"}
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", branch = "dev_legal_name_changes"}
-sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "dev_legal_name_changes" }
-legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "dev_legal_name_changes" }
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", branch = "feature-legal-name"}
+sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "feature-legal-name" }
+legal_api = { git = "https://github.com/bcgov/lear.git", subdirectory = "legal-api", branch = "feature-legal-name" }
 simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
 requests = "^2.31.0"
 google-auth = "^2.21.0"
