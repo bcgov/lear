@@ -1,4 +1,4 @@
-name: Entity BN CI
+name: Business BN CI
 
 on:
   pull_request:

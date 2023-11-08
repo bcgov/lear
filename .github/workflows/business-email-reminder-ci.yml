@@ -1,15 +1,15 @@
-name: Future Effective Filings Job CI
+name: Business Email Reminder Job CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/future-effective-filings/**"
+      - "jobs/email-reminder/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/future-effective-filings
+    working-directory: ./jobs/email-reminder
 
 jobs:
   setup-job:
@@ -47,29 +47,22 @@ jobs:
         run: |
           make flake8
 
-  testing:
-    needs: setup-job
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          make setup
-      - name: Test with pytest
-        id: test
-        run: |
-          make test
-      #- name: Upload coverage to Codecov
-      #  uses: codecov/codecov-action@v3
-      #  with:
-      #    file: ./queue_services/entity-pay/coverage.xml
-      #    flags: entitypay
-      #    name: codecov-entity-pay
-      #    fail_ci_if_error: true
+  # testing:
+  #   needs: setup-job
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         make setup
+  #     - name: Test with pytest
+  #       id: test
+  #       run: |
+  #         make test
 
   build-check:
     needs: setup-job

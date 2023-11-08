@@ -1,15 +1,15 @@
-name: Update Legal Filings Job CI
+name: Business Future Effective Filings Job CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/update-legal-filings/**"
+      - "jobs/future-effective-filings/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/update-legal-filings
+    working-directory: ./jobs/future-effective-filings
 
 jobs:
   setup-job:

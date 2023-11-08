@@ -1,15 +1,15 @@
-name: Email Reminder Job CI
+name: Business Update Colin Filings Job CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/email-reminder/**"
+      - "jobs/update-colin-filings/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/email-reminder
+    working-directory: ./jobs/update-colin-filings
 
 jobs:
   setup-job:
@@ -47,22 +47,29 @@ jobs:
         run: |
           make flake8
 
-  # testing:
-  #   needs: setup-job
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v1
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     - name: Install dependencies
-  #       run: |
-  #         make setup
-  #     - name: Test with pytest
-  #       id: test
-  #       run: |
-  #         make test
+  testing:
+    needs: setup-job
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          make setup
+      - name: Test with pytest
+        id: test
+        run: |
+          make test
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v3
+      #  with:
+      #    file: ./queue_services/entity-pay/coverage.xml
+      #    flags: entitypay
+      #    name: codecov-entity-pay
+      #    fail_ci_if_error: true
 
   build-check:
     needs: setup-job

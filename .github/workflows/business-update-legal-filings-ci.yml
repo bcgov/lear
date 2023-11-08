@@ -1,15 +1,15 @@
-name: Update Colin Filings Job CI
+name: Business Update Legal Filings Job CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/update-colin-filings/**"
+      - "jobs/update-legal-filings/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/update-colin-filings
+    working-directory: ./jobs/update-legal-filings
 
 jobs:
   setup-job:

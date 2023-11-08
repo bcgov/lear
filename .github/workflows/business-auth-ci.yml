@@ -1,16 +1,16 @@
-name: Entity Emailer CI
+name: Business Auth CI
 
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "queue_services/entity-emailer/**"
+      - "queue_services/entity-auth/**"
       - "queue_services/common/**"
 
 defaults:
   run:
     shell: bash
-    working-directory: ./queue_services/entity-emailer
+    working-directory: ./queue_services/entity-auth
 
 jobs:
   setup-job:
@@ -57,21 +57,22 @@ jobs:
       DATABASE_TEST_HOST: localhost
       DATABASE_HOST: localhost
       DATABASE_PASSWORD: postgres
-      TRACKER_DATABASE_TEST_USERNAME: postgres
-      TRACKER_DATABASE_TEST_PASSWORD: postgres
-      TRACKER_DATABASE_TEST_NAME: postgres
-      TRACKER_DATABASE_TEST_HOST: localhost
-      TRACKER_DATABASE_TEST_PORT: 5433
       NATS_SERVERS: "nats://nats:4222"
-      NATS_CLIENT_NAME: entity.email.tester
+      NATS_CLIENT_NAME: entity.legal_api
       NATS_CLUSTER_ID: test-cluster
-      NATS_FILER_SUBJECT: entity.email
-      NATS_QUEUE: entity-email-worker
-      JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
-      TEMPLATE_PATH: /home/runner/work/lear/lear/queue_services/entity-emailer/src/entity_emailer/email_templates
-      DASHBOARD_URL: https://dev.bcregistry.ca/businesses/
+      NATS_FILER_SUBJECT: entity.filing.filer
+      NATS_QUEUE: entity-auth-worker
       TEST_NATS_DOCKER: True
       STAN_CLUSTER_NAME: test-cluster
+      JWT_OIDC_JWKS_CACHE_TIMEOUT: 300
+      GO_LIVE_DATE: 2019-08-12
+      LEGAL_API_URL: https://mock_legal_api_url
+      ACCOUNT_SVC_ENTITY_URL: https://mock_account_svc_entity_url
+      COLIN_API: https://mock_colin_api_url
+      ACCOUNT_SVC_AUTH_URL: https://mock_account_svc_auth_url
+      ACCOUNT_SVC_CLIENT_ID: account_svc_client_id
+      ACCOUNT_SVC_CLIENT_SECRET: account_svc_client_secret
+
 
     runs-on: ubuntu-20.04
 
@@ -84,16 +85,6 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-      postgres-tracker:
-        image: postgres:12
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5433:5432
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
@@ -113,9 +104,9 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./queue_services/entity-emailer/coverage.xml
-          flags: entityemailer
-          name: codecov-entity-emailer
+          file: ./queue_services/entity-auth/coverage.xml
+          flags: entityfiler
+          name: codecov-entity-auth
           fail_ci_if_error: true
 
   build-check:
