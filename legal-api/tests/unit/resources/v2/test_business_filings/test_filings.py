@@ -1050,15 +1050,6 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
 
-def _get_expect_fed(filing_name, filing_json: dict, future_effective_date):
-    """Return future effective date."""
-    filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
-    if filing_sub_type:
-        return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('codes', {}).get()
-
-    return Filing.FILINGS[filing_name].get('codes', {}).get()
-
-
 @pytest.mark.parametrize(
     'identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed',
     [
