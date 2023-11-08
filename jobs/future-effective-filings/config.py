@@ -54,12 +54,18 @@ CONFIGURATION = {
     'default': 'config.Production'
 }
 
+
 class Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    ENVIRONMENT = os.getenv('ENVIRONMENT', 'prod')
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+
+    SECRET_KEY = 'a secret'
+
+    ENVIRONMENT = os.getenv('APP_ENV', 'prod')
+
     GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
     ENTITY_FILER_TOPIC = os.getenv('ENTITY_FILER_TOPIC', 'filer')
     AUDIENCE = os.getenv(
@@ -69,10 +75,11 @@ class Config(object):  # pylint: disable=too-few-public-methods
         'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     )
 
-    LEGAL_URL = os.getenv('LEGAL_URL', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    # API Endpoints
+    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
+    BUSINESS_API_VERSION2 = os.getenv('BUSINESS_API_VERSION2', '')
 
-    SECRET_KEY = 'a secret'
+    LEGAL_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION2}'
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods

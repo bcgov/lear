@@ -65,7 +65,7 @@ metadata:
 description: Sandbox Environment
 requireApproval: true
 deployParameters:
-  deploy-project-id: "c4hnrd-tools"
+  deploy-project-id: "a083gt-integration"
   service-name: "business-api-sandbox"
   container-name: "business-api-sandbox"
   migration-job-name: "business-api-db-migration-sandbox"

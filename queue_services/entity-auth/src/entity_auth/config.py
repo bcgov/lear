@@ -36,46 +36,47 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+    ENVIRONMENT = os.getenv('APP_ENV', 'prod')
 
-    # service accounts
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "https://")
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
-    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
-
-    # BCRegistry Services
-    NAMEX_API = os.getenv("NAMEX_API")
+    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # POSTGRESQL
+    DB_USER = os.getenv('DATABASE_USERNAME', '')
+    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
+    DB_NAME = os.getenv('DATABASE_NAME', '')
+    DB_HOST = os.getenv('DATABASE_HOST', '')
+    DB_PORT = os.getenv('DATABASE_PORT', '5432')
 
     # POSTGRESQL
-    DB_USER = os.getenv("DATABASE_USERNAME", "")
-    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
-    DB_NAME = os.getenv("DATABASE_NAME", "")
-    DB_HOST = os.getenv("DATABASE_HOST", "")
-    DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    # POSTGRESQL
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
+    if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
+        SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}'
     else:
-        SQLALCHEMY_DATABASE_URI = (
-            f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        )
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
+    # API Endpoints
+    NAMEX_API_URL = os.getenv('NAMEX_API_URL', '')
+    NAMEX_API_VERSION = os.getenv('NAMEX_API_VERSION', '')
 
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    NAMEX_API = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
+
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv('KEYCLOAK_AUTH_TOKEN_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_TIMEOUT = os.getenv('KEYCLOAK_TIMEOUT')
+
+    # pub/sub
+    GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
     AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+        'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
     )
     PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+        'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     )
 
     # legislative timezone for future effective dating
-    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
@@ -94,12 +95,12 @@ class Testing(Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
     # POSTGRESQL
-    DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
-    DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")
-    DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
-    DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
-    DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')
+    DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', '')
+    DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
+    DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
+    DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
+    SQLALCHEMY_DATABASE_URI = f'postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}'
 
 
 class Production(Config):  # pylint: disable=too-few-public-methods

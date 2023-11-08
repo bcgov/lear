@@ -19,8 +19,8 @@ metadata:
 description: Dev Environment
 deployParameters:
   deploy-project-id: "a083gt-dev"
-  service-name: "business-filer-dev"
-  container-name: "business-filer-dev"
+  service-name: "business-auth-dev"
+  container-name: "business-auth-dev"
   app-env: "dev"
   cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
   max-scale: "1"
@@ -41,8 +41,8 @@ metadata:
 description: Test Environment
 deployParameters:
   deploy-project-id: "a083gt-test"
-  service-name: "business-filer-test"
-  container-name: "business-filer-test"
+  service-name: "business-auth-test"
+  container-name: "business-auth-test"
   app-env: "test"
   cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
   max-scale: "2"
@@ -64,8 +64,8 @@ description: Sandbox Environment
 requireApproval: true
 deployParameters:
   deploy-project-id: "a083gt-integration"
-  service-name: "business-filer-sandbox"
-  container-name: "business-filer-sandbox"
+  service-name: "business-auth-sandbox"
+  container-name: "business-auth-sandbox"
   app-env: "sandbox"
   cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
   max-scale: "3"
@@ -87,8 +87,8 @@ description: Production Environment
 requireApproval: true
 deployParameters:
   deploy-project-id: "a083gt-prod"
-  service-name: "business-filer-prod"
-  container-name: "business-filer-sandbox"
+  service-name: "business-auth-prod"
+  container-name: "business-auth-sandbox"
   app-env: "production"
   cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
   max-scale: "3"

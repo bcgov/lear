@@ -33,19 +33,24 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    COLIN_URL = os.getenv('COLIN_URL', '')
-    LEGAL_URL = os.getenv('LEGAL_URL', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
-
-    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
-
     SECRET_KEY = 'a secret'
 
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
-    ALEMBIC_INI = 'migrations/alembic.ini'
+    # API Endpoints
+    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
+    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION2', '')
+    COLIN_API_URL = os.getenv('COLIN_API_URL', '')
+    COLIN_API_VERSION = os.getenv('COLIN_API_VERSION', '')
+
+    COLIN_API = f'{COLIN_API_URL + COLIN_API_VERSION}'
+    LEGAL_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}'
+
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv('KEYCLOAK_AUTH_TOKEN_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_ID')
+    ACCOUNT_SVC_TIMEOUT = os.getenv('KEYCLOAK_TIMEOUT')
 
     # GCP QUEUE
     GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)

@@ -114,8 +114,6 @@ class Config:  # pylint: disable=too-few-public-methods
     MINIO_SECURE = True
 
 
-
-
 class Development(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
 
