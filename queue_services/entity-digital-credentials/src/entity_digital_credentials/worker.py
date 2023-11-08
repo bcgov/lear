@@ -43,6 +43,7 @@ from entity_digital_credentials.digital_credentials_processors import (
     business_number,
     change_of_registration,
     dissolution,
+    manual,
     put_back_on,
 )
 
@@ -76,9 +77,10 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
         if dc_msg['type'] is None:
             raise QueueException('Digital credential message is missing type.')
 
-        if dc_msg['type'] == 'bc.registry.business.bn':
-            # When a BN is added or changed the queue message does not have a data object.
-            # We queue the business information using the identifier and revoke/reissue the credential immediately.
+        if dc_msg['type'] in ('bc.registry.business.bn', 'bc.registry.business.manual'):
+            # When a BN is added or changed or there is a manuak administrative update the queue message does not have
+            # a data object. We queue the business information using the identifier and revoke/reissue the credential
+            # immediately.
             if dc_msg['identifier'] is None:
                 raise QueueException('Digital credential message is missing identifier')
 
@@ -86,7 +88,10 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
             if not (business := Business.find_by_identifier(identifier)):  # pylint: disable=superfluous-parens
                 raise Exception(f'Business with identifier: {identifier} not found.')
 
-            await business_number.process(business)
+            if dc_msg['type'] == 'bc.registry.business.bn':
+                await business_number.process(business)
+            elif dc_msg['type'] == 'bc.registry.business.manual':
+                await manual.process(business)
         else:
             if dc_msg['data'] is None \
                     or dc_msg['data']['filing'] is None \
