@@ -272,6 +272,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_transition_data(filing)
         elif self._report_key == 'dissolution':
             self._format_dissolution_data(filing)
+        elif self._report_key == 'letterOfAgmExtension':
+            self._format_agm_extension_data(filing)
         elif self._report_key == 'letterOfAgmLocationChange':
             self._format_agm_location_change_data(filing)
         else:
@@ -582,6 +584,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
+
+    def _format_agm_extension_data(self, filing):
+        # FUTURE: format logic for letter of agm extension
+        return
 
     def _format_agm_location_change_data(self, filing):
         filing['agm_year'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('year', '')
@@ -1173,6 +1179,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'letterOfConsent': {
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
+        },
+        'letterOfAgmExtension': {
+            'filingDescription': 'Letter Of AGM Extension',
+            'fileName': 'letterOfAgmExtension'
         },
         'letterOfAgmLocationChange': {
             'filingDescription': 'Letter Of AGM Location Change',
