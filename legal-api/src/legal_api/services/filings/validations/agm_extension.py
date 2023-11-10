@@ -62,11 +62,11 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
     msg = []
 
     has_ext_req_for_agm_year = get_bool(filing, f'{AGM_EXTENSION_PATH}/extReqForAgmYear')
-    founding_date = LegislationDatetime.as_legislation_timezone_from_date(business.founding_date)
+    founding_date = LegislationDatetime.as_legislation_timezone_from_date(business.founding_date).date()
 
     if not has_ext_req_for_agm_year:
         # first AGM, first extension
-        now = LegislationDatetime.now()
+        now = LegislationDatetime.datenow()
         latest_ext_date = founding_date + relativedelta(months=18, days=5)
         if now > latest_ext_date:
             msg.append({'error': 'Allotted period to request extension has expired.',
@@ -84,7 +84,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
 
         curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
         allowable_ext_date = founding_date + relativedelta(months=30)
-        now = LegislationDatetime.now()
+        now = LegislationDatetime.datenow()
         if curr_ext_expire_date >= allowable_ext_date:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
                         'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'})
@@ -119,7 +119,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
 
     if not has_ext_req_for_agm_year:
         # subsequent AGM, first extension
-        now = LegislationDatetime.now()
+        now = LegislationDatetime.datenow()
         latest_ext_date = prev_agm_ref_date + relativedelta(months=15, days=5)
         if now > latest_ext_date:
             msg.append({'error': 'Allotted period to request extension has expired.',
@@ -138,7 +138,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
         curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
 
         allowable_ext_date = prev_agm_ref_date + relativedelta(months=12)
-        now = LegislationDatetime.now()
+        now = LegislationDatetime.datenow()
 
         if curr_ext_expire_date >= allowable_ext_date:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
