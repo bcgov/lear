@@ -78,7 +78,9 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
                 msg.append({'error': babel('Fail to grant extension.')})
     else:
         # first AGM, second extension or more
-        curr_ext_expire_date_str = filing['filing']['agmExtension']['expireDateCurrExt']
+        if not (curr_ext_expire_date_str := get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')):
+            return [{'error': 'Expiry date for current extension is required.', 'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'}]
+
         curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
         allowable_ext_date = founding_date + relativedelta(months=30)
         now = LegislationDatetime.now()
@@ -108,7 +110,9 @@ def subsequent_agm_validation(filing: Dict) -> list:
     msg = []
 
     has_ext_req_for_agm_year = filing['filing']['agmExtension']['extReqForAgmYear']
-    prev_agm_ref_date_str = filing['filing']['agmExtension']['prevAgmRefDate']
+    if not (prev_agm_ref_date_str := get_str(filing, f'{AGM_EXTENSION_PATH}/prevAgmRefDate')):
+        return [{'error': 'Previous AGM date or a reference date is required.', 'path': f'{AGM_EXTENSION_PATH}/prevAgmRefDate'}]
+
     prev_agm_ref_date = LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str)
 
     if not has_ext_req_for_agm_year:
@@ -125,7 +129,9 @@ def subsequent_agm_validation(filing: Dict) -> list:
                 msg.append({'error': babel('Fail to grant extension.')})
     else:
         # subsequent AGM, second extension or more
-        curr_ext_expire_date_str = filing['filing']['agmExtension']['expireDateCurrExt']
+        if not (curr_ext_expire_date_str := get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')):
+            return [{'error': 'Expiry date for current extension is required.', 'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'}]
+
         curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
 
         allowable_ext_date = prev_agm_ref_date + relativedelta(months=12)
