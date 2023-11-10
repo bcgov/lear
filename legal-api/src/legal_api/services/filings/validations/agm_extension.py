@@ -21,11 +21,11 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from ...utils import get_bool, get_int, get_str
-# noqa: I003
+from ...utils import get_bool, get_int, get_str  # noqa: I003
 
 
 AGM_EXTENSION_PATH = '/filing/agmExtension'
+
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
     """Validate the AGM Extension filing."""
@@ -35,10 +35,13 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     msg = []
 
     if get_bool(filing, f'{AGM_EXTENSION_PATH}/isFirstAgm') is None:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('isFirstAgm is required.'), 'path': f'{AGM_EXTENSION_PATH}/isFirstAgm'}])
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel('isFirstAgm is required.'), 'path': f'{AGM_EXTENSION_PATH}/isFirstAgm'}])
 
     if get_bool(filing, f'{AGM_EXTENSION_PATH}/extReqForAgmYear') is None:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('extReqForAgmYear is required.'), 'path': f'{AGM_EXTENSION_PATH}/extReqForAgmYear'}])
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel('extReqForAgmYear is required.'),
+                       'path': f'{AGM_EXTENSION_PATH}/extReqForAgmYear'}])
 
     is_first_agm = get_bool(filing, f'{AGM_EXTENSION_PATH}/isFirstAgm')
 
@@ -90,10 +93,11 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
             extension_duration = get_int(filing, f'{AGM_EXTENSION_PATH}/extensionDuration')
 
             baseline = founding_date + relativedelta(months=18)
-            expected_total_approved_ext, expected_extension_duration = _calculate_granted_ext(curr_ext_expire_date, baseline)
+            expected_total_approved_ext, expected_extension_duration =\
+                _calculate_granted_ext(curr_ext_expire_date, baseline)
 
             if expected_total_approved_ext != total_approved_ext or\
-                expected_extension_duration != extension_duration:
+                    expected_extension_duration != extension_duration:
                 msg.append({'error': babel('Fail to grant extension.')})
 
     return msg
@@ -137,17 +141,18 @@ def subsequent_agm_validation(filing: Dict) -> list:
             total_approved_ext = get_int(filing, f'{AGM_EXTENSION_PATH}/totalApprovedExt')
             extension_duration = get_int(filing, f'{AGM_EXTENSION_PATH}/extensionDuration')
 
-            expected_total_approved_ext, expected_extension_duration = _calculate_granted_ext(curr_ext_expire_date, prev_agm_ref_date)
+            expected_total_approved_ext, expected_extension_duration =\
+                _calculate_granted_ext(curr_ext_expire_date, prev_agm_ref_date)
 
             if expected_total_approved_ext != total_approved_ext or\
-                expected_extension_duration != extension_duration:
+                    expected_extension_duration != extension_duration:
                 msg.append({'error': babel('Fail to grant extension.')})
 
     return msg
 
 
 def intended_agm_date_validation(filing: Dict) -> list:
-    """Validate intended AGM date"""
+    """Validate intended AGM date."""
     msg = []
     intended_agm_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/intendedAgmDate')
     curr_ext_expire_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')
@@ -157,7 +162,7 @@ def intended_agm_date_validation(filing: Dict) -> list:
 
         if intended_agm_date > curr_ext_expire_date:
             msg.append({'error': 'Intended AGM date should not be greater than current extension expiry date.',
-                    'path': f'{AGM_EXTENSION_PATH}/intendedAgmDate'})
+                        'path': f'{AGM_EXTENSION_PATH}/intendedAgmDate'})
 
     return msg
 
