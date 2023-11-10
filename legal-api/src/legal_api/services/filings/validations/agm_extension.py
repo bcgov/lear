@@ -22,7 +22,7 @@ from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from ...utils import get_bool, get_int, get_str  # noqa: I003
-
+# noqa: I003
 
 AGM_EXTENSION_PATH = '/filing/agmExtension'
 
