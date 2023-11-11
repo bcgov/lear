@@ -73,7 +73,8 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
             return [{'error': 'Expiry date for current extension is required.',
                      'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'}]
 
-        curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
+        curr_ext_expire_date =\
+            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
         allowable_ext_date = founding_date + relativedelta(months=30)
         now = LegislationDatetime.datenow()
         if curr_ext_expire_date >= allowable_ext_date:
@@ -106,7 +107,8 @@ def subsequent_agm_validation(filing: Dict) -> list:
         return [{'error': 'Previous AGM date or a reference date is required.',
                  'path': f'{AGM_EXTENSION_PATH}/prevAgmRefDate'}]
 
-    prev_agm_ref_date = LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str)
+    prev_agm_ref_date =\
+        LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str).date()
 
     if not has_ext_req_for_agm_year:
         # subsequent AGM, first extension
@@ -126,7 +128,8 @@ def subsequent_agm_validation(filing: Dict) -> list:
             return [{'error': 'Expiry date for current extension is required.',
                      'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'}]
 
-        curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
+        curr_ext_expire_date =\
+            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
 
         allowable_ext_date = prev_agm_ref_date + relativedelta(months=12)
         now = LegislationDatetime.datenow()
@@ -157,8 +160,10 @@ def intended_agm_date_validation(filing: Dict) -> list:
     intended_agm_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/intendedAgmDate')
     curr_ext_expire_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')
     if intended_agm_date_str and curr_ext_expire_date_str:
-        intended_agm_date = LegislationDatetime.as_legislation_timezone_from_date_str(intended_agm_date_str)
-        curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str)
+        intended_agm_date =\
+            LegislationDatetime.as_legislation_timezone_from_date_str(intended_agm_date_str).date()
+        curr_ext_expire_date =\
+            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
 
         if intended_agm_date > curr_ext_expire_date:
             msg.append({'error': 'Intended AGM date should not be greater than current extension expiry date.',
