@@ -34,15 +34,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     msg = []
 
-    if get_bool(filing, f'{AGM_EXTENSION_PATH}/isFirstAgm') is None:
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': babel('isFirstAgm is required.'), 'path': f'{AGM_EXTENSION_PATH}/isFirstAgm'}])
-
-    if get_bool(filing, f'{AGM_EXTENSION_PATH}/extReqForAgmYear') is None:
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': babel('extReqForAgmYear is required.'),
-                       'path': f'{AGM_EXTENSION_PATH}/extReqForAgmYear'}])
-
     is_first_agm = get_bool(filing, f'{AGM_EXTENSION_PATH}/isFirstAgm')
 
     if is_first_agm:
