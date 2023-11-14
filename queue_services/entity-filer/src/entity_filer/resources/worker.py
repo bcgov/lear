@@ -102,13 +102,17 @@ def worker():
     if not (ce := queue.get_simple_cloud_event(request)):
         # Decision here is to return a 4xx,
         # so the event is errored off the Queue
+        structured_log(request, "INFO", f"no CloudEvent in: {request.data}")
         return {"error": "no cloud event"}, HTTPStatus.BAD_REQUEST
+    structured_log(request, "INFO", f"Incoming CloudEvent: {ce}")
 
     # 2. Get filing_message information
     # ##
     if not (filing_message := get_filing_message(ce)):
         # no filing_message info, error off Q
+        structured_log(request, "DEBUG", f"no filing_message info in: {ce}")
         return {"error": "no filing info in cloud event"}, HTTPStatus.BAD_REQUEST
+    structured_log(request, "INFO", f"Incoming filing_message: {filing_message}")
 
     # 3. Process Filing
     # ##
@@ -132,18 +136,16 @@ class FilingMessage:
 
 
 def get_filing_message(ce: SimpleCloudEvent):
-    """Return a PaymentToken if enclosed in the cloud event."""
+    """Return a FilingMessage if enclosed in the cloud event."""
     if (
         (ce.type == "filingMessage")
-        and (data := ce.data)
-        and isinstance(data, dict)
-        and (filing_message := data.get("filingMessage", {}))
+        and isinstance(ce.data, dict)
+        and (filing_message := ce.data.get("filingMessage", {}))
     ):
         converted = dict_keys_to_snake_case(filing_message)
         fm = FilingMessage(**converted)
         return fm
     return None
-
 
 def dict_keys_to_snake_case(d: dict):
     """Convert the keys of a dict to snake_case"""
@@ -215,16 +217,15 @@ async def publish_event(business: LegalEntity, filing: Filing):
 def process_filing(
     filing_message: FilingMessage,
 ):  # pylint: disable=too-many-branches,too-many-statements
-    """Render the filings contained in the submission.
-
-    Start the migration to using core/Filing
-    """
+    """Render the filings contained in the submission."""
     if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
+        structured_log(request, "ERROR", f"No filing found for: {filing_message}")
         raise DefaultException(
             error_text=f"filing not found for {filing_message.filing_identifier}"
         )
 
     if filing_submission.status == Filing.Status.COMPLETED:
+        structured_log(request, "INFO", f"Filing already processed for: {filing_message}")
         print(
             "QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s",
             filing_submission.legal_entity_id,
