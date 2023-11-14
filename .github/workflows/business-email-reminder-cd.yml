@@ -1,0 +1,30 @@
+name: Business Email Reminder Job CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "./jobs/email-reminder/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy To"
+        required: true
+        type: choice
+        options:
+        - dev
+        - test
+        - sandbox
+        - prod
+
+jobs:
+  business-email-reminder-cd:
+    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "business-email-reminder"
+      working_directory: "./jobs/email-reminder"
+    secrets:
+      WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
