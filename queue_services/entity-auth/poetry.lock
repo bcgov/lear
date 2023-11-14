@@ -147,7 +147,7 @@ sql-versioning = {path = "../sql-versioning"}
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "dev_legal_name_changes"
+reference = "feature-legal-name"
 resolved_reference = "a94b4fe2522eeedd5b5ab8657b4164812fd3ddbb"
 subdirectory = "python/common/business-registry-model"
 

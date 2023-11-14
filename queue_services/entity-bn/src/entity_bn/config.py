@@ -36,25 +36,18 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    ENVIRONMENT = os.getenv("APP_ENV", "prod")
+
     SENTRY_DSN = os.getenv("SENTRY_DSN", None)
-    COLIN_API = f"{os.getenv('COLIN_SVC_URL', '')}{os.getenv('COLIN_SVC_VERSION', '')}"
-
-    SEARCH_API = f"{os.getenv('REGISTRIES_SEARCH_API_INTERNAL_URL', '')}{os.getenv('REGISTRIES_SEARCH_API_VERSION', '/api/v1')}"
-
-    BN_HUB_API_URL = os.getenv("BN_HUB_API_URL", None)
-    BN_HUB_CLIENT_ID = os.getenv("BN_HUB_CLIENT_ID", None)
-    BN_HUB_CLIENT_SECRET = os.getenv("BN_HUB_CLIENT_SECRET", None)
-    BN_HUB_MAX_RETRY = int(os.getenv("BN_HUB_MAX_RETRY", "9"))
-    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_USERNAME", "")
     DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
+
     # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
@@ -63,7 +56,22 @@ class Config:  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
+    # legislative timezone for future effective dating
+    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
+
+    # API Endpoints
+    COLIN_API_URL = os.getenv("COLIN_API_URL", "")
+    COLIN_API_VERSION = os.getenv("COLIN_API_VERSION", "")
+    SEARCH_API_URL = os.getenv("REGISTRIES_SEARCH_API_INTERNAL_URL", "")
+    SEARCH_API_VERSION = os.getenv("REGISTRIES_SEARCH_API_VERSION", "")
+    COLIN_API = f"{COLIN_API_URL + COLIN_API_VERSION}"
+    SEARCH_API = f"{SEARCH_API_URL + SEARCH_API_VERSION}"
+
+    BN_HUB_API_URL = os.getenv("BN_HUB_API_URL", None)
+    BN_HUB_CLIENT_ID = os.getenv("BN_HUB_CLIENT_ID", None)
+    BN_HUB_CLIENT_SECRET = os.getenv("BN_HUB_CLIENT_SECRET", None)
+    BN_HUB_MAX_RETRY = int(os.getenv("BN_HUB_MAX_RETRY", "9"))
 
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
@@ -74,9 +82,6 @@ class Config:  # pylint: disable=too-few-public-methods
     PUBLISHER_AUDIENCE = os.getenv(
         "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
-
-    # legislative timezone for future effective dating
-    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods

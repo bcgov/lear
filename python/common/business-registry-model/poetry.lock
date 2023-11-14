@@ -1052,7 +1052,7 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "dev_legal_name_changes"
+reference = "feature-legal-name"
 resolved_reference = "de407723bd4a0a1d6a29059caffac48ac25ab567"
 subdirectory = "python/common/sql-versioning"
 

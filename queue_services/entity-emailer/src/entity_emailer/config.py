@@ -1,6 +1,6 @@
 # Copyright © 2023 Province of British Columbia
 #
-# Licensed under the BSD 3 Clause License, (the "License");
+# Licensed under the BSD 3 Clause License, (the 'License');
 # you may not use this file except in compliance with the License.
 # The template for the license can be found here
 #    https://opensource.org/license/bsd-3-clause/
@@ -72,41 +72,59 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    MSG_RETRY_NUM = int(os.getenv("MSG_RETRY_NUM", "5"))
+    ENVIRONMENT = os.getenv("APP_ENV", "prod")
 
-    # urls
-    DASHBOARD_URL = os.getenv("DASHBOARD_URL", None)
-    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", None)
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL", None)
-    PAY_API_URL = os.getenv("PAY_API_URL", None)
-    AUTH_URL = os.getenv("AUTH_URL", None)
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
-    # secrets
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
-    # variables
-    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
-    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
+    SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    NAMEX_AUTH_SVC_URL = os.getenv("NAMEX_AUTH_SVC_URL", None)
-    NAMEX_SVC_URL = os.getenv("NAMEX_SVC_URL", None)
-    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("NAMEX_SERVICE_CLIENT_USERNAME", None)
-    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("NAMEX_SERVICE_CLIENT_SECRET", None)
-
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_USERNAME", "")
     DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
+
+    # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
     else:
         SQLALCHEMY_DATABASE_URI = (
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
+
+    # variables
+    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    MSG_RETRY_NUM = int(os.getenv("MSG_RETRY_NUM", "5"))
+    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
+    DASHBOARD_URL = os.getenv("DASHBOARD_URL", None)
+    LOG_LEVEL = os.getenv("LOG_LEVEL", None)
+
+    # API Endpoints
+    AUTH_API_URL = os.getenv("AUTH_API_URL", "")
+    AUTH_API_VERSION = os.getenv("AUTH_API_VERSION", "")
+    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "")
+    NOTIFY_API_VERSION = os.getenv("NOTIFY_API_VERSION", "")
+    BUSINESS_API_URL = os.getenv("BUSINESS_API_URL", "")
+    BUSINESS_API_VERSION_2 = os.getenv("BUSINESS_API_VERSION2", "")
+    NAMEX_API_URL = os.getenv("NAMEX_API_URL", "")
+    NAMEX_API_VERSION = os.getenv("NAMEX_API_VERSION", "")
+    PAY_API_URL = os.getenv("PAY_API_URL", "")
+    PAY_API_VERSION = os.getenv("PAY_API_VERSION", "")
+
+    LEGAL_API_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}"
+    NOTIFY_API_URL = f"{NOTIFY_API_URL + AUTH_API_VERSION}/notify/"
+    NAMEX_SVC_URL = f"{NAMEX_API_URL + NAMEX_API_VERSION}"
+    PAY_API_URL = f"{PAY_API_URL + PAY_API_VERSION}/payment-request"
+    AUTH_URL = f"{AUTH_API_URL + AUTH_API_VERSION}"
+
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
+    NAMEX_AUTH_SVC_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("KEYCLOAK_CLIENT_ID")
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
 
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(

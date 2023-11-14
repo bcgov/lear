@@ -17,7 +17,7 @@ The following will serve as steps required to get the LEAR database model and da
    A successful run will look like the following:
 ``` bash
 
-(legal-api-py3.10) argus@Argus-Mac-Studio ~/h3/git/bcreg/lear/legal-api (dev_legal_name_changes) $ dbshell /Users/argus/h3/git/bcreg/lear/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql
+(legal-api-py3.10) argus@Argus-Mac-Studio ~/h3/git/bcreg/lear/legal-api (feature-legal-name) $ dbshell /Users/argus/h3/git/bcreg/lear/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql
 DbShell 1.3.2 Build #210311
 Type 'help' for a list of commands.
 
@@ -71,4 +71,3 @@ Done
 1. Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/legal_name_updates.sql` against new LEAR db
 2. Cleanup temporary artifacts and states created by data transfer scripts.
    Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_after.sql` against new LEAR db
-

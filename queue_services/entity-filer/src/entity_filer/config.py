@@ -56,21 +56,17 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
-
     SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
-    REPORT_TEMPLATE_PATH = os.getenv("REPORT_PATH", "report-templates")
-
-    FONTS_PATH = os.getenv("FONTS_PATH", "fonts")
-
-    # POSTGRESQL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # POSTGRESQL
     DB_USER = os.getenv("DATABASE_USERNAME", "")
     DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
+
+    # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
     else:
@@ -78,20 +74,36 @@ class Config:  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    COLIN_API = os.getenv("COLIN_API", "")
+    # API Endpoints
+    AUTH_API_URL = os.getenv("AUTH_API_URL", "")
+    AUTH_API_VERSION = os.getenv("AUTH_API_VERSION", "")
+    COLIN_API_URL = os.getenv("COLIN_API_URL", "")
+    COLIN_API_VERSION = os.getenv("COLIN_API_VERSION", "")
+    BUSINESS_API_URL = os.getenv("BUSINESS_API_URL", "")
+    BUSINESS_API_VERSION_2 = os.getenv("BUSINESS_API_VERSION2", "")
+    NAMEX_API_URL = os.getenv("NAMEX_API_URL", "")
+    NAMEX_API_VERSION = os.getenv("NAMEX_API_VERSION", "")
+    PAY_API_URL = os.getenv("PAY_API_URL", "")
+    PAY_API_VERSION = os.getenv("PAY_API_VERSION", "")
+    REPORT_API_URL = os.getenv("REPORT_API_URL", "")
+    REPORT_API_VERSION = os.getenv("REPORT_API_VERSION", "")
+
+    LEGAL_API_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}"
+    COLIN_API = f"{COLIN_API_URL + AUTH_API_VERSION}"
+    NAMEX_API = f"{NAMEX_API_URL + NAMEX_API_VERSION}"
+    PAYMENT_SVC_URL = f"{PAY_API_URL + PAY_API_VERSION}/payment-request"
+    AUTH_SVC_URL = f"{AUTH_API_URL + AUTH_API_VERSION}"
+    REPORT_SVC_URL = f"{REPORT_API_URL + REPORT_API_VERSION}/reports"
+    NAICS_API_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/naics"
+
+    REPORT_TEMPLATE_PATH = os.getenv("REPORT_PATH", "report-templates")
+    FONTS_PATH = os.getenv("FONTS_PATH", "fonts")
 
     # service accounts
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "https://")
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
-    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
-
-    # BCRegistry Services
-    ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
-    ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL")
-    NAMEX_API = os.getenv("NAMEX_API")
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
@@ -102,8 +114,6 @@ class Config:  # pylint: disable=too-few-public-methods
     MINIO_ACCESS_SECRET = os.getenv("MINIO_ACCESS_SECRET")
     MINIO_BUCKET_BUSINESSES = os.getenv("MINIO_BUCKET_BUSINESSES", "businesses")
     MINIO_SECURE = True
-
-    NAICS_API_URL = os.getenv("NAICS_API_URL", "https://NAICS_API_URL/api/v2/naics")
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods
