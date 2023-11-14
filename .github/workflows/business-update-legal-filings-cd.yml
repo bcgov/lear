@@ -20,7 +20,7 @@ on:
 
 jobs:
   business-update-legal-filings-cd:
-    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-update-legal-filings"
