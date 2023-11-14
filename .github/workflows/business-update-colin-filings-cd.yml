@@ -3,7 +3,7 @@ name: Business Update Colin Filings Job CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "./jobs/update-colin-filings/**"
   workflow_dispatch:
@@ -20,7 +20,7 @@ on:
 
 jobs:
   business-update-colin-filings-cd:
-    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-update-colin-filings"

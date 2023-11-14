@@ -3,7 +3,7 @@ name: Business API CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "legal-api/**"
   workflow_dispatch:
@@ -20,7 +20,7 @@ on:
 
 jobs:
   business-api-cd:
-    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-api"
