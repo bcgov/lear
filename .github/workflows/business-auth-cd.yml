@@ -3,7 +3,7 @@ name: Business Auth CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "queue_services/entity-auth/**"
       - "queue_services/common/**"
@@ -21,7 +21,7 @@ on:
 
 jobs:
   business-auth-cd:
-    uses: pwei1018/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-auth"
