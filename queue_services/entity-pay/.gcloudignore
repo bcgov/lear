@@ -6,8 +6,6 @@ venv
 .env*
 .eggs
 Makefile
-devops
-k8s
 manage.py
 migrations
 pre-hook-update-db.sh
