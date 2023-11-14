@@ -3,7 +3,7 @@ name: Business API CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "legal-api/**"
   workflow_dispatch:

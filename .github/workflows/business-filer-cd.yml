@@ -3,7 +3,7 @@ name: Business Filer CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "queue_services/entity-filer/**"
       - "queue_services/common/**"

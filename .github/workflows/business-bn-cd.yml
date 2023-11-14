@@ -3,7 +3,7 @@ name: Business BN CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "queue_services/entity-bn/**"
       - "queue_services/common/**"

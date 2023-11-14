@@ -3,7 +3,7 @@ name: Business Emailer CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "queue_services/entity-emailer/**"
       - "queue_services/common/**"

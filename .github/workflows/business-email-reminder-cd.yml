@@ -3,7 +3,7 @@ name: Business Email Reminder Job CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "./jobs/email-reminder/**"
   workflow_dispatch:

@@ -3,7 +3,7 @@ name: Business Update Colin Filings Job CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "./jobs/update-colin-filings/**"
   workflow_dispatch:

@@ -3,7 +3,7 @@ name: Business Update Legal Filings Job CD
 on:
   push:
     branches:
-      - main
+      - feature-legal-name
     paths:
       - "./jobs/update-legal-filings/**"
   workflow_dispatch:
