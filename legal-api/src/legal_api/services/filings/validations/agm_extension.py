@@ -25,6 +25,8 @@ from ...utils import get_bool, get_int, get_str  # noqa: I003
 # noqa: I003
 
 AGM_EXTENSION_PATH = '/filing/agmExtension'
+EXPIRED_ERROR = 'Allotted period to request extension has expired.'
+GRANT_FAILURE = 'Fail to grant extension.'
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
@@ -59,13 +61,13 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
         now = LegislationDatetime.datenow()
         latest_ext_date = founding_date + relativedelta(months=18, days=5)
         if now > latest_ext_date:
-            msg.append({'error': 'Allotted period to request extension has expired.',
+            msg.append({'error': EXPIRED_ERROR,
                         'path': f'{AGM_EXTENSION_PATH}/isFirstAgm'})
         else:
             total_approved_ext = get_int(filing, f'{AGM_EXTENSION_PATH}/totalApprovedExt')
             extension_duration = get_int(filing, f'{AGM_EXTENSION_PATH}/extensionDuration')
             if total_approved_ext != 6 or extension_duration != 6:
-                msg.append({'error': babel('Fail to grant extension.')})
+                msg.append({'error': babel(GRANT_FAILURE)})
     else:
         # first AGM, second extension or more
         if not (curr_ext_expire_date_str := get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')):
@@ -80,7 +82,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
                         'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'})
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({'error': 'Allotted period to request extension has expired.',
+            msg.append({'error': EXPIRED_ERROR,
                         'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'})
         else:
             total_approved_ext = get_int(filing, f'{AGM_EXTENSION_PATH}/totalApprovedExt')
@@ -92,7 +94,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
 
             if expected_total_approved_ext != total_approved_ext or\
                     expected_extension_duration != extension_duration:
-                msg.append({'error': babel('Fail to grant extension.')})
+                msg.append({'error': babel(GRANT_FAILURE)})
 
     return msg
 
@@ -114,13 +116,13 @@ def subsequent_agm_validation(filing: Dict) -> list:
         now = LegislationDatetime.datenow()
         latest_ext_date = prev_agm_ref_date + relativedelta(months=15, days=5)
         if now > latest_ext_date:
-            msg.append({'error': 'Allotted period to request extension has expired.',
+            msg.append({'error': EXPIRED_ERROR,
                         'path': f'{AGM_EXTENSION_PATH}/prevAgmRefDate'})
         else:
             total_approved_ext = get_int(filing, f'{AGM_EXTENSION_PATH}/totalApprovedExt')
             extension_duration = get_int(filing, f'{AGM_EXTENSION_PATH}/extensionDuration')
             if total_approved_ext != 6 or extension_duration != 6:
-                msg.append({'error': babel('Fail to grant extension.')})
+                msg.append({'error': babel(GRANT_FAILURE)})
     else:
         # subsequent AGM, second extension or more
         if not (curr_ext_expire_date_str := get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')):
@@ -137,7 +139,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
             msg.append({'error': 'Company has received the maximum 12 months of allowable extensions.',
                         'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'})
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({'error': 'Allotted period to request extension has expired.',
+            msg.append({'error': EXPIRED_ERROR,
                         'path': f'{AGM_EXTENSION_PATH}/expireDateCurrExt'})
         else:
             total_approved_ext = get_int(filing, f'{AGM_EXTENSION_PATH}/totalApprovedExt')
@@ -148,7 +150,7 @@ def subsequent_agm_validation(filing: Dict) -> list:
 
             if expected_total_approved_ext != total_approved_ext or\
                     expected_extension_duration != extension_duration:
-                msg.append({'error': babel('Fail to grant extension.')})
+                msg.append({'error': babel(GRANT_FAILURE)})
 
     return msg
 
