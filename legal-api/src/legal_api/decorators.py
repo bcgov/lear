@@ -14,6 +14,7 @@
 """This module holds function decorators."""
 
 import json
+from datetime import datetime
 from functools import wraps
 
 import jwt
@@ -39,7 +40,11 @@ def requires_traction_auth(f):
             if not hasattr(current_app, 'api_token'):
                 raise jwt.ExpiredSignatureError
 
-            jwt.decode(current_app.api_token, options={'verify_signature': False})
+            if not (decoded := jwt.decode(current_app.api_token, options={'verify_signature': False})):
+                raise jwt.ExpiredSignatureError
+
+            if datetime.utcfromtimestamp(decoded['exp']) <= datetime.utcnow():
+                raise jwt.ExpiredSignatureError
         except ExpiredSignatureError:
             current_app.logger.info('JWT token expired or is missing, requesting new token')
             response = requests.post(f'{traction_api_url}/multitenancy/tenant/{traction_tenant_id}/token',
