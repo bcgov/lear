@@ -142,7 +142,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     DECIDE_BUSINESS_URL = os.getenv('DECIDE_BUSINESS_URL', '')
     COLIN_URL = os.getenv('COLIN_URL', '')
     CORP_FORMS_URL = os.getenv('CORP_FORMS_URL', '')
-
+    SOCIETIES_URL = os.getenv('SOCIETIES_URL', '')
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
