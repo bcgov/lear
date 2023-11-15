@@ -47,12 +47,17 @@ def __is_colin(legal_type):
     colin_list = ['CR', 'UL', 'CC', 'XCR', 'XUL', 'RLC']
     return legal_type in colin_list
 
-
+def _is_society(legal_type):
+        society_list = ['SO', 'XSO']
+        return legal_type in society_list
+    
 def __get_instruction_group(legal_type):
     if __is_modernized(legal_type):
         return 'modernized'
     if __is_colin(legal_type):
         return 'colin'
+    if _is_society(legal_type):
+            return 'so'
     return ''
 
 
@@ -92,6 +97,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     decide_business_url = current_app.config.get('DECIDE_BUSINESS_URL')
     corp_online_url = current_app.config.get('COLIN_URL')
     form_page_url = current_app.config.get('CORP_FORMS_URL')
+    societies_url = current_app.config.get('SOCIETIES_URL')
 
     file_name_suffix = option.upper()
     if option == Option.BEFORE_EXPIRY.value:
@@ -115,7 +121,8 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
         name_request_url=name_request_url,
         decide_business_url=decide_business_url,
         corp_online_url=corp_online_url,
-        form_page_url=form_page_url
+        form_page_url=form_page_url,
+        societies_url=societies_url
     )
 
     # get recipients
