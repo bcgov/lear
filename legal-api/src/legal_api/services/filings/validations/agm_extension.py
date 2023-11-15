@@ -40,7 +40,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         msg.extend(first_agm_validation(business, filing))
     else:
         msg.extend(subsequent_agm_validation(filing))
-    msg.extend(intended_agm_date_validation(filing))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -150,24 +149,6 @@ def subsequent_agm_validation(filing: Dict) -> list:
             if expected_total_approved_ext != total_approved_ext or\
                     expected_extension_duration != extension_duration:
                 msg.append({'error': babel('Fail to grant extension.')})
-
-    return msg
-
-
-def intended_agm_date_validation(filing: Dict) -> list:
-    """Validate intended AGM date."""
-    msg = []
-    intended_agm_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/intendedAgmDate')
-    curr_ext_expire_date_str = get_str(filing, f'{AGM_EXTENSION_PATH}/expireDateCurrExt')
-    if intended_agm_date_str and curr_ext_expire_date_str:
-        intended_agm_date =\
-            LegislationDatetime.as_legislation_timezone_from_date_str(intended_agm_date_str).date()
-        curr_ext_expire_date =\
-            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
-
-        if intended_agm_date > curr_ext_expire_date:
-            msg.append({'error': 'Intended AGM date should not be greater than current extension expiry date.',
-                        'path': f'{AGM_EXTENSION_PATH}/intendedAgmDate'})
 
     return msg
 
