@@ -57,6 +57,7 @@ class Filing:
         """Render an Enum of all Filing Types."""
 
         ADMIN_FREEZE = 'adminFreeze'
+        AGMEXTENSION = 'agmExtension'
         AGMLOCATIONCHANGE = 'agmLocationChange'
         ALTERATION = 'alteration'
         AMALGAMATIONAPPLICATION = 'amalgamationApplication'
@@ -474,6 +475,7 @@ class Filing:
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
+            Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
         if filing.status == Filing.Status.PAID and \
@@ -508,6 +510,7 @@ class Filing:
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.AGMEXTENSION.value,
                     Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                 ]
                 if filing.filing_type not in no_legal_filings:
