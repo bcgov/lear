@@ -25,24 +25,6 @@ from legal_api.services.bootstrap import AccountService
 bp = Blueprint('NAMEREQUEST2', __name__, url_prefix='/api/v2/nameRequests')
 
 
-@bp.route('/<string:identifier>', methods=['GET'])
-@cross_origin(origin='*')
-def get(identifier):
-    """Return a JSON object with name request information."""
-    try:
-        nr_response = namex.query_nr_number(identifier)
-        # Errors in general will just pass though,
-        # 404 is overriden as it is giving namex-api specific messaging
-        if nr_response.status_code == 404:
-            return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
-
-        return jsonify(nr_response.json())
-    except Exception as err:
-        current_app.logger.error(err)
-        abort(500)
-        return {}, 500  # to appease the linter
-
-
 @bp.route('/<string:identifier>/validate', methods=['GET'])
 @cross_origin(origin='*')
 def validate_with_contact_info(identifier):

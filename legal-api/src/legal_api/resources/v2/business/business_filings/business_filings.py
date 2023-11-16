@@ -730,11 +730,19 @@ class ListFilingResource():
                         'futureEffective': ListFilingResource.is_future_effective_filing(filing_json)
                     })
                 elif filing_type_code:
-                    filing_types.append({
-                        'filingTypeCode': filing_type_code,
-                        'priority': priority,
-                        'waiveFees': waive_fees_flag
-                    })
+                    if k == 'alteration':
+                        filing_types.append({
+                            'filingTypeCode': filing_type_code,
+                            'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                            'priority': priority,
+                            'waiveFees': waive_fees_flag
+                        })
+                    else:
+                        filing_types.append({
+                            'filingTypeCode': filing_type_code,
+                            'priority': priority,
+                            'waiveFees': waive_fees_flag
+                        })
         return filing_types
 
     @staticmethod
