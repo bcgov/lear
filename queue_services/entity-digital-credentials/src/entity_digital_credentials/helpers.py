@@ -106,7 +106,7 @@ def revoke_issued_digital_credential(business: Business,
 def replace_issued_digital_credential(business: Business,
                                       issued_credential: DCIssuedCredential,
                                       credential_type: DCDefinition.CredentialType,
-                                      reason: DCRevocationReason):
+                                      reason: DCRevocationReason):  # pylint: disable=too-many-arguments
     """Replace an issued digital credential for a business."""
     try:
         if issued_credential.is_issued and not issued_credential.is_revoked:
