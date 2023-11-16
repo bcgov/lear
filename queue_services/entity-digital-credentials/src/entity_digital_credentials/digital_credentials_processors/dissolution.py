@@ -13,6 +13,7 @@
 # limitations under the License.
 """Processing dissolution actions."""
 
+from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCDefinition, DCRevocationReason
 
 from entity_digital_credentials.helpers import (
@@ -27,7 +28,8 @@ async def process(business: Business, filing_sub_type: str):
     issued_credentials = get_issued_digital_credentials(business=business)
 
     if not (issued_credentials and len(issued_credentials)):
-        raise Exception('No issued credentials found.')
+        logger.error('No issued credentials found for business: %s', business.identifier)
+        return None
 
     if filing_sub_type == 'voluntary':
         reason = DCRevocationReason.VOLUNTARY_DISSOLUTION

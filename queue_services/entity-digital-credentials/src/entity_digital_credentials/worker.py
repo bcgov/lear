@@ -65,17 +65,20 @@ if FLASK_APP.config.get('LD_SDK_KEY', None):
 async def process_digital_credential(dc_msg: dict, flask_app: Flask):
     # pylint: disable=too-many-branches, too-many-statements
     """Process any digital credential messages in queue."""
+    if not dc_msg or dc_msg.get('type') not in [
+            f'bc.registry.business.{FilingCore.FilingTypes.CHANGEOFREGISTRATION.value}',
+            f'bc.registry.business.{FilingCore.FilingTypes.DISSOLUTION.value}',
+            f'bc.registry.business.{FilingCore.FilingTypes.PUTBACKON.value}',
+            'bc.registry.admin.bn',
+            'bc.registry.admin.manual'
+    ]:
+        return None
+
     if not flask_app:
         raise QueueException('Flask App not available.')
 
     with flask_app.app_context():
         logger.debug('Attempting to process digital credential message: %s', dc_msg)
-
-        if dc_msg is None:
-            raise QueueException
-
-        if dc_msg['type'] is None:
-            raise QueueException('Digital credential message is missing type.')
 
         if dc_msg['type'] in ('bc.registry.business.bn', 'bc.registry.business.manual'):
             # When a BN is added or changed or there is a manuak administrative update the queue message does not have

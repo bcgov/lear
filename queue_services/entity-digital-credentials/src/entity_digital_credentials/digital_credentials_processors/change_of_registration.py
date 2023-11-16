@@ -13,6 +13,7 @@
 # limitations under the License.
 """Processing change of registration actions."""
 
+from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCDefinition, DCRevocationReason, Filing
 
 from entity_digital_credentials.helpers import get_issued_digital_credentials, replace_issued_digital_credential
@@ -24,7 +25,8 @@ async def process(business: Business, filing: Filing):
 
         issued_credentials = get_issued_digital_credentials(business=business)
         if not (issued_credentials and len(issued_credentials)):
-            raise Exception('No issued credentials found.')
+            logger.error('No issued credentials found for business: %s', business.identifier)
+            return None
 
         return replace_issued_digital_credential(business=business,
                                                  issued_credential=issued_credentials[0],
