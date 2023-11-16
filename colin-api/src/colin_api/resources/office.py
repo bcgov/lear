@@ -35,7 +35,7 @@ class OfficeInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return the registered and/or records office for a corporation."""
         if not identifier:

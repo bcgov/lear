@@ -37,7 +37,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type, identifier, filing_type, filing_sub_type=None):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
@@ -86,7 +86,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type, identifier, **kwargs):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get

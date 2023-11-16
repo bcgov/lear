@@ -28,7 +28,7 @@ class EventInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(corp_type, event_id):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
         querystring = ("""
@@ -66,7 +66,7 @@ class CorpEventInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(corp_num):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
         querystring = ("""

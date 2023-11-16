@@ -34,7 +34,7 @@ class ProgramAccountInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(identifier: str, transaction_id: str = None):
         """Return the BNI DB link program account."""
         if not identifier:

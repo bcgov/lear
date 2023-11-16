@@ -38,7 +38,7 @@ class BusinessInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return the complete business info."""
         try:
@@ -65,7 +65,7 @@ class BusinessInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type: str):
         """Create and return a new corp number for the given legal type."""
         if legal_type not in [x.value for x in Business.LearBusinessTypes]:
@@ -94,7 +94,7 @@ class BusinessNamesInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type, identifier, name_type):
         """Get active names by type code for a business."""
         if legal_type not in [x.value for x in Business.LearBusinessTypes]:
@@ -128,7 +128,7 @@ class InternalBusinessInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(info_type, legal_type=None, identifier=None):  # pylint: disable = too-many-return-statements;
         """Return specific business info for businesses."""
         try:

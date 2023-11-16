@@ -43,7 +43,7 @@ def conditional_auth(auth_decorator, roles):
 
     When disable-colin-api-auth feature flag value is False, auth_decorator function will be called resulting in
     the endpoint using this decorator to authenticate the api consumer.  In this scenario, the REST resource(endpoint)
-    should be decorated with "@conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])".
+    should be decorated with "@jwt.requires_roles([COLIN_SVC_ROLE])".
     """
     def decorator(f):
         @wraps(f)

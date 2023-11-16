@@ -35,7 +35,7 @@ class ShareStruct(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return the current directors for a business."""
         if not identifier:

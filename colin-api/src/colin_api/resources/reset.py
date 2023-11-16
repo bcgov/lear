@@ -33,7 +33,7 @@ class ResetInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def post():
         """Reset the changes in COLIN made by COOPER."""
         try:
