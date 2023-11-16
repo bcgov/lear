@@ -28,13 +28,13 @@ def requires_traction_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not (traction_api_url := current_app.config['TRACTION_API_URL']):
-            raise EnvironmentError('TRACTION_API_URL environment vairable is not set')
+            raise EnvironmentError('TRACTION_API_URL environment variable is not set')
 
         if not (traction_tenant_id := current_app.config['TRACTION_TENANT_ID']):
-            raise EnvironmentError('TRACTION_TENANT_ID environment vairable is not set')
+            raise EnvironmentError('TRACTION_TENANT_ID environment variable is not set')
 
         if not (traction_api_key := current_app.config['TRACTION_API_KEY']):
-            raise EnvironmentError('TRACTION_API_KEY environment vairable is not set')
+            raise EnvironmentError('TRACTION_API_KEY environment variable is not set')
 
         try:
             if not hasattr(current_app, 'api_token'):

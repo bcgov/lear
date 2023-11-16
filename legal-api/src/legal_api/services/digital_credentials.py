@@ -84,7 +84,7 @@ class DigitalCredentialsService:
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
             if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
                 raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
-                                 ' must be avaible in Traction tenant storage')
+                                 ' must be available in Traction tenant storage')
 
             # Check for the current Business definition.
             definition = DCDefinition.find_by(

@@ -26,6 +26,5 @@ class DCRevocationReason(Enum):
     PUT_BACK_ON = 'Your business was put back on the Registry. '
     RESTORATION = 'Your business was put back on the Registry. ' \
         'A new credential was offered that reflects the new company status and that revoked all previous copies.'
-    ACCESS_REMOVED = 'Your role in the business was changed and you no longer have system access to the business.'
     SELF_REISSUANCE = 'You chose to issue yourself a new credential and that revoked all previous copies.'
     SELF_REVOCATION = 'You chose to revoke your own credential.'

@@ -1,6 +1,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![codecov](https://codecov.io/gh/bcgov/lear/branch/master/graph/badge.svg?flag=entityemailer)](https://codecov.io/gh/bcgov/lear/tree/master/queue_services/entity-emailer)
+[![codecov](https://codecov.io/gh/bcgov/lear/branch/master/graph/badge.svg?flag=entitydigitalcredentials)](https://codecov.io/gh/bcgov/lear/tree/master/queue_services/entity-digital-credentials)
 
 # Application Name
 
@@ -19,7 +19,7 @@ BC Registries Entity Digital Credentials Service
 
 ## Getting Help or Reporting an Issue
 
-To report bugs/issues/feature requests, please file an [issue](../../issues).
+To report bugs/issues/feature requests, please file an [issue](https://github.com/bcgov/entity/issues).
 
 ## How to Contribute
 
