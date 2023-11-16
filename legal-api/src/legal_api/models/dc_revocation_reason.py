@@ -24,7 +24,5 @@ class DCRevocationReason(Enum):
         'A new credential was offered that reflects the new company status and that revoked all previous copies.'
     ADMINISTRATIVE_DISSOLUTION = 'Your business was dissolved by the Registrar.'
     PUT_BACK_ON = 'Your business was put back on the Registry. '
-    RESTORATION = 'Your business was put back on the Registry. ' \
-        'A new credential was offered that reflects the new company status and that revoked all previous copies.'
     SELF_REISSUANCE = 'You chose to issue yourself a new credential and that revoked all previous copies.'
     SELF_REVOCATION = 'You chose to revoke your own credential.'
