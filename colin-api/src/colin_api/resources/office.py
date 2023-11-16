@@ -25,7 +25,7 @@ from colin_api.models import Business, Office
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
-from colin_api.utils.util import conditional_auth, cors_preflight
+from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET')

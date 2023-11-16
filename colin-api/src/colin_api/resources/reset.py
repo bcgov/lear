@@ -20,7 +20,7 @@ from flask_restx import Namespace, Resource, cors
 
 from colin_api.models.reset import Reset
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
-from colin_api.utils.util import conditional_auth, cors_preflight
+from colin_api.utils.util import cors_preflight
 
 
 API = Namespace('Reset', description='Reset endpoint for changes made by COOPER')

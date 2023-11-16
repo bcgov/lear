@@ -24,7 +24,7 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business, CorpName
 from colin_api.resources.db import DB
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
-from colin_api.utils.util import conditional_auth, cors_preflight
+from colin_api.utils.util import cors_preflight
 
 
 API = Namespace('businesses', description='Colin API Services - Businesses')
