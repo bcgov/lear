@@ -14,6 +14,7 @@
 """This module holds data for digital credentials connection."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import List
 
 from .db import db
@@ -21,6 +22,18 @@ from .db import db
 
 class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials connection."""
+
+    class State(Enum):
+        """Enum of the connection states."""
+
+        INIT = 'init'
+        INVITATION = 'invitation'
+        REQUEST = 'request'
+        RESPONSE = 'response'
+        ACTIVE = 'active'
+        COMPLETED = 'completed'
+        INACTIVE = 'inactive'
+        ERROR = 'error'
 
     __tablename__ = 'dc_connections'
 

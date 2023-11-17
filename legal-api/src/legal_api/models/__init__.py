@@ -25,6 +25,7 @@ from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
 from .dc_issued_business_user_credential import DCIssuedBusinessUserCredential
 from .dc_issued_credential import DCIssuedCredential
+from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
 from .naics_element import NaicsElement
@@ -40,8 +41,8 @@ from .user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'ConsentContinuationOut', 'CorpType',
-           'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential', 'Document',
-           'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker',
-           'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure',
-           'NaicsElement')
+           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'ConsentContinuationOut',
+           'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential',
+           'DCRevocationReason', 'Document', 'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party',
+           'RegistrationBootstrap', 'RequestTracker', 'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries',
+           'User', 'UserRoles', 'NaicsStructure', 'NaicsElement')

@@ -35,6 +35,14 @@ class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-inst
         db.session.commit()
 
     @classmethod
+    def find_by_id(cls, dc_issued_business_user_id: str) -> DCIssuedBusinessUserCredential:
+        """Return the issued business user credential matching the id."""
+        dc_issued_business_user = None
+        if dc_issued_business_user_id:
+            dc_issued_business_user = cls.query.filter_by(id=dc_issued_business_user_id).one_or_none()
+        return dc_issued_business_user
+
+    @classmethod
     def find_by(cls,
                 business_id: int = None,
                 user_id: int = None) -> List[DCIssuedBusinessUserCredential]:
