@@ -22,7 +22,7 @@ from typing import Optional
 import requests
 
 from legal_api.decorators import requires_traction_auth
-from legal_api.models import DCDefinition
+from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, DCRevocationReason, User
 
 
 class DigitalCredentialsService:
@@ -61,11 +61,11 @@ class DigitalCredentialsService:
     def _register_business_definition(self):
         """Fetch schema and credential definition and save a Business definition."""
         try:
-            if self.business_schema_id is None:
+            if not self.business_schema_id:
                 self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
-            if self.business_cred_def_id is None:
+            if not self.business_cred_def_id:
                 self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
                 raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
@@ -77,16 +77,14 @@ class DigitalCredentialsService:
             ###
 
             # Look for a schema first, and copy it into the Traction tenant if it's not there
-            schema_id = self._fetch_schema(self.business_schema_id)
-            if not schema_id:
+            if not (schema_id := self._fetch_schema(self.business_schema_id)):
                 raise ValueError(f'Schema with id:{self.business_schema_id}' +
                                  ' must be available in Traction tenant storage')
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
-            credential_definition_id = self._fetch_credential_definition(self.business_cred_def_id)
-            if not credential_definition_id:
+            if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
                 raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
-                                 ' must be avaible in Traction tenant storage')
+                                 ' must be available in Traction tenant storage')
 
             # Check for the current Business definition.
             definition = DCDefinition.find_by(
@@ -94,7 +92,6 @@ class DigitalCredentialsService:
                 schema_id=self.business_schema_id,
                 credential_definition_id=self.business_cred_def_id
             )
-
             if definition and not definition.is_deleted:
                 return None
 
@@ -197,7 +194,22 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def revoke_credential(self, connection_id, cred_rev_id: str, rev_reg_id: str) -> Optional[dict]:
+    def fetch_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+        """Fetch a credential exchange record."""
+        try:
+            response = requests.get(self.api_url + '/issue-credential-2.0/records/' + cred_ex_id,
+                                    headers=self._get_headers())
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def revoke_credential(self, connection_id,
+                          cred_rev_id: str,
+                          rev_reg_id: str,
+                          reason: DCRevocationReason) -> Optional[dict]:
         """Revoke a credential."""
         try:
             response = requests.post(self.api_url + '/revocation/revoke',
@@ -208,7 +220,8 @@ class DigitalCredentialsService:
                                          'rev_reg_id': rev_reg_id,
                                          'publish': True,
                                          'notify': True,
-                                         'notify_version': 'v1_0'
+                                         'notify_version': 'v1_0',
+                                         'comment': reason.value if reason else ''
                                      }))
             response.raise_for_status()
             return response.json()
@@ -245,3 +258,90 @@ class DigitalCredentialsService:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.app.api_token}'
         }
+
+
+class DigitalCredentialsHelpers:
+    """Provides helper functions for digital credentials."""
+
+    @staticmethod
+    def get_digital_credential_data(business: Business, user: User, credential_type: DCDefinition.CredentialType):
+        """Get the data for a digital credential."""
+        if credential_type == DCDefinition.CredentialType.business:
+
+            # Find the credential id from dc_issued_business_user_credentials and if there isn't one create one
+            if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by(
+                    business_id=business.id, user_id=user.id)):
+                issued_business_user_credential = DCIssuedBusinessUserCredential(
+                    business_id=business.id, user_id=user.id)
+                issued_business_user_credential.save()
+
+            credential_id = f'{issued_business_user_credential.id:08}'
+
+            if (business_type := CorpType.find_by_id(business.legal_type)):
+                business_type = business_type.full_desc
+            else:
+                business_type = business.legal_type
+
+            registered_on_dateint = ''
+            if business.founding_date:
+                registered_on_dateint = business.founding_date.strftime('%Y%m%d')
+
+            company_status = Business.State(business.state).name
+
+            family_name = (user.lastname or '').strip().upper()
+
+            given_names = ' '.join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
+
+            return [
+                {
+                    'name': 'credential_id',
+                    'value':  credential_id or ''
+                },
+                {
+                    'name': 'identifier',
+                    'value': business.identifier or ''
+                },
+                {
+                    'name': 'business_name',
+                    'value': business.legal_name or ''
+                },
+                {
+                    'name': 'business_type',
+                    'value': business_type or ''
+                },
+                {
+                    'name': 'cra_business_number',
+                    'value': business.tax_id or ''
+                },
+                {
+                    'name': 'registered_on_dateint',
+                    'value': registered_on_dateint or ''
+                },
+                {
+                    'name': 'company_status',
+                    'value': company_status or ''
+                },
+                {
+                    'name': 'family_name',
+                    'value': family_name or ''
+                },
+                {
+                    'name': 'given_names',
+                    'value': given_names or ''
+                },
+                {
+                    'name': 'role',
+                    'value': ''
+                }
+            ]
+
+        return None
+
+    @staticmethod
+    def extract_invitation_message_id(json_message: dict):
+        """Extract the invitation message id from the json message."""
+        if 'invitation' in json_message and json_message['invitation'] is not None:
+            invitation_message_id = json_message['invitation']['@id']
+        else:
+            invitation_message_id = json_message['invitation_msg_id']
+        return invitation_message_id
