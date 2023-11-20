@@ -28,7 +28,7 @@ async def process(business: Business, filing_sub_type: str):
     issued_credentials = get_issued_digital_credentials(business=business)
 
     if not (issued_credentials and len(issued_credentials)):
-        logger.error('No issued credentials found for business: %s', business.identifier)
+        logger.warning('No issued credentials found for business: %s', business.identifier)
         return None
 
     if filing_sub_type == 'voluntary':

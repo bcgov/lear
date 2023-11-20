@@ -24,7 +24,7 @@ async def process(business: Business):
     issued_credentials = get_issued_digital_credentials(business=business)
 
     if not (issued_credentials and len(issued_credentials)):
-        logger.error('No issued credentials found for business: %s', business.identifier)
+        logger.warning('No issued credentials found for business: %s', business.identifier)
         return None
 
     return replace_issued_digital_credential(business=business,
