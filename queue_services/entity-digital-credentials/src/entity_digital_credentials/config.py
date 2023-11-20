@@ -58,14 +58,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     Used as the base for all the other configurations.
     """
 
-    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-
-    MSG_RETRY_NUM = int(os.getenv('MSG_RETRY_NUM', '5'))
-
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
-
-    # urls
-    LEGAL_API_URL = os.getenv('LEGAL_API_URL', None)
 
     # variables
     LEGISLATIVE_TIMEZONE = os.getenv(
@@ -74,11 +67,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
+    DB_USER = os.getenv('ENTITY_DATABASE_USERNAME', '') 
+    DB_PASSWORD = os.getenv('ENTITY_DATABASE_PASSWORD', '') 
+    DB_NAME = os.getenv('ENTITY_DATABASE_NAME', '') 
+    DB_HOST = os.getenv('ENTITY_DATABASE_HOST', '') 
+    DB_PORT = os.getenv('ENTITY_DATABASE_PORT', '5432') 
     SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
         user=DB_USER,
         password=DB_PASSWORD,
@@ -100,7 +93,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     }
 
     SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_DIGITAL_CREDENTIALS_SUBJECT', 'error'),
+        'subject': os.getenv('NATS_DIGITAL_CREDENTIALS_SUBJECT', 'entity.events'),
         'queue': os.getenv('NATS_QUEUE', 'error'),
         'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
     }
@@ -108,9 +101,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     ENTITY_EVENT_PUBLISH_OPTIONS = {
         'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
     }
-
-    NAME_REQUEST_URL = os.getenv('NAME_REQUEST_URL', '')
-    DECIDE_BUSINESS_URL = os.getenv('DECIDE_BUSINESS_URL', '')
 
     # Traction ACA-Py tenant settings to issue credentials from
     TRACTION_API_URL = os.getenv('TRACTION_API_URL')
@@ -148,8 +138,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
     DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
     DEPLOYMENT_ENV = 'testing'
-    LEGAL_API_URL = 'https://legal-api-url/'
-    PAY_API_URL = 'https://pay-api-url/'
     SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
         user=DB_USER,
         password=DB_PASSWORD,
