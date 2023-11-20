@@ -15,6 +15,8 @@ vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
 connect lear_old;
 
+learn schema public;
+
 -- temp table to determine which filing_id to use for transactions that map to more than one filing which is incorrect
 CREATE TABLE public.temp_multiple_filing_transactions AS
 select f.id as filing_id,
@@ -41,6 +43,7 @@ from (select t.id as transaction_id, min(f.id) as filing_id
 
 connect lear_new;
 
+learn schema public;
 
 -- users -> users
 transfer public.users from lear_old using
@@ -113,10 +116,10 @@ select id,
        deletion_locked,
        effective_date,
        filing_date,
-       filing_json,
+    --    filing_json,
        filing_sub_type,
        filing_type,
-       meta_data,
+    --    meta_data,
        notice_date,
        order_details,
        paper_only,
@@ -129,7 +132,7 @@ select id,
        status,
        submitter_id,
        submitter_roles,
-       tech_correction_json,
+    --    tech_correction_json,
        temp_reg,
        transaction_id
 from public.filings;
@@ -417,6 +420,14 @@ SELECT id,
 FROM public.dc_definitions;
 
 
+-- dc_issued_business_user_credentials -> dc_issued_business_user_credentials
+transfer public.dc_issued_business_user_credentials from lear_old using
+SELECT id,
+       user_id,
+       business_id as legal_entity_id
+FROM public.dc_issued_business_user_credentials;
+
+
 -- dc_issued_credentials -> dc_issued_credentials
 transfer public.dc_issued_credentials from lear_old using
 SELECT id,
@@ -426,7 +437,9 @@ SELECT id,
        credential_id,
        is_issued,
        date_of_issue,
-       is_revoked
+       is_revoked,
+       credential_revocation_id,
+       revocation_registry_id
 FROM public.dc_issued_credentials;
 
 
