@@ -67,11 +67,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
-    DB_USER = os.getenv('ENTITY_DATABASE_USERNAME', '') 
-    DB_PASSWORD = os.getenv('ENTITY_DATABASE_PASSWORD', '') 
-    DB_NAME = os.getenv('ENTITY_DATABASE_NAME', '') 
-    DB_HOST = os.getenv('ENTITY_DATABASE_HOST', '') 
-    DB_PORT = os.getenv('ENTITY_DATABASE_PORT', '5432') 
+    DB_USER = os.getenv('ENTITY_DATABASE_USERNAME', '')
+    DB_PASSWORD = os.getenv('ENTITY_DATABASE_PASSWORD', '')
+    DB_NAME = os.getenv('ENTITY_DATABASE_NAME', '')
+    DB_HOST = os.getenv('ENTITY_DATABASE_HOST', '')
+    DB_PORT = os.getenv('ENTITY_DATABASE_PORT', '5432')
     SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
         user=DB_USER,
         password=DB_PASSWORD,
