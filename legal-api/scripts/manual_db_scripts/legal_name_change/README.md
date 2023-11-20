@@ -4,16 +4,18 @@ The following will serve as steps required to get the LEAR database model and da
 
 ### 1. Transfer LEAR data in old data model to new LEAR database model
 1. Create a new empty new LEAR database and apply the new data model using alembic scripts.
-2. Install dbshell -  [DbShell | Free Universal SQL Command-Line Client](https://dbschema.com/dbshell.html)  More general info around configuration and data transfer can be found at [DbShell | Multi-Database SQL Command Line Client](https://dbschema.com/documentation/dbshell.html)
-3. Add `/Applications/DbShell` to path
-4. Register source db by adding db connection in  `~/.DbSchema/dbshell/init.sql`
-   e.g. `connection lear_old PostgreSql "user=postgres password=postgres host=localhost port=5432 db=lear"`
-5. Register target db by adding db connection in  `~/.DbSchema/dbshell/init.sql`
-   e.g. `connection lear_new PostgreSql "user=postgres password=postgres host=localhost port=5432 db=lear_new"`
-6. Prep new LEAR db for data transfer.
+2. Install dbshell -  [DbSchemaCLI | Free Universal SQL Command-Line Client](https://dbschema.com/dbschemacli.html)  More general info around configuration and data transfer can be found at [DbSchemaCLI | Multi-Database SQL Command Line Client](https://dbschema.com/documentation/dbschemacli.html)
+3. Add `/Applications/DbSchema` to path
+4. Download PostgreSQL JDBC driver and place it into `~/.DbSchema/drivers/` e.g. `~/.DbSchema/drivers/PostgreSql/postgresql-x.x.x.jar`
+4. Register driver by adding driver registration in `~/.DbSchema/cli/init.sql` e.g. `register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db> "port=5432"`
+5. Register source db by adding db connection in  `~/.DbSchema/cli/init.sql`
+   e.g. `connection lear_old -d PostgreSql -u postgres -p postgres -h localhost -P 5432 -D lear`
+6. Register target db by adding db connection in  `~/.DbSchema/cli/init.sql`
+   e.g. `connection lear_new -d PostgreSql -u postgres -p postgres -h localhost -P 5432 -D lear_new`
+7. Prep new LEAR db for data transfer.
    Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_before.sql` against new LEAR db
-7. Transfer data from old LEAR to new LEAR db
-   `dbshell <lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql`
+8. Transfer data from old LEAR to new LEAR db
+   `dbschemacli <lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql`
    A successful run will look like the following:
 ``` bash
 
