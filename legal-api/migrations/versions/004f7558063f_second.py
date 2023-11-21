@@ -634,14 +634,26 @@ def upgrade():
     sa.Column('dc_definition_id', sa.Integer(), nullable=True),
     sa.Column('dc_connection_id', sa.Integer(), nullable=True),
     sa.Column('credential_exchange_id', sa.String(length=100), nullable=True),
-    sa.Column('credential_id', sa.String(length=100), nullable=True),
+    sa.Column('credential_id', sa.String(length=10), nullable=True),
     sa.Column('is_issued', sa.Boolean(), nullable=True),
     sa.Column('date_of_issue', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_revoked', sa.Boolean(), nullable=True),
+    sa.Column('credential_revocation_id', sa.String(length=10), nullable=True),
+    sa.Column('revocation_registry_id', sa.String(length=200), nullable=True),
     sa.ForeignKeyConstraint(['dc_connection_id'], ['dc_connections.id'], ),
     sa.ForeignKeyConstraint(['dc_definition_id'], ['dc_definitions.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+
+    op.create_table('dc_issued_business_user_credentials',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('legal_entity_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id']),
+    sa.PrimaryKeyConstraint('id')
+    )
+
     op.create_table('entity_roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('role_type', sa.Enum('applicant', 'completing_party', 'custodian', 'director', 'incorporator', 'liquidator', 'proprietor', 'partner', name='roletypes'), nullable=False),
@@ -1040,6 +1052,7 @@ def downgrade():
     op.drop_table('entity_roles_history')
     op.drop_table('entity_roles')
     op.drop_table('dc_issued_credentials')
+    op.drop_table('dc_issued_business_user_credentials')
     with op.batch_alter_table('share_classes_history', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_share_classes_history_name'))
         batch_op.drop_index(batch_op.f('ix_share_classes_history_change_filing_id'))
