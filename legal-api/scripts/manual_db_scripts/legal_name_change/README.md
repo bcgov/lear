@@ -14,8 +14,14 @@ The following will serve as steps required to get the LEAR database model and da
    e.g. `connection lear_new -d PostgreSql -u postgres -p postgres -h localhost -P 5432 -D lear_new`
 7. Prep new LEAR db for data transfer.
    Run `<lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear_before.sql` against new LEAR db
-8. Transfer data from old LEAR to new LEAR db
-   `dbschemacli <lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql`
+8. Transfer data from old LEAR to new LEAR db.
+   ```
+   # For mac
+   dbschemacli <lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql
+   
+   # For WSL, the command is case sensitive 
+   DbSchemaCLI <lear-repo-base-path>/legal-api/scripts/manual_db_scripts/legal_name_change/transfer_to_new_lear.sql
+   ```
    A successful run will look like the following:
 ``` bash
 

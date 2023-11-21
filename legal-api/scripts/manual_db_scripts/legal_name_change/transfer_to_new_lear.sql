@@ -116,10 +116,10 @@ select id,
        deletion_locked,
        effective_date,
        filing_date,
-    --    filing_json,
+    --    filing_json,          -- TODO: transferring JSONB field properly
        filing_sub_type,
        filing_type,
-    --    meta_data,
+    --    meta_data,            -- TODO: transferring JSONB field properly
        notice_date,
        order_details,
        paper_only,
@@ -132,7 +132,7 @@ select id,
        status,
        submitter_id,
        submitter_roles,
-    --    tech_correction_json,
+    --    tech_correction_json, -- TODO: transferring JSONB field properly
        temp_reg,
        transaction_id
 from public.filings;
