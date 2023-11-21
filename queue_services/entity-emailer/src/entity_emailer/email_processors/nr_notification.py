@@ -47,17 +47,17 @@ def __is_colin(legal_type):
     colin_list = ['CR', 'UL', 'CC', 'XCR', 'XUL', 'RLC']
     return legal_type in colin_list
 
-def _is_society(legal_type):
+def _is_society(entity_type_cd):
         society_list = ['SO', 'XSO']
-        return legal_type in society_list
+        return entity_type_cd in society_list
     
-def __get_instruction_group(legal_type):
+def __get_instruction_group(legal_type,entity_type_cd):
     if __is_modernized(legal_type):
         return 'modernized'
     if __is_colin(legal_type):
         return 'colin'
-    if _is_society(legal_type):
-            return 'so'
+    if _is_society(entity_type_cd):
+        return 'so'
     return ''
 
 
@@ -103,7 +103,8 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     if option == Option.BEFORE_EXPIRY.value:
         if 'legalType' in nr_data:
             legal_type = nr_data['legalType']
-            group = __get_instruction_group(legal_type)
+            entity_type = nr_data['entity_type_cd']
+            group = __get_instruction_group(legal_type,entity_type)
             if group:
                 instruction_group = '-' + group
                 file_name_suffix += instruction_group.upper()
