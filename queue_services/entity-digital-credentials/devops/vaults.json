@@ -23,5 +23,11 @@
         "application": [
             "aca-py"
         ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
+        ]
     }
 ]
