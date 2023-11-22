@@ -28,7 +28,6 @@ from tests.unit import create_business, create_filing
         [
             ('general'), ('first_agm_year'), ('more_extension'), ('final_extension')
         ]
-        
 )
 async def test_worker_agm_extension(app, session, mocker, test_name):
     """Assert that the agm extension object is correctly populated to model objects."""
@@ -66,7 +65,7 @@ async def test_worker_agm_extension(app, session, mocker, test_name):
     final_filing = Filing.find_by_id(filing.id)
     assert final_filing.id
     assert final_filing.meta_data
-    
+
     agm_extension = final_filing.meta_data.get('agmExtension')
     assert agm_extension
     assert filing_json['filing']['agmExtension']['year'] == agm_extension.get('year')
