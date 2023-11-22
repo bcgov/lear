@@ -57,7 +57,7 @@ def process(filing: Dict, filing_meta: FilingMeta):
 
 
 def _check_final_extension(filing: Dict) -> bool:
-    """Mark final extension for current AGM year."""
+    """Mark final extension for current agm year."""
     total_approved_ext = filing['agmExtension']['totalApprovedExt']
     if total_approved_ext >= 12:
         return True
