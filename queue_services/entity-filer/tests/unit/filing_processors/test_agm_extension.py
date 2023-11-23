@@ -72,7 +72,7 @@ async def test_worker_agm_extension(app, session, mocker, test_name):
     assert filing_json['filing']['agmExtension']['isFirstAgm'] == agm_extension.get('isFirstAgm')
     assert filing_json['filing']['agmExtension']['extReqForAgmYear'] == agm_extension.get('extReqForAgmYear')
     assert filing_json['filing']['agmExtension']['totalApprovedExt'] == agm_extension.get('totalApprovedExt')
-    # assert filing_json['filing']['agmExtension']['extenionDuration'] == agm_extension.get('extenionDuration')
+    assert filing_json['filing']['agmExtension']['extensionDuration'] == agm_extension.get('extensionDuration')
 
     if test_name == 'first_agm_year':
         assert agm_extension.get('prevAgmRefDate') is None

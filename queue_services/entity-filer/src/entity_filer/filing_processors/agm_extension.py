@@ -27,7 +27,7 @@ def process(filing: Dict, filing_meta: FilingMeta):
         'isFirstAgm': filing['agmExtension']['isFirstAgm'],
         'extReqForAgmYear': filing['agmExtension']['extReqForAgmYear'],
         'totalApprovedExt': filing['agmExtension']['totalApprovedExt'],
-        # 'extensionDuration': filing['agmExtension']['extenionDuration'],
+        'extensionDuration': filing['agmExtension']['extensionDuration'],
         'isFinalExtension': _check_final_extension(filing)
     }
 
