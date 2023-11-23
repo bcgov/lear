@@ -55,13 +55,13 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
     last_month = datetime.now() - relativedelta(months=1)
     ext = ''
     filename = ''
-    if not os.getenv('ENVIRONMENT', '') == 'prod':
-        ext = ' on ' + os.getenv('ENVIRONMENT', '')
+    if not Config.ENVIRONMENT == 'prod':
+        ext = ' on ' + Config.ENVIRONMENT
 
     if emailtype == 'ERROR':
         subject = "Jupyter Notebook Error Notification from LEAR for processing '" \
             + note_book + "' on " + date + ext
-        recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
+        recipients = Config.ERROR_EMAIL_RECIPIENTS
         message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
     else:
         file_processing = note_book.split('.ipynb')[0]
@@ -69,19 +69,19 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
         if file_processing == 'incorpfilings':
             subject = 'Incorporation Filings Daily Stats ' + date + ext
             filename = 'incorporation_filings_daily_stats_' + date + '.csv'
-            recipients = os.getenv('INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS', '')
+            recipients = Config.INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS
         elif file_processing == 'coopfilings':
             subject = 'COOP Filings Monthly Stats for ' + format(last_month, '%B %Y') + ext
             filename = 'coop_filings_monthly_stats_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS', '')
+            recipients = Config.COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS
         elif file_processing == 'cooperative':
             subject = 'Cooperative Monthly Stats for ' + format(last_month, '%B %Y') + ext
             filename = 'cooperative_monthly_stats_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('COOPERATIVE_MONTHLY_REPORT_RECIPIENTS', '')
+            recipients = Config.COOPERATIVE_MONTHLY_REPORT_RECIPIENTS
         elif file_processing == 'firm-registration-filings':
             subject = 'BC STATS FIRMS for ' + format(last_month, '%B %Y') + ext
             filename = 'bc_stats_firms_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('BC_STATS_MONTHLY_REPORT_RECIPIENTS', '')
+            recipients = Config.BC_STATS_MONTHLY_REPORT_RECIPIENTS
 
         # Add body to email
         message.attach(MIMEText('Please see the attachment(s).', 'plain'))
@@ -106,10 +106,10 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
         message.attach(part)
 
     message['Subject'] = subject
-    server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
+    server = smtplib.SMTP(Config.EMAIL_SMTP)
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
-    server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
+    server.sendmail(Config.SENDER_EMAIL, email_list, message.as_string())
     logging.info('Email with subject %s has been sent successfully!', subject)
     server.quit()
     if filename != '':
@@ -118,54 +118,29 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
 
 def processnotebooks(notebookdirectory, data_directory):
     """Process Notebook."""
-    status = False
     now = datetime.now()
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
     try:
-        retry_times = int(os.getenv('RETRY_TIMES', '1'))
-        retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
         if notebookdirectory == 'monthly':
-            days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
+            days = ast.literal_eval(Config.MONTH_REPORT_DATES)
     except Exception:  # noqa: B902
         logging.exception('Error processing notebook for %s', notebookdirectory)
         send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
-        return status
 
     # For monthly tasks, we only run on the specified days
     if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
         logging.info('Processing: %s', notebookdirectory)
 
-        num_files = len(os.listdir(notebookdirectory))
-        file_processed = 0
-
         for file in findfiles(notebookdirectory, '*.ipynb'):
-            file_processed += 1
             note_book = os.path.basename(file)
-            for attempt in range(retry_times):
-                try:
-                    pm.execute_notebook(file, data_directory+'temp.ipynb', parameters=None)
-                    send_email(note_book, data_directory, '', '')
-                    os.remove(data_directory+'temp.ipynb')
-                    status = True
-                    break
-                except Exception:  # noqa: B902
-                    if attempt + 1 == retry_times:
-                        # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception(
-                            'Error processing notebook %s at %s/%s try.', notebookdirectory, attempt + 1,
-                            retry_times)
-                        send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
-                    else:
-                        # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception('Error processing notebook %s at %s/%s try. '
-                                          'Sleeping for %s secs before next try', notebookdirectory, attempt + 1,
-                                          retry_times, retry_interval)
-                        time.sleep(retry_interval)
-                        continue
-            if not status and num_files == file_processed:
-                break
-    return status
+            try:
+                pm.execute_notebook(file, data_directory+'temp.ipynb', parameters=None)
+                send_email(note_book, data_directory, '', '')
+                os.remove(data_directory+'temp.ipynb')
+            except Exception:  # noqa: B902
+                logging.exception('Error: %s.', file)
+                send_email(file, data_directory, 'ERROR', traceback.format_exc())
 
 
 if __name__ == '__main__':

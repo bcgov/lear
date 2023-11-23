@@ -18,7 +18,8 @@ from config import Config
 from tasks.ftp_processor import FtpProcessor
 from util.logging import setup_logging
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(
+    __file__)), 'logging.conf'))  # important to do this first
 
 # Notebook Scheduler
 # ---------------------------------------
@@ -32,7 +33,8 @@ def create_app(config=Config):
     app.config.from_object(config)
     # db.init_app(app)
     app.app_context().push()
-    current_app.logger.debug('created the Flask App and pushed the App Context')
+    current_app.logger.debug(
+        'created the Flask App and pushed the App Context')
 
     return app
 
@@ -50,20 +52,21 @@ def send_email(note_book, errormessage):
     date = datetime.strftime(datetime.now(), '%Y%m%d')
 
     ext = ''
-    if not os.getenv('ENVIRONMENT', '') == 'prod':
-        ext = ' on ' + os.getenv('ENVIRONMENT', '')
+    if not Config.ENVIRONMENT == 'prod':
+        ext = ' on ' + Config.ENVIRONMENT
 
     subject = "SFTP ICBC Error Notification from LEAR for processing '" \
         + note_book + "' on " + date + ext
-    recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
+    recipients = Config.ERROR_EMAIL_RECIPIENTS
     message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
 
     message['Subject'] = subject
-    server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
+    server = smtplib.SMTP(Config.EMAIL_SMTP)
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
-    server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
-    logging.info("Email with subject \'%s\' has been sent successfully!", subject)
+    server.sendmail(Config.SENDER_EMAIL, email_list, message.as_string())
+    logging.info(
+        "Email with subject \'%s\' has been sent successfully!", subject)
     server.quit()
 
 
@@ -98,5 +101,6 @@ if __name__ == '__main__':
     # shutil.rmtree(temp_dir)
 
     end_time = datetime.utcnow()
-    logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
+    logging.info('job - jupyter notebook report completed in: %s',
+                 end_time - start_time)
     sys.exit()

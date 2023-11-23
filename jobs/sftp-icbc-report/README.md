@@ -10,28 +10,30 @@ to setup your local development environment.
 ## Development Setup
 
 1. Follow the [instructions](https://github.com/bcgov/entity/blob/master/docs/setup-forking-workflow.md) to checkout the project from GitHub.
-2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes, set up a virtual environment to install the Python packages used by this project.
-3. Run `make setup` to set up the virtual environment and install libraries.
-4. The following command will generate a pair of private key and public key. The private key will be kept on the calling side and the public key will be kept on the called side (sftp host side) - from command line
+2. The following command will generate a pair of private key and public key. The private key will be kept on the calling side and the public key will be kept on the called side (sftp host side) - from command line
    > ssh-keygen -t rsa -b 2048 -C 'BCRegistries'
-5. The following command will print a public key which will be used on the calling side (i.e openshift) - from command line
+3. The following command will print a public key which will be used on the calling side (i.e openshift) - from command line
    > ssh-keyscan server.gov.bc.ca(target server domain or IP)   such as 'C:\>ssh-keyscan bcsc01.gov.bc.ca'
 
    this will print the public key. Store the string after ssh-rsa to the SFTP_HOST_KEY configurations on openshift.
 
 ## Running Notebook Report
 
-1. Run `. venv/bin/activate` to change to `venv` environment.
-2. Run notebook with `python sftpicbc.py`
+1. Open project in VS Code and Ubuntu environment.
+2. Create pyproject.toml file on project 
+3. poetry config virtualenvs.in-project true
+4. for first time: brew install python@3.10
+5. for first time: brew info python@3.10
+6. Create .venv: poetry env use /home/linuxbrew/.linuxbrew/bin/python3.10
+7. Change to .venv environment by:  poetry shell
+8. Install required dependencies: poetry install
+9. Run project: 'poetry run python sftpicbc.py' or 'poetry run ./run.sh' or './run.sh' (Important: Please remember to do "git update-index --add --chmod=+x run.sh" before run.sh is commit to github on first time.)
 
 ## Added permission to run.sh file if it is needed
 
 git add --chmod=+x path/to/file
 python sftpicbc.py
 
-## Running Unit Tests
-
-1. Run `python -m pytest` or `pytest` command.
 
 ### Build API - can be done in VS Code
 
