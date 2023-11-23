@@ -399,6 +399,7 @@ def prep_agm_location_change_filing(identifier, payment_id, legal_type, legal_na
         'legalName': legal_name
     }
 
+
 def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new AGM extension filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)

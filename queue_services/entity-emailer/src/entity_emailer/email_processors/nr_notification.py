@@ -47,9 +47,11 @@ def __is_colin(legal_type):
     colin_list = ['CR', 'UL', 'CC', 'XCR', 'XUL', 'RLC']
     return legal_type in colin_list
 
+
 def _is_society(legal_type):
     society_list = ['SO', 'XSO']
     return legal_type in society_list
+
 
 def __get_instruction_group(legal_type):
     if __is_modernized(legal_type):

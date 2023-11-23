@@ -193,7 +193,7 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '1112223333'
              }
-         }), 
+         }),
         ('alteration_PAID_1112223333',
          {
              'email': {
