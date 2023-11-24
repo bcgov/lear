@@ -69,8 +69,8 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
             f'bc.registry.business.{FilingCore.FilingTypes.CHANGEOFREGISTRATION.value}',
             f'bc.registry.business.{FilingCore.FilingTypes.DISSOLUTION.value}',
             f'bc.registry.business.{FilingCore.FilingTypes.PUTBACKON.value}',
-            'bc.registry.admin.bn',
-            'bc.registry.admin.manual'
+            'bc.registry.business.bn',
+            'bc.registry.business.manual'
     ]:
         return None
 
