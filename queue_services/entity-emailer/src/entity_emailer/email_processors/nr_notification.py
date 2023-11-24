@@ -57,7 +57,7 @@ def __get_instruction_group(legal_type):
     if __is_colin(legal_type):
         return 'colin'
     if _is_society(legal_type):
-            return 'so'
+        return 'so'
     return ''
 
 
@@ -101,8 +101,8 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     file_name_suffix = option.upper()
     if option == Option.BEFORE_EXPIRY.value:
-        if 'legalType' in nr_data:
-            legal_type = nr_data['legalType']
+        if 'entity_type_cd' in nr_data:
+            legal_type = nr_data['entity_type_cd']
             group = __get_instruction_group(legal_type)
             if group:
                 instruction_group = '-' + group

@@ -26,7 +26,7 @@ from colin_api.models.filing import DB, Filing
 from colin_api.resources.business import API
 from colin_api.utils import convert_to_pacific_time
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
-from colin_api.utils.util import conditional_auth, cors_preflight
+from colin_api.utils.util import cors_preflight
 
 
 @cors_preflight('GET, POST')
@@ -37,7 +37,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type, identifier, filing_type, filing_sub_type=None):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
@@ -86,7 +86,7 @@ class FilingInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    @conditional_auth(jwt.requires_roles, [COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type, identifier, **kwargs):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
