@@ -4,7 +4,7 @@ USER root
 
 ENV PORT=8080
 
-LABEL maintainer="hongjingchen"
+LABEL maintainer="stevenchen"
 LABEL vendor="BCROS"
 
 ARG APP_ENV \
