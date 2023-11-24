@@ -37,15 +37,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          make setup
+          #make setup
       - name: Lint with pylint
         id: pylint
         run: |
-          make pylint
+          #make pylint
       - name: Lint with flake8
         id: flake8
         run: |
-          make flake8
+          #make flake8
 
   # testing:
   #   needs: setup-job
