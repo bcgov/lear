@@ -399,6 +399,18 @@ def prep_agm_location_change_filing(identifier, payment_id, legal_type, legal_na
         'legalName': legal_name
     }
 
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+
+    filing.save()
+    return filing
+
 
 def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new AGM extension filing prepped for email notification."""
