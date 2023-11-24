@@ -1,5 +1,3 @@
 {
-    "flagValues": {
-        "disable-colin-api-auth": true
-    }
+    "flagValues": {}
 }
