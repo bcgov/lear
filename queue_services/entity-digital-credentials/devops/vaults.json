@@ -1,1 +1,33 @@
-[]
+[
+    {
+        "vault": "entity",
+        "application": [
+            "launchdarkly"
+        ]
+    },
+    {
+        "vault": "database",
+        "application": [
+            "entity-db"
+        ]
+    },
+    {
+        "vault": "nats",
+        "application": [
+            "base",
+            "entity-digital-credentials"
+        ]
+    },
+    {
+        "vault": "bbdc",
+        "application": [
+            "aca-py"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+            "entity"
+        ]
+    }
+]
