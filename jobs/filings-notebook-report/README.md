@@ -13,7 +13,7 @@ to setup your local development environment.
 2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). 
 3. Follow up document to create environment: https://community.inkdrop.app/note/a27b7a79c8cdf7db0ab19be10b4fc2e8/note:gxJT0Yj7D#user-content-setting-up-postgres-container
 
-## Running Notebook Report
+## Running Notebook Report (refer to doc: https://community.inkdrop.app/note/a27b7a79c8cdf7db0ab19be10b4fc2e8/note:gxJT0Yj7D)
 
 1. Open project in VS Code and Ubuntu environment.
 2. Create pyproject.toml file on project 

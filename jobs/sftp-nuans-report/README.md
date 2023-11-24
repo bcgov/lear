@@ -19,7 +19,7 @@ to setup your local development environment.
 
    this will print the public key. Store the string after ssh-rsa to the SFTP_HOST_KEY configurations on openshift.
 
-## Running Notebook Report
+## Running Notebook Report (refer to doc: https://community.inkdrop.app/note/a27b7a79c8cdf7db0ab19be10b4fc2e8/note:gxJT0Yj7D)
 
 1. Open project in VS Code and Ubuntu environment.
 2. Create pyproject.toml file on project 
