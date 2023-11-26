@@ -31,7 +31,7 @@ async def process(business: Business, filing_sub_type: str):
         logger.warning('No issued credentials found for business: %s', business.identifier)
         return None
 
-    if filing_sub_type == 'voluntary':
+    if filing_sub_type == 'voluntary':  # pylint: disable=no-else-return
         reason = DCRevocationReason.VOLUNTARY_DISSOLUTION
         return replace_issued_digital_credential(business=business,
                                                  issued_credential=issued_credentials[0],
@@ -43,4 +43,4 @@ async def process(business: Business, filing_sub_type: str):
                                                 issued_credential=issued_credentials[0],
                                                 reason=reason)
     else:
-        raise Exception('Invalid filing sub type.')
+        raise Exception('Invalid filing sub type.')  # pylint: disable=broad-exception-raised
