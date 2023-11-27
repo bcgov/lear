@@ -1,0 +1,30 @@
+name: Business Filings Notebook Report Job CD
+
+on:
+  push:
+    branches:
+      - feature-legal-name
+    paths:
+      - "./jobs/filings-notebook-report/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy To"
+        required: true
+        type: choice
+        options:
+        - dev
+        - test
+        - sandbox
+        - prod
+
+jobs:
+  business-filings-notebook-report-cd:
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "business-filings-notebook-report"
+      working_directory: "./jobs/filings-notebook-report"
+    secrets:
+      WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
