@@ -17,7 +17,7 @@ import paramiko
 import logging
 from base64 import decodebytes
 from pysftp import Connection, CnOpts
-
+from config import Config
 
 class SFTPService:  # pylint: disable=too-few-public-methods
     """SFTP  Service class."""
@@ -30,16 +30,16 @@ class SFTPService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _connect() -> Connection:
 
-        sftp_host = os.getenv('SFTP_HOST', 'localhost')
-        sftp_port = os.getenv('SFTP_PORT', 22)
+        sftp_host = Config.SFTP_HOST
+        sftp_port = Config.SFTP_PORT
         logging.info('Start _connect sftp_host: %s', sftp_host)
 
         cnopts = CnOpts()
         # only for local development set this to false .
-        if os.getenv('SFTP_VERIFY_HOST').lower() == 'false':
+        if Config.SFTP_VERIFY_HOST.lower() == 'false':
             cnopts.hostkeys = None
         else:
-            ftp_host_key_data = os.getenv('SFTP_HOST_KEY', '').encode()
+            ftp_host_key_data = Config.SFTP_HOST_KEY.encode()
             key = paramiko.RSAKey(data=decodebytes(ftp_host_key_data))
             cnopts.hostkeys.add(sftp_host, 'ssh-rsa', key)
 
@@ -48,14 +48,14 @@ class SFTPService:  # pylint: disable=too-few-public-methods
         # only create key file if it doesn't exist
         if not os.path.isfile(sftp_priv_key_file):
             with open(sftp_priv_key_file, 'w+') as fh:
-                sftp_priv_key = os.getenv('BCREG_FTP_PRIVATE_KEY', '')
+                sftp_priv_key = Config.BCREG_FTP_PRIVATE_KEY
                 fh.write(sftp_priv_key)
 
         sft_credentials = {
-            'username': os.getenv('SFTP_USERNAME', 'foo'),
+            'username': Config.SFTP_USERNAME,
             # private_key should be the absolute path to where private key file lies since sftp
             'private_key': sftp_priv_key_file,
-            'private_key_pass': os.getenv('BCREG_FTP_PRIVATE_KEY_PASSPHRASE', '')
+            'private_key_pass': Config.BCREG_FTP_PRIVATE_KEY_PASSPHRASE
         }
 
         sftp_connection = Connection(host=sftp_host, **sft_credentials, cnopts=cnopts, port=int(sftp_port))

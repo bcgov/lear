@@ -1,0 +1,30 @@
+name: Business SFTP NUANS Report Job CD
+
+on:
+  push:
+    branches:
+      - feature-legal-name
+    paths:
+      - "./jobs/sftp-nuans-report/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy To"
+        required: true
+        type: choice
+        options:
+        - dev
+        - test
+        - sandbox
+        - prod
+
+jobs:
+  business-sftp-nuans-report-cd:
+    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "business-sftp-nuans-report"
+      working_directory: "./jobs/sftp-nuans-report"
+    secrets:
+      WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

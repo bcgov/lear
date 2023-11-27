@@ -1,3 +1,4 @@
-cd /opt/app-root
+#! /bin/sh
+#cd /code
 echo 'run sftpicbc'
 python sftpicbc.py

@@ -1,3 +1,4 @@
-cd /opt/app-root
-echo 'run sftpnuans'
+#! /bin/sh
+#cd /code
+echo 'run sftpnuaus'
 python sftpnuans.py

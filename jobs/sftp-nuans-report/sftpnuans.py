@@ -50,19 +50,19 @@ def send_email(note_book, errormessage):
     date = datetime.strftime(datetime.now(), '%Y%m%d')
 
     ext = ''
-    if not os.getenv('ENVIRONMENT', '') == 'prod':
-        ext = ' on ' + os.getenv('ENVIRONMENT', '')
+    if not Config.ENVIRONMENT == 'prod':
+        ext = ' on ' + Config.ENVIRONMENT
 
     subject = "SFTP NUANS Error Notification from LEAR for processing '" \
         + note_book + "' on " + date + ext
-    recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
+    recipients = Config.ERROR_EMAIL_RECIPIENTS
     message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
 
     message['Subject'] = subject
-    server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
+    server = smtplib.SMTP(Config.EMAIL_SMTP)
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
-    server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
+    server.sendmail(Config.SENDER_EMAIL, email_list, message.as_string())
     logging.info("Email with subject \'%s\' has been sent successfully!", subject)
     server.quit()
 
