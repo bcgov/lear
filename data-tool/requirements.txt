@@ -1,4 +1,4 @@
-prefect==2.7.3
+prefect==2.14.3
 pandas
 requests==2.25.1
 prefect-dask
