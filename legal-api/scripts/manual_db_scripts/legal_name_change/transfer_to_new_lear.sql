@@ -103,8 +103,15 @@ FROM public.registration_bootstrap;
 
 
 -- filings -> filings
-transfer public.filings from lear_old using
-select id,
+CREATE TABLE public.temp_filings AS TABLE public.filings;
+ALTER TABLE public.temp_filings ALTER filing_json TYPE text;
+ALTER TABLE public.temp_filings ALTER meta_data TYPE text;
+ALTER TABLE public.temp_filings ALTER tech_correction_json TYPE text;
+
+learn schema public;
+
+transfer public.temp_filings from lear_old using
+SELECT id,
        application_date,
        approval_type,
        business_id as legal_entity_id,
@@ -116,10 +123,10 @@ select id,
        deletion_locked,
        effective_date,
        filing_date,
-    --    filing_json,          -- TODO: transferring JSONB field properly
+       filing_json :: text,
        filing_sub_type,
        filing_type,
-    --    meta_data,            -- TODO: transferring JSONB field properly
+       meta_data :: text,
        notice_date,
        order_details,
        paper_only,
@@ -132,11 +139,79 @@ select id,
        status,
        submitter_id,
        submitter_roles,
-    --    tech_correction_json, -- TODO: transferring JSONB field properly
+       tech_correction_json :: text,
        temp_reg,
        transaction_id
-from public.filings;
+FROM public.filings;
 
+INSERT INTO public.filings (
+        id,
+        application_date,
+        approval_type,
+        legal_entity_id,
+        colin_only,
+        completion_date,
+        court_order_date,
+        court_order_effect_of_order,
+        court_order_file_number,
+        deletion_locked,
+        effective_date,
+        filing_date,
+        filing_json,
+        filing_sub_type,
+        filing_type,
+        meta_data,
+        notice_date,
+        order_details,
+        paper_only,
+        parent_filing_id,
+        payment_account,
+        payment_completion_date,
+        payment_id,
+        payment_status_code,
+        source,
+        status,
+        submitter_id,
+        submitter_roles,
+        tech_correction_json,
+        temp_reg,
+        transaction_id
+) 
+SELECT
+        id,
+        application_date,
+        approval_type,
+        legal_entity_id,
+        colin_only,
+        completion_date,
+        court_order_date,
+        court_order_effect_of_order,
+        court_order_file_number,
+        deletion_locked,
+        effective_date,
+        filing_date,
+        filing_json :: jsonb,
+        filing_sub_type,
+        filing_type,
+        meta_data :: jsonb,
+        notice_date,
+        order_details,
+        paper_only,
+        parent_filing_id,
+        payment_account,
+        payment_completion_date,
+        payment_id,
+        payment_status_code,
+        source,
+        status,
+        submitter_id,
+        submitter_roles,
+        tech_correction_json :: jsonb,
+        temp_reg,
+        transaction_id
+FROM public.temp_filings;
+
+DROP TABLE public.temp_filings;
 
 
 -- businesses -> legal_entities
