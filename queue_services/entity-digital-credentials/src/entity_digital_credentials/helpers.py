@@ -48,7 +48,8 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
                                                    digital_credentials.business_schema_id,
                                                    digital_credentials.business_cred_def_id)):
-            raise Exception(f'Definition not found for credential type: {credential_type}')
+            # pylint: disable=broad-exception-raised
+            raise Exception(f'Definition not found for credential type: {credential_type}.')
 
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
