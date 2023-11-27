@@ -32,14 +32,15 @@ def get_issued_digital_credentials(business: Business):
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
             # pylint: disable=broad-exception-raised
-            raise Exception(f'{Business.identifier} active connection not found.')
+            raise Exception(f'{business.identifier} active connection not found.')
 
         # pylint: disable=superfluous-parens
         if not (issued_credentials := DCIssuedCredential.find_by(dc_connection_id=connection.id)):
             return []
 
         return issued_credentials
-    except Exception as err:  # noqa: B902; pylint: disable=broad-exception-raised
+    # pylint: disable=broad-exception-raised
+    except Exception as err:  # noqa: B902
         raise err
 
 
@@ -55,7 +56,7 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
             # pylint: disable=broad-exception-raised
-            raise Exception(f'{Business.identifier} active connection not found.')
+            raise Exception(f'{business.identifier} active connection not found.')
 
         credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business,
                                                                                 user,
@@ -76,7 +77,8 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
         issued_credential.save()
 
         return issued_credential
-    except Exception as err:  # noqa: B902; pylint: disable=broad-exception-raised
+    # pylint: disable=broad-exception-raised
+    except Exception as err:  # noqa: B902
         raise err
 
 
@@ -92,7 +94,7 @@ def revoke_issued_digital_credential(business: Business,
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
             # pylint: disable=broad-exception-raised
-            raise Exception(f'{Business.identifier} active connection not found.')
+            raise Exception(f'{business.identifier} active connection not found.')
 
         if (revoked := digital_credentials.revoke_credential(connection.connection_id,
                                                              issued_credential.credential_revocation_id,
@@ -104,7 +106,8 @@ def revoke_issued_digital_credential(business: Business,
         issued_credential.save()
 
         return revoked
-    except Exception as err:  # noqa: B902; pylint: disable=broad-exception-raised
+    # pylint: disable=broad-exception-raised
+    except Exception as err:  # noqa: B902
         raise err
 
 
@@ -135,5 +138,6 @@ def replace_issued_digital_credential(business: Business,
         issued_credential.delete()
 
         return issue_digital_credential(business, user, credential_type)
-    except Exception as err:  # noqa: B902; pylint: disable=broad-exception-raised
+    # pylint: disable=broad-exception-raised
+    except Exception as err:  # noqa: B902
         raise err
