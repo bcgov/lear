@@ -593,20 +593,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
         filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
 
-        number_world = ['one', 'two', 'three', 'four', 'five', 'six']
+        number_words = ['one', 'two', 'three', 'four', 'five', 'six']
         duration_numeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
         filing['duration_numeric'] = duration_numeric
-        filing['duration_spelling'] = number_world[int(duration_numeric)-1]
+        filing['duration_spelling'] = number_words[int(duration_numeric)-1]
 
         if is_first_agm:
-            funding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
-            funding_date = funding_date_json[0:10]
+            founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
+            founding_date = founding_date_json[0:10]
             original_date_time = LegislationDatetime.\
-                as_legislation_timezone_from_date_str(funding_date) + relativedelta(months=18)
+                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
             filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
         else:
             expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
-            date_current_obj = datetime.strptime(expire_date_current_string, '%Y-%m-%d')
+            date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
             filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
 
         expire_date_approved_string = meta_data.get('agmExtension', {}).get('expireDateApprovedExt', '')
