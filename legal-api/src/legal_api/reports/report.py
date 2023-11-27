@@ -594,24 +594,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
 
         number_world = ['one','two','three','four','five','six']
-        durationNumeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
-        filing['durationNumeric'] = durationNumeric 
-        filing['durationSpelling'] = number_world[int(durationNumeric)-1]
+        duration_numeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
+        filing['duration_numeric'] = duration_numeric
+        filing['duration_spelling'] = number_world[int(duration_numeric)-1]
 
         if is_first_agm:
-            fundingDateJson = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
-            fundingDate = fundingDateJson[0:10]
-            originalDateTime = LegislationDatetime.as_legislation_timezone_from_date_str(fundingDate) + relativedelta(months=18)
-            filing['original_agm_date'] = originalDateTime.strftime(OUTPUT_DATE_FORMAT)
+            funding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
+            funding_date = funding_date_json[0:10]
+            original_date_time = LegislationDatetime.as_legislation_timezone_from_date_str(funding_date) + relativedelta(months=18)
+            filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
         else:
-            expireDateCurrentString = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
-            dateCurrentObj = datetime.strptime(expireDateCurrentString, '%Y-%m-%d')
-            filing['original_agm_date'] = dateCurrentObj.strftime(OUTPUT_DATE_FORMAT)
+            expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+            date_current_obj = datetime.strptime(expire_date_current_string, '%Y-%m-%d')
+            filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
 
-        expireDateApprovedString = meta_data.get('agmExtension', {}).get('expireDateApprovedExt', '')
-        dateApprovedObj = datetime.strptime(expireDateApprovedString, '%Y-%m-%d')
-        filing['extended_agm_date'] = dateApprovedObj.strftime(OUTPUT_DATE_FORMAT)
-        
+        expire_date_approved_string = meta_data.get('agmExtension', {}).get('expireDateApprovedExt', '')
+        date_approved_obj = datetime.strptime(expire_date_approved_string, '%Y-%m-%d')
+        filing['extended_agm_date'] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
+
         filing['offices'] = VersionedBusinessDetailsService.\
             get_office_revision(self._filing.transaction_id, self._business.id)
         with suppress(KeyError):

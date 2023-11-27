@@ -34,14 +34,14 @@
                within which the above named company is required to hold its Annual General Meeting for the year {{agm_year}}
             {% endif %}
             
-            by {{durationSpelling}} ({{durationNumeric}}) 
+            by {{duration_spelling}} ({{duration_numeric}}) 
             
-            {% if durationNumeric==1 %}
+            {% if duration_numeric==1 %}
                month
             {% else %}
                months
             {% endif %}
-            
+
             from {{original_agm_date}} to {{extended_agm_date}}.
  
          </div>
