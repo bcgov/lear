@@ -21,8 +21,8 @@ from typing import Final
 
 import pycountry
 import requests
-from flask import current_app, jsonify
 from dateutil.relativedelta import relativedelta
+from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
@@ -593,7 +593,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
         filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
 
-        number_world = ['one','two','three','four','five','six']
+        number_world = ['one', 'two', 'three', 'four', 'five', 'six']
         duration_numeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
         filing['duration_numeric'] = duration_numeric
         filing['duration_spelling'] = number_world[int(duration_numeric)-1]
@@ -601,7 +601,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if is_first_agm:
             funding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
             funding_date = funding_date_json[0:10]
-            original_date_time = LegislationDatetime.as_legislation_timezone_from_date_str(funding_date) + relativedelta(months=18)
+            original_date_time = LegislationDatetime.\
+                as_legislation_timezone_from_date_str(funding_date) + relativedelta(months=18)
             filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
         else:
             expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
