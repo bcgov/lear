@@ -22,6 +22,13 @@ from entity_digital_credentials.worker import process_digital_credential
 from tests.unit import create_business, create_filing
 
 
+ADMIN_REVOKE = 'bc.registry.admin.revoke'
+BUSINESS_NUMBER = 'bc.registry.business.bn'
+CHANGE_OF_REGISTRATION = 'bc.registry.business.changeOfRegistration'
+DISSOLUTION = 'bc.registry.business.dissolution'
+PUT_BACK_ON = 'bc.registry.business.putBackOn'
+
+
 @pytest.mark.asyncio
 @patch('entity_digital_credentials.digital_credentials_processors.admin_revoke.process')
 @patch('entity_digital_credentials.digital_credentials_processors.business_number.process')
@@ -47,10 +54,10 @@ async def test_processes_not_run(mock_put_back_on, mock_dissolution, mock_change
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('dc_msg', [{
-    'type': 'bc.registry.admin.revoke',
+    'type': ADMIN_REVOKE,
     'identifier': 'FM0000001'
 }, {
-    'type': 'bc.registry.business.bn',
+    'type': BUSINESS_NUMBER,
     'identifier': 'FM0000002'
 }])
 @patch('entity_digital_credentials.digital_credentials_processors.admin_revoke.process')
@@ -68,7 +75,7 @@ async def test_processes_no_filing_required(mock_put_back_on, mock_dissolution, 
     await process_digital_credential(dc_msg, flask_app=app)
 
     # Assert
-    if dc_msg['type'] == 'bc.registry.admin.revoke':
+    if dc_msg['type'] == ADMIN_REVOKE:
         mock_admin_revoke.assert_called_once()
         assert business.identifier == 'FM0000001'
         mock_admin_revoke.assert_called_with(business)
@@ -78,7 +85,7 @@ async def test_processes_no_filing_required(mock_put_back_on, mock_dissolution, 
         mock_change_of_registration.assert_not_called()
         mock_dissolution.assert_not_called()
         mock_put_back_on.assert_not_called()
-    elif dc_msg['type'] == 'bc.registry.business.bn':
+    elif dc_msg['type'] == BUSINESS_NUMBER:
         mock_business_number.assert_called_once()
         assert business.identifier == 'FM0000002'
         mock_business_number.assert_called_with(business)
@@ -94,15 +101,15 @@ async def test_processes_no_filing_required(mock_put_back_on, mock_dissolution, 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('dc_msg', [{
-    'type': 'bc.registry.business.changeOfRegistration',
+    'type': CHANGE_OF_REGISTRATION,
     'identifier': 'FM0000001',
     'data': {'filing': {'header': {'filingId': None}}}
 }, {
-    'type': 'bc.registry.business.dissolution',
+    'type': DISSOLUTION,
     'identifier': 'FM0000002',
     'data': {'filing': {'header': {'filingId': None}}}
 }, {
-    'type': 'bc.registry.business.putBackOn',
+    'type': PUT_BACK_ON,
     'identifier': 'FM0000003',
     'data': {'filing': {'header': {'filingId': None}}}
 }])
@@ -124,7 +131,7 @@ async def test_processes_filing_required(mock_put_back_on, mock_dissolution, moc
     await process_digital_credential(dc_msg, flask_app=app)
 
     # Assert
-    if dc_msg['type'] == 'bc.registry.business.changeOfRegistration':
+    if dc_msg['type'] == CHANGE_OF_REGISTRATION:
         mock_change_of_registration.assert_called_once()
         assert business.identifier == 'FM0000001'
         mock_change_of_registration.assert_called_with(business, filing)
@@ -134,7 +141,7 @@ async def test_processes_filing_required(mock_put_back_on, mock_dissolution, moc
         mock_business_number.assert_not_called()
         mock_dissolution.assert_not_called()
         mock_put_back_on.assert_not_called()
-    elif dc_msg['type'] == 'bc.registry.business.dissolution':
+    elif dc_msg['type'] == DISSOLUTION:
         mock_dissolution.assert_called_once()
         assert business.identifier == 'FM0000002'
         mock_dissolution.assert_called_with(business, 'test')
@@ -144,7 +151,7 @@ async def test_processes_filing_required(mock_put_back_on, mock_dissolution, moc
         mock_business_number.assert_not_called()
         mock_change_of_registration.assert_not_called()
         mock_put_back_on.assert_not_called()
-    elif dc_msg['type'] == 'bc.registry.business.putBackOn':
+    elif dc_msg['type'] == PUT_BACK_ON:
         mock_put_back_on.assert_called_once()
         assert business.identifier == 'FM0000003'
         mock_put_back_on.assert_called_with(business)
@@ -160,18 +167,18 @@ async def test_processes_filing_required(mock_put_back_on, mock_dissolution, moc
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('dc_msg', [{
-    'type': 'bc.registry.business.changeOfRegistration',
+    'type': CHANGE_OF_REGISTRATION,
     'identifier': 'FM0000001'
 }, {
-    'type': 'bc.registry.business.changeOfRegistration',
+    'type': CHANGE_OF_REGISTRATION,
     'identifier': 'FM0000001',
     'data': {}
 }, {
-    'type': 'bc.registry.business.changeOfRegistration',
+    'type': CHANGE_OF_REGISTRATION,
     'identifier': 'FM0000001',
     'data': {'filing': {}}
 }, {
-    'type': 'bc.registry.business.changeOfRegistration',
+    'type': CHANGE_OF_REGISTRATION,
     'identifier': 'FM0000001',
     'data': {'filing': {'header': {}}}
 }])
@@ -193,7 +200,7 @@ async def test_process_failure_no_identifier_no_filing_required(app, session):
     """Assert processor throws QueueException if no idenfiier in message."""
     # Arrange
     from entity_queue_common.service_utils import QueueException
-    dc_msg = {'type': 'bc.registry.admin.revoke'}
+    dc_msg = {'type': ADMIN_REVOKE}
 
     # Act
     with pytest.raises(QueueException) as excinfo:
@@ -208,7 +215,7 @@ async def test_process_failure_no_business_no_filing_required(app, session):
     """Assert processor throws Exception if idenfiier in message but business not found."""
     # Arrange
     identifier = 'FM0000001'
-    dc_msg = {'type': 'bc.registry.admin.revoke', 'identifier': identifier}
+    dc_msg = {'type': ADMIN_REVOKE, 'identifier': identifier}
 
     # Act
     with pytest.raises(Exception) as excinfo:
