@@ -186,6 +186,14 @@ from . import create_mock_message  # noqa: I003
                  'filingId': '1112223333'
              }
          }),
+        ('agmExtension_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'agmExtension',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
+         }),
         ('alteration_PAID_1112223333',
          {
              'email': {

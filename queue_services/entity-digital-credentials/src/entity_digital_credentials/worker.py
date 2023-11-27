@@ -27,6 +27,7 @@ to be pursued.
 """
 import json
 import os
+from enum import Enum
 
 import nats
 from entity_queue_common.service import QueueServiceManager
@@ -40,10 +41,10 @@ from sqlalchemy.exc import OperationalError
 
 from entity_digital_credentials import config
 from entity_digital_credentials.digital_credentials_processors import (
+    admin_revoke,
     business_number,
     change_of_registration,
     dissolution,
-    manual,
     put_back_on,
 )
 
@@ -62,15 +63,30 @@ if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
 
 
+class AdminMessage(Enum):
+    """Entity Digital Credential admin message type."""
+
+    REVOKE = 'bc.registry.admin.revoke'
+
+
+class BusinessMessage(Enum):
+    """Entity Digital Credential business message type."""
+
+    BN = 'bc.registry.business.bn'
+    CHANGE_OF_REGISTRATION = f'bc.registry.business.{FilingCore.FilingTypes.CHANGEOFREGISTRATION.value}'
+    DISSOLUTION = f'bc.registry.business.{FilingCore.FilingTypes.DISSOLUTION.value}'
+    PUT_BACK_ON = f'bc.registry.business.{FilingCore.FilingTypes.PUTBACKON.value}'
+
+
 async def process_digital_credential(dc_msg: dict, flask_app: Flask):
     # pylint: disable=too-many-branches, too-many-statements
     """Process any digital credential messages in queue."""
     if not dc_msg or dc_msg.get('type') not in [
-            f'bc.registry.business.{FilingCore.FilingTypes.CHANGEOFREGISTRATION.value}',
-            f'bc.registry.business.{FilingCore.FilingTypes.DISSOLUTION.value}',
-            f'bc.registry.business.{FilingCore.FilingTypes.PUTBACKON.value}',
-            'bc.registry.admin.bn',
-            'bc.registry.admin.manual'
+            BusinessMessage.CHANGE_OF_REGISTRATION.value,
+            BusinessMessage.DISSOLUTION.value,
+            BusinessMessage.PUT_BACK_ON.value,
+            BusinessMessage.BN.value,
+            AdminMessage.REVOKE.value
     ]:
         return None
 
@@ -80,26 +96,27 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
     with flask_app.app_context():
         logger.debug('Attempting to process digital credential message: %s', dc_msg)
 
-        if dc_msg['type'] in ('bc.registry.business.bn', 'bc.registry.business.manual'):
+        if dc_msg['type'] in (BusinessMessage.BN.value, AdminMessage.REVOKE.value):
             # When a BN is added or changed or there is a manuak administrative update the queue message does not have
             # a data object. We queue the business information using the identifier and revoke/reissue the credential
             # immediately.
-            if dc_msg['identifier'] is None:
+            if dc_msg.get('identifier') is None:
                 raise QueueException('Digital credential message is missing identifier')
 
             identifier = dc_msg['identifier']
             if not (business := Business.find_by_identifier(identifier)):  # pylint: disable=superfluous-parens
+                # pylint: disable=broad-exception-raised
                 raise Exception(f'Business with identifier: {identifier} not found.')
 
-            if dc_msg['type'] == 'bc.registry.business.bn':
+            if dc_msg['type'] == BusinessMessage.BN.value:
                 await business_number.process(business)
-            elif dc_msg['type'] == 'bc.registry.business.manual':
-                await manual.process(business)
+            elif dc_msg['type'] == AdminMessage.REVOKE.value:
+                await admin_revoke.process(business)
         else:
-            if dc_msg['data'] is None \
-                    or dc_msg['data']['filing'] is None \
-                    or dc_msg['data']['filing']['header'] is None \
-                    or dc_msg['data']['filing']['header']['filingId'] is None:
+            if dc_msg.get('data') is None \
+                    or dc_msg.get('data').get('filing') is None \
+                    or dc_msg.get('data').get('filing').get('header') is None \
+                    or dc_msg.get('data').get('filing').get('header').get('filingId') is None:
                 raise QueueException('Digital credential message is missing data.')
 
             filing_id = dc_msg['data']['filing']['header']['filingId']
@@ -115,6 +132,7 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
 
             business_id = filing.business_id
             if not (business := Business.find_by_internal_id(business_id)):  # pylint: disable=superfluous-parens
+                # pylint: disable=broad-exception-raised
                 raise Exception(f'Business with internal id: {business_id} not found.')
 
             # Process individual filing events
@@ -140,6 +158,6 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             logger.error('Queue Blocked - Database Issue: %s',
                          json.dumps(dc_msg), exc_info=True)
             raise err  # We don't want to handle the error, as a DB down would drain the queue
-        except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703;
+        except (QueueException, Exception) as err:  # noqa B902; pylint: disable=W0703, disable=unused-variable
             # Catch Exception so that any error is still caught and the message is removed from the queue
             logger.error('Queue Error: %s', json.dumps(dc_msg), exc_info=True)

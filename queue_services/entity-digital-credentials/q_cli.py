@@ -87,7 +87,6 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
 
         payload = {
             'specversion': '1.x-wip',
-            'type': f'bc.registry.business.{filing_type}',
             'source': f'/businesses/{identifier}',
             'id': str(uuid.uuid4()),
             'time': datetime.utcfromtimestamp(time.time()).replace(tzinfo=timezone.utc).isoformat(),
@@ -95,11 +94,18 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
             'identifier': identifier,
             'data': {
                 'filing': {
-                    'header': {'filingId': filing_id},
                     'business': {'identifier': identifier}
                 }
             }
         }
+
+        if filing_type == 'admin.revoke':
+            payload['type'] = 'bc.registry.admin.revoke'
+        else:
+            payload['type'] = f'bc.registry.business.{filing_type}'
+
+        if filing_id is not None:
+            payload['data']['filing']['header'] = {'filingId': filing_id}
 
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
@@ -114,6 +120,7 @@ if __name__ == '__main__':
     except getopt.GetoptError:
         print('q_cli.py -i <identifier> -f <filing_id> -t <filing_type>')
         sys.exit(2)
+    filing_id = None
     for opt, arg in opts:
         if opt == '-h':
             print('q_cli.py -i <identifier> -f <filing_id> -t <filing_type>')

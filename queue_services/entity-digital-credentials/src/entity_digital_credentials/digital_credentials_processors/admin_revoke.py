@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Processing manual actions."""
+"""Processing admin revocation actions."""
 
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCRevocationReason
