@@ -22,6 +22,7 @@ from typing import Final
 import pycountry
 import requests
 from flask import current_app, jsonify
+from dateutil.relativedelta import relativedelta
 
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import Business, ConsentContinuationOut, CorpType, Document, Filing, PartyRole
@@ -586,8 +587,35 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_agm_extension_data(self, filing):
-        # FUTURE: format logic for letter of agm extension
-        return
+        meta_data = self._filing.meta_data or {}
+        is_first_agm = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
+        filing['is_first_agm'] = is_first_agm
+        filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
+        filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
+
+        number_world = ['one','two','three','four','five','six']
+        durationNumeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
+        filing['durationNumeric'] = durationNumeric 
+        filing['durationSpelling'] = number_world[int(durationNumeric)-1]
+
+        if is_first_agm:
+            fundingDateJson = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
+            fundingDate = fundingDateJson[0:10]
+            originalDateTime = LegislationDatetime.as_legislation_timezone_from_date_str(fundingDate) + relativedelta(months=18)
+            filing['original_agm_date'] = originalDateTime.strftime(OUTPUT_DATE_FORMAT)
+        else:
+            expireDateCurrentString = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+            dateCurrentObj = datetime.strptime(expireDateCurrentString, '%Y-%m-%d')
+            filing['original_agm_date'] = dateCurrentObj.strftime(OUTPUT_DATE_FORMAT)
+
+        expireDateApprovedString = meta_data.get('agmExtension', {}).get('expireDateApprovedExt', '')
+        dateApprovedObj = datetime.strptime(expireDateApprovedString, '%Y-%m-%d')
+        filing['extended_agm_date'] = dateApprovedObj.strftime(OUTPUT_DATE_FORMAT)
+        
+        filing['offices'] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+        with suppress(KeyError):
+            self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_agm_location_change_data(self, filing):
         filing['agm_year'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('year', '')
