@@ -27,7 +27,9 @@ from tests.unit import create_business
        return_value=[])
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.logger')
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_issued_digital_credential')
-async def test_processor_does_not_run_if_no_issued_credential(mock_replace_issued_digital_credential,
+@patch('entity_digital_credentials.digital_credentials_processors.dissolution.revoke_issued_digital_credential')
+async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_issued_digital_credential,
+                                                              mock_replace_issued_digital_credential,
                                                               mock_logger,
                                                               mock_get_issued_digital_credentials,
                                                               app, session):
@@ -42,6 +44,7 @@ async def test_processor_does_not_run_if_no_issued_credential(mock_replace_issue
     mock_get_issued_digital_credentials.assert_called_once_with(business=business)
     mock_logger.warning.assert_called_once_with('No issued credentials found for business: %s', 'FM0000001')
     mock_replace_issued_digital_credential.assert_not_called()
+    mock_revoke_issued_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
