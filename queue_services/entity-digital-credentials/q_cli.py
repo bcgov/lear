@@ -92,20 +92,20 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
             'time': datetime.utcfromtimestamp(time.time()).replace(tzinfo=timezone.utc).isoformat(),
             'datacontenttype': 'application/json',
             'identifier': identifier,
+            'data': {
+                'filing': {
+                    'business': {'identifier': identifier}
+                }
+            }
         }
 
         if filing_type == 'admin.revoke':
             payload['type'] = 'bc.registry.admin.revoke'
         else:
             payload['type'] = f'bc.registry.business.{filing_type}'
-            payload['data'] = {
-                'filing': {
-                    'business': {'identifier': identifier}
-                }
-            }
 
-            if filing_id is not None:
-                payload['data']['filing']['header'] = {'filingId': filing_id}
+        if filing_id is not None:
+            payload['data']['filing']['header'] = {'filingId': filing_id}
 
         await sc.publish(subject=subscription_options().get('subject'),
                          payload=json.dumps(payload).encode('utf-8'))
