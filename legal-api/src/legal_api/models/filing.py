@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+# pylint: disable=too-many-lines
 import copy
 from datetime import date, datetime
 from enum import Enum
@@ -93,6 +94,39 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'ALTER',
                 'ULC': 'ALTER',
                 'CC': 'ALTER'
+            }
+        },
+        'amalgamation': {
+            'name': 'amalgamation',
+            'regular': {
+                'name': 'regularAmalgamation',
+                'title': 'Regular Amalgamation',
+                'codes': {
+                    'BEN': 'AMARE',
+                    'BC': 'AMARE',
+                    'ULC': 'AMARE',
+                    'CC': 'AMARE'
+                }
+            },
+            'vertical': {
+                'name': 'verticalAmalgamation',
+                'title': 'Vertical Amalgamation',
+                'codes': {
+                    'BEN': 'AMAVE',
+                    'BC': 'AMAVE',
+                    'ULC': 'AMAVE',
+                    'CC': 'AMAVE'
+                }
+            },
+            'horizontal': {
+                'name': 'horizontalAmalgamation',
+                'title': 'Horizontal Amalgamation',
+                'codes': {
+                    'BEN': 'AMAHO',
+                    'BC': 'AMAHO',
+                    'ULC': 'AMAHO',
+                    'CC': 'AMAHO'
+                }
             }
         },
         'annualReport': {

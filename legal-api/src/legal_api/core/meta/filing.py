@@ -124,6 +124,45 @@ FILINGS: Final = {
             {'types': 'BC,BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
+    'amalgamation': {
+        'name': 'amalgamation',
+        'additional': [
+            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
+        ],
+        'regular': {
+            'name': 'regularAmalgamation',
+            'title': 'Regular Amalgamation',
+            'displayName': 'Regular Amalgamation',
+            'codes': {
+                'BEN': 'AMARE',
+                'BC': 'AMARE',
+                'ULC': 'AMARE',
+                'CC': 'AMARE'
+            }
+        },
+        'vertical': {
+            'name': 'verticalAmalgamation',
+            'title': 'Vertical Amalgamation',
+            'displayName': 'Vertical Amalgamation',
+            'codes': {
+                'BEN': 'AMAVE',
+                'BC': 'AMAVE',
+                'ULC': 'AMAVE',
+                'CC': 'AMAVE'
+            }
+        },
+        'horizontal': {
+            'name': 'horizontalAmalgamation',
+            'title': 'Horizontal Amalgamation',
+            'displayName': 'Horizontal Amalgamation',
+            'codes': {
+                'BEN': 'AMAHO',
+                'BC': 'AMAHO',
+                'ULC': 'AMAHO',
+                'CC': 'AMAHO'
+            }
+        }
+    },
     'annualReport': {
         'name': 'annualReport',
         'title': 'Annual Report Filing',
