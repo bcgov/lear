@@ -609,9 +609,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
             filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
 
-        expire_date_approved_string = meta_data.get('agmExtension', {}).get('expireDateApprovedExt', '')
-        date_approved_obj = datetime.strptime(expire_date_approved_string, '%Y-%m-%d')
-        filing['extended_agm_date'] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
+        if expire_date_approved_string := meta_data.get('agmExtension', {}).get('expireDateApprovedExt', ''):
+            date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
+            filing['extended_agm_date'] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
 
         filing['offices'] = VersionedBusinessDetailsService.\
             get_office_revision(self._filing.transaction_id, self._business.id)
