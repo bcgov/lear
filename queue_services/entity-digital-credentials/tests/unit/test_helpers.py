@@ -35,12 +35,15 @@ from entity_digital_credentials.helpers import (
 from tests.unit import create_business, create_dc_connection, create_dc_definition, create_dc_issued_credential
 
 
+BUSINESS_IDENTIFIER = 'FM0000001'
+
+
 @patch('legal_api.models.DCIssuedCredential.find_by', return_value=DCIssuedCredential(id=1))
 @patch('legal_api.models.DCConnection.find_active_by', return_value=None)
 def test_get_issued_digital_credentials_raises_exception(mock_find_active_by, mock_find_by, app, session):
     """Assert get_issued_digital_credentials raises an exception when no active connection found."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
 
     # Act
     with pytest.raises(Exception) as excinfo:
@@ -55,7 +58,7 @@ def test_get_issued_digital_credentials_raises_exception(mock_find_active_by, mo
 def test_get_issued_credentials_returns_empty_list(mock_find_active_by, mock_find_by, app, session):
     """Assert get_issued_digital_credentials returns an empty list when no issued credentials found."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
 
     # Act
     issued_credentials = get_issued_digital_credentials(business=business)
@@ -68,7 +71,7 @@ def test_get_issued_credentials_returns_empty_list(mock_find_active_by, mock_fin
 def test_issued_credential_not_issued_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if is not yet issued."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=False)
 
     # Act
@@ -85,7 +88,7 @@ def test_issued_credential_not_issued_not_revoked(mock_revoke_credential, app, s
 def test_issued_credential_already_revoked_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if already revoked."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
 
     # Act
@@ -104,7 +107,7 @@ def test_issued_credential_no_active_connection_not_revoked(mock_revoke_credenti
                                                             app, session):
     """Assert that the issued credential is not revoked if no active connection found."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=False)
 
     # Act
@@ -121,7 +124,7 @@ def test_issued_credential_no_active_connection_not_revoked(mock_revoke_credenti
 def test_revoke_issued_digital_credential_helper_throws_exception(mock_revoke_credential, app, session):
     """Assert that the revoke issued credential helper throws an exception if the service fails."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=False)
 
     # Act
@@ -139,7 +142,7 @@ def test_revoke_issued_digital_credential_helper_throws_exception(mock_revoke_cr
 def test_issued_credential_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is revoked."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=False)
 
     # Act
@@ -165,7 +168,7 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_credential,
                                                         app, session):
     """Assert that the issued credential is revoked first if its not revoked before replacing."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=False)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
@@ -193,7 +196,7 @@ def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
                                                         app, session):
     """Assert that the issued credential is not revoked first if its already revoked before replacing."""
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
@@ -221,7 +224,7 @@ def test_replace_issued_digital_credential_throws_cred_ex_id_exception(mock_remo
     An exception should be thrown if the service fails to remove a credential exchange id.
     """
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
@@ -250,7 +253,7 @@ def test_replace_issued_digital_credential_throws_ibuc_not_found_exception(mock_
     An exception should be thrown if the issued business user credential is not found.
     """
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
@@ -282,7 +285,7 @@ def test_replace_issued_digital_credential_throws_user_not_found_exception(mock_
     An exception should be thrown if the user is not found.
     """
     # Arrange
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
@@ -311,7 +314,7 @@ def test_issued_credential_replaced(mock_find_ibuc_by_id,
     """Assert that the issued credential is deleted and replaced with a new one."""
     # Arrange
     user = User.find_by_id(1)
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     issued_credential = create_dc_issued_credential(business=business, is_issued=True, is_revoked=True)
     credential_type = DCDefinition.CredentialType.business.name
     reason = DCRevocationReason.UPDATED_INFORMATION
@@ -332,7 +335,7 @@ def test_issue_digital_credential_throws_definition_not_found_error(mock_find_de
     """Assert that the issue_digital_credential helper throws an exception if the definition is not found."""
     # Arrange
     user = User(id=1)
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     definition = create_dc_definition()
 
     # Act
@@ -353,7 +356,7 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
     mock_digital_credentials.business_schema_id = 'test_schema_id'
     mock_digital_credentials.business_cred_def_id = 'test_credential_definition_id'
     user = User(id=1)
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     definition = create_dc_definition()
 
     # Act
@@ -378,7 +381,7 @@ def test_issue_digital_credential_throws_exception_on_failure(mock_digital_crede
     mock_digital_credentials.business_schema_id = 'test_schema_id'
     mock_digital_credentials.business_cred_def_id = 'test_credential_definition_id'
     user = User(id=1)
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     definition = create_dc_definition()
     create_dc_connection(business=business, is_active=True)
 
@@ -404,7 +407,7 @@ def test_issue_digital_credential(mock_digital_credentials_helpers,
     mock_digital_credentials.business_schema_id = 'test_schema_id'
     mock_digital_credentials.business_cred_def_id = 'test_credential_definition_id'
     user = User(id=1)
-    business = create_business(identifier='FM0000001')
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
     definition = create_dc_definition()
     connection = create_dc_connection(business=business, is_active=True)
 
