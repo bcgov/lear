@@ -21,6 +21,7 @@ from typing import Final
 
 import pycountry
 import requests
+from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
@@ -586,8 +587,36 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_agm_extension_data(self, filing):
-        # FUTURE: format logic for letter of agm extension
-        return
+        meta_data = self._filing.meta_data or {}
+        is_first_agm = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
+        filing['is_first_agm'] = is_first_agm
+        filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
+        filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
+
+        number_words = ['one', 'two', 'three', 'four', 'five', 'six']
+        duration_numeric = meta_data.get('agmExtension', {}).get('extensionDuration', '')
+        filing['duration_numeric'] = duration_numeric
+        filing['duration_spelling'] = number_words[int(duration_numeric)-1]
+
+        if is_first_agm:
+            founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
+            founding_date = founding_date_json[0:10]
+            original_date_time = LegislationDatetime.\
+                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
+            filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+        else:
+            expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+            date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+            filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
+
+        if expire_date_approved_string := meta_data.get('agmExtension', {}).get('expireDateApprovedExt', ''):
+            date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
+            filing['extended_agm_date'] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
+
+        filing['offices'] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+        with suppress(KeyError):
+            self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
     def _format_agm_location_change_data(self, filing):
         filing['agm_year'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('year', '')
