@@ -129,7 +129,7 @@ def replace_issued_digital_credential(business: Business,
         if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by_id(
                 dc_issued_business_user_id=issued_credential.credential_id)):
             # pylint: disable=broad-exception-raised
-            raise Exception('Unable to find buisness user for issued credential.')
+            raise Exception('Unable to find business user for issued credential.')
 
         if not (user := User.find_by_id(issued_business_user_credential.user_id)):  # pylint: disable=superfluous-parens
             # pylint: disable=broad-exception-raised

@@ -50,7 +50,7 @@ def test_get_issued_digital_credentials_raises_exception(mock_find_active_by, mo
         get_issued_digital_credentials(business=business)
 
     # Assert
-    assert 'FM0000001 active connection not found.' in str(excinfo)
+    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(excinfo)
 
 
 @patch('legal_api.models.DCIssuedCredential.find_by', return_value=None)
@@ -116,7 +116,7 @@ def test_issued_credential_no_active_connection_not_revoked(mock_revoke_credenti
                                          issued_credential=issued_credential,
                                          reason=DCRevocationReason.UPDATED_INFORMATION)
     # Assert
-    assert 'FM0000001 active connection not found.' in str(excinfo)
+    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(excinfo)
     mock_revoke_credential.assert_not_called()
 
 
@@ -265,7 +265,7 @@ def test_replace_issued_digital_credential_throws_ibuc_not_found_exception(mock_
                                           reason=reason)
 
     # Assert
-    assert 'Unable to find buisness user for issued credential.' in str(excinfo)
+    assert 'Unable to find business user for issued credential.' in str(excinfo)
     mock_issue_digital_credential.assert_not_called()
 
 
@@ -364,7 +364,7 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
         issue_digital_credential(business=business, user=user, credential_type=definition.credential_type.name)
 
     # Assert
-    assert 'FM0000001 active connection not found.' in str(excinfo)
+    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(excinfo)
 
 
 @patch('entity_digital_credentials.helpers.digital_credentials')
