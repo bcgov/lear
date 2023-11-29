@@ -19,6 +19,7 @@ from http import HTTPStatus
 from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
 from flask_cors import cross_origin
 
+from legal_api.decorators import can_access_digital_credentials
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials import DigitalCredentialsHelpers
@@ -33,6 +34,7 @@ bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCr
 @bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def create_invitation(identifier):
     """Create a new connection invitation."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -64,6 +66,7 @@ def create_invitation(identifier):
 @bp.route('/<string:identifier>/digitalCredentials/connections', methods=['GET', 'OPTIONS'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def get_connections(identifier):
     """Get active connection for this business."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -83,6 +86,7 @@ def get_connections(identifier):
           methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def delete_connection(identifier, connection_id):
     """Delete a connection."""
     if not Business.find_by_identifier(identifier):
@@ -102,6 +106,7 @@ def delete_connection(identifier, connection_id):
 @bp.route('/<string:identifier>/digitalCredentials/activeConnection', methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def delete_active_connection(identifier):
     """Delete an active connection for this business."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -120,6 +125,7 @@ def delete_active_connection(identifier):
 @bp.route('/<string:identifier>/digitalCredentials', methods=['GET', 'OPTIONS'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def get_issued_credentials(identifier):
     """Get all issued credentials."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -148,6 +154,7 @@ def get_issued_credentials(identifier):
 @bp.route('/<string:identifier>/digitalCredentials/<string:credential_type>', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -191,6 +198,7 @@ def send_credential(identifier, credential_type):
           methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def revoke_credential(identifier, credential_id):
     """Revoke a credential."""
     if not (business := Business.find_by_identifier(identifier)):
@@ -220,6 +228,7 @@ def revoke_credential(identifier, credential_id):
 @bp.route('/<string:identifier>/digitalCredentials/<string:credential_id>', methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
+@can_access_digital_credentials
 def delete_credential(identifier, credential_id):
     """Delete a credential."""
     if not Business.find_by_identifier(identifier):

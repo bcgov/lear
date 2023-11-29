@@ -16,11 +16,16 @@
 import json
 from datetime import datetime
 from functools import wraps
+from http import HTTPStatus
 
-import jwt
+import jwt as pyjwt
 import requests
-from flask import current_app
+from flask import current_app, jsonify
 from jwt import ExpiredSignatureError
+
+from legal_api.models import Business
+from legal_api.services.authz import are_digital_credentials_allowed
+from legal_api.utils.auth import jwt
 
 
 def requires_traction_auth(f):
@@ -38,13 +43,13 @@ def requires_traction_auth(f):
 
         try:
             if not hasattr(current_app, 'api_token'):
-                raise jwt.ExpiredSignatureError
+                raise pyjwt.ExpiredSignatureError
 
-            if not (decoded := jwt.decode(current_app.api_token, options={'verify_signature': False})):
-                raise jwt.ExpiredSignatureError
+            if not (decoded := pyjwt.decode(current_app.api_token, options={'verify_signature': False})):
+                raise pyjwt.ExpiredSignatureError
 
             if datetime.utcfromtimestamp(decoded['exp']) <= datetime.utcnow():
-                raise jwt.ExpiredSignatureError
+                raise pyjwt.ExpiredSignatureError
         except ExpiredSignatureError:
             current_app.logger.info('JWT token expired or is missing, requesting new token')
             response = requests.post(f'{traction_api_url}/multitenancy/tenant/{traction_tenant_id}/token',
@@ -52,6 +57,22 @@ def requires_traction_auth(f):
                                      data=json.dumps({'api_key': traction_api_key}))
             response.raise_for_status()
             current_app.api_token = response.json()['token']
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def can_access_digital_credentials(f):
+    """Ensure the business can has access to digital credentials."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        identifier = kwargs.get('identifier', None)
+
+        if not (business := Business.find_by_identifier(identifier)):
+            return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+        if not are_digital_credentials_allowed(business, jwt):
+            return jsonify({'message': f'digital credential not available for: {identifier}.'}), HTTPStatus.UNAUTHORIZED
 
         return f(*args, **kwargs)
     return decorated_function
