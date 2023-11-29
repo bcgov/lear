@@ -17,6 +17,7 @@ from http import HTTPStatus
 from typing import Final, List
 from urllib.parse import urljoin
 
+import jwt as pyjwt
 import requests
 from flask import current_app
 from flask_jwt_oidc import JwtManager
@@ -24,7 +25,7 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, User
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -395,7 +396,8 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         'filing': {
             'filingSubmissionLink': filing_submission_url,
             'filingTypes': allowed_filings
-        }
+        },
+        'digitalBusinessCard': are_digital_credentials_allowed(business, jwt)
     }
     return result
 
@@ -669,3 +671,64 @@ def add_allowable_filing_type(is_allowable: bool = False,
         allowable_filing_types.append(allowable_filing_type)
 
     return allowable_filing_types
+
+
+def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
+    """Return True if the business is allowed to have/view a digital business card."""
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+        return False
+
+    if not (user := User.find_by_jwt_token(token)):
+        return False
+
+    is_staff = jwt.contains_role([STAFF_ROLE])
+
+    is_sole_prop = business and business.legal_type == Business.LegalTypes.SOLE_PROP.value
+
+    is_login_source_bcsc = user.login_source == 'BCSC'
+
+    is_owner_operator = is_self_registered_owner_operator(business, user)
+
+    return is_login_source_bcsc and is_sole_prop and is_owner_operator and not is_staff
+
+
+def is_self_registered_owner_operator(business, user):
+    """Return True if the user is the owner operator of the business."""
+    if not (registration_filing := get_registration_filing(business)):
+        return False
+
+    if not (filing_json := registration_filing.filing_json.get('filing', {}).get('registration', None)):
+        return False
+
+    if not (parties := filing_json.get('parties', None)):
+        return False
+
+    completing_party = (next((party for party in parties if party.get('roles', None) and (
+        any(role for role in party.get('roles') if role.get('roleType') == 'Completing Party'))), None)
+    ).get('officer', None)
+    proprietor = (next((party for party in parties if party.get('roles', None) and (
+        any(role for role in party.get('roles') if role.get('roleType') == 'Proprietor'))), None)
+    ).get('officer', None)
+    if (not completing_party) or (not proprietor):
+        return False
+
+    return (
+        registration_filing.submitter_id == user.id and
+        completing_party.get('firstName') == proprietor.get('firstName') and
+        completing_party.get('lastName') == proprietor.get('lastName') and
+        proprietor.get('firstName') == user.firstname and
+        proprietor.get('lastName') == user.lastname
+    )
+
+
+def get_registration_filing(business):
+    """Return the registration filing for the business."""
+    filings = Filing.get_filings_by_types(business.id, ['registration'])
+
+    registration_filing = None
+    for filing in filings:
+        if filing.filing_json.get('filing', {}).get('registration', None):
+            registration_filing = filing
+            break
+
+    return registration_filing

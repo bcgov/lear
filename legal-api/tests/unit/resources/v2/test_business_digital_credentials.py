@@ -34,6 +34,7 @@ from tests.unit.services.utils import create_header
 content_type = 'application/json'
 
 
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_create_invitation(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert create invitation endpoint returns invitation_url."""
     headers = create_header(jwt, [BASIC_USER])
@@ -55,7 +56,8 @@ iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE
         assert rv.json.get('invitationUrl') == invitation_url
 
 
-def test_get_connections_not_found(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_get_connections_not_found(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert get connections endpoint returns not found when there is no active connection."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
@@ -67,7 +69,8 @@ def test_get_connections_not_found(session, client, jwt):  # pylint:disable=unus
     assert rv.json.get('connections') == []
 
 
-def test_get_connections(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_get_connections(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert get connection endpoint returns connection json."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
@@ -84,7 +87,8 @@ def test_get_connections(session, client, jwt):  # pylint:disable=unused-argumen
     assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
 
 
-def test_send_credential(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_send_credential(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert Issue credentials to the connection."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
@@ -105,7 +109,8 @@ def test_send_credential(session, client, jwt):  # pylint:disable=unused-argumen
                 assert rv.json.get('credentialExchangeId') == cred_ex_id
 
 
-def test_get_issued_credentials(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert Get all issued credentials json."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
@@ -124,7 +129,8 @@ def test_get_issued_credentials(session, client, jwt):  # pylint:disable=unused-
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')
 
 
-def test_webhook_connections_notification(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_webhook_connections_notification(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert webhook connection notification endpoint when connection to active."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
@@ -149,7 +155,8 @@ def test_webhook_connections_notification(session, client, jwt):  # pylint:disab
     assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
 
 
-def test_webhook_issue_credential_notification(session, client, jwt):  # pylint:disable=unused-argument
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_webhook_issue_credential_notification(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert webhook issue_credential notification endpoint when credential issued."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
