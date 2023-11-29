@@ -397,7 +397,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
             'filingSubmissionLink': filing_submission_url,
             'filingTypes': allowed_filings
         },
-        'digitalBusinessCard': is_digital_business_card_allowed(business, jwt)
+        'digitalBusinessCard': are_digital_credentials_allowed(business, jwt)
     }
     return result
 
@@ -673,7 +673,7 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def is_digital_business_card_allowed(business: Business, jwt: JwtManager):
+def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
     """Return True if the business is allowed to have/view a digital business card."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return False

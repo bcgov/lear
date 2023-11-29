@@ -35,7 +35,7 @@ from legal_api.models import Filing
 from legal_api.models.business import Business, User
 
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, PUBLIC_USER, \
-    authorized, get_allowed, is_allowed, get_allowed_filings, get_allowable_actions, is_digital_business_card_allowed
+    are_digital_credentials_allowed, authorized, get_allowed, is_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
@@ -1815,7 +1815,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed_false_when_no_token(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_no_token(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1829,12 +1829,12 @@ def test_is_digital_credentials_is_allowed_false_when_no_token(monkeypatch, app,
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=None)
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed_false_when_no_user(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_no_user(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1848,12 +1848,12 @@ def test_is_digital_credentials_is_allowed_false_when_no_user(monkeypatch, app, 
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed_false_user_is_staff(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_user_is_staff(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1867,12 +1867,12 @@ def test_is_digital_credentials_is_allowed_false_user_is_staff(monkeypatch, app,
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed_false_login_source_not_bcsc(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_login_source_not_bcsc(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1886,12 +1886,12 @@ def test_is_digital_credentials_is_allowed_false_login_source_not_bcsc(monkeypat
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed_false_when_wrong_business_type(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_wrong_business_type(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1905,12 +1905,12 @@ def test_is_digital_credentials_is_allowed_false_when_wrong_business_type(monkey
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('GP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=False)
-def test_is_digital_credentials_is_allowed_false_when_not_owner_operator(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_not_owner_operator(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1924,12 +1924,12 @@ def test_is_digital_credentials_is_allowed_false_when_not_owner_operator(monkeyp
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is False
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_is_digital_credentials_is_allowed(monkeypatch, app, session, jwt):
+def test_are_digital_credentials_allowed_true(monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
     token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -1943,7 +1943,7 @@ def test_is_digital_credentials_is_allowed(monkeypatch, app, session, jwt):
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
-        assert is_digital_business_card_allowed(business, jwt) is True
+        assert are_digital_credentials_allowed(business, jwt) is True
 
 
 def create_business(legal_type, state):
