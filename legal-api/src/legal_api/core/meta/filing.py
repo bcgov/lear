@@ -134,10 +134,10 @@ FILINGS: Final = {
             'title': 'Regular Amalgamation',
             'displayName': 'Regular Amalgamation',
             'codes': {
-                'BEN': 'AMARE',
-                'BC': 'AMARE',
-                'ULC': 'AMARE',
-                'CC': 'AMARE'
+                'BEN': 'AMALR',
+                'BC': 'AMALR',
+                'ULC': 'AMALR',
+                'CC': 'AMALR'
             }
         },
         'vertical': {
@@ -145,10 +145,10 @@ FILINGS: Final = {
             'title': 'Vertical Amalgamation',
             'displayName': 'Vertical Amalgamation',
             'codes': {
-                'BEN': 'AMAVE',
-                'BC': 'AMAVE',
-                'ULC': 'AMAVE',
-                'CC': 'AMAVE'
+                'BEN': 'AMALV',
+                'BC': 'AMALV',
+                'ULC': 'AMALV',
+                'CC': 'AMALV'
             }
         },
         'horizontal': {
@@ -156,10 +156,10 @@ FILINGS: Final = {
             'title': 'Horizontal Amalgamation',
             'displayName': 'Horizontal Amalgamation',
             'codes': {
-                'BEN': 'AMAHO',
-                'BC': 'AMAHO',
-                'ULC': 'AMAHO',
-                'CC': 'AMAHO'
+                'BEN': 'AMALH',
+                'BC': 'AMALH',
+                'ULC': 'AMALH',
+                'CC': 'AMALH'
             }
         }
     },

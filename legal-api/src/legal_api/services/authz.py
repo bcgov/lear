@@ -140,19 +140,19 @@ ALLOWABLE_FILINGS: Final = {
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 }
             },
@@ -321,19 +321,19 @@ ALLOWABLE_FILINGS: Final = {
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 }
             },
