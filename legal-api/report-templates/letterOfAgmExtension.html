@@ -9,5 +9,57 @@
       [[common/styleLetterOverride.html]]
    </head>
    <body>
+      <div class="header-logo">[[logo.html]]</div>
+ 
+      <div class="letter-copy">
+         <div>{{ report_date }}</div>
+         {% set office = offices.registeredOffice %}
+         <div class="mt-12">{{ office.mailingAddress.streetAddress }}</div>
+         <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+         <div>
+            {{ office.mailingAddress.addressCity }}, {{ office.mailingAddress.addressRegion }}
+         </div>
+         <div> {{ office.mailingAddress.postalCode }}</div>
+         <div class="mt-7">Dear Applicant,</div>
+         <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+         <div class="mt-5">
+            {% if is_first_agm %}
+               Under section 182(4) of the Business Corporations Act, I hereby allow the company to extend the time
+               within which the above named company is required to hold its first Annual General Meeting
+            {% elif is_final_agm %}
+               Under section 182(4) of the Business Corporations Act, I hereby allow the company to further extend the time
+               within which the above named company is required to hold its Annual General Meeting for the year {{agm_year}}
+            {% else %}
+               Under section 182(4) of the Business Corporations Act, I hereby allow the company to extend the time
+               within which the above named company is required to hold its Annual General Meeting for the year {{agm_year}}
+            {% endif %}
+            
+            by {{duration_spelling}} ({{duration_numeric}}) 
+            
+            {% if duration_numeric==1 %}
+               month
+            {% else %}
+               months
+            {% endif %}
+
+            from {{original_agm_date}} to {{extended_agm_date}}.
+ 
+         </div>
+         <div class="mt-5">
+            {% if is_final_agm %}
+               Please note, this is your final extension.
+            {% endif %}
+         </div>
+         <p class="mt-12">Yours truly,</p>
+         <div class="registrar-info">
+            <div>[[common/certificateRegistrarSignature.html]]</div>
+            <div>
+               <div class="registrar-name">{{ registrarInfo.name }}</div>
+               <div class="registrar-title">{{ registrarInfo.title }}</div>
+            </div>
+         </div>
+      </div>
+      [[common/footerMOCS.html]]
    </body>
 </html>
+ 

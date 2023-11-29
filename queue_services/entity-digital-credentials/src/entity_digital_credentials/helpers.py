@@ -51,7 +51,7 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
                                                    digital_credentials.business_schema_id,
                                                    digital_credentials.business_cred_def_id)):
             # pylint: disable=broad-exception-raised
-            raise Exception(f'Definition not found for credential type: {credential_type}')
+            raise Exception(f'Definition not found for credential type: {credential_type}.')
 
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):
@@ -129,7 +129,7 @@ def replace_issued_digital_credential(business: Business,
         if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by_id(
                 dc_issued_business_user_id=issued_credential.credential_id)):
             # pylint: disable=broad-exception-raised
-            raise Exception('Unable to find buisness user for issued credential.')
+            raise Exception('Unable to find business user for issued credential.')
 
         if not (user := User.find_by_id(issued_business_user_credential.user_id)):  # pylint: disable=superfluous-parens
             # pylint: disable=broad-exception-raised
