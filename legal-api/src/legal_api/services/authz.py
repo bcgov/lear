@@ -703,24 +703,27 @@ def is_self_registered_owner_operator(business, user):
     if not (parties := filing_json.get('parties', None)):
         return False
 
-    completing_party = next((party for party in parties if party.get('roles', None) and
-                             any(role for role in party.get('roles')
-                                 if role.get('roleType') == 'completingParty')), None)
-    proprietor = next((party for party in parties if party.get('roles', None) and
-                       any(role for role in party.get('roles')
-                           if role.get('roleType') == 'proprietor')), None)
+    completing_party = (next((party for party in parties if party.get('roles', None) and (
+        any(role for role in party.get('roles') if role.get('roleType') == 'Completing Party'))), None)
+    ).get('officer', None)
+    proprietor = (next((party for party in parties if party.get('roles', None) and (
+        any(role for role in party.get('roles') if role.get('roleType') == 'Proprietor'))), None)
+    ).get('officer', None)
     if (not completing_party) or (not proprietor):
         return False
 
-    return completing_party.get('firstName') == proprietor.get('firstName') and \
-        completing_party.get('lastName') == proprietor.get('lastName') and \
-        proprietor.get('firstName') == user.firstname and \
+    return (
+        registration_filing.submitter_id == user.id and
+        completing_party.get('firstName') == proprietor.get('firstName') and
+        completing_party.get('lastName') == proprietor.get('lastName') and
+        proprietor.get('firstName') == user.firstname and
         proprietor.get('lastName') == user.lastname
+    )
 
 
 def get_registration_filing(business):
     """Return the registration filing for the business."""
-    filings = Filing.get_filings_by_types(business.id, ['registration', 'changeOfRegistration'])
+    filings = Filing.get_filings_by_types(business.id, ['registration'])
 
     registration_filing = None
     for filing in filings:

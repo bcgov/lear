@@ -16,7 +16,8 @@
 from datetime import datetime
 from http import HTTPStatus
 
-from flask import Blueprint, _request_ctx_stack, current_app, jsonify, request
+import jwt as pyjwt
+from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.decorators import can_access_digital_credentials
@@ -157,10 +158,13 @@ def get_issued_credentials(identifier):
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+        return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
+
     if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
 
-    if not (user := User.find_by_jwt_token(_request_ctx_stack.top.current_user)):
+    if not (user := User.find_by_jwt_token(token)):
         return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
 
     connection = DCConnection.find_active_by(business_id=business.id)
