@@ -98,6 +98,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'amalgamation': {
             'name': 'amalgamation',
+            'temporaryCorpTypeCode': 'ATMP',
             'regular': {
                 'name': 'regularAmalgamation',
                 'title': 'Regular Amalgamation',
@@ -107,7 +108,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'ULC': 'AMALR',
                     'CC': 'AMALR'
                 },
-                'temporaryCorpTypeCode': 'ATMP'
             },
             'vertical': {
                 'name': 'verticalAmalgamation',
@@ -118,7 +118,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'ULC': 'AMALV',
                     'CC': 'AMALV'
                 },
-                'temporaryCorpTypeCode': 'ATMP'
             },
             'horizontal': {
                 'name': 'horizontalAmalgamation',
@@ -129,7 +128,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'ULC': 'AMALH',
                     'CC': 'AMALH'
                 },
-                'temporaryCorpTypeCode': 'ATMP'
             }
         },
         'annualReport': {
