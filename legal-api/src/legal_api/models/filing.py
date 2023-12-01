@@ -350,7 +350,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         'dissolution': 'dissolutionType',
-        'restoration': 'type'
+        'restoration': 'type',
+        'amalgamation': 'type'
     }
 
     __tablename__ = 'filings'
