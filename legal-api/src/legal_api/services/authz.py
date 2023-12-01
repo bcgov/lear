@@ -698,12 +698,12 @@ def is_self_registered_owner_operator(business, user):
     if not (registration_filing := get_registration_filing(business)):
         return False
 
-    if not len(proprietors := PartyRole.get_parties_by_role(
-            business.id, PartyRole.RoleTypes.PROPRIETOR.value)) > 0:
+    if len(proprietors := PartyRole.get_parties_by_role(
+            business.id, PartyRole.RoleTypes.PROPRIETOR.value)) <= 0:
         return False
 
-    if not len(completing_parties := PartyRole.get_party_roles_by_filing(
-            registration_filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)) > 0:
+    if len(completing_parties := PartyRole.get_party_roles_by_filing(
+            registration_filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)) <= 0:
         return False
 
     if not (proprietor := proprietors[0].party):
@@ -723,7 +723,7 @@ def is_self_registered_owner_operator(business, user):
 
 def get_registration_filing(business):
     """Return the registration filing for the business."""
-    if not len(registration_filings := Filing.get_filings_by_types(business.id, ['registration'])) > 0:
+    if len(registration_filings := Filing.get_filings_by_types(business.id, ['registration'])) <= 0:
         return None
 
     return registration_filings[0]
