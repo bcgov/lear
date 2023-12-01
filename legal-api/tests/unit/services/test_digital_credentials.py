@@ -63,7 +63,7 @@ def test_init_app(app, session):
         'middlename': 'Middle',
     },
     'expected': [
-        {'name': 'credential_id', 'value': '00000001'},
+        {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': 'Test Business'},
         {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
@@ -92,7 +92,7 @@ def test_init_app(app, session):
         'middlename': '',
     },
     'expected': [
-        {'name': 'credential_id', 'value': '00000002'},
+        {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': ''},
         {'name': 'business_type', 'value': 'BC Cooperative Association'},
@@ -124,9 +124,14 @@ def test_data_helper(app, session, test_data):
         _party_role.save()
 
     issued_business_user_credential = DCIssuedBusinessUserCredential(business_id=business.id, user_id=user.id)
+    issued_business_user_credential.save()
 
     # Act
     credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business, user, credential_type)
 
     # Assert
-    assert credential_data == test_data['expected']
+    for item in credential_data:
+        if item['name'] == 'credential_id':
+            assert item['value'] == f'{issued_business_user_credential.id:08}'
+        else:
+            assert item in test_data['expected']
