@@ -292,6 +292,12 @@ class DigitalCredentialsHelpers:
 
             given_names = ' '.join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
 
+            # For an SP there is only one role. This will need to be updated
+            # when the entity model changes and we need to support multiple roles.
+            role = (
+                business.party_roles[0].role if (business.party_roles and len(business.party_roles.all())) else ''
+            ).replace('_', ' ').title()
+
             return [
                 {
                     'name': 'credential_id',
@@ -331,7 +337,7 @@ class DigitalCredentialsHelpers:
                 },
                 {
                     'name': 'role',
-                    'value': ''
+                    'value': role or ''
                 }
             ]
 
