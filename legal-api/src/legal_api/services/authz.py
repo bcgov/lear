@@ -712,12 +712,19 @@ def is_self_registered_owner_operator(business, user):
     if not (completing_party := completing_parties[0].party):
         return False
 
+    completing_party_first_name = (completing_party.first_name or '').lower()
+    completing_party_last_name = (completing_party.last_name or '').lower()
+    proprietor_first_name = (proprietor.first_name or '').lower()
+    proprietor_last_name = (proprietor.last_name or '').lower()
+    user_first_name = (user.firstname or '').lower()
+    user_last_name = (user.lastname or '').lower()
+
     return (
         registration_filing.submitter_id == user.id and
-        completing_party.first_name == proprietor.first_name and
-        completing_party.last_name == proprietor.last_name and
-        proprietor.first_name == user.firstname and
-        proprietor.last_name == user.lastname
+        completing_party_first_name == proprietor_first_name and
+        completing_party_last_name == proprietor_last_name and
+        proprietor_first_name == user_first_name and
+        proprietor_last_name == user_last_name
     )
 
 

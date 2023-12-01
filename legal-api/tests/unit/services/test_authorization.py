@@ -2151,9 +2151,9 @@ def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
                       first_name=None, last_name=None, middle_initial=None):
     completing_party_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
     officer = {
-        'firstName': first_name or 'Test',
+        'firstName': first_name or 'TEST',
         'middleInitial': middle_initial or 'TU',
-        'lastName': last_name or 'User',
+        'lastName': last_name or 'USER',
         'partyType': 'person',
         'organizationName': ''
     }
@@ -2170,7 +2170,7 @@ def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
 
 def create_test_user(suffix=''):
     return {
-        'first_name': f'Test{suffix}',
-        'last_name': f'User{suffix}',
+        'first_name': f'TEST{suffix}',
+        'last_name': f'USER{suffix}',
         'middle_initial': f'TU{suffix}'
-    } 
+    }
