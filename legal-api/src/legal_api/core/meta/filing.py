@@ -127,7 +127,7 @@ FILINGS: Final = {
     'amalgamation': {
         'name': 'amalgamation',
         'additional': [
-            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
+            {'types': 'BC,ULC,BEN,CC', 'outputs': ['noticeOfArticles', 'certificate']},
         ],
         'regular': {
             'name': 'regularAmalgamation',
