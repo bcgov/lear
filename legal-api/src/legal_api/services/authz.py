@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This manages all of the authentication and authorization service."""
+from datetime import datetime
 from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
@@ -25,7 +26,7 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing, User
+from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -697,38 +698,32 @@ def is_self_registered_owner_operator(business, user):
     if not (registration_filing := get_registration_filing(business)):
         return False
 
-    if not (filing_json := registration_filing.filing_json.get('filing', {}).get('registration', None)):
+    if len(proprietors := PartyRole.get_parties_by_role(
+            business.id, PartyRole.RoleTypes.PROPRIETOR.value)) <= 0:
         return False
 
-    if not (parties := filing_json.get('parties', None)):
+    if len(completing_parties := PartyRole.get_party_roles_by_filing(
+            registration_filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)) <= 0:
         return False
 
-    completing_party = (next((party for party in parties if party.get('roles', None) and (
-        any(role for role in party.get('roles') if role.get('roleType') == 'Completing Party'))), None)
-    ).get('officer', None)
-    proprietor = (next((party for party in parties if party.get('roles', None) and (
-        any(role for role in party.get('roles') if role.get('roleType') == 'Proprietor'))), None)
-    ).get('officer', None)
-    if (not completing_party) or (not proprietor):
+    if not (proprietor := proprietors[0].party):
+        return False
+
+    if not (completing_party := completing_parties[0].party):
         return False
 
     return (
         registration_filing.submitter_id == user.id and
-        completing_party.get('firstName') == proprietor.get('firstName') and
-        completing_party.get('lastName') == proprietor.get('lastName') and
-        proprietor.get('firstName') == user.firstname and
-        proprietor.get('lastName') == user.lastname
+        completing_party.first_name == proprietor.first_name and
+        completing_party.last_name == proprietor.last_name and
+        proprietor.first_name == user.firstname and
+        proprietor.last_name == user.lastname
     )
 
 
 def get_registration_filing(business):
     """Return the registration filing for the business."""
-    filings = Filing.get_filings_by_types(business.id, ['registration'])
+    if len(registration_filings := Filing.get_filings_by_types(business.id, ['registration'])) <= 0:
+        return None
 
-    registration_filing = None
-    for filing in filings:
-        if filing.filing_json.get('filing', {}).get('registration', None):
-            registration_filing = filing
-            break
-
-    return registration_filing
+    return registration_filings[0]
