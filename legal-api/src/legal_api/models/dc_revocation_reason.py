@@ -18,6 +18,7 @@ from enum import Enum
 class DCRevocationReason(Enum):
     """Digital Credential Revocation Reasons."""
 
+    ADMINISTRATIVE_REVOCATION = 'Your credential was revoked.'
     UPDATED_INFORMATION = 'You were offered a new credential with updated information ' \
         'and that revoked all previous copies.'
     VOLUNTARY_DISSOLUTION = 'You chose to dissolve your business. ' \
