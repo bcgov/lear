@@ -119,9 +119,8 @@ def post_businesses():
     # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
     bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
     if not isinstance(bootstrap, RegistrationBootstrap):
-        if filing_type == Filing.FILINGS['amalgamation']['name']:
-            amalgamation_type = Filing.get_filings_sub_type(filing_type, json_input)
-            title = Filing.FILINGS[filing_type][amalgamation_type]['title']
+        if filing_sub_type := Filing.get_filings_sub_type(filing_type, json_input):
+            title = Filing.FILINGS[filing_type][filing_sub_type]['title']
         else:
             title = Filing.FILINGS[filing_type]['title']
         return {'error': babel('Unable to create {0} Filing.'.format(title))}, \

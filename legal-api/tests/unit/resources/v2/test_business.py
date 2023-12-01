@@ -381,7 +381,7 @@ def test_post_affiliated_businesses(session, client, jwt):
         if filing_name == 'amalgamation':
             json_data['filing'][filing_name] = {
                 **json_data['filing'][filing_name],
-                'amalgamationType': 'regular'
+                'type': 'regular'
             }
         filing = factory_pending_filing(None, json_data)
         filing.temp_reg = draft_business[0]
