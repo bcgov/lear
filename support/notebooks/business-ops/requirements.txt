@@ -1,17 +1,16 @@
-jupyter
-requests
-d6tstack
-d6tstack[psql]
-d6tstack[xls]
-pandas
-sqlalchemy
-psycopg2
-simplejson
-matplotlib
-ipython-sql
+jupyterlab==1.2.21
+ipython-sql==0.3.9
+requests==2.25.1
+# d6tstack
+# d6tstack[psql]
+# d6tstack[xls]
+pylint
+pandas==1.4.2
+SQLAlchemy==1.4.44
+psycopg2-binary==2.8.6
+simplejson==3.17.6
+matplotlib==3.7.1
 tlaplus_jupyter
-ipytest
-pytest
 git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 
