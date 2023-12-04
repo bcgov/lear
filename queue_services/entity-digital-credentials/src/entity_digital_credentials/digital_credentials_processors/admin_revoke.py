@@ -29,4 +29,4 @@ async def process(business: Business):
 
     return revoke_issued_digital_credential(business=business,
                                             issued_credential=issued_credentials[0],
-                                            reason=DCRevocationReason.UPDATED_INFORMATION)
+                                            reason=DCRevocationReason.ADMINISTRATIVE_REVOCATION)
