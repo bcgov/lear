@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+# pylint: disable=too-many-lines
 import copy
 from datetime import date, datetime
 from enum import Enum
@@ -93,6 +94,40 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'ALTER',
                 'ULC': 'ALTER',
                 'CC': 'ALTER'
+            }
+        },
+        'amalgamation': {
+            'name': 'amalgamation',
+            'temporaryCorpTypeCode': 'ATMP',
+            'regular': {
+                'name': 'regularAmalgamation',
+                'title': 'Regular Amalgamation',
+                'codes': {
+                    'BEN': 'AMALR',
+                    'BC': 'AMALR',
+                    'ULC': 'AMALR',
+                    'CC': 'AMALR'
+                },
+            },
+            'vertical': {
+                'name': 'verticalAmalgamation',
+                'title': 'Vertical Amalgamation',
+                'codes': {
+                    'BEN': 'AMALV',
+                    'BC': 'AMALV',
+                    'ULC': 'AMALV',
+                    'CC': 'AMALV'
+                },
+            },
+            'horizontal': {
+                'name': 'horizontalAmalgamation',
+                'title': 'Horizontal Amalgamation',
+                'codes': {
+                    'BEN': 'AMALH',
+                    'BC': 'AMALH',
+                    'ULC': 'AMALH',
+                    'CC': 'AMALH'
+                },
             }
         },
         'annualReport': {
@@ -315,7 +350,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # FUTURE: uncomment and update such that FEE codes can be defined like restoration sub-types.  Tests were
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         'dissolution': 'dissolutionType',
-        'restoration': 'type'
+        'restoration': 'type',
+        'amalgamation': 'type'
     }
 
     __tablename__ = 'filings'

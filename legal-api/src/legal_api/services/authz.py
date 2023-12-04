@@ -138,6 +138,26 @@ ALLOWABLE_FILINGS: Final = {
                     'business': [BusinessBlocker.DEFAULT]
                 }
             },
+            'amalgamation': {
+                'regular': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
+                },
+                'vertical': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
+                },
+                'horizontal': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
+                }
+            },
             'annualReport': {
                 'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
                 'blockerChecks': {
@@ -297,6 +317,26 @@ ALLOWABLE_FILINGS: Final = {
                 'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                 'blockerChecks': {
                     'business': [BusinessBlocker.DEFAULT]
+                }
+            },
+            'amalgamation': {
+                'regular': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
+                },
+                'vertical': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
+                },
+                'horizontal': {
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                    }
                 }
             },
             'annualReport': {

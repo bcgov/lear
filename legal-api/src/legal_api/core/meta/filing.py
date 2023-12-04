@@ -124,6 +124,45 @@ FILINGS: Final = {
             {'types': 'BC,BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
         ]
     },
+    'amalgamation': {
+        'name': 'amalgamation',
+        'additional': [
+            {'types': 'BC,ULC,BEN,CC', 'outputs': ['noticeOfArticles', 'certificate']},
+        ],
+        'regular': {
+            'name': 'regularAmalgamation',
+            'title': 'Regular Amalgamation',
+            'displayName': 'Regular Amalgamation',
+            'codes': {
+                'BEN': 'AMALR',
+                'BC': 'AMALR',
+                'ULC': 'AMALR',
+                'CC': 'AMALR'
+            }
+        },
+        'vertical': {
+            'name': 'verticalAmalgamation',
+            'title': 'Vertical Amalgamation',
+            'displayName': 'Vertical Amalgamation',
+            'codes': {
+                'BEN': 'AMALV',
+                'BC': 'AMALV',
+                'ULC': 'AMALV',
+                'CC': 'AMALV'
+            }
+        },
+        'horizontal': {
+            'name': 'horizontalAmalgamation',
+            'title': 'Horizontal Amalgamation',
+            'displayName': 'Horizontal Amalgamation',
+            'codes': {
+                'BEN': 'AMALH',
+                'BC': 'AMALH',
+                'ULC': 'AMALH',
+                'CC': 'AMALH'
+            }
+        }
+    },
     'annualReport': {
         'name': 'annualReport',
         'title': 'Annual Report Filing',
