@@ -62,4 +62,4 @@ async def test_processor_revokes_issued_credential(mock_revoke_issued_digital_cr
     mock_get_issued_digital_credentials.assert_called_once_with(business=business)
     mock_revoke_issued_digital_credential.assert_called_once_with(business=business,
                                                                   issued_credential={'id': 1},
-                                                                  reason=DCRevocationReason.ADMINISTRATIVE_REVOCATION)
+                                                                  reason=DCRevocationReason.UPDATED_INFORMATION)
