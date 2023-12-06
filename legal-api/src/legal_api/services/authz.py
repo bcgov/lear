@@ -141,18 +141,21 @@ ALLOWABLE_FILINGS: Final = {
             'amalgamation': {
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
@@ -322,18 +325,21 @@ ALLOWABLE_FILINGS: Final = {
             'amalgamation': {
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN]
                     }
@@ -469,12 +475,16 @@ def get_allowed_filings(business: Business,
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
-        if bool(business) ^ allowable_filing_value.get('businessExists', True):
-            continue
+        # might re-active after update the amalgamation filing allowable method
+        # if bool(business) ^ allowable_filing_value.get('businessExists', True):
+        #     continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
 
         if allowable_filing_legal_types:
+            # will remove after update the amalgamation filing allowable method
+            if bool(business) ^ allowable_filing_value.get('businessExists', True):
+                continue
             is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
@@ -489,7 +499,15 @@ def get_allowed_filings(business: Business,
         filing_sub_type_items = \
             filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            # will remove this condition statement after update the amalgamation filing allowable method
+            if filing_sub_type_item_value.get('ignoreBlockerChecksBusinessNotExists', False):
+                is_allowable = True
+            elif bool(business) ^ filing_sub_type_item_value.get('businessExists', True):
+                continue
+            else:
+                is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value,
+                                               business_blocker_dict)
+
             allowable_filing_sub_type = {'name': allowable_filing_key,
                                          'type': filing_sub_type_item_key,
                                          'displayName': FilingMeta.get_display_name(legal_type,
