@@ -428,7 +428,8 @@ class ListFilingResource():
 
         if filing_type not in [
             Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name']
+            Filing.FILINGS['registration']['name'],
+            Filing.FILINGS['amalgamation']['name']
         ] and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
