@@ -500,11 +500,11 @@ def get_allowed_filings(business: Business,
             filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
             # will remove this condition statement after update the amalgamation filing allowable method
-            ignoreBlockerChecks = filing_sub_type_item_value.get('ignoreBlockerChecksBusinessNotExists', False)
-            if not ignoreBlockerChecks and (bool(business) ^ filing_sub_type_item_value.get('businessExists', True)):
+            ignore_blocker_checks = filing_sub_type_item_value.get('ignoreBlockerChecksBusinessNotExists', False)
+            if (not ignore_blocker_checks) & (bool(business) ^ filing_sub_type_item_value.get('businessExists', True)):
                 continue
             is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value,
-                                            business_blocker_dict, ignoreBlockerChecks)
+                                           business_blocker_dict, ignore_blocker_checks)
 
             allowable_filing_sub_type = {'name': allowable_filing_key,
                                          'type': filing_sub_type_item_key,
@@ -522,9 +522,9 @@ def get_allowed_filings(business: Business,
 
 
 def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict,
-                ignoreBlockerChecks = False):
+                ignore_blocker_checks: bool = False):
     """Return True if allowable filing has a blocker."""
-    if ignoreBlockerChecks:
+    if ignore_blocker_checks:
         return False
 
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
