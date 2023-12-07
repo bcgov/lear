@@ -499,12 +499,7 @@ def get_allowed_filings(business: Business,
         filing_sub_type_items = \
             filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            # will remove this condition statement after update the amalgamation filing allowable method
-            ignore_blocker_checks = filing_sub_type_item_value.get('ignoreBlockerChecksBusinessNotExists', False)
-            if (not ignore_blocker_checks) & (bool(business) ^ filing_sub_type_item_value.get('businessExists', True)):
-                continue
-            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value,
-                                           business_blocker_dict, ignore_blocker_checks)
+            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
 
             allowable_filing_sub_type = {'name': allowable_filing_key,
                                          'type': filing_sub_type_item_key,
@@ -521,10 +516,10 @@ def get_allowed_filings(business: Business,
     return allowable_filing_types
 
 
-def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict,
-                ignore_blocker_checks: bool = False):
+def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
-    if ignore_blocker_checks:
+    ignore_blocker_checks_no_business = allowable_filing.get('ignoreBlockerChecksBusinessNotExists', False)
+    if ignore_blocker_checks_no_business and not bool(business):
         return False
 
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
@@ -537,6 +532,9 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
         return True
 
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
+        return True
+
+    if not bool(business):
         return True
 
     if has_blocker_completed_filing(business, blocker_checks):

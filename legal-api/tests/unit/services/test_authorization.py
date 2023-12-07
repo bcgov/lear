@@ -1081,9 +1081,6 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_ORDER])),
         ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
                           FilingKey.REGISTRARS_NOTATION,
@@ -1101,10 +1098,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
         # active business - general user
         ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.TRANSITION])),
+         expected_lookup([FilingKey.TRANSITION])),
         ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
 
