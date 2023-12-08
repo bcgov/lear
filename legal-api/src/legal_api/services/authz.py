@@ -545,7 +545,7 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
 
     if has_blocker_completed_filing(business, blocker_checks):
         return True
-    
+
     if has_blocker_future_effective_filing(business, blocker_checks):
         return True
 
@@ -658,14 +658,14 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
     """Check if business has a future effective filing."""
     if not (fed_filing_types := blocker_checks.get('futureEffectiveFilings', [])):
         return False
-    
+
     filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
-    
-    pending_filings = Filing.get_filings_by_type_pairs(business.id, 
+
+    pending_filings = Filing.get_filings_by_type_pairs(business.id,
                                                        filing_type_pairs,
                                                        [Filing.Status.PENDING.value],
                                                        True)
-    
+
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
     is_fed = False
     if pending_filings:
