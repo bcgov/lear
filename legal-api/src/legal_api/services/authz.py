@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This manages all of the authentication and authorization service."""
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
@@ -665,8 +665,15 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
                                                        filing_type_pairs,
                                                        [Filing.Status.PENDING.value],
                                                        True)
+    
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    is_fed = False
+    if pending_filings:
+        for f in pending_filings:
+            if f.effective_date > now:
+                is_fed = True
 
-    if len(pending_filings) == len(fed_filing_types):
+    if len(pending_filings) == len(fed_filing_types) and is_fed:
         return True
 
     return False
