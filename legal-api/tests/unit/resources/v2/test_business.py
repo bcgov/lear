@@ -74,7 +74,7 @@ def test_create_bootstrap_failure_filing(client, jwt):
 @pytest.mark.parametrize('filing_name', [
     'incorporationApplication',
     'registration',
-    'amalgamation'
+    'amalgamationApplication'
 ])
 def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
@@ -349,7 +349,7 @@ def test_post_affiliated_businesses(session, client, jwt):
     draft_businesses = [
         (identifiers[2], 'registration', Business.LegalTypes.BCOMP.value, None),
         (identifiers[3], 'incorporationApplication', Business.LegalTypes.SOLE_PROP.value, 'NR 1234567'),
-        (identifiers[4], 'amalgamation', Business.LegalTypes.COMP.value, 'NR 1234567')]
+        (identifiers[4], 'amalgamationApplication', Business.LegalTypes.COMP.value, 'NR 1234567')]
 
     # NB: these are real businesses now so temp should not get returned
     old_draft_businesses = [identifiers[4]]
@@ -378,7 +378,7 @@ def test_post_affiliated_businesses(session, client, jwt):
             json_data['filing'][filing_name] = {
                 'nameRequest': {'nrNumber': draft_business[3]}
             }
-        if filing_name == 'amalgamation':
+        if filing_name == 'amalgamationApplication':
             json_data['filing'][filing_name] = {
                 **json_data['filing'][filing_name],
                 'type': 'regular'

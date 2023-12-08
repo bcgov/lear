@@ -205,9 +205,9 @@ EXPECTED_DATA = {
     FilingKey.RESTRN_LTD_TO_FULL_LLC: {'displayName': 'Conversion to Full Restoration Application', 'feeCode': None,
                                        'name': 'restoration', 'type': 'limitedRestorationToFull'},
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
-    FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamation', 'type': 'regular', 'displayName': 'Regular Amalgamation', 'feeCode': 'AMALR'},
-    FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamation', 'type': 'vertical', 'displayName': 'Vertical Amalgamation', 'feeCode': 'AMALV'},
-    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamation', 'type': 'horizontal', 'displayName': 'Horizontal Amalgamation', 'feeCode': 'AMALH'}
+    FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Regular Amalgamation', 'feeCode': 'AMALR'},
+    FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Vertical Amalgamation', 'feeCode': 'AMALV'},
+    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Horizontal Amalgamation', 'feeCode': 'AMALH'}
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
@@ -424,7 +424,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
-          {'amalgamation': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'changeOfAddress',
+          {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'changeOfAddress',
           'changeOfDirectors', 'consentContinuationOut', 'continuationOut', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition',
@@ -439,7 +439,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
          ['annualReport', 'changeOfAddress', 'changeOfDirectors',
           {'dissolution': ['voluntary']}, 'incorporationApplication', 'specialResolution']),
         ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamation': ['regular', 'vertical', 'horizontal']},
+         ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
           'annualReport', 'changeOfAddress', 'changeOfDirectors',
           'consentContinuationOut', {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition']),
         ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
