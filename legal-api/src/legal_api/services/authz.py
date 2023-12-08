@@ -51,7 +51,7 @@ class BusinessBlocker(str, Enum):
 
 
 class BusinessStatus(str, Enum):
-    """Define an enum for """
+    """Define an enum for business existing scenatios."""
     EXIST = 'EXIST'
     NOT_EXIST = 'NOT_EXIST'
     NO_RESTRICTION = 'NO_RESTRICTION'
