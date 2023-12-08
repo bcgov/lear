@@ -50,6 +50,13 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
 
 
+class BusinessStatus(str, Enum):
+    """Define an enum for """
+    EXIST = 'EXIST'
+    NOT_EXIST = 'NOT_EXIST'
+    NO_RESTRICTION = 'NO_RESTRICTION'
+
+
 def authorized(  # pylint: disable=too-many-return-statements
         identifier: str, jwt: JwtManager, action: List[str]) -> bool:
     """Assert that the user is authorized to create filings against the business identifier."""
@@ -138,26 +145,27 @@ ALLOWABLE_FILINGS: Final = {
                     'business': [BusinessBlocker.DEFAULT]
                 }
             },
-            'amalgamation': {
+            'amalgamationApplication': {
+                'businessStatus': BusinessStatus.NO_RESTRICTION,
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 }
             },
@@ -230,7 +238,7 @@ ALLOWABLE_FILINGS: Final = {
             },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST # only show filing when providing allowable filings not specific to a business
             },
             'registrarsNotation': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
@@ -240,7 +248,7 @@ ALLOWABLE_FILINGS: Final = {
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST # only show filing when providing allowable filings not specific to a business
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -322,26 +330,27 @@ ALLOWABLE_FILINGS: Final = {
                     'business': [BusinessBlocker.DEFAULT]
                 }
             },
-            'amalgamation': {
+            'amalgamationApplication': {
+                'businessStatus': BusinessStatus.NO_RESTRICTION,
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
+                        'business': [BusinessBlocker.BUSINESS_FROZEN],
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 }
             },
@@ -387,11 +396,11 @@ ALLOWABLE_FILINGS: Final = {
             },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST  # only show filing when providing allowable filings not specific to a business
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST  # only show filing when providing allowable filings not specific to a business
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -475,16 +484,16 @@ def get_allowed_filings(business: Business,
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
-        # might re-active after update the amalgamation filing allowable method
-        # if bool(business) ^ allowable_filing_value.get('businessExists', True):
-        #     continue
+
+        business_status = allowable_filing_value.get('businessStatus', BusinessStatus.EXIST)
+
+        if business_status != BusinessStatus.NO_RESTRICTION and\
+            bool(business) ^ (business_status == BusinessStatus.EXIST):
+            continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
 
         if allowable_filing_legal_types:
-            # will remove after update the amalgamation filing allowable method
-            if bool(business) ^ allowable_filing_value.get('businessExists', True):
-                continue
             is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
@@ -497,7 +506,8 @@ def get_allowed_filings(business: Business,
             continue
 
         filing_sub_type_items = \
-            filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+            filter(lambda x: isinstance(x[1], dict) and legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
             is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
 
@@ -518,8 +528,7 @@ def get_allowed_filings(business: Business,
 
 def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
-    ignore_blocker_checks_no_business = allowable_filing.get('ignoreBlockerChecksBusinessNotExists', False)
-    if ignore_blocker_checks_no_business and not bool(business):
+    if not business:
         return False
 
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
@@ -534,10 +543,10 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
-    if not bool(business):
-        return True
-
     if has_blocker_completed_filing(business, blocker_checks):
+        return True
+    
+    if has_blocker_future_effective_filing(business, blocker_checks):
         return True
 
     if has_blocker_warning_filing(business.warnings, blocker_checks):
@@ -645,6 +654,24 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
     return True
 
 
+def has_blocker_future_effective_filing(business: Business, blocker_checks: dict):
+    """Check if business has a future effective filing."""
+    if not (fed_filing_types := blocker_checks.get('futureEffectiveFilings', [])):
+        return False
+    
+    filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
+    
+    pending_filings = Filing.get_filings_by_type_pairs(business.id, 
+                                                       filing_type_pairs,
+                                                       [Filing.Status.PENDING.value],
+                                                       True)
+
+    if len(pending_filings) == len(fed_filing_types):
+        return True
+
+    return False
+
+
 def has_filing_match(filing: Filing, filing_types: list):
     """Return if filing matches any filings provided in filing_types arg ."""
     for filing_type in filing_types:
@@ -696,7 +723,7 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
             if legal_type in legal_types:
                 allowable_filing_types.append(allowable_filing_key)
         else:
-            sub_filing_types = [x for x in allowable_filing_value.items() if legal_type in x[1].get('legalTypes')]
+            sub_filing_types = [x for x in allowable_filing_value.items() if isinstance(x[1], dict) and legal_type in x[1].get('legalTypes')]
             if sub_filing_types:
                 allowable_filing_types.append({
                     allowable_filing_key: [sub_filing_type[0] for sub_filing_type in sub_filing_types]
