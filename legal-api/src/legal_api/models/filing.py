@@ -96,8 +96,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CC': 'ALTER'
             }
         },
-        'amalgamation': {
-            'name': 'amalgamation',
+        'amalgamationApplication': {
+            'name': 'amalgamationApplication',
             'temporaryCorpTypeCode': 'ATMP',
             'regular': {
                 'name': 'regularAmalgamation',
@@ -351,7 +351,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         'dissolution': 'dissolutionType',
         'restoration': 'type',
-        'amalgamation': 'type'
+        'amalgamationApplication': 'type'
     }
 
     __tablename__ = 'filings'
