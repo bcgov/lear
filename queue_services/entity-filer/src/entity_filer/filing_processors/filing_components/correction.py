@@ -135,7 +135,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
             rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
             filing_meta.correction = {**filing_meta.correction,
                                       **{'uploadNewRules': True}}
-            
+
     # update memorandum, if any
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
