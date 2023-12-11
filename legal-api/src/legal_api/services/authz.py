@@ -50,8 +50,8 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
 
 
-class BusinessStatus(str, Enum):
-    """Define an enum for business existing scenatios."""
+class BusinessRequirement(str, Enum):
+    """Define an enum for business requirement scenarios."""
 
     EXIST = 'EXIST'
     NOT_EXIST = 'NOT_EXIST'
@@ -147,7 +147,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'amalgamationApplication': {
-                'businessStatus': BusinessStatus.NO_RESTRICTION,
+                'businessRequirement': BusinessRequirement.NO_RESTRICTION,
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
@@ -240,7 +240,7 @@ ALLOWABLE_FILINGS: Final = {
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
                 # only show filing when providing allowable filings not specific to a business
-                'businessStatus': BusinessStatus.NOT_EXIST
+                'businessRequirement': BusinessRequirement.NOT_EXIST
             },
             'registrarsNotation': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
@@ -251,7 +251,7 @@ ALLOWABLE_FILINGS: Final = {
             'registration': {
                 'legalTypes': ['SP', 'GP'],
                 # only show filing when providing allowable filings not specific to a business
-                'businessStatus': BusinessStatus.NOT_EXIST
+                'businessRequirement': BusinessRequirement.NOT_EXIST
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -334,7 +334,7 @@ ALLOWABLE_FILINGS: Final = {
                 }
             },
             'amalgamationApplication': {
-                'businessStatus': BusinessStatus.NO_RESTRICTION,
+                'businessRequirement': BusinessRequirement.NO_RESTRICTION,
                 'regular': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
@@ -400,12 +400,12 @@ ALLOWABLE_FILINGS: Final = {
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
                 # only show filing when providing allowable filings not specific to a business
-                'businessStatus': BusinessStatus.NOT_EXIST
+                'businessRequirement': BusinessRequirement.NOT_EXIST
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
                 # only show filing when providing allowable filings not specific to a business
-                'businessStatus': BusinessStatus.NOT_EXIST
+                'businessRequirement': BusinessRequirement.NOT_EXIST
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -490,10 +490,10 @@ def get_allowed_filings(business: Business,
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
 
-        business_status = allowable_filing_value.get('businessStatus', BusinessStatus.EXIST)
+        business_status = allowable_filing_value.get('businessRequirement', BusinessRequirement.EXIST)
 
-        if business_status != BusinessStatus.NO_RESTRICTION and \
-                bool(business) ^ (business_status == BusinessStatus.EXIST):
+        if business_status != BusinessRequirement.NO_RESTRICTION and \
+                bool(business) ^ (business_status == BusinessRequirement.EXIST):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
