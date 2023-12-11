@@ -1186,6 +1186,9 @@ def filer_action(filing_name, filing_json, meta_data, business):
 
         if filing_json['filing']['correction'].get('rulesFileKey'):
             meta_data['correction']['uploadNewRules'] = True
+            
+        if filing_json['filing']['correction'].get('memorandumFileKey'):
+            meta_data['correction']['uploadNewMemorandum'] = True
 
         if filing_json['filing']['correction'].get('resolution'):
             meta_data['correction']['hasResolution'] = True

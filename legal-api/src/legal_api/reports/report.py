@@ -997,6 +997,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['newCoopAssociationType'] = ASSOCIATION_TYPE_DESC.get(to_association_type, '')
         filing['rulesInResolution'] = filing.get(filing_source, {}).get('rulesInResolution')
         filing['uploadNewRules'] = meta_data.get(filing_source, {}).get('uploadNewRules')
+        filing['uploadNewMemorandum'] = meta_data.get(filing_source, {}).get('uploadNewMemorandum')
         filing['memorandumInResolution'] = filing.get(filing_source, {}).get('memorandumInResolution')
         if (resolution_date_str := filing.get(filing_source, {}).get('resolutionDate', None)):
             resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)

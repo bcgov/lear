@@ -132,6 +132,8 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
         msg.extend(court_order_validation(filing_dict))
     if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('rulesFileKey', None):
         msg.extend(rules_change_validation(filing_dict))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('memorandumFileKey', None):
+        msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get('filing', {})):
         if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
             err = validate_roles(filing_dict, legal_type, filing_type)
@@ -239,6 +241,20 @@ def rules_change_validation(filing):
 
     if rules_file_key:
         rules_err = validate_pdf(rules_file_key, rules_file_key_path)
+        if rules_err:
+            msg.extend(rules_err)
+        return msg
+    return []
+
+
+def memorandum_change_validation(filing):
+    """Validate memorandum change."""
+    msg = []
+    memorandum_file_key_path: Final = '/filing/correction/memorandumFileKey'
+    memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
+
+    if memorandum_file_key:
+        rules_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
         if rules_err:
             msg.extend(rules_err)
         return msg

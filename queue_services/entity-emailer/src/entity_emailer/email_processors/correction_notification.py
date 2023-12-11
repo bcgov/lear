@@ -141,7 +141,9 @@ def _get_pdfs(
                 attach_order += 1
         elif is_cp_special_resolution:
             rules_changed = bool(filing.filing_json['filing']['correction'].get('rulesFileKey'))
-            pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
+            memorandum_changed = bool(filing.filing_json['filing']['correction'].get('rulesMemorandumKey'))
+            pdfs = get_completed_pdfs(token, business, filing, name_changed,
+                                      rules_changed=rules_changed, memorandum_changed=memorandum_changed)
     return pdfs
 
 

@@ -570,6 +570,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfNameChange')
             if filing.meta_data.get('correction', {}).get('uploadNewRules'):
                 outputs.add('certifiedRules')
+            if filing.meta_data.get('correction', {}).get('uploadNewMemorandum'):
+                outputs.add('certifiedMemorandum')
             if filing.meta_data.get('correction', {}).get('hasResolution'):
                 outputs.add('specialResolution')
         return outputs
