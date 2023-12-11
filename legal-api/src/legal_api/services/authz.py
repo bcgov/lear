@@ -673,11 +673,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
                                                        True)
 
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
-    is_fed = False
-    if pending_filings:
-        for f in pending_filings:
-            if f.effective_date > now:
-                is_fed = True
+    is_fed = any(f.effective_date > now for f in pending_filings)
 
     if len(pending_filings) == len(fed_filing_types) and is_fed:
         return True
