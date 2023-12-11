@@ -101,7 +101,7 @@ def get_completed_pdfs(
                 }
             )
             attach_order += 1
-            
+
     # Certified Memorandum
     if memorandum_changed:
         memorandum = requests.get(
