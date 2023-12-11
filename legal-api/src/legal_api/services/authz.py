@@ -755,6 +755,9 @@ def is_self_registered_owner_operator(business, user):
     completing_party_first_name = (completing_party.first_name or '').lower()
     completing_party_last_name = (completing_party.last_name or '').lower()
     proprietor_first_name = (proprietor.first_name or '').lower()
+    proprietor_middle_initial = (proprietor.middle_initial or '').lower()
+    if proprietor_middle_initial:
+        proprietor_first_name = f'{proprietor_first_name} {proprietor_middle_initial}'
     proprietor_last_name = (proprietor.last_name or '').lower()
     user_first_name = (user.firstname or '').lower()
     user_last_name = (user.lastname or '').lower()
