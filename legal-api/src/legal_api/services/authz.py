@@ -52,6 +52,7 @@ class BusinessBlocker(str, Enum):
 
 class BusinessStatus(str, Enum):
     """Define an enum for business existing scenatios."""
+
     EXIST = 'EXIST'
     NOT_EXIST = 'NOT_EXIST'
     NO_RESTRICTION = 'NO_RESTRICTION'
@@ -238,7 +239,8 @@ ALLOWABLE_FILINGS: Final = {
             },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessStatus': BusinessStatus.NOT_EXIST # only show filing when providing allowable filings not specific to a business
+                # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST
             },
             'registrarsNotation': {
                 'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
@@ -248,7 +250,8 @@ ALLOWABLE_FILINGS: Final = {
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
-                'businessStatus': BusinessStatus.NOT_EXIST # only show filing when providing allowable filings not specific to a business
+                # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -396,11 +399,13 @@ ALLOWABLE_FILINGS: Final = {
             },
             'incorporationApplication': {
                 'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessStatus': BusinessStatus.NOT_EXIST  # only show filing when providing allowable filings not specific to a business
+                # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST
             },
             'registration': {
                 'legalTypes': ['SP', 'GP'],
-                'businessStatus': BusinessStatus.NOT_EXIST  # only show filing when providing allowable filings not specific to a business
+                # only show filing when providing allowable filings not specific to a business
+                'businessStatus': BusinessStatus.NOT_EXIST
             },
             'specialResolution': {
                 'legalTypes': ['CP'],
@@ -487,8 +492,8 @@ def get_allowed_filings(business: Business,
 
         business_status = allowable_filing_value.get('businessStatus', BusinessStatus.EXIST)
 
-        if business_status != BusinessStatus.NO_RESTRICTION and\
-            bool(business) ^ (business_status == BusinessStatus.EXIST):
+        if business_status != BusinessStatus.NO_RESTRICTION and \
+                bool(business) ^ (business_status == BusinessStatus.EXIST):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
@@ -506,7 +511,8 @@ def get_allowed_filings(business: Business,
             continue
 
         filing_sub_type_items = \
-            filter(lambda x: isinstance(x[1], dict) and legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+            filter(lambda x: isinstance(x[1], dict) and legal_type in
+                   x[1].get('legalTypes', []), allowable_filing_value.items())
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
             is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
@@ -730,7 +736,8 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
             if legal_type in legal_types:
                 allowable_filing_types.append(allowable_filing_key)
         else:
-            sub_filing_types = [x for x in allowable_filing_value.items() if isinstance(x[1], dict) and legal_type in x[1].get('legalTypes')]
+            sub_filing_types = [x for x in allowable_filing_value.items()
+                                if isinstance(x[1], dict) and legal_type in x[1].get('legalTypes')]
             if sub_filing_types:
                 allowable_filing_types.append({
                     allowable_filing_key: [sub_filing_type[0] for sub_filing_type in sub_filing_types]
