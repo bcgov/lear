@@ -594,6 +594,34 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     return filing
 
 
+def prep_cp_special_resolution_correction_upload_memorandum_filing(session, business,
+                                                                   original_filing_id,
+                                                                   payment_id, option,
+                                                                   corrected_filing_type):
+    """Return a cp special resolution correction filing prepped for email notification."""
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'correction'
+    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
+    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
+    filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
+    del filing_template['filing']['correction']['resolution']
+    filing_template['filing']['correction']['memorandumFileKey'] = '28f73dc4-8e7c-4c89-bef6-a81dff909ca6.pdf'
+    filing_template['filing']['correction']['memorandumFileName'] = 'test.pdf'
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+    # Triggered from the filer.
+    filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
+    filing.save()
+    if option in ['COMPLETED']:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+    return filing
+
+
 class Obj:
     """Make a custom object hook used by dict_to_obj."""
 

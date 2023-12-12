@@ -10,10 +10,14 @@
 <div class="separator mt-4"></div>
 {% endif %}
 
-{% if memorandumInResolution %}
+{% if memorandumInResolution or uploadNewMemorandum %}
 <div class="no-page-break">
     <div class="section-title mt-4">Memorandum <span class="correction-label">CORRECTED</span></div>
 </div>
+{% if uploadNewMemorandum %}
+<div class="section-data mt-4">A certified copy of the uploaded memorandum is attached with this filing.</div>
+{% else %}
 <div class="section-data mt-4">Changes will be described in the special resolution text.</div>
+{% endif %}
 <div class="separator mt-4"></div>
 {% endif %}

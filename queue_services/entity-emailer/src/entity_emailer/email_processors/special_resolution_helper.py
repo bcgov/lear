@@ -26,7 +26,8 @@ def get_completed_pdfs(
         business: dict,
         filing: Filing,
         name_changed: bool,
-        rules_changed=False) -> list:
+        rules_changed=False,
+        memorandum_changed=False) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the completed pdfs for the special resolution output."""
     pdfs = []
@@ -95,6 +96,25 @@ def get_completed_pdfs(
                 {
                     'fileName': 'Certified Rules.pdf',
                     'fileBytes': certified_rules_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': attach_order
+                }
+            )
+            attach_order += 1
+
+    # Certified Memorandum
+    if memorandum_changed:
+        memorandum = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            '?type=certifiedMemorandum',
+            headers=headers
+        )
+        if memorandum.status_code == HTTPStatus.OK:
+            certified_memorandum_encoded = base64.b64encode(memorandum.content)
+            pdfs.append(
+                {
+                    'fileName': 'Certified Memorandum.pdf',
+                    'fileBytes': certified_memorandum_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': attach_order
                 }

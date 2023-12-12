@@ -132,22 +132,28 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
         msg.extend(court_order_validation(filing_dict))
     if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('rulesFileKey', None):
         msg.extend(rules_change_validation(filing_dict))
+    if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('memorandumFileKey', None):
+        msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get('filing', {})):
-        if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
-            err = validate_roles(filing_dict, legal_type, filing_type)
-            if err:
-                msg.extend(err)
-            # FUTURE: this should be removed when COLIN sync back is no longer required.
-            err = validate_parties_names(filing_dict, legal_type, filing_type)
-            if err:
-                msg.extend(err)
+        _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
 
-            err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
-            if err:
-                msg.extend(err)
-        else:
-            err_path = f'/filing/{filing_type}/parties/roles'
-            msg.append({'error': 'Parties list cannot be empty or null', 'path': err_path})
+
+def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg):
+    if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
+        err = validate_roles(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+        # FUTURE: this should be removed when COLIN sync back is no longer required.
+        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+    else:
+        err_path = f'/filing/{filing_type}/parties/roles'
+        msg.append({'error': 'Parties list cannot be empty or null', 'path': err_path})
 
 
 def validate_party(filing: Dict, legal_type: str) -> list:
@@ -239,6 +245,20 @@ def rules_change_validation(filing):
 
     if rules_file_key:
         rules_err = validate_pdf(rules_file_key, rules_file_key_path)
+        if rules_err:
+            msg.extend(rules_err)
+        return msg
+    return []
+
+
+def memorandum_change_validation(filing):
+    """Validate memorandum change."""
+    msg = []
+    memorandum_file_key_path: Final = '/filing/correction/memorandumFileKey'
+    memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
+
+    if memorandum_file_key:
+        rules_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
         if rules_err:
             msg.extend(rules_err)
         return msg

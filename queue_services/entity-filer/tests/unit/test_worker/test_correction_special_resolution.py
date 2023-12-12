@@ -172,7 +172,7 @@ async def test_special_resolution_correction(app, session, mocker, test_name, co
 
 
 def test_correction_coop_rules(app, session, minio_server):
-    """Assert that the coop rules is altered."""
+    """Assert that the coop rules and memorandum is altered."""
     # Create business
     identifier = 'CP1234567'
     business = create_entity(identifier, 'CP', 'COOP INC.')
@@ -197,6 +197,9 @@ def test_correction_coop_rules(app, session, minio_server):
     rules_file_key_uploaded_by_user = upload_file('rules.pdf')
     correction_filing['filing']['correction']['rulesFileKey'] = rules_file_key_uploaded_by_user
     correction_filing['filing']['correction']['rulesFileName'] = 'rules.pdf'
+    memorandum_file_key_uploaded_by_user = upload_file('memorandum.pdf')
+    correction_filing['filing']['correction']['memorandumFileKey'] = memorandum_file_key_uploaded_by_user
+    correction_filing['filing']['correction']['memorandumFileName'] = 'memorandum.pdf'
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -224,3 +227,14 @@ def test_correction_coop_rules(app, session, minio_server):
     rules_files_obj = MinioService.get_file(rules_file_key_uploaded_by_user)
     assert rules_files_obj
     assert_pdf_contains_text('Filed on ', rules_files_obj.read())
+    
+    memorandum_document = session.query(Document). \
+        filter(Document.filing_id == filing_submission.id). \
+        filter(Document.type == DocumentType.COOP_MEMORANDUM.value). \
+        one_or_none()
+
+    assert memorandum_document.file_key == correction_filing['filing']['correction']['memorandumFileKey']
+    assert MinioService.get_file(memorandum_document.file_key)
+    memorandum_files_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
+    assert memorandum_files_obj
+    assert_pdf_contains_text('Filed on ', memorandum_files_obj.read())

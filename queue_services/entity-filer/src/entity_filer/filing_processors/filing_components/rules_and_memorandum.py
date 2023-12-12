@@ -57,7 +57,8 @@ def update_rules(
 def update_memorandum(
     business: Business,
     filing: Filing,
-    memorandum_file_key: String
+    memorandum_file_key: String,
+    file_name: String = None
 ) -> Optional[List]:
     """Updtes memorandum if any.
 
@@ -67,9 +68,10 @@ def update_memorandum(
         # if nothing is passed in, we don't care and it's not an error
         return None
 
+    is_correction = filing.filing_type == 'correction'
     # create certified copy for memorandum document
     memorandum_file = MinioService.get_file(memorandum_file_key)
-    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier)
+    registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
     replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
     document = Document()
