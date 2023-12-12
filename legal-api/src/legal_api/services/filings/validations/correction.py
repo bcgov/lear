@@ -135,16 +135,22 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     if filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {}).get('memorandumFileKey', None):
         msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get('filing', {})):
-        correction = filing_dict.get('filing', {}).get(filing_type, {}).get('correction', {})
-        _validate_roles_parties_correction(correction, legal_type, filing_type, msg)
+        _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
 
 
-def _validate_roles_parties_correction(correction, legal_type, filing_type, msg):
-    if correction.get('parties', None):
-        for validation_func in [validate_roles, validate_parties_names, validate_parties_mailing_address]:
-            err = validation_func(correction, legal_type, filing_type)
-            if err:
-                msg.extend(err)
+def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg):
+    if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
+        err = validate_roles(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+        # FUTURE: this should be removed when COLIN sync back is no longer required.
+        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+        if err:
+            msg.extend(err)
     else:
         err_path = f'/filing/{filing_type}/parties/roles'
         msg.append({'error': 'Parties list cannot be empty or null', 'path': err_path})
