@@ -152,21 +152,27 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 }
             },
@@ -339,21 +345,27 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution']
+                        'futureEffectiveFilings': ['dissolution',
+                                                   'dissolution.voluntary',
+                                                   'dissolution.administrative']
                     }
                 }
             },
@@ -675,10 +687,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
     is_fed = any(f.effective_date > now for f in pending_filings)
 
-    if len(pending_filings) == len(fed_filing_types) and is_fed:
-        return True
-
-    return False
+    return is_fed
 
 
 def has_filing_match(filing: Filing, filing_types: list):
