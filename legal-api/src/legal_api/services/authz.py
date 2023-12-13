@@ -152,27 +152,21 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 }
             },
@@ -345,27 +339,21 @@ ALLOWABLE_FILINGS: Final = {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'vertical': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 },
                 'horizontal': {
                     'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN],
-                        'futureEffectiveFilings': ['dissolution',
-                                                   'dissolution.voluntary',
-                                                   'dissolution.administrative']
+                        'futureEffectiveFilings': ['dissolution']
                     }
                 }
             },

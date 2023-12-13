@@ -1463,6 +1463,55 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
 
 
 @pytest.mark.parametrize(
+    'test_name,state,legal_types,username,roles,filing_types,filing_statuses,is_fed,expected',
+    [
+        # active business - staff user
+        ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+         ['dissolution'], [Filing.Status.PENDING.value], True,
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+
+        # active business - general user
+        ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+         ['dissolution'], [Filing.Status.PENDING.value], True, expected_lookup([FilingKey.TRANSITION]))
+    ]
+)
+def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session, jwt, test_name, state,
+                                                            legal_types, username, roles, filing_types, filing_statuses,
+                                                            is_fed,
+                                                            expected):
+    """Assert that get allowed returns valid filings when amalgamating business has blocker filings.
+
+       A blocker filing in this instance is a pending future effective dissolution filing.
+    """
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            for filing_status in filing_statuses:
+                for filing_type in filing_types:
+                    business = create_business(legal_type, state)
+                    filing_dict = FILING_DATA.get(filing_type, None)
+                    create_incomplete_filing(business=business,
+                                             filing_name=filing_type,
+                                             filing_status=filing_status,
+                                             filing_dict=filing_dict,
+                                             filing_type=filing_type,
+                                             is_future_effective=is_fed)
+                    allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                    assert allowed_filing_types == expected
+
+
+@pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,expected',
     [
         # active business - staff user
@@ -2261,15 +2310,20 @@ def create_incomplete_filing(business,
                              filing_status,
                              filing_dict: dict = copy.deepcopy(ANNUAL_REPORT),
                              filing_type=None,
-                             filing_sub_type=None):
+                             filing_sub_type=None,
+                             is_future_effective=False):
     """Create an incomplete filing of a given status."""
     filing_dict['filing']['header']['name'] = filing_name
     if filing_dict:
         filing_dict = copy.deepcopy(filing_dict)
-    filing = factory_filing(business=business, data_dict=filing_dict, filing_sub_type=filing_sub_type)
+    filing = factory_filing(business=business,
+                            data_dict=filing_dict,
+                            filing_sub_type=filing_sub_type,
+                            is_future_effective=is_future_effective)
     filing.skip_status_listener = True
     filing._status = filing_status
     filing._filing_type = filing_type
+    filing._filing_sub_type = filing_sub_type
     return filing
 
 
