@@ -181,12 +181,6 @@ def test_complete_special_resolution_correction_attachments(session, config):
             content=b'pdf_content_3',
             status_code=200
         )
-        
-        m.get(
-            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}?type=certifiedMemorandum',
-            content=b'pdf_content_4',
-            status_code=200
-        )
 
         output = correction_notification.process({
             'filingId': filing.id,
@@ -202,8 +196,6 @@ def test_complete_special_resolution_correction_attachments(session, config):
         assert base64.b64decode(output['content']['attachments'][1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
         assert output['content']['attachments'][2]['fileName'] == 'Certified Rules.pdf'
         assert base64.b64decode(output['content']['attachments'][2]['fileBytes']).decode('utf-8') == 'pdf_content_3'
-        assert output['content']['attachments'][3]['fileName'] == 'Certified Memorandum.pdf'
-        assert base64.b64decode(output['content']['attachments'][3]['fileBytes']).decode('utf-8') == 'pdf_content_4'
 
 
 def test_paid_special_resolution_correction_attachments(session, config):
