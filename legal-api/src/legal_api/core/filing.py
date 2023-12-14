@@ -60,7 +60,6 @@ class Filing:
         AGMEXTENSION = 'agmExtension'
         AGMLOCATIONCHANGE = 'agmLocationChange'
         ALTERATION = 'alteration'
-        AMALGAMATION = 'amalgamation'
         AMALGAMATIONAPPLICATION = 'amalgamationApplication'
         AMENDEDAGM = 'amendedAGM'
         AMENDEDANNUALREPORT = 'amendedAnnualReport'

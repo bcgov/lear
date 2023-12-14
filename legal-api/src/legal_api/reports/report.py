@@ -1091,9 +1091,9 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
 
     reports = {
-        'amalgamation': {
+        'amalgamationApplication': {
             'filingDescription': 'Amalgamation Application',
-            'fileName': 'amalgamation'
+            'fileName': 'amalgamationApplication'
         },
         'certificate': {
             'filingDescription': 'Certificate of Incorporation',
