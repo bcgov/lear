@@ -88,6 +88,19 @@ class Filing:
         SPECIALRESOLUTION = 'specialResolution'
         TRANSITION = 'transition'
 
+    class FilingTypesCompact(str, Enum):
+        """Render enum for filing types with sub-types."""
+
+        DISSOLUTION_VOLUNTARY = 'dissolution.voluntary'
+        DISSOLUTION_ADMINISTRATIVE = 'dissolution.administrative'
+        RESTORATION_FULL_RESTORATION = 'restoration.fullRestoration'
+        RESTORATION_LIMITED_RESTORATION = 'restoration.limitedRestoration'
+        RESTORATION_LIMITED_RESTORATION_EXT = 'restoration.limitedRestorationExtension'
+        RESTORATION_LIMITED_RESTORATION_TO_FULL = 'restoration.limitedRestorationToFull'
+        AMALGAMATION_APPLICATION_REGULAR = 'amalgamationApplication.regular'
+        AMALGAMATION_APPLICATION_VERTICAL = 'amalgamationApplication.vertical'
+        AMALGAMATION_APPLICATION_HORIZONTAL = 'amalgamationApplication.horizontal'
+
     def __init__(self):
         """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
