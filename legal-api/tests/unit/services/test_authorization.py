@@ -213,6 +213,7 @@ EXPECTED_DATA = {
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
 BLOCKER_FILING_STATUSES_AND_ADDITIONAL = factory_incomplete_statuses(['unknown_status_1',
                                                                       'unknown_status_2'])
+BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG = [Filing.Status.PENDING.value, Filing.Status.PAID.value]
 BLOCKER_FILING_TYPES = ['alteration', 'correction']
 
 AGM_EXTENSION_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
@@ -1467,7 +1468,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
     [
         # active business - staff user
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
-         ['dissolution'], [Filing.Status.PENDING.value], True,
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
@@ -1476,13 +1477,13 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
 
         # active business - general user
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         ['dissolution'], [Filing.Status.PENDING.value], True, expected_lookup([FilingKey.TRANSITION]))
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
+         expected_lookup([FilingKey.TRANSITION]))
     ]
 )
 def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session, jwt, test_name, state,
-                                                            legal_types, username, roles, filing_types, filing_statuses,
-                                                            is_fed,
-                                                            expected):
+                                                      legal_types, username, roles, filing_types, filing_statuses,
+                                                      is_fed, expected):
     """Assert that get allowed returns valid filings when amalgamating business has blocker filings.
 
        A blocker filing in this instance is a pending future effective dissolution filing.
@@ -1498,7 +1499,8 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
 
         for legal_type in legal_types:
             for filing_status in filing_statuses:
-                for filing_type in filing_types:
+                for filing in filing_types:
+                    filing_type, filing_sub_type = filing.split('.')
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
                     create_incomplete_filing(business=business,
@@ -1506,6 +1508,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                              filing_status=filing_status,
                                              filing_dict=filing_dict,
                                              filing_type=filing_type,
+                                             filing_sub_type=filing_sub_type,
                                              is_future_effective=is_fed)
                     allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
                     assert allowed_filing_types == expected
