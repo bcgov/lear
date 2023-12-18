@@ -29,32 +29,6 @@ def upgrade():
     # amalgamating_business/amalgamation tables
     # ==========================================================================================
     
-    
-    op.create_table(
-        
-        'amalgamating_business',
-        
-        sa.Column('id', sa.Integer(), primary_key=False),
-        
-        sa.Column('business_id', sa.Integer(), nullable=False),
-        
-        sa.Column('amalgamation_id', sa.Integer(), nullable=False),
-        
-        sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=False),
-        
-        sa.Column('foreign_name', sa.String(length=100), nullable=False),
-        
-        sa.Column('foreign_corp_num', sa.String(length=50), nullable=False),
-        
-        sa.ForeignKeyConstraint(['business_id'], ['business.id']),
-        
-        sa.ForeignKeyConstraint(['amalgamation_id'], ['amalgamation.id']),
-        
-        sa.PrimaryKeyConstraint('id'))
-    
-    # enum added after creating table as DuplicateObject error would be thrown otherwise
-    op.add_column('amalgamating_business', sa.Column('role', role_enum, nullable=False))
-    
 
     op.create_table(
         
@@ -72,12 +46,38 @@ def upgrade():
         
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
         
-        sa.ForeignKeyConstraint(['business_id'], ['business.id']),
+        sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
         
         sa.PrimaryKeyConstraint('id'))
     
     # enum added after creating table as DuplicateObject error would be thrown otherwise
     op.add_column('amalgamation', sa.Column('amalgamation_type', amalgamation_type_enum, nullable=False))
+    
+    
+    op.create_table(
+        
+        'amalgamating_business',
+        
+        sa.Column('id', sa.Integer(), primary_key=False),
+        
+        sa.Column('business_id', sa.Integer(), nullable=False),
+        
+        sa.Column('amalgamation_id', sa.Integer(), nullable=False),
+        
+        sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=False),
+        
+        sa.Column('foreign_name', sa.String(length=100), nullable=False),
+        
+        sa.Column('foreign_corp_num', sa.String(length=50), nullable=False),
+        
+        sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
+        
+        sa.ForeignKeyConstraint(['amalgamation_id'], ['amalgamation.id']),
+        
+        sa.PrimaryKeyConstraint('id'))
+    
+    # enum added after creating table as DuplicateObject error would be thrown otherwise
+    op.add_column('amalgamating_business', sa.Column('role', role_enum, nullable=False))
         
 
 def downgrade():

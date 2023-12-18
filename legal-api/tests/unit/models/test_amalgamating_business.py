@@ -41,7 +41,7 @@ def test_valid_alternate_name_save(session):
     amalgamating_business_2 = amalgamating_business(
         identifier = identifier,
         role = amalgamating_business.AmalgamatingBusiness.Role.HOLDING,
-        foreign_jurisdiction = "ALberta",
+        foreign_jurisdiction = "Alberta",
         foreign_name = "Testing123",
         foreign_corp_num = "123456789",
         business_id = 1234,
@@ -53,4 +53,8 @@ def test_valid_alternate_name_save(session):
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
     amalgamating_business_roles = amalgamating_business.AmalgamatingBusiness.Role.all()
+    assert len(amalgamating_business_roles) == 2
+    assert any(amalgamating_business.AmalgamatingBusiness.Role.HOLDING for role_type in amalgamating_business_roles)
+    assert any(amalgamating_business.AmalgamatingBusiness.Role.AMALGAMATING for role_type in amalgamating_business_roles)
+    
     

@@ -16,6 +16,8 @@
 from .db import db  # noqa: I001
 from .address import Address
 from .alias import Alias
+from .amalgamating_business import AmalgamatingBusiness
+from .amalgamation import Amalgamation
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment

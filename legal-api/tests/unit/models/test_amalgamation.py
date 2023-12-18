@@ -88,5 +88,8 @@ def test_valid_amalgamation_save(session):
     assert amalgamation_1.id
     assert amalgamation_2.id
     assert amalgamation_3.id
-    amalgamating_business_roles = amalgamation.Amalgamation.AmalgamationTypes.all()
-    
+    amalgamation_types = amalgamation.Amalgamation.AmalgamationTypes.all()
+    assert len(amalgamation_types) == 3
+    assert any(amalgamation.Amalgamation.AmalgamationTypes.vertical for amalgamation_type in amalgamation_types)
+    assert any(amalgamation.Amalgamation.AmalgamationTypes.horizontal for amalgamation_type in amalgamation_types)
+    assert any(amalgamation.Amalgamation.AmalgamationTypes.regular for amalgamation_type in amalgamation_types)
