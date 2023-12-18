@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
@@ -916,6 +917,36 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_amalgamation_completed', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, 
+     None, None, Filing.Status.COMPLETED,
+     {'documents': {
+        'certificateOfAmalgamation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
+        'legalFilings': [
+            {
+                'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+            }
+        ],
+        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+    }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_amalgamation_paid', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, 
+     None, None, Filing.Status.PAID,
+     {'documents': {
+        'legalFilings': [
+            {
+                'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+            }
+        ],
+        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+    }
      },
      HTTPStatus.OK, '2017-10-01'
      ),
