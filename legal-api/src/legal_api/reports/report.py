@@ -676,7 +676,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_amalgamation_data(self, filling):
         # FUTURE: format logic for amalgamation application
         return
-    
+
     def _format_certificate_of_amalgamation_data(self, filing):
         # FUTURE: format logic for certificate of amalgamation
         return
