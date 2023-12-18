@@ -34,17 +34,17 @@ def upgrade():
         
         'amalgamating_business',
         
-        sa.Column('id', sa.Integer(), primary_key=True),
+        sa.Column('id', sa.Integer(), primary_key=False),
         
         sa.Column('business_id', sa.Integer(), nullable=False),
         
         sa.Column('amalgamation_id', sa.Integer(), nullable=False),
         
-        sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=True),
+        sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=False),
         
-        sa.Column('foreign_name', sa.String(length=100), nullable=True),
+        sa.Column('foreign_name', sa.String(length=100), nullable=False),
         
-        sa.Column('foreign_corp_num', sa.String(length=50), nullable=True),
+        sa.Column('foreign_corp_num', sa.String(length=50), nullable=False),
         
         sa.ForeignKeyConstraint(['business_id'], ['business.id']),
         
@@ -62,13 +62,13 @@ def upgrade():
         
         sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
         
-        sa.Column('business_id', sa.Integer(), autoincrement=False, nullable=True),
+        sa.Column('business_id', sa.Integer(), autoincrement=False, nullable=False),
         
-        sa.Column('filing_id', sa.Integer(), autoincrement=False, nullable=True),
+        sa.Column('filing_id', sa.Integer(), autoincrement=False, nullable=False),
         
         sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
         
-        sa.Column('court_approval', sa.Boolean(), nullable=True),
+        sa.Column('court_approval', sa.Boolean(), nullable=False),
         
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
         

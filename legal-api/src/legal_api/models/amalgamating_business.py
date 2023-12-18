@@ -16,8 +16,8 @@
 Currently this only provides API versioning information
 """
 
-from .db import db
 from enum import auto
+from .db import db
 from ..utils.base import BaseEnum
 
 
@@ -53,7 +53,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     
-    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id', ondelete='CASCADE'), nullable=True)
+    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id', ondelete='CASCADE'), nullable=False)
     
     def save(self):
         """Save the object to the database immediately."""

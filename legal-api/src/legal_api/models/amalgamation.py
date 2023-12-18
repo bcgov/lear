@@ -46,14 +46,14 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     
     amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
     
-    amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=True)
+    amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
     
     court_approval = db.Column('court_approval', db.Boolean())
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id', ondelete='CASCADE'), nullable=True)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id', ondelete='CASCADE'), nullable=False)
     
     def save(self):
         """Save the object to the database immediately."""
