@@ -28,6 +28,7 @@ from legal_api.services.filings.validations.common_validations import (
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
+# noqa: I003
 
 
 def validate(business: Business, amalgamation_json: Dict, account_id) -> Optional[Error]:
