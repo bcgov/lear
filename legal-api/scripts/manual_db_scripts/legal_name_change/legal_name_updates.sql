@@ -119,6 +119,7 @@ select le.id,
        f.filing_type,
        f.effective_date                            as start_date,
        null                                        as end_date,
+       null                                        as next_filing_id,
        le.version
 from legal_entities le
          left join filings f on f.id = le.change_filing_id
@@ -143,33 +144,37 @@ select leh.id,
        f.id                                        as filing_id,
        f.filing_type,
        f.effective_date                            as start_date,
-       (select (CASE
-                    WHEN tmp_next_le.legal_name is NULL THEN NULL
-                    WHEN leh.legal_name != tmp_next_le.legal_name THEN tmp_next_le.effective_date
-                    ELSE NULL
-           END) AS end_date
-        from (select leh_next_tmp.legal_name,
-                     f_next_tmp.effective_date
-              from legal_entities_history leh_next_tmp
-                       left join filings f_next_tmp
-                                 on f_next_tmp.id = leh_next_tmp.change_filing_id
-              where f_next_tmp.legal_entity_id = leh.id
-                and leh_next_tmp.version = (leh.version + 1)
-              UNION
-              select le_next_tmp.legal_name, f_next_tmp.effective_date
-              from legal_entities le_next_tmp
-                       left join filings f_next_tmp on f_next_tmp.id = le_next_tmp.change_filing_id
-              where f_next_tmp.legal_entity_id = leh.id
-                and le_next_tmp.version = (leh.version + 1)) tmp_next_le
-
-        where tmp_next_le.legal_name is not null)
-                                                   as end_date,
+       next_leh.end_date,
+       next_leh.next_filing_id,
        leh.version
 from legal_entities_history leh
          left join filings f on f.id = leh.change_filing_id
          left join legal_entities_history prev_leh
                    on leh.id = prev_leh.id and prev_leh.version = leh.version - 1
          left join legal_entities le on leh.id = le.id
+         left join lateral (select (CASE
+                                        WHEN tmp_next_le.legal_name is NULL THEN NULL
+                                        WHEN leh.legal_name != tmp_next_le.legal_name THEN tmp_next_le.effective_date
+                                        ELSE NULL
+    END)                                                 AS end_date,
+                                   tmp_next_le.filing_id AS next_filing_id
+                            from (select leh_next_tmp.legal_name,
+                                         f_next_tmp.effective_date,
+                                         f_next_tmp.id as filing_id
+                                  from legal_entities_history leh_next_tmp
+                                           left join filings f_next_tmp
+                                                     on f_next_tmp.id = leh_next_tmp.change_filing_id
+                                  where f_next_tmp.legal_entity_id = leh.id
+                                    and leh_next_tmp.version = (leh.version + 1)
+                                  UNION
+                                  select le_next_tmp.legal_name, f_next_tmp.effective_date, f_next_tmp.id as filing_id
+                                  from legal_entities le_next_tmp
+                                           left join filings f_next_tmp on f_next_tmp.id = le_next_tmp.change_filing_id
+                                  where f_next_tmp.legal_entity_id = leh.id
+                                    and le_next_tmp.version = (leh.version + 1)) tmp_next_le
+
+                            where tmp_next_le.legal_name is not null) next_leh
+                   on true
 where leh.entity_type in ('SP', 'GP')
 ;
 
@@ -178,15 +183,15 @@ where leh.entity_type in ('SP', 'GP')
 INSERT
 INTO alternate_names(legal_entity_id, identifier, name, bn15, start_date, end_date, name_type, change_filing_id,
                      version)
-select lnc.id                  as legal_entity_id,
+select lnc.id                as legal_entity_id,
        identifier,
-       legal_name              as name,
-       tax_id                  as bn15,
+       legal_name            as name,
+       tax_id                as bn15,
        start_date,
        end_date,
-       'OPERATING'             as name_type,
-       lnc.filing_id           as change_filing_id,
-       max_version.new_version as version
+       'OPERATING'::nametype as name_type,
+       lnc.filing_id         as change_filing_id,
+       1                     as version
 from temp_legal_name_changes lnc
          join (select id,
                       max(version)   as version_match,
@@ -202,26 +207,42 @@ order by lnc.version desc
 
 
 -- Insert name change entries for SP/GPs in legal_entities_history table into alternate_names_history
+WITH id_values AS (SELECT nextval('alternate_names_id_seq') as an_seq_id, lnc.*
+                   FROM temp_legal_name_changes lnc
+                            join alternate_names an on an.legal_entity_id = lnc.id
+                   WHERE lnc.filing_id is not null
+                     AND lnc.legal_name_changed = True
+                     and lnc.filing_id != an.change_filing_id)
 INSERT
 INTO alternate_names_history(id, legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
                              version, change_filing_id, changed)
-select an.id,
-       lnc.id                                                          as legal_entity_id,
-       lnc.identifier,
-       lnc.legal_name                                                  as name,
-       lnc.tax_id                                                      as bn15,
-       lnc.start_date,
-       lnc.end_date,
-       'OPERATING'                                                     as name_type,
-       ROW_NUMBER() OVER (PARTITION BY an.id ORDER BY lnc.version ASC) as version,
-       lnc.filing_id                                                   as change_filing_id,
-       lnc.start_date                                                  as changed
-from temp_legal_name_changes lnc
-         join alternate_names an on an.legal_entity_id = lnc.id
-where lnc.filing_id is not null
-  and lnc.legal_name_changed = True
-  and lnc.version != an.version
-;
+SELECT id_values.an_seq_id   as id,
+       id_values.id          as legal_entity_id,
+       id_values.identifier,
+       id_values.legal_name  as name,
+       id_values.tax_id      as bn15,
+       id_values.start_date,
+       NULL                  as end_date,
+       'OPERATING'::nametype as name_type,
+       1                     as version,
+       id_values.filing_id   as change_filing_id,
+       id_values.start_date  as changed
+FROM id_values
+
+UNION ALL
+
+SELECT id_values.an_seq_id      as id,
+       id_values.id             as legal_entity_id,
+       id_values.identifier,
+       id_values.legal_name     as name,
+       id_values.tax_id         as bn15,
+       id_values.start_date,
+       id_values.end_date       as end_date,
+       'OPERATING'::nametype    as name_type,
+       2                        as version,
+       id_values.next_filing_id as change_filing_id,
+       id_values.end_date       as changed
+FROM id_values;
 
 
 -- Delete legal_entities_history entries that are only name changes.  These will be represented in the
@@ -290,10 +311,13 @@ where le.entity_type in ('SP', 'GP')
   and le.identifier like 'FM%'
 ;
 
-
 CREATE TABLE temp_parties_legal_name AS
-select distinct ph.id                 as                                             party_id,
-                CAST(NULL AS INTEGER) as                                             new_legal_entity_id,
+select distinct ph.id                                                                        as party_id,
+                (CASE
+                     WHEN pr.role = 'proprietor' and ph.party_type = 'person'
+                         THEN pr.legal_entity_id
+                     ELSE CAST(NULL AS INTEGER)
+                    END)                                                                     AS new_legal_entity_id,
                 ph.party_type,
                 (CASE
                      WHEN ph.party_type = 'person'
@@ -301,42 +325,45 @@ select distinct ph.id                 as                                        
                      WHEN ph.party_type = 'organization'
                          THEN ph.organization_name
                      ELSE NULL
-                    END)              AS                                             legal_name,
+                    END)                                                                     AS legal_name,
                 ph.first_name,
                 ph.middle_initial,
                 ph.last_name,
                 ph.title,
                 ph.organization_name,
+                COALESCE((pr.role = 'proprietor' and ph.party_type = 'person'), FALSE)       as is_proprietor_person,
+                COALESCE((pr.role = 'proprietor' and ph.party_type = 'organization'), FALSE) as is_proprietor_org,
                 ph.delivery_address_id,
                 ph.mailing_address_id,
                 ph.changed,
                 ph.change_filing_id,
-                f.effective_date      as                                             change_filing_effective_date,
+                f.effective_date                                                             as change_filing_effective_date,
                 ph.identifier,
                 ph.email,
-                le.id                 as                                             matching_legal_entity_id,
-                (r.id is null and pr.filing_id is null)                              is_business_party,
-                (r.id is null and pr.filing_id is null and ph.party_type = 'person') is_business_party_person,
+                le.id                                                                        as matching_legal_entity_id,
+                (r.id is null and pr.filing_id is null)                                         is_business_party,
+                (r.id is null and pr.filing_id is null and ph.party_type = 'person')            is_business_party_person,
                 (r.id is null
                     and pr.filing_id is null
                     and ph.party_type = 'organization'
                     and le.id is null
                     and (ph.identifier is null or ph.identifier = '' or ph.identifier like 'FM%')
-                    )                                                                is_business_party_org_no_match,
+                    )                                                                           is_business_party_org_no_match,
                 (r.id is null
                     and pr.filing_id is null
                     and ph.party_type = 'organization'
-                    and le.id is not null)                                           is_business_party_org_match,
+                    and
+                 le.id is not null)                                                             is_business_party_org_match,
                 (r.id is null
                     and pr.filing_id is null
                     and le.id is null
                     and ph.party_type = 'organization'
                     and (ph.identifier is not null and ph.identifier != '' and ph.identifier not like 'FM%')
-                    )                                                                is_business_party_colin_entity,
-                (r.id is null and pr.filing_id is not null)                          is_filing_party,
-                (r.id is not null and pr.id is null)                                 is_resolution_party,
+                    )                                                                           is_business_party_colin_entity,
+                (r.id is null and pr.filing_id is not null)                                     is_filing_party,
+                (r.id is not null and pr.id is null)                                            is_resolution_party,
                 ph.version,
-                cp.version            as                                             max_version
+                cp.version                                                                   as max_version
 from parties_history ph
          left join party_roles pr on ph.id = pr.party_id
          left join resolutions r on r.signing_party_id = ph.id
@@ -348,8 +375,12 @@ from parties_history ph
          left join filings f on f.id = ph.change_filing_id
          join parties cp on cp.id = ph.id
 UNION
-select distinct p.id                  as                                            party_id,
-                CAST(NULL AS INTEGER) as                                            new_legal_entity_id,
+select distinct p.id                                                                        as party_id,
+                (CASE
+                     WHEN pr.role = 'proprietor' and p.party_type = 'person'
+                         THEN pr.legal_entity_id
+                     ELSE CAST(NULL AS INTEGER)
+                    END)                                                                    AS new_legal_entity_id,
                 p.party_type,
                 (CASE
                      WHEN p.party_type = 'person'
@@ -357,42 +388,45 @@ select distinct p.id                  as                                        
                      WHEN p.party_type = 'organization'
                          THEN p.organization_name
                      ELSE NULL
-                    END)              AS                                            legal_name,
+                    END)                                                                    AS legal_name,
                 p.first_name,
                 p.middle_initial,
                 p.last_name,
                 p.title,
                 p.organization_name,
+                COALESCE((pr.role = 'proprietor' and p.party_type = 'person'), FALSE)       as is_proprietor_person,
+                COALESCE((pr.role = 'proprietor' and p.party_type = 'organization'), FALSE) as is_proprietor_org,
                 p.delivery_address_id,
                 p.mailing_address_id,
-                f.effective_date      as                                            changed,
+                f.effective_date                                                            as changed,
                 p.change_filing_id,
-                f.effective_date      as                                            change_filing_effective_date,
+                f.effective_date                                                            as change_filing_effective_date,
                 p.identifier,
                 p.email,
-                le.id                 as                                            matching_legal_entity_id,
-                (r.id is null and pr.filing_id is null)                             is_business_party,
-                (r.id is null and pr.filing_id is null and p.party_type = 'person') is_business_party_person,
+                le.id                                                                       as matching_legal_entity_id,
+                (r.id is null and pr.filing_id is null)                                        is_business_party,
+                (r.id is null and pr.filing_id is null and p.party_type = 'person')            is_business_party_person,
                 (r.id is null
                     and pr.filing_id is null
                     and p.party_type = 'organization'
                     and le.id is null
                     and (p.identifier is null or p.identifier = '' or p.identifier like 'FM%')
-                    )                                                               is_business_party_org_no_match,
+                    )                                                                          is_business_party_org_no_match,
                 (r.id is null
                     and pr.filing_id is null
                     and p.party_type = 'organization'
-                    and le.id is not null)                                          is_business_party_org_match,
+                    and
+                 le.id is not null)                                                            is_business_party_org_match,
                 (r.id is null
                     and pr.filing_id is null
                     and le.id is null
                     and p.party_type = 'organization'
                     and (p.identifier is not null and p.identifier != '' and p.identifier not like 'FM%')
-                    )                                                               is_business_party_colin_entity,
-                (r.id is null and pr.filing_id is not null)                         is_filing_party,
-                (r.id is not null and pr.id is null)                                is_resolution_party,
+                    )                                                                          is_business_party_colin_entity,
+                (r.id is null and pr.filing_id is not null)                                    is_filing_party,
+                (r.id is not null and pr.id is null)                                           is_resolution_party,
                 p.version,
-                p.version             as                                            max_version
+                p.version                                                                   as max_version
 from parties p
          left join party_roles pr on p.id = pr.party_id
          left join resolutions r on r.signing_party_id = p.id
@@ -430,6 +464,7 @@ WITH insert_parties AS (
         from temp_parties_legal_name tp
         where tp.version = tp.max_version
           and not tp.is_business_party_colin_entity
+          and not tp.is_proprietor_person
         RETURNING id, temp_party_id)
 UPDATE temp_parties_legal_name
 set new_legal_entity_id = ibp.id
@@ -502,7 +537,8 @@ with subquery as
                         on tp.party_id = max_version.party_id
                    join temp_parties_legal_name maxTp
                         on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
-          where not maxTp.is_business_party_colin_entity),
+          where not maxTp.is_business_party_colin_entity
+            and not maxTp.is_proprietor_person),
      max_versions as
          (select id, max(version) as max_version
           from subquery sq
@@ -511,7 +547,6 @@ select sq.*
 from subquery sq
          left join max_versions mv on mv.id = sq.id
 where sq.version != mv.max_version;
-;
 
 
 -- Populate signing_legal_entity_id with corresponding legal entity id into resolutions_history table.
@@ -553,6 +588,589 @@ where sq.version != mv.max_version;
 
 
 -- ************************************************************************************************
+-- Inserts/Updates into legal_entities/legal_entities_history tables specific to natural person SPs
+-- ************************************************************************************************
+
+-- Update SP LE history entries that match party history entries using change filing id
+-- update proprietor person record in legal_entities_history table using info from temp_parties_legal_name
+with subquery AS
+         (select CONCAT_WS(' ', NULLIF(tp.first_name, ''), NULLIF(tp.middle_initial, ''),
+                           NULLIF(tp.last_name, '')) as legal_name,
+                 tp.first_name,
+                 tp.middle_initial,
+                 tp.last_name,
+                 tp.title,
+                 tp.delivery_address_id,
+                 tp.mailing_address_id,
+                 tp.email,
+                 tp.change_filing_id,
+                 tp.new_legal_entity_id              as sp_legal_entity_id
+          from temp_parties_legal_name tp
+                   join legal_entities_history leh
+                        on tp.new_legal_entity_id = leh.id and tp.change_filing_id = leh.change_filing_id
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+          where 1 = 1
+            and tp.is_proprietor_person
+            AND tp.version <> maxTp.version)
+update legal_entities_history leh
+set entity_type         = 'person',
+    legal_name          = CONCAT_WS(' ', NULLIF(sq.first_name, ''), NULLIF(sq.middle_initial, ''),
+                                    NULLIF(sq.last_name, '')),
+    first_name          = sq.first_name,
+    middle_initial      = sq.middle_initial,
+    last_name           = sq.last_name,
+    title               = sq.title,
+    delivery_address_id = sq.delivery_address_id,
+    mailing_address_id  = sq.mailing_address_id,
+    email               = sq.email
+from subquery sq
+WHERE leh.id = sq.sp_legal_entity_id
+  AND leh.change_filing_id = sq.change_filing_id
+;
+
+
+-- Update SP LE entries that match party history entries using change filing id
+-- update proprietor person record in legal_entities table using info from temp_parties_legal_name
+with subquery AS
+         (select CONCAT_WS(' ', NULLIF(tp.first_name, ''), NULLIF(tp.middle_initial, ''),
+                           NULLIF(tp.last_name, '')) as legal_name,
+                 tp.first_name,
+                 tp.middle_initial,
+                 tp.last_name,
+                 tp.title,
+                 tp.delivery_address_id,
+                 tp.mailing_address_id,
+                 tp.email,
+                 tp.change_filing_id,
+                 tp.new_legal_entity_id              as sp_legal_entity_id
+          from temp_parties_legal_name tp
+                   join legal_entities le
+                        on tp.new_legal_entity_id = le.id and tp.change_filing_id = le.change_filing_id
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+          where 1 = 1
+            and tp.is_proprietor_person
+            AND tp.version <> maxTp.version)
+update legal_entities le
+set entity_type         = 'person',
+    legal_name          = CONCAT_WS(' ', NULLIF(sq.first_name, ''), NULLIF(sq.middle_initial, ''),
+                                    NULLIF(sq.last_name, '')),
+    first_name          = sq.first_name,
+    middle_initial      = sq.middle_initial,
+    last_name           = sq.last_name,
+    title               = sq.title,
+    delivery_address_id = sq.delivery_address_id,
+    mailing_address_id  = sq.mailing_address_id,
+    email               = sq.email
+from subquery sq
+WHERE le.id = sq.sp_legal_entity_id
+  AND le.change_filing_id = sq.change_filing_id
+;
+
+
+-- For each entry in party_history table that has no matching change_filing_id in LE SP tables, find the most recent
+-- SP LE history entry and combine with party data. bump the version number using prev entry version num as base.
+-- Create a function to get the previous SP LE history entry
+CREATE OR REPLACE FUNCTION get_previous_le_history_entry(le_id INT, change_filing_id_compare INT)
+    RETURNS legal_entities_history AS
+$$
+DECLARE
+    leh legal_entities_history%ROWTYPE;
+BEGIN
+    SELECT *
+    INTO leh
+    FROM legal_entities_history
+    WHERE id = le_id
+      AND change_filing_id < change_filing_id_compare
+    ORDER BY leh.change_filing_id DESC
+    LIMIT 1;
+    RETURN leh;
+EXCEPTION
+    WHEN others THEN RAISE NOTICE '%', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION insert_into_leh(base_leh legal_entities_history, updates jsonb)
+    RETURNS VOID AS
+$$
+DECLARE
+    key   text;
+    value text;
+BEGIN
+    RAISE NOTICE 'insert_into_leh - 1';
+
+    -- Loop through each key-value pair in the JSONB object
+    FOR key, value IN SELECT * FROM jsonb_each_text(updates)
+        LOOP
+            -- Use a CASE statement to update the appropriate field based on the key
+            CASE key
+                WHEN 'id' THEN base_leh.id := value::int;
+                WHEN 'legal_name' THEN base_leh.legal_name := value;
+                WHEN 'first_name' THEN base_leh.first_name := value;
+                WHEN 'middle_initial' THEN base_leh.middle_initial := value;
+                WHEN 'last_name' THEN base_leh.last_name := value;
+                WHEN 'title' THEN base_leh.title := value;
+                WHEN 'delivery_address_id' THEN base_leh.delivery_address_id := value::int;
+                WHEN 'mailing_address_id' THEN base_leh.mailing_address_id := value::int;
+                WHEN 'email' THEN base_leh.email := value;
+                WHEN 'change_filing_id' THEN base_leh.change_filing_id := value::int;
+                WHEN 'changed' THEN base_leh.changed := value::timestamp;
+                WHEN 'version' THEN base_leh.version := value::int;
+                END CASE;
+        END LOOP;
+
+    -- Debug logging
+    RAISE NOTICE 'Inserting into legal_entities_history with values: %', base_leh;
+
+    -- Insert the leh record into the legal_entities_history table
+    INSERT INTO legal_entities_history VALUES (base_leh.*);
+EXCEPTION
+    WHEN others THEN RAISE NOTICE '%', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+SELECT insert_into_leh(
+               get_previous_le_history_entry(tp.new_legal_entity_id, tp.change_filing_id),
+               jsonb_build_object(
+                       'id', tp.new_legal_entity_id,
+                       'legal_name', CONCAT_WS(' ', NULLIF(tp.first_name, ''), NULLIF(tp.middle_initial, ''),
+                                               NULLIF(tp.last_name, '')),
+                       'first_name', tp.first_name,
+                       'middle_initial', tp.middle_initial,
+                       'last_name', tp.last_name,
+                       'title', tp.title,
+                       'delivery_address_id', tp.delivery_address_id,
+                       'mailing_address_id', tp.mailing_address_id,
+                       'email', tp.email,
+                       'change_filing_id', tp.change_filing_id,
+                       'changed', tp.change_filing_effective_date,
+                       'version', tp.version + 1
+                   )
+           )
+FROM temp_parties_legal_name tp
+         LEFT JOIN legal_entities_history leh
+                   ON tp.new_legal_entity_id = leh.id AND tp.change_filing_id = leh.change_filing_id
+         LEFT JOIN legal_entities le
+                   ON tp.new_legal_entity_id = le.id AND tp.change_filing_id = le.change_filing_id
+         join (select party_id, max(version) as version
+               from temp_parties_legal_name
+               group by party_id) max_version
+              on tp.party_id = max_version.party_id
+         join temp_parties_legal_name maxTp
+              on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+WHERE tp.is_proprietor_person
+  AND le.change_filing_id IS NULL
+  AND leh.change_filing_id IS NULL
+  AND tp.version <> maxTp.version
+order by tp.change_filing_id asc
+    FETCH FIRST 10000000000 ROWS ONLY;
+;
+
+
+-- Update SP LE active entry if party entry matches change filing id
+with subquery AS
+         (select CONCAT_WS(' ', NULLIF(tp.first_name, ''), NULLIF(tp.middle_initial, ''),
+                           NULLIF(tp.last_name, '')) as legal_name,
+                 tp.first_name,
+                 tp.middle_initial,
+                 tp.last_name,
+                 tp.title,
+                 tp.delivery_address_id,
+                 tp.mailing_address_id,
+                 tp.email,
+                 tp.change_filing_id,
+                 tp.new_legal_entity_id              as sp_legal_entity_id
+          from temp_parties_legal_name tp
+                   join legal_entities le
+                        on tp.new_legal_entity_id = le.id and tp.change_filing_id = le.change_filing_id
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+          where 1 = 1
+            and tp.is_proprietor_person
+            AND tp.version = maxTp.version)
+update legal_entities le
+set entity_type         = 'person',
+    legal_name          = CONCAT_WS(' ', NULLIF(sq.first_name, ''), NULLIF(sq.middle_initial, ''),
+                                    NULLIF(sq.last_name, '')),
+    first_name          = sq.first_name,
+    middle_initial      = sq.middle_initial,
+    last_name           = sq.last_name,
+    title               = sq.title,
+    delivery_address_id = sq.delivery_address_id,
+    mailing_address_id  = sq.mailing_address_id,
+    email               = sq.email
+from subquery sq
+WHERE le.id = sq.sp_legal_entity_id
+  AND le.change_filing_id = sq.change_filing_id
+;
+
+-- Update SP LE history entry if party entry matches change filing id
+with subquery AS
+         (select CONCAT_WS(' ', NULLIF(tp.first_name, ''), NULLIF(tp.middle_initial, ''),
+                           NULLIF(tp.last_name, '')) as legal_name,
+                 tp.first_name,
+                 tp.middle_initial,
+                 tp.last_name,
+                 tp.title,
+                 tp.delivery_address_id,
+                 tp.mailing_address_id,
+                 tp.email,
+                 tp.change_filing_id,
+                 tp.new_legal_entity_id              as sp_legal_entity_id
+          from temp_parties_legal_name tp
+                   join legal_entities_history leh
+                        on tp.new_legal_entity_id = leh.id and tp.change_filing_id = leh.change_filing_id
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
+          where 1 = 1
+            and tp.is_proprietor_person
+            AND tp.version = maxTp.version)
+update legal_entities_history leh
+set entity_type         = 'person',
+    legal_name          = CONCAT_WS(' ', NULLIF(sq.first_name, ''), NULLIF(sq.middle_initial, ''),
+                                    NULLIF(sq.last_name, '')),
+    first_name          = sq.first_name,
+    middle_initial      = sq.middle_initial,
+    last_name           = sq.last_name,
+    title               = sq.title,
+    delivery_address_id = sq.delivery_address_id,
+    mailing_address_id  = sq.mailing_address_id,
+    email               = sq.email
+from subquery sq
+WHERE leh.id = sq.sp_legal_entity_id
+  AND leh.change_filing_id = sq.change_filing_id
+;
+
+CREATE EXTENSION IF NOT EXISTS hstore;
+
+CREATE OR REPLACE FUNCTION cast_le_to_leh(row_le legal_entities,
+                                          ts timestamptz DEFAULT '1900-01-01T00:00:00Z'::timestamptz)
+    RETURNS legal_entities_history
+    LANGUAGE plpgsql AS
+$$
+DECLARE
+    hstore_le  hstore;
+    hstore_leh hstore;
+    row_leh    legal_entities_history%ROWTYPE;
+BEGIN
+
+    RAISE NOTICE 'cast_le_to_leh - 1';
+    -- Convert row_le to hstore
+    hstore_le := hstore(row_le);
+
+    -- Set the changed field
+    hstore_leh := hstore_le || hstore(array ['changed'], array [ts::text]);
+
+    -- Convert hstore_leh to legal_entities_history type
+    row_leh := populate_record(NULL::legal_entities_history, hstore_leh);
+
+    RETURN row_leh;
+EXCEPTION
+    WHEN others THEN RAISE NOTICE '%', SQLERRM;
+END;
+$$;
+
+
+WITH unmatched_entries AS
+         (SELECT tp.*
+          FROM temp_parties_legal_name tp
+                   LEFT JOIN legal_entities le
+                             ON tp.new_legal_entity_id = le.id AND
+                                tp.change_filing_id = le.change_filing_id
+                   LEFT JOIN legal_entities_history leh
+                             ON tp.new_legal_entity_id = leh.id AND
+                                tp.change_filing_id = leh.change_filing_id
+                   join (select party_id, max(version) as version
+                         from temp_parties_legal_name
+                         group by party_id) max_version
+                        on tp.party_id = max_version.party_id
+                   join temp_parties_legal_name maxTp
+                        on max_version.party_id = maxTp.party_id and
+                           max_version.version = maxTp.version
+          WHERE tp.is_proprietor_person
+            AND le.id IS NULL
+            AND leh.id IS NULL
+            AND tp.version = maxTp.version
+            and tp.change_filing_id = 145024)
+-- find the most recent legal_entities_history entry, relative to the change_filing_id
+        ,
+     previous_history_entries AS
+         (SELECT leh.*
+          FROM unmatched_entries ue
+                   JOIN LATERAL (
+              SELECT *
+              FROM legal_entities_history
+              WHERE id = ue.new_legal_entity_id
+                AND change_filing_id < ue.change_filing_id
+              ORDER BY change_filing_id DESC
+              LIMIT 1
+              ) leh ON TRUE),
+     clone_and_insert AS
+         (select ue.*
+          FROM unmatched_entries ue
+                   LEFT JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id
+          WHERE 1 = 1
+         )
+select *
+from clone_and_insert
+;
+
+
+-- For each entry in temp_parties_legal_name table that has no matching change_filing_id in
+-- legal_entities/legal_entities_history tables
+WITH unmatched_entries AS
+    (SELECT tp.*
+     FROM temp_parties_legal_name tp
+              LEFT JOIN legal_entities le
+                        ON tp.new_legal_entity_id = le.id AND
+                           tp.change_filing_id = le.change_filing_id
+              LEFT JOIN legal_entities_history leh
+                        ON tp.new_legal_entity_id = leh.id AND
+                           tp.change_filing_id = leh.change_filing_id
+              join (select party_id, max(version) as version
+                    from temp_parties_legal_name
+                    group by party_id) max_version
+                   on tp.party_id = max_version.party_id
+              join temp_parties_legal_name maxTp
+                   on max_version.party_id = maxTp.party_id and
+                      max_version.version = maxTp.version
+     WHERE tp.is_proprietor_person
+       AND le.id IS NULL
+       AND leh.id IS NULL
+       AND tp.version = maxTp.version)
+-- find the most recent legal_entities_history entry, relative to the change_filing_id
+   , previous_history_entries AS
+    (SELECT leh.*
+     FROM unmatched_entries ue
+              JOIN LATERAL (
+         SELECT *
+         FROM legal_entities_history
+         WHERE id = ue.new_legal_entity_id
+           AND change_filing_id < ue.change_filing_id
+         ORDER BY change_filing_id DESC
+         LIMIT 1
+         ) leh ON TRUE)
+-- if no match, clone LE SP active entry and INSERT into history table, update active row using party entry.  bump the
+-- version number using prev entry version num as base
+   , clone_and_insert AS
+    (SELECT insert_into_leh(
+                    (SELECT cast_le_to_leh(le.*, prev_tp.changed)
+                     FROM legal_entities le
+                              join temp_parties_legal_name prev_tp on le.id = prev_tp.new_legal_entity_id and
+                                                                      le.change_filing_id = prev_tp.change_filing_id
+                     WHERE le.id = ue.new_legal_entity_id),
+                    jsonb_build_object(
+                            'version', 1
+                        )
+                )
+     FROM unmatched_entries ue
+              LEFT JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id
+     WHERE phe.id IS NULL)
+   , update_active_row AS
+    (UPDATE legal_entities le
+        SET entity_type = 'person',
+            legal_name =
+                    CONCAT_WS(' ', NULLIF(ue.first_name, ''), NULLIF(ue.middle_initial, ''), NULLIF(ue.last_name, '')),
+            first_name = ue.first_name,
+            middle_initial = ue.middle_initial,
+            last_name = ue.last_name,
+            title = ue.title,
+            delivery_address_id = ue.delivery_address_id,
+            mailing_address_id = ue.mailing_address_id,
+            email = ue.email,
+            version = 2,
+            change_filing_id = ue.change_filing_id
+        FROM unmatched_entries ue
+            LEFT JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id
+        WHERE le.id = ue.new_legal_entity_id and phe.id is NULL)
+   ,
+-- if match, create new SP LE history entry and combine with party data.  bump the version number using prev entry version num as base
+    create_new_history_entry AS
+        (SELECT insert_into_leh(
+                        phe.*,
+                        jsonb_build_object(
+                                'id', ue.new_legal_entity_id,
+                                'legal_name', CONCAT_WS(' ', NULLIF(ue.first_name, ''), NULLIF(ue.middle_initial, ''),
+                                                        NULLIF(ue.last_name, '')),
+                                'first_name', ue.first_name,
+                                'middle_initial', ue.middle_initial,
+                                'last_name', ue.last_name,
+                                'title', ue.title,
+                                'delivery_address_id', ue.delivery_address_id,
+                                'mailing_address_id', ue.mailing_address_id,
+                                'email', ue.email,
+                                'change_filing_id', ue.change_filing_id,
+                                'changed', ue.change_filing_effective_date,
+                                'version', phe.version + 1
+                            )
+                    )
+         FROM unmatched_entries ue
+                  JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id)
+SELECT COUNT(*)
+FROM (SELECT *
+      FROM clone_and_insert
+      UNION ALL
+      SELECT *
+      FROM create_new_history_entry) AS temp
+;
+
+
+-- For each entry in LE SP history table that does not have matching party/party_history change_filing_id, find
+-- previous record to load required person info and update version num
+DO
+$$
+    DECLARE
+        rec RECORD;
+    BEGIN
+        FOR rec IN (SELECT *
+                    FROM legal_entities_history leh
+                             LEFT JOIN temp_parties_legal_name tp
+                                       ON leh.id = tp.new_legal_entity_id AND
+                                          leh.change_filing_id = tp.change_filing_id
+                    WHERE tp.new_legal_entity_id IS NULL
+                    ORDER BY leh.change_filing_id)
+            LOOP
+                -- find previous record to load required person info
+                WITH previous_leh_entries AS
+                         (SELECT *
+                          FROM legal_entities_history
+                          WHERE id = rec.id
+                            AND change_filing_id < rec.change_filing_id
+                          ORDER BY change_filing_id DESC
+                          LIMIT 1)
+                -- update fields using previous leh entry
+                UPDATE legal_entities_history leh
+                SET version             = ple.version + 1,
+                    legal_name          = ple.legal_name,
+                    first_name          = ple.first_name,
+                    middle_initial      = ple.middle_initial,
+                    last_name           = ple.last_name,
+                    title               = ple.title,
+                    delivery_address_id = ple.delivery_address_id,
+                    mailing_address_id  = ple.mailing_address_id,
+                    email               = ple.email,
+                    entity_type         = ple.entity_type
+                FROM previous_leh_entries ple
+                WHERE leh.id = rec.id
+                  AND leh.change_filing_id = rec.change_filing_id;
+            END LOOP;
+    END;
+$$;
+
+
+-- Resort all SP LE history entries by id and change_filing_id and recalculate version nums
+WITH sorted_entries AS (SELECT id,
+                               change_filing_id,
+                               ROW_NUMBER() OVER (PARTITION BY id ORDER BY change_filing_id) as new_version
+                        FROM legal_entities_history)
+UPDATE legal_entities_history leh
+SET version = se.new_version
+FROM sorted_entries se
+WHERE leh.id = se.id
+  AND leh.change_filing_id = se.change_filing_id
+;
+
+
+-- For each LE SP active entry, find the most recent LE SP history record
+--    1. if no LE SP history record exists, do nothing.
+--    2. if LE SP history record is found and there is no match in party or party history tables, copy person info from LE SP history record and bump version num from LE SP history record.
+--    3. if LE SP history record is found and there is a match is found in party or party history tables, just bump the version num of the active LE SP record using the history record
+
+CREATE TABLE recent_history AS (SELECT leh.id, MAX(leh.change_filing_id) as max_change_filing_id
+                                FROM legal_entities_history leh
+                                GROUP BY leh.id);
+
+CREATE TABLE recent_history_details AS (SELECT leh.*
+                                        FROM legal_entities_history leh
+                                                 JOIN recent_history rh
+                                                      ON leh.id = rh.id AND leh.change_filing_id = rh.max_change_filing_id);
+
+CREATE TABLE party_matches AS (SELECT le.id, tp.party_id
+                               FROM legal_entities le
+                                        LEFT JOIN temp_parties_legal_name tp ON le.id = tp.new_legal_entity_id AND
+                                                                                le.change_filing_id =
+                                                                                tp.change_filing_id);
+
+-- if LE SP history record is found and there is no match in party or party history tables, copy person info from
+-- LE SP history record and bump version num from LE SP history record.
+UPDATE legal_entities le
+SET version             = combined.rhd_version + 1,
+    legal_name          = COALESCE(le.legal_name, combined.rhd_legal_name),
+    first_name          = COALESCE(le.first_name, combined.rhd_first_name),
+    middle_initial      = COALESCE(le.middle_initial, combined.rhd_middle_initial),
+    last_name           = COALESCE(le.last_name, combined.rhd_last_name),
+    title               = COALESCE(le.title, combined.rhd_title),
+    delivery_address_id = COALESCE(le.delivery_address_id, combined.rhd_delivery_address_id),
+    mailing_address_id  = COALESCE(le.mailing_address_id, combined.rhd_mailing_address_id),
+    email               = COALESCE(le.email, combined.rhd_email),
+    entity_type         = combined.rhd_entity_type
+FROM (SELECT le.*,
+             rhd.version             as rhd_version,
+             rhd.legal_name          as rhd_legal_name,
+             rhd.first_name          as rhd_first_name,
+             rhd.middle_initial      as rhd_middle_initial,
+             rhd.last_name           as rhd_last_name,
+             rhd.title               as rhd_title,
+             rhd.delivery_address_id as rhd_delivery_address_id,
+             rhd.mailing_address_id  as rhd_mailing_address_id,
+             rhd.email               as rhd_email,
+             rhd.entity_type         as rhd_entity_type,
+             pm.party_id
+      FROM legal_entities le
+               JOIN recent_history_details rhd ON le.id = rhd.id
+               LEFT JOIN party_matches pm ON le.id = pm.id) AS combined
+WHERE le.id = combined.id
+  AND combined.party_id IS NULL;
+
+-- if LE SP history record is found and there is a match is found in party or party history tables, just bump the
+-- version num of the active LE SP record using the history record
+UPDATE legal_entities le
+SET version = combined.rhd_version + 1
+FROM (SELECT le.*,
+             rhd.version             as rhd_version,
+             rhd.legal_name          as rhd_legal_name,
+             rhd.first_name          as rhd_first_name,
+             rhd.middle_initial      as rhd_middle_initial,
+             rhd.last_name           as rhd_last_name,
+             rhd.title               as rhd_title,
+             rhd.delivery_address_id as rhd_delivery_address_id,
+             rhd.mailing_address_id  as rhd_mailing_address_id,
+             rhd.email               as rhd_email,
+             rhd.entity_type         as rhd_entity_type,
+             pm.party_id
+      FROM legal_entities le
+               JOIN recent_history_details rhd ON le.id = rhd.id
+               LEFT JOIN party_matches pm ON le.id = pm.id) AS combined
+WHERE le.id = combined.id
+  AND combined.party_id IS NOT NULL;
+
+
+DROP TABLE recent_history;
+DROP TABLE recent_history_details;
+DROP TABLE party_matches;
+
+-- ************************************************************************************************
 -- PARTY_ROLES/PARTY_ROLES_history -> ENTIYTY_ROLES/ENTITY_ROLES_history
 -- ************************************************************************************************
 
@@ -571,6 +1189,8 @@ select pr.id                 as party_role_id,
        pr.version            as max_version
 from party_roles pr
          left join filings f on pr.change_filing_id = f.id
+where pr.role is not null
+  and pr.role <> ''
 UNION
 select prh.id                as party_role_id,
        CAST(NULL AS INTEGER) as new_entity_role_id,
@@ -586,6 +1206,8 @@ select prh.id                as party_role_id,
        cpr.version           as max_version
 from party_roles_history prh
          join party_roles cpr on cpr.id = prh.id
+where prh.role is not null
+  and prh.role <> ''
 ;
 
 
@@ -608,6 +1230,7 @@ WITH insert_parties_entity_role AS (
         where tpr.version = tpr.max_version
           and not tp.is_business_party_colin_entity
           and not tp.is_resolution_party
+          and not tp.is_proprietor_person
         RETURNING id, temp_party_role_id, temp_party_id)
 UPDATE temp_party_roles_legal_name
 set new_entity_role_id = ibper.id
@@ -633,7 +1256,8 @@ with subquery as
           from temp_party_roles_legal_name tpr
                    join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
           where not tp.is_business_party_colin_entity
-            and not tp.is_resolution_party),
+            and not tp.is_resolution_party
+            and not tp.is_proprietor_person),
      max_versions as
          (select id, max(version) as max_version
           from subquery sq
@@ -797,6 +1421,60 @@ WHERE filing_json -> 'filing' -> 'business' ? 'legalName'
   and filing_json -> 'filing' -> 'business' ->> 'legalType' in ('SP', 'GP');
 
 
+CREATE OR REPLACE FUNCTION update_legal_name() RETURNS VOID AS
+$$
+DECLARE
+    rec            RECORD;
+    legal_name_str TEXT;
+    results        RECORD;
+    result_count   INTEGER;
+BEGIN
+    FOR rec IN SELECT * FROM legal_entities WHERE entity_type IN ('SP', 'GP')
+        LOOP
+            result_count := 0;
+            legal_name_str := '';
+            FOR results IN (SELECT temp_ln_concat."legalName"
+                            FROM (SELECT CASE
+                                             WHEN (related_le_alias.entity_type = 'person') THEN concat_ws(' ',
+                                                                                                           nullif(related_le_alias.first_name, ''),
+                                                                                                           nullif(related_le_alias.middle_initial, ''),
+                                                                                                           nullif(related_le_alias.last_name, ''))
+                                             WHEN (related_le_alias.entity_type = 'organization')
+                                                 THEN related_le_alias.legal_name
+                                             END AS "legalName"
+                                  FROM legal_entities
+                                           JOIN entity_roles ON entity_roles.legal_entity_id = legal_entities.id
+                                           JOIN legal_entities AS related_le_alias
+                                                ON related_le_alias.id = entity_roles.related_entity_id
+                                  WHERE legal_entities.id = rec.id
+                                  UNION
+                                  SELECT colin_entities.organization_name AS "legalName"
+                                  FROM legal_entities
+                                           JOIN entity_roles ON entity_roles.legal_entity_id = legal_entities.id
+                                           JOIN colin_entities
+                                                ON colin_entities.id = entity_roles.related_colin_entity_id
+                                  WHERE legal_entities.id = rec.id) AS temp_ln_concat
+                            ORDER BY temp_ln_concat."legalName")
+                LOOP
+                    result_count := result_count + 1;
+                    IF result_count <= 2 THEN
+                        legal_name_str := legal_name_str || results."legalName" || ', ';
+                    ELSE
+                        legal_name_str := legal_name_str || 'et al';
+                        EXIT; -- Exit the loop after processing the first two results
+                    END IF;
+                END LOOP;
+            legal_name_str := rtrim(legal_name_str, ', '); -- Remove trailing comma and space
+            UPDATE legal_entities SET legal_name = legal_name_str WHERE id = rec.id;
+        END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT update_legal_name();
+
+-- TODO: create update_legal_name_history() to update legal_name for legal_entities_history
+
+
 -- DROP temporarily created columns, functions and tables
 DROP TABLE temp_legal_name_changes;
 DROP TABLE temp_parties_legal_name;
@@ -804,6 +1482,7 @@ DROP TABLE temp_party_roles_legal_name;
 DROP FUNCTION has_non_legal_name_change;
 DROP FUNCTION update_filing_json_party_ids;
 DROP FUNCTION rename_jsonb_key;
+DROP FUNCTION update_legal_name;
 ALTER TABLE legal_entities
     DROP COLUMN temp_party_id;
 ALTER TABLE colin_entities
