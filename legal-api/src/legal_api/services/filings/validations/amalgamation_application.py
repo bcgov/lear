@@ -16,7 +16,6 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
-
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE
@@ -29,8 +28,6 @@ from legal_api.services.filings.validations.common_validations import (
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
-
-# noqa: I003;
 
 
 def validate(business: Business, amalgamation_json: Dict, account_id) -> Optional[Error]:
@@ -88,6 +85,14 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get('identifier'):
             business = Business.find_by_identifier(identifier)
+            if not business:
+                if identifier.startswith('A'):
+                    # expro may not be available in lear, checking with identifier prefix as a temporary solution
+                    # better solution:
+                    #   either enforce affiliation of expro into lear or fetch business from business search
+                    is_any_expro_a = True
+                continue
+
             amalgamating_businesses[identifier] = business
 
             if business.legal_type == Business.LegalTypes.BCOMP.value:
@@ -98,10 +103,8 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 is_any_ccc = True
             elif business.legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
-            elif (business and business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value) or \
-                    identifier.startswith('A'):
-                # expro may not be available in lear.checking with identifier prefix as a temporary solution
-                # either enforce affiliation of expro into lear or fetch business from business search
+            elif business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
+                # once expro migrate to lear, this will work
                 is_any_expro_a = True
     is_any_bc_company = (is_any_ben or is_any_limited or is_any_ccc or is_any_ulc)
 
@@ -113,7 +116,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
         if amalgamating_business and _has_future_effective_filing(amalgamating_business):
             msg.append({
-                'error': f'{identifier} has a future effective filing',
+                'error': f'{identifier} has a future effective filing.',
                 'path': amalgamating_businesses_path
             })
 
@@ -121,54 +124,54 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
             if amalgamating_business:
                 if not _is_business_affliated(identifier, account_id):
                     msg.append({
-                        'error': f'{identifier} is not affiliated with the currently selected BC Registries account',
+                        'error': f'{identifier} is not affiliated with the currently selected BC Registries account.',
                         'path': amalgamating_businesses_path
                     })
 
                 if not amalgamating_business.good_standing:
                     msg.append({
-                        'error': f'{identifier} is not in good standing',
+                        'error': f'{identifier} is not in good standing.',
                         'path': amalgamating_businesses_path
                     })
             elif identifier and not identifier.startswith('A'):
                 msg.append({
-                    'error': f'A business with identifier:{identifier} not found',
+                    'error': f'A business with identifier:{identifier} not found.',
                     'path': amalgamating_businesses_path
                 })
 
             if is_foreign_business:
                 msg.append({
-                    'error': (f'{foreign_legal_name} foreign corporation cannot'
-                              'be amalgamated except by Registries staff'),
+                    'error': (f'{foreign_legal_name} foreign corporation cannot '
+                              'be amalgamated except by Registries staff.'),
                     'path': amalgamating_businesses_path
                 })
         else:
             if is_foreign_business:
                 if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value and is_any_bc_company:
                     msg.append({
-                        'error': (f'{foreign_legal_name} foreign corporation must not amalgamate with'
-                                  'a BC company to form a BC Unlimited Liability Company'),
+                        'error': (f'{foreign_legal_name} foreign corporation must not amalgamate with '
+                                  'a BC company to form a BC Unlimited Liability Company.'),
                         'path': amalgamating_businesses_path
                     })
 
                 if is_any_ulc:
                     msg.append({
-                        'error': ('A BC Unlimited Liability Company cannot amalgamate with'
-                                  f'a foreign company {foreign_legal_name}'),
+                        'error': ('A BC Unlimited Liability Company cannot amalgamate with '
+                                  f'a foreign company {foreign_legal_name}.'),
                         'path': amalgamating_businesses_path
                     })
 
     if legal_type == Business.LegalTypes.BC_CCC.value and not is_any_ccc:
         msg.append({
-            'error': ('A BC Community Contribution Company must amalgamate to form'
-                      'a new BC Community Contribution Company'),
+            'error': ('A BC Community Contribution Company must amalgamate to form '
+                      'a new BC Community Contribution Company.'),
             'path': amalgamating_businesses_path
         })
     elif (legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.BC_ULC_COMPANY.value] and
           is_any_expro_a and is_any_bc_company):
         msg.append({
-            'error': ('An extra-Pro cannot amalgamate with anything to become'
-                      'a BC Unlimited Liability Company or a BC Community Contribution Company'),
+            'error': ('An extra-Pro cannot amalgamate with anything to become '
+                      'a BC Unlimited Liability Company or a BC Community Contribution Company.'),
             'path': amalgamating_businesses_path
         })
 

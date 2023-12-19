@@ -17,13 +17,15 @@ from unittest.mock import patch
 from http import HTTPStatus
 
 import pytest
+import datetime
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
-from legal_api.models import Business
-from legal_api.services import NameXService, STAFF_ROLE
+from legal_api.models import Business, Filing
+from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER
 from legal_api.services.filings.validations.validation import validate
 
 from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.utils import helper_create_jwt
 
 
 class MockResponse:
@@ -639,9 +641,415 @@ def test_amalgamation_court_orders(mocker, app, session,
         assert not err
 
 
-def test_amalgamating_businesses(mocker, app, session):
-    """Assert valid court orders."""
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
+        ('FAIL', HTTPStatus.BAD_REQUEST, 'BC1234567 has a future effective filing.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_has_future_effective_filing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses has future effective filing."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.models.business.Business.find_by_identifier',
+                 return_value=Business(identifier='BC1234567',
+                                       legal_type=Business.LegalTypes.BCOMP.value))
+    mocker.patch('legal_api.models.filing.Filing.get_filings_by_status',
+                 return_value=[Filing()] if test_status == 'FAIL' else [])
+
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token}):
+        err = validate(None, filing)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
+        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses is affliated."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
+
+    token = helper_create_jwt(jwt)
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' == err.msg[0]['error']
+        assert f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' == err.msg[1]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
+        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses is in good standing."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value,
+                        state=Business.State.ACTIVE if test_status == 'FAIL' else Business.State.HISTORICAL,
+                        restoration_expiry_date=datetime.datetime.utcnow() if test_status == 'FAIL' else None)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt)
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
+        assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
+        ('FAIL', HTTPStatus.BAD_REQUEST, 'A business with identifier:BC7654321 not found.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses not found."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        if test_status == 'FAIL' and identifier == 'BC7654321':
+            return None
+
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt)
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, role, expected_code, expected_msg',
+    [
+        ('FAIL', BASIC_USER, HTTPStatus.BAD_REQUEST,
+         'Foreign Co. foreign corporation cannot be amalgamated except by Registries staff.'),
+        ('SUCCESS', STAFF_ROLE, None, None)
+    ]
+)
+def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, role, expected_code, expected_msg):
+    """Assert valid amalgamating foreign business."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt, roles=[role])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, role, expected_code, expected_msg',
+    [
+        ('FAIL', STAFF_ROLE, HTTPStatus.BAD_REQUEST,
+         'Foreign Co. foreign corporation must not amalgamate with a BC company to form a BC Unlimited Liability Company.'),
+        ('SUCCESS', STAFF_ROLE, None, None)
+    ]
+)
+def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, session, jwt,
+                                                              test_status, role, expected_code, expected_msg):
+    """Assert valid amalgamating foreign business with bc company to form ulc."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    if test_status == 'FAIL':
+        filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'ULC'
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt, roles=[role])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, role, expected_code, expected_msg',
+    [
+        ('FAIL', STAFF_ROLE, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company cannot amalgamate with a foreign company Foreign Co..'),
+        ('SUCCESS', STAFF_ROLE, None, None)
+    ]
+)
+def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jwt,
+                                                        test_status, role, expected_code, expected_msg):
+    """Assert valid amalgamating foreign business with ulc company."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BC_ULC_COMPANY.value
+                        if test_status == 'FAIL' else Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt, roles=[role])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
+        ('FAIL', HTTPStatus.BAD_REQUEST,
+         'A BC Community Contribution Company must amalgamate to form a new BC Community Contribution Company.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
+                               test_status, expected_code, expected_msg):
+    """Assert valid amalgamating cc to cc."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'CC'
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value
+                        if test_status == 'FAIL' else Business.LegalTypes.BC_CCC.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, legal_type, expected_code, expected_msg',
+    [
+        ('FAIL', Business.LegalTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
+         'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'),
+        ('SUCCESS', Business.LegalTypes.BC_CCC.value, None, None),
+        ('FAIL', Business.LegalTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
+         'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'),
+        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, None, None)
+    ]
+)
+def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt,
+                                         test_status, legal_type, expected_code, expected_msg):
+    """Assert valid amalgamating expro with bc company to cc or ulc."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': 'amalgamating',
+            'identifier': 'A1234567' if test_status == 'FAIL' else 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+        if identifier == 'A1234567':
+            return None
+
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BC_CCC.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
+    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
