@@ -24,6 +24,7 @@ amalgamation_type_enum = postgresql.ENUM('regular',
 
 def upgrade():
     
+    # add enum values
     role_enum.create(op.get_bind(), checkfirst=True)
     amalgamation_type_enum.create(op.get_bind(), checkfirst=True)
     

@@ -55,7 +55,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
     
     amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id', ondelete='CASCADE'), nullable=False)
     
-    # # relationships
+    # relationships
     amalgamation = db.relationship('Amalgamation', back_populates='amalgamating_business_submitter')
     
     def save(self):
