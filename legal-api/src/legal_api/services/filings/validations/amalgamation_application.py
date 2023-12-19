@@ -138,37 +138,37 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
             if is_foreign_business:
                 msg.append({
-                    'error': (f'{foreign_legal_name} foreign corporation cannot 
-                              be amalgamated except by Registries staff'),
+                    'error': (f'{foreign_legal_name} foreign corporation cannot'
+                              'be amalgamated except by Registries staff'),
                     'path': amalgamating_businesses_path
                 })
         else:
             if is_foreign_business:
                 if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value and is_any_bc_company:
                     msg.append({
-                        'error': (f'{foreign_legal_name} foreign corporation must not amalgamate with 
-                                  a BC company to form a BC Unlimited Liability Company'),
+                        'error': (f'{foreign_legal_name} foreign corporation must not amalgamate with'
+                                  'a BC company to form a BC Unlimited Liability Company'),
                         'path': amalgamating_businesses_path
                     })
 
                 if is_any_ulc:
                     msg.append({
-                        'error': (f'A BC Unlimited Liability Company cannot amalgamate with 
-                                  a foreign company {foreign_legal_name}'),
+                        'error': ('A BC Unlimited Liability Company cannot amalgamate with'
+                                  f'a foreign company {foreign_legal_name}'),
                         'path': amalgamating_businesses_path
                     })
 
     if legal_type == Business.LegalTypes.BC_CCC.value and not is_any_ccc:
         msg.append({
-            'error': (f'A BC Community Contribution Company must amalgamate to form 
-                      a new BC Community Contribution Company'),
+            'error': ('A BC Community Contribution Company must amalgamate to form'
+                      'a new BC Community Contribution Company'),
             'path': amalgamating_businesses_path
         })
     elif (legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.BC_ULC_COMPANY.value] and
           is_any_expro_a and is_any_bc_company):
         msg.append({
-            'error': (f'An extra-Pro cannot amalgamate with anything to become 
-                      a BC Unlimited Liability Company or a BC Community Contribution Company'),
+            'error': ('An extra-Pro cannot amalgamate with anything to become'
+                      'a BC Unlimited Liability Company or a BC Community Contribution Company'),
             'path': amalgamating_businesses_path
         })
 
