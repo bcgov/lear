@@ -20,6 +20,8 @@ from .db import db
 from enum import auto
 from ..utils.base import BaseEnum
 
+from .business import Business
+
 
 class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     """
@@ -54,6 +56,11 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
     
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id', ondelete='CASCADE'), nullable=False)
+    
+    # Relationships
+    
+    amalgamation_submitter = db.relationship('Business', back_populates='amalgamation')
+    amalgamating_business_submitter = db.relationship('AmalgamatingBusiness', back_populates='amalgamation')
     
     def save(self):
         """Save the object to the database immediately."""

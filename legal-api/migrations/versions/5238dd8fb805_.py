@@ -24,6 +24,8 @@ amalgamation_type_enum = postgresql.ENUM('regular',
 
 def upgrade():
     
+    role_enum.create(op.get_bind(), checkfirst=True)
+    amalgamation_type_enum.create(op.get_bind(), checkfirst=True)
     
     # ==========================================================================================
     # amalgamating_business/amalgamation tables
@@ -82,11 +84,10 @@ def upgrade():
 
 def downgrade():
     
+    # Drop enum types from the database
+    amalgamation_type_enum.drop(op.get_bind(), checkfirst=True)
+    role_enum.drop(op.get_bind(), checkfirst=True)
+    
     op.drop_table('amalgamation')
     
     op.drop_table('amalgamating_business')
-    
-    amalgamation_type_enum.drop(op.get_bind())
-    
-    role_enum.drop(op.get_bind())
-    

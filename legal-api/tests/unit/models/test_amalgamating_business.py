@@ -19,7 +19,9 @@ Test-Suite to ensure that the AlternateName Model is working as expected.
 """
 from datetime import datetime
 
-from legal_api.models import amalgamating_business
+from legal_api.models import AmalgamatingBusiness
+from legal_api.models import Business
+from legal_api.models import Amalgamation
 
 
 def test_valid_alternate_name_save(session):
@@ -27,34 +29,34 @@ def test_valid_alternate_name_save(session):
     identifier = 1234567
     # legal_entity = factory_legal_entity(identifier)
     
-    amalgamating_business_1 = amalgamating_business(
-        identifier = identifier,
-        role = amalgamating_business.AmalgamatingBusiness.Role.AMALGAMATING,
+    amalgamating_business_1 = AmalgamatingBusiness(
+        id = identifier,
+        role = AmalgamatingBusiness.Role.AMALGAMATING,
         foreign_jurisdiction = "Alberta",
         foreign_name = "Testing123",
         foreign_corp_num = "123456789",
-        business_id = 1234,
-        amalgation_id = 1234567
+        business_id = Business.id,
+        amalgamation_id = Amalgamation.id
     )
     amalgamating_business_1.save()
     
-    amalgamating_business_2 = amalgamating_business(
-        identifier = identifier,
-        role = amalgamating_business.AmalgamatingBusiness.Role.HOLDING,
+    amalgamating_business_2 = AmalgamatingBusiness(
+        id = identifier,
+        role = AmalgamatingBusiness.Role.HOLDING,
         foreign_jurisdiction = "Alberta",
         foreign_name = "Testing123",
         foreign_corp_num = "123456789",
-        business_id = 1234,
-        amalgation_id = 1234567
+        business_id = Business.id,
+        amalgamation_id = Amalgamation.id
     )
     amalgamating_business_2.save()
     
     # verify
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
-    amalgamating_business_roles = amalgamating_business.AmalgamatingBusiness.Role.all()
+    amalgamating_business_roles = AmalgamatingBusiness.Role.all()
     assert len(amalgamating_business_roles) == 2
-    assert any(amalgamating_business.AmalgamatingBusiness.Role.HOLDING for role_type in amalgamating_business_roles)
-    assert any(amalgamating_business.AmalgamatingBusiness.Role.AMALGAMATING for role_type in amalgamating_business_roles)
+    assert any(AmalgamatingBusiness.Role.HOLDING for role_type in amalgamating_business_roles)
+    assert any(AmalgamatingBusiness.Role.AMALGAMATING for role_type in amalgamating_business_roles)
     
     

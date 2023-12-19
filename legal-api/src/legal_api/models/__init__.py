@@ -43,7 +43,7 @@ from .user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'Business', 'ColinLastUpdate', 'Comment', 'ConsentContinuationOut',
+           'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Business', 'ColinLastUpdate', 'Comment', 'ConsentContinuationOut',
            'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential',
            'DCRevocationReason', 'Document', 'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party',
            'RegistrationBootstrap', 'RequestTracker', 'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries',

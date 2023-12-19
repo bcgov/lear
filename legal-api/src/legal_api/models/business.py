@@ -35,6 +35,8 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+
+from .amalgamating_business import AmalgamatingBusiness
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -251,6 +253,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
     consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
+    amalgamating_business = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamation = db.relationship('Amalgamation', back_populates='amalgamation_submitter')
+    
 
     @hybrid_property
     def identifier(self):
