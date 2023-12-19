@@ -49,9 +49,9 @@ from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 
 
-def validate(business: Business,
+def validate(business: Business,  # pylint: disable=too-many-branches,too-many-statements
              filing_json: Dict,
-             account_id=None) -> Error:  # pylint: disable=too-many-branches,too-many-statements
+             account_id=None) -> Error:
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
