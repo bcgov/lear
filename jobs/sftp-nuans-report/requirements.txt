@@ -36,7 +36,7 @@ pylint
 pylint-flask
 pep8
 autopep8
-paramiko==3.3.1
+paramiko==3.4.0
 pysftp==0.2.9
 
 git+https://github.com/bcgov/business-schemas.git@2.5.0#egg=registry_schemas
