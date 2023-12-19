@@ -122,7 +122,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
             business_validate = business
-        err = validate(business_validate, json_input)
+        err = validate(business_validate, json_input, payment_account_id)
         if err or query.only_validate:
             if err:
                 json_input['errors'] = err.msg
@@ -150,7 +150,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     filing_json = filing.json
     if response:
         filing_json['filing']['header'].update(response)
-    return jsonify(filing_json),\
+    return jsonify(filing_json), \
         (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
 
@@ -168,7 +168,7 @@ def delete_filings(identifier, filing_id=None):
     # check authorization
     if not authorized(identifier, jwt, action=['edit']):
         return jsonify({'message':
-                        _('You are not authorized to delete a filing for:') + identifier}),\
+                        _('You are not authorized to delete a filing for:') + identifier}), \
             HTTPStatus.UNAUTHORIZED
 
     if identifier.startswith('T'):
@@ -307,7 +307,7 @@ class ListFilingResource():
         """Return the requested ledger for the business identifier provided."""
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
-            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}), \
                 HTTPStatus.NOT_ACCEPTABLE
 
         ledger_start = request.args.get('start', default=None, type=int)
@@ -366,7 +366,8 @@ class ListFilingResource():
         """Check and update NR to extend expiration date as needed."""
         # if this is an incorporation filing for a name request
         if filing.filing_type in (Filing.FILINGS['incorporationApplication']['name'],
-                                  Filing.FILINGS['registration']['name']):
+                                  Filing.FILINGS['registration']['name'],
+                                  Filing.FILINGS['amalgamationApplication']['name']):
             nr_number = filing.json['filing'][filing.filing_type]['nameRequest'].get('nrNumber', None)
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
@@ -649,7 +650,8 @@ class ListFilingResource():
 
         if filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name']
+            Filing.FILINGS['registration']['name'],
+            Filing.FILINGS['amalgamationApplication']['name']
         ):
             legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
         else:
@@ -765,11 +767,13 @@ class ListFilingResource():
 
         if filing.filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name']
+            Filing.FILINGS['registration']['name'],
+            Filing.FILINGS['amalgamationApplication']['name']
         ):
-            if filing.filing_type == Filing.FILINGS['incorporationApplication']['name']:
+            if filing.filing_type in [Filing.FILINGS['incorporationApplication']['name'],
+                                      Filing.FILINGS['amalgamationApplication']['name']]:
                 mailing_address = Address.create_address(
-                    filing.json['filing']['incorporationApplication']['offices']['registeredOffice']['mailingAddress'])
+                    filing.json['filing'][filing.filing_type]['offices']['registeredOffice']['mailingAddress'])
             elif filing.filing_type == Filing.FILINGS['registration']['name']:
                 mailing_address = Address.create_address(
                     filing.json['filing']['registration']['offices']['businessOffice']['mailingAddress'])
@@ -877,7 +881,8 @@ class ListFilingResource():
         filing_type = filing.filing_json['filing']['header']['name']
         if filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name']
+            Filing.FILINGS['registration']['name'],
+            Filing.FILINGS['amalgamationApplication']['name']
         ):
             if fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate'):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)
