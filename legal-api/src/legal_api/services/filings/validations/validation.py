@@ -25,6 +25,7 @@ from .admin_freeze import validate as admin_freeze_validate
 from .agm_extension import validate as agm_extension_validate
 from .agm_location_change import validate as agm_location_change_validate
 from .alteration import validate as alteration_validate
+from .amalgamation_application import validate as amalgamation_application_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
@@ -48,7 +49,9 @@ from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 
 
-def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable=too-many-branches,too-many-statements
+def validate(business: Business,  # pylint: disable=too-many-branches,too-many-statements
+             filing_json: Dict,
+             account_id=None) -> Error:
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
@@ -186,6 +189,9 @@ def validate(business: Business, filing_json: Dict) -> Error:  # pylint: disable
 
                 elif k == Filing.FILINGS['agmExtension'].get('name'):
                     err = agm_extension_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['amalgamationApplication'].get('name'):
+                    err = amalgamation_application_validate(business, filing_json, account_id)
 
                 if err:
                     return err
