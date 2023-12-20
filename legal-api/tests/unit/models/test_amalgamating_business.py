@@ -19,15 +19,45 @@ Test-Suite to ensure that the AlternateName Model is working as expected.
 """
 from datetime import datetime
 
-from legal_api.models import AmalgamatingBusiness
-from legal_api.models import Business
-from legal_api.models import Amalgamation
+from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
+    ANNUAL_REPORT,
+    CHANGE_OF_DIRECTORS,
+    CORRECTION_AR,
+    COURT_ORDER,
+    FILING_HEADER,
+    SPECIAL_RESOLUTION,
+)
 
+from legal_api.models import AmalgamatingBusiness, Business, Amalgamation
+from tests.unit.models import (
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing,
+    factory_user,
+)
 
-def test_valid_alternate_name_save(session):
+def test_valid_amalgamating_business_save(session):
     """Assert that a valid alias can be saved."""
     identifier = 1234567
-    # legal_entity = factory_legal_entity(identifier)
+    
+    b = factory_business('CP1234567')
+    b.save()
+    
+    filing = factory_filing(b, ANNUAL_REPORT)
+    filing.save()
+    
+    amalgamation = Amalgamation(
+        id = identifier,
+        amalgamation_type = Amalgamation.AmalgamationTypes.horizontal,
+        business_id = b.id,
+        filing_id = filing.id,
+        amalgamation_date = datetime.utcnow(),
+        court_approval = True
+    )
+    
+    amalgamation.save()
     
     amalgamating_business_1 = AmalgamatingBusiness(
         id = identifier,
@@ -35,10 +65,12 @@ def test_valid_alternate_name_save(session):
         foreign_jurisdiction = "Alberta",
         foreign_name = "Testing123",
         foreign_corp_num = "123456789",
-        business_id = Business.id,
-        amalgamation_id = Amalgamation.id
+        business_id = b.id,
+        amalgamation_id = amalgamation.id
     )
     amalgamating_business_1.save()
+    
+    identifier = 1234568
     
     amalgamating_business_2 = AmalgamatingBusiness(
         id = identifier,
@@ -46,17 +78,14 @@ def test_valid_alternate_name_save(session):
         foreign_jurisdiction = "Alberta",
         foreign_name = "Testing123",
         foreign_corp_num = "123456789",
-        business_id = Business.id,
-        amalgamation_id = Amalgamation.id
+        business_id = b.id,
+        amalgamation_id = amalgamation.id
     )
     amalgamating_business_2.save()
     
     # verify
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
-    amalgamating_business_roles = AmalgamatingBusiness.Role.all()
-    assert len(amalgamating_business_roles) == 2
-    assert any(AmalgamatingBusiness.Role.HOLDING for role_type in amalgamating_business_roles)
-    assert any(AmalgamatingBusiness.Role.AMALGAMATING for role_type in amalgamating_business_roles)
-    
-    
+    for type in AmalgamatingBusiness.Role:
+        assert type in [AmalgamatingBusiness.Role.HOLDING,
+                        AmalgamatingBusiness.Role.AMALGAMATING]

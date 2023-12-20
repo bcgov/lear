@@ -44,44 +44,69 @@ Test-Suite to ensure that the Amalgamation Model is working as expected.
 """
 from datetime import datetime
 
+from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
+    ANNUAL_REPORT,
+    CHANGE_OF_DIRECTORS,
+    CORRECTION_AR,
+    COURT_ORDER,
+    FILING_HEADER,
+    SPECIAL_RESOLUTION,
+)
+
 from legal_api.models import Amalgamation
 from legal_api.models import Business
 from legal_api.models import Filing
-
-
-
+from tests.unit.models import (
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing,
+    factory_user,
+)
 
 def test_valid_amalgamation_save(session):
     """Assert that a valid alias can be saved."""
     identifier = 1234567
     
+    b = factory_business('CP1234567')
+    
+    b.save()
+    
+    filing = factory_filing(b, ANNUAL_REPORT)
+    
+    filing.save()
+    
     amalgamation_1 = Amalgamation(
         id = identifier,
         amalgamation_type = Amalgamation.AmalgamationTypes.horizontal,
-        business_id = Business.id,
-        filing_id = Filing.id,
+        business_id = b.id,
+        filing_id = filing.id,
         amalgamation_date = datetime.utcnow(),
         court_approval = True
     )
     
     amalgamation_1.save()
     
+    identifier = 1234568
+    
     amalgamation_2 = Amalgamation(
-        id= identifier,
+        id = identifier,
         amalgamation_type = Amalgamation.AmalgamationTypes.vertical,
-        business_id = Business.id,
-        filing_id = Filing.id,
+        business_id = b.id,
+        filing_id = filing.id,
         amalgamation_date = datetime.utcnow(),
         court_approval = True
     )
     
     amalgamation_2.save()
     
+    identifier = 12345679
     amalgamation_3 = Amalgamation(
         id = identifier,
         amalgamation_type = Amalgamation.AmalgamationTypes.regular,
-        business_id = Business.id,
-        filing_id = Filing.id,
+        business_id = b.id,
+        filing_id = filing.id,
         amalgamation_date = datetime.utcnow(),
         court_approval = True
     )
@@ -92,8 +117,7 @@ def test_valid_amalgamation_save(session):
     assert amalgamation_1.id
     assert amalgamation_2.id
     assert amalgamation_3.id
-    amalgamation_types = Amalgamation.AmalgamationTypes.all()
-    assert len(amalgamation_types) == 3
-    assert any(Amalgamation.AmalgamationTypes.vertical for amalgamation_type in amalgamation_types)
-    assert any(Amalgamation.AmalgamationTypes.horizontal for amalgamation_type in amalgamation_types)
-    assert any(Amalgamation.AmalgamationTypes.regular for amalgamation_type in amalgamation_types)
+    for type in Amalgamation.AmalgamationTypes:
+        assert type in [Amalgamation.AmalgamationTypes.horizontal,
+                        Amalgamation.AmalgamationTypes.vertical,
+                        Amalgamation.AmalgamationTypes.regular]

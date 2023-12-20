@@ -26,40 +26,31 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
     This class manages the amalgamating businesses.
 
     """
-    
+
     # pylint: disable=invalid-name
     class Role(BaseEnum):
-        
         """Enum for the Role Values."""
 
         AMALGAMATING = auto()
-        
         HOLDING = auto()
-   
-    __versioned__ = {}
-    
+
+    #__versioned__ = {}
     __tablename__ = 'amalgamating_business'
 
     id = db.Column(db.Integer, primary_key=True)
-    
     role = db.Column('role', db.Enum(Role), nullable=False)
-    
     foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    
     foreign_name = db.Column('foreign_name', db.String(100))
-    
     foreign_corp_num = db.Column('foreign_corp_num', db.String(50))
-    
+
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    
     amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id', ondelete='CASCADE'), nullable=False)
-    
+
     # relationships
-    amalgamation = db.relationship('Amalgamation', back_populates='amalgamating_business_submitter')
-    
+    #amalgamation = db.relationship('Amalgamation', back_populates='amalgamating_business_submitter')
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
-   

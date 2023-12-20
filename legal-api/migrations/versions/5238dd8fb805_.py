@@ -31,64 +31,40 @@ def upgrade():
     # ==========================================================================================
     # amalgamating_business/amalgamation tables
     # ==========================================================================================
-    
 
     op.create_table(
-        
         'amalgamation',
-        
         sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
-        
         sa.Column('business_id', sa.Integer(), autoincrement=False, nullable=False),
-        
         sa.Column('filing_id', sa.Integer(), autoincrement=False, nullable=False),
-        
         sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
-        
         sa.Column('court_approval', sa.Boolean(), nullable=False),
-        
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
-        
         sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
-        
         sa.PrimaryKeyConstraint('id'))
-    
+
     # enum added after creating table as DuplicateObject error would be thrown otherwise
     op.add_column('amalgamation', sa.Column('amalgamation_type', amalgamation_type_enum, nullable=False))
     
-    
     op.create_table(
-        
         'amalgamating_business',
-        
         sa.Column('id', sa.Integer(), primary_key=False),
-        
         sa.Column('business_id', sa.Integer(), nullable=False),
-        
         sa.Column('amalgamation_id', sa.Integer(), nullable=False),
-        
         sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=False),
-        
         sa.Column('foreign_name', sa.String(length=100), nullable=False),
-        
         sa.Column('foreign_corp_num', sa.String(length=50), nullable=False),
-        
         sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
-        
         sa.ForeignKeyConstraint(['amalgamation_id'], ['amalgamation.id']),
-        
         sa.PrimaryKeyConstraint('id'))
     
     # enum added after creating table as DuplicateObject error would be thrown otherwise
     op.add_column('amalgamating_business', sa.Column('role', role_enum, nullable=False))
         
-
 def downgrade():
-    
     # Drop enum types from the database
     amalgamation_type_enum.drop(op.get_bind(), checkfirst=True)
     role_enum.drop(op.get_bind(), checkfirst=True)
     
     op.drop_table('amalgamation')
-    
     op.drop_table('amalgamating_business')

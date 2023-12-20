@@ -16,11 +16,10 @@
 Currently this only provides API versioning information
 """
 
-from .db import db
 from enum import auto
+from .db import db
 from ..utils.base import BaseEnum
 
-from .business import Business
 
 
 class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -28,40 +27,32 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     This class manages the amalgamations.
 
     """
-    
+
     # pylint: disable=invalid-name
     class AmalgamationTypes(BaseEnum):
-        
         """Enum for the amalgamation type."""
 
         regular = auto()
-        
         vertical = auto()
-        
         horizontal = auto()
-   
-    __versioned__ = {}
-    
+
+   # __versioned__ = {}
     __tablename__ = 'amalgamation'
 
     id = db.Column(db.Integer, primary_key=True)
-    
     amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
-    
     amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
-    
     court_approval = db.Column('court_approval', db.Boolean())
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id', ondelete='CASCADE'), nullable=False)
-    
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
+
     # Relationships
-    
-    amalgamation_submitter = db.relationship('Business', back_populates='amalgamation')
-    amalgamating_business_submitter = db.relationship('AmalgamatingBusiness', back_populates='amalgamation')
-    
+    amalgamating_businesses = db.relationship('AmalgamatingBusiness', backref='amalgamation')
+    business = db.relationship('Business', back_populates='amalgamation')
+
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
