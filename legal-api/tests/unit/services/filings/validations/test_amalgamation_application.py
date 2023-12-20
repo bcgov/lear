@@ -664,6 +664,7 @@ def test_has_future_effective_filing(mocker, app, session, jwt, test_status, exp
                  return_value=[Filing()] if test_status == 'FAIL' else [])
 
     token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
+    print(token)
     with app.test_request_context(headers={'Authorization': 'Bearer ' + token}):
         err = validate(None, filing)
 
