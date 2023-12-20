@@ -663,10 +663,9 @@ def test_has_future_effective_filing(mocker, app, session, jwt, test_status, exp
     mocker.patch('legal_api.models.filing.Filing.get_filings_by_status',
                  return_value=[Filing()] if test_status == 'FAIL' else [])
 
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
-    app.logger.debug(f'jwt_token: {token}')
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token}):
-        err = validate(None, filing)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
+
+    err = validate(None, filing)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -701,7 +700,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
         }
     ]
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value)
 
@@ -713,9 +712,9 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
     mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
 
-    token = helper_create_jwt(jwt)
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -751,7 +750,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
         }
     ]
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
                         state=Business.State.ACTIVE if test_status == 'FAIL' else Business.State.HISTORICAL,
@@ -765,9 +764,9 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt)
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -803,7 +802,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
         }
     ]
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         if test_status == 'FAIL' and identifier == 'BC7654321':
             return None
 
@@ -818,9 +817,9 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt)
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -846,7 +845,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value)
 
@@ -858,9 +857,13 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt, roles=[role])
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    def mock_validate_roles(required_roles):
+        if role in required_roles:
+            return True
+        return False
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -889,7 +892,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, sessi
     if test_status == 'FAIL':
         filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'ULC'
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value)
 
@@ -901,9 +904,13 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, sessi
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt, roles=[role])
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    def mock_validate_roles(required_roles):
+        if role in required_roles:
+            return True
+        return False
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -930,7 +937,7 @@ def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jw
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BC_ULC_COMPANY.value
                         if test_status == 'FAIL' else Business.LegalTypes.BCOMP.value)
@@ -943,9 +950,13 @@ def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jw
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt, roles=[role])
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    def mock_validate_roles(required_roles):
+        if role in required_roles:
+            return True
+        return False
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -973,7 +984,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'CC'
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value
                         if test_status == 'FAIL' else Business.LegalTypes.BC_CCC.value)
@@ -986,9 +997,9 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -999,18 +1010,15 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type, expected_code, expected_msg',
+    'test_status, legal_type',
     [
-        ('FAIL', Business.LegalTypes.BC_CCC.value, HTTPStatus.BAD_REQUEST,
-         'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'),
-        ('SUCCESS', Business.LegalTypes.BC_CCC.value, None, None),
-        ('FAIL', Business.LegalTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
-         'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'),
-        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, None, None)
+        ('FAIL', Business.LegalTypes.BC_CCC.value),
+        ('SUCCESS_CC', Business.LegalTypes.BC_CCC.value),
+        ('FAIL', Business.LegalTypes.BC_ULC_COMPANY.value),
+        ('SUCCESS_ULC', Business.LegalTypes.BC_ULC_COMPANY.value)
     ]
 )
-def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt,
-                                         test_status, legal_type, expected_code, expected_msg):
+def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status, legal_type):
     """Assert valid amalgamating expro with bc company to cc or ulc."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -1025,14 +1033,16 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt,
         },
         {
             'role': 'amalgamating',
-            'identifier': 'A1234567' if test_status == 'FAIL' else 'BC7654321'
+            'legalName': 'Foreign Co.',
+            'foreignJurisdiction': {
+                'country': 'CA',
+                'region': 'BC'
+            },
+            'corpNumber': 'A1234567' if test_status == 'FAIL' else '7654321'
         }
     ]
 
-    def mock_find_by_identifier(identifier):  # pylint: disable=unused-argument; mocks of library methods
-        if identifier == 'A1234567':
-            return None
-
+    def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BC_CCC.value)
 
@@ -1044,13 +1054,16 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt,
                  return_value=True)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE])
-    with app.test_request_context(headers={'Authorization': 'Bearer ' + token, 'accountId': account_id}):
-        err = validate(None, filing, account_id)
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    expected_msg = 'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'
+    if test_status == 'SUCCESS_CC':
         assert not err
+    elif test_status == 'SUCCESS_ULC':
+        assert not next((x for x in err.msg if x['error'] == expected_msg), None)
     else:
-        assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert next((x for x in err.msg if x['error'] == expected_msg), None)

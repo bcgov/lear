@@ -85,13 +85,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     amalgamating_businesses = {}
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get('identifier'):
-            business = Business.find_by_identifier(identifier)
-            if not business:
-                if identifier.startswith('A'):
-                    # expro may not be available in lear, checking with identifier prefix as a temporary solution
-                    # better solution:
-                    #   either enforce affiliation of expro into lear or fetch business from business search
-                    is_any_expro_a = True
+            if not (business := Business.find_by_identifier(identifier)):
                 continue
 
             amalgamating_businesses[identifier] = business
@@ -104,8 +98,9 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 is_any_ccc = True
             elif business.legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
-            elif business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
-                # once expro migrate to lear, this will work
+        elif ((corp_number := amalgamating_business_json.get('corpNumber')) and corp_number.startswith('A')):
+            if ((foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction')) and
+                    foreign_jurisdiction.get('country') == 'CA' and foreign_jurisdiction.get('region') == 'BC'):
                 is_any_expro_a = True
     is_any_bc_company = (is_any_ben or is_any_limited or is_any_ccc or is_any_ulc)
 
@@ -134,7 +129,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                         'error': f'{identifier} is not in good standing.',
                         'path': amalgamating_businesses_path
                     })
-            elif identifier and not identifier.startswith('A'):
+            elif identifier:
                 msg.append({
                     'error': f'A business with identifier:{identifier} not found.',
                     'path': amalgamating_businesses_path
