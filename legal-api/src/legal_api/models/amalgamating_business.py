@@ -17,15 +17,13 @@ Currently this only provides API versioning information
 """
 
 from enum import auto
-from .db import db
+
 from ..utils.base import BaseEnum
+from .db import db
 
 
 class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attributes
-    """
-    This class manages the amalgamating businesses.
-
-    """
+    """This class manages the amalgamating businesses."""
 
     # pylint: disable=invalid-name
     class Role(BaseEnum):
@@ -34,7 +32,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
         AMALGAMATING = auto()
         HOLDING = auto()
 
-    #__versioned__ = {}
+    # __versioned__ = {}
     __tablename__ = 'amalgamating_business'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -45,10 +43,9 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id', ondelete='CASCADE'), nullable=False)
-
-    # relationships
-    #amalgamation = db.relationship('Amalgamation', back_populates='amalgamating_business_submitter')
+    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id',
+                                                                             ondelete='CASCADE'),
+                                nullable=False)
 
     def save(self):
         """Save the object to the database immediately."""

@@ -17,16 +17,13 @@ Currently this only provides API versioning information
 """
 
 from enum import auto
-from .db import db
-from ..utils.base import BaseEnum
 
+from ..utils.base import BaseEnum
+from .db import db
 
 
 class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
-    """
-    This class manages the amalgamations.
-
-    """
+    """This class manages the amalgamations."""
 
     # pylint: disable=invalid-name
     class AmalgamationTypes(BaseEnum):
@@ -36,7 +33,7 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
         vertical = auto()
         horizontal = auto()
 
-   # __versioned__ = {}
+    # __versioned__ = {}
     __tablename__ = 'amalgamation'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -52,9 +49,7 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     amalgamating_businesses = db.relationship('AmalgamatingBusiness', backref='amalgamation')
     business = db.relationship('Business', back_populates='amalgamation')
 
-
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
-   
