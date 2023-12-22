@@ -39,9 +39,9 @@ def load_ledger(business, founding_date):
         elif filing_meta['name'] == 'dissolution':
             filing['filing']['dissolution'] = {}
             filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
-        elif filing_meta['name'] == 'amalgamation':
-            filing['filing']['amalgamation'] = {}
-            filing['filing']['amalgamation']['type'] = 'regular'
+        elif filing_meta['name'] == 'amalgamationApplication':
+            filing['filing']['amalgamationApplication'] = {}
+            filing['filing']['amalgamationApplication']['type'] = 'regular'
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()

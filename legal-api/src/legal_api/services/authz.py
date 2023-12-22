@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This manages all of the authentication and authorization service."""
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
-from typing import Final, List
+from typing import List
 from urllib.parse import urljoin
 
 import jwt as pyjwt
@@ -48,6 +48,14 @@ class BusinessBlocker(str, Enum):
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
     DRAFT_PENDING = 'DRAFT_PENDING'
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
+
+
+class BusinessRequirement(str, Enum):
+    """Define an enum for business requirement scenarios."""
+
+    EXIST = 'EXIST'
+    NOT_EXIST = 'NOT_EXIST'
+    NO_RESTRICTION = 'NO_RESTRICTION'
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -114,298 +122,318 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     return False
 
 
-ALLOWABLE_FILINGS: Final = {
-    'staff': {
-        Business.State.ACTIVE: {
-            'adminFreeze': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
-            },
-            'agmExtension': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'agmLocationChange': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'alteration': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'amalgamation': {
-                'regular': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
-                    'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
+def get_allowable_filings_dict():
+    """Return dictionary containing rules for when filings are allowed."""
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.filing import Filing as CoreFiling
+
+    filing_types_compact = CoreFiling.FilingTypesCompact
+
+    return {
+        'staff': {
+            Business.State.ACTIVE: {
+                'adminFreeze': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
                 },
-                'vertical': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
+                'agmExtension': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
-                },
-                'horizontal': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
-                    'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
-                }
-            },
-            'annualReport': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'changeOfAddress': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'changeOfDirectors': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'changeOfRegistration': {
-                'legalTypes': ['SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'consentContinuationOut': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'continuationOut': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
-                    'completedFilings': ['consentContinuationOut']
-                }
-            },
-            'conversion': {
-                'legalTypes': ['SP', 'GP']
-            },
-            'correction': {
-                'legalTypes': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'courtOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-            },
-            'dissolution': {
-                'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
-                    'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
-                'administrative': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
+                'agmLocationChange': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DRAFT_PENDING]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
-                }
-            },
-            'incorporationApplication': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
-            },
-            'registrarsNotation': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-            },
-            'registrarsOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-            },
-            'registration': {
-                'legalTypes': ['SP', 'GP'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
-            },
-            'specialResolution': {
-                'legalTypes': ['CP'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
-            },
-            'restoration': {
-                'limitedRestorationExtension': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                },
+                'alteration': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'validStateFilings': ['restoration.limitedRestoration',
-                                              'restoration.limitedRestorationExtension'],
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
-                'limitedRestorationToFull': {
+                'amalgamationApplication': {
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION,
+                    'regular': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    },
+                    'vertical': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    },
+                    'horizontal': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    }
+                },
+                'annualReport': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfAddress': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfDirectors': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfRegistration': {
+                    'legalTypes': ['SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'consentContinuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        'validStateFilings': ['restoration.limitedRestoration',
-                                              'restoration.limitedRestorationExtension'],
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                    }
+                },
+                'continuationOut': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                        'completedFilings': ['consentContinuationOut']
+                    }
+                },
+                'conversion': {
+                    'legalTypes': ['SP', 'GP']
+                },
+                'correction': {
+                    'legalTypes': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'courtOrder': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                },
+                'dissolution': {
+                    'voluntary': {
+                        'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
+                        'blockerChecks': {
+                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                        }
+                    },
+                    'administrative': {
+                        'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
+                        'blockerChecks': {
+                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'business': [BusinessBlocker.DRAFT_PENDING]
+                        }
+                    }
+                },
+                'incorporationApplication': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'registrarsNotation': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                },
+                'registrarsOrder': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                },
+                'registration': {
+                    'legalTypes': ['SP', 'GP'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'specialResolution': {
+                    'legalTypes': ['CP'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'transition': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
+                },
+                'restoration': {
+                    'limitedRestorationExtension': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                        'blockerChecks': {
+                            'validStateFilings': [filing_types_compact.RESTORATION_LIMITED_RESTORATION,
+                                                  filing_types_compact.RESTORATION_LIMITED_RESTORATION_EXT],
+                            'business': [BusinessBlocker.DEFAULT]
+                        }
+                    },
+                    'limitedRestorationToFull': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                        'blockerChecks': {
+                            'validStateFilings': [filing_types_compact.RESTORATION_LIMITED_RESTORATION,
+                                                  filing_types_compact.RESTORATION_LIMITED_RESTORATION_EXT],
+                            'business': [BusinessBlocker.DEFAULT]
+                        }
+                    }
+                }
+            },
+            Business.State.HISTORICAL: {
+                'courtOrder': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
+                },
+                'putBackOn': {
+                    'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
+                    'blockerChecks': {
+                        'validStateFilings': [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                    }
+                },
+                'registrarsNotation': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                },
+                'registrarsOrder': {
+                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
+                },
+                'restoration': {
+                    'fullRestoration': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                        'blockerChecks': {
+                            'invalidStateFilings': ['continuationIn', 'continuationOut']
+                        }
+                    },
+                    'limitedRestoration': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+                        'blockerChecks': {
+                            'invalidStateFilings': ['continuationIn', 'continuationOut']
+                        }
                     }
                 }
             }
         },
-        Business.State.HISTORICAL: {
-            'courtOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC'],
-            },
-            'putBackOn': {
-                'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'validStateFilings': ['dissolution.administrative']
-                }
-            },
-            'registrarsNotation': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-            },
-            'registrarsOrder': {
-                'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-            },
-            'restoration': {
-                'fullRestoration': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
+        'general': {
+            Business.State.ACTIVE: {
+                'agmExtension': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'invalidStateFilings': ['continuationIn', 'continuationOut']
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
-                'limitedRestoration': {
+                'agmLocationChange': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                    }
+                },
+                'alteration': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'amalgamationApplication': {
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION,
+                    'regular': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    },
+                    'vertical': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    },
+                    'horizontal': {
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
+                        }
+                    }
+                },
+                'annualReport': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfAddress': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT],
+                    }
+                },
+                'changeOfDirectors': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfRegistration': {
+                    'legalTypes': ['SP', 'GP'],
+                    'blockerChecks': {
+                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'consentContinuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
-                        'invalidStateFilings': ['continuationIn', 'continuationOut']
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
+                },
+                'dissolution': {
+                    'voluntary': {
+                        'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
+                        'blockerChecks': {
+                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                        }
+                    },
+                },
+                'incorporationApplication': {
+                    'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'registration': {
+                    'legalTypes': ['SP', 'GP'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'specialResolution': {
+                    'legalTypes': ['CP'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'transition': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
                 }
-            }
+            },
+            Business.State.HISTORICAL: {}
         }
-    },
-    'general': {
-        Business.State.ACTIVE: {
-            'agmExtension': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'agmLocationChange': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'alteration': {
-                'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'amalgamation': {
-                'regular': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
-                    'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
-                },
-                'vertical': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
-                    'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
-                },
-                'horizontal': {
-                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
-                    'ignoreBlockerChecksBusinessNotExists': True,
-                    'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN]
-                    }
-                }
-            },
-            'annualReport': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'changeOfAddress': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT],
-                }
-            },
-            'changeOfDirectors': {
-                'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'changeOfRegistration': {
-                'legalTypes': ['SP', 'GP'],
-                'blockerChecks': {
-                    'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'consentContinuationOut': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                }
-            },
-            'dissolution': {
-                'voluntary': {
-                    'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
-                    'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                    }
-                },
-            },
-            'incorporationApplication': {
-                'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
-            },
-            'registration': {
-                'legalTypes': ['SP', 'GP'],
-                'businessExists': False  # only show filing when providing allowable filings not specific to a business
-            },
-            'specialResolution': {
-                'legalTypes': ['CP'],
-                'blockerChecks': {
-                    'business': [BusinessBlocker.DEFAULT]
-                }
-            },
-            'transition': {
-                'legalTypes': ['BC', 'BEN', 'CC', 'ULC']
-            }
-        },
-        Business.State.HISTORICAL: {}
     }
-}
 
 
 # pylint: disable=(too-many-arguments,too-many-locals
@@ -469,22 +497,22 @@ def get_allowed_filings(business: Business,
 
     # doing this check up front to cache result
     business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
-    allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
-        # might re-active after update the amalgamation filing allowable method
-        # if bool(business) ^ allowable_filing_value.get('businessExists', True):
-        #     continue
+
+        business_status = allowable_filing_value.get('businessRequirement', BusinessRequirement.EXIST)
+
+        if business_status != BusinessRequirement.NO_RESTRICTION and \
+                bool(business) ^ (business_status == BusinessRequirement.EXIST):
+            continue
 
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
 
         if allowable_filing_legal_types:
-            # will remove after update the amalgamation filing allowable method
-            if bool(business) ^ allowable_filing_value.get('businessExists', True):
-                continue
             is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
@@ -497,7 +525,9 @@ def get_allowed_filings(business: Business,
             continue
 
         filing_sub_type_items = \
-            filter(lambda x: legal_type in x[1].get('legalTypes', []), allowable_filing_value.items())
+            filter(lambda x: isinstance(x[1], dict) and legal_type in
+                   x[1].get('legalTypes', []), allowable_filing_value.items())
+
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
             is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
 
@@ -518,8 +548,7 @@ def get_allowed_filings(business: Business,
 
 def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
-    ignore_blocker_checks_no_business = allowable_filing.get('ignoreBlockerChecksBusinessNotExists', False)
-    if ignore_blocker_checks_no_business and not bool(business):
+    if not business:
         return False
 
     if not (blocker_checks := allowable_filing.get('blockerChecks', {})):
@@ -534,10 +563,10 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
-    if not bool(business):
+    if has_blocker_completed_filing(business, blocker_checks):
         return True
 
-    if has_blocker_completed_filing(business, blocker_checks):
+    if has_blocker_future_effective_filing(business, blocker_checks):
         return True
 
     if has_blocker_warning_filing(business.warnings, blocker_checks):
@@ -645,6 +674,24 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
     return True
 
 
+def has_blocker_future_effective_filing(business: Business, blocker_checks: dict):
+    """Check if business has a future effective filing."""
+    if not (fed_filing_types := blocker_checks.get('futureEffectiveFilings', [])):
+        return False
+
+    filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
+
+    pending_filings = Filing.get_filings_by_type_pairs(business.id,
+                                                       filing_type_pairs,
+                                                       [Filing.Status.PENDING.value, Filing.Status.PAID.value],
+                                                       True)
+
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    is_fed = any(f.effective_date > now for f in pending_filings)
+
+    return is_fed
+
+
 def has_filing_match(filing: Filing, filing_types: list):
     """Return if filing matches any filings provided in filing_types arg ."""
     for filing_type in filing_types:
@@ -689,14 +736,15 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = 'staff'
 
-    allowable_filings = ALLOWABLE_FILINGS.get(user_role, {}).get(state, {})
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
     allowable_filing_types = []
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
         if legal_types := allowable_filing_value.get('legalTypes', None):
             if legal_type in legal_types:
                 allowable_filing_types.append(allowable_filing_key)
         else:
-            sub_filing_types = [x for x in allowable_filing_value.items() if legal_type in x[1].get('legalTypes')]
+            sub_filing_types = [x for x in allowable_filing_value.items()
+                                if isinstance(x[1], dict) and legal_type in x[1].get('legalTypes')]
             if sub_filing_types:
                 allowable_filing_types.append({
                     allowable_filing_key: [sub_filing_type[0] for sub_filing_type in sub_filing_types]

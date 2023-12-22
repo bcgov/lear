@@ -277,6 +277,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_agm_extension_data(filing)
         elif self._report_key == 'letterOfAgmLocationChange':
             self._format_agm_location_change_data(filing)
+        elif self._report_key == 'amalgamationApplication':
+            self._format_amalgamation_data(filing)
+        elif self._report_key == 'certificateOfAmalgamation':
+            self._format_certificate_of_amalgamation_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -668,6 +672,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if prev_legal_type else None
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
+
+    def _format_amalgamation_data(self, filling):
+        # FUTURE: format logic for amalgamation application
+        return
+
+    def _format_certificate_of_amalgamation_data(self, filing):
+        # FUTURE: format logic for certificate of amalgamation
+        return
 
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
@@ -1091,9 +1103,13 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
 
     reports = {
-        'amalgamation': {
+        'amalgamationApplication': {
             'filingDescription': 'Amalgamation Application',
-            'fileName': 'amalgamation'
+            'fileName': 'amalgamationApplication'
+        },
+        'certificateOfAmalgamation': {
+            'filingDescription': 'Certificate Of Amalgamation',
+            'fileName': 'certificateOfAmalgamation'
         },
         'certificate': {
             'filingDescription': 'Certificate of Incorporation',

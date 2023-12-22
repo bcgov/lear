@@ -105,7 +105,7 @@ def post_businesses():
     valid_filing_types = [
         Filing.FILINGS['incorporationApplication']['name'],
         Filing.FILINGS['registration']['name'],
-        Filing.FILINGS['amalgamation']['name']
+        Filing.FILINGS['amalgamationApplication']['name']
     ]
 
     try:
