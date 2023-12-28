@@ -127,64 +127,40 @@ def _mock_nr_response(legal_type):
     })
 
 
-def test_gp_registration(monkeypatch, app, session, jwt):
+def test_gp_registration(mocker, app, session, jwt):
     """Assert that the general partnership registration is valid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('GP')):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, GP_REGISTRATION)
 
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('GP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, GP_REGISTRATION)
-
-        assert not err
+    assert not err
 
 
-def test_sp_registration(monkeypatch, app, session, jwt):
+def test_sp_registration(mocker, app, session, jwt):
     """Assert that the general partnership registration is valid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, SP_REGISTRATION)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, SP_REGISTRATION)
-
-        assert not err
+    assert not err
 
 
-def test_dba_registration(monkeypatch, app, session, jwt):
+def test_dba_registration(mocker, app, session, jwt):
     """Assert that the general partnership registration is valid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, DBA_REGISTRATION)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, DBA_REGISTRATION)
-
-        assert not err
+    assert not err
 
 
-def test_invalid_nr_registration(monkeypatch, app, session, jwt):
+def test_invalid_nr_registration(mocker, app, session, jwt):
     """Assert that nr is invalid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     
     filing = copy.deepcopy(SP_REGISTRATION)
     invalid_nr_response = {
@@ -196,36 +172,27 @@ def test_invalid_nr_registration(monkeypatch, app, session, jwt):
             'consumptionDate': ''
         }]
     }
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        assert err
-        assert err.msg[0]['error'] == 'Name Request is not approved.'
+    assert err
+    assert err.msg[0]['error'] == 'Name Request is not approved.'
 
 
-def test_business_type_required(monkeypatch, app, session, jwt):
+def test_business_type_required(mocker, app, session, jwt):
     """Assert that business type is required."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-    
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     filing = copy.deepcopy(SP_REGISTRATION)
     del filing['filing']['registration']['businessType']
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        assert err
-        assert err.msg[0]['error'] == 'Business Type is required.'
+    assert err
+    assert err.msg[0]['error'] == 'Business Type is required.'
 
 
 @pytest.mark.parametrize(
@@ -235,50 +202,35 @@ def test_business_type_required(monkeypatch, app, session, jwt):
         ('valid_taxId', '123456789', None)
     ]
 )
-def test_validate_tax_id(monkeypatch, app, session, jwt, test_name, tax_id, expected):
+def test_validate_tax_id(mocker, app, session, jwt, test_name, tax_id, expected):
     """Assert that taxId is validated."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-    
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     filing = copy.deepcopy(SP_REGISTRATION)
     filing['filing']['registration']['business']['taxId'] = tax_id
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        if expected:
-            assert err
-            assert err.msg[0]['error'] == expected
-        else:
-            assert err is None
+    if expected:
+        assert err
+        assert err.msg[0]['error'] == expected
+    else:
+        assert err is None
 
 
 def test_naics_invalid(monkeypatch, app, session, jwt):
     """Assert that naics is invalid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-    
     filing = copy.deepcopy(SP_REGISTRATION)
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value={}):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value={}):
+            err = validate(None, filing)
 
-        assert err
-        assert err.msg[0]['error'] == 'Invalid naics code or description.'
+    assert err
+    assert err.msg[0]['error'] == 'Invalid naics code or description.'
 
 
 @pytest.mark.parametrize(
@@ -289,25 +241,18 @@ def test_naics_invalid(monkeypatch, app, session, jwt):
         ('gp_invalid_party', copy.deepcopy(GP_REGISTRATION), '2 Partners and a Completing Party is required.'),
     ]
 )
-def test_invalid_party(monkeypatch, app, session, jwt, test_name, filing, expected_msg):
+def test_invalid_party(mocker, app, session, jwt, test_name, filing, expected_msg):
     """Assert that party is invalid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-    
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     filing['filing']['registration']['parties'] = []
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        assert err
-        assert err.msg[0]['error'] == expected_msg
+    assert err
+    assert err.msg[0]['error'] == expected_msg
 
 
 @pytest.mark.parametrize(
@@ -318,36 +263,30 @@ def test_invalid_party(monkeypatch, app, session, jwt, test_name, filing, expect
         ('gp_invalid_business_address', copy.deepcopy(GP_REGISTRATION)),
     ]
 )
-def test_invalid_business_address(monkeypatch, app, session, jwt, test_name, filing):
+def test_invalid_business_address(mocker, app, session, jwt, test_name, filing):
     """Assert that delivery business address is invalid."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
     filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = 'invalid'
     filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = 'invalid'
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        assert err
-        assert err.msg[0]['error'] == "Address Region must be 'BC'."
-        assert err.msg[1]['error'] == "Address Country must be 'CA'."
+    assert err
+    assert err.msg[0]['error'] == "Address Region must be 'BC'."
+    assert err.msg[1]['error'] == "Address Country must be 'CA'."
 
 
 @pytest.mark.parametrize(
     'test_name, username, roles, delta_date, is_valid',
     [
-        ('staff_today', 'staff', [STAFF_ROLE], None, True),
-        ('staff_greater', 'staff', [STAFF_ROLE], timedelta(days=90), True),
-        ('staff_invalid_greater', 'staff', [STAFF_ROLE], timedelta(days=91), False),
-        ('staff_lesser', 'staff', [STAFF_ROLE], relativedelta(years=-20), True),
+        ('staff_today', 'staff', STAFF_ROLE, None, True),
+        ('staff_greater', 'staff', STAFF_ROLE, timedelta(days=90), True),
+        ('staff_invalid_greater', 'staff', STAFF_ROLE, timedelta(days=91), False),
+        ('staff_lesser', 'staff', STAFF_ROLE, relativedelta(years=-20), True),
         ('general_user_today', 'general', [BASIC_USER], None, True),
         ('general_user_greater', 'general', [BASIC_USER], timedelta(days=90), True),
         ('general_user_invalid_greater', 'general', [BASIC_USER], timedelta(days=91), False),
@@ -355,13 +294,13 @@ def test_invalid_business_address(monkeypatch, app, session, jwt, test_name, fil
         ('general_user_invalid_lesser', 'general', [BASIC_USER], relativedelta(years=-10, days=-1), False)
     ]
 )
-def test_validate_start_date(monkeypatch, app, session, jwt, test_name, username, roles, delta_date, is_valid):
+def test_validate_start_date(mocker, app, session, jwt, test_name, username, roles, delta_date, is_valid):
     """Assert that start date is validated."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_validate_roles(required_roles):
+        if roles in required_roles:
+            return True
+        return False
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)  # Client
 
     start_date = LegislationDatetime.now()
     if delta_date:
@@ -371,17 +310,14 @@ def test_validate_start_date(monkeypatch, app, session, jwt, test_name, username
     filing['filing']['registration']['startDate'] = start_date.strftime('%Y-%m-%d')
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        if is_valid:
-            assert not err
-        else:
-            assert err
+    if is_valid:
+        assert not err
+    else:
+        assert err
 
 
 @pytest.mark.parametrize(
@@ -391,13 +327,9 @@ def test_validate_start_date(monkeypatch, app, session, jwt, test_name, username
         ('SUCCESS', '12345678901234567890', 'planOfArrangement', None, None)
     ]
 )
-def test_registration_court_orders(monkeypatch, app, session, jwt, test_status, file_number, effect_of_order, expected_code, expected_msg):
+def test_registration_court_orders(mocker, app, session, jwt, test_status, file_number, effect_of_order, expected_code, expected_msg):
     """Assert valid court orders."""
-    token = helper_create_jwt(jwt)
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False) 
     
     filing = copy.deepcopy(GP_REGISTRATION)
 
@@ -407,15 +339,13 @@ def test_registration_court_orders(monkeypatch, app, session, jwt, test_status, 
     filing['filing']['registration']['courtOrder'] = court_order
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
-            with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                err = validate(None, filing)
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
 
-        # validate outcomes
-        if test_status == 'FAIL':
-            assert expected_code == err.code
-            assert expected_msg == err.msg[0]['error']
-        else:
-            assert not err
+    # validate outcomes
+    if test_status == 'FAIL':
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
