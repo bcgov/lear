@@ -21,7 +21,7 @@ from typing import Final
 from unittest.mock import patch
 
 import pytest
-from business_model import Address, LegalEntity, Filing, PartyRole
+from business_model import Address, LegalEntity, Filing, EntityRole
 
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import (
@@ -310,7 +310,7 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
 
     # Check outcome
     business = LegalEntity.find_by_internal_id(business_id)
-    party = business.party_roles.all()[0].party
+    party = business.entity_roles.all()[0].related_entity
     assert (
         party.first_name
         == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
@@ -427,7 +427,7 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     business = LegalEntity.find_by_internal_id(business_id)
 
     if test_name == "gp_edit_partner_name_and_address":
-        party = business.party_roles.all()[0].party
+        party = business.entity_roles.all()[0].party
         assert (
             party.first_name
             == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
@@ -446,15 +446,15 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
                 "streetAddress"
             ]
         )
-        assert business.party_roles.all()[0].cessation_date is None
-        assert business.party_roles.all()[1].cessation_date is None
+        assert business.entity_roles.all()[0].cessation_date is None
+        assert business.entity_roles.all()[1].cessation_date is None
 
     if test_name == "gp_delete_partner":
-        deleted_role = PartyRole.get_party_roles_by_party_id(business_id, party_id_2)[0]
+        deleted_role = EntityRole.get_entity_roles_by_party_id(business_id, party_id_2)[0]
         assert deleted_role.cessation_date is not None
 
     if test_name == "gp_add_partner":
-        assert len(PartyRole.get_parties_by_role(business_id, "partner")) == 3
-        assert len(business.party_roles.all()) == 3
-        for party_role in business.party_roles.all():
+        assert len(EntityRole.get_parties_by_role(business_id, "partner")) == 3
+        assert len(business.entity_roles.all()) == 3
+        for party_role in business.entity_roles.all():
             assert party_role.cessation_date is None

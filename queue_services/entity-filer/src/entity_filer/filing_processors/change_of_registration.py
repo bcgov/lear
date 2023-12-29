@@ -17,64 +17,44 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
-from business_model import Address, LegalEntity, Filing, Party, PartyRole
+from business_model import Address, AlternateName, LegalEntity, Filing
+from entity_filer.exceptions.default_exception import DefaultException
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
-    create_address,
-    merge_party,
-    create_role,
     filings,
     legal_entity_info,
     name_request,
     update_address,
 )
+from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
+from entity_filer.filing_processors.registration import get_partnership_name
 
 
 def process(
-    business: LegalEntity,
+    legal_entity: LegalEntity,
     change_filing_rec: Filing,
     change_filing: Dict,
     filing_meta: FilingMeta,
 ):
     """Render the change of registration filing onto the business model objects."""
     filing_meta.change_of_registration = {}
-    # Update business legalName if present
-    with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(
-            change_filing, "/changeOfRegistration/nameRequest"
-        )
-        if name_request_json.get("legalName"):
-            from_legal_name = business.legal_name
-            legal_entity_info.set_legal_name(
-                business.identifier, business, name_request_json
+    match legal_entity.entity_type:
+        case LegalEntity.EntityTypes.SOLE_PROP:                    
+            _update_sp_change(
+                legal_entity,
+                change_filing_rec,
+                change_filing,
+                filing_meta
             )
-            if from_legal_name != business.legal_name:
-                filing_meta.change_of_registration = {
-                    **filing_meta.change_of_registration,
-                    **{
-                        "fromLegalName": from_legal_name,
-                        "toLegalName": business.legal_name,
-                    },
-                }
-    # Update Nature of LegalEntity
-    if (
-        naics := change_filing.get("changeOfRegistration", {})
-        .get("business", {})
-        .get("naics")
-    ) and (naics_code := naics.get("naicsCode")):
-        if business.naics_code != naics_code:
-            filing_meta.change_of_registration = {
-                **filing_meta.change_of_registration,
-                **{
-                    "fromNaicsCode": business.naics_code,
-                    "toNaicsCode": naics_code,
-                    "naicsDescription": naics.get("naicsDescription"),
-                },
-            }
-            legal_entity_info.update_naics_info(business, naics)
-
+        case LegalEntity.EntityTypes.PARTNERSHIP:
+            _update_partner_change(
+                legal_entity,
+                change_filing_rec,
+                change_filing,
+                filing_meta
+            )
+        
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
         business_office_json = dpath.util.get(
@@ -88,8 +68,8 @@ def process(
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(change_filing, "/changeOfRegistration/parties")
-        update_parties(business, party_json, change_filing_rec)
+        parties = dpath.util.get(change_filing, "/changeOfRegistration/parties")
+        merge_all_parties(legal_entity, change_filing_rec, {"parties": parties})
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -99,89 +79,118 @@ def process(
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
 
-def update_parties(business: LegalEntity, parties: dict, change_filing_rec: Filing):
-    """Create a new party or get them if they already exist."""
-    # Cease the party roles not present in the edit request
-    end_date_time = datetime.datetime.utcnow()
-    parties_to_update = [
-        party.get("officer").get("id")
-        for party in parties
-        if party.get("officer").get("id") is not None
-    ]
-    existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
-    for party_role in existing_party_roles:
-        if party_role.party_id not in parties_to_update:
-            party_role.cessation_date = end_date_time
-
-    # Create and Update
-    for party_info in parties:
-        # Create if id not present
-        # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
-        # The backend will have an id of type int
-        if not party_info.get("officer").get("id") or (
-            party_info.get("officer").get("id")
-            and not isinstance(party_info.get("officer").get("id"), int)
-        ):
-            _create_party_info(business, change_filing_rec, party_info)
-        else:
-            # Update if id is present
-            _update_party(party_info)
-
-
-def _update_party(party_info):
-    party = Party.find_by_id(party_id=party_info.get("officer").get("id"))
-    if party:
-        party.first_name = party_info["officer"].get("firstName", "").upper()
-        party.last_name = party_info["officer"].get("lastName", "").upper()
-        party.middle_initial = party_info["officer"].get("middleName", "").upper()
-        party.title = party_info.get("title", "").upper()
-        party.organization_name = (
-            party_info["officer"].get("organizationName", "").upper()
-        )
-        party.party_type = party_info["officer"].get("partyType")
-        party.email = party_info["officer"].get("email", "").lower()
-        party.identifier = party_info["officer"].get("identifier", "").upper()
-
-        # add addresses to party
-        if party_info.get("deliveryAddress", None):
-            if party.delivery_address:
-                update_address(
-                    party.delivery_address, party_info.get("deliveryAddress")
-                )
-            else:
-                address = create_address(
-                    party_info["deliveryAddress"], Address.DELIVERY
-                )
-                party.delivery_address = address
-        if party_info.get("mailingAddress", None):
-            if party.mailing_address:
-                update_address(party.mailing_address, party_info.get("mailingAddress"))
-            else:
-                mailing_address = create_address(
-                    party_info["mailingAddress"], Address.MAILING
-                )
-                party.mailing_address = mailing_address
-
-
-def _create_party_info(business, change_filing_rec, party_info):
-    party = merge_party(business_id=business.id, party_info=party_info, create=False)
-    for role_type in party_info.get("roles"):
-        role_str = role_type.get("roleType", "").lower()
-        role = {
-            "roleType": role_str,
-            "appointmentDate": role_type.get("appointmentDate", None),
-            "cessationDate": role_type.get("cessationDate", None),
-        }
-        party_role = create_role(party=party, role_info=role)
-        if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value]:
-            change_filing_rec.filing_party_roles.append(party_role)
-        else:
-            business.party_roles.append(party_role)
-
-
 def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for change of registration.
 
     THIS SHOULD NOT ALTER THE MODEL
     """
     name_request.consume_nr(business, filing, "changeOfRegistration")
+
+def _update_partner_change(
+        legal_entity: LegalEntity,
+        change_filing_rec: Filing,
+        change_filing: Dict,
+        filing_meta: FilingMeta,
+):
+    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest")
+    if name_request and (to_legal_name := name_request.get("legalName")):
+        alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
+        parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
+
+        legal_entity.legal_name = get_partnership_name(parties_dict)
+
+        legal_entity.alternate_names.remove(alternate_name)
+        alternate_name.end_date = change_filing_rec.effective_date
+        alternate_name.change_filing_id = change_filing_rec.id
+        alternate_name.delete()
+
+        new_alternate_name = AlternateName(
+            bn15=alternate_name.bn15,
+            change_filing_id=change_filing_rec.id,
+            end_date=None,
+            identifier=legal_entity.identifier,
+            name=to_legal_name,
+            name_type=AlternateName.NameType.OPERATING,
+            start_date=alternate_name.start_date,
+            registration_date=change_filing_rec.effective_date,
+        )
+        legal_entity.alternate_names.append(new_alternate_name)
+
+        filing_meta.change_of_registration = {
+            **filing_meta.change_of_registration,
+            "fromLegalName": alternate_name.name,
+            "toLegalName": to_legal_name,
+        }
+
+    # Update Nature of LegalEntity
+    if (
+        naics := change_filing.get("changeOfRegistration", {})
+        .get("business", {})
+        .get("naics")
+    ) and (naics_code := naics.get("naicsCode")):
+        if legal_entity.naics_code != naics_code:
+            filing_meta.change_of_registration = {
+                **filing_meta.change_of_registration,
+                **{
+                    "fromNaicsCode": legal_entity.naics_code,
+                    "toNaicsCode": naics_code,
+                    "naicsDescription": naics.get("naicsDescription"),
+                },
+            }
+            legal_entity_info.update_naics_info(legal_entity, naics)
+
+
+def _update_sp_change(
+        legal_entity: LegalEntity,
+        change_filing_rec: Filing,
+        change_filing: Dict,
+        filing_meta: FilingMeta,
+):
+    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest")
+    if name_request and (to_legal_name := name_request.get("legalName")):
+        alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
+        parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
+
+        # Find the Proprietor
+        proprietor = None
+        for party in parties_dict:
+            for role in party.get("roles"):
+                if role.get("roleType") == "Proprietor":
+                    proprietor_dict = party
+                    break
+            if proprietor_dict:
+                break
+
+        if not proprietor_dict:
+            raise DefaultException(
+                f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
+            )
+
+        proprietor, delivery_address, mailing_address = get_or_create_party(
+            proprietor_dict, change_filing_rec
+        )
+        if not proprietor:
+            raise DefaultException(
+                f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
+            )
+
+        alternate_name.end_date = change_filing.effective_date
+        alternate_name.change_filing_id = change_filing.id
+        alternate_name.delete()
+
+        new_alternate_name = AlternateName(
+            identifier=legal_entity.identifier,
+            name_type=AlternateName.NameType.OPERATING,
+            change_filing_id=change_filing_rec.id,
+            end_date=None,
+            name=to_legal_name,
+            start_date=alternate_name.start_date,
+            registration_date=change_filing_rec.effective_date,
+        )
+        proprietor.alternate_names.append(new_alternate_name)
+
+        filing_meta.change_of_registration = {
+            **filing_meta.change_of_registration,
+            "fromLegalName": alternate_name.name,
+            "toLegalName": to_legal_name,
+        }
