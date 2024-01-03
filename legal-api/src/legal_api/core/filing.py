@@ -405,7 +405,6 @@ class Filing:
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
-            'displayLedger': filing_storage.filing_type != Filing.FilingTypes.ADMIN_FREEZE,
             'commentsCount': filing_storage.comments_count,
             'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
             'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents' if

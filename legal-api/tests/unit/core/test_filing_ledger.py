@@ -79,7 +79,6 @@ def test_simple_ledger_search(session):
     assert 'status' in alteration
     assert 'submittedDate' in alteration
     assert 'submitter' in alteration
-    assert alteration['displayLedger']
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
