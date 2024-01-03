@@ -459,15 +459,18 @@ def create_user(
 
 
 def create_entity(identifier, legal_type, legal_name):
-    """Return a test business."""
+    """Return a test legal entity."""
     from business_model import Address, LegalEntity
 
-    business = LegalEntity()
-    business.identifier = identifier
-    business.entity_type = legal_type
-    business.legal_name = legal_name
-    business.save()
-    return business
+    legal_entity = LegalEntity()
+    legal_entity.entity_type = legal_type
+    if legal_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
+        legal_entity.first_name = "my"
+        legal_entity.last_name = "self"
+    legal_entity.legal_name = legal_name
+    legal_entity.identifier = identifier
+    legal_entity.save()
+    return legal_entity
 
 
 def create_office(business, office_type: str):

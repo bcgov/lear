@@ -21,7 +21,7 @@ from typing import Final
 from unittest.mock import patch
 
 import pytest
-from business_model import Address, LegalEntity, Filing, EntityRole
+from business_model import Address, AlternateName, LegalEntity, Filing, EntityRole
 
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import (
@@ -51,6 +51,8 @@ GP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
 GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"].append(
     REGISTRATION["parties"][1]
 )
+del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]['officer']['id']
+del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1]['officer']['id']
 
 SP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
 SP_CHANGE_OF_REGISTRATION["filing"]["business"]["legalType"] = "SP"
@@ -61,6 +63,7 @@ SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]["roles
     {"roleType": "Completing Party", "appointmentDate": "2022-01-01"},
     {"roleType": "Proprietor", "appointmentDate": "2022-01-01"},
 ]
+del SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]['officer']['id']
 
 naics_response = {
     "code": REGISTRATION["business"]["naics"]["naicsCode"],
@@ -71,13 +74,11 @@ naics_response = {
 @pytest.mark.parametrize(
     "test_name, legal_name, new_legal_name,legal_type, filing_template",
     [
-        ("name_change", "Test Firm", "New Name", "GP", GP_CHANGE_OF_REGISTRATION),
-        ("no_change", "Test Firm", None, "GP", GP_CHANGE_OF_REGISTRATION),
         ("name_change", "Test Firm", "New Name", "SP", SP_CHANGE_OF_REGISTRATION),
         ("no_change", "Test Firm", None, "SP", SP_CHANGE_OF_REGISTRATION),
     ],
 )
-def test_change_of_registration_legal_name(
+def test_change_of_registration_legal_name_sp(
     app,
     session,
     mocker,
@@ -90,9 +91,7 @@ def test_change_of_registration_legal_name(
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = "FM1234567"
-    business = create_entity(identifier, legal_type, legal_name)
-    business.save()
-    business_id = business.id
+    
     filing = copy.deepcopy(filing_template)
     if test_name == "name_change":
         filing["filing"]["changeOfRegistration"]["nameRequest"][
@@ -103,7 +102,111 @@ def test_change_of_registration_legal_name(
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
-    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    proprietor_identifier = 'P1234567'
+    proprietor = create_entity(proprietor_identifier, "person", "my self old")
+    filing["filing"]["changeOfRegistration"]["parties"][0]['officer']['id'] = proprietor.id
+
+    filing["filing"]["business"]["identifier"] = identifier
+    filing = create_filing(payment_id, filing)
+    
+    alternate_name = AlternateName(
+        identifier=identifier,
+        name_type=AlternateName.NameType.OPERATING,
+        change_filing_id=filing.id,
+        end_date=None,
+        name=legal_name,
+        start_date=datetime.utcnow(),
+        registration_date=datetime.utcnow(),
+    )
+    proprietor.alternate_names.append(alternate_name)
+    proprietor.save()
+    proprietor_id = proprietor.id
+    
+    filing_id = filing.id
+    filing.legal_entity_id = proprietor_id
+    filing.save()
+    
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    # mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    # mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    # mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+    #              return_value=None)
+    # mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, "find_by_code", return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    final_filing = Filing.find_by_id(filing_id)
+    change_of_registration = final_filing.meta_data.get("changeOfRegistration", {})
+    business = LegalEntity.find_by_internal_id(proprietor_id)
+    alternate_name = business.alternate_names.all()[0]
+
+    if new_legal_name:
+        assert alternate_name.name == new_legal_name
+        assert change_of_registration.get("toLegalName") == new_legal_name
+        assert change_of_registration.get("fromLegalName") == legal_name
+    else:
+        assert alternate_name.name == legal_name
+        assert change_of_registration.get("toLegalName") is None
+        assert change_of_registration.get("fromLegalName") is None
+
+
+@pytest.mark.parametrize(
+    "test_name, legal_name, new_legal_name,legal_type, filing_template",
+    [
+        ("name_change", "Test Firm", "New Name", "GP", GP_CHANGE_OF_REGISTRATION),
+        ("no_change", "Test Firm", None, "GP", GP_CHANGE_OF_REGISTRATION),
+    ],
+)
+def test_change_of_registration_legal_name_gp(
+    app,
+    session,
+    mocker,
+    test_name,
+    legal_name,
+    new_legal_name,
+    legal_type,
+    filing_template,
+):
+    """Assert the worker process calls the legal name change correctly."""
+
+    identifier = "FM1234567"
+    
+    filing = copy.deepcopy(filing_template)
+    if test_name == "name_change":
+        filing["filing"]["changeOfRegistration"]["nameRequest"][
+            "legalName"
+        ] = new_legal_name
+    else:
+        del filing["filing"]["changeOfRegistration"]["nameRequest"]
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing = create_filing(payment_id, filing)
+
+    business = create_entity(identifier, legal_type, legal_name)
+    
+    alternate_name = AlternateName(
+        identifier=identifier,
+        name_type=AlternateName.NameType.OPERATING,
+        change_filing_id=filing.id,
+        end_date=None,
+        name=legal_name,
+        start_date=datetime.utcnow(),
+        registration_date=datetime.utcnow(),
+    )
+    business.alternate_names.append(alternate_name)
+    business.save()
+    business_id = business.id
+    filing_id = filing.id
+    filing.legal_entity_id = business_id
+    filing.save()
+    
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
@@ -124,11 +227,11 @@ def test_change_of_registration_legal_name(
     business = LegalEntity.find_by_internal_id(business_id)
 
     if new_legal_name:
-        assert business.legal_name == new_legal_name
+        assert business.business_name == new_legal_name
         assert change_of_registration.get("toLegalName") == new_legal_name
         assert change_of_registration.get("fromLegalName") == legal_name
     else:
-        assert business.legal_name == legal_name
+        assert business.business_name == legal_name
         assert change_of_registration.get("toLegalName") is None
         assert change_of_registration.get("fromLegalName") is None
 
@@ -136,8 +239,8 @@ def test_change_of_registration_legal_name(
 @pytest.mark.parametrize(
     "test_name,legal_type, legal_name, filing_template",
     [
-        ("sp_address_change", "Test Firm", "SP", SP_CHANGE_OF_REGISTRATION),
-        ("gp_address_change", "Test Firm", "GP", GP_CHANGE_OF_REGISTRATION),
+        ("sp_address_change", "SP", "Test Firm", SP_CHANGE_OF_REGISTRATION),
+        ("gp_address_change", "GP", "Test Firm", GP_CHANGE_OF_REGISTRATION),
     ],
 )
 def test_change_of_registration_business_address(
@@ -160,6 +263,7 @@ def test_change_of_registration_business_address(
     filing = copy.deepcopy(filing_template)
 
     del filing["filing"]["changeOfRegistration"]["nameRequest"]
+    del filing["filing"]["changeOfRegistration"]["parties"]
 
     filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"][
         "deliveryAddress"
@@ -235,6 +339,7 @@ def test_worker_change_of_registration_court_order(
     ] = effect_of_order
 
     del filing["filing"]["changeOfRegistration"]["nameRequest"]
+    del filing["filing"]["changeOfRegistration"]["parties"]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -318,13 +423,13 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
         ].upper()
     )
     assert (
-        party.delivery_address.street
+        party.entity_delivery_address.street
         == filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"][
             "streetAddress"
         ]
     )
     assert (
-        party.mailing_address.street
+        party.entity_mailing_address.street
         == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
             "streetAddress"
         ]
@@ -405,19 +510,19 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch("entity_filer.worker.publish_email_message", return_value=None)
-    mocker.patch("entity_filer.worker.publish_event", return_value=None)
-    mocker.patch(
-        "entity_filer.filing_processors.filing_components.name_request.consume_nr",
-        return_value=None,
-    )
-    mocker.patch(
-        "entity_filer.filing_processors.filing_components.business_profile.update_business_profile",
-        return_value=None,
-    )
-    mocker.patch(
-        "legal_api.services.bootstrap.AccountService.update_entity", return_value=None
-    )
+    # mocker.patch("entity_filer.worker.publish_email_message", return_value=None)
+    # mocker.patch("entity_filer.worker.publish_event", return_value=None)
+    # mocker.patch(
+    #     "entity_filer.filing_processors.filing_components.name_request.consume_nr",
+    #     return_value=None,
+    # )
+    # mocker.patch(
+    #     "entity_filer.filing_processors.filing_components.business_profile.update_business_profile",
+    #     return_value=None,
+    # )
+    # mocker.patch(
+    #     "legal_api.services.bootstrap.AccountService.update_entity", return_value=None
+    # )
 
     # Test
     with patch.object(NaicsService, "find_by_code", return_value=naics_response):
@@ -427,7 +532,7 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     business = LegalEntity.find_by_internal_id(business_id)
 
     if test_name == "gp_edit_partner_name_and_address":
-        party = business.entity_roles.all()[0].party
+        party = business.entity_roles.all()[0].related_entity
         assert (
             party.first_name
             == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
@@ -435,13 +540,13 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
             ].upper()
         )
         assert (
-            party.delivery_address.street
+            party.entity_delivery_address.street
             == filing["filing"]["changeOfRegistration"]["parties"][0][
                 "deliveryAddress"
             ]["streetAddress"]
         )
         assert (
-            party.mailing_address.street
+            party.entity_mailing_address.street
             == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
                 "streetAddress"
             ]
@@ -450,7 +555,7 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
         assert business.entity_roles.all()[1].cessation_date is None
 
     if test_name == "gp_delete_partner":
-        deleted_role = EntityRole.get_entity_roles_by_party_id(business_id, party_id_2)[0]
+        deleted_role = EntityRole.get__roles_by_party_id(business_id, party_id_2)[0]
         assert deleted_role.cessation_date is not None
 
     if test_name == "gp_add_partner":

@@ -17,7 +17,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from business_model import Address, AlternateName, LegalEntity, Filing
+from business_model import db, Address, AlternateName, LegalEntity, Filing
 from entity_filer.exceptions.default_exception import DefaultException
 
 from entity_filer.filing_meta import FilingMeta
@@ -31,7 +31,7 @@ from entity_filer.filing_processors.filing_components.parties import get_or_crea
 from entity_filer.filing_processors.registration import get_partnership_name
 
 
-def process(
+def  process(
     legal_entity: LegalEntity,
     change_filing_rec: Filing,
     change_filing: Dict,
@@ -40,15 +40,15 @@ def process(
     """Render the change of registration filing onto the business model objects."""
     filing_meta.change_of_registration = {}
     match legal_entity.entity_type:
-        case LegalEntity.EntityTypes.SOLE_PROP:                    
-            _update_sp_change(
+        case LegalEntity.EntityTypes.PARTNERSHIP:
+            _update_partner_change(
                 legal_entity,
                 change_filing_rec,
                 change_filing,
                 filing_meta
             )
-        case LegalEntity.EntityTypes.PARTNERSHIP:
-            _update_partner_change(
+        case _: # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
+            _update_sp_change(
                 legal_entity,
                 change_filing_rec,
                 change_filing,
@@ -92,7 +92,7 @@ def _update_partner_change(
         change_filing: Dict,
         filing_meta: FilingMeta,
 ):
-    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest")
+    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
     if name_request and (to_legal_name := name_request.get("legalName")):
         alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
         parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
@@ -102,7 +102,12 @@ def _update_partner_change(
         legal_entity.alternate_names.remove(alternate_name)
         alternate_name.end_date = change_filing_rec.effective_date
         alternate_name.change_filing_id = change_filing_rec.id
-        alternate_name.delete()
+        # alternate_name.delete()
+        db.session.add(alternate_name)
+        db.session.commit()
+        db.session.delete(alternate_name)
+        db.session.commit()
+
 
         new_alternate_name = AlternateName(
             bn15=alternate_name.bn15,
@@ -146,9 +151,10 @@ def _update_sp_change(
         change_filing: Dict,
         filing_meta: FilingMeta,
 ):
-    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest")
+    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
+    identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
     if name_request and (to_legal_name := name_request.get("legalName")):
-        alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
+        alternate_name = AlternateName.find_by_identifier(identifier)
         parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
 
         # Find the Proprietor
@@ -174,12 +180,16 @@ def _update_sp_change(
                 f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
             )
 
-        alternate_name.end_date = change_filing.effective_date
-        alternate_name.change_filing_id = change_filing.id
-        alternate_name.delete()
+        alternate_name.end_date = change_filing_rec.effective_date
+        alternate_name.change_filing_id = change_filing_rec.id
+        # alternate_name.delete()
+        db.session.add(alternate_name)
+        db.session.commit()
+        db.session.delete(alternate_name)
+        db.session.commit()
 
         new_alternate_name = AlternateName(
-            identifier=legal_entity.identifier,
+            identifier=identifier,
             name_type=AlternateName.NameType.OPERATING,
             change_filing_id=change_filing_rec.id,
             end_date=None,

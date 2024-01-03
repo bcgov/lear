@@ -38,7 +38,7 @@ When deployed in OKD, it adds the last commit hash onto the version info.
 import io
 import os
 
-import PyPDF2
+# import PyPDF2
 
 # from legal_api.reports.registrar_meta import RegistrarInfo
 # from legal_api.services import PdfService

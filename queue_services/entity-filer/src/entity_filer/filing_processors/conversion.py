@@ -33,9 +33,7 @@ from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.change_of_registration import (
-    update_parties as upsert_parties,
-)
+
 from entity_filer.filing_processors.filing_components import (
     aliases,
     legal_entity_info,
@@ -151,8 +149,8 @@ def _process_firms_conversion(
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(conversion_filing, "/filing/conversion/parties")
-        upsert_parties(legal_entity, party_json, filing_rec)
+        parties = dpath.util.get(conversion_filing, "/filing/conversion/parties")
+        merge_all_parties(legal_entity, conversion_filing, {"parties": parties})
 
     # update legal_entity start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
