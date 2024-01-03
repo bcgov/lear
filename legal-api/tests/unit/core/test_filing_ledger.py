@@ -70,7 +70,7 @@ def test_simple_ledger_search(session):
     alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
 
     assert alteration
-    assert 16 == len(alteration.keys())
+    assert 15 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
