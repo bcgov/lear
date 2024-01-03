@@ -430,7 +430,7 @@ class Filing:
 
     @staticmethod
     def _is_display_ledger(filing: FilingStorage) -> bool:
-        """"Return boolean that display the ledger"""
+        """Return boolean that display the ledger."""
         return filing.filing_type != Filing.FilingTypes.ADMIN_FREEZE
 
     @staticmethod
