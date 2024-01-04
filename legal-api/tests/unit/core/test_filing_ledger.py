@@ -70,7 +70,7 @@ def test_simple_ledger_search(session):
     alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
 
     assert alteration
-    assert 15 == len(alteration.keys())
+    assert 16 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
@@ -79,6 +79,7 @@ def test_simple_ledger_search(session):
     assert 'status' in alteration
     assert 'submittedDate' in alteration
     assert 'submitter' in alteration
+    assert 'displayLedger' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
@@ -104,3 +105,10 @@ def test_common_ledger_items(session):
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
     assert common_ledger_items['documentsLink'] is not None
+    assert common_ledger_items['displayLedger'] is True
+
+    filing['filing']['header']['name'] = 'adminFreeze'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1), filing_type='adminFreeze')
+    common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
+    assert common_ledger_items['displayLedger'] is False
