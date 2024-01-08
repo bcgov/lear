@@ -38,51 +38,54 @@ from tests.unit.models import (
     factory_user,
 )
 
+
 def test_valid_amalgamating_business_save(session):
     """Assert that a valid alias can be saved."""
     identifier = 1234567
-    
+
     b = factory_business('CP1234567')
     b.save()
-    
+
     filing = factory_filing(b, ANNUAL_REPORT)
     filing.save()
-    
+
     amalgamation = Amalgamation(
-        id = identifier,
-        amalgamation_type = Amalgamation.AmalgamationTypes.horizontal,
-        business_id = b.id,
-        filing_id = filing.id,
-        amalgamation_date = datetime.utcnow(),
-        court_approval = True
+        id=identifier,
+        amalgamation_type=Amalgamation.AmalgamationTypes.horizontal,
+        business_id=b.id,
+        filing_id=filing.id,
+        amalgamation_date=datetime.utcnow(),
+        court_approval=True
     )
-    
+
     amalgamation.save()
-    
+
     amalgamating_business_1 = AmalgamatingBusiness(
-        id = identifier,
-        role = AmalgamatingBusiness.Role.AMALGAMATING,
-        foreign_jurisdiction = "Alberta",
-        foreign_name = "Testing123",
-        foreign_corp_num = "123456789",
-        business_id = b.id,
-        amalgamation_id = amalgamation.id
+        id=identifier,
+        role=AmalgamatingBusiness.Role.AMALGAMATING,
+        foreign_jurisdiction="CA",
+        foreign_jurisdiction_region="AB",
+        foreign_name="Testing123",
+        foreign_corp_num="123456789",
+        business_id=b.id,
+        amalgamation_id=amalgamation.id
     )
     amalgamating_business_1.save()
-    
+
     identifier = 1234568
-    
+
     amalgamating_business_2 = AmalgamatingBusiness(
-        id = identifier,
-        role = AmalgamatingBusiness.Role.HOLDING,
-        foreign_jurisdiction = "Alberta",
-        foreign_name = "Testing123",
-        foreign_corp_num = "123456789",
-        business_id = b.id,
-        amalgamation_id = amalgamation.id
+        id=identifier,
+        role=AmalgamatingBusiness.Role.HOLDING,
+        foreign_jurisdiction="CA",
+        foreign_jurisdiction_region="AB",
+        foreign_name="Testing123",
+        foreign_corp_num="123456789",
+        business_id=b.id,
+        amalgamation_id=amalgamation.id
     )
     amalgamating_business_2.save()
-    
+
     # verify
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
