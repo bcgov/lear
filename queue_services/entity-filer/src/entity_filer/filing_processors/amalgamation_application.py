@@ -20,7 +20,8 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException
-from legal_api.models import db, AmalgamatingBusiness, Amalgamation, Business, Filing, RegistrationBootstrap
+from legal_api import db
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_meta import FilingMeta
