@@ -120,6 +120,9 @@ select le.id,
        f.effective_date                            as start_date,
        null                                        as end_date,
        null                                        as next_filing_id,
+       le.naics_key,
+       le.naics_code,
+       le.naics_description,
        le.version
 from legal_entities le
          left join filings f on f.id = le.change_filing_id
@@ -146,6 +149,9 @@ select leh.id,
        f.effective_date                            as start_date,
        next_leh.end_date,
        next_leh.next_filing_id,
+       leh.naics_key,
+       leh.naics_code,
+       leh.naics_description,
        leh.version
 from legal_entities_history leh
          left join filings f on f.id = leh.change_filing_id
@@ -182,7 +188,7 @@ where leh.entity_type in ('SP', 'GP')
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
 INSERT
 INTO alternate_names(legal_entity_id, identifier, name, bn15, start_date, end_date, name_type, change_filing_id,
-                     version)
+                     naics_key, naics_code, naics_description, version)
 select lnc.id                as legal_entity_id,
        identifier,
        legal_name            as name,
@@ -191,6 +197,9 @@ select lnc.id                as legal_entity_id,
        end_date,
        'OPERATING'::nametype as name_type,
        lnc.filing_id         as change_filing_id,
+       naics_key,
+       naics_code,
+       naics_description,
        1                     as version
 from temp_legal_name_changes lnc
          join (select id,
@@ -215,7 +224,7 @@ WITH id_values AS (SELECT nextval('alternate_names_id_seq') as an_seq_id, lnc.*
                      and lnc.filing_id != an.change_filing_id)
 INSERT
 INTO alternate_names_history(id, legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
-                             version, change_filing_id, changed)
+                             naics_key, naics_code, naics_description, version, change_filing_id, changed)
 SELECT id_values.an_seq_id   as id,
        id_values.id          as legal_entity_id,
        id_values.identifier,
@@ -224,6 +233,9 @@ SELECT id_values.an_seq_id   as id,
        id_values.start_date,
        NULL                  as end_date,
        'OPERATING'::nametype as name_type,
+       id_values.naics_key,
+       id_values.naics_code,
+       id_values.naics_description,
        1                     as version,
        id_values.filing_id   as change_filing_id,
        id_values.start_date  as changed
@@ -239,6 +251,9 @@ SELECT id_values.an_seq_id      as id,
        id_values.start_date,
        id_values.end_date       as end_date,
        'OPERATING'::nametype    as name_type,
+       id_values.naics_key,
+       id_values.naics_code,
+       id_values.naics_description,
        2                        as version,
        id_values.next_filing_id as change_filing_id,
        id_values.end_date       as changed
