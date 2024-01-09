@@ -29,8 +29,9 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
     class Role(BaseEnum):
         """Enum for the Role Values."""
 
-        AMALGAMATING = auto()
-        HOLDING = auto()
+        amalgamating = auto()
+        holding = auto()
+        primary = auto()
 
     # __versioned__ = {}
     __tablename__ = 'amalgamating_business'

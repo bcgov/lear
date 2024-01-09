@@ -41,8 +41,6 @@ from tests.unit.models import (
 
 def test_valid_amalgamating_business_save(session):
     """Assert that a valid alias can be saved."""
-    identifier = 1234567
-
     b = factory_business('CP1234567')
     b.save()
 
@@ -50,7 +48,6 @@ def test_valid_amalgamating_business_save(session):
     filing.save()
 
     amalgamation = Amalgamation(
-        id=identifier,
         amalgamation_type=Amalgamation.AmalgamationTypes.horizontal,
         business_id=b.id,
         filing_id=filing.id,
@@ -61,8 +58,7 @@ def test_valid_amalgamating_business_save(session):
     amalgamation.save()
 
     amalgamating_business_1 = AmalgamatingBusiness(
-        id=identifier,
-        role=AmalgamatingBusiness.Role.AMALGAMATING,
+        role=AmalgamatingBusiness.Role.amalgamating,
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
@@ -72,11 +68,8 @@ def test_valid_amalgamating_business_save(session):
     )
     amalgamating_business_1.save()
 
-    identifier = 1234568
-
     amalgamating_business_2 = AmalgamatingBusiness(
-        id=identifier,
-        role=AmalgamatingBusiness.Role.HOLDING,
+        role=AmalgamatingBusiness.Role.holding,
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
@@ -90,5 +83,6 @@ def test_valid_amalgamating_business_save(session):
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
     for type in AmalgamatingBusiness.Role:
-        assert type in [AmalgamatingBusiness.Role.HOLDING,
-                        AmalgamatingBusiness.Role.AMALGAMATING]
+        assert type in [AmalgamatingBusiness.Role.holding,
+                        AmalgamatingBusiness.Role.amalgamating,
+                        AmalgamatingBusiness.Role.primary]
