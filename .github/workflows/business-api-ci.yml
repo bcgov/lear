@@ -17,5 +17,5 @@ jobs:
     uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
     with:
       app_name: "business-api"
-      working_directory: "./business-api"
+      working_directory: "./legal-api"
       codecov_flag: "legalapi"
