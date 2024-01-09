@@ -15,31 +15,40 @@
 from http import HTTPStatus
 from typing import Dict, Optional
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
+    _ as babel,
+)
+
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
 
 from ...utils import get_str
+
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(legal_entity: LegalEntity, registrars_order: Dict) -> Optional[Error]:
     """Validate the Registrars Order filing."""
     if not legal_entity or not registrars_order:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    effect_of_order = get_str(registrars_order, '/filing/registrarsOrder/effectOfOrder')
+    effect_of_order = get_str(registrars_order, "/filing/registrarsOrder/effectOfOrder")
     if effect_of_order:
-        if effect_of_order == 'planOfArrangement':
-            file_number = get_str(registrars_order, '/filing/registrarsOrder/fileNumber')
+        if effect_of_order == "planOfArrangement":
+            file_number = get_str(registrars_order, "/filing/registrarsOrder/fileNumber")
             if not file_number:
-                msg.append({'error': babel(
-                    'Court Order Number is required when this filing is pursuant to a Plan of Arrangement.'),
-                    'path': '/filing/registrarsOrder/fileNumber'})
+                msg.append(
+                    {
+                        "error": babel(
+                            "Court Order Number is required when this filing is pursuant to a Plan of Arrangement."
+                        ),
+                        "path": "/filing/registrarsOrder/fileNumber",
+                    }
+                )
         else:
-            msg.append({'error': babel('Invalid effectOfOrder.'), 'path': '/filing/registrarsOrder/effectOfOrder'})
+            msg.append({"error": babel("Invalid effectOfOrder."), "path": "/filing/registrarsOrder/effectOfOrder"})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

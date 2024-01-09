@@ -20,12 +20,11 @@ from flask_cors import cross_origin
 
 from legal_api.services import namex
 
+bp = Blueprint("NAMEREQUEST2", __name__, url_prefix="/api/v2/nameRequests")
 
-bp = Blueprint('NAMEREQUEST2', __name__, url_prefix='/api/v2/nameRequests')
 
-
-@bp.route('/<string:identifier>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>", methods=["GET"])
+@cross_origin(origin="*")
 def get(identifier):
     """Return a JSON object with name request information."""
     try:
@@ -33,7 +32,7 @@ def get(identifier):
         # Errors in general will just pass though,
         # 404 is overriden as it is giving namex-api specific messaging
         if nr_response.status_code == 404:
-            return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
+            return make_response(jsonify(message="{} not found.".format(identifier)), 404)
 
         return jsonify(nr_response.json())
     except Exception as err:

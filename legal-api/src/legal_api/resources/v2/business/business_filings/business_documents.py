@@ -24,7 +24,8 @@ from flask_cors import cross_origin
 
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Filing as FilingModel, LegalEntity  # noqa: I001
+from legal_api.models import Filing as FilingModel  # noqa: I001
+from legal_api.models import LegalEntity
 from legal_api.reports import get_pdf
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
@@ -32,49 +33,62 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
 from ..bp import bp
+
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-DOCUMENTS_BASE_ROUTE: Final = '/<string:identifier>/filings/<int:filing_id>/documents'
-OUTPUT_DATE_FORMAT: Final = '%b %-d, %Y at %-I:%M %p Pacific time'
+DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/documents"
+OUTPUT_DATE_FORMAT: Final = "%b %-d, %Y at %-I:%M %p Pacific time"
 #    example                'Jun 9, 2021 at 11:36 am Pacific time'
 
 
-@cors_preflight('GET, POST')
-@bp.route(DOCUMENTS_BASE_ROUTE, methods=['GET', 'OPTIONS'])
-@bp.route(DOCUMENTS_BASE_ROUTE + '/<string:legal_filing_name>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@cors_preflight("GET, POST")
+@bp.route(DOCUMENTS_BASE_ROUTE, methods=["GET", "OPTIONS"])
+@bp.route(DOCUMENTS_BASE_ROUTE + "/<string:legal_filing_name>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    if not authorized(identifier, jwt, ['view', ]):
-        return jsonify(
-            message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
-        ), HTTPStatus.UNAUTHORIZED
+    if not authorized(
+        identifier,
+        jwt,
+        [
+            "view",
+        ],
+    ):
+        return (
+            jsonify(message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{"identifier": identifier})),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
-    if identifier.startswith('T'):
+    if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         legal_entity = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
     else:
         legal_entity = LegalEntity.find_by_identifier(identifier)
 
-    if not legal_entity and not identifier.startswith('T'):
-        return jsonify(
-            message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
-        ), HTTPStatus.NOT_FOUND
+    if not legal_entity and not identifier.startswith("T"):
+        return (
+            jsonify(message=get_error_message(ErrorCode.MISSING_BUSINESS, **{"identifier": identifier})),
+            HTTPStatus.NOT_FOUND,
+        )
 
     if not (filing := Filing.get(identifier, filing_id)):
-        return jsonify(
-            message=get_error_message(ErrorCode.FILING_NOT_FOUND,
-                                      **{'filing_id': filing_id, 'identifier': identifier})
-        ), HTTPStatus.NOT_FOUND
+        return (
+            jsonify(
+                message=get_error_message(
+                    ErrorCode.FILING_NOT_FOUND, **{"filing_id": filing_id, "identifier": identifier}
+                )
+            ),
+            HTTPStatus.NOT_FOUND,
+        )
 
     if not legal_filing_name:
         return _get_document_list(legal_entity, filing)
 
-    if legal_filing_name and ('application/pdf' in request.accept_mimetypes):
-        if legal_filing_name.lower().startswith('receipt'):
+    if legal_filing_name and ("application/pdf" in request.accept_mimetypes):
+        if legal_filing_name.lower().startswith("receipt"):
             return _get_receipt(legal_entity, filing, jwt.get_token_auth_header())
 
         return get_pdf(filing.storage, legal_filing_name)
@@ -93,36 +107,36 @@ def _get_document_list(legal_entity, filing):
 def _get_receipt(legal_entity: LegalEntity, filing: Filing, token):
     """Get the receipt for the filing."""
     if filing.status not in (
-            Filing.Status.PAID,
-            Filing.Status.COMPLETED,
-            Filing.Status.CORRECTED,
+        Filing.Status.PAID,
+        Filing.Status.COMPLETED,
+        Filing.Status.CORRECTED,
     ):
         return {}, HTTPStatus.BAD_REQUEST
 
     effective_date = None
     if filing.storage.effective_date.date() != filing.storage.filing_date.date():
-        effective_date = (LegislationDatetime
-                          .as_legislation_timezone(filing.storage.effective_date)
-                          .strftime(OUTPUT_DATE_FORMAT))
+        effective_date = LegislationDatetime.as_legislation_timezone(filing.storage.effective_date).strftime(
+            OUTPUT_DATE_FORMAT
+        )
 
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {"Authorization": "Bearer " + token}
 
     url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.storage.payment_token}/receipts'
     receipt = requests.post(
         url,
         json={
-            'corpName': legal_entity.legal_name if legal_entity else filing.storage.temp_reg,
-            'filingDateTime': (LegislationDatetime
-                               .as_legislation_timezone(filing.storage.filing_date)
-                               .strftime(OUTPUT_DATE_FORMAT)),
-            'effectiveDateTime': effective_date if effective_date else '',
-            'filingIdentifier': str(filing.id),
-            'businessNumber': legal_entity.tax_id if legal_entity and legal_entity.tax_id else ''
+            "corpName": legal_entity.legal_name if legal_entity else filing.storage.temp_reg,
+            "filingDateTime": (
+                LegislationDatetime.as_legislation_timezone(filing.storage.filing_date).strftime(OUTPUT_DATE_FORMAT)
+            ),
+            "effectiveDateTime": effective_date if effective_date else "",
+            "filingIdentifier": str(filing.id),
+            "businessNumber": legal_entity.tax_id if legal_entity and legal_entity.tax_id else "",
         },
-        headers=headers
+        headers=headers,
     )
 
     if receipt.status_code != HTTPStatus.CREATED:
-        current_app.logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
 
     return receipt.content, receipt.status_code

@@ -19,10 +19,11 @@ from unittest.mock import patch
 import pytest
 from registry_schemas.example_data import CHANGE_OF_NAME, FILING_HEADER
 
-from legal_api.services import NameXService
 from legal_api.models import LegalEntity
+from legal_api.services import NameXService
 from legal_api.services.filings.validations.change_of_name import validate
 from tests.unit.models import factory_legal_entity
+
 
 class MockResponse:
     def __init__(self, json_data, status_code):
@@ -34,23 +35,23 @@ class MockResponse:
 
 
 @pytest.mark.parametrize(
-    'test_name, resolution, identifier, expected_code',
+    "test_name, resolution, identifier, expected_code",
     [
-        ('SUCCESS', 'some name', 'CP1234567', None),
-        ('MISSING - legalName', None, 'CP1234567', HTTPStatus.BAD_REQUEST),
-    ]
+        ("SUCCESS", "some name", "CP1234567", None),
+        ("MISSING - legalName", None, "CP1234567", HTTPStatus.BAD_REQUEST),
+    ],
 )
 def test_validate(session, test_name, resolution, identifier, expected_code):
     """Assert that a CoN can be validated."""
     # setup
-    legal_entity =LegalEntity(identifier=identifier)
+    legal_entity = LegalEntity(identifier=identifier)
 
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['changeOfName'] = copy.deepcopy(CHANGE_OF_NAME)
+    filing["filing"]["changeOfName"] = copy.deepcopy(CHANGE_OF_NAME)
     if resolution:
-        filing['filing']['changeOfName']['legalName'] = resolution
+        filing["filing"]["changeOfName"]["legalName"] = resolution
     else:
-        del filing['filing']['changeOfName']['legalName']
+        del filing["filing"]["changeOfName"]["legalName"]
 
     # perform test
     err = validate(legal_entity, filing)
@@ -61,51 +62,46 @@ def test_validate(session, test_name, resolution, identifier, expected_code):
     else:
         assert not err
 
+
 TEST_DATA = [
-    (True, 'legal_name-CP1234568', 'CP', 'XCLP', True, 1),
-    (True, 'wrong_name-CP1234568', 'CP', 'XCLP', False, 1),
-    (False, 'legal_name-CP1234568', 'CP', 'XCLP', True, 1)
+    (True, "legal_name-CP1234568", "CP", "XCLP", True, 1),
+    (True, "wrong_name-CP1234568", "CP", "XCLP", False, 1),
+    (False, "legal_name-CP1234568", "CP", "XCLP", True, 1),
 ]
-@pytest.mark.parametrize('use_nr, new_name, entity_type, nr_type, should_pass, num_errors', TEST_DATA)
+
+
+@pytest.mark.parametrize("use_nr, new_name, entity_type, nr_type, should_pass, num_errors", TEST_DATA)
 def test_validate_nr(session, use_nr, new_name, entity_type, nr_type, should_pass, num_errors):
     """Assert that a CoN can be validated."""
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
 
     CHANGE_OF_NAME = {
-        'legalName': 'My New Entity Name',
-        'nameRequest': {
-            'nrNumber': 'NR 8798956',
-            'legalName': 'legal_name-CP1234568',
-            'legalType': 'CP'
-        },
+        "legalName": "My New Entity Name",
+        "nameRequest": {"nrNumber": "NR 8798956", "legalName": "legal_name-CP1234568", "legalType": "CP"},
     }
 
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['changeOfName'] = copy.deepcopy(CHANGE_OF_NAME)
+    filing["filing"]["changeOfName"] = copy.deepcopy(CHANGE_OF_NAME)
 
     if use_nr:
-        del filing['filing']['changeOfName']['legalName']
+        del filing["filing"]["changeOfName"]["legalName"]
 
         nr_json = {
             "state": "APPROVED",
             "expirationDate": "",
             "requestTypeCd": nr_type,
-            "names": [{
-                "name": new_name,
-                "state": "APPROVED",
-                "consumptionDate": ""
-            }]
+            "names": [{"name": new_name, "state": "APPROVED", "consumptionDate": ""}],
         }
 
         nr_response = MockResponse(nr_json, 200)
 
-        with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+        with patch.object(NameXService, "query_nr_number", return_value=nr_response):
             err = validate(legal_entity, filing)
     else:
-        del filing['filing']['changeOfName']['nameRequest']
+        del filing["filing"]["changeOfName"]["nameRequest"]
         err = validate(legal_entity, filing)
 
     if err:

@@ -20,13 +20,13 @@ from enum import Enum
 class EndpointEnum(str, Enum):
     """Enumerate the endpoint mounts used in the system."""
 
-    API_V2 = '/api/v2'
-    API = '/api'
-    BUSINESSES_V2 = '/api/v2/businesses'
+    API_V2 = "/api/v2"
+    API = "/api"
+    BUSINESSES_V2 = "/api/v2/businesses"
     DEFAULT_API = API_V2
 
 
 class EndpointVersionEnum(str, Enum):
     """Enumerate the Accept Version Headers."""
 
-    V2 = 'v2'
+    V2 = "v2"

@@ -15,23 +15,28 @@
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
+    _ as babel,
+)
+
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
 
+from ...utils import (  # noqa: I003; needed as the linter gets confused from the babel override above.
+    get_str,
+)
 from .common_validations import validate_court_order
-from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(legal_entity: LegalEntity, put_back_on: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not legal_entity or not put_back_on:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    if not get_str(put_back_on, '/filing/putBackOn/details'):
-        msg.append({'error': babel('Put Back On details are required.'), 'path': '/filing/putBackOn/details'})
+    if not get_str(put_back_on, "/filing/putBackOn/details"):
+        msg.append({"error": babel("Put Back On details are required."), "path": "/filing/putBackOn/details"})
 
     msg.extend(_validate_court_order(put_back_on))
 
@@ -42,8 +47,8 @@ def validate(legal_entity: LegalEntity, put_back_on: Dict) -> Optional[Error]:
 
 def _validate_court_order(filing):
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get('putBackOn', {}).get('courtOrder', None):
-        court_order_path: Final = '/filing/putBackOn/courtOrder'
+    if court_order := filing.get("filing", {}).get("putBackOn", {}).get("courtOrder", None):
+        court_order_path: Final = "/filing/putBackOn/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err

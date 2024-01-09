@@ -14,37 +14,30 @@
 """Data for the JWT tokens."""
 from typing import List
 
+STAFF_ROLE = "staff"
 
-STAFF_ROLE = 'staff'
 
-
-def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = 'test-user'):
+def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = "test-user"):
     """Create a jwt bearer token with the correct keys, roles and username."""
-    token_header = {
-        'alg': 'RS256',
-        'typ': 'JWT',
-        'kid': 'flask-jwt-oidc-test-client'
-    }
+    token_header = {"alg": "RS256", "typ": "JWT", "kid": "flask-jwt-oidc-test-client"}
     claims = {
-        'iss': 'https://example.localdomain/auth/realms/example',
-        'sub': '43e6a245-0bf7-4ccf-9bd0-e7fb85fd18cc',
-        'aud': 'example',
-        'exp': 2539722391,
-        'iat': 1539718791,
-        'jti': 'flask-jwt-oidc-test-support',
-        'typ': 'Bearer',
-        'username': f'{username}',
-        'idp_userid': '123',
-        'loginSource': 'IDIR',
-        'realm_access': {
-            'roles': [] + roles
-        }
+        "iss": "https://example.localdomain/auth/realms/example",
+        "sub": "43e6a245-0bf7-4ccf-9bd0-e7fb85fd18cc",
+        "aud": "example",
+        "exp": 2539722391,
+        "iat": 1539718791,
+        "jti": "flask-jwt-oidc-test-support",
+        "typ": "Bearer",
+        "username": f"{username}",
+        "idp_userid": "123",
+        "loginSource": "IDIR",
+        "realm_access": {"roles": [] + roles},
     }
     return jwt_manager.create_jwt(claims, token_header)
 
 
-def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user', **kwargs):
+def create_header(jwt_manager, roles: List[str] = [], username: str = "test-user", **kwargs):
     """Return a header containing a JWT bearer token."""
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
-    headers = {**kwargs, **{'Authorization': 'Bearer ' + token}}
+    headers = {**kwargs, **{"Authorization": "Bearer " + token}}
     return headers

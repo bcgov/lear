@@ -27,10 +27,10 @@ from .test_pdf_service import _create_pdf_file
 
 def test_create_signed_put_url(session, minio_server):  # pylint:disable=unused-argument
     """Assert that the a PUT url can be pre-signed."""
-    file_name = 'cooperative-test.pdf'
+    file_name = "cooperative-test.pdf"
     signed_url = MinioService.create_signed_put_url(file_name)
     assert signed_url
-    assert signed_url.get('key').endswith('.pdf')
+    assert signed_url.get("key").endswith(".pdf")
 
 
 def test_create_signed_get_url(session, minio_server, tmpdir):  # pylint:disable=unused-argument
@@ -64,21 +64,21 @@ def test_delete_file(session, minio_server, tmpdir):  # pylint:disable=unused-ar
     try:
         MinioService.get_file_info(key)
     except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+        assert ex.code == "NoSuchKey"
 
 
 def _upload_file(tmpdir):
-    d = tmpdir.mkdir('subdir')
-    fh = d.join('cooperative-test.pdf')
-    fh.write('Test File')
+    d = tmpdir.mkdir("subdir")
+    fh = d.join("cooperative-test.pdf")
+    fh.write("Test File")
     filename = os.path.join(fh.dirname, fh.basename)
 
-    test_file = open(filename, 'rb')
-    files = {'upload_file': test_file}
+    test_file = open(filename, "rb")
+    files = {"upload_file": test_file}
     file_name = fh.basename
     signed_url = MinioService.create_signed_put_url(file_name)
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
+    key = signed_url.get("key")
+    pre_signed_put = signed_url.get("preSignedUrl")
     requests.put(pre_signed_put, files=files)
     return key
 
@@ -96,4 +96,4 @@ def test_put_file(session, minio_server, tmpdir):  # pylint:disable=unused-argum
         pdf_file.seek(0)
         assert file.data == pdf_file.read()
     except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+        assert ex.code == "NoSuchKey"

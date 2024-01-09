@@ -14,5 +14,4 @@
 """Translations for the API messages, not for the content returned from the datastore or entered by users."""
 from flask_babel import Babel
 
-
 babel = Babel()  # pylint: disable=invalid-name; by convention our external services are lower case

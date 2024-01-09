@@ -14,6 +14,7 @@
 
 """Service to check compliancy for a LegalEntity."""
 from legal_api.models import LegalEntity
+
 from .firms import check_business as firms_check  # noqa: I003
 
 
@@ -21,9 +22,7 @@ def check_business(legal_entity: any) -> list:
     """Check business for warnings."""
     result = []
 
-    if legal_entity.entity_type in \
-            (LegalEntity.EntityTypes.SOLE_PROP.value,
-             LegalEntity.EntityTypes.PARTNERSHIP.value):
+    if legal_entity.entity_type in (LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value):
         result = firms_check(legal_entity)
 
     return result

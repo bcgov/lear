@@ -31,20 +31,21 @@ from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 
 from .bp import bp
+
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@bp.route('/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>', methods=['PUT', 'PATCH', 'DELETE'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["PUT", "PATCH", "DELETE"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pylint: disable=W0613; matching signature
     """Block the redirect of the versioned API calls."""
     return {}, HTTPStatus.METHOD_NOT_ALLOWED
 
 
-@bp.route('/<string:identifier>/filings/<int:filing_id>/comments', methods=['GET'])
-@bp.route('/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments", methods=["GET"])
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_filing_comments(identifier, filing_id, comment_id=None):
     """Return a JSON object with meta information about the Service."""
@@ -58,7 +59,7 @@ def get_filing_comments(identifier, filing_id, comment_id=None):
     if comment_id:
         comment = comments.filter(Comment.id == comment_id).one_or_none()
         if not comment:
-            return jsonify({'message': f'Comment {comment_id} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"Comment {comment_id} not found"}), HTTPStatus.NOT_FOUND
 
         return jsonify(comment.json)
 
@@ -69,9 +70,9 @@ def get_filing_comments(identifier, filing_id, comment_id=None):
     return jsonify(comments=rv)
 
 
-@bp.route('/<string:identifier>/filings/<int:filing_id>/comments', methods=['POST'])
-@bp.route('/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>', methods=['POST'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments", methods=["POST"])
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["POST"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def post_filing_comments(identifier, filing_id):
     """Create a new comment for the filing."""
@@ -83,27 +84,30 @@ def post_filing_comments(identifier, filing_id):
     json_input = request.get_json()
 
     # check authorization
-    if not authorized(identifier, jwt, action=['add_comment']):
-        return jsonify({'message':
-                        f'You are not authorized to submit a comment for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["add_comment"]):
+        return (
+            jsonify({"message": f"You are not authorized to submit a comment for {identifier}."}),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
     # validate comment
     err = validate(json_input, True)
     if err:
-        json_input['errors'] = err.msg
+        json_input["errors"] = err.msg
         return jsonify(json_input), err.code
 
     # confirm that the filing ID in the URL is the same as in the json
-    if json_input['comment']['filingId'] != filing_id:
-        json_input['errors'] = [{'error': 'Invalid filingId in request'}, ]
+    if json_input["comment"]["filingId"] != filing_id:
+        json_input["errors"] = [
+            {"error": "Invalid filingId in request"},
+        ]
         return jsonify(json_input), HTTPStatus.BAD_REQUEST
 
     # save comment
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
         comment = Comment()
-        comment.comment = json_input['comment']['comment']
+        comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
         comment.filing_id = filing_id
         comment.timestamp = datetime.datetime.utcnow()
@@ -111,9 +115,12 @@ def post_filing_comments(identifier, filing_id):
         comment.save()
     except BusinessException as err:
         reply = json_input
-        reply['errors'] = [{'error': err.error}, ]
-        return jsonify(reply), err.status_code or \
-            (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
+        reply["errors"] = [
+            {"error": err.error},
+        ]
+        return jsonify(reply), err.status_code or (
+            HTTPStatus.CREATED if (request.method == "POST") else HTTPStatus.ACCEPTED
+        )
 
     # all done
     return jsonify(comment.json), HTTPStatus.CREATED
@@ -124,11 +131,10 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
     json_input = None
     with suppress(UnsupportedMediaType):
         json_input = client_request.get_json()
-    if client_request.method == 'POST' and not json_input:
-        return ({'message': f'No filing json data in body of post for {identifier}.'},
-                HTTPStatus.BAD_REQUEST)
+    if client_request.method == "POST" and not json_input:
+        return ({"message": f"No filing json data in body of post for {identifier}."}, HTTPStatus.BAD_REQUEST)
 
-    if client_request.method == 'GET' and identifier.startswith('T'):
+    if client_request.method == "GET" and identifier.startswith("T"):
         filing_model = Filing.get_temp_reg_filing(identifier)
         legal_entity = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
     else:
@@ -137,10 +143,10 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
     filing = Filing.find_by_id(filing_id)
 
     if not legal_entity:
-        return ({'message': f'{identifier} not found'}, HTTPStatus.NOT_FOUND)
+        return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     # check that filing belongs to this business
     if not filing or filing.legal_entity_id != legal_entity.id:
-        return ({'message': f'Filing {filing_id} not found'}, HTTPStatus.NOT_FOUND)
+        return ({"message": f"Filing {filing_id} not found"}, HTTPStatus.NOT_FOUND)
 
     return (None, None)

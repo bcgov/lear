@@ -20,15 +20,14 @@ Test-Suite to ensure that the /documents endpoint is working as expected.
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
-
 from tests.unit.services.utils import create_header
 
 
 def test_documents_signature_get_returns_200(client, jwt, session, minio_server):  # pylint:disable=unused-argument
     """Assert get documents/filename/signatures endpoint returns 200."""
     headers = create_header(jwt, [STAFF_ROLE])
-    file_name = 'test_file.jpeg'
-    rv = client.get(f'/api/v2/documents/{file_name}/signatures', headers=headers, content_type='application/json')
+    file_name = "test_file.jpeg"
+    rv = client.get(f"/api/v2/documents/{file_name}/signatures", headers=headers, content_type="application/json")
 
     assert rv.status_code == HTTPStatus.OK
-    assert 'key' in rv.json and 'preSignedUrl' in rv.json
+    assert "key" in rv.json and "preSignedUrl" in rv.json

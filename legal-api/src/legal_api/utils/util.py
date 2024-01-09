@@ -19,17 +19,24 @@ A simple decorator to add the options method to a Request Class.
 # from functools import wraps
 
 
-def cors_preflight(methods: str = 'GET'):
+def cors_preflight(methods: str = "GET"):
     """Render an option method on the class."""
+
     def wrapper(func):
         def options(self, *args, **kwargs):  # pylint: disable=unused-argument
-            return {'Allow': 'GET'}, 200, \
-                   {'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': methods,
-                    'Access-Control-Allow-Headers': 'Authorization, Content-Type'}
+            return (
+                {"Allow": "GET"},
+                200,
+                {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": methods,
+                    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                },
+            )
 
-        setattr(func, 'options', options)
+        setattr(func, "options", options)
         return func
+
     return wrapper
 
 
@@ -39,11 +46,13 @@ def build_schema_error_response(errors):
     for error in errors:
         validation_errors = []
         for context in error.context:
-            validation_errors.append({
-                'message': context.message,
-                'jsonPath': context.json_path,
-                'validator': context.validator,
-                'validatorValue': context.validator_value
-            })
-        formatted_errors.append({'path': '/'.join(error.path), 'error': error.message, 'context': validation_errors})
+            validation_errors.append(
+                {
+                    "message": context.message,
+                    "jsonPath": context.json_path,
+                    "validator": context.validator,
+                    "validatorValue": context.validator_value,
+                }
+            )
+        formatted_errors.append({"path": "/".join(error.path), "error": error.message, "context": validation_errors})
     return formatted_errors

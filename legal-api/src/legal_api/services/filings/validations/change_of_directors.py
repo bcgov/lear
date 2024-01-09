@@ -16,7 +16,9 @@ from http import HTTPStatus
 from typing import Dict, List
 
 import pycountry
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
+    _ as babel,
+)
 
 from legal_api.errors import Error
 from legal_api.models import Address, Filing, LegalEntity
@@ -24,13 +26,14 @@ from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_str
+
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(legal_entity: LegalEntity, cod: Dict) -> Error:
     """Validate the Change of Directors filing."""
     if not legal_entity or not cod:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
     msg_directors_addresses = validate_directors_addresses(cod)
@@ -53,18 +56,24 @@ def validate_directors_addresses(cod: Dict) -> List:
     """
     msg = []
 
-    directors = cod['filing']['changeOfDirectors']['directors']
+    directors = cod["filing"]["changeOfDirectors"]["directors"]
 
-    for idx, director in enumerate(directors):  # pylint: disable=too-many-nested-blocks;  # noqa: E501 review this when implementing corrections
+    for idx, director in enumerate(
+        directors
+    ):  # pylint: disable=too-many-nested-blocks;  # noqa: E501 review this when implementing corrections
         for address_type in Address.JSON_ADDRESS_TYPES:
             if address_type in director:
                 try:
-                    country = get_str(director, f'/{address_type}/addressCountry')
+                    country = get_str(director, f"/{address_type}/addressCountry")
                     _ = pycountry.countries.search_fuzzy(country)[0].alpha_2
 
                 except LookupError:
-                    msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
-                                'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})
+                    msg.append(
+                        {
+                            "error": babel("Address Country must resolve to a valid ISO-2 country."),
+                            "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry",
+                        }
+                    )
     return msg
 
 
@@ -84,19 +93,19 @@ def validate_effective_date(legal_entity: LegalEntity, cod: Dict) -> List:
 
     # get effective datetime string from filing
     try:
-        effective_datetime_str = cod['filing']['header']['effectiveDate']
+        effective_datetime_str = cod["filing"]["header"]["effectiveDate"]
     except KeyError:
-        return {'error': babel('No effective date provided.')}
+        return {"error": babel("No effective date provided.")}
 
     # convert string to datetime
     try:
         effective_datetime_utc = datetime.fromisoformat(effective_datetime_str)
     except ValueError:
-        return {'error': babel('Invalid ISO format for effective date.')}
+        return {"error": babel("Invalid ISO format for effective date.")}
 
     # check if effective datetime is in the future
     if effective_datetime_utc > datetime.utcnow():
-        msg.append({'error': babel('Filing cannot have a future effective date.')})
+        msg.append({"error": babel("Filing cannot have a future effective date.")})
 
     # convert to legislation timezone and then get date only
     effective_date_leg = LegislationDatetime.as_legislation_timezone(effective_datetime_utc).date()
@@ -104,14 +113,13 @@ def validate_effective_date(legal_entity: LegalEntity, cod: Dict) -> List:
     # check if effective date is before their incorporation date
     founding_date_leg = LegislationDatetime.as_legislation_timezone(legal_entity.founding_date).date()
     if effective_date_leg < founding_date_leg:
-        msg.append({'error': babel('Effective date cannot be before businesses founding date.')})
+        msg.append({"error": babel("Effective date cannot be before businesses founding date.")})
 
     # check if effective date is before their most recent COD or AR date
-    last_cod_filing = Filing.get_most_recent_legal_filing(legal_entity.id,
-                                                          Filing.FILINGS['changeOfDirectors']['name'])
+    last_cod_filing = Filing.get_most_recent_legal_filing(legal_entity.id, Filing.FILINGS["changeOfDirectors"]["name"])
     if last_cod_filing:
         last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
         if effective_date_leg < last_cod_date_leg:
-            msg.append({'error': babel('Effective date cannot be before another Change of Director filing.')})
+            msg.append({"error": babel("Effective date cannot be before another Change of Director filing.")})
 
     return msg

@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Mounting the end-points."""
-from http import HTTPStatus
 from typing import Optional
 
-from flask import current_app, redirect, request, url_for, Flask  # noqa: I001
+from flask import Flask
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 
 from legal_api import errorhandlers
 from legal_api.utils.run_version import get_run_version
 
-from .constants import EndpointEnum, EndpointVersionEnum
 from .v2 import v2_endpoint
 
 
@@ -41,22 +39,22 @@ class Endpoints:
         self._mount_endpoints()
 
     def _handler_setup(self):
-
         @self.app.after_request
         def add_version(response):  # pylint: disable=unused-variable
             version = get_run_version()
-            response.headers['API'] = f'legal_api/{version}'
-            response.headers['SCHEMAS'] = f'registry_schemas/{registry_schemas_version}'
+            response.headers["API"] = f"legal_api/{version}"
+            response.headers["SCHEMAS"] = f"registry_schemas/{registry_schemas_version}"
             return response
 
         errorhandlers.init_app(self.app)
 
     def _set_access_control_header(self, response):  # pylint: disable=unused-variable
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""
         v2_endpoint.init_app(self.app)
+
 
 endpoints = Endpoints()

@@ -33,7 +33,7 @@ def test_handle_http_error_pass_through_routing_exception():  # pylint: disable=
 def test_handle_http_error_pass(app):
     """Assert that the RoutingException is passed through the handler."""
     with app.app_context():
-        err = HTTPException(description='description')
+        err = HTTPException(description="description")
         err.code = 200
         response = errorhandlers.handle_http_error(err)
 

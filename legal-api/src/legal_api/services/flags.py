@@ -18,25 +18,24 @@ from contextlib import suppress
 from typing import Union
 
 import ldclient
-from ldclient import LDClient, Config
+from flask import Flask, current_app, has_app_context
+from ldclient import Config, LDClient
 from ldclient.integrations.test_data import TestData
-from flask import current_app
-from flask import has_app_context
-from flask import Flask
 
 import legal_api
+
 # from legal_api.models import User
 from legal_api.services.authz import get_role
 from legal_api.utils.auth import JwtManager
 
 
-class Flags():
+class Flags:
     """Wrapper around the feature flag system.
 
     1 client per application.
     """
 
-    COMPONENT_NAME = 'featureflags'
+    COMPONENT_NAME = "featureflags"
 
     def __init__(self, app: Flask = None):
         """Initialize this object."""
@@ -52,10 +51,10 @@ class Flags():
         Provide TD for TestData.
         """
         self.app = app
-        self.sdk_key = app.config.get('LD_SDK_KEY')
+        self.sdk_key = app.config.get("LD_SDK_KEY")
 
         if td:
-            client = LDClient(config=Config('testing', update_processor_class=td))
+            client = LDClient(config=Config("testing", update_processor_class=td))
         elif self.sdk_key:
             ldclient.set_config(Config(self.sdk_key))
             client = ldclient.get()
@@ -67,9 +66,11 @@ class Flags():
                 app.teardown_appcontext(self.teardown)
         except Exception as err:  # noqa: B903
             if app and has_app_context():
-                app.logger.warn('issue registering flag service', err)
+                app.logger.warn("issue registering flag service", err)
 
-    def teardown(self, exception):  # pylint: disable=unused-argument,no-self-use; flask method signature
+    def teardown(
+        self, exception  # pylint: disable=useless-option-value, unused-argument,no-self-use; flask method signature
+    ):
         """Destroy all objects created by this extension.
 
         Ensure we close the client connection nicely.
@@ -93,30 +94,26 @@ class Flags():
     @staticmethod
     def get_anonymous_user():
         """Return an anonymous key."""
-        return {
-            'key': 'anonymous'
-        }
+        return {"key": "anonymous"}
 
     @staticmethod
-    def flag_user(user: legal_api.models.User,
-                  account_id: int = None,
-                  jwt: JwtManager = None):
+    def flag_user(user: legal_api.models.User, account_id: int = None, jwt: JwtManager = None):
         """Convert User into a Flag user dict."""
         if not isinstance(user, legal_api.models.User):
             return None
 
         _user = {
-            'key': user.sub,
-            'firstName': user.firstname,
-            'lastName': user.lastname,
-            'email': user.email,
-            'custom': {
-                'loginSource': user.login_source,
-            }
+            "key": user.sub,
+            "firstName": user.firstname,
+            "lastName": user.lastname,
+            "email": user.email,
+            "custom": {
+                "loginSource": user.login_source,
+            },
         }
         with suppress(Exception):
             if account_id and jwt:
-                _user['custom']['group'] = get_role(jwt, account_id)
+                _user["custom"]["group"] = get_role(jwt, account_id)
 
         return _user
 
@@ -133,7 +130,7 @@ class Flags():
         try:
             return client.variation(flag, flag_user, None)
         except Exception as err:  # noqa: B902
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
             return None
 
     @staticmethod

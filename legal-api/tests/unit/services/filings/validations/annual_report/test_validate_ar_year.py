@@ -19,46 +19,94 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from freezegun import freeze_time
-from legal_api.models import LegalEntity
-from legal_api.services.filings.validations.annual_report import validate_ar_year
 from registry_schemas.example_data import ANNUAL_REPORT
 
+from legal_api.models import LegalEntity
+from legal_api.services.filings.validations.annual_report import validate_ar_year
 from tests.unit.models import factory_legal_entity
 
 
-@pytest.mark.parametrize('test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg', [
-    ('SUCCESS', '2018-08-05', '2017-08-05', '1900-07-01', None, None),
-    ('NO_AR_DATE', None, '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date must be a valid date.',
-                               'path': 'filing/annualReport/annualReportDate'}]),
-    ('NO_FUTURE_FILINGS',
-     (datetime.utcnow() + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
-     '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date cannot be in the future.',
-                               'path': 'filing/annualReport/annualReportDate'}]),
-    ('AR_BEFORE_LAST_AR', '2016-08-05', '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date cannot be before a previous Annual Report or the Founding Date.',
-          'path': 'filing/annualReport/annualReportDate'}]),
-    ('NO_LAST_AR_NOT_AFTER_FOUNDING', '2016-08-05', None, '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
-          'path': 'filing/annualReport/annualReportDate'}]),
-    ('NO_LAST_AR_BEFORE_FOUNDING', '2016-08-05', None, '2017-08-05',
-     HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date cannot be before a previous Annual Report or the Founding Date.',
-          'path': 'filing/annualReport/annualReportDate'}]),
-    ('LAST_AR_NOT_CONTIGUOUS_ORDER', '2019-08-05', '2017-08-05', '1900-07-01',
-     HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
-          'path': 'filing/annualReport/annualReportDate'}]),
-])
-def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, founding_date,
-                          expected_code, expected_msg):
+@pytest.mark.parametrize(
+    "test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg",
+    [
+        ("SUCCESS", "2018-08-05", "2017-08-05", "1900-07-01", None, None),
+        (
+            "NO_AR_DATE",
+            None,
+            "2017-08-05",
+            "1900-07-01",
+            HTTPStatus.BAD_REQUEST,
+            [{"error": "Annual Report Date must be a valid date.", "path": "filing/annualReport/annualReportDate"}],
+        ),
+        (
+            "NO_FUTURE_FILINGS",
+            (datetime.utcnow() + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
+            "2017-08-05",
+            "1900-07-01",
+            HTTPStatus.BAD_REQUEST,
+            [{"error": "Annual Report Date cannot be in the future.", "path": "filing/annualReport/annualReportDate"}],
+        ),
+        (
+            "AR_BEFORE_LAST_AR",
+            "2016-08-05",
+            "2017-08-05",
+            "1900-07-01",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Annual Report Date cannot be before a previous Annual Report or the Founding Date.",
+                    "path": "filing/annualReport/annualReportDate",
+                }
+            ],
+        ),
+        (
+            "NO_LAST_AR_NOT_AFTER_FOUNDING",
+            "2016-08-05",
+            None,
+            "1900-07-01",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Annual Report Date must be the next Annual Report in contiguous order.",
+                    "path": "filing/annualReport/annualReportDate",
+                }
+            ],
+        ),
+        (
+            "NO_LAST_AR_BEFORE_FOUNDING",
+            "2016-08-05",
+            None,
+            "2017-08-05",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Annual Report Date cannot be before a previous Annual Report or the Founding Date.",
+                    "path": "filing/annualReport/annualReportDate",
+                }
+            ],
+        ),
+        (
+            "LAST_AR_NOT_CONTIGUOUS_ORDER",
+            "2019-08-05",
+            "2017-08-05",
+            "1900-07-01",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Annual Report Date must be the next Annual Report in contiguous order.",
+                    "path": "filing/annualReport/annualReportDate",
+                }
+            ],
+        ),
+    ],
+)
+def test_validate_ar_year(
+    app, test_name, current_ar_date, previous_ar_date, founding_date, expected_code, expected_msg
+):
     """Assert that ARs filing/annualReport/annualReportDate is valid."""
     # setup
-    identifier = 'CP1234567'
-    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=previous_ar_date)
+    identifier = "CP1234567"
+    legal_entity = LegalEntity(identifier=identifier, last_ledger_timestamp=previous_ar_date)
     legal_entity.founding_date = datetime.fromisoformat(founding_date)
 
     if previous_ar_date:
@@ -68,12 +116,11 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
     previous_ar = copy.deepcopy(ANNUAL_REPORT)
     current_ar = copy.deepcopy(previous_ar)
 
-    current_ar['filing']['annualReport']['annualReportDate'] = current_ar_date
+    current_ar["filing"]["annualReport"]["annualReportDate"] = current_ar_date
 
     # Test it
     with app.app_context():
-        err = validate_ar_year(legal_entity=legal_entity,
-                               current_annual_report=current_ar)
+        err = validate_ar_year(legal_entity=legal_entity, current_annual_report=current_ar)
     # Validate the outcome
     if not expected_code and not err:
         assert err is expected_code
@@ -83,70 +130,274 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
 
 
 @pytest.mark.parametrize(
-    'test_name, founding_date, previous_ar_date, entity_type, expected_ar_min_date,' +
-    'expected_ar_max_date, previous_ar_year, next_year, today',
+    "test_name, founding_date, previous_ar_date, entity_type, expected_ar_min_date,"
+    + "expected_ar_max_date, previous_ar_year, next_year, today",
     [
-        ('BEN first AR', '2011-06-29', None, LegalEntity.EntityTypes.BCOMP.value,
-         '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('BEN last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BCOMP.value,
-         '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('BEN max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.BCOMP.value,
-         '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('BEN 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BCOMP.value,
-         '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-
-        ('BC first AR', '2011-06-29', None, LegalEntity.EntityTypes.COMP.value,
-         '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('BC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.COMP.value,
-         '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('BC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.COMP.value,
-         '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('BC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.COMP.value,
-         '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-
-        ('ULC first AR', '2011-06-29', None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-         '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('ULC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-         '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('ULC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03',
-         LegalEntity.EntityTypes.BC_ULC_COMPANY.value, '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('ULC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-         '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-
-        ('CC first AR', '2011-06-29', None, LegalEntity.EntityTypes.BC_CCC.value,
-         '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
-        ('CC last AR filed', '1900-07-01', '2011-07-03', LegalEntity.EntityTypes.BC_CCC.value,
-         '2012-07-01', '2012-08-30', 2011, 2012, '2022-07-14'),
-        ('CC max AR date equals today (2022-07-14)', '1900-07-01', '2021-07-03', LegalEntity.EntityTypes.BC_CCC.value,
-         '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
-        ('CC 2021', '1900-06-01', '2020-07-03', LegalEntity.EntityTypes.BC_CCC.value,
-         '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-
-        ('COOP first AR', '2011-01-01', None, LegalEntity.EntityTypes.COOP.value,
-         '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'),
-        ('COOP founded in the end of the year', '2011-12-31', None, LegalEntity.EntityTypes.COOP.value,
-         '2012-01-01', '2013-04-30', None, 2012, '2022-07-14'),
-        ('COOP AR for 2021', '1900-07-01', '2020-07-03', LegalEntity.EntityTypes.COOP.value,
-         '2021-01-01', '2021-07-14', 2020, 2021, '2021-07-14'),
-        ('COOP AR for 2020 (covid extension)', '1900-07-01', '2019-07-03', LegalEntity.EntityTypes.COOP.value,
-         '2020-01-01', '2021-10-31', 2019, 2020, '2022-07-14'),
-        ('COOP AR for 2020 (covid extension, max date equals today = 2021-07-14)', '1900-07-01', '2019-07-03',
-         LegalEntity.EntityTypes.COOP.value, '2020-01-01', '2021-07-14', 2019, 2020, '2021-07-14'),
-        ('COOP founded in 2019 (covid extension)', '2019-07-01', None, LegalEntity.EntityTypes.COOP.value,
-         '2020-01-01', '2021-10-31', None, 2020, '2022-07-14'),
-    ])
+        (
+            "BEN first AR",
+            "2011-06-29",
+            None,
+            LegalEntity.EntityTypes.BCOMP.value,
+            "2012-06-29",
+            "2012-08-28",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "BEN last AR filed",
+            "1900-07-01",
+            "2011-07-03",
+            LegalEntity.EntityTypes.BCOMP.value,
+            "2012-07-01",
+            "2012-08-30",
+            2011,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "BEN max AR date equals today (2022-07-14)",
+            "1900-07-01",
+            "2021-07-03",
+            LegalEntity.EntityTypes.BCOMP.value,
+            "2022-07-01",
+            "2022-07-14",
+            2021,
+            2022,
+            "2022-07-14",
+        ),
+        (
+            "BEN 2021",
+            "1900-06-01",
+            "2020-07-03",
+            LegalEntity.EntityTypes.BCOMP.value,
+            "2021-06-01",
+            "2021-07-14",
+            2020,
+            2021,
+            "2021-07-14",
+        ),
+        (
+            "BC first AR",
+            "2011-06-29",
+            None,
+            LegalEntity.EntityTypes.COMP.value,
+            "2012-06-29",
+            "2012-08-28",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "BC last AR filed",
+            "1900-07-01",
+            "2011-07-03",
+            LegalEntity.EntityTypes.COMP.value,
+            "2012-07-01",
+            "2012-08-30",
+            2011,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "BC max AR date equals today (2022-07-14)",
+            "1900-07-01",
+            "2021-07-03",
+            LegalEntity.EntityTypes.COMP.value,
+            "2022-07-01",
+            "2022-07-14",
+            2021,
+            2022,
+            "2022-07-14",
+        ),
+        (
+            "BC 2021",
+            "1900-06-01",
+            "2020-07-03",
+            LegalEntity.EntityTypes.COMP.value,
+            "2021-06-01",
+            "2021-07-14",
+            2020,
+            2021,
+            "2021-07-14",
+        ),
+        (
+            "ULC first AR",
+            "2011-06-29",
+            None,
+            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            "2012-06-29",
+            "2012-08-28",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "ULC last AR filed",
+            "1900-07-01",
+            "2011-07-03",
+            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            "2012-07-01",
+            "2012-08-30",
+            2011,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "ULC max AR date equals today (2022-07-14)",
+            "1900-07-01",
+            "2021-07-03",
+            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            "2022-07-01",
+            "2022-07-14",
+            2021,
+            2022,
+            "2022-07-14",
+        ),
+        (
+            "ULC 2021",
+            "1900-06-01",
+            "2020-07-03",
+            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            "2021-06-01",
+            "2021-07-14",
+            2020,
+            2021,
+            "2021-07-14",
+        ),
+        (
+            "CC first AR",
+            "2011-06-29",
+            None,
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "2012-06-29",
+            "2012-08-28",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "CC last AR filed",
+            "1900-07-01",
+            "2011-07-03",
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "2012-07-01",
+            "2012-08-30",
+            2011,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "CC max AR date equals today (2022-07-14)",
+            "1900-07-01",
+            "2021-07-03",
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "2022-07-01",
+            "2022-07-14",
+            2021,
+            2022,
+            "2022-07-14",
+        ),
+        (
+            "CC 2021",
+            "1900-06-01",
+            "2020-07-03",
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "2021-06-01",
+            "2021-07-14",
+            2020,
+            2021,
+            "2021-07-14",
+        ),
+        (
+            "COOP first AR",
+            "2011-01-01",
+            None,
+            LegalEntity.EntityTypes.COOP.value,
+            "2012-01-01",
+            "2013-04-30",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "COOP founded in the end of the year",
+            "2011-12-31",
+            None,
+            LegalEntity.EntityTypes.COOP.value,
+            "2012-01-01",
+            "2013-04-30",
+            None,
+            2012,
+            "2022-07-14",
+        ),
+        (
+            "COOP AR for 2021",
+            "1900-07-01",
+            "2020-07-03",
+            LegalEntity.EntityTypes.COOP.value,
+            "2021-01-01",
+            "2021-07-14",
+            2020,
+            2021,
+            "2021-07-14",
+        ),
+        (
+            "COOP AR for 2020 (covid extension)",
+            "1900-07-01",
+            "2019-07-03",
+            LegalEntity.EntityTypes.COOP.value,
+            "2020-01-01",
+            "2021-10-31",
+            2019,
+            2020,
+            "2022-07-14",
+        ),
+        (
+            "COOP AR for 2020 (covid extension, max date equals today = 2021-07-14)",
+            "1900-07-01",
+            "2019-07-03",
+            LegalEntity.EntityTypes.COOP.value,
+            "2020-01-01",
+            "2021-07-14",
+            2019,
+            2020,
+            "2021-07-14",
+        ),
+        (
+            "COOP founded in 2019 (covid extension)",
+            "2019-07-01",
+            None,
+            LegalEntity.EntityTypes.COOP.value,
+            "2020-01-01",
+            "2021-10-31",
+            None,
+            2020,
+            "2022-07-14",
+        ),
+    ],
+)
 def test_ar_dates(
-        app, session, test_name, founding_date, previous_ar_date, entity_type, expected_ar_min_date,
-        expected_ar_max_date, previous_ar_year, next_year, today):
+    app,
+    session,
+    test_name,
+    founding_date,
+    previous_ar_date,
+    entity_type,
+    expected_ar_min_date,
+    expected_ar_max_date,
+    previous_ar_year,
+    next_year,
+    today,
+):
     """Assert min and max dates for Annual Report are correct."""
     now = datetime.fromisoformat(today)
     with freeze_time(now):
         # setup
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
-        legal_entity =factory_legal_entity('CP1234567',
-                                    datetime.fromisoformat(founding_date),
-                                    previous_ar_datetime,
-                                    entity_type)
+        legal_entity = factory_legal_entity(
+            "CP1234567", datetime.fromisoformat(founding_date), previous_ar_datetime, entity_type
+        )
         ar_min_date, ar_max_date = legal_entity.get_ar_dates(next_year)
 
         assert ar_min_date.isoformat() == expected_ar_min_date

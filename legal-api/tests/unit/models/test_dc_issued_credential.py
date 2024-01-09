@@ -19,7 +19,6 @@ Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 import uuid
 
 from legal_api.models import DCIssuedCredential
-
 from tests.unit.models import factory_legal_entity
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
@@ -50,8 +49,9 @@ def test_find_by_credential_exchange_id(session):
 def test_find_by(session):
     """Assert that the method returns correct value."""
     issued_credential = create_dc_issued_credential()
-    res = DCIssuedCredential.find_by(dc_connection_id=issued_credential.dc_connection_id,
-                                     dc_definition_id=issued_credential.dc_definition_id)
+    res = DCIssuedCredential.find_by(
+        dc_connection_id=issued_credential.dc_connection_id, dc_definition_id=issued_credential.dc_definition_id
+    )
 
     assert len(res) == 1
     assert res[0].id == issued_credential.id
@@ -60,14 +60,12 @@ def test_find_by(session):
 def create_dc_issued_credential(legal_entity=None):
     """Create new dc_issued_credential object."""
     if not legal_entity:
-        identifier = 'FM1234567'
-        legal_entity =factory_legal_entity(identifier)
+        identifier = "FM1234567"
+        legal_entity = factory_legal_entity(identifier)
     definition = create_dc_definition()
     connection = create_dc_connection(legal_entity, is_active=True)
     issued_credential = DCIssuedCredential(
-        dc_definition_id=definition.id,
-        dc_connection_id=connection.id,
-        credential_exchange_id=str(uuid.uuid4())
+        dc_definition_id=definition.id, dc_connection_id=connection.id, credential_exchange_id=str(uuid.uuid4())
     )
     issued_credential.save()
     return issued_credential

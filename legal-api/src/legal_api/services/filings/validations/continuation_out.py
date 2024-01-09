@@ -16,23 +16,29 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 import pycountry
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
+    _ as babel,
+)
+
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import ConsentContinuationOut, LegalEntity
-from legal_api.services.filings.validations.common_validations import validate_court_order
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+)
 from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
 # noqa: I003;
 
 
 def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     """Validate the Continuation Out filing."""
     if not legal_entity or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
     msg = []
-    filing_type = 'continuationOut'
+    filing_type = "continuationOut"
 
     is_valid_co_date = True
     is_valid_foreign_jurisdiction = True
@@ -48,8 +54,8 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     if is_valid_co_date and is_valid_foreign_jurisdiction:
         msg.extend(validate_active_cco(legal_entity, filing, filing_type))
 
-    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
-        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
+    if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
+        court_order_path: Final = f"/filing/{filing_type}/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             msg.extend(err)
@@ -62,12 +68,12 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
 def validate_active_cco(legal_entity: LegalEntity, filing: Dict, filing_type: str) -> list:
     """Validate active consent continuation out."""
     msg = []
-    continuation_out_date_str = filing['filing'][filing_type]['continuationOutDate']
+    continuation_out_date_str = filing["filing"][filing_type]["continuationOutDate"]
     continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(continuation_out_date_str)
 
-    foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    country_code = foreign_jurisdiction.get('country')
-    region = foreign_jurisdiction.get('region')
+    foreign_jurisdiction = filing["filing"][filing_type]["foreignJurisdiction"]
+    country_code = foreign_jurisdiction.get("country")
+    region = foreign_jurisdiction.get("region")
 
     continuation_out_date_utc = LegislationDatetime.as_utc_timezone(continuation_out_date)
     ccos = ConsentContinuationOut.get_active_cco(legal_entity.id, continuation_out_date_utc, country_code, region)
@@ -75,14 +81,22 @@ def validate_active_cco(legal_entity: LegalEntity, filing: Dict, filing_type: st
     active_consent = False
     # Make sure continuation_out_date is on or after consent filing effective date
     for consent in ccos:
-        if continuation_out_date.date() >= \
-                LegislationDatetime.as_legislation_timezone(consent.filing.effective_date).date():
+        if (
+            continuation_out_date.date()
+            >= LegislationDatetime.as_legislation_timezone(consent.filing.effective_date).date()
+        ):
             active_consent = True
             break
 
     if not active_consent:
-        msg.extend([{'error': 'No active consent continuation out for this date and/or jurisdiction.',
-                    'path': f'/filing/{filing_type}/continuationOutDate'}])
+        msg.extend(
+            [
+                {
+                    "error": "No active consent continuation out for this date and/or jurisdiction.",
+                    "path": f"/filing/{filing_type}/continuationOutDate",
+                }
+            ]
+        )
 
     return msg
 
@@ -90,13 +104,12 @@ def validate_active_cco(legal_entity: LegalEntity, filing: Dict, filing_type: st
 def validate_continuation_out_date(filing: Dict, filing_type: str) -> list:
     """Validate continuation out date."""
     msg = []
-    continuation_out_date_path = f'/filing/{filing_type}/continuationOutDate'
+    continuation_out_date_path = f"/filing/{filing_type}/continuationOutDate"
     continuation_out_date = get_date(filing, continuation_out_date_path)
 
     now = LegislationDatetime.now().date()
     if continuation_out_date > now:
-        msg.append({'error': 'Continuation out date must be today or past.',
-                    'path': continuation_out_date_path})
+        msg.append({"error": "Continuation out date must be today or past.", "path": continuation_out_date_path})
 
     return msg
 
@@ -104,21 +117,21 @@ def validate_continuation_out_date(filing: Dict, filing_type: str) -> list:
 def validate_foreign_jurisdiction(filing: Dict, filing_type: str) -> list:
     """Validate foreign jurisdiction."""
     msg = []
-    foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
+    foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
 
-    foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
-    region = (foreign_jurisdiction.get('region') or '').upper()
+    foreign_jurisdiction = filing["filing"][filing_type]["foreignJurisdiction"]
+    country_code = foreign_jurisdiction.get("country").upper()  # country is a required field in schema
+    region = (foreign_jurisdiction.get("region") or "").upper()
 
     country = pycountry.countries.get(alpha_2=country_code)
     if not country:
-        msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
-    elif country_code == 'CA':
-        if region == 'BC':
-            msg.append({'error': 'Region should not be BC.', 'path': f'{foreign_jurisdiction_path}/region'})
-        elif not (region == 'FEDERAL' or pycountry.subdivisions.get(code=f'{country_code}-{region}')):
-            msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
-    elif country_code == 'US' and not pycountry.subdivisions.get(code=f'{country_code}-{region}'):
-        msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+        msg.append({"error": "Invalid country.", "path": f"{foreign_jurisdiction_path}/country"})
+    elif country_code == "CA":
+        if region == "BC":
+            msg.append({"error": "Region should not be BC.", "path": f"{foreign_jurisdiction_path}/region"})
+        elif not (region == "FEDERAL" or pycountry.subdivisions.get(code=f"{country_code}-{region}")):
+            msg.append({"error": "Invalid region.", "path": f"{foreign_jurisdiction_path}/region"})
+    elif country_code == "US" and not pycountry.subdivisions.get(code=f"{country_code}-{region}"):
+        msg.append({"error": "Invalid region.", "path": f"{foreign_jurisdiction_path}/region"})
 
     return msg

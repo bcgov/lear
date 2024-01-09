@@ -23,4 +23,4 @@ def get_pdf(filing, report_type=None):
         return Report(filing).get_pdf(report_type)
     except FileNotFoundError:
         # We don't have a template for it, so it must only be available on paper.
-        return jsonify({'message': _('Available on paper only.')}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": _("Available on paper only.")}), HTTPStatus.NOT_FOUND

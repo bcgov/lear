@@ -26,7 +26,6 @@ from flask import jsonify
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +46,7 @@ def handle_http_error(error):
     if isinstance(error, RoutingException):
         return error
 
-    response = jsonify({'message': error.description})
+    response = jsonify({"message": error.description})
     response.status_code = error.code
     return response
 
@@ -58,7 +57,7 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
     Since the handler suppresses the actual exception, log it explicitly to
     ensure it's logged and recorded in Sentry.
     """
-    logger.error('Uncaught exception', exc_info=sys.exc_info())
-    response = jsonify({'message': 'Internal server error'})
+    logger.error("Uncaught exception", exc_info=sys.exc_info())
+    response = jsonify({"message": "Internal server error"})
     response.status_code = 500
     return response

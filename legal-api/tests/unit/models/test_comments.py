@@ -26,13 +26,13 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from legal_api.exceptions import BusinessException
 from legal_api.models import Comment
 from tests import EPOCH_DATETIME
-from tests.unit.models import factory_legal_entity, factory_comment, factory_filing
+from tests.unit.models import factory_comment, factory_filing, factory_legal_entity
 
 
 def test_minimal_comment(session):
     """Assert that a minimal comment can be created."""
     comment = Comment()
-    comment.comment = 'some words'
+    comment.comment = "some words"
     comment.save()
 
     assert comment.id is not None
@@ -49,7 +49,7 @@ def test_comment_block_orm_delete(session):
         session.commit()
 
     assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-    assert excinfo.value.error == 'Deletion not allowed.'
+    assert excinfo.value.error == "Deletion not allowed."
 
 
 def test_comment_delete_is_blocked(session):
@@ -60,24 +60,24 @@ def test_comment_delete_is_blocked(session):
         c.delete()
 
     assert excinfo.value.status_code == HTTPStatus.FORBIDDEN
-    assert excinfo.value.error == 'Deletion not allowed.'
+    assert excinfo.value.error == "Deletion not allowed."
 
 
 def test_filing_comment_dump_json(session):
     """Assert the comment json serialization works correctly."""
-    identifier = 'CP7654321'
+    identifier = "CP7654321"
     b = factory_legal_entity(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
-    c = factory_comment(b, f, 'a comment')
+    c = factory_comment(b, f, "a comment")
 
     assert c.json == {
-        'comment': {
-            'id': c.id,
-            'submitterDisplayName': None,
-            'comment': 'a comment',
-            'filingId': f.id,
-            'businessId': None,
-            'timestamp': c.timestamp.isoformat()
+        "comment": {
+            "id": c.id,
+            "submitterDisplayName": None,
+            "comment": "a comment",
+            "filingId": f.id,
+            "businessId": None,
+            "timestamp": c.timestamp.isoformat(),
         }
     }
 
@@ -104,7 +104,7 @@ def test_comment_save(session):
 
     comment = Comment()
     comment.timestamp = EPOCH_DATETIME
-    comment.comment = 'a comment'
+    comment.comment = "a comment"
 
     assert not session.new
     assert not Session.object_session(comment)

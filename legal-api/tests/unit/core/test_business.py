@@ -19,25 +19,28 @@ import pytest
 from legal_api.core.business import BusinessIdentifier, BusinessType
 
 
-@pytest.mark.parametrize('business_type,expected', [
-    (BusinessType.COOPERATIVE, True),
-    (BusinessType.PARTNERSHIP_AND_SOLE_PROP, True),
-    ('NOT_FOUND', False),
-])
+@pytest.mark.parametrize(
+    "business_type,expected",
+    [
+        (BusinessType.COOPERATIVE, True),
+        (BusinessType.PARTNERSHIP_AND_SOLE_PROP, True),
+        ("NOT_FOUND", False),
+    ],
+)
 def test_business_next_identifier(session, business_type, expected):
     """Assert that the next identifier is correctly generated."""
     identifier = BusinessIdentifier.next_identifier(business_type)
 
     if expected:
-        entity_type = identifier[:re.search(r"\d", identifier).start()]
+        entity_type = identifier[: re.search(r"\d", identifier).start()]
         assert entity_type in BusinessType
-        assert identifier[identifier.find(entity_type) + len(entity_type):].isdigit()
+        assert identifier[identifier.find(entity_type) + len(entity_type) :].isdigit()
     else:
         assert identifier is None
 
 
 def test_get_enum_by_value():
     """Assert that the get_enum_by_value function returns the correct enum."""
-    assert BusinessType.get_enum_by_value('CP') == BusinessType.COOPERATIVE
-    assert BusinessType.get_enum_by_value('FM') == BusinessType.PARTNERSHIP_AND_SOLE_PROP
-    assert BusinessType.get_enum_by_value('NOT_FOUND') is None
+    assert BusinessType.get_enum_by_value("CP") == BusinessType.COOPERATIVE
+    assert BusinessType.get_enum_by_value("FM") == BusinessType.PARTNERSHIP_AND_SOLE_PROP
+    assert BusinessType.get_enum_by_value("NOT_FOUND") is None

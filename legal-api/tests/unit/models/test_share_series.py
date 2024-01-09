@@ -28,32 +28,24 @@ from tests.unit.models import factory_legal_entity
 
 def test_valid_share_series_save(session):
     """Assert that a valid share series can be saved."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=True,
         max_shares=1000,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=500,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=500, special_rights_flag=False
     )
     share_series_2 = ShareSeries(
-        name='Share Series 2',
-        priority=2,
-        max_share_flag=True,
-        max_shares=1000,
-        special_rights_flag=False
+        name="Share Series 2", priority=2, max_share_flag=True, max_shares=1000, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
     share_class.series.append(share_series_2)
@@ -64,74 +56,66 @@ def test_valid_share_series_save(session):
 
 def test_share_series_json(session):
     """Assert the json format of share series."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=True,
         max_shares=1000,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=500,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=500, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
     share_class.save()
 
     share_class_json = {
-        'id': share_class.id,
-        'name': share_class.name,
-        'priority': share_class.priority,
-        'hasMaximumShares': share_class.max_share_flag,
-        'maxNumberOfShares': share_class.max_shares,
-        'hasParValue': share_class.par_value_flag,
-        'parValue': share_class.par_value,
-        'currency': share_class.currency,
-        'hasRightsOrRestrictions': share_class.special_rights_flag,
-        'series': [
+        "id": share_class.id,
+        "name": share_class.name,
+        "priority": share_class.priority,
+        "hasMaximumShares": share_class.max_share_flag,
+        "maxNumberOfShares": share_class.max_shares,
+        "hasParValue": share_class.par_value_flag,
+        "parValue": share_class.par_value,
+        "currency": share_class.currency,
+        "hasRightsOrRestrictions": share_class.special_rights_flag,
+        "series": [
             {
-                'id': share_series_1.id,
-                'name': share_series_1.name,
-                'priority': share_series_1.priority,
-                'hasMaximumShares': share_series_1.max_share_flag,
-                'maxNumberOfShares': share_series_1.max_shares,
-                'hasRightsOrRestrictions': share_series_1.special_rights_flag
+                "id": share_series_1.id,
+                "name": share_series_1.name,
+                "priority": share_series_1.priority,
+                "hasMaximumShares": share_series_1.max_share_flag,
+                "maxNumberOfShares": share_series_1.max_shares,
+                "hasRightsOrRestrictions": share_series_1.special_rights_flag,
             }
-        ]
+        ],
     }
     assert share_class_json == share_class.json
 
 
 def test_invalid_share_quantity(session):
     """Assert that model validates share series share quantity."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=True,
         max_shares=1000,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=None,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=None, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
 
@@ -141,31 +125,28 @@ def test_invalid_share_quantity(session):
 
     assert share_class_error
     assert share_class_error.value.status_code == HTTPStatus.BAD_REQUEST
-    assert share_class_error.value.error == \
-        f'The share series {share_series_1.name} must specify maximum number of share.'
+    assert (
+        share_class_error.value.error == f"The share series {share_series_1.name} must specify maximum number of share."
+    )
 
 
 def test_validate_share_quantity_not_exceed_class_value(session):
     """Assert that model validates share series share quantity."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=True,
         max_shares=1000,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=1500,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=1500, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
 
@@ -175,31 +156,29 @@ def test_validate_share_quantity_not_exceed_class_value(session):
 
     assert share_class_error
     assert share_class_error.value.status_code == HTTPStatus.BAD_REQUEST
-    assert share_class_error.value.error == \
-        f'The max share quantity of {share_series_1.name} must be <= that of share class quantity.'
+    assert (
+        share_class_error.value.error
+        == f"The max share quantity of {share_series_1.name} must be <= that of share class quantity."
+    )
 
 
 def test_share_quantity_when_no_max_share_for_parent(session):
     """Assert that model validates share series share quantity."""
-    identifier = 'CP1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP1234567"
+    legal_entity = factory_legal_entity(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=False,
         max_shares=None,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=1500,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=1500, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
     share_class.save()

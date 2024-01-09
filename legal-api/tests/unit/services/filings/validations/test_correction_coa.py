@@ -15,28 +15,32 @@
 import copy
 from http import HTTPStatus
 
-from registry_schemas.example_data import CHANGE_OF_ADDRESS, CORRECTION_COA, FILING_TEMPLATE
+from registry_schemas.example_data import (
+    CHANGE_OF_ADDRESS,
+    CORRECTION_COA,
+    FILING_TEMPLATE,
+)
 
 from legal_api.services.filings import validate
-from tests.unit.models import factory_legal_entity, factory_completed_filing
+from tests.unit.models import factory_completed_filing, factory_legal_entity
 
 
 def test_valid_coa_correction(session):
     """Test that a valid COA correction passes validation."""
     # setup
-    identifier = 'CP1234567'
-    name = 'changeOfAddress'
+    identifier = "CP1234567"
+    name = "changeOfAddress"
     legal_entity = factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
-    coa['filing']['header']['name'] = name
-    coa['filing'][name] = CHANGE_OF_ADDRESS
+    coa["filing"]["header"]["name"] = name
+    coa["filing"][name] = CHANGE_OF_ADDRESS
     corrected_filing = factory_completed_filing(legal_entity, coa)
 
     f = copy.deepcopy(CORRECTION_COA)
-    f['filing']['header']['identifier'] = identifier
-    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    f['filing'][name]['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
-    f['filing'][name]['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    f["filing"]["header"]["identifier"] = identifier
+    f["filing"]["correction"]["correctedFilingId"] = corrected_filing.id
+    f["filing"][name]["offices"]["registeredOffice"]["deliveryAddress"]["addressCountry"] = "CA"
+    f["filing"][name]["offices"]["registeredOffice"]["mailingAddress"]["addressCountry"] = "CA"
 
     err = validate(legal_entity, f)
     if err:
@@ -49,19 +53,19 @@ def test_valid_coa_correction(session):
 def test_fail_coa_correction(session):
     """Test that an invalid COA correction passes validation."""
     # setup
-    identifier = 'CP1234567'
-    name = 'changeOfAddress'
+    identifier = "CP1234567"
+    name = "changeOfAddress"
     legal_entity = factory_legal_entity(identifier)
     coa = copy.deepcopy(FILING_TEMPLATE)
-    coa['filing']['header']['name'] = name
-    coa['filing'][name] = CHANGE_OF_ADDRESS
+    coa["filing"]["header"]["name"] = name
+    coa["filing"][name] = CHANGE_OF_ADDRESS
     corrected_filing = factory_completed_filing(legal_entity, coa)
 
     f = copy.deepcopy(CORRECTION_COA)
-    f['filing']['header']['identifier'] = identifier
-    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    f['filing'][name]['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'DANG'
-    f['filing'][name]['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'NABBIT'
+    f["filing"]["header"]["identifier"] = identifier
+    f["filing"]["correction"]["correctedFilingId"] = corrected_filing.id
+    f["filing"][name]["offices"]["registeredOffice"]["deliveryAddress"]["addressCountry"] = "DANG"
+    f["filing"][name]["offices"]["registeredOffice"]["mailingAddress"]["addressCountry"] = "NABBIT"
 
     err = validate(legal_entity, f)
     if err:
@@ -72,4 +76,4 @@ def test_fail_coa_correction(session):
     assert HTTPStatus.BAD_REQUEST == err.code
     assert len(err.msg) == 2
     for msg in err.msg:
-        assert "Address Country must be 'CA'." == msg['error']
+        assert "Address Country must be 'CA'." == msg["error"]

@@ -38,12 +38,12 @@ def has_expected_date_str_format(date_str: str, format: str) -> bool:
 
 
 @contextmanager
-def nested_session(session):
+def nested_session(session, exception):
     try:
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except:
+    except exception:
         pass
     finally:
         pass

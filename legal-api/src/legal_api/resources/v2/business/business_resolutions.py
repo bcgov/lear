@@ -24,22 +24,23 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/resolutions', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/resolutions/<int:resolution_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/resolutions", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/resolutions/<int:resolution_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_resolutions(identifier, resolution_id=None):
     """Return a JSON of the resolutions."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
 
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view resolutions for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["view"]):
+        return (
+            jsonify({"message": f"You are not authorized to view resolutions for {identifier}."}),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
     # return the matching resolution
     if resolution_id:
@@ -48,7 +49,7 @@ def get_resolutions(identifier, resolution_id=None):
 
     resolution_list = []
 
-    resolution_type = request.args.get('type')
+    resolution_type = request.args.get("type")
     if resolution_type:
         resolutions = Resolution.find_by_type(legal_entity.id, resolution_type.upper())
     else:
@@ -67,9 +68,9 @@ def _get_resolution(legal_entity, resolution_id=None):
     if resolution_id:
         rv = Resolution.find_by_id(resolution_id=resolution_id)
         if rv:
-            resolution = {'resolution': rv.json}
+            resolution = {"resolution": rv.json}
 
     if not resolution:
-        return None, {'message': f'{legal_entity.identifier} resolution not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{legal_entity.identifier} resolution not found"}, HTTPStatus.NOT_FOUND
 
     return resolution, None, HTTPStatus.OK

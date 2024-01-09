@@ -18,46 +18,44 @@ This module is the API for the Legal Entity system.
 import os
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
-from flask import redirect, Flask  # noqa: I001
+from flask import Flask, redirect  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
+from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 
 from legal_api import config, models
 from legal_api.models import db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import digital_credentials, Flags
+from legal_api.services import Flags, digital_credentials
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
+
 # noqa: I003; the sentry import creates a bad line count in isort
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production'), **kwargs):
+def create_app(run_mode=os.getenv("FLASK_ENV", "production"), **kwargs):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
 
     # Configure Sentry
-    if dsn := app.config.get('SENTRY_DSN', None):
+    if dsn := app.config.get("SENTRY_DSN", None):
         # pylint==2.7.4 errors out on the syntatic sugar for sentry_sdk
         # the error is skipped by disable=abstract-class-instantiated
         sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            release=f'legal-api@{get_run_version()}',
-            send_default_pii=False
+            dsn=dsn, integrations=[FlaskIntegration()], release=f"legal-api@{get_run_version()}", send_default_pii=False
         )
 
     db.init_app(app)
     rsbc_schemas.init_app(app)
-     # td is testData instance passed in to support testing
-    td = kwargs.get('ld_test_data', None)
-    Flags().init_app(app, td)    # queue.init_app(app)
+    # td is testData instance passed in to support testing
+    td = kwargs.get("ld_test_data", None)
+    Flags().init_app(app, td)  # queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
 
@@ -71,8 +69,10 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production'), **kwargs):
 
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
+
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     jwt_manager.init_app(app)

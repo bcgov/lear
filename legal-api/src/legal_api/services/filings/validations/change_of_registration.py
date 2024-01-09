@@ -19,7 +19,9 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
-from legal_api.services.filings.validations.common_validations import validate_name_request
+from legal_api.services.filings.validations.common_validations import (
+    validate_name_request,
+)
 from legal_api.services.filings.validations.registration import (
     validate_naics,
     validate_offices,
@@ -32,24 +34,23 @@ from ...utils import get_str
 
 def validate(filing: Dict) -> Optional[Error]:
     """Validate the Change of Registration filing."""
-    filing_type = 'changeOfRegistration'
+    filing_type = "changeOfRegistration"
     if not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
-    legal_type_path = '/filing/business/legalType'
+    legal_type_path = "/filing/business/legalType"
     legal_type = get_str(filing, legal_type_path)
     if legal_type not in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
         return Error(
-            HTTPStatus.BAD_REQUEST,
-            [{'error': babel('A valid legalType is required.'), 'path': legal_type_path}]
+            HTTPStatus.BAD_REQUEST, [{"error": babel("A valid legalType is required."), "path": legal_type_path}]
         )
 
     msg = []
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('nameRequest', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("nameRequest", None):
         msg.extend(validate_name_request(filing, legal_type, filing_type))
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('parties', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("parties", None):
         msg.extend(validate_party(filing, legal_type, filing_type))
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('offices', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("offices", None):
         msg.extend(validate_offices(filing, filing_type))
 
     msg.extend(validate_naics(filing, filing_type))

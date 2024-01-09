@@ -18,19 +18,18 @@ Test-Suite to ensure that the RequestTracker Model is working as expected.
 """
 
 from legal_api.models import RequestTracker
-
-from tests.unit.models import factory_legal_entity, factory_filing
+from tests.unit.models import factory_filing, factory_legal_entity
 
 
 def test_valid_request_tracker_save(session):
     """Assert that a valid request_tracker can be saved."""
-    identifier = 'FM1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "FM1234567"
+    legal_entity = factory_legal_entity(identifier)
     request_tracker = RequestTracker(
         legal_entity_id=legal_entity.id,
         service_name=RequestTracker.ServiceName.BN_HUB,
         request_type=RequestTracker.RequestType.INFORM_CRA,
-        request_object=''
+        request_object="",
     )
     request_tracker.save()
     assert request_tracker.id
@@ -104,13 +103,13 @@ sample_xml = """<?xml version="1.0"?>
 
 def test_find_request_tracker_by_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "FM1234567"
+    legal_entity = factory_legal_entity(identifier)
     request_tracker = RequestTracker(
         legal_entity_id=legal_entity.id,
         service_name=RequestTracker.ServiceName.BN_HUB,
         request_type=RequestTracker.RequestType.INFORM_CRA,
-        request_object=sample_xml
+        request_object=sample_xml,
     )
     request_tracker.save()
 
@@ -122,32 +121,30 @@ def test_find_request_tracker_by_id(session):
 
 def test_find_request_tracker_by(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    legal_entity =factory_legal_entity(identifier)
-    filing = factory_filing(legal_entity, {'filing': {'header': {'name': 'registration'}}}, filing_type='registration')
+    identifier = "FM1234567"
+    legal_entity = factory_legal_entity(identifier)
+    filing = factory_filing(legal_entity, {"filing": {"header": {"name": "registration"}}}, filing_type="registration")
     request_tracker = RequestTracker(
         legal_entity_id=legal_entity.id,
         filing_id=filing.id,
         service_name=RequestTracker.ServiceName.BN_HUB,
         request_type=RequestTracker.RequestType.INFORM_CRA,
-        request_object=sample_xml
+        request_object=sample_xml,
     )
     request_tracker.save()
 
-    res = RequestTracker.find_by(legal_entity.id,
-                                 RequestTracker.ServiceName.BN_HUB)
+    res = RequestTracker.find_by(legal_entity.id, RequestTracker.ServiceName.BN_HUB)
     assert len(res) == 1
     assert res[0].id == request_tracker.id
 
-    res = RequestTracker.find_by(legal_entity.id,
-                                 RequestTracker.ServiceName.BN_HUB,
-                                 RequestTracker.RequestType.INFORM_CRA)
+    res = RequestTracker.find_by(
+        legal_entity.id, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA
+    )
     assert len(res) == 1
     assert res[0].id == request_tracker.id
 
-    res = RequestTracker.find_by(legal_entity.id,
-                                 RequestTracker.ServiceName.BN_HUB,
-                                 RequestTracker.RequestType.INFORM_CRA,
-                                 filing_id=filing.id)
+    res = RequestTracker.find_by(
+        legal_entity.id, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA, filing_id=filing.id
+    )
     assert len(res) == 1
     assert res[0].id == request_tracker.id

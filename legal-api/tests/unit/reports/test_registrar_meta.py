@@ -28,7 +28,7 @@ from tests.unit.models import factory_legal_entity
 
 def test_get_current_registrar(session):
     """Assert that the current registrar is returned."""
-    b = factory_legal_entity('CP1234567')
+    b = factory_legal_entity("CP1234567")
     filing = Filing()
     filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime.utcnow()
@@ -36,16 +36,16 @@ def test_get_current_registrar(session):
     filing.save()
 
     registrar_info = RegistrarInfo.get_registrar_info(filing.effective_date)
-    assert registrar_info['startDate']
+    assert registrar_info["startDate"]
     # assert registrar_info['endDate'] is None
-    assert registrar_info['signature']
-    assert registrar_info['name']
-    assert registrar_info['title']
+    assert registrar_info["signature"]
+    assert registrar_info["name"]
+    assert registrar_info["title"]
 
 
 def test_get_registrar_for_a_filing(session):
     """Assert that the registrar effective on that date is returned."""
-    b = factory_legal_entity('CP1234567')
+    b = factory_legal_entity("CP1234567")
     filing = Filing()
     filing.legal_entity_id = b.id
     filing.filing_date = datetime.datetime(2012, 6, 6)
@@ -54,8 +54,8 @@ def test_get_registrar_for_a_filing(session):
     filing.save()
 
     registrar_info = RegistrarInfo.get_registrar_info(filing.effective_date)
-    assert registrar_info['startDate']
-    assert registrar_info['endDate']
-    assert registrar_info['signature']
-    assert registrar_info['name'] == 'ANGELO COCCO'
-    assert registrar_info['title'] == 'A/Registrar of Companies'
+    assert registrar_info["startDate"]
+    assert registrar_info["endDate"]
+    assert registrar_info["signature"]
+    assert registrar_info["name"] == "ANGELO COCCO"
+    assert registrar_info["title"] == "A/Registrar of Companies"

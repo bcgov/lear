@@ -25,50 +25,57 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/parties', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/parties/<int:party_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/parties", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/parties/<int:party_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_parties(identifier, party_id=None):
     """Return a JSON of the parties."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
 
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view parties for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["view"]):
+        return (
+            jsonify({"message": f"You are not authorized to view parties for {identifier}."}),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
     if party_id:
         party_roles = EntityRole.get_entity_roles_by_party_id(legal_entity.id, party_id)
         if not party_roles:
-            return jsonify({'message': f'Party {party_id} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"Party {party_id} not found"}), HTTPStatus.NOT_FOUND
     else:
-        end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date() \
-            if request.args.get('date') else datetime.utcnow().date()
-        party_roles = EntityRole.get_entity_roles(legal_entity.id, end_date, request.args.get('role'))
+        end_date = (
+            datetime.utcnow().strptime(request.args.get("date"), "%Y-%m-%d").date()
+            if request.args.get("date")
+            else datetime.utcnow().date()
+        )
+        party_roles = EntityRole.get_entity_roles(legal_entity.id, end_date, request.args.get("role"))
 
     party_role_dict = {}
     party_list = []
     for party_role in party_roles:
         party_role_json = party_role.json
         party_role_dict.setdefault(party_role.related_entity_id, []).append(
-              {'roleType': party_role_json['role'].replace('_', ' ').title(),
-               'appointmentDate': party_role_json['appointmentDate'],
-               'cessationDate': party_role_json['cessationDate']})
+            {
+                "roleType": party_role_json["role"].replace("_", " ").title(),
+                "appointmentDate": party_role_json["appointmentDate"],
+                "cessationDate": party_role_json["cessationDate"],
+            }
+        )
     for key, value in party_role_dict.items():
         party = [x for x in party_roles if x.related_entity_id == key][0]
         party_json = party.json
-        del party_json['role']
-        del party_json['appointmentDate']
-        del party_json['cessationDate']
-        party_json['roles'] = value
+        del party_json["role"]
+        del party_json["appointmentDate"]
+        del party_json["cessationDate"]
+        party_json["roles"] = value
         party_list.append(party_json)
 
     if party_id:
-        return {'party': party_list[0]}
+        return {"party": party_list[0]}
     else:
         return jsonify(parties=party_list)

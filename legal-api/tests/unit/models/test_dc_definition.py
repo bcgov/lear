@@ -40,7 +40,7 @@ def test_find_by_id(session):
 
 def test_find_by_credential_type(session):
     """Assert that the method returns correct value."""
-    definition = create_dc_definition()
+    # definition = create_dc_definition()
 
     res = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
 
@@ -62,12 +62,9 @@ def test_deactivate(session):
 
 def test_find_by(session):
     """Assert that the method returns correct value."""
-    definition = create_dc_definition()
+    # definition = create_dc_definition()
 
-    res = DCDefinition.find_by(DCDefinition.CredentialType.business,
-                               'business_schema',
-                               schema_version='1.0.0'
-                               )
+    res = DCDefinition.find_by(DCDefinition.CredentialType.business, "business_schema", schema_version="1.0.0")
     assert res
     # assert res.id == definition.id
 
@@ -76,10 +73,10 @@ def create_dc_definition():
     """Create new dc_definition object."""
     definition = DCDefinition(
         credential_type=DCDefinition.CredentialType.business,
-        schema_name='business_schema',
-        schema_version='1.0.0',
-        schema_id=f'{str(uuid.uuid4().hex)}:2:business_schema:1.0.0',
-        credential_definition_id=f'{str(uuid.uuid4().hex)}:3:CL:146949:business_schema'
+        schema_name="business_schema",
+        schema_version="1.0.0",
+        schema_id=f"{str(uuid.uuid4().hex)}:2:business_schema:1.0.0",
+        credential_definition_id=f"{str(uuid.uuid4().hex)}:3:CL:146949:business_schema",
     )
     definition.save()
     return definition

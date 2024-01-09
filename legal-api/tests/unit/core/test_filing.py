@@ -20,8 +20,12 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
 from legal_api.models.user import UserRoles
-from tests.unit.models import factory_legal_entity, factory_completed_filing, factory_user
 from legal_api.utils.datetime import datetime, timezone
+from tests.unit.models import (
+    factory_completed_filing,
+    factory_legal_entity,
+    factory_user,
+)
 
 
 def test_filing_raw():
@@ -33,32 +37,30 @@ def test_filing_raw():
 
 def test_filing_type(session):
     """Assert that filing_type is empty on a new filing."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP7654321"
+    legal_entity = factory_legal_entity(identifier)
     factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
     filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
-    assert filings[0].filing_type == 'annualReport'
+    assert filings[0].filing_type == "annualReport"
 
 
 def test_filing_json_draft(session):
     """Assert that the json field gets the draft filing correctly."""
     filing = Filing()
     filing_submission = {
-        'filing': {
-            'header': {
-                'name': 'specialResolution',
-                'date': '2019-04-08'
-            },
-            'specialResolution': {
-                'resolution': 'Year challenge is hitting oppo for the win.'
-            }}}
+        "filing": {
+            "header": {"name": "specialResolution", "date": "2019-04-08"},
+            "specialResolution": {"resolution": "Year challenge is hitting oppo for the win."},
+        }
+    }
 
     filing.json = filing_submission
     filing.save()
 
-    assert filing.json['filing']['header']['name'] == filing_submission['filing']['header']['name']
-    assert filing.json['filing']['specialResolution'] == filing_submission['filing']['specialResolution']
+    assert filing.json["filing"]["header"]["name"] == filing_submission["filing"]["header"]["name"]
+    assert filing.json["filing"]["specialResolution"] == filing_submission["filing"]["specialResolution"]
+
 
 def test_technical_filing_json_draft(session):
     """Assert that the technical json field gets the draft filing correctly.
@@ -72,25 +74,23 @@ def test_technical_filing_json_draft(session):
     # setup
     filing = Filing()
     filing_submission = {
-        'filing': {
-            'header': {
-                'name': 'specialResolution',
-                'date': '2019-04-08'
-            },
-            'specialResolution': {
-                'resolution': 'Year challenge is hitting oppo for the win.'
-            }}}
+        "filing": {
+            "header": {"name": "specialResolution", "date": "2019-04-08"},
+            "specialResolution": {"resolution": "Year challenge is hitting oppo for the win."},
+        }
+    }
 
     filing.json = filing_submission
     filing.save()
     # sanity check
-    assert filing.json['filing']['header']['name'] == filing_submission['filing']['header']['name']
-    assert filing.json['filing']['specialResolution'] == filing_submission['filing']['specialResolution']
+    assert filing.json["filing"]["header"]["name"] == filing_submission["filing"]["header"]["name"]
+    assert filing.json["filing"]["specialResolution"] == filing_submission["filing"]["specialResolution"]
 
     # test
-    non_compliant_json  = {
-        'dope': 'this would fail any validator, but can bypass everything.',
-        'dogsLife': "do the humans really know what's best?"}
+    non_compliant_json = {
+        "dope": "this would fail any validator, but can bypass everything.",
+        "dogsLife": "do the humans really know what's best?",
+    }
     filing.storage.tech_correction_json = non_compliant_json
     # over ride the state and skip state setting listeners for this test
     filing._storage.skip_status_listener = True
@@ -103,32 +103,29 @@ def test_technical_filing_json_draft(session):
 
 def test_filing_json_completed(session):
     """Assert that the json field gets the completed filing correctly."""
-    identifier = 'CP7654321'
-    legal_entity =factory_legal_entity(identifier)
+    identifier = "CP7654321"
+    legal_entity = factory_legal_entity(identifier)
     factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
     filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
     filing = filings[0]
 
     assert filing.json
-    assert filing.json['filing']['header']['status'] == Filing.Status.COMPLETED.value
-    assert filing.json['filing']['annualReport']
-    assert 'directors' in filing.json['filing']['annualReport']
-    assert 'offices' in filing.json['filing']['annualReport']
+    assert filing.json["filing"]["header"]["status"] == Filing.Status.COMPLETED.value
+    assert filing.json["filing"]["annualReport"]
+    assert "directors" in filing.json["filing"]["annualReport"]
+    assert "offices" in filing.json["filing"]["annualReport"]
 
 
 def test_filing_save(session):
     """Assert that the core filing is saved to the backing store."""
     filing = Filing()
     filing_submission = {
-        'filing': {
-            'header': {
-                'name': 'specialResolution',
-                'date': '2019-04-08'
-            },
-            'specialResolution': {
-                'resolution': 'Year challenge is hitting oppo for the win.'
-            }}}
+        "filing": {
+            "header": {"name": "specialResolution", "date": "2019-04-08"},
+            "specialResolution": {"resolution": "Year challenge is hitting oppo for the win."},
+        }
+    }
 
     filing.json = filing_submission
 
@@ -142,9 +139,9 @@ def test_filing_save(session):
 def test_is_future_effective(session):
     """Assert that is_future_effective property works as expected."""
     filing = Filing()
-    filing_type = 'bogus type'
-    filing.storage.filing_json = {'filing': {'header': {'name': filing_type}}}
-    filing.storage._payment_token = '12345'
+    filing_type = "bogus type"
+    filing.storage.filing_json = {"filing": {"header": {"name": filing_type}}}
+    filing.storage._payment_token = "12345"
     filing.storage._filing_type = filing_type
 
     now = datetime(2019, 7, 1)
@@ -161,16 +158,15 @@ def test_set_effective(session):
     now = datetime(2021, 9, 17, 7, 36, 43, 903557, tzinfo=timezone.utc)
 
     with freeze_time(now):
-
-        payment_date  = now + datedelta.DAY
-        entity_type = 'SP'
+        payment_date = now + datedelta.DAY
+        entity_type = "SP"
 
         filing = Filing()
-        filing_type = 'annualReport'
+        filing_type = "annualReport"
         filing.json = ANNUAL_REPORT
         filing.save()
 
-        filing.storage._payment_token = '12345'
+        filing.storage._payment_token = "12345"
         filing.storage._filing_type = filing_type
         filing.storage.effective_date = now
         filing._storage.skip_status_listener = True
@@ -185,7 +181,7 @@ def test_set_effective(session):
         assert not filing.is_future_effective
 
         future_date = now + datedelta.DAY
-        alt_payment_date  = now
+        alt_payment_date = now
         filing._storage.skip_status_listener = True
         filing._storage.payment_completion_date = alt_payment_date
         filing._storage.save()
@@ -203,7 +199,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
 
-        entity_type = 'CP'
+        entity_type = "CP"
         filing.storage.set_processed(entity_type)
 
         # assert that the effective date is unchanged by payment date
@@ -211,4 +207,3 @@ def test_set_effective(session):
         assert filing._storage.effective_date == past_date
         assert filing._storage.effective_date.replace(tzinfo=None) != payment_date.replace(tzinfo=None)
         assert not filing.is_future_effective
-

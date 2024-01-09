@@ -19,7 +19,11 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_ADDRESS,
+    FILING_HEADER,
+)
 
 from legal_api.models import LegalEntity
 from legal_api.services.filings import validate
@@ -29,22 +33,25 @@ from . import lists_are_equal
 
 # from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address, factory_filing
 @pytest.mark.parametrize(
-    'test_name, now, ar_date, agm_date, expected_code, expected_msg',
-    [('SUCCESS', date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
-     ])
-def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
-                           expected_code, expected_msg):  # pylint: disable=too-many-arguments
+    "test_name, now, ar_date, agm_date, expected_code, expected_msg",
+    [
+        ("SUCCESS", date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
+    ],
+)
+def test_validate_ar_basic(
+    session, test_name, now, ar_date, agm_date, expected_code, expected_msg
+):  # pylint: disable=too-many-arguments
     """Assert that a basic AR can be validated."""
     # setup
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     founding_date = ar_date - datedelta.YEAR
-    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
+    legal_entity = LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
     legal_entity.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
+    ar["filing"]["business"]["identifier"] = identifier
+    ar["filing"]["annualReport"]["annualReportDate"] = ar_date.isoformat()
+    ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = agm_date.isoformat()
 
     # perform test
     with freeze_time(now):
@@ -55,55 +62,115 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
 
 
 @pytest.mark.parametrize(
-    'test_name, now, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',
+    "test_name, now, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg",
     [
-        ('SUCCESS', date(2020, 9, 17), 'BC', 'CA', 'BC', 'CA', None, None),
-        ('FAIL_NOT_BC_DELIVERY_REGION', date(2020, 9, 17), 'AB', 'CA', 'BC', 'CA',
-         HTTPStatus.BAD_REQUEST, [{'error': "Address Region must be 'BC'.",
-                                   'path':
-                                   '/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressRegion'}]),
-        ('FAIL_NOT_BC_DELIVERY_REGION', date(2020, 9, 17), 'BC', 'CA', 'AB', 'CA',
-         HTTPStatus.BAD_REQUEST, [{'error': "Address Region must be 'BC'.",
-                                   'path':
-                                   '/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion'}]),
-        ('FAIL_ALL_ADDRESS_REGIONS', date(2020, 9, 17), 'WA', 'CA', 'WA', 'CA',
-         HTTPStatus.BAD_REQUEST, [
-             {'error': "Address Region must be 'BC'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion'},
-             {'error': "Address Region must be 'BC'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion'}
-        ]),
-        ('FAIL_ALL_ADDRESS', date(2020, 9, 17), 'WA', 'US', 'WA', 'US',
-         HTTPStatus.BAD_REQUEST, [
-             {'error': "Address Region must be 'BC'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion'},
-             {'error': "Address Country must be 'CA'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressCountry'},
-             {'error': "Address Region must be 'BC'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressRegion'},
-             {'error': "Address Country must be 'CA'.",
-              'path': '/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressCountry'}
-        ]),
-    ])
-def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_country, mailing_region, mailing_country,
-                            expected_code, expected_msg):  # pylint: disable=too-many-arguments
+        ("SUCCESS", date(2020, 9, 17), "BC", "CA", "BC", "CA", None, None),
+        (
+            "FAIL_NOT_BC_DELIVERY_REGION",
+            date(2020, 9, 17),
+            "AB",
+            "CA",
+            "BC",
+            "CA",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressRegion",
+                }
+            ],
+        ),
+        (
+            "FAIL_NOT_BC_DELIVERY_REGION",
+            date(2020, 9, 17),
+            "BC",
+            "CA",
+            "AB",
+            "CA",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion",
+                }
+            ],
+        ),
+        (
+            "FAIL_ALL_ADDRESS_REGIONS",
+            date(2020, 9, 17),
+            "WA",
+            "CA",
+            "WA",
+            "CA",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion",
+                },
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion",
+                },
+            ],
+        ),
+        (
+            "FAIL_ALL_ADDRESS",
+            date(2020, 9, 17),
+            "WA",
+            "US",
+            "WA",
+            "US",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressRegion",
+                },
+                {
+                    "error": "Address Country must be 'CA'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/mailingAddress/addressCountry",
+                },
+                {
+                    "error": "Address Region must be 'BC'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressRegion",
+                },
+                {
+                    "error": "Address Country must be 'CA'.",
+                    "path": "/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressCountry",
+                },
+            ],
+        ),
+    ],
+)
+def test_validate_coa_basic(
+    session,
+    test_name,
+    now,
+    delivery_region,
+    delivery_country,
+    mailing_region,
+    mailing_country,
+    expected_code,
+    expected_msg,
+):  # pylint: disable=too-many-arguments
     """Assert that a basic COA can be validated."""
     # setup
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     founding_date = now - datedelta.YEAR
-    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
+    legal_entity = LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
     legal_entity.founding_date = founding_date
 
     f = copy.deepcopy(FILING_HEADER)
-    f['filing']['header']['date'] = now.isoformat()
-    f['filing']['header']['name'] = 'changeOfDirectors'
-    f['filing']['business']['identifier'] = identifier
-    f['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    office = f['filing']['changeOfAddress']['offices']['registeredOffice']
-    office['deliveryAddress']['addressRegion'] = delivery_region
-    office['deliveryAddress']['addressCountry'] = delivery_country
-    office['mailingAddress']['addressRegion'] = mailing_region
-    office['mailingAddress']['addressCountry'] = mailing_country
+    f["filing"]["header"]["date"] = now.isoformat()
+    f["filing"]["header"]["name"] = "changeOfDirectors"
+    f["filing"]["business"]["identifier"] = identifier
+    f["filing"]["changeOfAddress"] = CHANGE_OF_ADDRESS
+    office = f["filing"]["changeOfAddress"]["offices"]["registeredOffice"]
+    office["deliveryAddress"]["addressRegion"] = delivery_region
+    office["deliveryAddress"]["addressCountry"] = delivery_country
+    office["mailingAddress"]["addressRegion"] = mailing_region
+    office["mailingAddress"]["addressCountry"] = mailing_country
     # perform test
     with freeze_time(now):
         err = validate(legal_entity, f)

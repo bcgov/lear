@@ -29,29 +29,21 @@ def test_get_business_aliases(session, client, jwt):
     # setup
     with suppress(Exception):
         sess = session.begin_nested()
-        identifier = 'CP7654321'
-        legal_entity =factory_legal_entity(identifier)
-        alias1 = Alias(
-            alias='ABC Ltd.',
-            type='TRANSLATION',
-            legal_entity_id=legal_entity.id
-        )
-        alias2 = Alias(
-            alias='DEF Ltd.',
-            type='DBA',
-            legal_entity_id=legal_entity.id
-        )
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
+        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
+        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
         alias1.save()
         alias2.save()
 
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
         # check
         assert rv.status_code == HTTPStatus.OK
-        assert 'aliases' in rv.json
-        assert len(rv.json['aliases']) == 2
+        assert "aliases" in rv.json
+        assert len(rv.json["aliases"]) == 2
         sess.rollback()
 
 
@@ -60,16 +52,16 @@ def test_get_business_no_aliases(session, client, jwt):
     # setup
     with suppress(Exception):
         sess = session.begin_nested()
-        identifier = 'CP7654321'
+        identifier = "CP7654321"
         factory_legal_entity(identifier)
 
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
         # check
         assert rv.status_code == HTTPStatus.OK
-        assert rv.json['aliases'] == []
+        assert rv.json["aliases"] == []
         sess.rollback()
 
 
@@ -78,27 +70,19 @@ def test_get_business_alias_by_id(session, client, jwt):
     # setup
     with suppress(Exception):
         sess = session.begin_nested()
-        identifier = 'CP7654321'
-        legal_entity =factory_legal_entity(identifier)
-        alias1 = Alias(
-            alias='ABC Ltd.',
-            type='TRANSLATION',
-            legal_entity_id=legal_entity.id
-        )
-        alias2 = Alias(
-            alias='DEF Ltd.',
-            type='DBA',
-            legal_entity_id=legal_entity.id
-        )
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
+        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
+        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
         alias1.save()
         alias2.save()
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases/{alias1.id}',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases/{alias1.id}", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
         # check
         assert rv.status_code == HTTPStatus.OK
-        assert rv.json['alias']['name'] == 'ABC Ltd.'
+        assert rv.json["alias"]["name"] == "ABC Ltd."
         sess.rollback()
 
 
@@ -107,18 +91,18 @@ def test_get_business_alias_by_invalid_id(session, client, jwt):
     # setup
     with suppress(Exception):
         sess = session.begin_nested()
-        identifier = 'CP7654321'
-        legal_entity =factory_legal_entity(identifier)
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
         alias_id = 5000
         legal_entity.save()
 
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases/{alias_id}',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases/{alias_id}", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
         # check
         assert rv.status_code == HTTPStatus.NOT_FOUND
-        assert rv.json == {'message': f'{identifier} alias not found'}
+        assert rv.json == {"message": f"{identifier} alias not found"}
         sess.rollback()
 
 
@@ -128,70 +112,57 @@ def test_get_business_alias_by_type(session, client, jwt):
     # setup
     with suppress(Exception):
         sess = session.begin_nested()
-        identifier = 'CP7654321'
-        legal_entity =factory_legal_entity(identifier)
-        alias1 = Alias(
-            alias='ABC Ltd.',
-            type='TRANSLATION',
-            legal_entity_id=legal_entity.id
-        )
-        alias2 = Alias(
-            alias='DEF Ltd.',
-            type='DBA',
-            legal_entity_id=legal_entity.id
-        )
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
+        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
+        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
         alias1.save()
         alias2.save()
 
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases?type=dba',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases?type=dba", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
         # check
         assert rv.status_code == HTTPStatus.OK
-        assert 'aliases' in rv.json
-        assert len(rv.json['aliases']) == 1
-        assert rv.json['aliases'][0]['name'] == 'DEF Ltd.'
+        assert "aliases" in rv.json
+        assert len(rv.json["aliases"]) == 1
+        assert rv.json["aliases"][0]["name"] == "DEF Ltd."
         sess.rollback()
 
 
 from contextlib import contextmanager
 
+
 @contextmanager
-def nested_session(session):
+def nested_session(session, exception):
     try:
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except:
+    except exception:
         pass
     finally:
         pass
+
 
 def test_get_business_alias_by_invalid_type(session, client, jwt):
     """Assert that business aliases are not returned."""
     # setup
     with nested_session(session):
-        identifier = 'CP7654321'
-        legal_entity =factory_legal_entity(identifier)
-        alias1 = Alias(
-            alias='ABC Ltd.',
-            type='TRANSLATION',
-            legal_entity_id=legal_entity.id
-        )
-        alias2 = Alias(
-            alias='DEF Ltd.',
-            type='DBA',
-            legal_entity_id=legal_entity.id
-        )
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
+        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
+        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
         alias1.save()
         alias2.save()
 
         # test
-        rv = client.get(f'/api/v2/businesses/{identifier}/aliases?type=invalid',
-                        headers=create_header(jwt, [STAFF_ROLE], identifier)
-                        )
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases?type=invalid",
+            headers=create_header(jwt, [STAFF_ROLE], identifier),
+        )
         # check
         assert rv.status_code == HTTPStatus.OK
-        assert 'aliases' in rv.json
-        assert rv.json['aliases'] == []
+        assert "aliases" in rv.json
+        assert rv.json["aliases"] == []

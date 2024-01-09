@@ -20,10 +20,13 @@ import pytest
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import LegalEntity, Comment, Filing, UserRoles
-from legal_api.models.user import UserRoles
+from legal_api.models import Comment, Filing, LegalEntity
 from legal_api.utils.datetime import datetime
-from tests.unit.models import factory_legal_entity, factory_completed_filing, factory_user
+from tests.unit.models import (
+    factory_completed_filing,
+    factory_legal_entity,
+    factory_user,
+)
 from tests.unit.services.utils import helper_create_jwt
 
 
@@ -32,17 +35,17 @@ def load_ledger(legal_entity, founding_date):
     i = 0
     for k, filing_meta in Filing.FILINGS.items():
         filing = copy.deepcopy(FILING_TEMPLATE)
-        filing['filing']['header']['name'] = filing_meta['name']
-        if filing_meta['name'] == 'restoration':
-            filing['filing']['restoration'] = {}
-            filing['filing']['restoration']['type'] = 'fullRestoration'
-        elif filing_meta['name'] == 'dissolution':
-            filing['filing']['dissolution'] = {}
-            filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
+        filing["filing"]["header"]["name"] = filing_meta["name"]
+        if filing_meta["name"] == "restoration":
+            filing["filing"]["restoration"] = {}
+            filing["filing"]["restoration"]["type"] = "fullRestoration"
+        elif filing_meta["name"] == "dissolution":
+            filing["filing"]["dissolution"] = {}
+            filing["filing"]["dissolution"]["dissolutionType"] = "voluntary"
         f = factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()
-            comment.comment = f'this comment {c}'
+            comment.comment = f"this comment {c}"
             f.comments.append(comment)
         f.save()
         i += 1
@@ -52,9 +55,14 @@ def load_ledger(legal_entity, founding_date):
 def test_simple_ledger_search(session):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
-    identifier = 'BC1234567'
+    identifier = "BC1234567"
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
-    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+    legal_entity = factory_legal_entity(
+        identifier=identifier,
+        founding_date=founding_date,
+        last_ar_date=None,
+        entity_type=LegalEntity.EntityTypes.BCOMP.value,
+    )
     num_of_files = load_ledger(legal_entity, founding_date)
 
     # test
@@ -64,18 +72,18 @@ def test_simple_ledger_search(session):
     assert len(ledger) == num_of_files
 
     # Fully examine 1 filing - alteration
-    alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
+    alteration = next((f for f in ledger if f.get("name") == "alteration"), None)
 
     assert alteration
     assert 15 == len(alteration.keys())
-    assert 'availableOnPaperOnly' in alteration
-    assert 'effectiveDate' in alteration
-    assert 'filingId' in alteration
-    assert 'name' in alteration
-    assert 'paymentStatusCode' in alteration
-    assert 'status' in alteration
-    assert 'submittedDate' in alteration
-    assert 'submitter' in alteration
+    assert "availableOnPaperOnly" in alteration
+    assert "effectiveDate" in alteration
+    assert "filingId" in alteration
+    assert "name" in alteration
+    assert "paymentStatusCode" in alteration
+    assert "status" in alteration
+    assert "submittedDate" in alteration
+    assert "submitter" in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
@@ -83,21 +91,27 @@ def test_simple_ledger_search(session):
 
 def test_common_ledger_items(session):
     """Assert that common ledger items works as expected."""
-    identifier = 'BC1234567'
+    identifier = "BC1234567"
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
-    legal_entity =factory_legal_entity(identifier=identifier, founding_date=founding_date, last_ar_date=None,
-                                entity_type=LegalEntity.EntityTypes.BCOMP.value)
+    legal_entity = factory_legal_entity(
+        identifier=identifier,
+        founding_date=founding_date,
+        last_ar_date=None,
+        entity_type=LegalEntity.EntityTypes.BCOMP.value,
+    )
     filing = copy.deepcopy(FILING_TEMPLATE)
-    filing['filing']['header']['name'] = 'Involuntary Dissolution'
-    completed_filing = \
-        factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    filing["filing"]["header"]["name"] = "Involuntary Dissolution"
+    completed_filing = factory_completed_filing(
+        legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1)
+    )
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
-    assert common_ledger_items['documentsLink'] is None
+    assert common_ledger_items["documentsLink"] is None
 
-    filing['filing']['header']['name'] = 'dissolution'
-    filing['filing']['dissolution'] = {}
-    filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
-    completed_filing = \
-        factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    filing["filing"]["header"]["name"] = "dissolution"
+    filing["filing"]["dissolution"] = {}
+    filing["filing"]["dissolution"]["dissolutionType"] = "voluntary"
+    completed_filing = factory_completed_filing(
+        legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1)
+    )
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
-    assert common_ledger_items['documentsLink'] is not None
+    assert common_ledger_items["documentsLink"] is not None
