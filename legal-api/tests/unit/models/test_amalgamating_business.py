@@ -58,7 +58,7 @@ def test_valid_amalgamating_business_save(session):
     amalgamation.save()
 
     amalgamating_business_1 = AmalgamatingBusiness(
-        role=AmalgamatingBusiness.Role.AMALGAMATING,
+        role=AmalgamatingBusiness.Role.amalgamating,
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
@@ -69,7 +69,7 @@ def test_valid_amalgamating_business_save(session):
     amalgamating_business_1.save()
 
     amalgamating_business_2 = AmalgamatingBusiness(
-        role=AmalgamatingBusiness.Role.HOLDING,
+        role=AmalgamatingBusiness.Role.holding,
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
@@ -83,5 +83,6 @@ def test_valid_amalgamating_business_save(session):
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
     for type in AmalgamatingBusiness.Role:
-        assert type in [AmalgamatingBusiness.Role.HOLDING,
-                        AmalgamatingBusiness.Role.AMALGAMATING]
+        assert type in [AmalgamatingBusiness.Role.holding,
+                        AmalgamatingBusiness.Role.amalgamating,
+                        AmalgamatingBusiness.Role.primary]
