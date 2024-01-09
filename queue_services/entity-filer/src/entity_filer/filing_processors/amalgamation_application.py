@@ -22,7 +22,6 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import db, AmalgamatingBusiness, Amalgamation, Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, business_profile, filings, shares
@@ -78,20 +77,21 @@ def update_affiliation(business: Business, filing: Filing):
             level='error'
         )
 
+
 def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amalgamation, filing_rec: Filing):
     """Create amalgamating businesses."""
     amalgamating_businesses_json = amalgamation_filing.get('amalgamatingBusinesses', [])
     for amalgamating_business_json in amalgamating_businesses_json:
         amalgamating_business = AmalgamatingBusiness()
         amalgamating_business.role = amalgamating_business_json.get('role')
-        if ((identifier := amalgamating_business_json.get('identifier')) and 
-            (business := Business.find_by_identifier(identifier))):
+        if ((identifier := amalgamating_business_json.get('identifier')) and
+                (business := Business.find_by_identifier(identifier))):
             amalgamating_business.business_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
         else:
             amalgamating_business.foreign_corp_num = amalgamating_business_json.get('corpNumber')
             amalgamating_business.foreign_name = amalgamating_business_json.get('legalName')
-            
+
             foreign_jurisdiction = amalgamating_business_json.get('foreignJurisdiction')
             amalgamating_business.foreign_jurisdiction = foreign_jurisdiction.get('country').upper()
             if region := foreign_jurisdiction.get('region'):
@@ -99,12 +99,14 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
 
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
+
 def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
     """Dissolve amalgamating business."""
     business.dissolution_date = filing_rec.effective_date
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
     db.session.add(business)
+
 
 def process(business: Business,  # pylint: disable=too-many-branches
             filing: Dict,
@@ -145,8 +147,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     if nr_number := business_info_obj.get('nrNumber', None):
         filing_meta.amalgamation_application = {**filing_meta.amalgamation_application,
-                                    **{'nrNumber': nr_number,
-                                       'legalName': business_info_obj.get('legalName', None)}}
+                                                **{'nrNumber': nr_number,
+                                                   'legalName': business_info_obj.get('legalName', None)}}
 
     if not business:
         raise QueueException(f'amalgamationApplication {filing_rec.id}, Unable to create business.')

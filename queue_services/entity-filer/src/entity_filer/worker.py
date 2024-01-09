@@ -245,13 +245,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
-                    
+
                 elif filing.get('amalgamationApplication'):
-                    business, filing_submission, filing_meta = \
-                        amalgamation_application.process(business, 
-                                                         filing_core_submission.json,
-                                                         filing_submission,
-                                                         filing_meta)
+                    business, filing_submission, filing_meta = amalgamation_application.process(
+                        business,
+                        filing_core_submission.json,
+                        filing_submission,
+                        filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)

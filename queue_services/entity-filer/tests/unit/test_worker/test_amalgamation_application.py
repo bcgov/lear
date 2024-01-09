@@ -16,17 +16,12 @@
 import copy
 from datetime import datetime, timezone
 from http import HTTPStatus
-from unittest.mock import patch, call
+from unittest.mock import patch
 
 import pytest
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, RegistrationBootstrap
-from legal_api.services.bootstrap import AccountService
-from registry_schemas.example_data import (
-    FILING_HEADER,
-    AMALGAMATION_APPLICATION
-)
+from legal_api.models import Amalgamation, Business, Filing
+from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
-from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import business_info, business_profile
 from entity_filer.worker import process_filing
 from tests.unit import create_entity, create_filing
@@ -59,12 +54,12 @@ async def test_amalgamation_application_process(app, session):
     ]
 
     filing['filing'][filing_type]['nameRequest']['nrNumber'] = nr_identifier
-    
+
     filing_rec = create_filing('123', filing)
     effective_date = datetime.now(timezone.utc)
     filing_rec.effective_date = effective_date
     filing_rec.save()
-   
+
     # test
     filing_msg = {'filing': {'id': filing_rec.id}}
     with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
@@ -74,7 +69,7 @@ async def test_amalgamation_application_process(app, session):
     # Assertions
     filing_rec = Filing.find_by_id(filing_rec.id)
     business = Business.find_by_identifier(next_corp_num)
-    
+
     assert filing_rec.business_id == business.id
     assert filing_rec.status == Filing.Status.COMPLETED.value
     assert business.identifier
