@@ -51,6 +51,7 @@ from entity_filer.filing_processors import (
     agm_extension,
     agm_location_change,
     alteration,
+    amalgamation_application,
     annual_report,
     change_of_address,
     change_of_directors,
@@ -244,6 +245,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
+                    
+                elif filing.get('amalgamationApplication'):
+                    business, filing_submission, filing_meta = \
+                        amalgamation_application.process(business, 
+                                                         filing_core_submission.json,
+                                                         filing_submission,
+                                                         filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
@@ -337,6 +345,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 registration.update_affiliation(business, filing_submission)
                 name_request.consume_nr(business, filing_submission, 'registration')
                 registration.post_process(business, filing_submission)
+
+            if any('amalgamationApplication' in x for x in legal_filings):
+                filing_submission.business_id = business.id
+                db.session.add(filing_submission)
+                db.session.commit()
+                amalgamation_application.update_affiliation(business, filing_submission)
+                name_request.consume_nr(business, filing_submission, 'amalgamationApplication')
+                amalgamation_application.post_process(business, filing_submission)
 
             if any('changeOfName' in x for x in legal_filings):
                 change_of_name.post_process(business, filing_submission)

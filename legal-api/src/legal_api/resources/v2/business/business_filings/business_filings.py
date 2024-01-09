@@ -113,7 +113,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
         return response, response_code
 
     # get header params
-    payment_account_id = request.headers.get('accountId', None)
+    payment_account_id = request.headers.get('account-id', request.headers.get('accountId', None))
 
     if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
