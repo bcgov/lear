@@ -227,6 +227,7 @@ def merge_partnership_registration(
         name=registration_filing.get("nameRequest", {}).get("legalName"),
         name_type=AlternateName.NameType.OPERATING,
         start_date=registration_filing.get("startDate"),
+        registration_date=filing_rec.effective_date,
     )
     business.alternate_names.append(alternate_name)
 

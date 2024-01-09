@@ -205,9 +205,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         sess = _db.session()
         sess.execute(text("SET TIME ZONE 'UTC';"))
 
-        dir_path = business_model_migrations.__file__[
-            : business_model_migrations.__file__.rfind("/")
-        ]
+        dir_path = os.path.dirname(business_model_migrations.__file__)
 
         migrate = Migrate(app, _db, directory=dir_path, **{"dialect_name": "postgres"})
         upgrade()

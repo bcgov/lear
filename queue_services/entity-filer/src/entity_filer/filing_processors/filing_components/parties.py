@@ -115,6 +115,7 @@ def merge_all_parties(
        Set has directors, so remove existing directors NOT in the set.
     """
     memoize_existing_director_ids = []
+    memoize_existing_partners = []
     errors = []
 
     if not parties.get("parties"):
@@ -149,7 +150,10 @@ def merge_all_parties(
         ) or (
             (not party_identifier)
             and (party_id := party_dict.get("officer", {}).get("id"))
-            and (party_le := LegalEntity.find_by_id(party_id))
+            and (
+                (party_le := LegalEntity.find_by_id(party_id))
+                 or (party_le := ColinEntity.find_by_identifier(party_id))
+            )
         ):
             existing_party = True
 
@@ -248,6 +252,7 @@ def merge_all_parties(
                         )
 
                     case "Partner":
+                        memoize_existing_partners.append(party_le)
                         merge_entity_role_to_filing(
                             party_le,
                             filing,
@@ -272,8 +277,13 @@ def merge_all_parties(
                         )
 
     if memoize_existing_director_ids:
-        delete_non_memoized_directors(
-            legal_entity, filing, memoize_existing_director_ids
+        delete_non_memoized_entity_role(
+            legal_entity, filing, memoize_existing_director_ids, EntityRole.RoleTypes.director
+        )
+
+    if memoize_existing_partners:
+        delete_non_memoized_entity_role(
+            legal_entity, filing, memoize_existing_partners, EntityRole.RoleTypes.partner
         )
 
     return errors if len(errors) > 0 else None
@@ -468,15 +478,14 @@ def get_address_for_filing(party_address: Address, address_dict: dict) -> Addres
     return new_address
 
 
-def delete_non_memoized_directors(
+def delete_non_memoized_entity_role(
     legal_entity: LegalEntity,
     filing: Filing,
     keep_list,
+    role: EntityRole.RoleTypes
 ) -> []:
-    """Delete EntityRoles for directors not in the keep_list."""
-    candidates = EntityRole.get_parties_by_role(
-        legal_entity.id, EntityRole.RoleTypes.director
-    )
+    """Delete EntityRoles for role not in the keep_list."""
+    candidates = EntityRole.get_parties_by_role(legal_entity.id, role)
 
     for candidate in candidates:
         if candidate.related_entity in keep_list:
@@ -502,7 +511,10 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     ) or (
         (not party_identifier)
         and (party_id := party_dict.get("officer", {}).get("id"))
-        and (party_le := LegalEntity.find_by_id(party_id))
+        and (
+            (party_le := LegalEntity.find_by_id(party_id))
+            or (party_le := ColinEntity.find_by_identifier(party_id))
+        )
     ):
         existing_party = True
 
@@ -521,6 +533,7 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     # An existing person can have a different set of addresses
     # for this set of roles
     if existing_party and party_type == "person":
+        update_person_info(party_le, party_dict)
         delivery_address = get_address_for_filing(
             party_le.entity_delivery_address, party_dict.get("deliveryAddress")
         )
