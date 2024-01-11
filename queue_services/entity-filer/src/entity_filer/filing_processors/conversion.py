@@ -41,7 +41,7 @@ from entity_filer.filing_processors.filing_components import (
     shares,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
 
 
 def process(
