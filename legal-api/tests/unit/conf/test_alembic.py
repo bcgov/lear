@@ -20,6 +20,7 @@ from alembic.script import ScriptDirectory
 
 from tests.conftest import not_raises
 
+
 def test_for_no_branches_in_versions():
     config = Config()
     config.set_main_option("script_location", "migrations")

@@ -20,6 +20,7 @@ import json
 
 from legal_api.models import NaicsStructure
 
+
 def test_naics_find_by_search_term(session):
     """Assert matching naics search results are returned.
 
@@ -27,7 +28,7 @@ def test_naics_find_by_search_term(session):
     the same.  This test search term provides a quick way of testing that a lot of paths of the search logic is
     working correctly.  A bit overloaded but a quick way to uncover any issues with the NAICS search.
     """
-    results = NaicsStructure.find_by_search_term('roast')
+    results = NaicsStructure.find_by_search_term("roast")
     assert results
     assert len(results) == 7
 
@@ -43,21 +44,21 @@ def test_exact_match_search_naics(app, session, client, jwt):
     """Assert that search results are returned when searching with exact search term."""
 
     # test
-    results = NaicsStructure.find_by_search_term('chocolate confectionery manufacturing')
+    results = NaicsStructure.find_by_search_term("chocolate confectionery manufacturing")
 
     # check
     assert results
     assert len(results) == 1
     assert len(results[0].naics_elements) == 15
-    assert results[0].year == int(app.config.get('NAICS_YEAR'))
-    assert results[0].version == int(app.config.get('NAICS_VERSION'))
+    assert results[0].year == int(app.config.get("NAICS_YEAR"))
+    assert results[0].version == int(app.config.get("NAICS_VERSION"))
 
 
 def test_non_exact_match_search_naics(session, client, jwt):
     """Assert that search results are returned when searching with non-exact search term."""
 
     # test
-    results = NaicsStructure.find_by_search_term('confectionery chocolate')
+    results = NaicsStructure.find_by_search_term("confectionery chocolate")
 
     # check
     assert results
@@ -76,7 +77,7 @@ def test_non_exact_match_search_naics(session, client, jwt):
 
 def test_naics_find_by_search_term_no_results(session):
     """Assert no matching naics search results are returned."""
-    results = NaicsStructure.find_by_search_term('roastasdf')
+    results = NaicsStructure.find_by_search_term("roastasdf")
     assert len(results) == 0
 
 
@@ -84,7 +85,7 @@ def test_naics_find_by_naics_code(app, session):
     """Assert naics code can be retrieved by code."""
 
     # setup
-    naics_code = '311911'
+    naics_code = "311911"
 
     # test
     result = NaicsStructure.find_by_code(naics_code)
@@ -92,16 +93,15 @@ def test_naics_find_by_naics_code(app, session):
     # check
     assert result
     assert result.code == naics_code
-    assert result.year == int(app.config.get('NAICS_YEAR'))
-    assert result.version == int(app.config.get('NAICS_VERSION'))
-
+    assert result.year == int(app.config.get("NAICS_YEAR"))
+    assert result.version == int(app.config.get("NAICS_VERSION"))
 
 
 def test_naics_find_by_naics_code_no_match(session):
     """Assert no result retrieved for non-existent naics code."""
 
     # setup
-    naics_code = '311911a'
+    naics_code = "311911a"
 
     # test
     result = NaicsStructure.find_by_code(naics_code)
@@ -114,8 +114,8 @@ def test_naics_find_by_naics_key(app, session):
     """Assert naics code can be retrieved by key."""
 
     # setup
-    naics_code = '311911'
-    naics_key = 'a201b79d-d39d-42d4-94ab-21885809fce2'
+    naics_code = "311911"
+    naics_key = "a201b79d-d39d-42d4-94ab-21885809fce2"
 
     # test
     result = NaicsStructure.find_by_naics_key(naics_key)
@@ -124,16 +124,15 @@ def test_naics_find_by_naics_key(app, session):
     assert result
     assert str(result.naics_key) == naics_key
     assert result.code == naics_code
-    assert result.year == int(app.config.get('NAICS_YEAR'))
-    assert result.version == int(app.config.get('NAICS_VERSION'))
-
+    assert result.year == int(app.config.get("NAICS_YEAR"))
+    assert result.version == int(app.config.get("NAICS_VERSION"))
 
 
 def test_naics_find_by_naics_key_no_match(session):
     """Assert no result retrieved for non-existent naics key."""
 
     # setup
-    naics_key = 'd2fca3f1-f391-49a7-8b67-00381b569aaa'
+    naics_key = "d2fca3f1-f391-49a7-8b67-00381b569aaa"
 
     # test
     result = NaicsStructure.find_by_naics_key(naics_key)

@@ -26,22 +26,25 @@ from legal_api.services.filings.validations.annual_report import validate
 
 # from tests.unit.models import factory_legal_entity, factory_legal_entity_mailing_address, factory_filing
 @pytest.mark.parametrize(
-    'test_name, now, ar_date, agm_date, expected_code, expected_msg',
-    [('SUCCESS', date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
-     ])
-def test_validate(session, test_name, now, ar_date, agm_date,
-                  expected_code, expected_msg):  # pylint: disable=too-many-arguments
+    "test_name, now, ar_date, agm_date, expected_code, expected_msg",
+    [
+        ("SUCCESS", date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
+    ],
+)
+def test_validate(
+    session, test_name, now, ar_date, agm_date, expected_code, expected_msg
+):  # pylint: disable=too-many-arguments
     """Assert that a basic AR can be validated."""
     # setup
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     founding_date = ar_date - datedelta.YEAR
-    legal_entity =LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
+    legal_entity = LegalEntity(identifier=identifier, last_ledger_timestamp=founding_date)
     legal_entity.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['business']['identifier'] = identifier
-    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
+    ar["filing"]["business"]["identifier"] = identifier
+    ar["filing"]["annualReport"]["annualReportDate"] = ar_date.isoformat()
+    ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = agm_date.isoformat()
 
     # perform test
     with freeze_time(now):

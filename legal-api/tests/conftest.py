@@ -32,15 +32,17 @@ from legal_api.models import db as _db
 
 from . import FROZEN_DATETIME
 
+DB_TEST_NAME: Final = "lear_test_db"
 
-DB_TEST_NAME: Final = 'lear_test_db'
 
-def create_test_db(user: str = None,
-                   password: str = None,
-                   database: str = None,
-                   host: str = "localhost",
-                   port: int = 1521,
-                   database_uri: str = None) -> bool:
+def create_test_db(
+    user: str = None,
+    password: str = None,
+    database: str = None,
+    host: str = "localhost",
+    port: int = 1521,
+    database_uri: str = None,
+) -> bool:
     """Create the database in our .devcontainer launched postgres DB.
 
     Parameters
@@ -65,7 +67,7 @@ def create_test_db(user: str = None,
     else:
         DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
+    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
 
     try:
         with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
@@ -76,32 +78,34 @@ def create_test_db(user: str = None,
         print(err)  # used in the test suite, so on failure print something
         return False
 
-def drop_test_db(user: str = None,
-                   password: str = None,
-                   database: str = None,
-                   host: str = "localhost",
-                   port: int = 1521,
-                   database_uri: str = None) -> bool:
+
+def drop_test_db(
+    user: str = None,
+    password: str = None,
+    database: str = None,
+    host: str = "localhost",
+    port: int = 1521,
+    database_uri: str = None,
+) -> bool:
     """Delete the database in our .devcontainer launched postgres DB."""
     if database_uri:
         DATABASE_URI = database_uri
     else:
         DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
-    
-    DATABASE_URI = DATABASE_URI[:DATABASE_URI.rfind("/")] + '/postgres'
-    
+
+    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+
     close_all = f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid)
         FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with contextlib.suppress(sqlalchemy.exc.ProgrammingError,
-                             psycopg2.OperationalError,
-                             Exception):
+    with contextlib.suppress(sqlalchemy.exc.ProgrammingError, psycopg2.OperationalError, Exception):
         with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
+
 
 @contextmanager
 def not_raises(exception):
@@ -112,41 +116,42 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
 
 # fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
 def freeze_datetime_utcnow(monkeypatch):
     """Fixture to return a static time for utcnow()."""
+
     class _Datetime:
         @classmethod
         def utcnow(cls):
             return FROZEN_DATETIME
 
-    monkeypatch.setattr(datetime, 'datetime', _Datetime)
+    monkeypatch.setattr(datetime, "datetime", _Datetime)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def ld():
     """LaunchDarkly TestData source."""
     td = TestData.data_source()
     yield td
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing', **{'ld_test_data': ld})
+    _app = create_app("testing", **{"ld_test_data": ld})
 
     return _app
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_ctx(event_loop):
     # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app("testing")
     with _app.app_context():
         yield _app
 
@@ -157,45 +162,43 @@ def config(app):
     return app.config
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_request():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app("testing")
 
     return _app
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def jwt():
     """Return a session-wide jwt manager."""
     return _jwt
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client_ctx(app):  # pylint: disable=redefined-outer-name
     """Return session-wide Flask test client."""
     with app.test_client() as _client:
         yield _client
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
     Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
-
         # drop_test_db(database=app.config.get('DB_NAME'),
         #              database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
-        create_test_db(database=app.config.get('DB_NAME'),
-                       database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        create_test_db(database=app.config.get("DB_NAME"), database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"))
 
         # metadata_obj = MetaData()
         # metadata_obj.reflect(bind=_db.engine)
@@ -205,7 +208,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         #     print(table.foreign_key_constraints)
         #     for fk in table.foreign_key_constraints:
         #         sess.execute(DropConstraint(fk))
-        
+
         # with suppress(Exception):
         #     _db.drop_all()
 
@@ -253,11 +256,10 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         yield _db
 
-        drop_test_db(database=app.config.get('DB_NAME'),
-                     database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        drop_test_db(database=app.config.get("DB_NAME"), database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"))
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
@@ -270,13 +272,13 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
             sess = db._make_scoped_session(options=options)
         except Exception as err:
             print(err)
-            print('done')
+            print("done")
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()
 
-        @event.listens_for(sess(), 'after_transaction_end')
+        @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
             if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
@@ -286,7 +288,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
 
         db.session = sess
 
-        sql = text('select 1')
+        sql = text("select 1")
         sess.execute(sql)
 
         yield sess
@@ -298,17 +300,17 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         conn.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def stan_server(docker_services):
     """Create the nats / stan services that the integration tests will use."""
-    docker_services.start('nats')
+    docker_services.start("nats")
     time.sleep(2)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def minio_server(docker_services):
     """Create the minio services that the integration tests will use."""
-    docker_services.start('minio')
+    docker_services.start("minio")
     with suppress(Exception):
-        docker_services.wait_for_service('minio', 9000)
+        docker_services.wait_for_service("minio", 9000)
     time.sleep(10)

@@ -17,6 +17,7 @@ These will get initialized by the application using the models
 """
 from flask_sqlalchemy import SQLAlchemy
 from sql_versioning import versioned_session
+
 # from sqlalchemy_continuum import make_versioned
 
 

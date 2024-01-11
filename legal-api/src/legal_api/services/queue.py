@@ -20,12 +20,13 @@ import random
 import string
 
 # import nest_asyncio  # noqa: I001
-from flask import _app_ctx_stack
-# from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
-# from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+from flask import _app_ctx_stack  # pylint: disable=no-name-in-module;
+
+from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
+from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 
-class QueueService():
+class QueueService:
     """Provides services to use the Queue from Flask.
 
     For ease of use, this follows the style of a Flask Extension
@@ -34,7 +35,7 @@ class QueueService():
     def __init__(self, app=None, loop=None):
         """Initialize, supports setting the app context on instantiation."""
         # Default NATS Options
-        self.name = 'default_api_client'
+        self.name = "default_api_client"
         self.nats_options = {}
         self.stan_options = {}
         self.loop = loop
@@ -46,30 +47,28 @@ class QueueService():
         if app is not None:
             self.init_app(app, self.loop)
 
-    def init_app(self, app, loop=None,
-                 nats_options=None, stan_options=None):
+    def init_app(self, app, loop=None, nats_options=None, stan_options=None):
         """Initialize the extension.
 
         :param app: Flask app
         :return: naked
         """
         # nest_asyncio.apply()
-        self.name = app.config.get('NATS_CLIENT_NAME')
+        self.name = app.config.get("NATS_CLIENT_NAME")
         self.loop = loop or asyncio.get_event_loop()
-        self.nats_servers = app.config.get('NATS_SERVERS').split(',')
-        self.subject = app.config.get('NATS_FILER_SUBJECT')
+        self.nats_servers = app.config.get("NATS_SERVERS").split(",")
+        self.subject = app.config.get("NATS_FILER_SUBJECT")
 
         default_nats_options = {
-            'name': self.name,
-            'io_loop': self.loop,
-            'servers': self.nats_servers,
-            'connect_timeout': app.config.get('NATS_CONNECT_TIMEOUT', DEFAULT_CONNECT_TIMEOUT),
-
+            "name": self.name,
+            "io_loop": self.loop,
+            "servers": self.nats_servers,
+            "connect_timeout": app.config.get("NATS_CONNECT_TIMEOUT", DEFAULT_CONNECT_TIMEOUT),
             # NATS handlers
-            'error_cb': self.on_error,
-            'closed_cb': self.on_close,
-            'reconnected_cb': self.on_reconnect,
-            'disconnected_cb': self.on_disconnect,
+            "error_cb": self.on_error,
+            "closed_cb": self.on_close,
+            "reconnected_cb": self.on_reconnect,
+            "disconnected_cb": self.on_disconnect,
         }
         if not nats_options:
             nats_options = {}
@@ -77,13 +76,12 @@ class QueueService():
         self.nats_options = {**default_nats_options, **nats_options}
 
         default_stan_options = {
-            'cluster_id': app.config.get('NATS_CLUSTER_ID'),
-            'client_id':
-            (self.name.
-             lower().
-             strip(string.whitespace)
-             ).translate({ord(c): '_' for c in string.punctuation})
-            + '_' + str(random.SystemRandom().getrandbits(0x58))
+            "cluster_id": app.config.get("NATS_CLUSTER_ID"),
+            "client_id": (self.name.lower().strip(string.whitespace)).translate(
+                {ord(c): "_" for c in string.punctuation}
+            )
+            + "_"
+            + str(random.SystemRandom().getrandbits(0x58)),
         }
         if not stan_options:
             stan_options = {}
@@ -104,12 +102,12 @@ class QueueService():
         """Connect to the queueing service."""
         ctx = _app_ctx_stack.top
         if ctx:
-            if not hasattr(ctx, 'nats'):
+            if not hasattr(ctx, "nats"):
                 ctx.nats = NATS()
                 ctx.stan = STAN()
 
             if not ctx.nats.is_connected:
-                self.stan_options = {**self.stan_options, **{'nats': ctx.nats}}
+                self.stan_options = {**self.stan_options, **{"nats": ctx.nats}}
                 await ctx.nats.connect(**self.nats_options)
                 await ctx.stan.connect(**self.stan_options)
 
@@ -125,7 +123,7 @@ class QueueService():
             subject = subject or self.subject
             self.loop.run_until_complete(self.async_publish_json(payload, subject))
         except Exception as err:
-            self.logger.error('Error: %s', err)
+            self.logger.error("Error: %s", err)
             raise err
 
     async def publish_json_to_subject(self, payload=None, subject=None):
@@ -133,7 +131,7 @@ class QueueService():
         try:
             await self.async_publish_json(payload, subject)
         except Exception as err:
-            self.logger.error('Error: %s', err)
+            self.logger.error("Error: %s", err)
             raise err
 
     async def async_publish_json(self, payload=None, subject=None):
@@ -141,24 +139,23 @@ class QueueService():
         if not self.is_connected:
             await self.connect()
 
-        await self.stan.publish(subject=subject,
-                                payload=json.dumps(payload).encode('utf-8'))
+        await self.stan.publish(subject=subject, payload=json.dumps(payload).encode("utf-8"))
 
     async def on_error(self, e):
         """Handle errors raised by the client library."""
-        self.logger.warning('Error: %s', e)
+        self.logger.warning("Error: %s", e)
 
     async def on_reconnect(self):
         """Invoke by the client library when attempting to reconnect to NATS."""
-        self.logger.warning('Reconnected to NATS at nats://%s', self.nats.connected_url.netloc if self.nats else 'none')
+        self.logger.warning("Reconnected to NATS at nats://%s", self.nats.connected_url.netloc if self.nats else "none")
 
     async def on_disconnect(self):
         """Invoke by the client library when disconnected from NATS."""
-        self.logger.warning('Disconnected from NATS')
+        self.logger.warning("Disconnected from NATS")
 
     async def on_close(self):
         """Invoke by the client library when the NATS connection is closed."""
-        self.logger.warning('Closed connection to NATS')
+        self.logger.warning("Closed connection to NATS")
 
     @property
     def is_closed(self):
@@ -179,7 +176,7 @@ class QueueService():
         """Return the STAN client for the Queue Service."""
         ctx = _app_ctx_stack.top
         if ctx:
-            if not hasattr(ctx, 'stan'):
+            if not hasattr(ctx, "stan"):
                 return None
             return ctx.stan
         return None
@@ -189,7 +186,7 @@ class QueueService():
         """Return the NATS client for the Queue Service."""
         ctx = _app_ctx_stack.top
         if ctx:
-            if not hasattr(ctx, 'nats'):
+            if not hasattr(ctx, "nats"):
                 return None
             return ctx.nats
         return None

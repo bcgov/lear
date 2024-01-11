@@ -30,60 +30,63 @@ def test_search_naics_using_search_term_with_results(session, client, jwt):
     working correctly.  A bit overloaded but a quick way to uncover any issues with the NAICS search.
     """
     # test
-    rv = client.get(f'/api/v2/naics?search_term=roast',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term=roast", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 7
 
     # verify elements are filtered correctly
-    results_with_more_than_one_element = [result for result in results if len(result['naicsElements']) > 0]
+    results_with_more_than_one_element = [result for result in results if len(result["naicsElements"]) > 0]
     assert len(results_with_more_than_one_element) == 7
 
-    results_with_3_elements = [result for result in results if len(result['naicsElements']) == 3]
+    results_with_3_elements = [result for result in results if len(result["naicsElements"]) == 3]
     assert len(results_with_3_elements) == 2
+
 
 def test_exact_match_search_naics(app, session, client, jwt):
     """Assert that search results are returned when searching with exact search term."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=chocolate%20confectionery%20manufacturing',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(
+        "/api/v2/naics?search_term=chocolate%20confectionery%20manufacturing",
+        headers=create_header(jwt, [BASIC_USER], "user"),
+    )
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 1
-    assert len(results[0]['naicsElements']) == 15
-    assert results[0]['year'] == int(app.config.get('NAICS_YEAR'))
-    assert results[0]['version'] == int(app.config.get('NAICS_VERSION'))
+    assert len(results[0]["naicsElements"]) == 15
+    assert results[0]["year"] == int(app.config.get("NAICS_YEAR"))
+    assert results[0]["version"] == int(app.config.get("NAICS_VERSION"))
 
 
 def test_non_exact_match_search_naics(session, client, jwt):
     """Assert that search results are returned when searching with non-exact search term."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=confectionery%20chocolate',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(
+        "/api/v2/naics?search_term=confectionery%20chocolate", headers=create_header(jwt, [BASIC_USER], "user")
+    )
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 3
 
     # verify elements are filtered correctly
-    results_with_11_elements = [result for result in results if len(result['naicsElements']) == 11]
+    results_with_11_elements = [result for result in results if len(result["naicsElements"]) == 11]
     assert len(results_with_11_elements) == 1
 
-    results_with_2_elements = [result for result in results if len(result['naicsElements']) == 2]
+    results_with_2_elements = [result for result in results if len(result["naicsElements"]) == 2]
     assert len(results_with_2_elements) == 1
 
-    results_with_5_elements = [result for result in results if len(result['naicsElements']) == 5]
+    results_with_5_elements = [result for result in results if len(result["naicsElements"]) == 5]
     assert len(results_with_5_elements) == 1
 
 
@@ -91,13 +94,12 @@ def test_search_naics_using_code_with_result(session, client, jwt):
     """Assert that search result is returned when searching with valid naics code."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=311911',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term=311911", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 1
 
     assert len(results[0]["naicsElements"]) == 3
@@ -107,13 +109,12 @@ def test_search_naics_using_code_with_no_result(session, client, jwt):
     """Assert that no search result is returned when searching with non-existent naics code."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=999999',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term=999999", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 0
 
 
@@ -121,13 +122,12 @@ def test_search_naics_no_results(session, client, jwt):
     """Assert that 200 is returned with no results."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=jaklsjdf',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term=jaklsjdf", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'results' in rv.json
-    results = rv.json['results']
+    assert "results" in rv.json
+    results = rv.json["results"]
     assert len(results) == 0
 
 
@@ -135,121 +135,114 @@ def test_search_naics_with_no_search_term_param(session, client, jwt):
     """Assert that hitting naics endpoint with no search_term query param returns 400 and correct error message."""
 
     # test
-    rv = client.get(f'/api/v2/naics',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'message' in rv.json
-    assert 'search_term query parameter is required.' in rv.json['message']
+    assert "message" in rv.json
+    assert "search_term query parameter is required." in rv.json["message"]
 
 
 def test_search_naics_with_no_value_for_search_term_param(session, client, jwt):
-    """Assert that hitting naics endpoint with no value for search_term query param returns 400 and correct error message."""
+    """Assert that hitting naics endpoint with no value for search_term query param returns 400 and
+    correct error message."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'message' in rv.json
-    assert 'search_term query parameter is required.' in rv.json['message']
+    assert "message" in rv.json
+    assert "search_term query parameter is required." in rv.json["message"]
 
 
 def test_search_naics_with_search_term_param_too_short(session, client, jwt):
     """Assert that hitting naics endpoint with search_term query param with value of less than 3 characters
-        returns 400 and correct error message."""
+    returns 400 and correct error message."""
 
     # test
-    rv = client.get(f'/api/v2/naics?search_term=ab',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get("/api/v2/naics?search_term=ab", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'message' in rv.json
-    assert 'search_term cannot be less than 3 characters.' in rv.json['message']
+    assert "message" in rv.json
+    assert "search_term cannot be less than 3 characters." in rv.json["message"]
 
 
 def test_get_naics_code_by_code(app, session, client, jwt):
     """Assert that naics code can be retrieved using code."""
 
     # setup
-    naics_code = '311911'
+    naics_code = "311911"
 
     # test
-    rv = client.get(f'/api/v2/naics/{naics_code}',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(f"/api/v2/naics/{naics_code}", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'code' in rv.json
-    assert rv.json['code'] == naics_code
-    assert 'classDefinition' in rv.json
-    assert 'classTitle' in rv.json
-    assert 'year' in rv.json
+    assert "code" in rv.json
+    assert rv.json["code"] == naics_code
+    assert "classDefinition" in rv.json
+    assert "classTitle" in rv.json
+    assert "year" in rv.json
 
-    assert 'naicsElements' in rv.json
-    assert len(rv.json['naicsElements']) == 3
-    assert rv.json['year'] == int(app.config.get('NAICS_YEAR'))
-    assert rv.json['version'] == int(app.config.get('NAICS_VERSION'))
-
+    assert "naicsElements" in rv.json
+    assert len(rv.json["naicsElements"]) == 3
+    assert rv.json["year"] == int(app.config.get("NAICS_YEAR"))
+    assert rv.json["version"] == int(app.config.get("NAICS_VERSION"))
 
 
 def test_get_naics_code_by_key(app, session, client, jwt):
     """Assert that naics code can be retrieved using key."""
 
     # setup
-    naics_code = '311911'
-    naics_key = 'a201b79d-d39d-42d4-94ab-21885809fce2'
+    naics_code = "311911"
+    naics_key = "a201b79d-d39d-42d4-94ab-21885809fce2"
 
     # test
-    rv = client.get(f'/api/v2/naics/{naics_key}',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(f"/api/v2/naics/{naics_key}", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert 'code' in rv.json
-    assert rv.json['code'] == naics_code
-    assert 'naicsKey' in rv.json
-    assert rv.json['naicsKey'] == naics_key
-    assert 'classDefinition' in rv.json
-    assert 'classTitle' in rv.json
-    assert 'year' in rv.json
+    assert "code" in rv.json
+    assert rv.json["code"] == naics_code
+    assert "naicsKey" in rv.json
+    assert rv.json["naicsKey"] == naics_key
+    assert "classDefinition" in rv.json
+    assert "classTitle" in rv.json
+    assert "year" in rv.json
 
-    assert 'naicsElements' in rv.json
-    assert len(rv.json['naicsElements']) == 3
-    assert rv.json['year'] == int(app.config.get('NAICS_YEAR'))
-    assert rv.json['version'] == int(app.config.get('NAICS_VERSION'))
+    assert "naicsElements" in rv.json
+    assert len(rv.json["naicsElements"]) == 3
+    assert rv.json["year"] == int(app.config.get("NAICS_YEAR"))
+    assert rv.json["version"] == int(app.config.get("NAICS_VERSION"))
 
 
 def test_get_naics_code_invalid_code_or_key_format(session, client, jwt):
     """Assert that retrieving naics code with invalid code format returns 400."""
 
     # setup
-    naics_code = '311aaa'
+    naics_code = "311aaa"
 
     # test
-    rv = client.get(f'/api/v2/naics/{naics_code}',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(f"/api/v2/naics/{naics_code}", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'message' in rv.json
-    assert rv.json['message'] == 'Invalid NAICS code(6 digits) or naics key(uuid v4) format.'
+    assert "message" in rv.json
+    assert rv.json["message"] == "Invalid NAICS code(6 digits) or naics key(uuid v4) format."
 
 
 def test_get_naics_code_not_found(session, client, jwt):
     """Assert that retrieving naics code returns 404 when not found."""
 
     # setup
-    naics_code = '999999'
+    naics_code = "999999"
 
     # test
-    rv = client.get(f'/api/v2/naics/{naics_code}',
-                    headers=create_header(jwt, [BASIC_USER], 'user'))
+    rv = client.get(f"/api/v2/naics/{naics_code}", headers=create_header(jwt, [BASIC_USER], "user"))
 
     # check
     assert rv.status_code == HTTPStatus.NOT_FOUND
-    assert 'message' in rv.json
-    assert rv.json['message'] == 'NAICS code not found.'
+    assert "message" in rv.json
+    assert rv.json["message"] == "NAICS code not found."

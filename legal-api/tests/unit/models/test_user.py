@@ -30,14 +30,15 @@ def test_user(session):
     Start with a blank database.
     """
     salt = str(uuid.uuid4())
-    user = User(username='username',
-                firstname='firstname',
-                middlename='middlename',
-                lastname='lastname',
-                sub='sub' + salt,
-                iss='iss',
-                idp_userid='idp_userid' + salt,
-                login_source='IDIR'
+    user = User(
+        username="username",
+        firstname="firstname",
+        middlename="middlename",
+        lastname="lastname",
+        sub="sub" + salt,
+        iss="iss",
+        idp_userid="idp_userid" + salt,
+        login_source="IDIR",
     )
 
     session.add(user)
@@ -51,11 +52,19 @@ def test_user_find_by_jwt_token(session):
 
     Start with a blank database.
     """
-    user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    user = User(
+        username="username",
+        firstname="firstname",
+        lastname="lastname",
+        sub="sub",
+        iss="iss",
+        idp_userid="123",
+        login_source="IDIR",
+    )
     session.add(user)
     session.commit()
 
-    token = {'idp_userid': '123'}
+    token = {"idp_userid": "123"}
     u = User.find_by_jwt_token(token)
 
     assert u.id is not None
@@ -65,40 +74,42 @@ def test_create_from_jwt_token(session):
     """Assert User is created from the JWT fields."""
     salt = str(uuid.uuid4())
 
-    token = {'username': 'username',
-             'given_name': 'given_name',
-             'family_name': 'family_name',
-             'iss': 'iss',
-             'sub': 'sub' + salt,
-             'idp_userid': 'idp_userid' + salt,
-             'loginSource': 'IDIR'
-             }
+    token = {
+        "username": "username",
+        "given_name": "given_name",
+        "family_name": "family_name",
+        "iss": "iss",
+        "sub": "sub" + salt,
+        "idp_userid": "idp_userid" + salt,
+        "loginSource": "IDIR",
+    }
     u = User.create_from_jwt_token(token)
     assert u.id is not None
 
 
 def test_get_or_create_user_by_jwt(session):
     """Assert User is created from the JWT fields."""
-    token = {'username': 'username',
-             'given_name': 'given_name',
-             'family_name': 'family_name',
-             'iss': 'iss',
-             'sub': 'sub',
-             'idp_userid': '123',
-             'loginSource': 'IDIR'
-             }
+    token = {
+        "username": "username",
+        "given_name": "given_name",
+        "family_name": "family_name",
+        "iss": "iss",
+        "sub": "sub",
+        "idp_userid": "123",
+        "loginSource": "IDIR",
+    }
     u = User.get_or_create_user_by_jwt(token)
     assert u.id is not None
 
 
 def test_get_or_create_user_by_jwt_invlaid_jwt(session):
     """Assert User is created from the JWT fields."""
-    token = b'invalidtoken'
+    token = b"invalidtoken"
 
     with pytest.raises(BusinessException) as excinfo:
         User.get_or_create_user_by_jwt(token)
 
-    assert excinfo.value.error == 'unable_to_get_or_create_user'
+    assert excinfo.value.error == "unable_to_get_or_create_user"
 
 
 def test_create_from_jwt_token_no_token(session):
@@ -110,7 +121,7 @@ def test_create_from_jwt_token_no_token(session):
 
 def test_create_from_invalid_jwt_token_no_token(session):
     """Assert User is not created from an empty token."""
-    token = b'invalidtoken'
+    token = b"invalidtoken"
 
     with pytest.raises(AttributeError) as excinfo:
         User.create_from_jwt_token(token)
@@ -121,15 +132,16 @@ def test_create_from_invalid_jwt_token_no_token(session):
 def test_find_by_username(session):
     """Assert User can be found by the most current username."""
     salt = str(uuid.uuid4())
-    username = 'username' + salt
-    user = User(username=username,
-                firstname='firstname',
-                middlename='middlename',
-                lastname='lastname',
-                sub='sub' + salt,
-                iss='iss',
-                idp_userid='idp_userid' + salt,
-                login_source='IDIR'
+    username = "username" + salt
+    user = User(
+        username=username,
+        firstname="firstname",
+        middlename="middlename",
+        lastname="lastname",
+        sub="sub" + salt,
+        iss="iss",
+        idp_userid="idp_userid" + salt,
+        login_source="IDIR",
     )
     session.add(user)
     session.commit()
@@ -142,15 +154,16 @@ def test_find_by_username(session):
 def test_find_by_sub(session):
     """Assert find User by the unique sub key."""
     salt = str(uuid.uuid4())
-    sub = 'sub' + salt
-    user = User(username='username',
-                firstname='firstname',
-                middlename='middlename',
-                lastname='lastname',
-                sub=sub,
-                iss='iss',
-                idp_userid='idp_userid' + salt,
-                login_source='IDIR'
+    sub = "sub" + salt
+    user = User(
+        username="username",
+        firstname="firstname",
+        middlename="middlename",
+        lastname="lastname",
+        sub=sub,
+        iss="iss",
+        idp_userid="idp_userid" + salt,
+        login_source="IDIR",
     )
     session.add(user)
     session.commit()
@@ -163,15 +176,16 @@ def test_find_by_sub(session):
 def test_user_delete(session):
     """Assert the User record is deleted."""
     salt = str(uuid.uuid4())
-    sub = 'sub' + salt
-    user = User(username='username',
-                firstname='firstname',
-                middlename='middlename',
-                lastname='lastname',
-                sub=sub,
-                iss='iss',
-                idp_userid='idp_userid' + salt,
-                login_source='IDIR'
+    sub = "sub" + salt
+    user = User(
+        username="username",
+        firstname="firstname",
+        middlename="middlename",
+        lastname="lastname",
+        sub=sub,
+        iss="iss",
+        idp_userid="idp_userid" + salt,
+        login_source="IDIR",
     )
     user.save()
     user.delete()
@@ -180,23 +194,34 @@ def test_user_delete(session):
 
 
 TEST_USER_DISPLAY_NAME = [
-    ('nothing to show', '', '', '', '', None),
-    ('simple username', 'someone', '', '', '', 'someone'),
+    ("nothing to show", "", "", "", "", None),
+    ("simple username", "someone", "", "", "", "someone"),
     # below: idir is idir\blablabla; flake thinks we're trying to escape a character, hence the double slashes
-    ('username - idir with slash', 'idir\\joefresh', '', '', '', 'joefresh'),
-    ('username - idir with @', 'joefresh@idir', '', '', '', 'joefresh'),
-    ('username - services card', 'bcsc/abc123', '', '', '', None),
-    ('simple name', 'anything', 'First', 'Last', '', 'First Last'),
-    ('name - first name only', 'anything', 'First', '', '', 'First'),
-    ('name - last name only', 'anything', '', 'Last', '', 'Last'),
-    ('name - middle name only', 'anything', '', '', 'Middle', 'Middle'),
-    ('name - full name', 'anything', 'First', 'Last', 'Middle', 'First Middle Last')
+    ("username - idir with slash", "idir\\joefresh", "", "", "", "joefresh"),
+    ("username - idir with @", "joefresh@idir", "", "", "", "joefresh"),
+    ("username - services card", "bcsc/abc123", "", "", "", None),
+    ("simple name", "anything", "First", "Last", "", "First Last"),
+    ("name - first name only", "anything", "First", "", "", "First"),
+    ("name - last name only", "anything", "", "Last", "", "Last"),
+    ("name - middle name only", "anything", "", "", "Middle", "Middle"),
+    ("name - full name", "anything", "First", "Last", "Middle", "First Middle Last"),
 ]
 
 
-@pytest.mark.parametrize('test_description, username, firstname, lastname, middlename, display_name', TEST_USER_DISPLAY_NAME)
+@pytest.mark.parametrize(
+    "test_description, username, firstname, lastname, middlename, display_name", TEST_USER_DISPLAY_NAME
+)
 def test_user_display_name(session, test_description, username, firstname, lastname, middlename, display_name):
     """Assert the User record is deleted."""
-    user = User(username=username, firstname=firstname, lastname=lastname, middlename=middlename, sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    user = User(
+        username=username,
+        firstname=firstname,
+        lastname=lastname,
+        middlename=middlename,
+        sub="sub",
+        iss="iss",
+        idp_userid="123",
+        login_source="IDIR",
+    )
 
     assert display_name == user.display_name

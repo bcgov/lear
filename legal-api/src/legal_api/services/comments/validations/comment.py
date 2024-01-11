@@ -25,21 +25,19 @@ from ...utils import get_str
 def validate(comment: Dict, is_filing: bool) -> Error:
     """Validate a standalone comment."""
     if not comment:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid comment is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid comment is required.")}])
     msg = []
 
-    comment_text_path = '/comment/comment'
+    comment_text_path = "/comment/comment"
     comment_text = get_str(comment, comment_text_path)
     if not comment_text:
-        msg.append({'error': _('Comment text must be provided.'),
-                    'path': comment_text_path})
+        msg.append({"error": _("Comment text must be provided."), "path": comment_text_path})
 
     if is_filing:
-        filing_id_path = '/comment/filingId'
+        filing_id_path = "/comment/filingId"
         filing_id = get_str(comment, filing_id_path)
         if not filing_id:
-            msg.append({'error': _('Filing ID must be provided.'),
-                        'path': filing_id_path})
+            msg.append({"error": _("Filing ID must be provided."), "path": filing_id_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

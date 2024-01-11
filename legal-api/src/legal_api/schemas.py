@@ -15,7 +15,6 @@
 """Create the schema manager to be initialized inThe flask create_app."""
 from registry_schemas.flask import SchemaServices
 
-
 rsbc_schemas = SchemaServices()  # pylint: disable=invalid-name
 
-__all__ = ('rsbc_schemas',)
+__all__ = ("rsbc_schemas",)

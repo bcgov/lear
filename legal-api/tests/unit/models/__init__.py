@@ -19,14 +19,16 @@ import uuid
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
-from legal_api.exceptions.error_messages import ErrorCode
 
+from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
     Alias,
-    LegalEntity,
+    ColinEntity,
     Comment,
+    EntityRole,
     Filing,
+    LegalEntity,
     Office,
     OfficeType,
     Party,
@@ -34,83 +36,75 @@ from legal_api.models import (
     ShareClass,
     ShareSeries,
     User,
-    db, ColinEntity, EntityRole,
+    db,
 )
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
-
 AR_FILING = {
-    'filing': {
-        'header': {
-            'name': 'annualReport',
-            'date': '2019-08-13'
+    "filing": {
+        "header": {"name": "annualReport", "date": "2019-08-13"},
+        "business": {
+            "cacheId": 1,
+            "foundingDate": "2007-04-08",
+            "identifier": "CP1234567",
+            "businessName": "legal name - CP1234567",
         },
-        'business': {
-            'cacheId': 1,
-            'foundingDate': '2007-04-08',
-            'identifier': 'CP1234567',
-            'businessName': 'legal name - CP1234567'
-        },
-        'annualReport': {
-            'annualGeneralMeetingDate': '2019-04-08',
-            'annualReportDate': '2019-04-08',
-            'certifiedBy': 'full name',
-            'email': 'no_one@never.get',
-            'directors': [
+        "annualReport": {
+            "annualGeneralMeetingDate": "2019-04-08",
+            "annualReportDate": "2019-04-08",
+            "certifiedBy": "full name",
+            "email": "no_one@never.get",
+            "directors": [
                 {
-                    'officer': {
-                        'firstName': 'Peter',
-                        'lastName': 'Griffin',
-                        'prevFirstName': 'Peter',
-                        'prevMiddleInitial': 'G',
-                        'prevLastName': 'Griffin'
+                    "officer": {
+                        "firstName": "Peter",
+                        "lastName": "Griffin",
+                        "prevFirstName": "Peter",
+                        "prevMiddleInitial": "G",
+                        "prevLastName": "Griffin",
                     },
-                    'deliveryAddress': {
-                        'streetAddress': 'street line 1',
-                        'addressCity': 'city',
-                        'addressCountry': 'country',
-                        'postalCode': 'H0H0H0',
-                        'addressRegion': 'BC'
+                    "deliveryAddress": {
+                        "streetAddress": "street line 1",
+                        "addressCity": "city",
+                        "addressCountry": "country",
+                        "postalCode": "H0H0H0",
+                        "addressRegion": "BC",
                     },
-                    'appointmentDate': '2018-01-01',
-                    'cessationDate': None
+                    "appointmentDate": "2018-01-01",
+                    "cessationDate": None,
                 },
                 {
-                    'officer': {
-                        'firstName': 'Joe',
-                        'middleInitial': 'P',
-                        'lastName': 'Swanson'
+                    "officer": {"firstName": "Joe", "middleInitial": "P", "lastName": "Swanson"},
+                    "deliveryAddress": {
+                        "streetAddress": "street line 1",
+                        "additionalStreetAddress": "street line 2",
+                        "addressCity": "city",
+                        "addressCountry": "UK",
+                        "postalCode": "H0H 0H0",
+                        "addressRegion": "SC",
                     },
-                    'deliveryAddress': {
-                        'streetAddress': 'street line 1',
-                        'additionalStreetAddress': 'street line 2',
-                        'addressCity': 'city',
-                        'addressCountry': 'UK',
-                        'postalCode': 'H0H 0H0',
-                        'addressRegion': 'SC'
-                    },
-                    'title': 'Treasurer',
-                    'cessationDate': None,
-                    'appointmentDate': '2018-01-01'
-                }
+                    "title": "Treasurer",
+                    "cessationDate": None,
+                    "appointmentDate": "2018-01-01",
+                },
             ],
-            'deliveryAddress': {
-                'streetAddress': 'delivery_address - address line one',
-                'addressCity': 'delivery_address city',
-                'addressCountry': 'delivery_address country',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
+            "deliveryAddress": {
+                "streetAddress": "delivery_address - address line one",
+                "addressCity": "delivery_address city",
+                "addressCountry": "delivery_address country",
+                "postalCode": "H0H0H0",
+                "addressRegion": "BC",
             },
-            'mailingAddress': {
-                'streetAddress': 'mailing_address - address line one',
-                'addressCity': 'mailing_address city',
-                'addressCountry': 'mailing_address country',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
-            }
-        }
+            "mailingAddress": {
+                "streetAddress": "mailing_address - address line one",
+                "addressCity": "mailing_address city",
+                "addressCountry": "mailing_address country",
+                "postalCode": "H0H0H0",
+                "addressRegion": "BC",
+            },
+        },
     }
 }
 
@@ -124,42 +118,46 @@ def factory_user(username: str, firstname: str = None, lastname: str = None):
     return user
 
 
-def factory_legal_entity(identifier=None,
-                         founding_date=EPOCH_DATETIME,
-                         last_ar_date=None,
-                         entity_type=LegalEntity.EntityTypes.COOP.value,
-                         state=LegalEntity.State.ACTIVE,
-                         naics_code=None,
-                         naics_desc=None,
-                         admin_freeze=False,
-                         first_name=None,
-                         middle_initial=None,
-                         last_name=None,
-                         change_filing_id=None):
+def factory_legal_entity(
+    identifier=None,
+    founding_date=EPOCH_DATETIME,
+    last_ar_date=None,
+    entity_type=LegalEntity.EntityTypes.COOP.value,
+    state=LegalEntity.State.ACTIVE,
+    naics_code=None,
+    naics_desc=None,
+    admin_freeze=False,
+    first_name=None,
+    middle_initial=None,
+    last_name=None,
+    change_filing_id=None,
+):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
 
-    legal_name = f'legal_name-{identifier}' if identifier else None
-    legal_entity = LegalEntity(_legal_name=legal_name,
-                               founding_date=founding_date,
-                               last_ar_date=last_ar_date,
-                               last_ar_year=last_ar_year,
-                               last_ledger_timestamp=EPOCH_DATETIME,
-                               # dissolution_date=EPOCH_DATETIME,
-                               entity_type=entity_type,
-                               identifier=identifier,
-                               tax_id='BN123456789',
-                               fiscal_year_end_date=FROZEN_DATETIME,
-                               state=state,
-                               naics_code=naics_code,
-                               naics_description=naics_desc,
-                               admin_freeze=admin_freeze,
-                               first_name=first_name,
-                               middle_initial=middle_initial,
-                               last_name=last_name,
-                               change_filing_id=change_filing_id)
+    legal_name = f"legal_name-{identifier}" if identifier else None
+    legal_entity = LegalEntity(
+        _legal_name=legal_name,
+        founding_date=founding_date,
+        last_ar_date=last_ar_date,
+        last_ar_year=last_ar_year,
+        last_ledger_timestamp=EPOCH_DATETIME,
+        # dissolution_date=EPOCH_DATETIME,
+        entity_type=entity_type,
+        identifier=identifier,
+        tax_id="BN123456789",
+        fiscal_year_end_date=FROZEN_DATETIME,
+        state=state,
+        naics_code=naics_code,
+        naics_description=naics_desc,
+        admin_freeze=admin_freeze,
+        first_name=first_name,
+        middle_initial=middle_initial,
+        last_name=last_name,
+        change_filing_id=change_filing_id,
+    )
 
     # Versioning business
     # uow = versioning_manager.unit_of_work(db.session)
@@ -172,17 +170,15 @@ def factory_legal_entity(identifier=None,
 def factory_legal_entity_mailing_address(legal_entity):
     """Create a business entity."""
     address = Address(
-        city='Test City',
-        street=f'{legal_entity.identifier}-Test Street',
-        postal_code='T3S3T3',
-        country='TA',
-        region='BC',
-        address_type=Address.MAILING
+        city="Test City",
+        street=f"{legal_entity.identifier}-Test Street",
+        postal_code="T3S3T3",
+        country="TA",
+        region="BC",
+        address_type=Address.MAILING,
     )
 
-    office = Office(
-        office_type='registeredOffice'
-    )
+    office = Office(office_type="registeredOffice")
 
     office.addresses.append(address)
     legal_entity.offices.append(office)
@@ -190,10 +186,7 @@ def factory_legal_entity_mailing_address(legal_entity):
     return legal_entity
 
 
-def factory_filing(legal_entity, data_dict,
-                   filing_date=FROZEN_DATETIME,
-                   filing_type=None,
-                   filing_sub_type=None):
+def factory_filing(legal_entity, data_dict, filing_date=FROZEN_DATETIME, filing_type=None, filing_sub_type=None):
     """Create a filing."""
     filing = Filing()
     filing.legal_entity_id = legal_entity.id
@@ -221,19 +214,20 @@ def factory_incorporation_filing(legal_entity, data_dict, filing_date=FROZEN_DAT
     return filing
 
 
-def factory_completed_filing(legal_entity,
-                             data_dict,
-                             filing_date=FROZEN_DATETIME,
-                             payment_token=None,
-                             colin_id=None,
-                             filing_type=None,
-                             filing_sub_type=None):
+def factory_completed_filing(
+    legal_entity,
+    data_dict,
+    filing_date=FROZEN_DATETIME,
+    payment_token=None,
+    colin_id=None,
+    filing_type=None,
+    filing_sub_type=None,
+):
     """Create a completed filing."""
     if not payment_token:
-        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace("=", "")
 
     with freeze_time(filing_date):
-
         filing = Filing()
         filing.legal_entity_id = legal_entity.id
         filing.filing_date = filing_date
@@ -254,7 +248,7 @@ def factory_completed_filing(legal_entity,
             colin_event.filing_id = filing.id
             colin_event.save()
 
-        setattr(filing, 'skip_status_listener', True)
+        setattr(filing, "skip_status_listener", True)
         filing.save()
 
         legal_entity.change_filing_id = filing.id
@@ -291,15 +285,15 @@ def factory_epoch_filing(legal_entity, filing_date=FROZEN_DATETIME):
     filing = Filing()
     filing.legal_entity_id = legal_entity.id
     filing.filing_date = filing_date
-    filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
+    filing.filing_json = {"filing": {"header": {"name": "lear_epoch"}}}
     filing.save()
     return filing
 
 
-def factory_legal_entity_comment(legal_entity: LegalEntity = None, comment_text: str = 'some text', user: User = None):
+def factory_legal_entity_comment(legal_entity: LegalEntity = None, comment_text: str = "some text", user: User = None):
     """Create a comment."""
     if not legal_entity:
-        legal_entity = factory_legal_entity('CP1234567')
+        legal_entity = factory_legal_entity("CP1234567")
 
     c = Comment()
     c.legal_entity_id = legal_entity.id
@@ -313,10 +307,11 @@ def factory_legal_entity_comment(legal_entity: LegalEntity = None, comment_text:
 
 
 def factory_comment(
-        legal_entity: LegalEntity = None, filing: Filing = None, comment_text: str = 'some text', user: User = None):
+    legal_entity: LegalEntity = None, filing: Filing = None, comment_text: str = "some text", user: User = None
+):
     """Create a comment."""
     if not legal_entity:
-        legal_entity = factory_legal_entity('CP1234567')
+        legal_entity = factory_legal_entity("CP1234567")
 
     if not filing:
         filing = factory_filing(legal_entity, ANNUAL_REPORT)
@@ -332,19 +327,21 @@ def factory_comment(
     return c
 
 
-def factory_party_role(delivery_address: Address,
-                       mailing_address: Address,
-                       officer: dict,
-                       appointment_date: datetime,
-                       cessation_date: datetime,
-                       role_type: EntityRole.RoleTypes):
+def factory_party_role(
+    delivery_address: Address,
+    mailing_address: Address,
+    officer: dict,
+    appointment_date: datetime,
+    cessation_date: datetime,
+    role_type: EntityRole.RoleTypes,
+):
     """Create a role."""
     legal_entity = LegalEntity(
-        first_name=officer['firstName'],
-        last_name=officer['lastName'],
-        middle_initial=officer['middleInitial'],
-        entity_type=officer['partyType'],
-        _legal_name=officer['organizationName']
+        first_name=officer["firstName"],
+        last_name=officer["lastName"],
+        middle_initial=officer["middleInitial"],
+        entity_type=officer["partyType"],
+        _legal_name=officer["organizationName"],
     )
     legal_entity.entity_delivery_address = delivery_address
     legal_entity.entity_mailing_address = mailing_address
@@ -353,7 +350,7 @@ def factory_party_role(delivery_address: Address,
         role_type=role_type,
         appointment_date=appointment_date,
         cessation_date=cessation_date,
-        related_entity_id=legal_entity.id
+        related_entity_id=legal_entity.id,
     )
     return entity_role
 
@@ -362,22 +359,18 @@ def factory_share_class(business_identifier: str):
     """Create a share class."""
     legal_entity = factory_legal_entity(business_identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name="Share Class 1",
         priority=1,
         max_share_flag=True,
         max_shares=1000,
         par_value_flag=True,
         par_value=0.852,
-        currency='CAD',
+        currency="CAD",
         special_rights_flag=False,
-        legal_entity_id=legal_entity.id
+        legal_entity_id=legal_entity.id,
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
-        priority=1,
-        max_share_flag=True,
-        max_shares=500,
-        special_rights_flag=False
+        name="Share Series 1", priority=1, max_share_flag=True, max_shares=500, special_rights_flag=False
     )
     share_class.series.append(share_series_1)
     share_class.save()
@@ -385,11 +378,13 @@ def factory_share_class(business_identifier: str):
 
 
 def factory_incomplete_statuses(unknown_statuses: list = []):
-    result = [Filing.Status.DRAFT.value,
-              Filing.Status.PENDING.value,
-              Filing.Status.PENDING_CORRECTION.value,
-              Filing.Status.ERROR.value,
-              Filing.Status.PAID.value]
+    result = [
+        Filing.Status.DRAFT.value,
+        Filing.Status.PENDING.value,
+        Filing.Status.PENDING_CORRECTION.value,
+        Filing.Status.ERROR.value,
+        Filing.Status.PAID.value,
+    ]
 
     if unknown_statuses:
         result.extend(unknown_statuses)
@@ -400,12 +395,12 @@ def factory_incomplete_statuses(unknown_statuses: list = []):
 def factory_address(address_type=Address.MAILING):
     """Create factory address."""
     address = Address(
-        city='Test City',
-        street='Test Street',
-        postal_code='T3S3T3',
-        country='TA',
-        region='BC',
-        address_type=address_type
+        city="Test City",
+        street="Test Street",
+        postal_code="T3S3T3",
+        country="TA",
+        region="BC",
+        address_type=address_type,
     )
     address.save()
     return address
@@ -414,21 +409,28 @@ def factory_address(address_type=Address.MAILING):
 def factory_offices(legal_entity, office_types=[OfficeType.REGISTERED], change_filing=None):
     """Create factory offices."""
     for office_type in office_types:
-        office = Office(office_type=office_type,
-                        change_filing_id=change_filing.id)
-        office.addresses.append(Address(city='Test City',
-                                        street=f'{change_filing._filing_type} {office_type} Mailing Street',
-                                        postal_code='T3S3T3',
-                                        country='TA',
-                                        region='BC',
-                                        address_type=Address.MAILING,
-                                        change_filing_id=change_filing.id))
+        office = Office(office_type=office_type, change_filing_id=change_filing.id)
+        office.addresses.append(
+            Address(
+                city="Test City",
+                street=f"{change_filing._filing_type} {office_type} Mailing Street",
+                postal_code="T3S3T3",
+                country="TA",
+                region="BC",
+                address_type=Address.MAILING,
+                change_filing_id=change_filing.id,
+            )
+        )
 
-        office.addresses.append(Address(city='Test City',
-                                        street=f'{change_filing._filing_type} {office_type} Delivery Street',
-                                        postal_code='T3S3T3',
-                                        country='TA',
-                                        region='BC',
-                                        address_type=Address.DELIVERY,
-                                        change_filing_id=change_filing.id))
+        office.addresses.append(
+            Address(
+                city="Test City",
+                street=f"{change_filing._filing_type} {office_type} Delivery Street",
+                postal_code="T3S3T3",
+                country="TA",
+                region="BC",
+                address_type=Address.DELIVERY,
+                change_filing_id=change_filing.id,
+            )
+        )
         legal_entity.offices.append(office)

@@ -24,12 +24,12 @@ from legal_api.utils.logging import setup_logging
 
 def test_logging_with_file(capsys):
     """Assert that logging is setup with the configuration file."""
-    file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf')
+    file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf")
     setup_logging(file_path)  # important to do this first
 
     captured = capsys.readouterr()
 
-    assert captured.out.startswith('Configure logging, from conf')
+    assert captured.out.startswith("Configure logging, from conf")
 
 
 def test_logging_with_missing_file(capsys):
@@ -39,4 +39,4 @@ def test_logging_with_missing_file(capsys):
 
     captured = capsys.readouterr()
 
-    assert captured.err.startswith('Unable to configure logging')
+    assert captured.err.startswith("Unable to configure logging")

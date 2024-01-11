@@ -25,44 +25,49 @@ import os
 import pytest
 from dotenv import find_dotenv, load_dotenv
 
-
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
 
-integration_affiliation = pytest.mark.skipif((os.getenv('RUN_AFFILIATION_TESTS', False) is False),
-                                             reason='Account affiliation tests are only run when requested.')
+integration_affiliation = pytest.mark.skipif(
+    (os.getenv("RUN_AFFILIATION_TESTS", False) is False),
+    reason="Account affiliation tests are only run when requested.",
+)
 
 integration_authorization = pytest.mark.skipif(
-    (os.getenv('RUN_AUTHORIZATION_TESTS', False) is False),
-    reason='Test requiring authorization service run when RUN_AUTHORIZATION_TESTS is set.')
+    (os.getenv("RUN_AUTHORIZATION_TESTS", False) is False),
+    reason="Test requiring authorization service run when RUN_AUTHORIZATION_TESTS is set.",
+)
 
-integration_colin = pytest.mark.skipif((os.getenv('RUN_COLIN_TESTS', False) is False),
-                                       reason='COLIN tests are only run when requested.')
+integration_colin = pytest.mark.skipif(
+    (os.getenv("RUN_COLIN_TESTS", False) is False), reason="COLIN tests are only run when requested."
+)
 
-integration_nats = pytest.mark.skipif((os.getenv('RUN_NATS_TESTS', False) is False),
-                                      reason='NATS tests are only run when requested.')
+integration_nats = pytest.mark.skipif(
+    (os.getenv("RUN_NATS_TESTS", False) is False), reason="NATS tests are only run when requested."
+)
 
-integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) is False),
-                                         reason='Test requiring payment service run when RUN_PAYMENT_TESTS is set.')
+integration_payment = pytest.mark.skipif(
+    (os.getenv("RUN_PAYMENT_TESTS", False) is False),
+    reason="Test requiring payment service run when RUN_PAYMENT_TESTS is set.",
+)
 
-integration_reports = pytest.mark.skipif((os.getenv('RUN_REPORT_TESTS', False) is False),
-                                         reason='Report tests are only run when requested.')
+integration_reports = pytest.mark.skipif(
+    (os.getenv("RUN_REPORT_TESTS", False) is False), reason="Report tests are only run when requested."
+)
 
-integration_sentry = pytest.mark.skipif((os.getenv('SENTRY_DSN', False) is False),
-                                        reason='SENTRY tests run when SENTRY_DSN is set.')
+integration_sentry = pytest.mark.skipif(
+    (os.getenv("SENTRY_DSN", False) is False), reason="SENTRY tests run when SENTRY_DSN is set."
+)
 
-integration_namerequests = pytest.mark.skipif((os.getenv('RUN_NAMEREQUESTS_TESTS', False) is False),
-                                              reason='Name request tests are only run when requested.')
+integration_namerequests = pytest.mark.skipif(
+    (os.getenv("RUN_NAMEREQUESTS_TESTS", False) is False), reason="Name request tests are only run when requested."
+)
 
-not_github_ci = pytest.mark.skipif((os.getenv('NOT_GITHUB_CI', False) is False),
-                                   reason='Does not pass on github ci.')
+not_github_ci = pytest.mark.skipif((os.getenv("NOT_GITHUB_CI", False) is False), reason="Does not pass on github ci.")
 
-todo_tech_debt = pytest.mark.skipif((os.getenv('TECH_DEBT', False) is False),
-                                   reason='Does not run tech debt tests.')
+todo_tech_debt = pytest.mark.skipif((os.getenv("TECH_DEBT", False) is False), reason="Does not run tech debt tests.")
 
-api_v1 = pytest.mark.skipif((os.getenv('API_V1', False) is False),
-                                   reason='Version 1 of API.')
+api_v1 = pytest.mark.skipif((os.getenv("API_V1", False) is False), reason="Version 1 of API.")
 
-api_v2 = pytest.mark.skipif((os.getenv('API_V2', False) is False),
-                                   reason='Version 2 of API.')
+api_v2 = pytest.mark.skipif((os.getenv("API_V2", False) is False), reason="Version 2 of API.")

@@ -15,10 +15,14 @@
 
 import copy
 
-from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
-                                        CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
+from registry_schemas.example_data import (
+    CORRECTION_CP_SPECIAL_RESOLUTION,
+    CP_SPECIAL_RESOLUTION_TEMPLATE,
+    FILING_HEADER,
+)
+
 from legal_api.services.filings import validate
-from tests.unit.models import factory_legal_entity, factory_completed_filing
+from tests.unit.models import factory_completed_filing, factory_legal_entity
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 
@@ -26,16 +30,16 @@ CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE
 def test_valid_special_resolution_correction(session):
     """Test that a valid SPECIAL_RESOLUTION correction passes validation."""
     # setup
-    identifier = 'CP1234567'
+    identifier = "CP1234567"
     business = factory_legal_entity(identifier)
     corrected_filing = factory_completed_filing(business, CP_SPECIAL_RESOLUTION_APPLICATION)
 
     correction_data = copy.deepcopy(FILING_HEADER)
-    correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-    correction_data['filing']['header']['name'] = 'correction'
+    correction_data["filing"]["correction"] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    correction_data["filing"]["header"]["name"] = "correction"
     f = copy.deepcopy(correction_data)
-    f['filing']['header']['identifier'] = identifier
-    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f["filing"]["header"]["identifier"] = identifier
+    f["filing"]["correction"]["correctedFilingId"] = corrected_filing.id
 
     err = validate(business, f)
 

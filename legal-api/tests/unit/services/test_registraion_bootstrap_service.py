@@ -30,34 +30,32 @@ from legal_api.services.bootstrap import AccountService
 from tests import integration_affiliation
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def account(app):
     """Create an account to be used for testing."""
     with app.app_context():
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_url = auth_url + '/orgs/{account_id}/affiliations'
-        account_url = account_url[:account_url.rfind('{') - 1]
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        account_url = auth_url + "/orgs/{account_id}/affiliations"
+        account_url = account_url[: account_url.rfind("{") - 1]
 
-        org_data = json.dumps({'name': str(uuid.uuid4())})
+        org_data = json.dumps({"name": str(uuid.uuid4())})
         token = AccountService.get_bearer_token()
 
         # with app.app_context():
         rv = requests.post(
             url=account_url,
             data=org_data,
-            headers={**AccountService.CONTENT_TYPE_JSON,
-                     'Authorization': AccountService.BEARER + token},
-            timeout=20
+            headers={**AccountService.CONTENT_TYPE_JSON, "Authorization": AccountService.BEARER + token},
+            timeout=20,
         )
 
-        account_id = rv.json()['id']
+        account_id = rv.json()["id"]
 
         yield account_id
 
-        rv = requests.delete(url=f'{account_url}/{account_id}',
-                             headers={'Authorization': AccountService.BEARER + token},
-                             timeout=20
-                             )
+        rv = requests.delete(
+            url=f"{account_url}/{account_id}", headers={"Authorization": AccountService.BEARER + token}, timeout=20
+        )
         print(rv)
 
 
@@ -70,21 +68,20 @@ def test_create_bootstrap_registrations(session):
 @integration_affiliation
 def test_account_affiliation_integration(account, app_ctx):
     """Assert that the affiliation can be created."""
-    business_registration = (f'T{random.SystemRandom().getrandbits(0x58)}')[:10]
-    r = AccountService.create_affiliation(account=account,
-                                          business_registration=business_registration,
-                                          business_name='')
+    business_registration = (f"T{random.SystemRandom().getrandbits(0x58)}")[:10]
+    r = AccountService.create_affiliation(
+        account=account, business_registration=business_registration, business_name=""
+    )
 
     assert r == HTTPStatus.OK
 
-    r = AccountService.update_entity(business_registration=business_registration,
-                                     business_name=business_registration,
-                                     corp_type_code='BEN')
+    r = AccountService.update_entity(
+        business_registration=business_registration, business_name=business_registration, corp_type_code="BEN"
+    )
 
     assert r == HTTPStatus.OK
 
-    r = AccountService.delete_affiliation(account=account,
-                                          business_registration=business_registration)
+    r = AccountService.delete_affiliation(account=account, business_registration=business_registration)
 
     # @TODO change this next sprint when affiliation service is updated.
     assert r == HTTPStatus.OK

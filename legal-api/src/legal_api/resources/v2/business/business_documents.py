@@ -29,60 +29,67 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/documents', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/documents/<string:document_name>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/documents", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/documents/<string:document_name>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_business_documents(identifier: str, document_name: str = None):
     """Return the business documents."""
     # basic checks
-    if not authorized(identifier, jwt, ['view', ]):
-        return jsonify(
-            message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
-        ), HTTPStatus.UNAUTHORIZED
+    if not authorized(
+        identifier,
+        jwt,
+        [
+            "view",
+        ],
+    ):
+        return (
+            jsonify(message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{"identifier": identifier})),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
     legal_entity = LegalEntity.find_by_identifier(identifier)
 
     if not legal_entity:
-        return jsonify(
-            message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
-        ), HTTPStatus.NOT_FOUND
+        return (
+            jsonify(message=get_error_message(ErrorCode.MISSING_BUSINESS, **{"identifier": identifier})),
+            HTTPStatus.NOT_FOUND,
+        )
 
     if not document_name:
         return _get_document_list(legal_entity)
 
     err = validate_document_request(document_name, legal_entity)
     if err:
-        response_message = {'errors': err.msg}
+        response_message = {"errors": err.msg}
         return jsonify(response_message), err.code
 
     if document_name:
-        if 'application/pdf' in request.accept_mimetypes:
+        if "application/pdf" in request.accept_mimetypes:
             return BusinessDocument(legal_entity, document_name).get_pdf()
-        elif 'application/json' in request.accept_mimetypes:
+        elif "application/json" in request.accept_mimetypes:
             return BusinessDocument(legal_entity, document_name).get_json()
     return {}, HTTPStatus.NOT_FOUND
 
 
 def _get_document_list(legal_entity):
     """Get list of business documents."""
-    base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    base_url = base_url[:base_url.find('/api')]
-    doc_url = url_for('API2.get_business_documents', **{'identifier': legal_entity.identifier,
-                                                        'document_name': None})
-    business_documents = ['summary']
-    documents = {'documents': {}}
+    base_url = current_app.config.get("LEGAL_API_BASE_URL")
+    base_url = base_url[: base_url.find("/api")]
+    doc_url = url_for("API2.get_business_documents", **{"identifier": legal_entity.identifier, "document_name": None})
+    business_documents = ["summary"]
+    documents = {"documents": {}}
 
     for doc in business_documents:
-        documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
+        documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
     if legal_entity.entity_type == LegalEntity.EntityTypes.COOP.value:
-        documents['documentsInfo'] = {}
+        documents["documentsInfo"] = {}
         coop_documents, coop_info = _get_coop_documents_and_info(legal_entity)
         for k, v in coop_documents.items():
-            documents['documents'][k] = v
+            documents["documents"][k] = v
         for k, v in coop_info.items():
-            documents['documentsInfo'][k] = v
+            documents["documentsInfo"][k] = v
 
     return jsonify(documents), HTTPStatus.OK
 
@@ -95,49 +102,54 @@ def _get_coop_documents_and_info(legal_entity):
     if not legal_entity:
         return documents, info
 
-    base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    base_url = base_url[:base_url.find('/api')]
+    base_url = current_app.config.get("LEGAL_API_BASE_URL")
+    base_url = base_url[: base_url.find("/api")]
 
-    info['certifiedRules'], info['certifiedMemorandum'] = {}, {}
+    info["certifiedRules"], info["certifiedMemorandum"] = {}, {}
 
-    sr_filings = Filing.get_filings_by_types(legal_entity.id, ['specialResolution'])
-    sr_rules_resolution = [sr for sr in sr_filings
-                           if sr.filing_json['filing'].get('alteration', {}).get('rulesInResolution') is True]
-    sr_memorandum_resolution = [sr for sr in sr_filings
-                                if sr.filing_json['filing'].get('alteration', {}).get('memorandumInResolution') is True]
+    sr_filings = Filing.get_filings_by_types(legal_entity.id, ["specialResolution"])
+    sr_rules_resolution = [
+        sr for sr in sr_filings if sr.filing_json["filing"].get("alteration", {}).get("rulesInResolution") is True
+    ]
+    sr_memorandum_resolution = [
+        sr for sr in sr_filings if sr.filing_json["filing"].get("alteration", {}).get("memorandumInResolution") is True
+    ]
     if rules_document := Document.find_by_legal_entity_id_and_type(legal_entity.id, DocumentType.COOP_RULES.value):
         rules_filing = Filing.find_by_id(rules_document.filing_id)
-        rules_doc_url = url_for('API2.get_documents', **{'identifier': legal_entity.identifier,
-                                                         'filing_id': rules_filing.id,
-                                                         'legal_filing_name': None})
-        documents['certifiedRules'] = f'{base_url}{rules_doc_url}/certifiedRules'
+        rules_doc_url = url_for(
+            "API2.get_documents",
+            **{"identifier": legal_entity.identifier, "filing_id": rules_filing.id, "legal_filing_name": None},
+        )
+        documents["certifiedRules"] = f"{base_url}{rules_doc_url}/certifiedRules"
         filing_date_str = LegislationDatetime.format_as_legislation_date(rules_filing.filing_date)
-        file_name = f'{legal_entity.identifier} - Certified Rules - {filing_date_str}.pdf'
-        info['certifiedRules'] = {
-            'key': rules_document.file_key,
-            'name': file_name,
-            'uploaded': rules_filing.filing_date.isoformat()
+        file_name = f"{legal_entity.identifier} - Certified Rules - {filing_date_str}.pdf"
+        info["certifiedRules"] = {
+            "key": rules_document.file_key,
+            "name": file_name,
+            "uploaded": rules_filing.filing_date.isoformat(),
         }
     if sr_rules_resolution:
-        info['certifiedRules']['includedInResolution'] = True
-        info['certifiedRules']['includedInResolutionDate'] = sr_rules_resolution[0].filing_date.isoformat()
+        info["certifiedRules"]["includedInResolution"] = True
+        info["certifiedRules"]["includedInResolutionDate"] = sr_rules_resolution[0].filing_date.isoformat()
 
     if memorandum_document := Document.find_by_legal_entity_id_and_type(
-            legal_entity.id, DocumentType.COOP_MEMORANDUM.value):
+        legal_entity.id, DocumentType.COOP_MEMORANDUM.value
+    ):
         memorandum_filing = Filing.find_by_id(memorandum_document.filing_id)
-        memorandum_doc_url = url_for('API2.get_documents', **{'identifier': legal_entity.identifier,
-                                                              'filing_id': memorandum_filing.id,
-                                                              'legal_filing_name': None})
-        documents['certifiedMemorandum'] = f'{base_url}{memorandum_doc_url}/certifiedMemorandum'
+        memorandum_doc_url = url_for(
+            "API2.get_documents",
+            **{"identifier": legal_entity.identifier, "filing_id": memorandum_filing.id, "legal_filing_name": None},
+        )
+        documents["certifiedMemorandum"] = f"{base_url}{memorandum_doc_url}/certifiedMemorandum"
         filing_date_str = LegislationDatetime.format_as_legislation_date(memorandum_filing.filing_date)
-        file_name = f'{legal_entity.identifier} - Certified Memorandum - {filing_date_str}.pdf'
-        info['certifiedMemorandum'] = {
-            'key': memorandum_document.file_key,
-            'name': file_name,
-            'uploaded': memorandum_filing.filing_date.isoformat()
+        file_name = f"{legal_entity.identifier} - Certified Memorandum - {filing_date_str}.pdf"
+        info["certifiedMemorandum"] = {
+            "key": memorandum_document.file_key,
+            "name": file_name,
+            "uploaded": memorandum_filing.filing_date.isoformat(),
         }
     if sr_memorandum_resolution:
-        info['certifiedMemorandum']['includedInResolution'] = True
-        info['certifiedMemorandum']['includedInResolutionDate'] = sr_memorandum_resolution[0].filing_date.isoformat()
+        info["certifiedMemorandum"]["includedInResolution"] = True
+        info["certifiedMemorandum"]["includedInResolutionDate"] = sr_memorandum_resolution[0].filing_date.isoformat()
 
     return documents, info

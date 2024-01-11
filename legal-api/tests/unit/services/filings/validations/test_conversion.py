@@ -24,43 +24,30 @@ from legal_api.services import NameXService
 from legal_api.services.filings.validations.conversion import validate
 from tests.unit.models import factory_legal_entity
 
-
-now = datetime.now().strftime('%Y-%m-%d')
+now = datetime.now().strftime("%Y-%m-%d")
 
 
 GP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-GP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
-GP_CONVERSION['filing']['business']['legalType'] = 'GP'
-GP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'GP'
-GP_CONVERSION['filing']['conversion']['startDate'] = '2019-01-01'
+GP_CONVERSION["filing"]["conversion"] = copy.deepcopy(FIRMS_CONVERSION)
+GP_CONVERSION["filing"]["business"]["legalType"] = "GP"
+GP_CONVERSION["filing"]["conversion"]["nameRequest"]["legalType"] = "GP"
+GP_CONVERSION["filing"]["conversion"]["startDate"] = "2019-01-01"
 
 SP_CONVERSION = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-SP_CONVERSION['filing']['conversion'] = copy.deepcopy(FIRMS_CONVERSION)
-SP_CONVERSION['filing']['conversion']['startDate'] = '2019-01-01'
-SP_CONVERSION['filing']['business']['legalType'] = 'SP'
-SP_CONVERSION['filing']['conversion']['nameRequest']['legalType'] = 'SP'
-del SP_CONVERSION['filing']['conversion']['parties'][1]
-SP_CONVERSION['filing']['conversion']['parties'][0]['roles'] = [
-    {
-        'roleType': 'Completing Party',
-        'appointmentDate': '2022-01-01'
-
-    },
-    {
-        'roleType': 'Proprietor',
-        'appointmentDate': '2022-01-01'
-
-    }
+SP_CONVERSION["filing"]["conversion"] = copy.deepcopy(FIRMS_CONVERSION)
+SP_CONVERSION["filing"]["conversion"]["startDate"] = "2019-01-01"
+SP_CONVERSION["filing"]["business"]["legalType"] = "SP"
+SP_CONVERSION["filing"]["conversion"]["nameRequest"]["legalType"] = "SP"
+del SP_CONVERSION["filing"]["conversion"]["parties"][1]
+SP_CONVERSION["filing"]["conversion"]["parties"][0]["roles"] = [
+    {"roleType": "Completing Party", "appointmentDate": "2022-01-01"},
+    {"roleType": "Proprietor", "appointmentDate": "2022-01-01"},
 ]
 
 nr_response = {
-    'state': 'APPROVED',
-    'expirationDate': '',
-    'names': [{
-        'name': FIRMS_CONVERSION['nameRequest']['legalName'],
-        'state': 'APPROVED',
-        'consumptionDate': ''
-    }]
+    "state": "APPROVED",
+    "expirationDate": "",
+    "names": [{"name": FIRMS_CONVERSION["nameRequest"]["legalName"], "state": "APPROVED", "consumptionDate": ""}],
 }
 
 
@@ -79,12 +66,16 @@ class MockResponse:
 def test_gp_conversion(session):
     """Assert that the general partnership conversion is valid."""
     registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    legal_entity =factory_legal_entity('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type='GP',
-                                state=LegalEntity.State.ACTIVE)
+    legal_entity = factory_legal_entity(
+        "FM1234567",
+        founding_date=registration_date,
+        last_ar_date=None,
+        entity_type="GP",
+        state=LegalEntity.State.ACTIVE,
+    )
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_entity.entity_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+    nr_res["legalType"] = legal_entity.entity_type
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
         err = validate(legal_entity, GP_CONVERSION)
     assert not err
 
@@ -92,12 +83,16 @@ def test_gp_conversion(session):
 def test_sp_conversion(session):
     """Assert that the sole proprietor conversion is valid."""
     registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    legal_entity =factory_legal_entity('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type='SP',
-                                state=LegalEntity.State.ACTIVE)
+    legal_entity = factory_legal_entity(
+        "FM1234567",
+        founding_date=registration_date,
+        last_ar_date=None,
+        entity_type="SP",
+        state=LegalEntity.State.ACTIVE,
+    )
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_entity.entity_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+    nr_res["legalType"] = legal_entity.entity_type
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
         err = validate(legal_entity, SP_CONVERSION)
 
     assert not err
@@ -106,72 +101,76 @@ def test_sp_conversion(session):
 def test_invalid_nr_conversion(session):
     """Assert that nr is invalid."""
     registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    legal_entity =factory_legal_entity('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type='SP',
-                                state=LegalEntity.State.ACTIVE)
+    legal_entity = factory_legal_entity(
+        "FM1234567",
+        founding_date=registration_date,
+        last_ar_date=None,
+        entity_type="SP",
+        state=LegalEntity.State.ACTIVE,
+    )
     filing = copy.deepcopy(SP_CONVERSION)
     invalid_nr_response = {
-        'state': 'INPROGRESS',
-        'expirationDate': '',
-        'names': [{
-            'name': 'legal_name',
-            'state': 'INPROGRESS',
-            'consumptionDate': ''
-        }]
+        "state": "INPROGRESS",
+        "expirationDate": "",
+        "names": [{"name": "legal_name", "state": "INPROGRESS", "consumptionDate": ""}],
     }
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(invalid_nr_response)):
         err = validate(legal_entity, filing)
 
     assert err
 
 
 @pytest.mark.parametrize(
-    'test_name, entity_type, filing, expected_msg',
+    "test_name, entity_type, filing, expected_msg",
     [
-        ('sp_invalid_party', 'SP', copy.deepcopy(SP_CONVERSION),
-         '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', 'GP', copy.deepcopy(GP_CONVERSION),
-         '2 Partners and a Completing Party is required.'),
-    ]
+        ("sp_invalid_party", "SP", copy.deepcopy(SP_CONVERSION), "1 Proprietor and a Completing Party is required."),
+        ("gp_invalid_party", "GP", copy.deepcopy(GP_CONVERSION), "2 Partners and a Completing Party is required."),
+    ],
 )
 def test_invalid_party(session, test_name, entity_type, filing, expected_msg):
     """Assert that party is invalid."""
     registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    legal_entity =factory_legal_entity('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type=entity_type,
-                                state=LegalEntity.State.ACTIVE)
-    filing['filing']['conversion']['parties'][0]['roles'] = []
+    legal_entity = factory_legal_entity(
+        "FM1234567",
+        founding_date=registration_date,
+        last_ar_date=None,
+        entity_type=entity_type,
+        state=LegalEntity.State.ACTIVE,
+    )
+    filing["filing"]["conversion"]["parties"][0]["roles"] = []
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = entity_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+    nr_res["legalType"] = entity_type
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
         err = validate(legal_entity, filing)
 
     assert err
-    assert err.msg[0]['error'] == expected_msg
+    assert err.msg[0]["error"] == expected_msg
 
 
 @pytest.mark.parametrize(
-    'test_name, entity_type, filing',
+    "test_name, entity_type, filing",
     [
-        ('sp_invalid_business_address', 'SP', copy.deepcopy(SP_CONVERSION)),
-        ('gp_invalid_business_address', 'GP', copy.deepcopy(GP_CONVERSION)),
-    ]
+        ("sp_invalid_business_address", "SP", copy.deepcopy(SP_CONVERSION)),
+        ("gp_invalid_business_address", "GP", copy.deepcopy(GP_CONVERSION)),
+    ],
 )
 def test_invalid_business_address(session, test_name, entity_type, filing):
     """Assert that delivery business address is invalid."""
     registration_date = datetime(year=2020, month=6, day=10, hour=5, minute=55, second=13)
-    legal_entity =factory_legal_entity('FM1234567', founding_date=registration_date, last_ar_date=None,
-                                entity_type=entity_type,
-                                state=LegalEntity.State.ACTIVE)
-    filing['filing']['conversion']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = \
-        'invalid'
-    filing['filing']['conversion']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = \
-        'invalid'
+    legal_entity = factory_legal_entity(
+        "FM1234567",
+        founding_date=registration_date,
+        last_ar_date=None,
+        entity_type=entity_type,
+        state=LegalEntity.State.ACTIVE,
+    )
+    filing["filing"]["conversion"]["offices"]["businessOffice"]["deliveryAddress"]["addressRegion"] = "invalid"
+    filing["filing"]["conversion"]["offices"]["businessOffice"]["deliveryAddress"]["addressCountry"] = "invalid"
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = entity_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+    nr_res["legalType"] = entity_type
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
         err = validate(legal_entity, filing)
 
     assert err
-    assert err.msg[0]['error'] == "Address Region must be 'BC'."
-    assert err.msg[1]['error'] == "Address Country must be 'CA'."
+    assert err.msg[0]["error"] == "Address Region must be 'BC'."
+    assert err.msg[1]["error"] == "Address Country must be 'CA'."

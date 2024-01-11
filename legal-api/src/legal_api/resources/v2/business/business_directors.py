@@ -25,22 +25,23 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/directors', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/directors/<int:director_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/directors", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/directors/<int:director_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_directors(identifier, director_id=None):
     """Return a JSON of the directors."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
 
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view directors for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["view"]):
+        return (
+            jsonify({"message": f"You are not authorized to view directors for {identifier}."}),
+            HTTPStatus.UNAUTHORIZED,
+        )
 
     # return the matching director
     if director_id:
@@ -48,15 +49,18 @@ def get_directors(identifier, director_id=None):
         return jsonify(director or msg), code
 
     # return all active directors as of date query param
-    end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date()\
-        if request.args.get('date') else datetime.utcnow().date()
+    end_date = (
+        datetime.utcnow().strptime(request.args.get("date"), "%Y-%m-%d").date()
+        if request.args.get("date")
+        else datetime.utcnow().date()
+    )
 
     party_list = []
     active_directors = EntityRole.get_active_directors(legal_entity.id, end_date)
     for director in active_directors:
         director_json = director.json
         if legal_entity.entity_type == LegalEntity.EntityTypes.COOP.value:
-            del director_json['mailingAddress']
+            del director_json["mailingAddress"]
         party_list.append(director_json)
 
     return jsonify(directors=party_list)
@@ -68,9 +72,9 @@ def _get_director(legal_entity, director_id=None):
     if director_id:
         rv = EntityRole.find_by_internal_id(internal_id=director_id)
         if rv:
-            director = {'director': rv.json}
+            director = {"director": rv.json}
 
     if not director:
-        return None, {'message': f'{legal_entity.identifier} director not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{legal_entity.identifier} director not found"}, HTTPStatus.NOT_FOUND
 
     return director, None, HTTPStatus.OK

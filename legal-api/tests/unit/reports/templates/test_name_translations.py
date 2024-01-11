@@ -20,34 +20,33 @@ import pytest
 from flask import current_app
 from jinja2 import Template
 
-
-title: Final = 'Company Name Translation(s)'
+title: Final = "Company Name Translation(s)"
 
 
 def get_template():
     """Returns the template."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/template-parts/common/nameTranslation.html').read_text()
+    template_path = current_app.config.get("REPORT_TEMPLATE_PATH")
+    template_code = Path(f"{template_path}/template-parts/common/nameTranslation.html").read_text()
     return Template(template_code)
 
 
-@pytest.mark.parametrize('list_of_translations,previous_translations', [
-    ([{'name': 'Ma Enterprise'}], []),
-    ([], [{'name': 'Ma Enterprise'}]),
-    ([], [])])
+@pytest.mark.parametrize(
+    "list_of_translations,previous_translations",
+    [([{"name": "Ma Enterprise"}], []), ([], [{"name": "Ma Enterprise"}]), ([], [])],
+)
 def test_render_translations(session, list_of_translations, previous_translations):
     """Test Company Name Translation(s) rendering."""
     template = get_template()
-    rendered = template.render(listOfTranslations=list_of_translations,
-                               previousNameTranslations=previous_translations,
-                               header={'name': ''})
+    rendered = template.render(
+        listOfTranslations=list_of_translations, previousNameTranslations=previous_translations, header={"name": ""}
+    )
     if len(list_of_translations):
         assert title in rendered
-        assert list_of_translations[0]['name'] in rendered
-        assert 'NONE' not in rendered
+        assert list_of_translations[0]["name"] in rendered
+        assert "NONE" not in rendered
     elif len(previous_translations):
         assert title in rendered
-        assert previous_translations[0]['name'] not in rendered
-        assert 'NONE' in rendered
+        assert previous_translations[0]["name"] not in rendered
+        assert "NONE" in rendered
     else:
         assert title not in rendered

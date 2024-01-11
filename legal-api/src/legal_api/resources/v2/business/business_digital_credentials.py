@@ -25,175 +25,157 @@ from legal_api.utils.auth import jwt
 
 from .bp import bp
 
+bp_dc = Blueprint("DIGITAL_CREDENTIALS", __name__, url_prefix="/api/v2/digitalCredentials")  # Blueprint for webhook
 
-bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
 
-
-@bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/digitalCredentials/invitation", methods=["POST"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def create_invitation(identifier):
     """Create a new connection invitation."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
 
     active_connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if active_connection:
-        return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
+        return jsonify({"message": f"{identifier} already have an active connection."}), HTTPStatus.UNPROCESSABLE_ENTITY
 
     # check whether this business has an existing connection which is not active
-    connections = DCConnection.find_by(legal_entity_id=legal_entity.id, connection_state='invitation')
+    connections = DCConnection.find_by(legal_entity_id=legal_entity.id, connection_state="invitation")
     if connections:
         connection = connections[0]
     else:
         invitation = digital_credentials.create_invitation()
         if not invitation:
-            return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+            return jsonify({"message": "Unable to create an invitation."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
         connection = DCConnection(
-            connection_id=invitation['connection_id'],
-            invitation_url=invitation['invitation_url'],
+            connection_id=invitation["connection_id"],
+            invitation_url=invitation["invitation_url"],
             is_active=False,
-            connection_state='invitation',
-            legal_entity_id=legal_entity.id
+            connection_state="invitation",
+            legal_entity_id=legal_entity.id,
         )
         connection.save()
 
-    return jsonify({'invitationUrl': connection.invitation_url}), HTTPStatus.OK
+    return jsonify({"invitationUrl": connection.invitation_url}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/connection', methods=['GET', 'OPTIONS'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/digitalCredentials/connection", methods=["GET", "OPTIONS"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_active_connection(identifier):
     """Get active connection for this LegalEntity."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
 
     connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if not connection:
-        return jsonify({'message': 'No active connection found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": "No active connection found."}), HTTPStatus.NOT_FOUND
 
     return jsonify(connection.json), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials', methods=['GET', 'OPTIONS'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/digitalCredentials", methods=["GET", "OPTIONS"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_issued_credentials(identifier):
     """Get all issued credentials."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
 
     connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     if not connection:
-        return jsonify({'issuedCredentials': []}), HTTPStatus.OK
+        return jsonify({"issuedCredentials": []}), HTTPStatus.OK
 
     issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id)
     if not issued_credentials:
-        return jsonify({'issuedCredentials': []}), HTTPStatus.OK
+        return jsonify({"issuedCredentials": []}), HTTPStatus.OK
 
     response = []
     for issued_credential in issued_credentials:
         definition = DCDefinition.find_by_id(issued_credential.dc_definition_id)
-        response.append({
-            'legalName': legal_entity.legal_name,
-            'credentialType': definition.credential_type.name,
-            'isIssued': issued_credential.is_issued,
-            'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
-            'isRevoked': issued_credential.is_revoked
-        })
-    return jsonify({'issuedCredentials': response}), HTTPStatus.OK
+        response.append(
+            {
+                "legalName": legal_entity.legal_name,
+                "credentialType": definition.credential_type.name,
+                "isIssued": issued_credential.is_issued,
+                "dateOfIssue": issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else "",
+                "isRevoked": issued_credential.is_revoked,
+            }
+        )
+    return jsonify({"issuedCredentials": response}), HTTPStatus.OK
 
 
-@bp.route('/<string:identifier>/digitalCredentials/<string:credential_type>', methods=['POST'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/digitalCredentials/<string:credential_type>", methods=["POST"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
     legal_entity = LegalEntity.find_by_identifier(identifier)
     if not legal_entity:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     connection = DCConnection.find_active_by(legal_entity_id=legal_entity.id)
     definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType[credential_type])
 
-    issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id,
-                                                    dc_definition_id=definition.id)
+    issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id, dc_definition_id=definition.id)
     if issued_credentials and issued_credentials[0].credential_exchange_id:
-        return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+        return jsonify({"message": "Already requested to issue credential."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     response = digital_credentials.issue_credential(
         connection_id=connection.connection_id,
         definition=definition,
-        data=_get_data_for_credential(definition.credential_type, legal_entity)
+        data=_get_data_for_credential(definition.credential_type, legal_entity),
     )
     if not response:
-        return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+        return jsonify({"message": "Failed to issue credential."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
         dc_connection_id=connection.id,
-        credential_exchange_id=response['credential_exchange_id']
+        credential_exchange_id=response["credential_exchange_id"],
     )
     issued_credential.save()
 
-    return jsonify({'message': 'Issue Credential is initiated.'}), HTTPStatus.OK
+    return jsonify({"message": "Issue Credential is initiated."}), HTTPStatus.OK
 
 
 def _get_data_for_credential(credential_type: DCDefinition.CredentialType, legal_entity: LegalEntity):
     if credential_type == DCDefinition.CredentialType.business:
         return [
-            {
-                'name': 'legalName',
-                'value': legal_entity.legal_name
-            },
-            {
-                'name': 'foundingDate',
-                'value': legal_entity.founding_date.isoformat()
-            },
-            {
-                'name': 'taxId',
-                'value': legal_entity.tax_id or ''
-            },
-            {
-                'name': 'homeJurisdiction',
-                'value': 'BC'  # for corp types that are not -xpro, the jurisdiction is BC
-            },
-            {
-                'name': 'legalType',
-                'value': legal_entity.entity_type
-            },
-            {
-                'name': 'identifier',
-                'value': legal_entity.identifier
-            }
+            {"name": "legalName", "value": legal_entity.legal_name},
+            {"name": "foundingDate", "value": legal_entity.founding_date.isoformat()},
+            {"name": "taxId", "value": legal_entity.tax_id or ""},
+            {"name": "homeJurisdiction", "value": "BC"},  # for corp types that are not -xpro, the jurisdiction is BC
+            {"name": "legalType", "value": legal_entity.entity_type},
+            {"name": "identifier", "value": legal_entity.identifier},
         ]
 
     return None
 
 
-@bp_dc.route('/topic/<string:topic_name>', methods=['POST'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp_dc.route("/topic/<string:topic_name>", methods=["POST"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()
     try:
-        if topic_name == 'connections':
-            connection = DCConnection.find_by_connection_id(json_input['connection_id'])
+        if topic_name == "connections":
+            connection = DCConnection.find_by_connection_id(json_input["connection_id"])
             # Trinsic Wallet will send `active` only when it’s used the first time.
             # Looking for `response` state to handle it.
-            if connection and not connection.is_active and json_input['state'] in ('response', 'active'):
-                connection.connection_state = 'active'
+            if connection and not connection.is_active and json_input["state"] in ("response", "active"):
+                connection.connection_state = "active"
                 connection.is_active = True
                 connection.save()
-        elif topic_name == 'issue_credential':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['credential_exchange_id'])
-            if issued_credential and json_input['state'] == 'credential_issued':
+        elif topic_name == "issue_credential":
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input["credential_exchange_id"])
+            if issued_credential and json_input["state"] == "credential_issued":
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
@@ -201,4 +183,4 @@ def webhook_notification(topic_name: str):
         current_app.logger.error(err)
         raise err
 
-    return jsonify({'message': 'Webhook received.'}), HTTPStatus.OK
+    return jsonify({"message": "Webhook received."}), HTTPStatus.OK

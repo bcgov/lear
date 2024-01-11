@@ -26,52 +26,74 @@ from legal_api.services.filings.validations.annual_report import validate_agm_ye
 
 
 @pytest.mark.parametrize(
-    'test_name, now, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg',
+    "test_name, now, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg",
     [
-        ('AGM_DATE_REQUIRED_IF_IN_FILING_YR',
-         date(2018, 8, 5), date(2018, 8, 5), None, date(2017, 7, 1), date(2018, 9, 17),
-         HTTPStatus.BAD_REQUEST,
-         [{'error': 'Annual General Meeting Date must be a valid date when submitting '
-           'an Annual Report in the current year.',
-           'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
-    ])
-def test_valid_agm_date(app, test_name, now, ar_date, agm_date, last_agm_date, submission_date,
-                        expected_code, expected_msg):
+        (
+            "AGM_DATE_REQUIRED_IF_IN_FILING_YR",
+            date(2018, 8, 5),
+            date(2018, 8, 5),
+            None,
+            date(2017, 7, 1),
+            date(2018, 9, 17),
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Annual General Meeting Date must be a valid date when submitting "
+                    "an Annual Report in the current year.",
+                    "path": "filing/annualReport/annualGeneralMeetingDate",
+                }
+            ],
+        ),
+    ],
+)
+def test_valid_agm_date(
+    app, test_name, now, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg
+):
     """Assert that the AGM date handles the examples that describe the AGM rules."""
     # with freeze_time(now):
     check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg)
 
 
-@given(test_name=text(), ar_date=dates(), agm_date=dates(), last_agm_date=dates(), submission_date=dates(),
-       expected_code=just(400), expected_msg=just(None))
-def test_valid_agm_date_hypothesis(app, test_name, ar_date, agm_date, last_agm_date, submission_date,
-                                   expected_code, expected_msg):
+@given(
+    test_name=text(),
+    ar_date=dates(),
+    agm_date=dates(),
+    last_agm_date=dates(),
+    submission_date=dates(),
+    expected_code=just(400),
+    expected_msg=just(None),
+)
+def test_valid_agm_date_hypothesis(
+    app, test_name, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg
+):
     """Assert that the fuzzed parameters do not cause unhandled errors."""
     check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg)
 
 
-def check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submission_date,
-                         expected_code, expected_msg):
+def check_valid_agm_date(
+    app, test_name, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg
+):
     """Assert that the AGM date for the filing is valid, or that valid warnings are returned."""
     # setup
-    identifier = 'CP1234567'
-    legal_entity =LegalEntity(identifier=identifier,
-                        last_ledger_timestamp=datetime(last_agm_date.year, last_agm_date.month, last_agm_date.day))
+    identifier = "CP1234567"
+    legal_entity = LegalEntity(
+        identifier=identifier,
+        last_ledger_timestamp=datetime(last_agm_date.year, last_agm_date.month, last_agm_date.day),
+    )
     legal_entity.last_agm_date = last_agm_date
 
     current_ar = copy.deepcopy(ANNUAL_REPORT)
-    current_ar['filing']['business']['identifier'] = identifier
-    current_ar['filing']['header']['date'] = submission_date.isoformat()
-    current_ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
+    current_ar["filing"]["business"]["identifier"] = identifier
+    current_ar["filing"]["header"]["date"] = submission_date.isoformat()
+    current_ar["filing"]["annualReport"]["annualReportDate"] = ar_date.isoformat()
     if agm_date:
-        current_ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
+        current_ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = agm_date.isoformat()
     else:
-        current_ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
+        current_ar["filing"]["annualReport"]["annualGeneralMeetingDate"] = None
 
     # Test it
     with app.app_context():
-        err = validate_agm_year(legal_entity=legal_entity,
-                                annual_report=current_ar)
+        err = validate_agm_year(legal_entity=legal_entity, annual_report=current_ar)
     # Validate the outcome
     if expected_msg:  # examples check
         assert err.msg == expected_msg

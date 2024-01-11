@@ -20,12 +20,11 @@ from flask_cors import cross_origin
 from legal_api.services import MinioService
 from legal_api.utils.auth import jwt
 
+bp = Blueprint("DOCUMENTS_SIGNATURE2", __name__, url_prefix="/api/v2/documents")
 
-bp = Blueprint('DOCUMENTS_SIGNATURE2', __name__, url_prefix='/api/v2/documents')
 
-
-@bp.route('/<string:file_name>/signatures', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:file_name>/signatures", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_signatures(file_name: str):
     """Return a pre-signed URL for the new document."""

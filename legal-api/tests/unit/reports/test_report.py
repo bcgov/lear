@@ -40,36 +40,39 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.models import db  # noqa:I001
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from tests.unit.models import factory_legal_entity, factory_completed_filing  # noqa:E501,I001
+from tests.unit.models import (  # noqa:E501,I001
+    factory_completed_filing,
+    factory_legal_entity,
+)
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):
     """Create an instance of the Report class."""
-    if template.get('filing'):
+    if template.get("filing"):
         filing_json = copy.deepcopy(template)
     else:
         filing_json = copy.deepcopy(FILING_HEADER)
-        filing_json['filing'][f'{filing_type}'] = copy.deepcopy(template)
-    filing_json['filing']['business']['identifier'] = identifier
-    filing_json['filing']['business']['legalType'] = entity_type
-    filing_json['filing']['header']['name'] = filing_type
+        filing_json["filing"][f"{filing_type}"] = copy.deepcopy(template)
+    filing_json["filing"]["business"]["identifier"] = identifier
+    filing_json["filing"]["business"]["legalType"] = entity_type
+    filing_json["filing"]["header"]["name"] = filing_type
 
     legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
-    if report_type == 'correction':
+    if report_type == "correction":
         original_filing_json = copy.deepcopy(filing_json)
-        original_filing_json['filing']['header']['name'] = filing_json['filing']['correction']['correctedFilingType']
-        del original_filing_json['filing']['correction']
+        original_filing_json["filing"]["header"]["name"] = filing_json["filing"]["correction"]["correctedFilingType"]
+        del original_filing_json["filing"]["correction"]
         original_filing = factory_completed_filing(legal_entity, original_filing_json)
-        filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
-    if report_type == 'specialResolution' and filing_type != 'specialResolution':
-        filing_json['specialResolution'] = SPECIAL_RESOLUTION
+        filing_json["filing"]["correction"]["correctedFilingId"] = original_filing.id
+    if report_type == "specialResolution" and filing_type != "specialResolution":
+        filing_json["specialResolution"] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(legal_entity, filing_json)
 
     report = Report(filing)
     report._legal_entity = legal_entity
     report._report_key = report_type
-    if report._report_key == 'correction':
-        report._report_key = report._filing.filing_json['filing']['correction']['correctedFilingType']
+    if report._report_key == "correction":
+        report._report_key = report._filing.filing_json["filing"]["correction"]["correctedFilingType"]
 
     return report
 
@@ -78,18 +81,18 @@ def populate_business_info_to_filing(report):
     """Assert _populate_business_info_to_filing works as expected."""
     report._populate_business_info_to_filing(report._filing, report._legal_entity)
     filing_json = report._filing.filing_json
-    assert filing_json['filing']['business']['formatted_founding_date_time']
-    assert filing_json['filing']['business']['formatted_founding_date']
+    assert filing_json["filing"]["business"]["formatted_founding_date_time"]
+    assert filing_json["filing"]["business"]["formatted_founding_date"]
 
 
 def set_dates(report):
     """Assert _set_dates works as expected."""
     filing_json = report._filing.filing_json
     report._set_dates(filing_json)
-    assert filing_json['filing_date_time']
-    assert filing_json['effective_date_time']
-    assert filing_json['effective_date']
-    assert filing_json['recognition_date_time']
+    assert filing_json["filing_date_time"]
+    assert filing_json["effective_date_time"]
+    assert filing_json["effective_date"]
+    assert filing_json["recognition_date_time"]
     # TODO: figure out why this fails and improve test/code
     # if report._report_key == 'annualReport':
     #     assert filing_json['agm_date']
@@ -99,8 +102,8 @@ def set_dates(report):
 
 def substitute_template_parts(report):
     """Assert _substitute_template_parts works as expected."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/{report._get_template_filename()}').read_text()
+    template_path = current_app.config.get("REPORT_TEMPLATE_PATH")
+    template_code = Path(f"{template_path}/{report._get_template_filename()}").read_text()
     # substitute template parts
     template_code = report._substitute_template_parts(template_code)
     assert template_code
@@ -110,21 +113,21 @@ def set_description(report):
     """Assert _set_description works as expected."""
     filing_json = report._filing.filing_json
     report._set_description(filing_json)
-    assert filing_json.get('entityDescription')
+    assert filing_json.get("entityDescription")
 
 
 def set_registrar_info(report):
     """Assert _set_registrar_info works as expected."""
     filing_json = report._filing.filing_json
     report._set_registrar_info(filing_json)
-    assert filing_json.get('registrarInfo')
+    assert filing_json.get("registrarInfo")
 
 
 def set_tax_id(report):
     """Assert _set_tax_id works as expected."""
     filing_json = report._filing.filing_json
     report._set_tax_id(filing_json)
-    assert filing_json.get('taxId')
+    assert filing_json.get("taxId")
 
 
 def set_addresses(report):
@@ -132,56 +135,67 @@ def set_addresses(report):
     filing_json = report._filing.filing_json
 
     with suppress(KeyError):
-        with patch.object(report, '_format_address', return_value=None):
-            report._set_addresses(filing_json['filing'])
+        with patch.object(report, "_format_address", return_value=None):
+            report._set_addresses(filing_json["filing"])
 
-    assert filing_json['filing'].get('registeredOfficeAddress')
-    if report._legal_entity.entity_type == 'BEN' and report._report_key == 'changeOfAddress':
-        assert filing_json['filing'].get('recordsOfficeAddress')
+    assert filing_json["filing"].get("registeredOfficeAddress")
+    if report._legal_entity.entity_type == "BEN" and report._report_key == "changeOfAddress":
+        assert filing_json["filing"].get("recordsOfficeAddress")
 
 
 def set_meta_info(report):
     """Assert _set_meta_info works as expected."""
     filing_json = report._filing.filing_json
     report._set_meta_info(filing_json)
-    assert filing_json.get('environment')
-    assert filing_json.get('source')
-    assert filing_json.get('meta_title')
-    assert filing_json.get('meta_subject')
+    assert filing_json.get("environment")
+    assert filing_json.get("source")
+    assert filing_json.get("meta_title")
+    assert filing_json.get("meta_subject")
 
 
 @pytest.mark.parametrize(
-    'test_name, identifier, entity_type, report_type, filing_type, template',
+    "test_name, identifier, entity_type, report_type, filing_type, template",
     [
-        ('CP AR', 'CP1234567', 'CP', 'annualReport', 'annualReport', ANNUAL_REPORT),
-        ('CP COA', 'CP1234567', 'CP', 'changeOfAddress', 'changeOfAddress', CHANGE_OF_ADDRESS),
-        ('CP COD', 'CP1234567', 'CP', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS),
-        ('CP COR combined AR', 'CP1234567', 'CP', 'correction', 'correction', CORRECTION_COMBINED_AR),
-        ('CP CON', 'CP1234567', 'CP', 'changeOfName', 'changeOfName', CHANGE_OF_NAME),
-        ('CP SR', 'CP1234567', 'CP', 'specialResolution', 'specialResolution', SPECIAL_RESOLUTION),
-        ('CP SR', 'CP1234567', 'CP', 'specialResolutionApplication', 'specialResolution', SPECIAL_RESOLUTION),
-        ('CP DISSOLUTION', 'CP1234567', 'CP', 'dissolution', 'dissolution', DISSOLUTION),
-        ('CP DISSOLUTION', 'CP1234567', 'CP', 'specialResolution', 'dissolution', DISSOLUTION),
-        ('BEN DISSOLUTION', 'BC1234567', 'BEN', 'dissolution', 'dissolution', DISSOLUTION),
-        ('BC DISSOLUTION', 'BC1234567', 'BC', 'dissolution', 'dissolution', DISSOLUTION),
-        ('CC DISSOLUTION', 'BC2345678', 'CC', 'dissolution', 'dissolution', DISSOLUTION),
-        ('ULC DISSOLUTION', 'BC1234567', 'ULC', 'dissolution', 'dissolution', DISSOLUTION),
-        ('CP DISSOLUTION', 'CP1234567', 'CP', 'certificateOfDissolution', 'dissolution', DISSOLUTION),
-        ('BEN AR', 'BC1234567', 'BEN', 'annualReport', 'annualReport', ANNUAL_REPORT),
-        ('BEN COA', 'BC1234567', 'BEN', 'changeOfAddress', 'changeOfAddress', CORP_CHANGE_OF_ADDRESS),
-        ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
-        ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', 'incorporationApplication',
-         INCORPORATION_FILING_TEMPLATE),
-        ('BEN CER', 'BC1234567', 'BEN', 'certificate', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
-        ('BEN TRANS', 'BC1234567', 'BEN', 'transition', 'transition', TRANSITION_FILING_TEMPLATE),
-    ]
+        ("CP AR", "CP1234567", "CP", "annualReport", "annualReport", ANNUAL_REPORT),
+        ("CP COA", "CP1234567", "CP", "changeOfAddress", "changeOfAddress", CHANGE_OF_ADDRESS),
+        ("CP COD", "CP1234567", "CP", "changeOfDirectors", "changeOfDirectors", CHANGE_OF_DIRECTORS),
+        ("CP COR combined AR", "CP1234567", "CP", "correction", "correction", CORRECTION_COMBINED_AR),
+        ("CP CON", "CP1234567", "CP", "changeOfName", "changeOfName", CHANGE_OF_NAME),
+        ("CP SR", "CP1234567", "CP", "specialResolution", "specialResolution", SPECIAL_RESOLUTION),
+        ("CP SR", "CP1234567", "CP", "specialResolutionApplication", "specialResolution", SPECIAL_RESOLUTION),
+        ("CP DISSOLUTION", "CP1234567", "CP", "dissolution", "dissolution", DISSOLUTION),
+        ("CP DISSOLUTION", "CP1234567", "CP", "specialResolution", "dissolution", DISSOLUTION),
+        ("BEN DISSOLUTION", "BC1234567", "BEN", "dissolution", "dissolution", DISSOLUTION),
+        ("BC DISSOLUTION", "BC1234567", "BC", "dissolution", "dissolution", DISSOLUTION),
+        ("CC DISSOLUTION", "BC2345678", "CC", "dissolution", "dissolution", DISSOLUTION),
+        ("ULC DISSOLUTION", "BC1234567", "ULC", "dissolution", "dissolution", DISSOLUTION),
+        ("CP DISSOLUTION", "CP1234567", "CP", "certificateOfDissolution", "dissolution", DISSOLUTION),
+        ("BEN AR", "BC1234567", "BEN", "annualReport", "annualReport", ANNUAL_REPORT),
+        ("BEN COA", "BC1234567", "BEN", "changeOfAddress", "changeOfAddress", CORP_CHANGE_OF_ADDRESS),
+        ("BEN COD", "BC1234567", "BEN", "changeOfDirectors", "changeOfDirectors", CHANGE_OF_DIRECTORS_MAILING),
+        (
+            "BEN INC",
+            "BC1234567",
+            "BEN",
+            "incorporationApplication",
+            "incorporationApplication",
+            INCORPORATION_FILING_TEMPLATE,
+        ),
+        ("BEN CER", "BC1234567", "BEN", "certificate", "incorporationApplication", INCORPORATION_FILING_TEMPLATE),
+        ("BEN TRANS", "BC1234567", "BEN", "transition", "transition", TRANSITION_FILING_TEMPLATE),
+    ],
 )
 def test_get_pdf(session, test_name, identifier, entity_type, report_type, filing_type, template):
     """Assert all filings can be returned as a PDF."""
     # TODO: add checks on set_directors, noa
     # setup
-    report = create_report(identifier=identifier, entity_type=entity_type, report_type=report_type,
-                           filing_type=filing_type, template=template)
+    report = create_report(
+        identifier=identifier,
+        entity_type=entity_type,
+        report_type=report_type,
+        filing_type=filing_type,
+        template=template,
+    )
 
     # verify
     populate_business_info_to_filing(report)
@@ -191,10 +205,10 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     set_registrar_info(report)
     set_meta_info(report)
 
-    if report_type in ['annualReport', 'changeOfAddress']:
+    if report_type in ["annualReport", "changeOfAddress"]:
         set_addresses(report)
 
-    if report._legal_entity.entity_type != 'CP':
+    if report._legal_entity.entity_type != "CP":
         set_tax_id(report)
 
     filename = report._get_report_filename()
@@ -205,11 +219,11 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
 
 def test_alteration_name_change(session):
     """Assert alteration name change filings can be returned as a PDF."""
-    numbered_company_name = '1234567 B.C. Ltd.'
-    named_company_name = 'New Name Ltd.'
-    identifier = 'BC1234567'
-    entity_type = 'BEN'
-    report_type = 'certificateOfNameChange'
+    numbered_company_name = "1234567 B.C. Ltd."
+    named_company_name = "New Name Ltd."
+    identifier = "BC1234567"
+    entity_type = "BEN"
+    report_type = "certificateOfNameChange"
 
     # An existing business
     legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
@@ -225,23 +239,22 @@ def test_alteration_name_change(session):
     named_company_report_template = named_company_report._get_template()
     assert named_company_report_template
     named_company_report_template_data = named_company_report._get_template_data()
-    assert named_company_report_template_data['toBusinessName'] == named_company_name
+    assert named_company_report_template_data["toBusinessName"] == named_company_name
 
     # changes its name to a numbered company
     numbered_company_filing = filing_numbered_company(legal_entity, ALTERATION_FILING_TEMPLATE, numbered_company_name)
     update_business_legal_name(legal_entity, numbered_company_name, numbered_company_filing)
 
     # new legal_name can be retrieved from the versioned business (numbered company case)
-    business_revision = \
-        VersionedBusinessDetailsService.get_business_revision(numbered_company_filing, legal_entity)
-    assert business_revision['businessName'] == numbered_company_name
+    business_revision = VersionedBusinessDetailsService.get_business_revision(numbered_company_filing, legal_entity)
+    assert business_revision["businessName"] == numbered_company_name
     numbered_company_report = create_alteration_report(numbered_company_filing, legal_entity, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
     assert numbered_company_filename
     numbered_company_template = numbered_company_report._get_template()
     assert numbered_company_template
     numbered_company_template_data = numbered_company_report._get_template_data()
-    assert numbered_company_template_data['toBusinessName'] == numbered_company_name
+    assert numbered_company_template_data["toBusinessName"] == numbered_company_name
 
 
 def update_business_legal_name(legal_entity, legal_name, filing):
@@ -254,14 +267,9 @@ def update_business_legal_name(legal_entity, legal_name, filing):
 def filing_named_company(legal_entity, template, legal_name):
     """Create a filing for a name change with for named company."""
     filing_json = copy.deepcopy(template)
-    filing_json['filing']['alteration']['nameRequest']['legalName'] = legal_name
+    filing_json["filing"]["alteration"]["nameRequest"]["legalName"] = legal_name
     filing = factory_completed_filing(legal_entity, filing_json)
-    filing._meta_data = {
-        'alteration': {
-            'fromBusinessName': legal_entity.legal_name,
-            'toBusinessName': legal_name
-        }
-    }
+    filing._meta_data = {"alteration": {"fromBusinessName": legal_entity.legal_name, "toBusinessName": legal_name}}
     filing.save()
     return filing
 
@@ -269,15 +277,10 @@ def filing_named_company(legal_entity, template, legal_name):
 def filing_numbered_company(legal_entity, template, legal_name):
     """Create a filing for a name change with for numbered company."""
     filing_json = copy.deepcopy(template)
-    del filing_json['filing']['alteration']['nameRequest']['legalName']
-    del filing_json['filing']['alteration']['nameRequest']['nrNumber']
+    del filing_json["filing"]["alteration"]["nameRequest"]["legalName"]
+    del filing_json["filing"]["alteration"]["nameRequest"]["nrNumber"]
     filing = factory_completed_filing(legal_entity, filing_json)
-    filing._meta_data = {
-        'alteration': {
-            'fromBusinessName': legal_entity.legal_name,
-            'toBusinessName': legal_name
-        }
-    }
+    filing._meta_data = {"alteration": {"fromBusinessName": legal_entity.legal_name, "toBusinessName": legal_name}}
     filing.save()
     return filing
 

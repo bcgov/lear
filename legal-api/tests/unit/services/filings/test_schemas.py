@@ -33,12 +33,12 @@ def test_validate_schema_bad_ar(app):
     """Assert that an invalid AR returns an error."""
     # validate_schema(json_data: Dict = None) -> Tuple(int, str):
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header'].pop('name')
+    ar["filing"]["header"].pop("name")
 
     with app.app_context():
         err = schemas.validate_against_schema(ar)
 
-    assert {'error': "'name' is a required property", 'path': 'filing/header', 'context': []} in err.msg
+    assert {"error": "'name' is a required property", "path": "filing/header", "context": []} in err.msg
     assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
@@ -55,15 +55,13 @@ def test_validate_schema_bad_cr(app):
     """Assert that an invalid AR returns an error."""
     # validate_schema(json_data: Dict = None) -> Tuple(int, str):
     cr = copy.deepcopy(CORRECTION_REGISTRATION)
-    cr['filing']['correction']['parties'][0]['officer']['firstName'] = \
-        'this_first_name_maximum_length_is_over'
-    cr['filing']['correction']['parties'][0]['officer']['middleName'] = \
-        'this_first_name_maximum_length_is_over'
+    cr["filing"]["correction"]["parties"][0]["officer"]["firstName"] = "this_first_name_maximum_length_is_over"
+    cr["filing"]["correction"]["parties"][0]["officer"]["middleName"] = "this_first_name_maximum_length_is_over"
 
     with app.app_context():
         err = schemas.validate_against_schema(cr)
 
-    assert {'error': "", 'path': 'filing', 'context': []}.keys() == err.msg[0].keys()
-    assert "is not valid under any of the given schemas" in err.msg[0]['error']
-    
+    assert {"error": "", "path": "filing", "context": []}.keys() == err.msg[0].keys()
+    assert "is not valid under any of the given schemas" in err.msg[0]["error"]
+
     assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY

@@ -20,29 +20,28 @@ from registry_schemas.example_data import ADMIN_FREEZE, FILING_HEADER
 from reportlab.lib.pagesizes import letter
 
 from legal_api.services.filings.validations.admin_freeze import validate
-
 from tests.unit.models import factory_legal_entity
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
 
 @pytest.mark.parametrize(
-    'freeze, identifier, expected_code',
+    "freeze, identifier, expected_code",
     [
-        (True, 'CP1234567', None),
-        (False, 'CP1234567', HTTPStatus.BAD_REQUEST),
-    ]
+        (True, "CP1234567", None),
+        (False, "CP1234567", HTTPStatus.BAD_REQUEST),
+    ],
 )
 def test_admin_freeze(session, freeze, identifier, expected_code):
     """Assert valid admin freeze."""
-    legal_entity =factory_legal_entity(identifier)
+    legal_entity = factory_legal_entity(identifier)
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['business']['identifier'] = identifier
-    filing_json['filing']['adminFreeze'] = copy.deepcopy(ADMIN_FREEZE)
+    filing_json["filing"]["business"]["identifier"] = identifier
+    filing_json["filing"]["adminFreeze"] = copy.deepcopy(ADMIN_FREEZE)
 
     if not freeze:
-        filing_json['filing']['adminFreeze']['freeze'] = False
+        filing_json["filing"]["adminFreeze"]["freeze"] = False
 
     err = validate(legal_entity, filing_json)
 

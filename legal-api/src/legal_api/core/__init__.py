@@ -21,11 +21,10 @@ from .business import BusinessIdentifier, BusinessType
 from .filing import Filing
 from .meta import FILINGS, FilingMeta
 
-
 __all__ = (
-    'BusinessIdentifier',
-    'BusinessType',
-    'FILINGS',
-    'Filing',
-    'FilingMeta',
+    "BusinessIdentifier",
+    "BusinessType",
+    "FILINGS",
+    "Filing",
+    "FilingMeta",
 )

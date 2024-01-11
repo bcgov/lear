@@ -43,9 +43,8 @@ from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
-
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-# queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
 
@@ -54,17 +53,19 @@ def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subjec
     """Publish the event message onto the given NATS subject."""
     try:
         payload = {
-            'specversion': '1.x-wip',
-            'type': event_type,
-            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', legal_entity.identifier]),
-            'id': message_id or str(uuid.uuid4()),
-            'time': datetime.utcnow().isoformat(),
-            'datacontenttype': 'application/json',
-            'identifier': legal_entity.identifier,
-            'data': data
+            "specversion": "1.x-wip",
+            "type": event_type,
+            "source": "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", legal_entity.identifier]),
+            "id": message_id or str(uuid.uuid4()),
+            "time": datetime.utcnow().isoformat(),
+            "datacontenttype": "application/json",
+            "identifier": legal_entity.identifier,
+            "data": data,
         }
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        capture_message(f'Legal-api queue publish {subject} error: legal_entity.id=' + str(legal_entity.id) + str(err),
-                        level='error')
-        current_app.logger.error('Queue Publish %s Error: legal_entity.id=%s', subject, legal_entity.id, exc_info=True)
+        capture_message(
+            f"Legal-api queue publish {subject} error: legal_entity.id=" + str(legal_entity.id) + str(err),
+            level="error",
+        )
+        current_app.logger.error("Queue Publish %s Error: legal_entity.id=%s", subject, legal_entity.id, exc_info=True)

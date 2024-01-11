@@ -15,8 +15,8 @@
 
 Test suite to ensure that the Digital Credentials service are working as expected.
 """
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
 
 from legal_api.models import DCDefinition
 from legal_api.services import digital_credentials
@@ -31,14 +31,14 @@ def test_init_app(session, app):  # pylint:disable=unused-argument
 
     with nested_session(session):
         stamp = str(uuid4())[:23]
-        schema_id = f'{stamp}:2:business_schema:1.0.0'
-        cred_def_id = f'{stamp}:3:CL:146949:business_schema'
-        with patch.object(DigitalCredentialsService, '_register_schema', return_value=schema_id):
-            with patch.object(DigitalCredentialsService, '_register_credential_definitions', return_value=cred_def_id):
+        schema_id = f"{stamp}:2:business_schema:1.0.0"
+        cred_def_id = f"{stamp}:3:CL:146949:business_schema"
+        with patch.object(DigitalCredentialsService, "_register_schema", return_value=schema_id):
+            with patch.object(DigitalCredentialsService, "_register_credential_definitions", return_value=cred_def_id):
                 digital_credentials.init_app(app)
                 definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
                 assert definition.schema_id == schema_id
-                assert definition.schema_name == digital_credentials.business_schema['schema_name']
-                assert definition.schema_version == digital_credentials.business_schema['schema_version']
+                assert definition.schema_name == digital_credentials.business_schema["schema_name"]
+                assert definition.schema_version == digital_credentials.business_schema["schema_version"]
                 assert definition.credential_definition_id == cred_def_id
                 assert not definition.is_deleted

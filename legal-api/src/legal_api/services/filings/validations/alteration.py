@@ -34,7 +34,7 @@ from .common_validations import (
 def validate(legal_entity: LegalEntity, filing: Dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
     if not legal_entity or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
     msg.extend(company_name_validation(filing))
@@ -44,7 +44,7 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Error:  # pylint: disab
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
 
-    if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
+    if err := validate_resolution_date_in_share_structure(filing, "alteration"):
         msg.append(err)
 
     if msg:
@@ -55,9 +55,9 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Error:  # pylint: disab
 
 def court_order_validation(filing):
     """Validate court order."""
-    court_order_path: Final = '/filing/alteration/courtOrder'
+    court_order_path: Final = "/filing/alteration/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
+        err = validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
         if err:
             return err
     return []
@@ -65,7 +65,7 @@ def court_order_validation(filing):
 
 def share_structure_validation(filing):
     """Validate share structure."""
-    share_structure_path: Final = '/filing/alteration/shareStructure'
+    share_structure_path: Final = "/filing/alteration/shareStructure"
     if get_str(filing, share_structure_path):
         err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
         if err:
@@ -76,7 +76,7 @@ def share_structure_validation(filing):
 def company_name_validation(filing):
     """Validate company name."""
     msg = []
-    nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
+    nr_path: Final = "/filing/alteration/nameRequest/nrNumber"
     if nr_number := get_str(filing, nr_path):
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number).json()
@@ -84,43 +84,52 @@ def company_name_validation(filing):
 
         error_msg = """The name type associated with the name request number entered cannot be used for this
                        transaction type."""
-        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECV'):
-            msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                        'path': nr_path})
+        if not nr_response["requestTypeCd"] in ("CCR", "CCP", "BEC", "BECV"):
+            msg.append({"error": babel(error_msg).replace("\n", "").replace("  ", ""), "path": nr_path})
 
-        if not validation_result['is_consumable']:
-            msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
+        if not validation_result["is_consumable"]:
+            msg.append({"error": babel("Alteration of Name Request is not approved."), "path": nr_path})
 
         # ensure NR request has the same legal name
-        nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
+        nr_legal_name_path: Final = "/filing/alteration/nameRequest/legalName"
         legal_name = get_str(filing, nr_legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
-            msg.append({'error': babel('Alteration of Name Request has a different legal name.'),
-                        'path': nr_legal_name_path})
+            msg.append(
+                {"error": babel("Alteration of Name Request has a different legal name."), "path": nr_legal_name_path}
+            )
 
-        nr_legal_type_path: Final = '/filing/alteration/nameRequest/legalType'
+        nr_legal_type_path: Final = "/filing/alteration/nameRequest/legalType"
         legal_type = get_str(filing, nr_legal_type_path)
-        nr_legal_type = nr_response.get('legalType')
+        nr_legal_type = nr_response.get("legalType")
         if legal_type != nr_legal_type:
-            msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
-                        'path': nr_legal_type_path})
+            msg.append(
+                {
+                    "error": babel("Name Request legal type is not same as the business legal type."),
+                    "path": nr_legal_type_path,
+                }
+            )
     else:
         # ensure legalType is valid
-        legal_type_path: Final = '/filing/business/legalType'
-        if get_str(filing, legal_type_path) not in \
-                (LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-                 LegalEntity.EntityTypes.BC_CCC.value,
-                 LegalEntity.EntityTypes.COMP.value,
-                 LegalEntity.EntityTypes.BCOMP.value,
-                 LegalEntity.EntityTypes.COOP.value):
-            msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
+        legal_type_path: Final = "/filing/business/legalType"
+        if get_str(filing, legal_type_path) not in (
+            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            LegalEntity.EntityTypes.BC_CCC.value,
+            LegalEntity.EntityTypes.COMP.value,
+            LegalEntity.EntityTypes.BCOMP.value,
+            LegalEntity.EntityTypes.COOP.value,
+        ):
+            msg.append({"error": babel("Alteration not valid for selected Legal Type."), "path": legal_type_path})
 
         # ensure company is named if being altered to numbered
-        business_name_path: Final = '/filing/business/businessName'
+        business_name_path: Final = "/filing/business/businessName"
         if not get_str(filing, business_name_path):
-            msg.append({'error': babel('Alteration to Numbered Company can only be done for a Named Company.'),
-                        'path': business_name_path})
+            msg.append(
+                {
+                    "error": babel("Alteration to Numbered Company can only be done for a Named Company."),
+                    "path": business_name_path,
+                }
+            )
 
     return msg
 
@@ -128,18 +137,19 @@ def company_name_validation(filing):
 def type_change_validation(filing):
     """Validate type change."""
     msg = []
-    legal_type_path: Final = '/filing/alteration/business/legalType'
+    legal_type_path: Final = "/filing/alteration/business/legalType"
     # you must alter to a bc benefit company or a COOP
-    if get_str(filing, legal_type_path) not in (LegalEntity.EntityTypes.BCOMP.value,
-                                                LegalEntity.EntityTypes.COOP.value,
-                                                LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-                                                LegalEntity.EntityTypes.COMP.value,
-                                                LegalEntity.EntityTypes.BC_CCC.value):
+    if get_str(filing, legal_type_path) not in (
+        LegalEntity.EntityTypes.BCOMP.value,
+        LegalEntity.EntityTypes.COOP.value,
+        LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+        LegalEntity.EntityTypes.COMP.value,
+        LegalEntity.EntityTypes.BC_CCC.value,
+    ):
         error_msg = """Your business type has not been updated to a BC Benefit Company,
                        BC Unlimited Liability Company, BC Community Contribution Company,
                        BC Limited Company or BC Cooperative Association."""
-        msg.append({'error': babel(error_msg),
-                    'path': legal_type_path})
+        msg.append({"error": babel(error_msg), "path": legal_type_path})
         return msg
     return []
 
@@ -147,16 +157,15 @@ def type_change_validation(filing):
 def rules_change_validation(filing):
     """Validate rules change."""
     msg = []
-    rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
+    rules_file_key_path: Final = "/filing/alteration/rulesFileKey"
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
-    rules_change_in_sr_path: Final = '/filing/alteration/rulesInResolution'
+    rules_change_in_sr_path: Final = "/filing/alteration/rulesInResolution"
     rules_change_in_sr: Final = get_bool(filing, rules_change_in_sr_path)
 
     if rules_file_key and rules_change_in_sr:
-        error_msg = 'Cannot provide both file upload and rules change in SR'
-        msg.append({'error': babel(error_msg),
-                    'path': rules_file_key_path + ' and ' + rules_change_in_sr_path})
+        error_msg = "Cannot provide both file upload and rules change in SR"
+        msg.append({"error": babel(error_msg), "path": rules_file_key_path + " and " + rules_change_in_sr_path})
         return msg
 
     if rules_file_key:
@@ -171,16 +180,15 @@ def rules_change_validation(filing):
 def memorandum_change_validation(filing):
     """Validate memorandum change."""
     msg = []
-    memorandum_file_key_path: Final = '/filing/alteration/memorandumFileKey'
+    memorandum_file_key_path: Final = "/filing/alteration/memorandumFileKey"
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
 
-    memorandum_change_in_sr_path: Final = '/filing/alteration/memorandumInResolution'
+    memorandum_change_in_sr_path: Final = "/filing/alteration/memorandumInResolution"
     memorandum_change_in_sr: Final = get_bool(filing, memorandum_change_in_sr_path)
 
     if memorandum_file_key and memorandum_change_in_sr:
-        error_msg = 'Cannot provide both file upload and memorandum change in SR'
-        msg.append({'error': babel(error_msg),
-                    'path': memorandum_file_key + ' and ' + memorandum_change_in_sr_path})
+        error_msg = "Cannot provide both file upload and memorandum change in SR"
+        msg.append({"error": babel(error_msg), "path": memorandum_file_key + " and " + memorandum_change_in_sr_path})
         return msg
 
     if memorandum_file_key:

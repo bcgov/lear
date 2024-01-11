@@ -1,7 +1,6 @@
 """Enum Utilities."""
-from enum import auto  # noqa: F401
-from enum import Enum
-from enum import EnumMeta
+from enum import auto  # pylint: disable=unused-import # noqa: F401
+from enum import Enum, EnumMeta
 from typing import Optional
 
 

@@ -32,21 +32,23 @@ def test_stamp(app):  # pylint:disable=unused-argument
         pdf_input = _create_pdf_file()
         incorp_date = LegislationDatetime.now()
         registrar_info = RegistrarInfo.get_registrar_info(incorp_date)
-        registrars_signature = registrar_info['signatureAndText']
+        registrars_signature = registrar_info["signatureAndText"]
         pdf_service = PdfService()
-        registrars_stamp = pdf_service.create_registrars_stamp(registrars_signature, incorp_date, 'CP00000001', 'rules.pdf')
-        
+        registrars_stamp = pdf_service.create_registrars_stamp(
+            registrars_signature, incorp_date, "CP00000001", "rules.pdf"
+        )
+
         certified_copy = pdf_service.stamp_pdf(pdf_input, registrars_stamp, only_first_page=True)
         certified_copy_obj = PyPDF2.PdfReader(certified_copy)
-        
+
         certified_copy_page = certified_copy_obj.pages[0]
-        text = certified_copy_page.extract_text() 
-        assert 'Filed on' in text
-        assert 'File Name: rules.pdf' in text
-        
+        text = certified_copy_page.extract_text()
+        assert "Filed on" in text
+        assert "File Name: rules.pdf" in text
+
         certified_copy_page = certified_copy_obj.pages[1]
-        text = certified_copy_page.extract_text() 
-        assert 'Filed on' not in text
+        text = certified_copy_page.extract_text()
+        assert "Filed on" not in text
 
         # Uncomment to generate the file:
         # f = open("certified_copy.pdf", "wb")
@@ -60,11 +62,11 @@ def _create_pdf_file():
     doc_height = letter[1]
 
     for _ in range(3):
-        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
+        text = "This is a test document.\nThis is a test document.\nThis is a test document."
         text_x_margin = 100
         text_y_margin = doc_height - 300
         line_height = 14
-        _write_text(can, text, line_height,text_x_margin, text_y_margin)
+        _write_text(can, text, line_height, text_x_margin, text_y_margin)
         can.showPage()
 
     can.save()

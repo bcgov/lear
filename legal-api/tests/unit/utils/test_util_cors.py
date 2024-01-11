@@ -20,26 +20,26 @@ import pytest
 
 from legal_api.utils.util import cors_preflight
 
-
 TEST_CORS_METHODS_DATA = [
-    ('GET'),
-    ('PUT'),
-    ('POST'),
-    ('GET,PUT'),
-    ('GET,POST'),
-    ('PUT,POST'),
-    ('GET,PUT,POST'),
+    ("GET"),
+    ("PUT"),
+    ("POST"),
+    ("GET,PUT"),
+    ("GET,POST"),
+    ("PUT,POST"),
+    ("GET,PUT,POST"),
 ]
 
 
-@pytest.mark.parametrize('methods', TEST_CORS_METHODS_DATA)
+@pytest.mark.parametrize("methods", TEST_CORS_METHODS_DATA)
 def test_cors_preflight_post(methods):
     """Assert that the options methos is added to the class and that the correct access controls are set."""
+
     @cors_preflight(methods)  # pylint: disable=too-few-public-methods
-    class TestCors():
+    class TestCors:
         pass
 
     rv = TestCors().options()  # pylint: disable=no-member
 
-    assert rv[2]['Access-Control-Allow-Origin'] == '*'
-    assert rv[2]['Access-Control-Allow-Methods'] == methods
+    assert rv[2]["Access-Control-Allow-Origin"] == "*"
+    assert rv[2]["Access-Control-Allow-Methods"] == methods

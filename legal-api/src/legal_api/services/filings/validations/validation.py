@@ -55,57 +55,60 @@ def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
 
     err = None
 
-    legal_type = get_str(filing_json, '/filing/business/legalType')
+    legal_type = get_str(filing_json, "/filing/business/legalType")
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
-    if 'correction' in filing_json['filing'].keys():
+    if "correction" in filing_json["filing"].keys():
         err = correction_validate(legal_entity, filing_json)
         if err:
             return err
 
         # For now the correction validators will get called here, these might be the same rules
         # so these 2 sections could get collapsed
-        for k in filing_json['filing'].keys():
+        for k in filing_json["filing"].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary
             if Filing.FILINGS.get(k, None):
-
-                if k == Filing.FILINGS['changeOfAddress'].get('name'):
+                if k == Filing.FILINGS["changeOfAddress"].get("name"):
                     err = coa_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['incorporationApplication'].get('name'):
+                elif k == Filing.FILINGS["incorporationApplication"].get("name"):
                     err = validate_correction_ia(filing_json)
 
         if err:
             return err
-    elif 'dissolution' in filing_json['filing'].keys() \
-            and (dissolution_type := filing_json['filing']['dissolution'].get('dissolutionType', None)) \
-            and (dissolution_type in ['voluntary', 'administrative']):
+    elif (
+        "dissolution" in filing_json["filing"].keys()
+        and (dissolution_type := filing_json["filing"]["dissolution"].get("dissolutionType", None))
+        and (dissolution_type in ["voluntary", "administrative"])
+    ):
         err = dissolution_validate(legal_entity, filing_json)
         if err:
             return err
 
-        legal_type = get_str(filing_json, '/filing/business/legalType')
-        dissolution_type = get_str(filing_json, '/filing/dissolution/dissolutionType')
+        legal_type = get_str(filing_json, "/filing/business/legalType")
+        dissolution_type = get_str(filing_json, "/filing/dissolution/dissolutionType")
 
         if legal_type == LegalEntity.EntityTypes.COOP.value and dissolution_type != DissolutionTypes.ADMINISTRATIVE:
-            if 'specialResolution' in filing_json['filing'].keys():
+            if "specialResolution" in filing_json["filing"].keys():
                 err = special_resolution_validate(legal_entity, filing_json)
             else:
-                err = Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Special Resolution is required.'),
-                                                      'path': '/filing/specialResolution'}])
+                err = Error(
+                    HTTPStatus.BAD_REQUEST,
+                    [{"error": babel("Special Resolution is required."), "path": "/filing/specialResolution"}],
+                )
         if err:
             return err
-    elif 'specialResolution' in filing_json['filing'].keys() and legal_type in [LegalEntity.EntityTypes.COOP.value]:
+    elif "specialResolution" in filing_json["filing"].keys() and legal_type in [LegalEntity.EntityTypes.COOP.value]:
         err = special_resolution_validate(legal_entity, filing_json)
         if err:
             return err
 
         either_con_or_alteration_flag = False
 
-        if 'changeOfName' in filing_json['filing'].keys():
+        if "changeOfName" in filing_json["filing"].keys():
             either_con_or_alteration_flag = True
             err = con_validate(legal_entity, filing_json)
-        if 'alteration' in filing_json['filing'].keys():
+        if "alteration" in filing_json["filing"].keys():
             either_con_or_alteration_flag = True
             err = alteration_validate(legal_entity, filing_json)
 
@@ -113,71 +116,73 @@ def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
             return err
 
         if not either_con_or_alteration_flag:
-            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('Either Change of Name or Alteration is required.'),
-                                                  'path': '/filing'}])
+            return Error(
+                HTTPStatus.BAD_REQUEST,
+                [{"error": babel("Either Change of Name or Alteration is required."), "path": "/filing"}],
+            )
     else:
-        for k in filing_json['filing'].keys():
+        for k in filing_json["filing"].keys():
             # Check if the JSON key exists in the FILINGS reference Dictionary
             if Filing.FILINGS.get(k, None):
                 # The type of this Filing exists in the JSON, determine which
                 # one it is (Annual Report, Change of Address, or Change of Directors)
                 # and validate against the appropriate logic
 
-                if k == Filing.FILINGS['annualReport'].get('name'):
+                if k == Filing.FILINGS["annualReport"].get("name"):
                     err = annual_report_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['changeOfAddress'].get('name'):
+                elif k == Filing.FILINGS["changeOfAddress"].get("name"):
                     err = coa_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['changeOfDirectors'].get('name'):
+                elif k == Filing.FILINGS["changeOfDirectors"].get("name"):
                     err = cod_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['changeOfName'].get('name'):
+                elif k == Filing.FILINGS["changeOfName"].get("name"):
                     err = con_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['dissolution'].get('name'):
+                elif k == Filing.FILINGS["dissolution"].get("name"):
                     err = dissolution_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['specialResolution'].get('name'):
+                elif k == Filing.FILINGS["specialResolution"].get("name"):
                     err = special_resolution_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['incorporationApplication'].get('name'):
+                elif k == Filing.FILINGS["incorporationApplication"].get("name"):
                     err = incorporation_application_validate(filing_json)
 
-                elif k == Filing.FILINGS['alteration'].get('name'):
+                elif k == Filing.FILINGS["alteration"].get("name"):
                     err = alteration_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['courtOrder'].get('name'):
+                elif k == Filing.FILINGS["courtOrder"].get("name"):
                     err = court_order_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['registrarsNotation'].get('name'):
+                elif k == Filing.FILINGS["registrarsNotation"].get("name"):
                     err = registrars_notation_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['registrarsOrder'].get('name'):
+                elif k == Filing.FILINGS["registrarsOrder"].get("name"):
                     err = registrars_order_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['registration'].get('name'):
+                elif k == Filing.FILINGS["registration"].get("name"):
                     err = registration_validate(filing_json)
 
-                elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
+                elif k == Filing.FILINGS["changeOfRegistration"].get("name"):
                     err = change_of_registration_validate(filing_json)
 
-                elif k == Filing.FILINGS['putBackOn'].get('name'):
+                elif k == Filing.FILINGS["putBackOn"].get("name"):
                     err = put_back_on_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['adminFreeze'].get('name'):
+                elif k == Filing.FILINGS["adminFreeze"].get("name"):
                     err = admin_freeze_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['conversion'].get('name'):
+                elif k == Filing.FILINGS["conversion"].get("name"):
                     err = conversion_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['restoration'].get('name'):
+                elif k == Filing.FILINGS["restoration"].get("name"):
                     err = restoration_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['consentContinuationOut'].get('name'):
+                elif k == Filing.FILINGS["consentContinuationOut"].get("name"):
                     err = consent_continuation_out_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['continuationOut'].get('name'):
+                elif k == Filing.FILINGS["continuationOut"].get("name"):
                     err = continuation_out_validate(legal_entity, filing_json)
 
                 if err:

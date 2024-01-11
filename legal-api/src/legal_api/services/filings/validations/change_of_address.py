@@ -26,34 +26,28 @@ from legal_api.models import LegalEntity
 def validate(legal_entity: LegalEntity, cod: Dict) -> Error:
     """Validate the Change ofAddress filing."""
     if not legal_entity or not cod:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
     msg = []
 
-    offices_array = json.dumps(cod['filing']['changeOfAddress']['offices'])
+    offices_array = json.dumps(cod["filing"]["changeOfAddress"]["offices"])
     addresses = json.loads(offices_array)
 
     for item in addresses.keys():
         for k, v in addresses[item].items():
-            region = v.get('addressRegion')
-            country = v['addressCountry']
+            region = v.get("addressRegion")
+            country = v["addressCountry"]
 
-            if region != 'BC':
-                path = '/filing/changeOfAddress/offices/%s/%s/addressRegion' % (
-                    item, k
-                )
-                msg.append({'error': _("Address Region must be 'BC'."),
-                            'path': path})
+            if region != "BC":
+                path = "/filing/changeOfAddress/offices/%s/%s/addressRegion" % (item, k)
+                msg.append({"error": _("Address Region must be 'BC'."), "path": path})
 
             try:
                 country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                if country != 'CA':
+                if country != "CA":
                     raise LookupError
             except LookupError:
-                err_path = '/filing/changeOfAddress/offices/%s/%s/addressCountry' % (
-                    item, k
-                )
-                msg.append({'error': _("Address Country must be 'CA'."),
-                            'path': err_path})
+                err_path = "/filing/changeOfAddress/offices/%s/%s/addressCountry" % (item, k)
+                msg.append({"error": _("Address Country must be 'CA'."), "path": err_path})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 

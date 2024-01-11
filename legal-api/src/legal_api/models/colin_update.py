@@ -23,25 +23,25 @@ from .db import db
 class ColinLastUpdate(db.Model):  # pylint: disable=too-few-public-methods
     """Creates a record of the last event loaded from colin."""
 
-    __tablename__ = 'colin_last_update'
+    __tablename__ = "colin_last_update"
     __mapper_args__ = {
-        'include_properties': [
-            'id',
-            'last_event_id',
-            'last_update',
+        "include_properties": [
+            "id",
+            "last_event_id",
+            "last_update",
         ]
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_event_id = db.Column('last_event_id', db.Integer, unique=False, nullable=False)
+    last_update = db.Column("last_update", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_event_id = db.Column("last_event_id", db.Integer, unique=False, nullable=False)
 
     @property
     def json(self):
         """Return the json representation of ColinLastUpdate."""
         colin_last_update = {
-                'id': self.id,
-                'last_event_id': self.last_event_id,
-                'last_update': self.last_update.isoformat()
+            "id": self.id,
+            "last_event_id": self.last_event_id,
+            "last_update": self.last_update.isoformat(),
         }
         return colin_last_update

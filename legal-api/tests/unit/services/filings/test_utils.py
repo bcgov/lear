@@ -26,8 +26,7 @@ from legal_api.services.utils import get_date, get_str
 
 
 @given(f=text(), p=text())
-@example(f={'filing': {'header': {'date': '2001-08-05'}}},
-         p='filing/header/date')
+@example(f={"filing": {"header": {"date": "2001-08-05"}}}, p="filing/header/date")
 def test_get_date(f, p):
     """Assert the get_date extracts the date from the JSON file."""
     d = get_date(f, p)
@@ -38,8 +37,7 @@ def test_get_date(f, p):
 
 
 @given(f=text(), p=text())
-@example(f={'filing': {'header': {'name': 'annualReport'}}},
-         p='filing/header/name')
+@example(f={"filing": {"header": {"name": "annualReport"}}}, p="filing/header/name")
 def test_get_str(f, p):
     """Assert the get_date extracts the date from the JSON file."""
     d = get_str(f, p)
@@ -50,12 +48,15 @@ def test_get_str(f, p):
 
 
 def _upload_file(page_size, invalid):
-    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
+    signed_url = MinioService.create_signed_put_url("cooperative-test.pdf")
+    key = signed_url.get("key")
+    pre_signed_put = signed_url.get("preSignedUrl")
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
-                 headers={'Content-Type': 'application/octet-stream'})
+    requests.put(
+        pre_signed_put,
+        data=_create_pdf_file(page_size, invalid).read(),
+        headers={"Content-Type": "application/octet-stream"},
+    )
     return key
 
 
@@ -66,9 +67,9 @@ def _create_pdf_file(page_size, invalid):
 
     for _ in range(3):
         # Create invalid page size on last page of pdf
-        if(invalid and _ == 2):
+        if invalid and _ == 2:
             can.setPageSize((500, 500))
-        text = 'This is a test document.\nThis is a test document.\nThis is a test document.'
+        text = "This is a test document.\nThis is a test document.\nThis is a test document."
         text_x_margin = 100
         text_y_margin = doc_height - 300
         line_height = 14

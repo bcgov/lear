@@ -24,6 +24,7 @@ from .internal_services import bp as internal_bp
 from .meta import bp as meta_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
+from .ops import bp as ops_bp
 from .request_tracker import bp as request_tracker_bp
 
 
@@ -37,7 +38,7 @@ class V2Endpoint:
     def init_app(self, app):
         """Register and initialize the Endpoint setup."""
         if not app:
-            raise Exception('Cannot initialize without a Flask App.')  # pylint: disable=broad-exception-raised
+            raise Exception("Cannot initialize without a Flask App.")  # pylint: disable=broad-exception-raised
 
         self.app = app
 
@@ -49,6 +50,7 @@ class V2Endpoint:
         self.app.register_blueprint(namerequest_bp)
         self.app.register_blueprint(naics_bp)
         self.app.register_blueprint(request_tracker_bp)
+        self.app.register_blueprint(ops_bp)
         self.app.register_blueprint(internal_bp)
 
 
