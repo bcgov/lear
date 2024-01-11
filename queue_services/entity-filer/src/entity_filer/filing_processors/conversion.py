@@ -119,8 +119,8 @@ def _process_firms_conversion(
                 conversion_filing,
                 filing_meta
             )
-        case _: # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
-            _update_sp_change(
+        case _: # LegalEntity.EntityTypes.PERSON: # legal_entity might be a proprietor?
+            _update_person_change(
                 legal_entity,
                 filing_rec,
                 conversion_filing,
@@ -240,7 +240,7 @@ def _update_partner_change(
             legal_entity_info.update_naics_info(legal_entity, naics)
 
 
-def _update_sp_change(
+def _update_person_change(
         legal_entity: LegalEntity,
         change_filing_rec: Filing,
         change_filing: Dict,
@@ -299,6 +299,35 @@ def _update_sp_change(
             "fromLegalName": alternate_name.name,
             "toLegalName": to_legal_name,
         }
+
+
+def get_partnership_name(parties_dict: dict):
+    """Set the legal_name of the partnership."""
+    parties = []
+    # get all parties in an array
+    for party in parties_dict:
+        if officer := party.get("officer"):
+            if org_name := officer.get("organizationName"):
+                parties.append(org_name.upper())
+                continue
+
+            name = officer["lastName"]
+            if first_name := officer.get("firstName"):
+                name = f"{name} {first_name}"
+            if middle_name := officer.get("middleName"):
+                name = f"{name} {middle_name}"
+            parties.append(name.upper())
+
+    if len(parties) < 2:
+        return parties[0]
+
+    parties.sort()
+    if parties and len(parties) > 2:
+        legal_name_str = ", ".join(parties[:2])
+        legal_name_str = f"{legal_name_str}, et al"
+    else:
+        legal_name_str = ", ".join(parties)
+    return legal_name_str
 
 
 def post_process(legal_entity: LegalEntity, filing: Filing):
