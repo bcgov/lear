@@ -127,24 +127,6 @@ def _process_firms_conversion(
                 filing_meta
             )
 
-    # Name change if present
-    with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(
-            conversion_filing, "/filing/conversion/nameRequest"
-        )
-        if name_request_json.get("legalName"):
-            from_legal_name = legal_entity.legal_name
-            legal_entity_info.set_legal_name(
-                legal_entity.identifier, legal_entity, name_request_json
-            )
-            if from_legal_name != legal_entity.legal_name:
-                filing_meta.conversion = {
-                    **filing_meta.conversion,
-                    **{
-                        "fromLegalName": from_legal_name,
-                        "toLegalName": legal_entity.legal_name,
-                    },
-                }
     # Update Nature of Business
     if (
         naics := conversion_filing.get("filing", {})
@@ -211,7 +193,7 @@ def _update_partner_change(
             identifier=legal_entity.identifier,
             name=to_legal_name,
             name_type=AlternateName.NameType.OPERATING,
-            start_date=alternate_name.start_date,
+            start_date=change_filing.get("startDate"),
             registration_date=change_filing_rec.effective_date,
         )
         legal_entity.alternate_names.append(new_alternate_name)
@@ -274,6 +256,15 @@ def _update_person_change(
             raise DefaultException(
                 f"No Proprietor in the SP conversion for filing:{change_filing_rec.id}"
             )
+        
+        if start := change_filing.get("filing", {}).get("conversion", {}).get("startDate"):
+            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+                start
+            )
+        elif change_filing.effective_date:
+            start_date = change_filing.effective_date.isoformat()
+        else:
+            start_date = LegislationDatetime.now()
 
         alternate_name.end_date = change_filing_rec.effective_date
         alternate_name.change_filing_id = change_filing_rec.id
@@ -289,7 +280,7 @@ def _update_person_change(
             change_filing_id=change_filing_rec.id,
             end_date=None,
             name=to_legal_name,
-            start_date=alternate_name.start_date,
+            start_date=start_date,
             registration_date=change_filing_rec.effective_date,
         )
         proprietor.alternate_names.append(new_alternate_name)
