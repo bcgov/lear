@@ -28,7 +28,7 @@ from typing import Dict
 import dpath
 
 # from entity_queue_common.service_utils import BusinessException
-from business_model import LegalEntity, Filing
+from business_model import db, AlternateName, LegalEntity, Filing
 from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.exceptions import BusinessException, DefaultException
@@ -111,6 +111,22 @@ def _process_firms_conversion(
     filing_rec: Filing,
     filing_meta: FilingMeta,
 ):
+    match legal_entity.entity_type:
+        case LegalEntity.EntityTypes.PARTNERSHIP:
+            _update_partner_change(
+                legal_entity,
+                filing_rec,
+                conversion_filing,
+                filing_meta
+            )
+        case _: # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
+            _update_sp_change(
+                legal_entity,
+                filing_rec,
+                conversion_filing,
+                filing_meta
+            )
+
     # Name change if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(
@@ -163,6 +179,126 @@ def _process_firms_conversion(
                     legal_entity_start_date
                 )
             )
+
+
+def _update_partner_change(
+        legal_entity: LegalEntity,
+        change_filing_rec: Filing,
+        change_filing: Dict,
+        filing_meta: FilingMeta,
+):
+    name_request = dpath.util.get(change_filing, "/conversion/nameRequest", default=None)
+    if name_request and (to_legal_name := name_request.get("legalName")):
+        alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
+        parties_dict = dpath.util.get(change_filing, "/conversion/parties")
+
+        legal_entity.legal_name = get_partnership_name(parties_dict)
+
+        legal_entity.alternate_names.remove(alternate_name)
+        alternate_name.end_date = change_filing_rec.effective_date
+        alternate_name.change_filing_id = change_filing_rec.id
+        # alternate_name.delete()
+        db.session.add(alternate_name)
+        db.session.commit()
+        db.session.delete(alternate_name)
+        db.session.commit()
+
+
+        new_alternate_name = AlternateName(
+            bn15=alternate_name.bn15,
+            change_filing_id=change_filing_rec.id,
+            end_date=None,
+            identifier=legal_entity.identifier,
+            name=to_legal_name,
+            name_type=AlternateName.NameType.OPERATING,
+            start_date=alternate_name.start_date,
+            registration_date=change_filing_rec.effective_date,
+        )
+        legal_entity.alternate_names.append(new_alternate_name)
+
+        filing_meta.conversion = {
+            **filing_meta.conversion,
+            "fromLegalName": alternate_name.name,
+            "toLegalName": to_legal_name,
+        }
+
+    # Update Nature of LegalEntity
+    if (
+        naics := change_filing.get("conversion", {})
+        .get("business", {})
+        .get("naics")
+    ) and (naics_code := naics.get("naicsCode")):
+        if legal_entity.naics_code != naics_code:
+            filing_meta.conversion = {
+                **filing_meta.conversion,
+                **{
+                    "fromNaicsCode": legal_entity.naics_code,
+                    "toNaicsCode": naics_code,
+                    "naicsDescription": naics.get("naicsDescription"),
+                },
+            }
+            legal_entity_info.update_naics_info(legal_entity, naics)
+
+
+def _update_sp_change(
+        legal_entity: LegalEntity,
+        change_filing_rec: Filing,
+        change_filing: Dict,
+        filing_meta: FilingMeta,
+):
+    name_request = dpath.util.get(change_filing, "/conversion/nameRequest", default=None)
+    identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
+    if name_request and (to_legal_name := name_request.get("legalName")):
+        alternate_name = AlternateName.find_by_identifier(identifier)
+        parties_dict = dpath.util.get(change_filing, "/conversion/parties")
+
+        # Find the Proprietor
+        proprietor = None
+        for party in parties_dict:
+            for role in party.get("roles"):
+                if role.get("roleType") == "Proprietor":
+                    proprietor_dict = party
+                    break
+            if proprietor_dict:
+                break
+
+        if not proprietor_dict:
+            raise DefaultException(
+                f"No Proprietor in the SP conversion for filing:{change_filing_rec.id}"
+            )
+
+        proprietor, delivery_address, mailing_address = get_or_create_party(
+            proprietor_dict, change_filing_rec
+        )
+        if not proprietor:
+            raise DefaultException(
+                f"No Proprietor in the SP conversion for filing:{change_filing_rec.id}"
+            )
+
+        alternate_name.end_date = change_filing_rec.effective_date
+        alternate_name.change_filing_id = change_filing_rec.id
+        # alternate_name.delete()
+        db.session.add(alternate_name)
+        db.session.commit()
+        db.session.delete(alternate_name)
+        db.session.commit()
+
+        new_alternate_name = AlternateName(
+            identifier=identifier,
+            name_type=AlternateName.NameType.OPERATING,
+            change_filing_id=change_filing_rec.id,
+            end_date=None,
+            name=to_legal_name,
+            start_date=alternate_name.start_date,
+            registration_date=change_filing_rec.effective_date,
+        )
+        proprietor.alternate_names.append(new_alternate_name)
+
+        filing_meta.conversion = {
+            **filing_meta.conversion,
+            "fromLegalName": alternate_name.name,
+            "toLegalName": to_legal_name,
+        }
 
 
 def post_process(legal_entity: LegalEntity, filing: Filing):
