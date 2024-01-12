@@ -644,6 +644,46 @@ def test_amalgamation_court_orders(mocker, app, session,
 @pytest.mark.parametrize(
     'test_status, expected_code, expected_msg',
     [
+        ('FAIL', HTTPStatus.BAD_REQUEST, 'Cannot amalgamate with BC1234567 which is in historical state.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_is_business_historical(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses is historical."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value,
+                        state=Business.State.ACTIVE if test_status == 'SUCCESS' else Business.State.HISTORICAL)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing',
+                 return_value=False)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
+
+    err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
         ('FAIL', HTTPStatus.BAD_REQUEST, 'BC1234567 has a future effective filing.'),
         ('SUCCESS', None, None)
     ]
@@ -751,10 +791,12 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
     ]
 
     def mock_find_by_identifier(identifier):
+        utc_now = datetime.datetime.now(datetime.timezone.utc)
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
-                        state=Business.State.ACTIVE if test_status == 'FAIL' else Business.State.HISTORICAL,
-                        restoration_expiry_date=datetime.datetime.utcnow() if test_status == 'FAIL' else None)
+                        state=Business.State.ACTIVE,
+                        founding_date=utc_now,
+                        restoration_expiry_date=utc_now if test_status == 'FAIL' else None)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])

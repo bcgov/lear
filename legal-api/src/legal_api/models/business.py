@@ -34,7 +34,7 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .amalgamating_business import AmalgamatingBusiness  # noqa: F401, I001, I003 pylint: disable=unused-import;
+from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import;
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -251,8 +251,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
     consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
-    amalgamating_business = db.relationship('AmalgamatingBusiness', backref='business')
-    amalgamation = db.relationship('Amalgamation', back_populates='business')
+    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamation = db.relationship('Amalgamation', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -438,7 +438,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+            if (self.state == Business.State.HISTORICAL and
+                    (amalgamating_business := self.amalgamating_businesses.one_or_none())):
+                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+                d['amalgamatedInto'] = amalgamation.json()
+            else:
+                d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         if self.start_date:
             d['startDate'] = LegislationDatetime.format_as_legislation_date(self.start_date)
