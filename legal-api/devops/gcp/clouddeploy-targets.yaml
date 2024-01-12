@@ -23,6 +23,7 @@ deployParameters:
   container-name: "business-api-dev"
   app-env: "dev"
   cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
+  service-account: "sa-api@a083gt-dev.iam.gserviceaccount.com"
 run:
  location: projects/a083gt-dev/locations/northamerica-northeast1
 executionConfigs:
@@ -41,11 +42,7 @@ deployParameters:
   container-name: "business-api-test"
   app-env: "test"
   cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
-  max-scale: "5"
-  container-concurrency: "7"
-  container-port: "8080"
-  resources-cpu: 2000m
-  resources-memory: 2Gi
+  service-account: "sa-api@a083gt-test.iam.gserviceaccount.com"
 run:
  location: projects/a083gt-test/locations/northamerica-northeast1
 executionConfigs:
@@ -65,6 +62,7 @@ deployParameters:
   container-name: "business-api-sandbox"
   app-env: "sandbox"
   cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
+  service-account: "sa-api@a083gt-integration.iam.gserviceaccount.com"
   max-scale: "50"
   container-concurrency: "20"
   container-port: "8080"
@@ -89,6 +87,7 @@ deployParameters:
   container-name: "business-api-prod"
   app-env: "production"
   cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
+  service-account: "sa-api@a083gt-prod.iam.gserviceaccount.com"
   max-scale: "50"
   container-concurrency: "20"
   container-port: "8080"
