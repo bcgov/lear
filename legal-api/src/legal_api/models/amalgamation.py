@@ -58,13 +58,13 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     def find_by_id(cls, amalgamation_id) -> Amalgamation:
         """Return amalgamation by the id."""
         amalgamation = None
-        if id:
+        if amalgamation_id:
             amalgamation = cls.query.filter_by(id=amalgamation_id).one_or_none()
         return amalgamation
 
     def json(self):
         """Return amalgamation json."""
-        from .business import Business
+        from .business import Business  # pylint: disable=import-outside-toplevel
         business = Business.find_by_internal_id(self.business_id)
 
         return {
