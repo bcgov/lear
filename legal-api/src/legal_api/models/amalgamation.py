@@ -15,6 +15,7 @@
 
 Currently this only provides API versioning information
 """
+from __future__ import annotations
 
 from enum import auto
 
@@ -46,10 +47,30 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
 
     # Relationships
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', backref='amalgamation')
-    business = db.relationship('Business', back_populates='amalgamation')
+    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @classmethod
+    def find_by_id(cls, amalgamation_id) -> Amalgamation:
+        """Return amalgamation by the id."""
+        amalgamation = None
+        if id:
+            amalgamation = cls.query.filter_by(id=amalgamation_id).one_or_none()
+        return amalgamation
+
+    def json(self):
+        """Return amalgamation json."""
+        from .business import Business
+        business = Business.find_by_internal_id(self.business_id)
+
+        return {
+            'amalgamationDate': self.amalgamation_date.isoformat(),
+            'amalgamationType': self.amalgamation_type.name,
+            'courtApproval': self.court_approval,
+            'identifier': business.identifier,
+            'legalName': business.legal_name
+        }

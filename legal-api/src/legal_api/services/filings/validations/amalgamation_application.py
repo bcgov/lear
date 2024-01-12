@@ -110,11 +110,17 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         is_foreign_business = bool(foreign_legal_name)
         amalgamating_business = amalgamating_businesses.get(identifier)
 
-        if amalgamating_business and _has_future_effective_filing(amalgamating_business):
-            msg.append({
-                'error': f'{identifier} has a future effective filing.',
-                'path': amalgamating_businesses_path
-            })
+        if amalgamating_business:
+            if amalgamating_business.state == Business.State.HISTORICAL:
+                msg.append({
+                    'error': f'Cannot amalgamate with {identifier} which is in historical state.',
+                    'path': amalgamating_businesses_path
+                })
+            elif _has_future_effective_filing(amalgamating_business):
+                msg.append({
+                    'error': f'{identifier} has a future effective filing.',
+                    'path': amalgamating_businesses_path
+                })
 
         if not is_staff:
             if amalgamating_business:
