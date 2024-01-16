@@ -35,7 +35,7 @@ from entity_filer.filing_processors.filing_components.parties import (
     create_entity_with_addresses,
 )
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party
-from entity_filer.filing_processors.filing_components.partner import get_partnership_name
+from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 
 def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""

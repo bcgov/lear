@@ -42,7 +42,7 @@ from entity_filer.filing_processors.filing_components import (
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
-from entity_filer.filing_processors.filing_components.partner import update_partner_change, update_proprietor_change
+from entity_filer.filing_processors.filing_components.alternate_name import update_partner_change, update_proprietor_change
 
 
 def process(
