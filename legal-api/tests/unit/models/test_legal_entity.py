@@ -40,6 +40,8 @@ ALTERNATE_NAME_2_IDENTIFIER = "FM2222222"
 ALTERNATE_NAME_2_START_DATE = "2023-09-05"
 ALTERNATE_NAME_2_REGISTERED_DATE = "2005-01-01T00:00:00+00:00"
 
+NAICS_DESCRIPTION = 'Apiculture'
+
 
 def factory_legal_entity(designation: str = "001"):
     """Return a valid Business object stamped with the supplied designation."""

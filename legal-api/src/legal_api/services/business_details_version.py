@@ -24,6 +24,7 @@ from sqlalchemy.sql.expression import null
 from legal_api.models import (
     Address,
     Alias,
+    AlternateName,
     ColinEntity,
     EntityRole,
     Filing,
@@ -788,7 +789,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         business_json["legalName"] = business_revision.legal_name
         business_json["businessName"] = business_revision.business_name
         business_json["legalType"] = business_revision.entity_type
-        business_json["naicsDescription"] = business_revision.naics_description
+
+        alternate_name = AlternateName.find_by_identifier(business_revision.identifier)
+        business_json["naicsDescription"] = alternate_name.naics_description if alternate_name else None
         return business_json
 
     @staticmethod

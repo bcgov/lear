@@ -141,6 +141,7 @@ class BusinessDocument:
                     business_json["business"]["registrationDateTime"] = registration_filing[
                         0
                     ].effective_date.isoformat()
+                business_json["business"]["naicsDescription"] = self._legal_entity.naics_description
 
             if get_json:
                 # set report date

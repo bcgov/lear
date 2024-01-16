@@ -278,9 +278,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     additional_name = db.Column("additional_name", db.String(100))
     title = db.Column("title", db.String(1000))
     email = db.Column("email", db.String(254))
-    naics_key = db.Column(db.String(50))
-    naics_code = db.Column(db.String(10))
-    naics_description = db.Column(db.String(300))
 
     jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
     foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
@@ -566,6 +563,35 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
         return []
 
+    def get_naics(self):
+        """Return naics info for a business if any."""
+        le_alias = aliased(LegalEntity)
+        naics_info = (
+            db.session.query(AlternateName.naics_code,
+                             AlternateName.naics_key,
+                             AlternateName.naics_description)
+            .join(le_alias, AlternateName.identifier == le_alias.identifier)
+            # .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
+            .filter(AlternateName.legal_entity_id == self.id)
+            .one_or_none()
+        )
+        return naics_info
+    
+    @property
+    def naics_code(self):
+        naics_info = self.get_naics()
+        return naics_info.naics_code if naics_info else None
+
+    @property
+    def naics_key(self):
+        naics_info = self.get_naics()
+        return naics_info.naics_key if naics_info else None
+
+    @property
+    def naics_description(self):
+        naics_info = self.get_naics()
+        return naics_info.naics_description if naics_info is not None else None
+
     def save(self):
         """Render a Business to the local cache."""
         db.session.add(self)
@@ -786,9 +812,22 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
+        if not identifier or not cls.validate_identifier(
+            entity_type=None, identifier=identifier
+        ):
+            return None
+
         legal_entity = None
-        if identifier:
-            non_entity_types = [LegalEntity.EntityTypes.PERSON.value, LegalEntity.EntityTypes.ORGANIZATION.value]
+
+        if identifier.startswith("FM"):
+            if alt_name := AlternateName.find_by_identifier(identifier):
+                legal_entity = cls.find_by_id(alt_name.legal_entity_id)
+        else:
+            non_entity_types = [
+                LegalEntity.EntityTypes.PERSON.value,
+                LegalEntity.EntityTypes.ORGANIZATION.value,
+            ]
+
             legal_entity = (
                 cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
                 .filter_by(identifier=identifier)
