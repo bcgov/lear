@@ -116,14 +116,14 @@ def _process_firms_conversion(
         case LegalEntity.EntityTypes.PARTNERSHIP:
             update_partner_change(
                 legal_entity=legal_entity,
-                filint_type="conversion",
+                filing_type="conversion",
                 change_filing_rec=filing_rec,
                 change_filing=conversion_filing,
                 filing_meta=filing_meta.conversion
             )
         case _: # LegalEntity.EntityTypes.PERSON: # legal_entity might be a proprietor?
             update_proprietor_change(
-                filint_type="conversion",
+                filing_type="conversion",
                 change_filing_rec=filing_rec,
                 change_filing=conversion_filing,
                 filing_meta=filing_meta.conversion

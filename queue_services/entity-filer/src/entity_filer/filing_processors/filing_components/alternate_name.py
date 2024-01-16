@@ -33,15 +33,15 @@ from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 def update_partner_change(
         legal_entity: LegalEntity,
-        filint_type: str,
+        filing_type: str,
         change_filing_rec: Filing,
         change_filing: Dict,
         filing_meta: Dict,
 ):
-    name_request = dpath.util.get(change_filing, f"/{filint_type}/nameRequest", default=None)
+    name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     if name_request and (to_legal_name := name_request.get("legalName")):
         alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
-        parties_dict = dpath.util.get(change_filing, f"/{filint_type}/parties")
+        parties_dict = dpath.util.get(change_filing, f"/{filing_type}/parties")
 
         legal_entity.legal_name = get_partnership_name(parties_dict)
 
@@ -62,7 +62,7 @@ def update_partner_change(
             identifier=legal_entity.identifier,
             name=to_legal_name,
             name_type=AlternateName.NameType.OPERATING,
-            start_date=change_filing.get("startDate"),
+            start_date=alternate_name.start_date,
             registration_date=change_filing_rec.effective_date,
         )
         legal_entity.alternate_names.append(new_alternate_name)
@@ -75,7 +75,7 @@ def update_partner_change(
 
     # Update Nature of LegalEntity
     if (
-        naics := change_filing.get(f"{filint_type}", {})
+        naics := change_filing.get(f"{filing_type}", {})
         .get("business", {})
         .get("naics")
     ) and (naics_code := naics.get("naicsCode")):
@@ -92,16 +92,16 @@ def update_partner_change(
 
 
 def update_proprietor_change(
-        filint_type: str,
+        filing_type: str,
         change_filing_rec: Filing,
         change_filing: Dict,
         filing_meta: Dict,
 ):
-    name_request = dpath.util.get(change_filing, f"/{filint_type}/nameRequest", default=None)
+    name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
     if name_request and (to_legal_name := name_request.get("legalName")):
         alternate_name = AlternateName.find_by_identifier(identifier)
-        parties_dict = dpath.util.get(change_filing, f"/{filint_type}/parties")
+        parties_dict = dpath.util.get(change_filing, f"/{filing_type}/parties")
 
         # Find the Proprietor
         proprietor = None
@@ -115,7 +115,7 @@ def update_proprietor_change(
 
         if not proprietor_dict:
             raise DefaultException(
-                f"No Proprietor in the SP {filint_type} for filing:{change_filing_rec.id}"
+                f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}"
             )
 
         proprietor, delivery_address, mailing_address = get_or_create_party(
@@ -123,17 +123,15 @@ def update_proprietor_change(
         )
         if not proprietor:
             raise DefaultException(
-                f"No Proprietor in the SP {filint_type} for filing:{change_filing_rec.id}"
+                f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}"
             )
         
-        if start := change_filing.get("filing", {}).get(f"{filint_type}", {}).get("startDate"):
+        if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
             start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
                 start
             )
-        elif change_filing.effective_date:
-            start_date = change_filing.effective_date.isoformat()
         else:
-            start_date = LegislationDatetime.now()
+            start_date = alternate_name.start_date
 
         alternate_name.end_date = change_filing_rec.effective_date
         alternate_name.change_filing_id = change_filing_rec.id
