@@ -29,6 +29,7 @@ from entity_filer.filing_processors.filing_components import (
 )
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
 from entity_filer.filing_processors.registration import get_partnership_name
+from entity_filer.filing_processors.filing_components.partner import update_partner_change, update_proprietor_change
 
 
 def  process(
@@ -41,18 +42,20 @@ def  process(
     filing_meta.change_of_registration = {}
     match legal_entity.entity_type:
         case LegalEntity.EntityTypes.PARTNERSHIP:
-            _update_partner_change(
-                legal_entity,
-                change_filing_rec,
-                change_filing,
-                filing_meta
+            update_partner_change(
+                legal_entity=legal_entity,
+                filint_type="changeOfRegistration",
+                change_filing_rec=change_filing_rec,
+                change_filing=change_filing,
+                filing_meta=filing_meta.change_of_registration
             )
         case _: # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
-            _update_sp_change(
-                legal_entity,
-                change_filing_rec,
-                change_filing,
-                filing_meta
+            update_proprietor_change(
+                legal_entity=legal_entity,
+                filint_type="changeOfRegistration",
+                change_filing_rec=change_filing_rec,
+                change_filing=change_filing,
+                filing_meta=filing_meta.change_of_registration
             )
         
     # Update business office if present
@@ -86,121 +89,121 @@ def post_process(business: LegalEntity, filing: Filing):
     """
     name_request.consume_nr(business, filing, "changeOfRegistration")
 
-def _update_partner_change(
-        legal_entity: LegalEntity,
-        change_filing_rec: Filing,
-        change_filing: Dict,
-        filing_meta: FilingMeta,
-):
-    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
-    if name_request and (to_legal_name := name_request.get("legalName")):
-        alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
-        parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
+# def _update_partner_change(
+#         legal_entity: LegalEntity,
+#         change_filing_rec: Filing,
+#         change_filing: Dict,
+#         filing_meta: FilingMeta,
+# ):
+#     name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
+#     if name_request and (to_legal_name := name_request.get("legalName")):
+#         alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
+#         parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
 
-        legal_entity.legal_name = get_partnership_name(parties_dict)
+#         legal_entity.legal_name = get_partnership_name(parties_dict)
 
-        legal_entity.alternate_names.remove(alternate_name)
-        alternate_name.end_date = change_filing_rec.effective_date
-        alternate_name.change_filing_id = change_filing_rec.id
-        # alternate_name.delete()
-        db.session.add(alternate_name)
-        db.session.commit()
-        db.session.delete(alternate_name)
-        db.session.commit()
-
-
-        new_alternate_name = AlternateName(
-            bn15=alternate_name.bn15,
-            change_filing_id=change_filing_rec.id,
-            end_date=None,
-            identifier=legal_entity.identifier,
-            name=to_legal_name,
-            name_type=AlternateName.NameType.OPERATING,
-            start_date=alternate_name.start_date,
-            registration_date=change_filing_rec.effective_date,
-        )
-        legal_entity.alternate_names.append(new_alternate_name)
-
-        filing_meta.change_of_registration = {
-            **filing_meta.change_of_registration,
-            "fromLegalName": alternate_name.name,
-            "toLegalName": to_legal_name,
-        }
-
-    # Update Nature of LegalEntity
-    if (
-        naics := change_filing.get("changeOfRegistration", {})
-        .get("business", {})
-        .get("naics")
-    ) and (naics_code := naics.get("naicsCode")):
-        if legal_entity.naics_code != naics_code:
-            filing_meta.change_of_registration = {
-                **filing_meta.change_of_registration,
-                **{
-                    "fromNaicsCode": legal_entity.naics_code,
-                    "toNaicsCode": naics_code,
-                    "naicsDescription": naics.get("naicsDescription"),
-                },
-            }
-            legal_entity_info.update_naics_info(legal_entity, naics)
+#         legal_entity.alternate_names.remove(alternate_name)
+#         alternate_name.end_date = change_filing_rec.effective_date
+#         alternate_name.change_filing_id = change_filing_rec.id
+#         # alternate_name.delete()
+#         db.session.add(alternate_name)
+#         db.session.commit()
+#         db.session.delete(alternate_name)
+#         db.session.commit()
 
 
-def _update_sp_change(
-        legal_entity: LegalEntity,
-        change_filing_rec: Filing,
-        change_filing: Dict,
-        filing_meta: FilingMeta,
-):
-    name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
-    identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
-    if name_request and (to_legal_name := name_request.get("legalName")):
-        alternate_name = AlternateName.find_by_identifier(identifier)
-        parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
+#         new_alternate_name = AlternateName(
+#             bn15=alternate_name.bn15,
+#             change_filing_id=change_filing_rec.id,
+#             end_date=None,
+#             identifier=legal_entity.identifier,
+#             name=to_legal_name,
+#             name_type=AlternateName.NameType.OPERATING,
+#             start_date=alternate_name.start_date,
+#             registration_date=change_filing_rec.effective_date,
+#         )
+#         legal_entity.alternate_names.append(new_alternate_name)
 
-        # Find the Proprietor
-        proprietor = None
-        for party in parties_dict:
-            for role in party.get("roles"):
-                if role.get("roleType") == "Proprietor":
-                    proprietor_dict = party
-                    break
-            if proprietor_dict:
-                break
+#         filing_meta.change_of_registration = {
+#             **filing_meta.change_of_registration,
+#             "fromLegalName": alternate_name.name,
+#             "toLegalName": to_legal_name,
+#         }
 
-        if not proprietor_dict:
-            raise DefaultException(
-                f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
-            )
+#     # Update Nature of LegalEntity
+#     if (
+#         naics := change_filing.get("changeOfRegistration", {})
+#         .get("business", {})
+#         .get("naics")
+#     ) and (naics_code := naics.get("naicsCode")):
+#         if legal_entity.naics_code != naics_code:
+#             filing_meta.change_of_registration = {
+#                 **filing_meta.change_of_registration,
+#                 **{
+#                     "fromNaicsCode": legal_entity.naics_code,
+#                     "toNaicsCode": naics_code,
+#                     "naicsDescription": naics.get("naicsDescription"),
+#                 },
+#             }
+#             legal_entity_info.update_naics_info(legal_entity, naics)
 
-        proprietor, delivery_address, mailing_address = get_or_create_party(
-            proprietor_dict, change_filing_rec
-        )
-        if not proprietor:
-            raise DefaultException(
-                f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
-            )
 
-        alternate_name.end_date = change_filing_rec.effective_date
-        alternate_name.change_filing_id = change_filing_rec.id
-        # alternate_name.delete()
-        db.session.add(alternate_name)
-        db.session.commit()
-        db.session.delete(alternate_name)
-        db.session.commit()
+# def _update_sp_change(
+#         legal_entity: LegalEntity,
+#         change_filing_rec: Filing,
+#         change_filing: Dict,
+#         filing_meta: FilingMeta,
+# ):
+#     name_request = dpath.util.get(change_filing, "/changeOfRegistration/nameRequest", default=None)
+#     identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
+#     if name_request and (to_legal_name := name_request.get("legalName")):
+#         alternate_name = AlternateName.find_by_identifier(identifier)
+#         parties_dict = dpath.util.get(change_filing, "/changeOfRegistration/parties")
 
-        new_alternate_name = AlternateName(
-            identifier=identifier,
-            name_type=AlternateName.NameType.OPERATING,
-            change_filing_id=change_filing_rec.id,
-            end_date=None,
-            name=to_legal_name,
-            start_date=alternate_name.start_date,
-            registration_date=change_filing_rec.effective_date,
-        )
-        proprietor.alternate_names.append(new_alternate_name)
+#         # Find the Proprietor
+#         proprietor = None
+#         for party in parties_dict:
+#             for role in party.get("roles"):
+#                 if role.get("roleType") == "Proprietor":
+#                     proprietor_dict = party
+#                     break
+#             if proprietor_dict:
+#                 break
 
-        filing_meta.change_of_registration = {
-            **filing_meta.change_of_registration,
-            "fromLegalName": alternate_name.name,
-            "toLegalName": to_legal_name,
-        }
+#         if not proprietor_dict:
+#             raise DefaultException(
+#                 f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
+#             )
+
+#         proprietor, delivery_address, mailing_address = get_or_create_party(
+#             proprietor_dict, change_filing_rec
+#         )
+#         if not proprietor:
+#             raise DefaultException(
+#                 f"No Proprietor in the SP registration for filing:{change_filing_rec.id}"
+#             )
+
+#         alternate_name.end_date = change_filing_rec.effective_date
+#         alternate_name.change_filing_id = change_filing_rec.id
+#         # alternate_name.delete()
+#         db.session.add(alternate_name)
+#         db.session.commit()
+#         db.session.delete(alternate_name)
+#         db.session.commit()
+
+#         new_alternate_name = AlternateName(
+#             identifier=identifier,
+#             name_type=AlternateName.NameType.OPERATING,
+#             change_filing_id=change_filing_rec.id,
+#             end_date=None,
+#             name=to_legal_name,
+#             start_date=alternate_name.start_date,
+#             registration_date=change_filing_rec.effective_date,
+#         )
+#         proprietor.alternate_names.append(new_alternate_name)
+
+#         filing_meta.change_of_registration = {
+#             **filing_meta.change_of_registration,
+#             "fromLegalName": alternate_name.name,
+#             "toLegalName": to_legal_name,
+#         }
