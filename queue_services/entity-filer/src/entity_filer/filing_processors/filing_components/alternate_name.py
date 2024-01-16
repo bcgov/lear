@@ -48,6 +48,13 @@ def update_partner_change(
         legal_entity.alternate_names.remove(alternate_name)
         alternate_name.end_date = change_filing_rec.effective_date
         alternate_name.change_filing_id = change_filing_rec.id
+
+        if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
+            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+                start
+            )
+        else:
+            start_date = alternate_name.start_date
         # alternate_name.delete()
         db.session.add(alternate_name)
         db.session.commit()
@@ -62,7 +69,7 @@ def update_partner_change(
             identifier=legal_entity.identifier,
             name=to_legal_name,
             name_type=AlternateName.NameType.OPERATING,
-            start_date=alternate_name.start_date,
+            start_date=start_date,
             registration_date=change_filing_rec.effective_date,
         )
         legal_entity.alternate_names.append(new_alternate_name)
