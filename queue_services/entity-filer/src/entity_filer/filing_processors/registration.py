@@ -35,7 +35,7 @@ from entity_filer.filing_processors.filing_components.parties import (
     create_entity_with_addresses,
 )
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party
-
+from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 
 def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
@@ -300,32 +300,3 @@ def set_naics(legal_entity: LegalEntity, naics_dict: dict):
     """Set the NAICS fields for a business."""
     legal_entity.naics_code = naics_dict["naicsCode"]
     legal_entity.naics_description = naics_dict["naicsDescription"]
-
-
-def get_partnership_name(parties_dict: dict):
-    """Set the legal_name of the partnership."""
-    parties = []
-    # get all parties in an array
-    for party in parties_dict:
-        if officer := party.get("officer"):
-            if org_name := officer.get("organizationName"):
-                parties.append(org_name.upper())
-                continue
-
-            name = officer["lastName"]
-            if first_name := officer.get("firstName"):
-                name = f"{name} {first_name}"
-            if middle_name := officer.get("middleName"):
-                name = f"{name} {middle_name}"
-            parties.append(name.upper())
-
-    if len(parties) < 2:
-        return parties[0]
-
-    parties.sort()
-    if parties and len(parties) > 2:
-        legal_name_str = ", ".join(parties[:2])
-        legal_name_str = f"{legal_name_str}, et al"
-    else:
-        legal_name_str = ", ".join(parties)
-    return legal_name_str
