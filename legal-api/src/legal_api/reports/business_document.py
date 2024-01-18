@@ -22,6 +22,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.models import Alias, Business, CorpType, Filing
+from legal_api.models.amalgamation import Amalgamation
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
@@ -311,6 +312,13 @@ class BusinessDocument:
                                                                       'voluntaryLiquidation', 'putBackOn',
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
+        # If it is amalgamating business
+        if ((business.get('business').get('state') == 'HISTORICAL') and (business.get('business').get('amalgamatedInto'))):
+            amalgamating_business_temp = Business.find_by_identifier(business.get('business').get('identifier'))
+            amalgamating_business = amalgamating_business_temp.amalgamating_businesses.one_or_none()
+            amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+            filing = Filing.find_by_id(amalgamation.filing_id)
+            state_filings.append(self._format_state_filing(filing))
         business['stateFilings'] = state_filings
 
     def _set_record_keepers(self, business: dict):
@@ -414,6 +422,8 @@ class BusinessDocument:
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta['continuationOut']['continuationOutDate'])
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
+        elif filing.filing_type == 'amalgamationApplication':
+            filing_info['filingName'] = 'Amalgamated'
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)
@@ -454,7 +464,6 @@ class BusinessDocument:
         amalgamating_info = business.get('business', {}).get('amalgamatedInto')
         if amalgamating_info:
             business['business']['isAmalgamating'] = True
-        business
 
     def _set_liquidation_details(self, business: dict):
         """Set partial liquidation filing data."""
