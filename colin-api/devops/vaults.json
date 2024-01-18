@@ -4,7 +4,9 @@
         "application": [
             "colin-api",
             "test-oracle",
-            "sentry"
+            "sentry",
+            "jwt",
+            "launchdarkly"
         ]
     }
 ]

@@ -62,6 +62,8 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.utils import create_header
 
+REGISTER_CORRECTION_APPLICATION = 'Register Correction Application'
+
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
@@ -142,7 +144,7 @@ def test_ledger_search(session, client, jwt):
         alteration = next((f for f in ledger["filings"] if f.get("name") == "alteration"), None)
 
         assert alteration
-        assert 15 == len(alteration.keys())
+        assert 16 == len(alteration.keys())
         assert "availableOnPaperOnly" in alteration
         assert "effectiveDate" in alteration
         assert "filingId" in alteration
@@ -151,6 +153,7 @@ def test_ledger_search(session, client, jwt):
         assert "status" in alteration
         assert "submittedDate" in alteration
         assert "submitter" in alteration
+        assert "displayLedger" in alteration
         # assert alteration['commentsLink']
         # assert alteration['correctionLink']
         # assert alteration['filingLink']
@@ -457,7 +460,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
         assert rv.json["filings"]
         for filing_json in rv.json["filings"]:
             if filing_json["name"] == "correction":
-                assert filing_json["displayName"] == "Register Correction Application"
+                assert filing_json["displayName"] == REGISTER_CORRECTION_APPLICATION
             elif filing_json["name"] == "incorporationApplication":
                 assert filing_json["displayName"] == "BC Benefit Company Incorporation Application"
             else:
@@ -645,7 +648,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
         assert rv.json["filings"]
         for filing_json in rv.json["filings"]:
             if filing_json["name"] == "correction":
-                assert filing_json["displayName"] == "Special Resolution Correction"
+                assert filing_json["displayName"] == REGISTER_CORRECTION_APPLICATION
             elif filing_json["name"] == "specialResolution":
                 assert filing_json["displayName"] == "Special Resolution"
             else:
@@ -686,7 +689,7 @@ def test_ledger_display_non_special_resolution_correction_name(session, client, 
         assert rv.json["filings"]
         for filing_json in rv.json["filings"]:
             if filing_json["name"] == "correction":
-                assert filing_json["displayName"] == "Register Correction Application"
+                assert filing_json["displayName"] == REGISTER_CORRECTION_APPLICATION
             elif filing_json["name"] == "changeOfAddress":
                 assert filing_json["displayName"] == "Address Change"
             else:

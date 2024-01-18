@@ -72,6 +72,10 @@ jobs:
       ACCOUNT_SVC_AUTH_URL: https://mock_account_svc_auth_url
       ACCOUNT_SVC_CLIENT_ID: account_svc_client_id
       ACCOUNT_SVC_CLIENT_SECRET: account_svc_client_secret
+      BUSINESS_SCHEMA_ID: test_business_schema_id
+      BUSINESS_CRED_DEF_ID: test_credential_definition_id
+      BUSINESS_SCHEMA_NAME: digital_business_card
+      BUSINESS_SCHEMA_VERSION: "1.0.0"
 
 
     runs-on: ubuntu-20.04

@@ -40,6 +40,12 @@ class Config:  # pylint: disable=too-few-public-methods
 
     SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_USERNAME", "")
@@ -57,7 +63,8 @@ class Config:  # pylint: disable=too-few-public-methods
         )
 
     # legislative timezone for future effective dating
-    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    LEGISLATIVE_TIMEZONE = os.getenv(
+        "LEGISLATIVE_TIMEZONE", "America/Vancouver")
     TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
 
     # API Endpoints

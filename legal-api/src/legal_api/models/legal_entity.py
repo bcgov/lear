@@ -42,6 +42,7 @@ from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the 
 from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
     AlternateName,
 )
+from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
 from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     EntityRole,
@@ -325,6 +326,8 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         foreign_keys="Resolution.signing_legal_entity_id",
         lazy="dynamic",
     )
+    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamation = db.relationship('Amalgamation', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -653,7 +656,12 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            if (self.state == LegalEntity.State.HISTORICAL and
+                    (amalgamating_business := self.amalgamating_businesses.one_or_none())):
+                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+                d["amalgamatedInto"] = amalgamation.json()
+            else:
+                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)

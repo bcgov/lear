@@ -57,6 +57,8 @@ class Filing:
         """Render an Enum of all Filing Types."""
 
         ADMIN_FREEZE = "adminFreeze"
+        AGMEXTENSION = "agmExtension"
+        AGMLOCATIONCHANGE = "agmLocationChange"
         ALTERATION = "alteration"
         AMALGAMATIONAPPLICATION = "amalgamationApplication"
         AMENDEDAGM = "amendedAGM"
@@ -85,6 +87,19 @@ class Filing:
         RESTORATIONAPPLICATION = "restorationApplication"
         SPECIALRESOLUTION = "specialResolution"
         TRANSITION = "transition"
+
+    class FilingTypesCompact(str, Enum):
+        """Render enum for filing types with sub-types."""
+
+        DISSOLUTION_VOLUNTARY = "dissolution.voluntary"
+        DISSOLUTION_ADMINISTRATIVE = "dissolution.administrative"
+        RESTORATION_FULL_RESTORATION = "restoration.fullRestoration"
+        RESTORATION_LIMITED_RESTORATION = "restoration.limitedRestoration"
+        RESTORATION_LIMITED_RESTORATION_EXT = "restoration.limitedRestorationExtension"
+        RESTORATION_LIMITED_RESTORATION_TO_FULL = "restoration.limitedRestorationToFull"
+        AMALGAMATION_APPLICATION_REGULAR = "amalgamationApplication.regular"
+        AMALGAMATION_APPLICATION_VERTICAL = "amalgamationApplication.vertical"
+        AMALGAMATION_APPLICATION_HORIZONTAL = "amalgamationApplication.horizontal"
 
     def __init__(self):
         """Create the Filing."""
@@ -425,6 +440,7 @@ class Filing:
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
+            "displayLedger": Filing._is_display_ledger(filing_storage),
             "commentsCount": filing_storage.comments_count,
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
             "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
@@ -447,6 +463,10 @@ class Filing:
         if not ledger_filing.get("data"):
             ledger_filing["data"] = {}
         ledger_filing["data"]["order"] = court_order_data
+
+    def _is_display_ledger(filing: FilingStorage) -> bool:
+        """Return boolean that display the ledger."""
+        return filing.filing_type != Filing.FilingTypes.ADMIN_FREEZE
 
     @staticmethod
     def get_document_list(  # pylint: disable=too-many-locals disable=too-many-branches
@@ -496,6 +516,8 @@ class Filing:
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
+            Filing.FilingTypes.AGMEXTENSION.value,
+            Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
         if filing.status == Filing.Status.PAID and not (
             filing.filing_type in no_legal_filings_in_paid_status
@@ -538,6 +560,8 @@ class Filing:
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.AGMEXTENSION.value,
+                    Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                 ]
                 if filing.filing_type not in no_legal_filings:
                     documents["documents"]["legalFilings"] = [

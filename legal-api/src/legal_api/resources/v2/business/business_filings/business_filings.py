@@ -140,18 +140,16 @@ def saving_filings(  # pylint: disable=too-many-return-statements,too-many-local
         return response, response_code
 
     # get header params
-    payment_account_id = request.headers.get("accountId", None)
+    payment_account_id = request.headers.get("account-id", request.headers.get("accountId", None))
 
-    if (
-        not query.draft
-        and not ListFilingResource.is_historical_colin_filing(json_input)
-        and not ListFilingResource.is_before_epoch_filing(json_input, legal_entity)
-    ):
+    if not query.draft \
+            and not ListFilingResource.is_historical_colin_filing(json_input) \
+            and not ListFilingResource.is_before_epoch_filing(json_input, legal_entity):
         if identifier.startswith("T"):
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
             business_validate = legal_entity
-        err = validate(business_validate, json_input)
+        err = validate(business_validate, json_input, payment_account_id)
         if err or query.only_validate:
             if err:
                 json_input["errors"] = err.msg
@@ -401,6 +399,7 @@ class ListFilingResource:
         if filing.filing_type in (
             Filing.FILINGS["incorporationApplication"]["name"],
             Filing.FILINGS["registration"]["name"],
+            Filing.FILINGS["amalgamationApplication"]["name"],
         ):
             nr_number = filing.json["filing"][filing.filing_type]["nameRequest"].get("nrNumber", None)
             effective_date = filing.json["filing"]["header"].get("effectiveDate", None)
@@ -460,11 +459,11 @@ class ListFilingResource:
         if not filing_type:
             return ({"message": "filing/header/name is a required property"}, HTTPStatus.BAD_REQUEST)
 
-        if (
-            filing_type
-            not in [Filing.FILINGS["incorporationApplication"]["name"], Filing.FILINGS["registration"]["name"]]
-            and legal_entity is None
-        ):
+        if filing_type not in [
+            Filing.FILINGS["incorporationApplication"]["name"],
+            Filing.FILINGS["registration"]["name"],
+            Filing.FILINGS["amalgamationApplication"]["name"]
+        ] and legal_entity is None:
             return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
         return None, None
@@ -697,7 +696,11 @@ class ListFilingResource:
         filing_type = filing_json["filing"]["header"].get("name", None)
         waive_fees_flag = filing_json["filing"]["header"].get("waiveFees", False)
 
-        if filing_type in (Filing.FILINGS["incorporationApplication"]["name"], Filing.FILINGS["registration"]["name"]):
+        if filing_type in (
+            Filing.FILINGS["incorporationApplication"]["name"],
+            Filing.FILINGS["registration"]["name"],
+            Filing.FILINGS["amalgamationApplication"]["name"]
+        ):
             entity_type = filing_json["filing"][filing_type]["nameRequest"]["legalType"]
         else:
             entity_type = legal_entity.entity_type
@@ -780,9 +783,19 @@ class ListFilingResource:
                         }
                     )
                 elif filing_type_code:
-                    filing_types.append(
-                        {"filingTypeCode": filing_type_code, "priority": priority, "waiveFees": waive_fees_flag}
-                    )
+                    if k == "alteration":
+                        filing_types.append({
+                            "filingTypeCode": filing_type_code,
+                            "futureEffective": ListFilingResource.is_future_effective_filing(filing_json),
+                            "priority": priority,
+                            "waiveFees": waive_fees_flag
+                        })
+                    else:
+                        filing_types.append({
+                            "filingTypeCode": filing_type_code,
+                            "priority": priority,
+                            "waiveFees": waive_fees_flag
+                        })
         return filing_types
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -808,11 +821,12 @@ class ListFilingResource:
         if filing.filing_type in (
             Filing.FILINGS["incorporationApplication"]["name"],
             Filing.FILINGS["registration"]["name"],
+            Filing.FILINGS["amalgamationApplication"]["name"]
         ):
-            if filing.filing_type == Filing.FILINGS["incorporationApplication"]["name"]:
+            if filing.filing_type in [Filing.FILINGS["incorporationApplication"]["name"],
+                                      Filing.FILINGS["amalgamationApplication"]["name"]]:
                 mailing_address = Address.create_address(
-                    filing.json["filing"]["incorporationApplication"]["offices"]["registeredOffice"]["mailingAddress"]
-                )
+                    filing.json["filing"][filing.filing_type]["offices"]["registeredOffice"]["mailingAddress"])
             elif filing.filing_type == Filing.FILINGS["registration"]["name"]:
                 mailing_address = Address.create_address(
                     filing.json["filing"]["registration"]["offices"]["businessOffice"]["mailingAddress"]
@@ -924,7 +938,11 @@ class ListFilingResource:
     def set_effective_date(legal_entity: LegalEntity, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json["filing"]["header"]["name"]
-        if filing_type in (Filing.FILINGS["incorporationApplication"]["name"], Filing.FILINGS["registration"]["name"]):
+        if filing_type in (
+            Filing.FILINGS["incorporationApplication"]["name"],
+            Filing.FILINGS["registration"]["name"],
+            Filing.FILINGS["amalgamationApplication"]["name"]
+        ):
             if fe_date := filing.filing_json["filing"]["header"].get("futureEffectiveDate"):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)
                 filing.save()

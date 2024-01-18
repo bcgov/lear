@@ -63,15 +63,18 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings')
+    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings',
+                       timeout=AccountService.timeout)
     if not req or req.status_code != 200:
-        app.logger.error(f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
-        raise Exception
+        app.logger.error(
+            f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
+        raise Exception  # pylint: disable=broad-exception-raised
     return req.json()
 
 
 def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     """Post to colin-api with filing."""
+    token = AccountService.get_bearer_token()
     clean_none(filing)
 
     filing_type = filing['filing']['header'].get('name', None)
@@ -79,14 +82,20 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     if identifier[:2] == LegalEntity.EntityTypes.COOP.value:
         entity_type = LegalEntity.EntityTypes.COOP.value
     else:
-        entity_type = filing['filing']['business'].get('legalType', LegalEntity.EntityTypes.BCOMP.value)
+        entity_type = filing['filing']['business'].get(
+            'legalType', LegalEntity.EntityTypes.BCOMP.value)
 
     req = None
     if entity_type and identifier and filing_type:
-        req = requests.post(f'{app.config["COLIN_URL"]}/{entity_type}/{identifier}/filings/{filing_type}', json=filing)
+        req = requests.post(f'{app.config["COLIN_URL"]}/{entity_type}/{identifier}/filings/{filing_type}',
+                            headers={**AccountService.CONTENT_TYPE_JSON,
+                                     'Authorization': AccountService.BEARER + token},
+                            json=filing,
+                            timeout=AccountService.timeout)
 
     if not req or req.status_code != 201:
-        app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
+        app.logger.error(
+            f'Filing {filing_id} not created in colin {identifier}.')
         # raise Exception
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
@@ -97,11 +106,13 @@ def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = 
     """Update the colin_id in the filings table."""
     req = requests.patch(
         f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={'colinIds': colin_ids},
-        headers={'Authorization': f'Bearer {token}'}
+        timeout=AccountService.timeout
     )
     if not req or req.status_code != 202:
-        app.logger.error(f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
+        app.logger.error(
+            f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
         return False
     return True
 
@@ -128,7 +139,8 @@ def run():
             filings = get_filings(app=application)
             if not filings:
                 # pylint: disable=no-member; false positive
-                application.logger.debug('No completed filings to send to colin.')
+                application.logger.debug(
+                    'No completed filings to send to colin.')
             for filing in filings:
                 filing_id = filing['filingId']
                 identifier = filing['filing']['business']['identifier']
@@ -137,17 +149,22 @@ def run():
                     application.logger.debug(f'Skipping filing {filing_id} for'
                                              f' {filing["filing"]["business"]["identifier"]}.')
                 else:
-                    colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
+                    colin_ids = send_filing(
+                        app=application, filing=filing, filing_id=filing_id)
                     update = None
                     if colin_ids:
-                        update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
+                        update = update_colin_id(
+                            app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
                     if update:
                         # pylint: disable=no-member; false positive
-                        application.logger.debug(f'Successfully updated filing {filing_id}')
+                        application.logger.debug(
+                            f'Successfully updated filing {filing_id}')
                     else:
-                        corps_with_failed_filing.append(filing['filing']['business']['identifier'])
+                        corps_with_failed_filing.append(
+                            filing['filing']['business']['identifier'])
                         # pylint: disable=no-member; false positive
-                        application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
+                        application.logger.error(
+                            f'Failed to update filing {filing_id} with colin event id.')
 
         except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive

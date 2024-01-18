@@ -72,3 +72,17 @@ def get_bool(filing: Dict, path: str) -> str:
         return bool(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
+
+
+def get_int(filing: Dict, path: str) -> str:
+    """Extract int from the JSON filing, at the provided path.
+
+    Args:
+        filing (Dict): A valid registry_schema filing.
+        path (str): The path to the property.
+    """
+    try:
+        raw = dpath.util.get(filing, path)
+        return int(raw)
+    except (IndexError, KeyError, TypeError, ValueError):
+        return None

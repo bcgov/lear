@@ -1100,6 +1100,14 @@ CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING["filing"]["continuationOut"] = {}
 
 
+# FUTURE: use AGM_LOCATION_CHANGE_FILING from business schema data when AGM location change filing work has been done
+AGM_LOCATION_CHANGE_FILING = copy.deepcopy(FILING_HEADER)
+AGM_LOCATION_CHANGE_FILING["filing"]["agmLocationChange"] = {}
+
+# FUTURE: use AGM_EXTENSION_FILING from business schema data when AGM Extension filing work has been done
+AGM_EXTENSION_FILING = copy.deepcopy(FILING_HEADER)
+AGM_EXTENSION_FILING["filing"]["agmExtension"] = {}
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1114,119 +1122,81 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
 
     return Filing.FILINGS[filing_name].get("codes", {}).get(legal_type)
 
-
 @pytest.mark.parametrize(
-    "identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes",
+    "identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed",
     [
-        ("BC1234567", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.COMP.value, False, []),
-        ("BC1234568", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234567", TRANSITION_FILING_TEMPLATE, "transition", LegalEntity.EntityTypes.COMP.value, False, []),
-        ("BC1234568", TRANSITION_FILING_TEMPLATE, "transition", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234569", ANNUAL_REPORT, "annualReport", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234569", FILING_HEADER, "changeOfAddress", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234569", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234569", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.BCOMP.value, True, []),
-        ("BC1234569", CORRECTION_INCORPORATION, "correction", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("CP1234567", ANNUAL_REPORT, "annualReport", LegalEntity.EntityTypes.COOP.value, False, []),
-        ("CP1234567", FILING_HEADER, "changeOfAddress", LegalEntity.EntityTypes.COOP.value, False, []),
-        ("CP1234567", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.COOP.value, False, []),
-        ("CP1234567", CORRECTION_AR, "correction", LegalEntity.EntityTypes.COOP.value, False, []),
-        ("CP1234567", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.COOP.value, True, []),
-        (
-            "T1234567",
-            INCORPORATION_FILING_TEMPLATE,
-            "incorporationApplication",
-            LegalEntity.EntityTypes.BCOMP.value,
-            False,
-            [],
-        ),
-        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.COMP.value, False, []),
-        (
-            "CP1234567",
-            DISSOLUTION_VOLUNTARY_FILING,
-            "dissolution",
-            LegalEntity.EntityTypes.COOP.value,
-            False,
-            ["AFDVT", "SPRLN"],
-        ),
-        (
-            "BC1234567",
-            DISSOLUTION_VOLUNTARY_FILING,
-            "dissolution",
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            False,
-            [],
-        ),
-        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BC_CCC.value, False, []),
-        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.LIMITED_CO.value, False, []),
-        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, []),
-        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, []),
-        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, []),
-        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, []),
-        (
-            "BC1234567",
-            RESTORATION_LIMITED_FILING,
-            "restoration",
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            False,
-            [],
-        ),
-        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, []),
-        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, []),
-        (
-            "BC1234567",
-            RESTORATION_LIMITED_EXT_FILING,
-            "restoration",
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            False,
-            [],
-        ),
-        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, []),
-        (
-            "BC1234567",
-            RESTORATION_LIMITED_TO_FULL_FILING,
-            "restoration",
-            LegalEntity.EntityTypes.BCOMP.value,
-            False,
-            [],
-        ),
-        ("BC1234567", RESTORATION_LIMITED_TO_FULL_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, []),
-        (
-            "BC1234567",
-            RESTORATION_LIMITED_TO_FULL_FILING,
-            "restoration",
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            False,
-            [],
-        ),
-        (
-            "BC1234567",
-            RESTORATION_LIMITED_TO_FULL_FILING,
-            "restoration",
-            LegalEntity.EntityTypes.BC_CCC.value,
-            False,
-            [],
-        ),
-        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.BCOMP.value, False, []),
-        (
-            "BC1234567",
-            CONTINUATION_OUT_FILING,
-            "continuationOut",
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            False,
-            [],
-        ),
-        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.COMP.value, False, []),
-        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.BC_CCC.value, False, []),
-    ],
+        ("BC1234567", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234568", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", TRANSITION_FILING_TEMPLATE, "transition", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234568", TRANSITION_FILING_TEMPLATE, "transition", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234569", ANNUAL_REPORT, "annualReport", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234569", FILING_HEADER, "changeOfAddress", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234569", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234569", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.BCOMP.value, True, [], False),
+        ("BC1234569", CORRECTION_INCORPORATION, "correction", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("CP1234567", ANNUAL_REPORT, "annualReport", LegalEntity.EntityTypes.COOP.value, False, [], False),
+        ("CP1234567", FILING_HEADER, "changeOfAddress", LegalEntity.EntityTypes.COOP.value, False, [], False),
+        ("CP1234567", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.COOP.value, False, [], False),
+        ("CP1234567", CORRECTION_AR, "correction", LegalEntity.EntityTypes.COOP.value, False, [], False),
+        ("CP1234567", FILING_HEADER, "changeOfDirectors", LegalEntity.EntityTypes.COOP.value, True, [], False),
+        ("T1234567", INCORPORATION_FILING_TEMPLATE, "incorporationApplication",
+         LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("CP1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.COOP.value, False,
+            ["AFDVT", "SPRLN"], False),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            False, [], False),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BC_CCC.value,
+            False, [], False),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.LIMITED_CO.value,
+            False, [], False),
+        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", RESTORATION_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_EXT_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_TO_FULL_FILING, "restoration", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_TO_FULL_FILING, "restoration", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_TO_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", RESTORATION_LIMITED_TO_FULL_FILING, "restoration", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", CONTINUATION_OUT_FILING, "continuationOut", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", AGM_LOCATION_CHANGE_FILING, "agmLocationChange", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", AGM_LOCATION_CHANGE_FILING, "agmLocationChange", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", AGM_LOCATION_CHANGE_FILING, "agmLocationChange", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", AGM_LOCATION_CHANGE_FILING, "agmLocationChange", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", AGM_EXTENSION_FILING, "agmExtension", LegalEntity.EntityTypes.BCOMP.value, False, [], False),
+        ("BC1234567", AGM_EXTENSION_FILING, "agmExtension", LegalEntity.EntityTypes.BC_ULC_COMPANY.value, False, [], False),
+        ("BC1234567", AGM_EXTENSION_FILING, "agmExtension", LegalEntity.EntityTypes.COMP.value, False, [], False),
+        ("BC1234567", AGM_EXTENSION_FILING, "agmExtension", LegalEntity.EntityTypes.BC_CCC.value, False, [], False),
+        ("BC1234567", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.COMP.value, False, [], True),
+        ("BC1234568", ALTERATION_FILING_TEMPLATE, "alteration", LegalEntity.EntityTypes.BCOMP.value, False, [], True),
+        ("T1234567", INCORPORATION_FILING_TEMPLATE, "incorporationApplication", 
+         LegalEntity.EntityTypes.BCOMP.value, False, [], True),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BCOMP.value, False, [], True),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.COMP.value, False, [], True),
+        ("CP1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.COOP.value, False,
+            ["AFDVT", "SPRLN"], True),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+            False, [], True),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.BC_CCC.value,
+            False, [], True),
+        ("BC1234567", DISSOLUTION_VOLUNTARY_FILING, "dissolution", LegalEntity.EntityTypes.LIMITED_CO.value,
+            False, [], True),
+    ]
 )
 def test_get_correct_fee_codes(
-    session, identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes
-):
+        session, identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed):
     """Assert fee codes are properly assigned to filings before sending to payment."""
     with nested_session(session):
         # setup
@@ -1240,6 +1210,9 @@ def test_get_correct_fee_codes(
         filing["filing"]["business"]["identifier"] = identifier
         filing["filing"]["business"]["legalType"] = orig_legal_type
         filing["filing"]["header"]["name"] = filing_name
+
+        if has_fed:
+            filing["filing"]["header"]["effectiveDate"] = "2999-01-01T00:00:00+00:00"
 
         if filing_name == "alteration":
             filing["filing"][filing_name]["business"]["legalType"] = orig_legal_type
@@ -1258,16 +1231,24 @@ def test_get_correct_fee_codes(
                 filing["filing"]["changeOfDirectors"]["directors"][0]["actions"] = ["ceased", "nameChanged"]
                 filing["filing"]["changeOfDirectors"]["directors"][1]["actions"] = ["nameChanged", "addressChanged"]
 
-        # get fee code
-        fee_code = ListFilingResource._get_filing_types(legal_entity, filing)[0]["filingTypeCode"]
+        # get fee code and future effective date
+        filing_type = ListFilingResource.get_filing_types(legal_entity, filing)[0]
+        fee_code = filing_type["filingTypeCode"]
+        future_effective = filing_type.get("futureEffective")
 
-        # verify fee code
+        # verify fee code and future effective date
         assert fee_code == expected_fee_code
+        if has_fed:
+            assert future_effective is True
+        else:
+            if filing_name in ["incorporationApplication", "alteration", "dissolution"]:
+                assert future_effective is False
+            else:
+                assert future_effective is None 
 
-        assert all(
-            elem in map(lambda x: x["filingTypeCode"], ListFilingResource._get_filing_types(legal_entity, filing))
-            for elem in additional_fee_codes
-        )
+        assert all(elem in
+                map(lambda x: x["filingTypeCode"], ListFilingResource.get_filing_types(legal_entity, filing))
+                for elem in additional_fee_codes)
 
 
 @integration_payment
@@ -1286,7 +1267,6 @@ def test_coa_future_effective(session, client, jwt):
             f"/api/v2/businesses/{identifier}/filings", json=coa, headers=create_header(jwt, [STAFF_ROLE], identifier)
         )
         assert rv.status_code == HTTPStatus.CREATED
-        # assert 'effectiveDate' not in rv.json['filing']['header']
 
         identifier = "CP7654321"
         bc = factory_legal_entity(

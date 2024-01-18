@@ -74,6 +74,8 @@ class Config:  # pylint: disable=too-few-public-methods
 
     ENVIRONMENT = os.getenv("APP_ENV", "prod")
 
+    LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
+
     SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -133,6 +135,12 @@ class Config:  # pylint: disable=too-few-public-methods
     PUBLISHER_AUDIENCE = os.getenv(
         "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
+
+    NAME_REQUEST_URL = os.getenv("NAME_REQUEST_URL", "")
+    DECIDE_BUSINESS_URL = os.getenv("DECIDE_BUSINESS_URL", "")
+    COLIN_URL = os.getenv("COLIN_URL", "")
+    CORP_FORMS_URL = os.getenv("CORP_FORMS_URL", "")
+    SOCIETIES_URL = os.getenv("SOCIETIES_URL", "")
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods

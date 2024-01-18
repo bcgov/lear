@@ -13,6 +13,9 @@
     <div class="outer-container">
       <div class="outer-container-header">
         <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+        {% if correctedOn is defined  %}
+        <span>Corrected on: {{ correctedOn }}</span>
+        {% endif %}      
       </div>
 
       <div class="certificate-statements">

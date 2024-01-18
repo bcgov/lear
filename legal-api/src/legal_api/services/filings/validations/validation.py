@@ -22,7 +22,10 @@ from legal_api.models import Filing, LegalEntity
 from legal_api.services.utils import get_str
 
 from .admin_freeze import validate as admin_freeze_validate
+from .agm_extension import validate as agm_extension_validate
+from .agm_location_change import validate as agm_location_change_validate
 from .alteration import validate as alteration_validate
+from .amalgamation_application import validate as amalgamation_application_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
@@ -47,7 +50,7 @@ from .special_resolution import validate as special_resolution_validate
 
 
 # pylint: disable=too-many-branches,too-many-statements
-def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
+def validate(legal_entity: LegalEntity, filing_json: Dict, account_id=None) -> Error:
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
@@ -184,6 +187,15 @@ def validate(legal_entity: LegalEntity, filing_json: Dict) -> Error:
 
                 elif k == Filing.FILINGS["continuationOut"].get("name"):
                     err = continuation_out_validate(legal_entity, filing_json)
+
+                elif k == Filing.FILINGS['agmLocationChange'].get('name'):
+                    err = agm_location_change_validate(legal_entity, filing_json)
+
+                elif k == Filing.FILINGS['agmExtension'].get('name'):
+                    err = agm_extension_validate(legal_entity, filing_json)
+
+                elif k == Filing.FILINGS['amalgamationApplication'].get('name'):
+                    err = amalgamation_application_validate(legal_entity, filing_json, account_id)
 
                 if err:
                     return err

@@ -64,6 +64,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
+    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
+
     # ORACLE - CDEV/CTST/CPRD
     ORACLE_USER = os.getenv('ORACLE_USER', '')
     ORACLE_PASSWORD = os.getenv('ORACLE_PASSWORD', '')
@@ -71,6 +73,24 @@ class _Config:  # pylint: disable=too-few-public-methods
     ORACLE_HOST = os.getenv('ORACLE_HOST', '')
     ORACLE_PORT = int(os.getenv('ORACLE_PORT', '1521'))
     ORACLE_BNI_DB_LINK = os.getenv('ORACLE_BNI_DB_LINK', '')
+
+    # JWT_OIDC Settings
+    JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv('JWT_OIDC_WELL_KNOWN_CONFIG')
+    JWT_OIDC_ALGORITHMS = os.getenv('JWT_OIDC_ALGORITHMS')
+    JWT_OIDC_JWKS_URI = os.getenv('JWT_OIDC_JWKS_URI')
+    JWT_OIDC_ISSUER = os.getenv('JWT_OIDC_ISSUER')
+    JWT_OIDC_AUDIENCE = os.getenv('JWT_OIDC_AUDIENCE')
+    JWT_OIDC_CLIENT_SECRET = os.getenv('JWT_OIDC_CLIENT_SECRET')
+    JWT_OIDC_CACHING_ENABLED = os.getenv('JWT_OIDC_CACHING_ENABLED')
+    JWT_OIDC_USERNAME = os.getenv('JWT_OIDC_USERNAME', 'username')
+    JWT_OIDC_FIRSTNAME = os.getenv('JWT_OIDC_FIRSTNAME', 'firstname')
+    JWT_OIDC_LASTNAME = os.getenv('JWT_OIDC_LASTNAME', 'lastname')
+    try:
+        JWT_OIDC_JWKS_CACHE_TIMEOUT = int(os.getenv('JWT_OIDC_JWKS_CACHE_TIMEOUT'))
+        if not JWT_OIDC_JWKS_CACHE_TIMEOUT:
+            JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
+    except (TypeError, ValueError):
+        JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
     TESTING = False
     DEBUG = False

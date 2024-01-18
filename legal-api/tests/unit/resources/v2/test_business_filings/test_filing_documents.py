@@ -29,6 +29,9 @@ from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
+    AGM_EXTENSION,
+    AGM_LOCATION_CHANGE,
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
@@ -1511,6 +1514,122 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION["rulesInResolution"] = True
             "2017-10-01",
         ),
         (
+            'ben_agmExtension_completed',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'agmExtension',
+            AGM_EXTENSION,
+            None,
+            None,
+            Filing.Status.COMPLETED,
+            {
+                'documents': {
+                    'letterOfAgmExtension': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
+            'ben_agmLocationChange_paid',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'agmExtension',
+            AGM_EXTENSION,
+            None,
+            None,
+            Filing.Status.PAID,
+            {
+                'documents': {
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
+            'ben_agmLocationChange_completed',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'agmLocationChange',
+            AGM_LOCATION_CHANGE,
+            None,
+            None,
+            Filing.Status.COMPLETED,
+            {
+                'documents': {
+                    'letterOfAgmLocationChange': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
+            'ben_agmLocationChange_paid',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'agmLocationChange',
+            AGM_LOCATION_CHANGE,
+            None,
+            None,
+            Filing.Status.PAID,
+            {
+                'documents': {
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
+            'ben_amalgamation_completed',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'amalgamationApplication',
+            AMALGAMATION_APPLICATION,
+            None,
+            None,
+            Filing.Status.COMPLETED,
+            {
+                'documents': {
+                    'certificateOfAmalgamation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
+                    'legalFilings': [
+                        {
+                            'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+                        }
+                    ],
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
+            'ben_amalgamation_paid',
+            'BC7654321',
+            LegalEntity.EntityTypes.BCOMP.value,
+            'amalgamationApplication',
+            AMALGAMATION_APPLICATION,
+            None,
+            None,
+            Filing.Status.PAID,
+            {
+                'documents': {
+                    'legalFilings': [
+                        {
+                            'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+                        }
+                    ],
+                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                }
+            },
+            HTTPStatus.OK,
+            '2017-10-01'
+        ),
+        (
             "ben_changeOfAddress",
             "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
@@ -1947,6 +2066,36 @@ def test_document_list_for_various_filing_states(
 
         assert rv.status_code == expected_http_code
         assert rv_data == expected
+
+
+def filer_action(filing_name, filing_json, meta_data, business):
+    """Helper function for test_document_list_for_various_filing_states."""
+    if filing_name == 'alteration' and \
+            (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
+        meta_data['alteration'] = {}
+        meta_data['alteration']['fromLegalName'] = business.legal_name
+        meta_data['alteration']['toLegalName'] = legal_name
+
+    if filing_name == 'correction' and business.legal_type == 'CP':
+        meta_data['correction'] = {}
+        if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
+            meta_data['correction']['fromLegalName'] = business.legal_name
+            meta_data['correction']['toLegalName'] = legal_name
+
+        if filing_json['filing']['correction'].get('rulesFileKey'):
+            meta_data['correction']['uploadNewRules'] = True
+
+        if filing_json['filing']['correction'].get('memorandumFileKey'):
+            meta_data['correction']['uploadNewMemorandum'] = True
+
+        if filing_json['filing']['correction'].get('resolution'):
+            meta_data['correction']['hasResolution'] = True
+
+    if filing_name == 'specialResolution' and business.legal_type == 'CP':
+        meta_data['alteration'] = {}
+        meta_data['alteration']['uploadNewRules'] = True
+
+    return meta_data
 
 
 def test_get_receipt(session, client, jwt, requests_mock):

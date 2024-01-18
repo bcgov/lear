@@ -63,6 +63,7 @@ from tests.unit import (
 )
 from tests.unit import nested_session
 
+
 def test_no_message(client):
     """Return a 4xx when an no JSON present."""
 
@@ -117,12 +118,13 @@ def test_process_incorp_email(app, session, client, option):
     # Setup
     filing = prep_incorp_filing(session, 'BC1234567', '1', option, 'BC')
     token = '1'
-    email_msg = {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': 'incorporationApplication', 'option': option}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:  
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 with patch.object(queue, "publish", return_value={}):
                     # TEST
                     rv = client.post("/", json=message)
@@ -133,7 +135,8 @@ def test_process_incorp_email(app, session, client, option):
                     assert mock_get_pdfs.call_args[0][0] == option
                     assert mock_get_pdfs.call_args[0][1] == token
                     if option == 'PAID':
-                        assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
+                        assert mock_get_pdfs.call_args[0][2]['identifier'].startswith(
+                            'T')
                     else:
                         assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
 
@@ -149,7 +152,8 @@ def test_process_incorp_email(app, session, client, option):
                             'Incorporation Documents from the Business Registry'
                     assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
                     assert mock_send_email.call_args[0][0]['content']['body']
-                    assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                    assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                    ]
                     assert mock_send_email.call_args[0][1] == token
 
 
@@ -163,9 +167,11 @@ def test_process_incorp_email(app, session, client, option):
 def test_maintenance_notification(app, session, client, status, filing_type):
     """Assert that the legal name is changed."""
     # Setup
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    filing = prep_maintenance_filing(
+        session, 'BC1234567', '1', status, filing_type)
     token = 'token'
-    email_msg = {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': f'{filing_type}', 'option': status}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -176,10 +182,10 @@ def test_maintenance_notification(app, session, client, status, filing_type):
                     with patch.object(queue, "publish", return_value={}):
                         # TEST
                         rv = client.post("/", json=message)
-                        
+
                         # Check
                         assert rv.status_code == HTTPStatus.OK
-                        
+
                         assert mock_get_pdfs.call_args[0][0] == status
                         assert mock_get_pdfs.call_args[0][1] == token
 
@@ -195,7 +201,8 @@ def test_maintenance_notification(app, session, client, status, filing_type):
                         assert mock_send_email.call_args[0][0]['content']['subject']
                         assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
                         assert mock_send_email.call_args[0][0]['content']['body']
-                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                        assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                        ]
                         assert mock_send_email.call_args[0][1] == token
 
 
@@ -209,9 +216,11 @@ def test_maintenance_notification(app, session, client, status, filing_type):
 def test_skips_notification(app, session, client, status, filing_type, identifier):
     """Assert that the legal name is changed."""
     # Setup
-    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type)
+    filing = prep_maintenance_filing(
+        session, identifier, '1', status, filing_type)
     token = 'token'
-    email_msg = {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': f'{filing_type}', 'option': status}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -231,7 +240,8 @@ def test_process_mras_email(app, session, client):
     # Setup
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
     token = '1'
-    email_msg = {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': 'incorporationApplication', 'option': 'mras'}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -246,7 +256,8 @@ def test_process_mras_email(app, session, client):
                 assert mock_send_email.call_args[0][0]['content']['subject'] == 'BC Business Registry Partner Information'
                 assert mock_send_email.call_args[0][0]['recipients'] == 'test@test.com'
                 assert mock_send_email.call_args[0][0]['content']['body']
-                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                ]
                 assert mock_send_email.call_args[0][1] == token
 
 
@@ -257,10 +268,12 @@ def test_process_mras_email(app, session, client):
 def test_process_special_resolution_email(app, session, client, option, submitter_role):
     """Assert that an special resolution email msg is processed correctly."""
     # Setup
-    filing = prep_cp_special_resolution_filing('CP1234567', '1', 'CP', 'TEST', submitter_role=submitter_role)
+    filing = prep_cp_special_resolution_filing(
+        'CP1234567', '1', 'CP', 'TEST', submitter_role=submitter_role)
     token = '1'
     get_pdf_function = 'get_paid_pdfs' if option == 'PAID' else 'get_completed_pdfs'
-    email_msg = {'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': 'specialResolution', 'option': option}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -293,7 +306,8 @@ def test_process_special_resolution_email(app, session, client, option, submitte
                             else:
                                 assert 'user@email.com' in mock_send_email.call_args[0][0]['recipients']
                             assert mock_send_email.call_args[0][0]['content']['body']
-                            assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                            assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                            ]
                             assert mock_send_email.call_args[0][1] == token
 
 
@@ -305,12 +319,14 @@ def test_process_correction_cp_sr_email(app, session, client, option):
     """Assert that a correction email msg is processed correctly."""
     # Setup
     identifier = 'CP1234567'
-    original_filing = prep_cp_special_resolution_filing(identifier, '1', 'CP', 'TEST', submitter_role=None)
+    original_filing = prep_cp_special_resolution_filing(
+        identifier, '1', 'CP', 'TEST', submitter_role=None)
     token = '1'
     business = LegalEntity.find_by_identifier(identifier)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', option, 'specialResolution')
-    email_msg = {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}
+    email_msg = {'email': {'filingId': filing.id,
+                           'type': 'correction', 'option': option}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -331,7 +347,8 @@ def test_process_correction_cp_sr_email(app, session, client, option):
                             'TEST - Correction Documents from the Business Registry'
                     assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
                     assert mock_send_email.call_args[0][0]['content']['body']
-                    assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                    assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                    ]
                     assert mock_send_email.call_args[0][1] == token
 
 
@@ -344,10 +361,10 @@ def test_process_ar_reminder_email(app, session, client):
     business.legal_name = 'test business'
     token = 'token'
     email_msg = {'email': {
-                    'businessId': filing.business_id,
-                    'type': 'annualReport', 'option': 'reminder',
-                    'arFee': '100', 'arYear': '2021'
-                }}
+        'businessId': filing.business_id,
+        'type': 'annualReport', 'option': 'reminder',
+        'arFee': '100', 'arYear': '2021'
+    }}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -364,6 +381,7 @@ def test_process_ar_reminder_email(app, session, client):
                     assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
                     assert call_args[0][0]['recipients'] == 'test@test.com'
                     assert call_args[0][0]['content']['body']
+                    assert 'Dye & Durham' not in call_args[0][0]['content']['body']
                     assert call_args[0][0]['content']['attachments'] == []
                     assert call_args[0][1] == token
 
@@ -374,7 +392,8 @@ def test_process_bn_email(app, session, client):
     identifier = 'BC1234567'
     filing = prep_incorp_filing(session, identifier, '1', 'bn')
     business = LegalEntity.find_by_identifier(identifier)
-    email_msg = {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}}
+    email_msg = {'email': {'filingId': None, 'type': 'businessNumber',
+                           'option': 'bn', 'identifier': 'BC1234567'}}
     message = helper_create_cloud_event_envelope(data=email_msg)
 
     # Sanity check
@@ -396,7 +415,8 @@ def test_process_bn_email(app, session, client):
                 assert mock_send_email.call_args[0][0]['content']['subject'] == \
                     f'{business.legal_name} - Business Number Information'
                 assert mock_send_email.call_args[0][0]['content']['body']
-                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                assert mock_send_email.call_args[0][0]['content']['attachments'] == [
+                ]
 
 
 default_legal_name = 'TEST COMP'
@@ -411,9 +431,12 @@ default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
         [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
     ('expired', 'NR 1234567', 'Expired', None, None, 'TEST4 Company Name',
         [{'name': 'TEST5 Company Name', 'state': 'NE'}, {'name': 'TEST4 Company Name', 'state': 'APPROVED'}]),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal',
+     '2021-07-20T00:00:00+00:00', None, None, default_names_array),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade',
+     None, None, None, default_names_array),
+    ('refund', 'NR 1234567', 'Refund request confirmation',
+     None, '123.45', None, default_names_array)
 ])
 def test_nr_notification(app, session, client, option, nr_number, subject, expiration_date, refund_value,
                          expected_legal_name, names):
@@ -422,6 +445,7 @@ def test_nr_notification(app, session, client, option, nr_number, subject, expir
     nr_json = {
         'expirationDate': expiration_date,
         'names': names,
+        'legalType': 'BC',
         'applicants': {
             'emailAddress': 'test@test.com'
         }
@@ -468,8 +492,10 @@ def test_nr_notification(app, session, client, option, nr_number, subject, expir
                         assert nr_number in call_args[0][0]['content']['body']
                         assert expected_legal_name in call_args[0][0]['content']['body']
                         exp_date = datetime.fromisoformat(expiration_date)
-                        exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
-                        assert_expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
+                        exp_date_tz = LegislationDatetime.as_legislation_timezone(
+                            exp_date)
+                        assert_expiration_date = LegislationDatetime.format_as_report_string(
+                            exp_date_tz)
                         assert assert_expiration_date in call_args[0][0]['content']['body']
 
                     if option == nr_notification.Option.EXPIRED.value:
@@ -525,7 +551,8 @@ def test_nr_receipt_notification(app, session, client):
                             assert mock_pdf.call_args[0][1] == payment_token
                             assert mock_query_nr_number.call_args[0][0] == nr_number
                             call_args = mock_send_email.call_args
-                            assert call_args[0][0]['content']['subject'] == f'{nr_number} - Receipt from Corporate Registry'
+                            assert call_args[0][0]['content'][
+                                'subject'] == f'{nr_number} - Receipt from Corporate Registry'
                             assert call_args[0][0]['recipients'] == email_address
                             assert call_args[0][0]['content']['body']
                             assert call_args[0][0]['content']['attachments'] == pdfs
@@ -599,9 +626,9 @@ def helper_create_cloud_event_envelope(
 ):
     if not data:
         data = {
-          "email": {
-            "type": "bn",
-          }
+            "email": {
+                "type": "bn",
+            }
         }
     if not ce:
         ce = SimpleCloudEvent(
