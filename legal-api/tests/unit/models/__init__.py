@@ -24,7 +24,7 @@ from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
     Alias,
-    AlternateName,
+    ColinEntity,
     LegalEntity,
     Comment,
     EntityRole,
@@ -151,6 +151,8 @@ def factory_legal_entity(
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,
         state=state,
+        naics_code=naics_code,
+        naics_description=naics_desc,
         admin_freeze=admin_freeze,
         first_name=first_name,
         middle_initial=middle_initial,
@@ -163,25 +165,6 @@ def factory_legal_entity(
     # uow.create_transaction(db.session)
 
     legal_entity.save()
-
-    if entity_type in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
-        old_alternate_name = AlternateName.find_by_identifier(identifier)
-        if old_alternate_name:
-            db.session.delete(old_alternate_name)
-            db.session.commit()
-
-        alternate_name = AlternateName(
-            identifier = identifier,
-            name=legal_name,
-            name_type='OPERATING',
-            start_date=EPOCH_DATETIME,
-            legal_entity_id=legal_entity.id,
-            change_filing_id=change_filing_id,
-            naics_code=naics_code,
-            naics_description=naics_desc
-        )
-        alternate_name.save()
-
     return legal_entity
 
 

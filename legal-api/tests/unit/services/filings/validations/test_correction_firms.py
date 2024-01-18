@@ -87,8 +87,7 @@ def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filin
     # setup
     identifier = "FM1234567"
     founding_date = datetime(2022, 1, 1)
-    legal_type = filing['filing']['business']['legalType']
-    legal_entity = factory_legal_entity(identifier, founding_date=founding_date, entity_type=legal_type)
+    legal_entity = factory_legal_entity(identifier, founding_date=founding_date)
     corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
@@ -132,8 +131,7 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
 
     # setup
     identifier = "FM1234567"
-    legal_type = filing["filing"]["business"]["legalType"]
-    legal_entity = factory_legal_entity(identifier=identifier, entity_type=legal_type)
+    legal_entity = factory_legal_entity(identifier)
     corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f = copy.deepcopy(filing)
@@ -334,10 +332,8 @@ def test_firms_correction_naics(
     # setup
     identifier = "FM1234567"
     founding_date = datetime(2022, 1, 1)
-    legal_type = filing["filing"]["business"]["legalType"]
     legal_entity = factory_legal_entity(
         identifier=identifier,
-        entity_type=legal_type,
         founding_date=founding_date,
         naics_code=existing_naics_code,
         naics_desc=existing_naics_desc,
@@ -554,9 +550,8 @@ def test_firms_correction_start_date(
         return headers[one]
 
     identifier = "FM1234567"
-    legal_type = filing["filing"]["business"]["legalType"]
     founding_date = datetime.strptime(founding_date_str, "%Y-%m-%d")
-    business = factory_legal_entity(identifier=identifier, founding_date=founding_date, entity_type=legal_type)
+    business = factory_legal_entity(identifier=identifier, founding_date=founding_date)
 
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 

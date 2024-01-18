@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import AlternateName, Filing, LegalEntity, PartyRole
+from legal_api.models import Filing, LegalEntity, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
@@ -183,11 +183,8 @@ def validate_naics(legal_entity: LegalEntity, filing: Dict, filing_type: str) ->
     naics_code = get_str(filing, naics_code_path)
     naics_desc = get_str(filing, f"/filing/{filing_type}/business/naics/naicsDescription")
 
-    alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
-
     # Note: if existing naics code and description has not changed, no NAICS validation is required
-    if naics_code and alternate_name and \
-        (alternate_name.naics_code != naics_code or alternate_name.naics_description != naics_desc):
+    if naics_code and (legal_entity.naics_code != naics_code or legal_entity.naics_description != naics_desc):
         naics = NaicsService.find_by_code(naics_code)
         if not naics or naics["classTitle"] != naics_desc:
             msg.append({"error": "Invalid naics code or description.", "path": naics_code_path})
