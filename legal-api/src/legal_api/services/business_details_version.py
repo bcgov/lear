@@ -789,7 +789,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         business_json["businessName"] = business_revision.business_name
         business_json["legalType"] = business_revision.entity_type
         business_json["naicsDescription"] = business_revision.naics_description
-
         return business_json
 
     @staticmethod

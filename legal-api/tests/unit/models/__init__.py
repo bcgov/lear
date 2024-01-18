@@ -25,7 +25,6 @@ from legal_api.models import (
     Address,
     Alias,
     ColinEntity,
-    LegalEntity,
     Comment,
     EntityRole,
     Filing,
