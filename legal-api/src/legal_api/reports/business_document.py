@@ -457,9 +457,9 @@ class BusinessDocument:
                         'identifier': identifier
                     }
                     amalgamated_businesses.append(amalgamated_businesses_info)
-                    amalgamating_businesses.remove(amalgamating_businesses[0])     
+                    amalgamating_businesses.remove(amalgamating_businesses[0])
         business['amalgamatedEntities'] = amalgamated_businesses
-        
+
     def _set_amalgamating_details(self, business: dict):
         amalgamating_info = business.get('business', {}).get('amalgamatedInto')
         if amalgamating_info:
