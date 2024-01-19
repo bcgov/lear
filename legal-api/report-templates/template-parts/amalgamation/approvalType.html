@@ -1,0 +1,30 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">
+      <span>Approval Type</span>
+    </div>
+    {% if amalgamationApplication.courtApproval is none %}
+      <div class="section-data mt-3">
+        N/A
+      </div>
+    {% else %}
+      {% if amalgamationApplication.courtApproval == 'courtOrder' %}
+        <div class="section-data mt-3">
+          The restoration was approved by a court order.
+        </div>
+        <div class="section-data mt-2">
+          Court order number: <span class="bold">{{amalgamationApplication.courtApproval.fileNumber}}</span>
+        </div>
+      {% elif amalgamationApplication.courtApproval == 'registrar' %}
+        <div class="section-data mt-3">
+          The restoration was approved by Registrar.
+        </div>
+        <div class="section-data mt-2">
+          BC Gazette published date: {{amalgamationApplication.courtApproval.noticeDate}}
+        </div>
+        <div class="section-data mt-2">
+          Notice of Application mailed date: {{amalgamationApplication.courtApproval.applicationDate}}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>

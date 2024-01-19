@@ -20,15 +20,15 @@
 
                 <div class="cert-title-container">
                     <div class="sub-header-1">Certificate  of</div>
-                    <div class="certificate-header">INCORPORATION</div>
+                    <div class="certificate-header">AMALGAMATION</div>
                     <div class="sub-header-2">{{ entityAct }}</div>
                 </div>
 
-                <div class="certify-clause-container">
-                    <div>I hereby certify that</div>
-                    <div class="company-name-header">{{ business.legalName }}</div>
-                    <div>was incorporated under the {{ entityAct }}</div>
+                <div class="certify-clause">
+                    <div>I hereby certify that the following companies were amalgamated under the name</div>
+                    <div class="company-name-header">{{ amalgamationApplication.nameRequest.legalName }}</div>
                     <div>on {{ business.formatted_founding_date_time }}</div>
+                    <div>{{business.amalgatingBusinesses}}</div>
                     <div class="cert-separator"></div>
                     <div class="cert-issued-by">
                         <div>Issued under my hand at Victoria, British Columbia</div>
