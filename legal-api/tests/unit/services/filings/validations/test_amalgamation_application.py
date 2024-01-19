@@ -1608,7 +1608,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
@@ -1632,10 +1632,10 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
 
 @pytest.mark.parametrize(
     "test_status, expected_code, expected_msg",
-    [("FAIL", HTTPStatus.BAD_REQUEST, "BC1234567 has a future effective filing."), ("SUCCESS", None, None)],
+    [('FAIL', HTTPStatus.BAD_REQUEST, 'BC1234567 has a draft, pending or future effective filing.'), ("SUCCESS", None, None)],
 )
-def test_has_future_effective_filing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
-    """Assert valid amalgamating businesses has future effective filing."""
+def test_has_pending_filing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert valid amalgamating businesses has draft, pending or future effective filing."""
     filing = {"filing": {}}
     filing["filing"]["header"] = {
         "name": "amalgamationApplication",
@@ -1697,7 +1697,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
@@ -1760,7 +1760,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -1812,7 +1812,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -1864,7 +1864,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -1926,7 +1926,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -1991,7 +1991,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -2054,7 +2054,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
@@ -2114,7 +2114,7 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
     )
     mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application._has_future_effective_filing",
+        "legal_api.services.filings.validations.amalgamation_application._has_pending_filing",
         return_value=False,
     )
     mocker.patch(
