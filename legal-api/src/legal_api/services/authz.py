@@ -19,7 +19,6 @@ from typing import List
 from urllib.parse import urljoin
 
 import jwt as pyjwt
-import requests
 from flask import current_app
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
