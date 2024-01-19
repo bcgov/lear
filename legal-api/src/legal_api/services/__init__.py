@@ -27,7 +27,6 @@ from .authz import (
     STAFF_ROLE,
     SYSTEM_ROLE,
     authorized,
-    get_account_by_affiliated_identifier,
     has_roles,
 )
 from .bootstrap import AccountService, RegistrationBootstrapService

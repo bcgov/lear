@@ -90,8 +90,8 @@ def get_businesses(identifier: str):
                                 g.jwt_oidc_token_info,
                                 account_response)
         if orgs := account_response.get('orgs'):
-            if str(orgs[0].get('id')) == q_account:
-                business_json['accountId'] = orgs[0].get('id')
+            if any(str(org.get('id')) == q_account for org in orgs):
+                business_json['accountId'] = q_account
 
     return jsonify(business=business_json)
 

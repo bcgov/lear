@@ -181,15 +181,15 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
 
 def _is_business_affliated(identifier, account_id):
-    if (account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and \
-            (orgs := account_response.get('orgs')) and str(orgs[0].get('id')) == account_id:
+    if ((account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
+        (orgs := account_response.get('orgs')) and
+            any(str(org.get('id')) == account_id for org in orgs)):
         return True
     return False
 
 
 def _has_future_effective_filing(amalgamating_business: Business):
-    if Filing.get_filings_by_status(amalgamating_business.id,
-                                    [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
+    if Filing.get_filings_by_status(amalgamating_business.id, [Filing.Status.PAID.value]):
         return True
     return False
 
