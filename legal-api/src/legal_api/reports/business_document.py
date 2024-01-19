@@ -423,7 +423,7 @@ class BusinessDocument:
                 filing_meta['continuationOut']['continuationOutDate'])
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
         elif filing.filing_type == 'amalgamationApplication':
-            filing_info['filingName'] = 'Amalgamated'
+            filing_info['filingName'] = 'Amalgamation'
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing.filing_type, None, None)

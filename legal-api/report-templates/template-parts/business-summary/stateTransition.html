@@ -1,4 +1,4 @@
-{% if stateFilings|length > 0 %}
+{% if stateFilings|length > 0 and not business.isAmalgamating %}
 <div class="no-page-break">
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">
