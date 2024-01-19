@@ -16,11 +16,12 @@ from __future__ import annotations
 
 from sql_versioning import Versioned
 
+from .base import EntityCommonBase
 from ..utils.enum import BaseEnum, auto
 from .db import db
 
 
-class AlternateName(Versioned, db.Model):
+class AlternateName(Versioned, db.Model, EntityCommonBase):
     """This class manages the alternate names."""
 
     class NameType(BaseEnum):
@@ -74,3 +75,41 @@ class AlternateName(Versioned, db.Model):
         """Return None or the AlternateName found by its registration number."""
         alternate_name = cls.query.filter_by(identifier=identifier).one_or_none()
         return alternate_name
+
+
+    def json(self, slim=False):
+        """Return the Business as a json object.
+
+        None fields are not included.
+        """
+        # TODO flesh out json fully once all additional columns added to this model
+        slim_json = self._slim_json()
+        if slim:
+            return slim_json
+
+        d = {
+            **slim_json,
+            "warnings": self.warnings,
+            "allowedActions": self.allowable_actions,
+        }
+
+        return d
+
+    def _slim_json(self):
+        """Return a smaller/faster version of the business json."""
+        legal_name = self.legal_entity.legal_name if self.legal_entity else None
+        d = {
+            "legalType": self.entity_type,
+            "identifier": self.identifier,
+            "legalName": legal_name,
+            "alternateNames": [
+                {
+                    "identifier": self.identifier,
+                    "operatingName": self.name,
+                    "entityType": 'SP',
+                    "nameRegisteredDate": self.start_date.isoformat(),
+                }
+            ]
+        }
+        return d
+

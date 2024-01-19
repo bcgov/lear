@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service to check compliancy for a LegalEntity."""
-from legal_api.models import AlternateName, LegalEntity
-
-from .firms import check_business as firms_check  # noqa: I003
+"""This provides the service for businesses(legal entities and alternate name entities."""
+from legal_api.models import LegalEntity
 
 
-def check_business(business: any) -> list:
-    """Check business for warnings."""
-    result = []
+class BusinessService:
+    """Provides services to retrieve correct businesses."""
 
-    if ((business.is_legal_entity and business.entity_type == LegalEntity.EntityTypes.PARTNERSHIP.value) or
-            business.is_alternate_name_entity):
-        result = firms_check(business)
 
-    return result
+    def fetch_business(self, identifier):
+        legal_entity, alternate_name_entity = LegalEntity.find_by_identifier(identifier)
+        if alternate_name_entity:
+            return alternate_name_entity
+        return legal_entity

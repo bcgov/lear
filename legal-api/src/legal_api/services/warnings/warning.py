@@ -18,12 +18,12 @@ from legal_api.models import LegalEntity
 from .business import check_business
 
 
-def check_warnings(legal_entity: LegalEntity) -> list:
+def check_warnings(business: any) -> list:
     """Check warnings for a LegalEntity."""
     result = []
 
     # Currently only checks for missing business info warnings but in future other warning checks can be included
     # e.g. compliance checks - result.extend(check_compliance(legal_entity))
-    result.extend(check_business(legal_entity))
+    result.extend(check_business(business))
 
     return result

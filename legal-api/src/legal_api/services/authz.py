@@ -321,11 +321,15 @@ def is_allowed(
     return False
 
 
-def get_allowable_actions(jwt: JwtManager, legal_entity: LegalEntity):
+def get_allowable_actions(jwt: JwtManager, business: any):
     """Get allowable actions."""
+    # TODO update to work with legal entities and alternate names
     base_url = current_app.config.get("LEGAL_API_BASE_URL")
-    allowed_filings = get_allowed_filings(legal_entity, legal_entity.state, legal_entity.entity_type, jwt)
-    filing_submission_url = urljoin(base_url, f"{legal_entity.identifier}/filings")
+    filing_submission_url = urljoin(base_url, f"{business.identifier}/filings")
+    if business.entity_type == LegalEntity.EntityTypes.SOLE_PROP:
+        allowed_filings = []
+    else:
+        allowed_filings = get_allowed_filings(business, business.state, business.entity_type, jwt)
     result = {"filing": {"filingSubmissionLink": filing_submission_url, "filingTypes": allowed_filings}}
     return result
 

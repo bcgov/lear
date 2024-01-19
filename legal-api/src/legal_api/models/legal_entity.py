@@ -42,6 +42,7 @@ from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the 
 from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
     AlternateName,
 )
+from .base import EntityCommonBase
 from .db import db  # noqa: I001
 from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     EntityRole,
@@ -66,7 +67,7 @@ from .user import (  # noqa: F401,I003 pylint: disable=unused-import; needed by 
 )
 
 
-class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class LegalEntity(Versioned, db.Model, EntityCommonBase):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a LegalEntity.
 
     A business is base form of any entity that can interact directly
@@ -252,7 +253,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
-    entity_type = db.Column("entity_type", db.String(15), index=True)
+    _entity_type = db.Column("entity_type", db.String(15), index=True)
     founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
     restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
@@ -468,7 +469,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                 db.session.query(
                     case(
                         (
-                            related_le_alias.entity_type == "person",
+                            related_le_alias._entity_type == "person",
                             func.concat_ws(
                                 " ",
                                 func.nullif(related_le_alias.last_name, ""),
@@ -476,12 +477,12 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                 func.nullif(related_le_alias.first_name, ""),
                             ),
                         ),
-                        (related_le_alias.entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
+                        (related_le_alias._entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("sortName"),
                     case(
                         (
-                            related_le_alias.entity_type == "person",
+                            related_le_alias._entity_type == "person",
                             func.concat_ws(
                                 " ",
                                 func.nullif(related_le_alias.first_name, ""),
@@ -489,7 +490,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                 func.nullif(related_le_alias.last_name, ""),
                             ),
                         ),
-                        (related_le_alias.entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
+                        (related_le_alias._entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("legalName"),
                 )
@@ -542,11 +543,11 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                 AlternateName.identifier,
                 AlternateName.name,
                 AlternateName.start_date,
-                le_alias.entity_type,
+                le_alias._entity_type,
                 le_alias.founding_date,
             )
             .join(le_alias, AlternateName.identifier == le_alias.identifier)
-            .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
+            .filter(~le_alias._entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
             .filter(AlternateName.legal_entity_id == self.id)
             .all()
         )
@@ -556,7 +557,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                 {
                     "identifier": alternate_name.identifier,
                     "operatingName": alternate_name.name,
-                    "entityType": alternate_name.entity_type,
+                    "entityType": alternate_name._entity_type,
                     "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
                     "nameRegisteredDate": alternate_name.founding_date.isoformat(),
                 }
@@ -720,39 +721,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
         return member
 
-    @property
-    def compliance_warnings(self):
-        """Return compliance warnings."""
-        if not hasattr(self, "_compliance_warnings"):
-            return []
-
-        return self._compliance_warnings
-
-    @compliance_warnings.setter
-    def compliance_warnings(self, value):
-        """Set compliance warnings."""
-        self._compliance_warnings = value
-
-    @property
-    def warnings(self):
-        """Return warnings."""
-        if not hasattr(self, "_warnings"):
-            return []
-
-        return self._warnings
-
-    @warnings.setter
-    def warnings(self, value):
-        """Set warnings."""
-        self._warnings = value
-
-    @property
-    def allowable_actions(self):
-        """Return warnings."""
-        if not hasattr(self, "_allowable_actions"):
-            return {}
-
-        return self._allowable_actions
 
     @property
     def name(self) -> str:
@@ -763,10 +731,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             return " ".join((self.first_name, self.last_name)).strip().upper()
         return self.legal_name
 
-    @allowable_actions.setter
-    def allowable_actions(self, value):
-        """Set warnings."""
-        self._allowable_actions = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -787,28 +751,30 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
         if not identifier or not cls.validate_identifier(
-            entity_type=None, identifier=identifier
+                entity_type=None, identifier=identifier
         ):
             return None
 
         legal_entity = None
-
+        alternate_name_entity = None
         if identifier.startswith("FM"):
             if alt_name := AlternateName.find_by_identifier(identifier):
                 legal_entity = cls.find_by_id(alt_name.legal_entity_id)
+                alternate_name_entity = alt_name \
+                    if legal_entity.entity_type != LegalEntity.EntityTypes.PARTNERSHIP.value else None
+
         else:
             non_entity_types = [
                 LegalEntity.EntityTypes.PERSON.value,
                 LegalEntity.EntityTypes.ORGANIZATION.value,
             ]
-
             legal_entity = (
-                cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
+                cls.query.filter(~LegalEntity._entity_type.in_(non_entity_types))
                 .filter_by(identifier=identifier)
                 .one_or_none()
             )
 
-        return legal_entity
+        return legal_entity, alternate_name_entity
 
     @classmethod
     def find_by_internal_id(cls, internal_id: int = None):

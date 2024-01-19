@@ -31,7 +31,7 @@ from legal_api.services import (  # noqa: I001;
     SYSTEM_ROLE,
     AccountService,
     RegistrationBootstrapService,
-    check_warnings,
+    check_warnings, business_service,
 )
 from legal_api.services.authz import get_allowable_actions, get_allowed
 from legal_api.utils.auth import jwt
@@ -41,15 +41,15 @@ from .bp import bp
 
 @bp.route("/<string:identifier>", methods=["GET"])
 @cross_origin(origin="*")
-@jwt.requires_auth
+# @jwt.requires_auth
 def get_businesses(identifier: str):
     """Return a JSON object with meta information about the Service."""
     if identifier.startswith("T"):
         return {"message": babel("No information on temp registrations.")}, 200
 
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
     # check authorization -- need to implement workaround for business search users before using this
     # if not authorized(identifier, jwt, action=['view']):
@@ -60,25 +60,25 @@ def get_businesses(identifier: str):
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business search update)
     if str(request.args.get("slim", None)).lower() == "true":
-        return jsonify(business=legal_entity.json(slim=True))
+        return jsonify(business=business.json(slim=True))
 
-    warnings = check_warnings(legal_entity)
+    warnings = check_warnings(business)
     # # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
-    legal_entity.compliance_warnings = warnings
-    legal_entity.warnings = warnings
+    business.compliance_warnings = warnings
+    business.warnings = warnings
 
-    allowable_actions = get_allowable_actions(jwt, legal_entity)
-    legal_entity.allowable_actions = allowable_actions
+    allowable_actions = get_allowable_actions(jwt, business)
+    business.allowable_actions = allowable_actions
 
-    business_json = legal_entity.json()
-    recent_filing_json = CoreFiling.get_most_recent_filing_json(legal_entity.id, None, jwt)
+    business_json = business.json()
+    recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:
         business_json["submitter"] = recent_filing_json["filing"]["header"]["submitter"]
         business_json["lastModified"] = recent_filing_json["filing"]["header"]["date"]
 
     allowed_filings = str(request.args.get("allowed_filings", None)).lower() == "true"
     if allowed_filings:
-        business_json["allowedFilings"] = get_allowed(legal_entity.state, legal_entity.entity_type, jwt)
+        business_json["allowedFilings"] = get_allowed(business.state, business.entity_type, jwt)
 
     q_account = request.args.get("account")
     current_app.logger.info("account info request, for account: %s", q_account)
