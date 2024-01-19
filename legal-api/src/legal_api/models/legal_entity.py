@@ -786,9 +786,22 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
+        if not identifier or not cls.validate_identifier(
+            entity_type=None, identifier=identifier
+        ):
+            return None
+
         legal_entity = None
-        if identifier:
-            non_entity_types = [LegalEntity.EntityTypes.PERSON.value, LegalEntity.EntityTypes.ORGANIZATION.value]
+
+        if identifier.startswith("FM"):
+            if alt_name := AlternateName.find_by_identifier(identifier):
+                legal_entity = cls.find_by_id(alt_name.legal_entity_id)
+        else:
+            non_entity_types = [
+                LegalEntity.EntityTypes.PERSON.value,
+                LegalEntity.EntityTypes.ORGANIZATION.value,
+            ]
+
             legal_entity = (
                 cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
                 .filter_by(identifier=identifier)
