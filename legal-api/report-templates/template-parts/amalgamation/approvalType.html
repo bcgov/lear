@@ -12,19 +12,6 @@
         <div class="section-data mt-3">
           The restoration was approved by a court order.
         </div>
-        <div class="section-data mt-2">
-          Court order number: <span class="bold">{{amalgamationApplication.courtApproval.fileNumber}}</span>
-        </div>
-      {% elif amalgamationApplication.courtApproval == 'registrar' %}
-        <div class="section-data mt-3">
-          The restoration was approved by Registrar.
-        </div>
-        <div class="section-data mt-2">
-          BC Gazette published date: {{amalgamationApplication.courtApproval.noticeDate}}
-        </div>
-        <div class="section-data mt-2">
-          Notice of Application mailed date: {{amalgamationApplication.courtApproval.applicationDate}}
-        </div>
-      {% endif %}
+        {%endif%}
     {% endif %}
   </div>
