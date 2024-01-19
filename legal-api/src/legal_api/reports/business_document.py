@@ -313,7 +313,8 @@ class BusinessDocument:
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
         # If it is amalgamating business
-        if ((business.get('business').get('state') == 'HISTORICAL') and (business.get('business').get('amalgamatedInto'))):
+        if ((business.get('business').get('state') == 'HISTORICAL')
+                and (business.get('business').get('amalgamatedInto'))):
             amalgamating_business_temp = Business.find_by_identifier(business.get('business').get('identifier'))
             amalgamating_business = amalgamating_business_temp.amalgamating_businesses.one_or_none()
             amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
@@ -435,7 +436,8 @@ class BusinessDocument:
         amalgamation_application = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
         if amalgamation_application:
             business['business']['amalgamatedEntity'] = True
-            amalgamation_json = amalgamation_application[0].filing_json.get('filing', {}).get('amalgamationApplication', {})
+            amalgamation_json = amalgamation_application[0].filing_json.get('filing', {})\
+                .get('amalgamationApplication', {})
             # if it's future effective
             if self._epoch_filing_date and amalgamation_application[0].effective_date < self._epoch_filing_date:
                 amalgamated_businesses_info = {
