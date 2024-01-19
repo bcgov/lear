@@ -443,12 +443,12 @@ class BusinessDocument:
                     'identifier': 'Not Available'
                 }
                 amalgamated_businesses.append(amalgamated_businesses_info)
-            else :
+            else:
                 amalgamating_businesses = amalgamation_json.get('amalgamatingBusinesses', {})
                 while amalgamating_businesses:
                     if len(amalgamating_businesses[0].get('foreignJurisdiction', {})) == 0:
                         identifier = amalgamating_businesses[0].get('identifier', {})
-                    else :
+                    else:
                         identifier = amalgamating_businesses[0].get('corpNumber', {})
                     amalgamating_business = Business.find_by_identifier(identifier)
                     business_legal_name = amalgamating_business.legal_name
