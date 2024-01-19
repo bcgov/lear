@@ -116,9 +116,9 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                     'error': f'Cannot amalgamate with {identifier} which is in historical state.',
                     'path': amalgamating_businesses_path
                 })
-            elif _has_future_effective_filing(amalgamating_business):
+            elif _has_pending_filing(amalgamating_business):
                 msg.append({
-                    'error': f'{identifier} has a future effective filing.',
+                    'error': f'{identifier} has a draft, pending or future effective filing.',
                     'path': amalgamating_businesses_path
                 })
 
@@ -181,15 +181,18 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
 
 def _is_business_affliated(identifier, account_id):
-    if (account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and \
-            (orgs := account_response.get('orgs')) and str(orgs[0].get('id')) == account_id:
+    if ((account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
+        (orgs := account_response.get('orgs')) and
+            any(str(org.get('id')) == account_id for org in orgs)):
         return True
     return False
 
 
-def _has_future_effective_filing(amalgamating_business: Business):
-    if Filing.get_filings_by_status(amalgamating_business.id,
-                                    [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
+def _has_pending_filing(amalgamating_business: Business):
+    if Filing.get_filings_by_status(amalgamating_business.id, [
+            Filing.Status.DRAFT.value,
+            Filing.Status.PENDING.value,
+            Filing.Status.PAID.value]):
         return True
     return False
 
