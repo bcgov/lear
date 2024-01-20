@@ -18,7 +18,6 @@ from typing import Dict
 import pytz
 import sentry_sdk
 
-# from legal_api.core.filing_helper import is_special_resolution_correction
 from business_model import LegalEntity, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
@@ -60,12 +59,8 @@ def process(
     )
 
     corrected_filing_type = filing["correction"]["correctedFilingType"]
-    # TODO i think we can remove this -> is_special_resolution_correction
-    # is_sr_correction = is_special_resolution_correction(filing, business, original_filing)
-    # if (business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC'] or
-    #         is_sr_correction) and \
     if (
-        business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC"]
+        business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"]
         and corrected_filing_type != "conversion"
     ):
         correct_business_data(business, correction_filing, filing, filing_meta)
