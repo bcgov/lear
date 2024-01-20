@@ -42,6 +42,7 @@ from entity_filer.filing_processors.filing_components import (
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+from entity_filer.filing_processors.filing_components.alternate_name import update_partner_change, update_proprietor_change
 
 
 def process(
@@ -111,36 +112,22 @@ def _process_firms_conversion(
     filing_rec: Filing,
     filing_meta: FilingMeta,
 ):
-    # Name change if present
-    with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(
-            conversion_filing, "/filing/conversion/nameRequest"
-        )
-        if name_request_json.get("legalName"):
-            from_legal_name = legal_entity.legal_name
-            legal_entity_info.set_legal_name(
-                legal_entity.identifier, legal_entity, name_request_json
+    match legal_entity.entity_type:
+        case LegalEntity.EntityTypes.PARTNERSHIP:
+            update_partner_change(
+                legal_entity=legal_entity,
+                filing_type="conversion",
+                change_filing_rec=filing_rec,
+                change_filing=conversion_filing,
+                filing_meta=filing_meta.conversion
             )
-            if from_legal_name != legal_entity.legal_name:
-                filing_meta.conversion = {
-                    **filing_meta.conversion,
-                    **{
-                        "fromLegalName": from_legal_name,
-                        "toLegalName": legal_entity.legal_name,
-                    },
-                }
-    # Update Nature of Business
-    if (
-        naics := conversion_filing.get("filing", {})
-        .get("conversion", {})
-        .get("legal_entity", {})
-        .get("naics")
-    ) and naics.get("naicsDescription"):
-        legal_entity_info.update_naics_info(legal_entity, naics)
-        filing_meta.conversion = {
-            **filing_meta.conversion,
-            **{"naicsDescription": naics.get("naicsDescription")},
-        }
+        case _: # LegalEntity.EntityTypes.PERSON: # legal_entity might be a proprietor?
+            update_proprietor_change(
+                filing_type="conversion",
+                change_filing_rec=filing_rec,
+                change_filing=conversion_filing,
+                filing_meta=filing_meta.conversion
+            )
 
     # Update legal_entity office if present
     with suppress(IndexError, KeyError, TypeError):
