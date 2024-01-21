@@ -135,6 +135,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
+            'business-summary/amalgamations',
             'common/certificateFooter',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
@@ -680,9 +681,36 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['newLegalTypeDescription'] = self._get_legal_type_description(new_legal_type)\
             if new_legal_type else None
 
-    def _format_amalgamation_data(self, filling):
-        # FUTURE: format logic for amalgamation application
-        return
+    def _format_amalgamation_data(self, filing):
+        amalgamation = filing['amalgamationApplication']
+
+        # Formatting addresses for registered and records office
+        self._format_address(amalgamation['offices']['registeredOffice']['deliveryAddress'])
+        self._format_address(amalgamation['offices']['registeredOffice']['mailingAddress'])
+        if 'recordsOffice' in amalgamation['offices']:
+            self._format_address(amalgamation['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(amalgamation['offices']['recordsOffice']['mailingAddress'])
+
+        # Formatting parties
+        self._format_directors(amalgamation['parties'])
+
+        # Creating helper lists and extracting other details
+        filing['nameRequest'] = amalgamation.get('nameRequest', {})
+        filing['listOfTranslations'] = amalgamation.get('nameTranslations', [])
+        filing['offices'] = amalgamation['offices']
+        filing['parties'] = amalgamation['parties']
+        filing['contactPoint'] = amalgamation.get('contactPoint', {})
+        filing['courtApproval'] = amalgamation.get('courtApproval')
+
+        if 'shareStructure' in amalgamation:
+            filing['shareClasses'] = amalgamation['shareStructure'].get('shareClasses', [])
+        else:
+            filing['shareClasses'] = amalgamation.get('shareClasses', [])
+
+        filing['amalgamatingBusinesses'] = amalgamation.get('amalgamatingBusinesses', [])
+        filing['incorporationAgreement'] = amalgamation.get('incorporationAgreement', {})
+
+        
 
     def _format_certificate_of_amalgamation_data(self, filing):
         # FUTURE: format logic for certificate of amalgamation
