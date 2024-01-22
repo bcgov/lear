@@ -106,7 +106,11 @@ def post_businesses():
     if not request.data and not request.is_json:
         return {"error": babel("No valid JSON submitted.")}, HTTPStatus.BAD_REQUEST
     json_input = request.get_json()
-    valid_filing_types = [Filing.FILINGS["incorporationApplication"]["name"], Filing.FILINGS["registration"]["name"]]
+    valid_filing_types = [
+        Filing.FILINGS["incorporationApplication"]["name"],
+        Filing.FILINGS["registration"]["name"],
+        Filing.FILINGS["amalgamationApplication"]["name"]
+    ]
 
     try:
         filing_account_id = json_input["filing"]["header"]["accountId"]
@@ -119,9 +123,12 @@ def post_businesses():
     # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
     bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
     if not isinstance(bootstrap, RegistrationBootstrap):
-        return {
-            "error": babel("Unable to create {0} Filing.".format(Filing.FILINGS[filing_type]["title"]))
-        }, HTTPStatus.SERVICE_UNAVAILABLE
+        if filing_sub_type := Filing.get_filings_sub_type(filing_type, json_input):
+            title = Filing.FILINGS[filing_type][filing_sub_type]["title"]
+        else:
+            title = Filing.FILINGS[filing_type]["title"]
+        return {"error": babel("Unable to create {0} Filing.".format(title))}, \
+            HTTPStatus.SERVICE_UNAVAILABLE
 
     try:
         business_name = json_input["filing"][filing_type]["nameRequest"]["nrNumber"]
@@ -152,7 +159,7 @@ def search_businesses():
         json_input = request.get_json()
         identifiers = json_input.get("identifiers", None)
         if not identifiers or not isinstance(identifiers, list):
-            return {"message": "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
+            return {"message": "Expected a list of 1 or more for 'identifiers'"}, HTTPStatus.BAD_REQUEST
 
         # base business query
         bus_query = db.session.query(LegalEntity).filter(

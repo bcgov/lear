@@ -262,37 +262,6 @@ def test_directors_mailing_address(session, client, jwt):
         assert rv.json["directors"][0]["mailingAddress"]["addressCity"] == "Test Mailing City"
 
 
-def test_directors_coop_no_mailing_address(session, client, jwt):
-    """Assert that coop directors have a mailing and delivery address."""
-    with nested_session(session):
-        # setup
-        identifier = "CP7654321"
-        legal_entity = factory_legal_entity(identifier)
-        delivery_address = Address(city="Test Delivery City", address_type=Address.DELIVERY)
-        officer = {
-            "firstName": "Michael",
-            "lastName": "Crane",
-            "middleInitial": "Joe",
-            "partyType": "person",
-            "organizationName": "",
-        }
-        party_role = factory_party_role(
-            delivery_address, None, officer, datetime.datetime(2017, 5, 17), None, EntityRole.RoleTypes.director
-        )
-        legal_entity.entity_roles.append(party_role)
-        legal_entity.save()
-
-        # test
-        rv = client.get(
-            f"/api/v2/businesses/{identifier}/directors", headers=create_header(jwt, [STAFF_ROLE], identifier)
-        )
-        # check
-        assert rv.status_code == HTTPStatus.OK
-        assert "directors" in rv.json
-        assert rv.json["directors"][0]["deliveryAddress"]["addressCity"] == "Test Delivery City"
-        assert "mailingAddress" not in rv.json["directors"][0]
-
-
 def test_directors_unauthorized(app, session, client, jwt, requests_mock):
     """Assert that directors are not returned for an unauthorized user."""
     with nested_session(session):

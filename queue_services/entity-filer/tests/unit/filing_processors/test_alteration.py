@@ -278,7 +278,7 @@ def test_alteration_coop_rules_and_memorandum(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_submission = create_filing(
-        payment_id, alteration_filing, business_id=business.id
+        payment_id, alteration_filing, business_id=business.id, filing_date=datetime.utcnow()
     )
 
     filing_meta = FilingMeta()

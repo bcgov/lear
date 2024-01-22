@@ -45,6 +45,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
     nr_json = {
         'expirationDate': expiration_date,
         'names': names,
+        'legalType': 'BC',
         'applicants': {
             'emailAddress': 'test@test.com'
         }

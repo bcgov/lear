@@ -21,9 +21,9 @@ from typing import Final
 
 import pycountry
 import requests
+from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.core.filing_helper import is_special_resolution_correction
 from legal_api.core.meta.filing import FILINGS
 from legal_api.models import (
     ConsentContinuationOut,
@@ -37,6 +37,7 @@ from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
+from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 OUTPUT_DATE_FORMAT: Final = "%B %-d, %Y"
@@ -65,7 +66,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
         response = MinioService.get_file(document.file_key)
-        return response.data, response.status
+        return current_app.response_class(
+            response=response.data,
+            status=response.status,
+            mimetype="application/pdf"
+        )
 
     def _get_report(self):
         if self._filing.legal_entity_id:
@@ -83,7 +88,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
-        return response.content, response.status_code
+
+        return current_app.response_class(
+            response=response.content,
+            status=response.status_code,
+            mimetype="application/pdf"
+        )
 
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
@@ -141,8 +151,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "common/completingParty",
             "correction/businessDetails",
             "correction/addresses",
+            "correction/associateType",
             "correction/directors",
             "correction/legalNameChange",
+            "correction/resolution",
+            "correction/rulesMemorandum",
             "change-of-registration/legal-name",
             "change-of-registration/nature-of-business",
             "change-of-registration/addresses",
@@ -184,7 +197,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "alteration-notice/companyProvisions",
             "special-resolution/resolution",
             "special-resolution/resolutionApplication",
-            "special-resolution/resolutionApplicationCorrection",
             "addresses",
             "certification",
             "directors",
@@ -207,14 +219,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if ReportMeta.reports[self._report_key].get("hasDifferentTemplates", False):
             # Get template specific to legal type
             file_name = None
-            specific_template = ReportMeta.reports[self._report_key].get(self._legal_entity.entity_type, None)
-            if self._legal_entity.entity_type == "CP" and self._filing.filing_type == "correction":
-                corrected_filing_id = self._filing.filing_json["filing"].get("correction", {}).get("correctedFilingId")
-                original_filing = Filing.find_by_id(corrected_filing_id)
-                if is_special_resolution_correction(
-                    self._filing.filing_json["filing"], self._legal_entity, original_filing
-                ):
-                    file_name = "specialResolutionCorrectionApplication"
+            specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
             if file_name is None:
                 # Fallback to default if specific template not found
                 file_name = (
@@ -240,6 +245,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         filing["header"]["reportType"] = self._report_key
 
+        self._format_par_value(filing)
         self._set_dates(filing)
         self._set_description(filing)
         self._set_tax_id(filing)
@@ -247,6 +253,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
         return filing
+
+    def _format_par_value(self, filing):
+        if share_classes := filing.get("shareClasses"):
+            for share_class in share_classes:
+                if (par_value := share_class.get("parValue")) and isinstance(par_value, float):
+                    share_class["parValue"] = float_to_str(par_value)
 
     def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
         if self._report_key == "incorporationApplication":
@@ -273,6 +285,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_transition_data(filing)
         elif self._report_key == "dissolution":
             self._format_dissolution_data(filing)
+        elif self._report_key == "letterOfAgmExtension":
+            self._format_agm_extension_data(filing)
+        elif self._report_key == "letterOfAgmLocationChange":
+            self._format_agm_location_change_data(filing)
+        elif self._report_key == "amalgamationApplication":
+            self._format_amalgamation_data(filing)
+        elif self._report_key == "certificateOfAmalgamation":
+            self._format_certificate_of_amalgamation_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -476,12 +496,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 cooperative["cooperativeAssociationType"], ""
             )
 
+    def _set_party_name(self, parties):
+        for party in parties:
+            party["officer"]["name"] = self._get_party_name(party)
+
     def _format_registration_data(self, filing):
         with suppress(KeyError):
             self._format_address(filing["registration"]["offices"]["businessOffice"]["deliveryAddress"])
         with suppress(KeyError):
+
             self._format_address(filing["registration"]["offices"]["businessOffice"]["mailingAddress"])
         self._format_directors(filing["registration"]["parties"])
+        self._set_party_name(filing["registration"]["parties"])
 
         start_date = LegislationDatetime.as_legislation_timezone_from_date_str(filing["registration"]["startDate"])
         filing["registration"]["startDate"] = start_date.strftime(OUTPUT_DATE_FORMAT)
@@ -493,6 +519,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == "alteration":
             from_business_name = meta_data.get("alteration", {}).get("fromBusinessName")
             to_business_name = meta_data.get("alteration", {}).get("toBusinessName")
+        if self._filing.filing_type == "correction":
+            from_business_name = meta_data.get("correction", {}).get("fromBusinessName")
+            to_business_name = meta_data.get("correction", {}).get("toBusinessName")
+            corrected_on = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+            filing["correctedOn"] = corrected_on.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_type == "specialResolution" and "changeOfName" in meta_data.get("legalFilings", []):
             from_business_name = meta_data.get("changeOfName", {}).get("fromBusinessName")
             to_business_name = meta_data.get("changeOfName", {}).get("toBusinessName")
@@ -582,6 +613,49 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
 
+    def _format_agm_extension_data(self, filing):
+        meta_data = self._filing.meta_data or {}
+        is_first_agm = meta_data.get("agmExtension", {}).get("isFirstAgm", "")
+        filing["is_first_agm"] = is_first_agm
+        filing["agm_year"] = meta_data.get("agmExtension", {}).get("year", "")
+        filing["is_final_agm"] = meta_data.get("agmExtension", {}).get("isFinalExtension", "")
+
+        number_words = ["one", "two", "three", "four", "five", "six"]
+        duration_numeric = meta_data.get("agmExtension", {}).get("extensionDuration", "")
+        filing["duration_numeric"] = duration_numeric
+        filing["duration_spelling"] = number_words[int(duration_numeric)-1]
+
+        if is_first_agm:
+            founding_date_json = self._filing.filing_json["filing"].get("business", {}).get("foundingDate", "")
+            founding_date = founding_date_json[0:10]
+            original_date_time = LegislationDatetime.\
+                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
+            filing["original_agm_date"] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+        else:
+            expire_date_current_string = meta_data.get("agmExtension", {}).get("expireDateCurrExt", "")
+            date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+            filing["original_agm_date"] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
+
+        if expire_date_approved_string := meta_data.get("agmExtension", {}).get("expireDateApprovedExt", ""):
+            date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
+            filing["extended_agm_date"] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
+
+        filing["offices"] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+        with suppress(KeyError):
+            self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
+
+    def _format_agm_location_change_data(self, filing):
+        filing["agm_year"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("year", "")
+
+        filing["location"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("agmLocation", "")
+
+        filing["offices"] = VersionedBusinessDetailsService.\
+            get_office_revision(self._filing.transaction_id, self._business.id)
+
+        with suppress(KeyError):
+            self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
+
     def _format_alteration_data(self, filing):
         # Get current list of translations in alteration. None if it is deletion
         if "nameTranslations" in filing["alteration"]:
@@ -623,9 +697,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
         filing["newLegalTypeDescription"] = self._get_legal_type_description(new_legal_type) if new_legal_type else None
 
-    def _format_change_of_registration_data(
-        self, filing, filing_type
-    ):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def _format_amalgamation_data(self, filling):
+        # FUTURE: format logic for amalgamation application
+        return
+
+    def _format_certificate_of_amalgamation_data(self, filing):
+        # FUTURE: format logic for certificate of amalgamation
+        return
+
+    def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(
             prev_completed_filing, self._legal_entity.id
@@ -720,10 +801,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if party_json.get("officer").get("partyType") == "person":
             last_name = party_json["officer"].get("lastName")
             first_name = party_json["officer"].get("firstName")
-            middle_initial = (
-                party_json["officer"].get("middleInitial") if party_json["officer"].get("middleInitial") else ""
-            )
-            party_name = f"{last_name}, {first_name} {middle_initial}"
+            middle_name = party_json["officer"].get("middleName", party_json["officer"].get("middleInitial", ""))
+            if not middle_name and not first_name:
+                party_name = f"{last_name}"
+            else:
+                party_name = f"{last_name}, {first_name} {middle_name}"
         elif party_json.get("officer").get("partyType") == "organization":
             party_name = party_json["officer"].get("organizationName")
         return party_name
@@ -791,12 +873,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
-        corrected_filing_id = filing.get("correction", {}).get("correctedFilingId")
-        original_filing = Filing.find_by_id(corrected_filing_id)
         if self._legal_entity.legal_type in ["SP", "GP"]:
             self._format_change_of_registration_data(filing, "correction")
-        elif is_special_resolution_correction(filing, self._legal_entity, original_filing):
-            self._format_special_resolution_application(filing, "correction")
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(
@@ -808,6 +886,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_office_data(filing, prev_completed_filing)
             self._format_party_data(filing, prev_completed_filing)
             self._format_share_class_data(filing, prev_completed_filing)
+            self._format_resolution_data(filing)
 
     def _format_name_request_data(self, filing, versioned_legal_entity: LegalEntity):
         name_request_json = filing.get("correction").get("nameRequest", {})
@@ -824,7 +903,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             prev_completed_filing, self._legal_entity.id
         )
         filing["previousNameTranslations"] = versioned_name_translations
-        filing["nameTranslationsChange"] = sorted(filing["listOfTranslations"]) != sorted(versioned_name_translations)
+        filing["nameTranslationsChange"] = \
+            sorted([translation["name"] for translation in filing["listOfTranslations"]]) != \
+            sorted([translation["name"] for translation in versioned_name_translations])
 
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing["offices"] = {}
@@ -965,6 +1046,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if ceased_share_series:
                 filing["shareClassesChange"] = True
 
+    def _format_resolution_data(self, filing: Filing):
+        meta_data = self._filing.meta_data or {}
+        filing_source = "correction"
+        prev_association_type = meta_data.get(filing_source, {}).get("fromCooperativeAssociationType")
+        to_association_type = meta_data.get(filing_source, {}).get("toCooperativeAssociationType")
+        if prev_association_type and to_association_type and prev_association_type != to_association_type:
+            filing["prevCoopAssociationType"] = ASSOCIATION_TYPE_DESC.get(prev_association_type, "")
+            filing["newCoopAssociationType"] = ASSOCIATION_TYPE_DESC.get(to_association_type, "")
+        filing["rulesInResolution"] = filing.get(filing_source, {}).get("rulesInResolution")
+        filing["uploadNewRules"] = meta_data.get(filing_source, {}).get("uploadNewRules")
+        filing["uploadNewMemorandum"] = meta_data.get(filing_source, {}).get("uploadNewMemorandum")
+        filing["memorandumInResolution"] = filing.get(filing_source, {}).get("memorandumInResolution")
+        if (resolution_date_str := filing.get(filing_source, {}).get("resolutionDate", None)):
+            resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
+            filing[filing_source]["resolutionDate"] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
+
     @staticmethod
     def _compare_json(new_json, existing_json, excluded_keys):
         if not new_json and not existing_json:
@@ -980,7 +1077,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return changed
 
     def _format_special_resolution(self, filing):
-        """For both special resolutions and special resolution corrections."""
+        """For special resolutions."""
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._legal_entity.entity_type)
@@ -996,22 +1093,23 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing[filing_source]["signingDate"] = signing_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _format_special_resolution_application(self, filing, filing_source):
-        """For both special resolutions and special resolution corrections."""
+        """For special resolutions."""
         meta_data = self._filing.meta_data or {}
-        prev_business_name = meta_data.get("changeOfName", {}).get("fromBusinessName")
-        to_business_name = meta_data.get("changeOfName", {}).get("toBusinessName")
-        if prev_business_name and to_business_name and prev_business_name != to_business_name:
-            filing["fromBusinessName"] = prev_business_name
-            filing["toBusinessName"] = to_business_name
-            filing["nrNumber"] = filing.get("changeOfName").get("nameRequest", {}).get("nrNumber", None)
-        prev_association_type = meta_data.get(filing_source, {}).get("fromCooperativeAssociationType")
-        to_association_type = meta_data.get(filing_source, {}).get("toCooperativeAssociationType")
-        if prev_association_type and to_association_type and prev_association_type != to_association_type:
-            filing["prevCoopAssociationType"] = ASSOCIATION_TYPE_DESC.get(prev_association_type, "")
-            filing["newCoopAssociationType"] = ASSOCIATION_TYPE_DESC.get(to_association_type, "")
-        filing["rulesInResolution"] = filing.get(filing_source, {}).get("rulesInResolution")
-        filing["uploadNewRules"] = meta_data.get(filing_source, {}).get("uploadNewRules")
-        filing["memorandumInResolution"] = filing.get(filing_source, {}).get("memorandumInResolution")
+        if filing_source == "alteration":
+            prev_business_name = meta_data.get("changeOfName", {}).get("fromBusinessName")
+            to_business_name = meta_data.get("changeOfName", {}).get("toBusinessName")
+            if prev_business_name and to_business_name and prev_business_name != to_business_name:
+                filing["fromBusinessName"] = prev_business_name
+                filing["toBusinessName"] = to_business_name
+                filing["nrNumber"] = filing.get("changeOfName").get("nameRequest", {}).get("nrNumber", None)
+        elif filing_source == "correction":
+            prev_business_name = meta_data.get(filing_source, {}).get("fromBusinessName")
+            to_business_name = meta_data.get(filing_source, {}).get("toBusinessName")
+            if prev_business_name and to_business_name and prev_business_name != to_business_name:
+                filing["fromBusinessName"] = prev_business_name
+                filing["toBusinessName"] = to_business_name
+                filing["nrNumber"] = filing.get(filing_source).get("nameRequest", {}).get("nrNumber", None)
+        self._format_resolution_data(filing)
 
     def _format_noa_data(self, filing):
         filing["header"] = {}
@@ -1057,6 +1155,14 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
 
     reports = {
+        "amalgamationApplication": {
+            "filingDescription": "Amalgamation Application",
+            "fileName": "amalgamationApplication"
+        },
+        "certificateOfAmalgamation": {
+            "filingDescription": "Certificate Of Amalgamation",
+            "fileName": "certificateOfAmalgamation"
+        },
         "certificate": {"filingDescription": "Certificate of Incorporation", "fileName": "certificateOfIncorporation"},
         "incorporationApplication": {
             "filingDescription": "Incorporation Application",
@@ -1122,6 +1228,14 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "restoration": {"filingDescription": "Restoration Application", "fileName": "restoration"},
         "letterOfConsent": {"filingDescription": "Letter Of Consent", "fileName": "letterOfConsent"},
+        "letterOfAgmExtension": {
+            "filingDescription": "Letter Of AGM Extension",
+            "fileName": "letterOfAgmExtension"
+        },
+        "letterOfAgmLocationChange": {
+            "filingDescription": "Letter Of AGM Location Change",
+            "fileName": "letterOfAgmLocationChange"
+        },
     }
 
     static_reports = {

@@ -1,0 +1,43 @@
+[[macros.html]]
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Letter of AGM Location Change</title>
+      <meta charset="UTF-8">
+      <meta name="author" content="BC Registries and Online Services">
+      [[common/style.html]]
+      [[common/styleLetterOverride.html]]
+   </head>
+   <body>
+      <div class="header-logo">[[logo.html]]</div>
+
+      <div class="letter-copy">
+        <div>{{ report_date }}</div>
+        {% set office = offices.registeredOffice %}
+        <div class="mt-12">{{ office.mailingAddress.streetAddress }}</div>
+        <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+        <div>
+          {{ office.mailingAddress.addressCity }}, {{ office.mailingAddress.addressRegion }}
+        </div>
+        <div> {{ office.mailingAddress.postalCode }}</div>
+        <div class="mt-7">Dear Applicant,</div>
+        <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+        <div class="mt-5">
+            Under section 166(b)(iii) of the Business Corporations Act, I hereby approve the following location 
+            as the place where the above-named company may convene its Annual General Meeting for the year {{agm_year}}.
+        </div>
+        <div class="mt-5">
+            {{location}}
+        </div>
+        <p class="mt-12">Yours truly,</p>
+        <div class="registrar-info">
+          <div>[[common/certificateRegistrarSignature.html]]</div>
+          <div>
+            <div class="registrar-name">{{ registrarInfo.name }}</div>
+            <div class="registrar-title">{{ registrarInfo.title }}</div>
+          </div>
+        </div>
+      </div>
+      [[common/footerMOCS.html]]
+   </body>
+</html>

@@ -244,9 +244,11 @@ def test_incorporation_filing_process_no_nr(
         ("too big number", "12345678", None),
     ],
 )
-def test_get_next_corp_num(requests_mock, app, test_name, response, expected):
+def test_get_next_corp_num(requests_mock, mocker, app, test_name, response, expected):
     """Assert that the corpnum is the correct format."""
     from flask import current_app
+
+    mocker.patch("legal_api.services.bootstrap.AccountService.get_bearer_token", return_value='')
 
     with app.app_context():
         current_app.config["COLIN_API"] = "http://localhost"

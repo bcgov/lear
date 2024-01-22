@@ -29,6 +29,11 @@ class LegislationDatetime:
         return datetime.now().astimezone(pytz.timezone(current_app.config.get("LEGISLATIVE_TIMEZONE")))
 
     @staticmethod
+    def datenow() -> date:
+        """Construct a date using the legislation timezone."""
+        return LegislationDatetime.now().date()
+
+    @staticmethod
     def tomorrow_midnight() -> datetime:
         """Construct a datetime tomorrow midnight using the legislation timezone."""
         _date = datetime.now().astimezone(pytz.timezone(current_app.config.get("LEGISLATIVE_TIMEZONE")))

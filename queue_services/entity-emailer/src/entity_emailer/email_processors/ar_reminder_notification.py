@@ -28,7 +28,7 @@ from entity_emailer.email_processors import (
 )
 
 
-def process(email_msg: dict, token: str) -> dict:
+def process(email_msg: dict, token: str, flag_on: bool) -> dict:
     """Build the email for annual report reminder notification."""
     structured_log(request, "DEBUG", f"ar_reminder_notification: {email_msg}")
     ar_fee = email_msg["arFee"]
@@ -48,8 +48,8 @@ def process(email_msg: dict, token: str) -> dict:
         ar_fee=ar_fee,
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
-        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
-        + business.identifier,
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.identifier,
+        disable_specific_service_provider=flag_on
     )
 
     # get recipients

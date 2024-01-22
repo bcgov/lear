@@ -41,6 +41,8 @@ from unittest.mock import Mock
 
 from legal_api.models import LegalEntity, Filing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
+    AGM_EXTENSION,
+    AGM_LOCATION_CHANGE,
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -114,9 +116,11 @@ def create_filing(token=None, filing_json=None, legal_entity_id=None, filing_dat
 
 def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None):
     """Return a new incorp filing prepped for email notification."""
-    legal_entity = create_legal_entity(identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
+    legal_entity = create_legal_entity(
+        identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_template['filing']['business'] = {'identifier': legal_entity.identifier}
+    filing_template['filing']['business'] = {
+        'identifier': legal_entity.identifier}
     if legal_entity.legal_type:
         filing_template['filing']['business']['legalType'] = legal_entity.legal_type
         filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_entity.legal_type
@@ -197,7 +201,8 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
             'foundingDate': legal_entity.founding_date.isoformat()
         }
 
-    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity_id)
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity_id)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
@@ -214,7 +219,8 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'dissolution'
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
 
     filing_template['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
     filing_template['filing']['business'] = {
@@ -251,9 +257,11 @@ def prep_consent_continuation_out_filing(session, identifier, payment_id, legal_
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'consentContinuationOut'
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
 
-    filing_template['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+    filing_template['filing']['consentContinuationOut'] = copy.deepcopy(
+        CONSENT_CONTINUATION_OUT)
     filing_template['filing']['business'] = {
         'identifier': legal_entity.identifier,
         'legalType': legal_type,
@@ -281,9 +289,11 @@ def prep_continuation_out_filing(session, identifier, payment_id, legal_type, le
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'continuationOut'
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
 
-    filing_template['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_template['filing']['continuationOut'] = copy.deepcopy(
+        CONTINUATION_OUT)
     filing_template['filing']['business'] = {
         'identifier': legal_entity.identifier,
         'legalType': legal_type,
@@ -345,12 +355,14 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
 
     gp_change_of_registration = copy.deepcopy(FILING_HEADER)
     gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
-    gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(
+        CHANGE_OF_REGISTRATION)
     gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party@email.com'
 
     sp_change_of_registration = copy.deepcopy(FILING_HEADER)
     sp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
-    sp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
+    sp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(
+        CHANGE_OF_REGISTRATION)
     sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['roles'] = [
         {
             'roleType': 'Completing Party',
@@ -376,7 +388,8 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
         'legalName': legal_name
     }
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
 
     filing = create_filing(
         token=payment_id,
@@ -395,28 +408,89 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
 
 def prep_alteration_filing(session, identifier, option, company_name):
     """Return an alteration filing prepped for email notification."""
-    legal_entity = create_legal_entity(identifier, legal_type=LegalEntity.EntityTypes.BCOMP.value, legal_name=company_name)
+    legal_entity = create_legal_entity(
+        identifier, legal_type=LegalEntity.EntityTypes.BCOMP.value, legal_name=company_name)
     filing_template = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': LegalEntity.EntityTypes.BCOMP.value, 'legalName': company_name}
-    filing = create_filing(filing_json=filing_template, legal_entity_id=legal_entity.id)
+        {'identifier': f'{identifier}',
+            'legalype': LegalEntity.EntityTypes.BCOMP.value, 'legalName': company_name}
+    filing = create_filing(filing_json=filing_template,
+                           legal_entity_id=legal_entity.id)
     filing.save()
 
     return filing
 
 
+def prep_agm_location_change_filing(identifier, payment_id, legal_type, legal_name):
+    """Return a new AGM location change filing prepped for email notification."""
+    business = create_legal_entity(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'agmLocationChange'
+
+    filing_template['filing']['agmLocationChange'] = copy.deepcopy(
+        AGM_LOCATION_CHANGE)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        legal_entity_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+
+    filing.save()
+    return filing
+
+
+def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
+    """Return a new AGM extension filing prepped for email notification."""
+    business = create_legal_entity(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'agmExtension'
+
+    filing_template['filing']['agmExtension'] = copy.deepcopy(AGM_EXTENSION)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        legal_entity_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+
+    filing.save()
+    return filing
+
+
 def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None):
     """Return a new maintenance filing prepped for email notification."""
-    legal_entity = create_legal_entity(identifier, LegalEntity.EntityTypes.BCOMP.value, LEGAL_NAME)
+    legal_entity = create_legal_entity(
+        identifier, LegalEntity.EntityTypes.BCOMP.value, LEGAL_NAME)
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
     filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': LegalEntity.EntityTypes.BCOMP.value, 'legalName': LEGAL_NAME}
-    filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
+        {'identifier': f'{identifier}',
+            'legalype': LegalEntity.EntityTypes.BCOMP.value, 'legalName': LEGAL_NAME}
+    filing_template['filing'][filing_type] = copy.deepcopy(
+        FILING_TYPE_MAPPER[filing_type])
 
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
 
     user = create_user('test_user')
     filing.submitter_id = user.id
@@ -436,14 +510,16 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
 def prep_incorporation_correction_filing(session, legal_entity, original_filing_id, payment_id, option):
     """Return a new incorporation correction filing prepped for email notification."""
     filing_template = copy.deepcopy(CORRECTION_INCORPORATION)
-    filing_template['filing']['business'] = {'identifier': legal_entity.identifier}
+    filing_template['filing']['business'] = {
+        'identifier': legal_entity.identifier}
     for party in filing_template['filing']['correction']['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['correction']['contactPoint']['email'] = 'test@test.com'
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
-    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
@@ -505,7 +581,8 @@ def prep_firm_correction_filing(session, identifier, payment_id, legal_type, leg
 
 def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_name, submitter_role=None):
     """Return a new cp special resolution out filing prepped for email notification."""
-    legal_entity = create_legal_entity(identifier, legal_type=legal_type, legal_name=legal_name)
+    legal_entity = create_legal_entity(
+        identifier, legal_type=legal_type, legal_name=legal_name)
     filing_template = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
     filing_template['filing']['business'] = \
         {'identifier': f'{identifier}', 'legalype': legal_type, 'legalName': legal_name}
@@ -521,8 +598,10 @@ def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_
         'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
     }
     if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
+        filing_template['filing']['header'][
+            'documentOptionalEmail'] = f'{submitter_role}@email.com'
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
 
     user = create_user('cp_test_user')
     filing.submitter_id = user.id
@@ -537,18 +616,55 @@ def prep_cp_special_resolution_correction_filing(session, legal_entity, original
     """Return a cp special resolution correction filing prepped for email notification."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'correction'
-    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-    filing_template['filing']['business'] = {'identifier': legal_entity.identifier}
+    filing_template['filing']['correction'] = copy.deepcopy(
+        CORRECTION_CP_SPECIAL_RESOLUTION)
+    filing_template['filing']['business'] = {
+        'identifier': legal_entity.identifier}
     filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
     filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
     filing_template['filing']['correction']['nameRequest'] = {
         'nrNumber': 'NR 8798956',
         'legalName': 'HAULER MEDIA INC.',
-        'legalType': 'BC'
+        'legalType': 'BC',
+        'requestType': 'CHG'
     }
-    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, legal_entity_id=legal_entity.id)
     filing.payment_completion_date = filing.filing_date
+    # Triggered from the filer.
+    filing._meta_data = {'correction': {
+        'uploadNewRules': True, 'toLegalName': True}}
+    filing.save()
+    if option in ['COMPLETED']:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+    return filing
+
+
+def prep_cp_special_resolution_correction_upload_memorandum_filing(session, business,
+                                                                   original_filing_id,
+                                                                   payment_id, option,
+                                                                   corrected_filing_type):
+    """Return a cp special resolution correction filing prepped for email notification."""
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'correction'
+    filing_template['filing']['correction'] = copy.deepcopy(
+        CORRECTION_CP_SPECIAL_RESOLUTION)
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
+    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
+    filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
+    del filing_template['filing']['correction']['resolution']
+    filing_template['filing']['correction']['memorandumFileKey'] = '28f73dc4-8e7c-4c89-bef6-a81dff909ca6.pdf'
+    filing_template['filing']['correction']['memorandumFileName'] = 'test.pdf'
+    filing = create_filing(
+        token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+    # Triggered from the filer.
+    filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
     filing.save()
     if option in ['COMPLETED']:
         uow = versioning_manager.unit_of_work(session)
@@ -579,6 +695,7 @@ def create_mock_message(message_payload: dict):
     json_msg_payload = json.dumps(message_payload)
     mock_msg.data.decode = Mock(return_value=json_msg_payload)
     return mock_msg
+
 
 @contextmanager
 def nested_session(session):

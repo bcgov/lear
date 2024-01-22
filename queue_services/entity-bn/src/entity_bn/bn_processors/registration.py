@@ -20,6 +20,7 @@ from http import HTTPStatus
 import requests
 from flask import current_app, request
 from legal_api.models import ColinEntity, EntityRole, LegalEntity, RequestTracker
+from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from simple_cloudevent import SimpleCloudEvent
@@ -148,7 +149,8 @@ def process(
         )
 
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
-        queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
+        queue.publish(topic=mail_topic,
+                      payload=queue.to_queue_message(cloud_event))
     except (
         Exception
     ) as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
@@ -262,7 +264,8 @@ def _get_bn(
         legal_entity.identifier, transaction_id
     )
     if status_code == HTTPStatus.OK:
-        program_account_ref_no = str(response["program_account_ref_no"]).zfill(4)
+        program_account_ref_no = str(
+            response["program_account_ref_no"]).zfill(4)
         bn15 = f"{response['business_no']}{response['business_program_id']}{program_account_ref_no}"
         alternate_name = legal_entity._alternate_names.first()
         alternate_name.bn15 = bn15
@@ -278,8 +281,12 @@ def _get_program_account(identifier, transaction_id):
     try:
         # Note: Dev environment don’t have BNI link. So this will never work in Dev environment.
         # Use Test environment for testing.
+        token = AccountService.get_bearer_token()
         url = f'{current_app.config["COLIN_API"]}/programAccount/{identifier}/{transaction_id}'
-        response = requests.get(url)
+        response = requests.get(url,
+                                headers={**AccountService.CONTENT_TYPE_JSON,
+                                         "Authorization": AccountService.BEARER + token},
+                                timeout=AccountService.timeout)
         return response.status_code, response.json()
     except requests.exceptions.RequestException as err:
         structured_log(request, "ERROR", str(err))

@@ -168,6 +168,22 @@ class _Config:  # pylint: disable=too-few-public-methods
     SENTRY_DSN = os.getenv("SENTRY_DSN", None)
     LD_SDK_KEY = os.getenv("BUSINESS_API_LD_SDK_KEY", None)
 
+    # Traction ACA-Py tenant settings to issue credentials from
+    TRACTION_API_URL = os.getenv("TRACTION_API_URL")
+    TRACTION_TENANT_ID = os.getenv("TRACTION_TENANT_ID")
+    TRACTION_API_KEY = os.getenv("TRACTION_API_KEY")
+    TRACTION_PUBLIC_SCHEMA_DID = os.getenv("TRACTION_PUBLIC_SCHEMA_DID")
+    TRACTION_PUBLIC_ISSUER_DID = os.getenv("TRACTION_PUBLIC_ISSUER_DID")
+
+    # Web socket settings
+    WS_ALLOWED_ORIGINS = os.getenv("WS_ALLOWED_ORIGINS")
+
+    # Digital Business Card configuration values (required to issue credentials)
+    BUSINESS_SCHEMA_NAME = os.getenv("BUSINESS_SCHEMA_NAME")
+    BUSINESS_SCHEMA_VERSION = os.getenv("BUSINESS_SCHEMA_VERSION")
+    BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID")
+    BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID")
+
     TESTING = False
     DEBUG = False
 

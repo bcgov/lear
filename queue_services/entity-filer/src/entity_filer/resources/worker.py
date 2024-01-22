@@ -66,7 +66,10 @@ from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
     admin_freeze,
+    agm_extension,
+    agm_location_change,
     alteration,
+    amalgamation_application,
     annual_report,
     change_of_address,
     change_of_directors,
@@ -273,6 +276,17 @@ def process_filing(
                     business, {filing_type: filing}, filing_submission, filing_meta
                 )
 
+            case "agmExtension":
+                agm_extension.process(filing, filing_meta)
+
+            case "agmLocationChange":
+                agm_location_change.process(filing, filing_meta)
+
+            case "amalgamationApplication":
+                business, filing_submission, filing_meta = amalgamation_application.process(
+                    business, filing_submission.json, filing_submission, filing_meta
+                )
+
             case "alteration":
                 alteration.process(
                     business, filing_submission, {filing_type: filing}, filing_meta
@@ -471,7 +485,7 @@ def process_filing(
         #     )
 
     if any("registration" in x for x in legal_filings):
-        filing_submission.business_id = business.id
+        filing_submission.legal_entity_id = business.id
         db.session.add(filing_submission)
         db.session.commit()
         # TODO
@@ -479,6 +493,16 @@ def process_filing(
         # registration.update_affiliation(business, filing_submission)
         # name_request.consume_nr(business, filing_submission, 'registration')
         # registration.post_process(business, filing_submission)
+
+    if any('amalgamationApplication' in x for x in legal_filings):
+        filing_submission.legal_entity_id = business.id
+        db.session.add(filing_submission)
+        db.session.commit()
+        # TODO
+        pass
+        # amalgamation_application.update_affiliation(business, filing_submission)
+        # name_request.consume_nr(business, filing_submission, 'amalgamationApplication')
+        # amalgamation_application.post_process(business, filing_submission)
 
     if any("changeOfName" in x for x in legal_filings):
         change_of_name.post_process(business, filing_submission)

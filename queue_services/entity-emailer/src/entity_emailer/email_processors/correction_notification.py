@@ -24,7 +24,7 @@ import requests
 from flask import current_app
 from flask import request
 from jinja2 import Template
-from legal_api.core.filing_helper import is_special_resolution_correction
+from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.models import Filing
 
 from entity_emailer.services.logging import structured_log
@@ -47,9 +47,8 @@ def _get_pdfs(
     attach_order = 1
     headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
     entity_type = business.get("legalType", None)
-    is_cp_special_resolution = is_special_resolution_correction(
-        filing.filing_json["filing"], business, filing
-    )
+    is_cp_special_resolution = entity_type == 'CP' and is_special_resolution_correction_by_filing_json(
+        filing.filing_json['filing'])
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -66,9 +65,7 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    "fileName": "Special Resolution Correction Application.pdf"
-                    if is_cp_special_resolution
-                    else "Register Correction Application.pdf",
+                    "fileName": "Register Correction Application.pdf",
                     "fileBytes": filing_pdf_encoded.decode("utf-8"),
                     "fileUrl": "",
                     "attachOrder": attach_order,
@@ -153,12 +150,10 @@ def _get_pdfs(
                 )
                 attach_order += 1
         elif is_cp_special_resolution:
-            rules_changed = bool(
-                filing.filing_json["filing"]["correction"].get("rulesFileKey")
-            )
-            pdfs = get_completed_pdfs(
-                token, business, filing, name_changed, rules_changed
-            )
+            rules_changed = bool(filing.filing_json["filing"]["correction"].get("rulesFileKey"))
+            memorandum_changed = bool(filing.filing_json["filing"]["correction"].get("memorandumFileKey"))
+            pdfs = get_completed_pdfs(token, business, filing, name_changed,
+                                      rules_changed=rules_changed, memorandum_changed=memorandum_changed)
     return pdfs
 
 
@@ -266,11 +261,11 @@ def process(
             "changeOfDirectors",
         ]:
             return None
-    elif is_special_resolution_correction(
-        filing.filing_json["filing"], business, filing
+    elif entity_type == "CP" and is_special_resolution_correction_by_filing_json(
+            filing.filing_json["filing"]
     ):
         prefix = "CP-SR"
-        name_changed = filing.filing_json["filing"]["correction"].get("nameRequest", {})
+        name_changed = "requestType" in filing.filing_json["filing"]["correction"].get("nameRequest", {})
     else:
         return None
 

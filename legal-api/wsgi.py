@@ -18,7 +18,7 @@ import os
 from legal_api import create_app, db
 from flask_migrate import Migrate
 
-app = create_app() # pylint: disable=invalid-name
+app = create_app()  # pylint: disable=invalid-name
 migrate = Migrate(app, db)
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@
 
 """This exports all of the models and schemas used by the application."""
 from .address import Address
+from .amalgamating_business import AmalgamatingBusiness
+from .amalgamation import Amalgamation
 from .alias import Alias
 from .alternate_name import AlternateName
 from .colin_entity import ColinEntity
@@ -24,7 +26,9 @@ from .corp_type import CorpType
 from .db import db  # noqa: I001
 from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
+from .dc_issued_business_user_credential import DCIssuedBusinessUserCredential
 from .dc_issued_credential import DCIssuedCredential
+from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .entity_role import EntityRole
 from .filing import Filing
@@ -44,6 +48,8 @@ from .user import User, UserRoles
 __all__ = (
     "db",
     "Address",
+    "AmalgamatingBusiness",
+    "Amalgamation",
     "Alias",
     "AlternateName",
     "ColinEntity",
@@ -54,7 +60,9 @@ __all__ = (
     "CorpType",
     "DCConnection",
     "DCDefinition",
+    "DCIssuedBusinessUserCredential",
     "DCIssuedCredential",
+    "DCRevocationReason",
     "Document",
     "DocumentType",
     "EntityRole",

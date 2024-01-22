@@ -236,6 +236,12 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
             print(err)
             print("done")
 
+        # For those who have local databases on bare metal in local time.
+        # Otherwise some of the returns will come back in local time and unit tests will fail.
+        # The current DEV database uses UTC.
+        sess.execute("SET TIME ZONE 'UTC';")
+        sess.commit()
+
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()

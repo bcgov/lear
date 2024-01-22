@@ -25,6 +25,7 @@ from business_model.models.document import DocumentType
 
 # from legal_api.services.bootstrap import AccountService
 # from legal_api.services.minio import MinioService
+# from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -85,7 +86,9 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
     #     # create certified copy for rules document
     #     rules_file_key = cooperative_obj.get('rulesFileKey')
     #     rules_file = MinioService.get_file(rules_file_key)
-    #     replace_file_with_certified_copy(rules_file.data, business, rules_file_key, business.founding_date)
+    #     registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
+
+    #     replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
 
     #     business.association_type = cooperative_obj.get('cooperativeAssociationType')
     #     document = Document()
@@ -98,7 +101,9 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
     #     # create certified copy for memorandum document
     #     memorandum_file_key = cooperative_obj.get('memorandumFileKey')
     #     memorandum_file = MinioService.get_file(memorandum_file_key)
-    #     replace_file_with_certified_copy(memorandum_file.data, business, memorandum_file_key, business.founding_date)
+    #     registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
+    #     replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
+
 
     #     document = Document()
     #     document.type = DocumentType.COOP_MEMORANDUM.value

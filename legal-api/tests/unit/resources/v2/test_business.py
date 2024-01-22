@@ -88,7 +88,11 @@ def test_create_bootstrap_failure_filing(client, jwt):
 
 
 @integration_affiliation
-@pytest.mark.parametrize("filing_name", ["incorporationApplication", "registration"])
+@pytest.mark.parametrize("filing_name", [
+    "incorporationApplication",
+    "registration",
+    "amalgamationApplication"
+])
 def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
     filing = {"filing": {"header": {"name": filing_name, "accountId": 28}}}
@@ -384,9 +388,9 @@ def test_post_affiliated_businesses(session, client, jwt):
             (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, "123456789BC0001"),
         ]
         draft_businesses = [
-            (identifiers[2], LegalEntity.EntityTypes.BCOMP.value, None),
-            (identifiers[3], LegalEntity.EntityTypes.SOLE_PROP.value, "NR 1234567"),
-            (identifiers[4], LegalEntity.EntityTypes.BCOMP.value, None),
+            (identifiers[2], "registration", LegalEntity.EntityTypes.GP.value, None),
+            (identifiers[3], "incorporationApplication", LegalEntity.EntityTypes.SOLE_PROP.value, "NR 1234567"),
+            (identifiers[4], "amalgamationApplication", LegalEntity.EntityTypes.COMP.value, "NR 1234567")
         ]
 
         # NB: these are real businesses now so temp should not get returned
@@ -406,20 +410,21 @@ def test_post_affiliated_businesses(session, client, jwt):
             )
 
         for draft_business in draft_businesses:
-            filing_name = (
-                "incorporationApplication"
-                if draft_business[1] == LegalEntity.EntityTypes.BCOMP.value
-                else "registration"
-            )
+            filing_name = draft_business[1]
             temp_reg = RegistrationBootstrap()
             temp_reg._identifier = draft_business[0]
             temp_reg.save()
             json_data = copy.deepcopy(FILING_HEADER)
             json_data["filing"]["header"]["name"] = filing_name
             json_data["filing"]["header"]["identifier"] = draft_business[0]
-            json_data["filing"]["header"]["legalType"] = draft_business[1]
-            if draft_business[2]:
-                json_data["filing"][filing_name] = {"nameRequest": {"nrNumber": draft_business[2]}}
+            json_data["filing"]["header"]["legalType"] = draft_business[2]
+            if draft_business[3]:
+                json_data["filing"][filing_name] = {"nameRequest": {"nrNumber": draft_business[3]}}
+            if filing_name == "amalgamationApplication":
+                json_data["filing"][filing_name] = {
+                    **json_data["filing"][filing_name],
+                    "type": "regular"
+                }
             filing = factory_pending_filing(None, json_data)
             filing.temp_reg = draft_business[0]
             if draft_business[0] in old_draft_businesses:

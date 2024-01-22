@@ -99,24 +99,29 @@ def test_special_resolution_correction(
     sr_filing_msg = {"filing": {"id": sr_filing_id}}
     # Call the process_filing method for the original special resolution
     process_filing(sr_filing_msg)
-
-    # Simulate a correction filing
-    correction_data = copy.deepcopy(FILING_HEADER)
-    correction_data["filing"]["correction"] = copy.deepcopy(correction_template)
-    correction_data["filing"]["header"]["name"] = "correction"
-    correction_data["filing"]["business"] = {"identifier": identifier}
-    correction_data["filing"]["correction"]["correctedFilingType"] = correct_filing_type
-    correction_data["filing"]["correction"]["resolution"] = "<p>xxxx</p>"
-    correction_data["filing"]["correction"]["signatory"] = {
-        "givenName": "Joey",
-        "familyName": "Doe",
-        "additionalName": "",
-    }
-    correction_data["filing"]["correction"]["cooperativeAssociationType"] = "HC"
-    # Update correction data to point to the original special resolution filing
-    if "correction" not in correction_data["filing"]:
-        correction_data["filing"]["correction"] = {}
-    correction_data["filing"]["correction"]["correctedFilingId"] = sr_filing_id
+    
+    if correct_filing_type == "changeOfAddress":
+        correction_data = copy.deepcopy(correction_template)
+        correction_data["filing"]["changeOfAddress"]["offices"] = {}
+        correction_data["filing"]["correction"]["correctedFilingId"] = sr_filing_id
+    else:
+        # Simulate a correction filing
+        correction_data = copy.deepcopy(FILING_HEADER)
+        correction_data["filing"]["correction"] = copy.deepcopy(correction_template)
+        correction_data["filing"]["header"]["name"] = "correction"
+        correction_data["filing"]["business"] = {"identifier": identifier}
+        correction_data["filing"]["correction"]["correctedFilingType"] = correct_filing_type
+        correction_data["filing"]["correction"]["resolution"] = "<p>xxxx</p>"
+        correction_data["filing"]["correction"]["signatory"] = {
+            "givenName": "Joey",
+            "familyName": "Doe",
+            "additionalName": "",
+        }
+        correction_data["filing"]["correction"]["cooperativeAssociationType"] = "HC"
+        # Update correction data to point to the original special resolution filing
+        if "correction" not in correction_data["filing"]:
+            correction_data["filing"]["correction"] = {}
+        correction_data["filing"]["correction"]["correctedFilingId"] = sr_filing_id
     correction_payment_id = str(random.SystemRandom().getrandbits(0x58))
     correction_filing_id = (
         create_filing(correction_payment_id, correction_data, business_id=business_id)

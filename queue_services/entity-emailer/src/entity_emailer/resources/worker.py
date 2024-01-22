@@ -45,12 +45,15 @@ from flask import request
 from legal_api import db
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.flags import Flags
 from simple_cloudevent import SimpleCloudEvent
 
 from entity_emailer.services import queue
 from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     affiliation_notification,
+    agm_extension_notification,
+    agm_location_change_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -129,7 +132,8 @@ def worker():
 
     if not email["recipients"] or not email["content"] or not email["content"]["body"]:
         # email object(s) is missing, take off queue
-        structured_log(request, "INFO", "Send email: email object(s) is missing")
+        structured_log(request, "INFO",
+                       "Send email: email object(s) is missing")
         return {}, HTTPStatus.OK
 
     resp = send_email(email, token)
@@ -152,10 +156,16 @@ def process_email(
     email_msg: dict, token: str
 ):  # pylint: disable=too-many-branches, too-many-statements
     """Process the email contained in the submission."""
-    structured_log(request, "DEBUG", f"Attempting to process email: {email_msg}")
+    flags = Flags()
+    if current_app.config.get("LD_SDK_KEY", None):
+        flags.init_app(current_app)
+
+    structured_log(request, "DEBUG",
+                   f"Attempting to process email: {email_msg}")
     etype = email_msg.get("type", None)
     if etype and etype == "bc.registry.names.request":
-        option = email_msg.get("data", {}).get("request", {}).get("option", None)
+        option = email_msg.get("data", {}).get(
+            "request", {}).get("option", None)
         if option and option in [
             nr_notification.Option.BEFORE_EXPIRY.value,
             nr_notification.Option.EXPIRED.value,
@@ -178,11 +188,20 @@ def process_email(
         elif etype == "incorporationApplication" and option == "mras":
             email = mras_notification.process(email_msg["email"])
         elif etype == "annualReport" and option == "reminder":
-            email = ar_reminder_notification.process(email_msg["email"], token)
+            flag_on = flags.is_on("disable-specific-service-provider")
+            email = ar_reminder_notification.process(
+                email_msg["email"], token, flag_on)
+        elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
+            email = agm_location_change_notification.process(
+                email_msg["email"], token)
+        elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
+            email = agm_extension_notification.process(
+                email_msg["email"], token)
         elif etype == "dissolution":
             email = dissolution_notification.process(email_msg["email"], token)
         elif etype == "registration":
-            email = registration_notification.process(email_msg["email"], token)
+            email = registration_notification.process(
+                email_msg["email"], token)
         elif etype == "restoration":
             email = restoration_notification.process(email_msg["email"], token)
         elif etype == "changeOfRegistration":
@@ -196,9 +215,11 @@ def process_email(
                 email_msg["email"], token
             )
         elif etype == "continuationOut":
-            email = continuation_out_notification.process(email_msg["email"], token)
+            email = continuation_out_notification.process(
+                email_msg["email"], token)
         elif etype == "specialResolution":
-            email = special_resolution_notification.process(email_msg["email"], token)
+            email = special_resolution_notification.process(
+                email_msg["email"], token)
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
                 return None

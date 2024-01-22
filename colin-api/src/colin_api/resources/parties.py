@@ -24,6 +24,7 @@ from colin_api.exceptions import GenericException
 from colin_api.models import Business, Party
 from colin_api.models.filing import DB
 from colin_api.resources.business import API
+from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
 from colin_api.utils.util import cors_preflight
 
 
@@ -34,6 +35,7 @@ class PartiesInfo(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return the current directors for a business."""
         if not identifier:
@@ -69,6 +71,7 @@ class Parties(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type: str, identifier: str):
         """Return all the parties for a business."""
         try:

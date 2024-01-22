@@ -24,7 +24,7 @@ from entity_emailer.services.logging import structured_log
 
 
 def get_completed_pdfs(
-    token: str, business: dict, filing: Filing, name_changed: bool, rules_changed=False
+    token: str, business: dict, filing: Filing, name_changed: bool, rules_changed=False, memorandum_changed=False
 ) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the completed pdfs for the special resolution output."""
@@ -67,7 +67,8 @@ def get_completed_pdfs(
         )
 
         if name_change.status_code == HTTPStatus.OK:
-            certified_name_change_encoded = base64.b64encode(name_change.content)
+            certified_name_change_encoded = base64.b64encode(
+                name_change.content)
             pdfs.append(
                 {
                     "fileName": "Certificate of Name Change.pdf",
@@ -103,6 +104,25 @@ def get_completed_pdfs(
             )
             attach_order += 1
 
+    # Certified Memorandum
+    if memorandum_changed:
+        memorandum = requests.get(
+            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
+            "?type=certifiedMemorandum",
+            headers=headers
+        )
+        if memorandum.status_code == HTTPStatus.OK:
+            certified_memorandum_encoded = base64.b64encode(memorandum.content)
+            pdfs.append(
+                {
+                    "fileName": "Certified Memorandum.pdf",
+                    "fileBytes": certified_memorandum_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order
+                }
+            )
+            attach_order += 1
+
     return pdfs
 
 
@@ -129,7 +149,8 @@ def get_paid_pdfs(
     )
 
     if sr_filing_pdf.status_code != HTTPStatus.OK:
-        structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
+        structured_log(request, "ERROR",
+                       f"Failed to get pdf for filing: {filing.id}")
     else:
         sr_filing_pdf_encoded = base64.b64encode(sr_filing_pdf.content)
         pdfs.append(

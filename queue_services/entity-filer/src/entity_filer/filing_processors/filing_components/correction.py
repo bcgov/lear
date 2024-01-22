@@ -136,6 +136,8 @@ def correct_business_data(
         resolution = dpath.util.get(correction_filing, "/correction/resolution")
         filings.update_filing_json(correction_filing_rec, resolution)
         resolutions.update_resolution(business, resolution)
+        if resolution:
+            filing_meta.correction = {**filing_meta.correction, **{"hasResolution": True}}
 
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -166,6 +168,26 @@ def correct_business_data(
                 **filing_meta.correction,
                 **{"uploadNewRules": True},
             }
+
+    # update memorandum, if any
+    with suppress(IndexError, KeyError, TypeError):
+        memorandum_file_key = dpath.util.get(correction_filing, "/correction/memorandumFileKey")
+        memorandum_file_name = dpath.util.get(correction_filing, "/correction/memorandumFileName")
+        if memorandum_file_key:
+            rules_and_memorandum.update_memorandum(business, correction_filing_rec,
+                                                   memorandum_file_key, memorandum_file_name)
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{"uploadNewMemorandum": True}}
+
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, "/correction/memorandumInResolution"):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{"memorandumInResolution": True}}
+
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, "/correction/rulesInResolution"):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{"rulesInResolution": True}}
 
 
 def update_parties(business: LegalEntity, parties: list, correction_filing_rec: Filing):

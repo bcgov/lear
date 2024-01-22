@@ -16,6 +16,7 @@
 import base64
 import uuid
 
+from datedelta import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
@@ -186,7 +187,11 @@ def factory_legal_entity_mailing_address(legal_entity):
     return legal_entity
 
 
-def factory_filing(legal_entity, data_dict, filing_date=FROZEN_DATETIME, filing_type=None, filing_sub_type=None):
+def factory_filing(legal_entity, data_dict,
+                   filing_date=FROZEN_DATETIME,
+                   filing_type=None,
+                   filing_sub_type=None,
+                   is_future_effective=False):
     """Create a filing."""
     filing = Filing()
     filing.legal_entity_id = legal_entity.id
@@ -196,6 +201,8 @@ def factory_filing(legal_entity, data_dict, filing_date=FROZEN_DATETIME, filing_
         filing._filing_type = filing_type
     if filing_sub_type:
         filing._filing_sub_type = filing_sub_type
+    if is_future_effective:
+        filing.effective_date = datetime.utcnow() + datedelta(days=5)
     try:
         filing.save()
     except Exception as err:

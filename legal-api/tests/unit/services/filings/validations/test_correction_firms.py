@@ -76,14 +76,9 @@ naics_response = {
         ("gp_correction", GP_CORRECTION_REGISTRATION_APPLICATION),
     ],
 )
-def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filing):
+def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
     """Test that a valid Firms correction passes validation."""
-    token = helper_create_jwt(jwt)
-    headers = {"Authorization": "Bearer " + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
+    mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)  # Client
     # setup
     identifier = "FM1234567"
     founding_date = datetime(2022, 1, 1)
@@ -97,17 +92,15 @@ def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filin
 
     nr_res = copy.deepcopy(nr_response)
     nr_res["legalType"] = f["filing"]["correction"]["nameRequest"]["legalType"]
-    with app.test_request_context():
-        monkeypatch.setattr("flask.request.headers.get", mock_auth)
-        with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-                err = validate(legal_entity, f)
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, "find_by_code", return_value=naics_response):
+            err = validate(legal_entity, f)
 
-                if err:
-                    print(err.msg)
+            if err:
+                print(err.msg)
 
-        # check that validation passed
-        assert None is err
+    # check that validation passed
+    assert None is err
 
 
 @pytest.mark.parametrize(
@@ -121,14 +114,9 @@ def test_valid_firms_correction(monkeypatch, app, session, jwt, test_name, filin
         ("gp_invalid_party", GP_CORRECTION_REGISTRATION_APPLICATION, "2 Partners and a Completing Party is required."),
     ],
 )
-def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_name, filing, expected_msg):
+def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, filing, expected_msg):
     """Test that a invalid Firms correction fails validation."""
-    token = helper_create_jwt(jwt)
-    headers = {"Authorization": "Bearer " + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
+    mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)  # Client
     # setup
     identifier = "FM1234567"
     legal_entity = factory_legal_entity(identifier)
@@ -142,18 +130,16 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
     del f["filing"]["correction"]["parties"][0]["roles"][0]
     nr_res = copy.deepcopy(nr_response)
     nr_res["legalType"] = f["filing"]["correction"]["nameRequest"]["legalType"]
-    with app.test_request_context():
-        monkeypatch.setattr("flask.request.headers.get", mock_auth)
-        with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-                err = validate(legal_entity, f)
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, "find_by_code", return_value=naics_response):
+            err = validate(legal_entity, f)
 
-                if err:
-                    print(err.msg)
+            if err:
+                print(err.msg)
 
-        # check that validation passed
-        assert err
-        assert err.msg[0]["error"] == expected_msg
+    # check that validation passed
+    assert err
+    assert err.msg[0]["error"] == expected_msg
 
 
 @pytest.mark.parametrize(
@@ -308,27 +294,10 @@ def test_firms_correction_invalid_parties(monkeypatch, app, session, jwt, test_n
         ),
     ],
 )
-def test_firms_correction_naics(
-    monkeypatch,
-    app,
-    session,
-    jwt,
-    test_name,
-    filing,
-    existing_naics_code,
-    existing_naics_desc,
-    correction_naics_code,
-    correction_naics_desc,
-    naics_response,
-    expected_msg,
-):
+def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, existing_naics_code, existing_naics_desc,
+                                correction_naics_code, correction_naics_desc, naics_response, expected_msg):
     """Test that NAICS code and description are correctly validated."""
-    token = helper_create_jwt(jwt)
-    headers = {"Authorization": "Bearer " + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
+    mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)  # Client
     # setup
     identifier = "FM1234567"
     founding_date = datetime(2022, 1, 1)
@@ -355,205 +324,56 @@ def test_firms_correction_naics(
 
     nr_res = copy.deepcopy(nr_response)
     nr_res["legalType"] = f["filing"]["correction"]["nameRequest"]["legalType"]
-    with app.test_request_context():
-        monkeypatch.setattr("flask.request.headers.get", mock_auth)
-        with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-                err = validate(legal_entity, f)
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, "find_by_code", return_value=naics_response):
+            err = validate(legal_entity, f)
 
-                if err:
-                    print(err.msg)
+            if err:
+                print(err.msg)
 
-        # check for expected validation resultsn
-        if expected_msg:
-            assert err
-            assert err.msg[0]["error"] == expected_msg
-        else:
-            assert None is err
+    # check for expected validation resultsn
+    if expected_msg:
+        assert err
+        assert err.msg[0]["error"] == expected_msg
+    else:
+        assert None is err
 
 
-@pytest.mark.parametrize(
-    "test_name, filing, username, roles, founding_date_str, delta_date, is_valid",
-    [
-        (
-            "sp_no_correction_by_staff",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            None,
-            True,
-        ),
-        (
-            "gp_no_correction_by_staff",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            None,
-            True,
-        ),
-        (
-            "sp_correction_greater_by_staff",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            timedelta(days=90),
-            True,
-        ),
-        (
-            "gp_correction_greater_by_staff",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            timedelta(days=90),
-            True,
-        ),
-        (
-            "sp_correction_invalid_greater_by_staff",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            timedelta(days=91),
-            False,
-        ),
-        (
-            "gp_correction_invalid_greater_by_staff",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            timedelta(days=91),
-            False,
-        ),
-        (
-            "sp_correction_lesser_by_staff",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            relativedelta(years=-20),
-            True,
-        ),
-        (
-            "gp_correction_lesser_by_staff",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "staff",
-            [STAFF_ROLE],
-            "2022-01-01",
-            relativedelta(years=-20),
-            True,
-        ),
-        (
-            "sp_no_correction_by_general_user",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            None,
-            True,
-        ),
-        (
-            "gp_no_correction_by_general_user",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            None,
-            True,
-        ),
-        (
-            "sp_correction_greater_by_general_user",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            timedelta(days=90),
-            True,
-        ),
-        (
-            "gp_correction_greater_by_general_user",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            timedelta(days=90),
-            True,
-        ),
-        (
-            "sp_correction_invalid_greater_by_general_user",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            timedelta(days=91),
-            False,
-        ),
-        (
-            "gp_correction_invalid_greater_by_general_user",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            timedelta(days=91),
-            False,
-        ),
-        (
-            "sp_correction_lesser_by_general_user",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            relativedelta(years=-10),
-            True,
-        ),
-        (
-            "gp_correction_lesser_by_general_user",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            relativedelta(years=-10),
-            True,
-        ),
-        (
-            "sp_correction_invalid_lesser_by_general_user",
-            SP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            relativedelta(years=-10, days=-1),
-            False,
-        ),
-        (
-            "gp_correction_invalid_lesser_by_general_user",
-            GP_CORRECTION_REGISTRATION_APPLICATION,
-            "general user",
-            [BASIC_USER],
-            "2022-01-01",
-            relativedelta(years=-10, days=-1),
-            False,
-        ),
-    ],
-)
-def test_firms_correction_start_date(
-    monkeypatch, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid
-):
+@pytest.mark.parametrize("test_name, filing, username, roles, founding_date_str, delta_date, is_valid",
+                         [
+                             ("sp_no_correction_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", None, True),
+                             ("gp_no_correction_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", None, True),
+                             ("sp_correction_greater_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=90), True),
+                             ("gp_correction_greater_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=90), True),
+                             ("sp_correction_invalid_greater_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=91), False),
+                             ("gp_correction_invalid_greater_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=91), False),
+                             ("sp_correction_lesser_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", relativedelta(years=-20), True),
+                             ("gp_correction_lesser_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", relativedelta(years=-20), True),
+
+                             ("sp_no_correction_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", None, True),
+                             ("gp_no_correction_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", None, True),
+                             ("sp_correction_greater_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=90), True),
+                             ("gp_correction_greater_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=90), True),
+                             ("sp_correction_invalid_greater_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=91), False),
+                             ("gp_correction_invalid_greater_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=91), False),
+                             ("sp_correction_lesser_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10), True),
+                             ("gp_correction_lesser_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10), True),
+                             ("sp_correction_invalid_lesser_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10, days=-1), False),
+                             ("gp_correction_invalid_lesser_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10, days=-1), False),
+                         ])
+def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid):
     """Test that start date of firms is correctly validated."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {"Authorization": "Bearer " + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_validate_roles(required_roles):
+        if roles in required_roles:
+            return True
+        return False
+    mocker.patch("legal_api.utils.auth.jwt.validate_roles", side_effect=mock_validate_roles)  # Client
 
     identifier = "FM1234567"
     founding_date = datetime.strptime(founding_date_str, "%Y-%m-%d")
-    business = factory_legal_entity(identifier=identifier, founding_date=founding_date)
+    legal_entity = factory_legal_entity(identifier=identifier, founding_date=founding_date)
 
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
+    corrected_filing = factory_completed_filing(legal_entity, CHANGE_OF_REGISTRATION_APPLICATION)
 
     start_date = founding_date
     if delta_date:
@@ -567,13 +387,11 @@ def test_firms_correction_start_date(
 
     nr_res = copy.deepcopy(nr_response)
     nr_res["legalType"] = f["filing"]["correction"]["nameRequest"]["legalType"]
-    with app.test_request_context():
-        monkeypatch.setattr("flask.request.headers.get", mock_auth)
-        with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
-            with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-                err = validate(business, f)
+    with patch.object(NameXService, "query_nr_number", return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, "find_by_code", return_value=naics_response):
+            err = validate(legal_entity, f)
 
-        if is_valid:
-            assert not err
-        else:
-            assert err
+    if is_valid:
+        assert not err
+    else:
+        assert err

@@ -295,8 +295,15 @@ def check_address(address: Address, address_type: str, referer: BusinessWarningR
     if not address.country:
         result.append(get_address_business_warning(referer, address_type, BusinessWarnings.NO_ADDRESS_COUNTRY))
     if not address.postal_code:
-        result.append(get_address_business_warning(referer, address_type, BusinessWarnings.NO_ADDRESS_POSTAL_CODE))
-    if not address.region:
-        result.append(get_address_business_warning(referer, address_type, BusinessWarnings.NO_ADDRESS_REGION))
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_POSTAL_CODE))
+
+    if (referer == BusinessWarningReferers.BUSINESS_OFFICE
+        and address_type == Address.DELIVERY
+            and not address.region):
+        result.append(get_address_business_warning(referer,
+                                                   address_type,
+                                                   BusinessWarnings.NO_ADDRESS_REGION))
 
     return result
