@@ -72,7 +72,6 @@ class FilingTitles(str, Enum):
 
 
 FILINGS: Final = {
-<<<<<<< HEAD
     "adminFreeze": {"name": "adminFreeze", "title": "Admin Freeze", "displayName": "Admin Freeze", "code": "NOFEE"},
     "affidavit": {"name": "affidavit", "title": "Affidavit", "codes": {"CP": "AFDVT"}},
     "agmExtension": {
