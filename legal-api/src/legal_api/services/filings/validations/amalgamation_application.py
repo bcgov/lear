@@ -83,11 +83,14 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     is_any_ulc = False
     is_any_expro_a = False
     amalgamating_businesses = {}
+    duplicate_businesses = []
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get('identifier'):
             if not (business := Business.find_by_identifier(identifier)):
                 continue
 
+            if identifier in amalgamating_businesses:
+                duplicate_businesses.append(identifier)
             amalgamating_businesses[identifier] = business
 
             if business.legal_type == Business.LegalTypes.BCOMP.value:
@@ -98,9 +101,15 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 is_any_ccc = True
             elif business.legal_type == Business.LegalTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
-        elif ((corp_number := amalgamating_business_json.get('corpNumber')) and corp_number.startswith('A')):
-            if ((foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction')) and
-                    foreign_jurisdiction.get('country') == 'CA' and foreign_jurisdiction.get('region') == 'BC'):
+        elif corp_number := amalgamating_business_json.get('corpNumber'):
+            if corp_number in amalgamating_businesses:
+                duplicate_businesses.append(corp_number)
+            amalgamating_businesses[corp_number] = amalgamating_business_json
+
+            if (corp_number.startswith('A') and
+                    (foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction')) and
+                    foreign_jurisdiction.get('country') == 'CA' and
+                    foreign_jurisdiction.get('region') == 'BC'):
                 is_any_expro_a = True
     is_any_bc_company = (is_any_ben or is_any_limited or is_any_ccc or is_any_ulc)
 
@@ -162,6 +171,20 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                                   f'a foreign company {foreign_legal_name}.'),
                         'path': amalgamating_businesses_path
                     })
+
+    if duplicate_businesses:
+        error_msg = 'Duplicate amalgamating business entry found in list: ' + \
+            ', '.join(duplicate_businesses) + '.'
+        msg.append({
+            'error': error_msg,
+            'path': amalgamating_businesses_path
+        })
+
+    if len(amalgamating_businesses) < 2:
+        msg.append({
+            'error': 'Two or more amalgamating businesses required.',
+            'path': amalgamating_businesses_path
+        })
 
     if legal_type == Business.LegalTypes.BC_CCC.value and not is_any_ccc:
         msg.append({
