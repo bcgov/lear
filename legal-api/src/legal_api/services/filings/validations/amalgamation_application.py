@@ -113,9 +113,9 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
             amalgamating_businesses[corp_number] = amalgamating_business_json
 
             if (corp_number.startswith('A') and
-                (foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction')) and
-                foreign_jurisdiction.get('country') == 'CA' and
-                foreign_jurisdiction.get('region') == 'BC'):
+                    (foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction')) and
+                    foreign_jurisdiction.get('country') == 'CA' and
+                    foreign_jurisdiction.get('region') == 'BC'):
                 is_any_expro_a = True
     is_any_bc_company = (is_any_ben or is_any_limited or is_any_ccc or is_any_ulc)
 
