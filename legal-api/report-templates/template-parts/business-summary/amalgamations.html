@@ -11,20 +11,20 @@
         <td class="col-50">
            <div class="section-sub-title">Incorporation Number</div>
         </td>
-      </tr>
-      {% for entity in amalgamatedEntities %}
-          <tr class="no-page-break">
+    </tr>
+    {% for entity in amalgamatedEntities %}
+        <tr class="no-page-break">
             <td class="col-50">
-                <div class="{{'upper-text' if entity.businessName!='Not Available'}}">
+                <div class="{{'upper-text' if entity.businessName!='Not Available'}} pt-2">
                     {{ entity.businessName }}
                 </div>
             </td>
             <td class="col-50">
-               <div class="{{'upper-text' if entity.identifier!='Not Available'}}">
+               <div class="{{'upper-text' if entity.identifier!='Not Available'}} pt-2">
                    {{ entity.identifier }}
                </div>
             </td>
-          </tr>
-      {% endfor %}
+        </tr>
+    {% endfor %}
 </table>
 {% endif %}
