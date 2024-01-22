@@ -464,11 +464,8 @@ class BusinessDocument:
 
     def _set_amalgamating_details(self, business: dict):
         amalgamating_info = business.get('business', {}).get('amalgamatedInto')
-        amalgamated_entity = business.get('business', {}).get('amalgamatedEntity')
         if amalgamating_info:
             business['business']['isAmalgamating'] = True
-            if amalgamated_entity:
-                business['business']['amalgamatedEntity'] = False
 
     def _set_liquidation_details(self, business: dict):
         """Set partial liquidation filing data."""
