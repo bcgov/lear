@@ -710,11 +710,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['amalgamatingBusinesses'] = amalgamation.get('amalgamatingBusinesses', [])
         filing['incorporationAgreement'] = amalgamation.get('incorporationAgreement', {})
 
-        
-
     def _format_certificate_of_amalgamation_data(self, filing):
-        # FUTURE: format logic for certificate of amalgamation
-        return
+        amalgamation = filing['amalgamationApplication']
+        
+        filing['nameRequest'] = amalgamation.get('nameRequest', {})
+        filing['amalgamatingBusinesses'] = amalgamation.get('amalgamatingBusinesses', [])
 
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
