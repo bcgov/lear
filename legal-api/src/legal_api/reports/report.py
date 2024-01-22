@@ -126,12 +126,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
         template_parts = [
             'amalgamation/amalgamatingCorp',
+            'amalgamation/amalgamationName',
             'amalgamation/amalgamationStmt',
             'amalgamation/approvalType',
             'amalgamation/completingParty',
             'amalgamation/completingPartyStmt',
             'amalgamation/effectiveDate',
-            'amalgamation/nameRequest',
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
