@@ -83,17 +83,14 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     is_any_ulc = False
     is_any_expro_a = False
     amalgamating_businesses = {}
+    duplicate_businesses = []
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get('identifier'):
             if not (business := Business.find_by_identifier(identifier)):
                 continue
 
             if identifier in amalgamating_businesses:
-                msg.append({
-                    'error': f'Duplicate amalgamating businesses: {identifier}.',
-                    'path': amalgamating_businesses_path
-                })
-
+                duplicate_businesses.append(identifier)
             amalgamating_businesses[identifier] = business
 
             if business.legal_type == Business.LegalTypes.BCOMP.value:
@@ -106,10 +103,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 is_any_ulc = True
         elif corp_number := amalgamating_business_json.get('corpNumber'):
             if corp_number in amalgamating_businesses:
-                msg.append({
-                    'error': f'Duplicate amalgamating businesses: {corp_number}.',
-                    'path': amalgamating_businesses_path
-                })
+                duplicate_businesses.append(corp_number)
             amalgamating_businesses[corp_number] = amalgamating_business_json
 
             if (corp_number.startswith('A') and
@@ -178,9 +172,17 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                         'path': amalgamating_businesses_path
                     })
 
+    if duplicate_businesses:
+        error_msg = 'Duplicate amalgamating business entry found in list: ' + \
+            ', '.join(duplicate_businesses) + '.'
+        msg.append({
+            'error': error_msg,
+            'path': amalgamating_businesses_path
+        })
+
     if len(amalgamating_businesses) < 2:
         msg.append({
-            'error': 'At least two amalgamating businesseses are required.',
+            'error': 'Two or more amalgamating businesses required.',
             'path': amalgamating_businesses_path
         })
 

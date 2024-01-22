@@ -1118,12 +1118,12 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
                 {'role': 'amalgamating','identifier': 'BC1234567'},
                 {'role': 'amalgamating','identifier': 'BC1234567'},
                 {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
-            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating businesses: BC1234567.'),
+            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: BC1234567.'),
             ('FAIL_EXPRO', [
                 {'role': 'amalgamating','identifier': 'BC1234567'},
                 {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'},
                 {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
-            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating businesses: 123456.'),
+            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: 123456.'),
             ('SUCCESS', [
                 {'role': 'amalgamating','identifier': 'BC1234567'},
                 {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
@@ -1165,12 +1165,12 @@ def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_statu
 @pytest.mark.parametrize(
         'test_status, expected_code, expected_msg',
         [
-            ('FAIL', HTTPStatus.BAD_REQUEST, 'At least two amalgamating businesseses are required.'),
+            ('FAIL', HTTPStatus.BAD_REQUEST, 'Two or more amalgamating businesses required.'),
             ('SUCCESS', None, None)
         ]
 )
 def test_amalgamating_businesses_number(mocker, app, session, jwt, test_status, expected_code, expected_msg):
-    """Assert at least two amalgamating businesses required."""
+    """Assert two or more amalgamating businesses required."""
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
