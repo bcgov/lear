@@ -135,7 +135,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
             'bc-director-change/directors',
-            'business-summary/amalgamations',
             'common/certificateFooter',
             'common/certificateLogo',
             'common/certificateRegistrarSignature',
