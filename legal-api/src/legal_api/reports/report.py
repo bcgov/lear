@@ -1117,8 +1117,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         # Appears in the Description section of the PDF Document Properties as Subject.
         if self._report_key == 'noticeOfArticles':
-            print("******")
-            print()
             filing['meta_subject'] = '{} ({})'.format(self._business.legal_name, self._business.identifier)
         else:
             legal_name = self._filing.filing_json['filing'].get('business', {}).get('legalName', 'NA')
