@@ -635,7 +635,6 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
         'legalType': Business.LegalTypes.BCOMP.value,
         'legalName': legal_name
     }
-    filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['business'] = {'identifier': business.identifier}
     for party in filing_template['filing']['amalgamationApplication']['parties']:
         for role in party['roles']:
