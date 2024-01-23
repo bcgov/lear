@@ -184,7 +184,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             elif etype == 'specialResolution':
                 email = special_resolution_notification.process(email_msg['email'], token)
                 send_email(email, token)
-            elif etype == 'amalgamation':
+            elif etype == 'amalgamationApplication':
                 email = amalgamation_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
