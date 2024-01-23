@@ -173,7 +173,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     legal_name = business.get('legalName', None)
     subject = f'{legal_name} - Amalgamation'
     if status == Filing.Status.COMPLETED.value:
-        subject = f'{legal_name} - Confirmation of Amalgamation'        
+        subject = f'{legal_name} - Confirmation of Amalgamation'
 
     return {
         'recipients': recipients,
