@@ -129,8 +129,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'amalgamation/amalgamationName',
             'amalgamation/amalgamationStmt',
             'amalgamation/approvalType',
-            'amalgamation/completingParty',
-            'amalgamation/completingPartyStmt',
             'amalgamation/effectiveDate',
             'bc-annual-report/legalObligations',
             'bc-address-change/addresses',
