@@ -1,0 +1,17 @@
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">
+    <span>Approval Type</span>
+  </div>
+  {% if courtApproval is none %}
+    <div class="section-data mt-3">
+      N/A
+    </div>
+  {% else %}
+    {% if courtApproval == True %}
+      <div class="section-data mt-3">
+        The restoration was approved by a court order.
+      </div>
+      {%endif%}
+  {% endif %}
+</div>
