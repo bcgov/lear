@@ -45,6 +45,7 @@ from registry_schemas.example_data import (
     AGM_LOCATION_CHANGE,
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
@@ -596,6 +597,41 @@ def prep_cp_special_resolution_correction_upload_memorandum_filing(
     filing._meta_data = {"correction": {"uploadNewMemorandum": True}}
     filing.save()
     if option in ["COMPLETED"]:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+    return filing
+
+
+def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name):
+    """Return a new incorp filing prepped for email notification."""
+    business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP.value, legal_name=legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'amalgamationApplication'
+
+    filing_template['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': Business.LegalTypes.BCOMP.value,
+        'legalName': legal_name
+    }
+    filing_template['filing']['business'] = {'identifier': business.identifier}
+    for party in filing_template['filing']['amalgamationApplication']['parties']:
+        for role in party['roles']:
+            if role['roleType'] == 'Completing Party':
+                party['officer']['email'] = 'comp_party@email.com'
+    filing_template['filing']['amalgamationApplication']['contactPoint']['email'] = 'test@test.com'
+
+    temp_identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+    filing = create_filing(token=payment_id, filing_json=filing_template,
+                           business_id=business.id, bootstrap_id=temp_identifier)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+    if option == Filing.Status.COMPLETED.value:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
