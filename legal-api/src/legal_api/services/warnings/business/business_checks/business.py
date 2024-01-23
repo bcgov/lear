@@ -15,7 +15,7 @@
 """Service to check compliancy for a business."""
 from legal_api.models import Business
 from .firms import check_business as firms_check  # noqa: I003
-
+from legal_api.services.warnings.business.business_checks import WarningType
 
 def check_business(business: any) -> list:
     """Check business for warnings."""
@@ -26,4 +26,16 @@ def check_business(business: any) -> list:
              Business.LegalTypes.PARTNERSHIP.value):
         result = firms_check(business)
 
+    ting_info = Business.check_if_ting(business.identifier)
+    if ting_info:
+        result =[  
+                    {
+                        "code": "AMALGAMATING_BUSINESS", 
+                        "message": "This business is part of a future effective amalgamation.", 
+                        "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
+                        "data": {
+                            "amalgamationDate": ting_info 
+                        }
+                    }
+                ]
     return result

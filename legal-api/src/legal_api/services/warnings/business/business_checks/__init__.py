@@ -19,6 +19,7 @@ class WarningType(str, Enum):
     """Render an Enum of the Warning Types."""
 
     MISSING_REQUIRED_BUSINESS_INFO = 'MISSING_REQUIRED_BUSINESS_INFO'
+    FUTURE_EFFECTIVE_AMALGAMATION = 'FUTURE_EFFECTIVE_AMALGAMATION'
 
 
 class BusinessWarningCodes(str, Enum):
