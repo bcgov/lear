@@ -9,6 +9,54 @@
         [[common/certificateStyle.html]]
     </head>
     <body>
+        <div class="outer-container">
+            <div class="outer-container-header">
+                <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+                [[common/correctedOnCertificate.html]]
+            </div>      
+
+            <div class="certificate-statements">
+                [[common/certificateLogo.html]]
+
+                <div class="cert-title-container">
+                    <div class="sub-header-1">Certificate  of</div>
+                    <div class="certificate-header">AMALGAMATION</div>
+                    <div class="sub-header-2">{{ entityAct }}</div>
+                </div>
+
+                <div class="certify-clause">
+                    <div>I hereby certify that the following companies were amalgamated under the name</div>
+                    <div class="company-name-header">{{ business.legalName }}</div>
+                    <div>on {{ effective_date_time }}</div>
+                    <div>&nbsp;</div>
+                    {% for entity in amalgamatingBusinesses %}
+                        {% if entity == amalgamatingBusinesses[-1] %}
+                        <tr class="no-page-break">
+                            <td class="col-50">
+                                <div class="{{'upper-text' if entity.legalName!='Not Available'}}">
+                                    and {{ entity.name }} ({{ entity.identifier }})
+                                </div>
+                            </td>   
+                            </tr>
+                        {%else%}
+                        <tr class="no-page-break">
+                        <td class="col-50">
+                            <div class="{{'upper-text' if entity.legalName!='Not Available'}}">
+                                {{ entity.name }}
+                                ({{ entity.identifier }}),
+                            </div>
+                        </td>
+                        </tr>
+                        {%endif%}
+                    {% endfor %}
+                    <div class="cert-separator"></div>
+                    <div class="cert-issued-by">
+                        <div>Issued under my hand at Victoria, British Columbia</div>
+                        <div>on {{ report_date_time }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
     [[common/certificateFooter.html]]
 </html>
