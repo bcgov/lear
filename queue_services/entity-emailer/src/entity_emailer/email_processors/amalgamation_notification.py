@@ -134,12 +134,10 @@ def _get_pdfs(
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Amalgamation notification."""
     logger.debug('filing_notification: %s', email_info)
-
+    # get template and fill in parts
+    filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = \
-        get_filing_info(email_info['data']['filing']['header']['filingId'])
-    filing_type = filing.filing_type
-    status = filing.status
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AMALGA-{status}.html').read_text()
@@ -153,8 +151,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -165,7 +162,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         return {}
 
     # get recipients
-    recipients = get_recipients(status, filing.filing_json, token)
+    recipients = get_recipients(status, filing.filing_json, token, filing_type)
     if not recipients:
         return {}
 
