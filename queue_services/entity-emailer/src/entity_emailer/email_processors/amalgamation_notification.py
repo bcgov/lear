@@ -158,8 +158,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get attachments
     pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
-    if not pdfs:
-        return {}
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token, filing_type)
