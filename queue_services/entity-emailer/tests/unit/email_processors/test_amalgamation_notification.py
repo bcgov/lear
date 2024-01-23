@@ -34,7 +34,7 @@ def test_amalgamation_notification(app, session, status):
     # test processor
     with patch.object(amalgamation_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = amalgamation_notification.process(
-            {'filingId': filing.id, 'type': 'registration', 'option': status}, token)
+            {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': status}, token)
         if status == Filing.Status.PAID.value:
             assert email['content']['subject'] == legal_name + ' - Amalgamation'
         else:
