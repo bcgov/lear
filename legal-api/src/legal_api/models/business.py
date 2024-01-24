@@ -30,7 +30,6 @@ from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db  # noqa: I001
-from sqlalchemy.sql.expression import text  # noqa: I001
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -563,24 +562,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
-
-    @classmethod
-    def check_if_ting(cls, business_identifier):
-        # Construct a JSON containment check clause for the SQL query
-        where_clause = text(
-        "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'" +
-        f' @>\'[{{"identifier": "{business_identifier}"}}]\'')
-
-        # Query the database to find amalgamation filings
-        filing = db.session.query(Filing). \
-            filter( Filing._status == Filing.Status.PAID.value,
-                    Filing._filing_type == 'amalgamationApplication',  # Check for the filing type
-                    where_clause  # Apply the JSON containment check
-            ).one_or_none()
-     
-         # Check if a matching filing was found and if its effective date is greater than payment completion date
-        if filing and filing.effective_date > filing.payment_completion_date:
-            return filing.effective_date
 
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
