@@ -22,8 +22,8 @@ import string
 # import nest_asyncio  # noqa: I001
 from flask import _app_ctx_stack  # pylint: disable=no-name-in-module;
 
-from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
-from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
+# from nats.aio.client import Client as NATS, DEFAULT_CONNECT_TIMEOUT  # noqa N814; by convention the name is NATS
+# from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 
 class QueueService:
