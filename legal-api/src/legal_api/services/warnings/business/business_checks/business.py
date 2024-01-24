@@ -16,6 +16,7 @@
 from .firms import check_business as firms_check  # noqa: I003
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.models import LegalEntity
+from .corps import check_business as corps_check
 
 def check_business(business: any) -> list:
     """Check business for warnings."""
@@ -23,10 +24,16 @@ def check_business(business: any) -> list:
 
     if business.is_firm:
         result = firms_check(business)
+    elif business.legal_type in \
+          (LegalEntity.EntityTypes.BC_CCC,
+           LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+           LegalEntity.EntityTypes.COMP.value,
+           LegalEntity.EntityTypes.BCOMP.value):
+        result = corps_check(business)
 
     ting_info = LegalEntity.check_if_ting(business.identifier)
     if ting_info:
-        result =[  
+        result = [  
                     {
                         "code": "AMALGAMATING_BUSINESS", 
                         "message": "This business is part of a future effective amalgamation.", 
@@ -35,5 +42,5 @@ def check_business(business: any) -> list:
                             "amalgamationDate": ting_info 
                         }
                     }
-                ]
+                 ]
     return result
