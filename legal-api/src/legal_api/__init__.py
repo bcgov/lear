@@ -59,8 +59,9 @@ def create_app(run_mode=os.getenv("FLASK_ENV", "production"), **kwargs):
     babel.init_app(app)
     endpoints.init_app(app)
 
-    with app.app_context():  # db require app context
-        digital_credentials.init_app(app)
+    # TODO commented out Digital Credentials functionality for now.
+    # with app.app_context():  # db require app context
+    #     digital_credentials.init_app(app)
 
     setup_jwt_manager(app, jwt)
 

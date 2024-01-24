@@ -39,12 +39,12 @@ from .minio import MinioService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
-from .queue import QueueService
+# from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+# queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
 

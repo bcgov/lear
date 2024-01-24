@@ -23,7 +23,7 @@ import requests
 from flask import current_app, jsonify
 from jwt import ExpiredSignatureError
 
-from legal_api.models import Business
+from legal_api.models import LegalEntity
 from legal_api.services.authz import are_digital_credentials_allowed
 from legal_api.utils.auth import jwt
 
@@ -68,7 +68,7 @@ def can_access_digital_credentials(f):
     def decorated_function(*args, **kwargs):
         identifier = kwargs.get("identifier", None)
 
-        if not (business := Business.find_by_identifier(identifier)):
+        if not (business := LegalEntity.find_by_identifier(identifier)):
             return jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
 
         if not are_digital_credentials_allowed(business, jwt):
