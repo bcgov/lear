@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Business checks for corps."""
 from sqlalchemy.sql.expression import text  # noqa: I001
 
 from legal_api.models import Business, Filing, db
