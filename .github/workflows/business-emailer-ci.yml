@@ -6,6 +6,7 @@ on:
     paths:
       - "queue_services/entity-emailer/**"
       - "queue_services/common/**"
+  workflow_dispatch:
 
 defaults:
   run:
