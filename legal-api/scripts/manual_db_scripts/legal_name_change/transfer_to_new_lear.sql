@@ -972,6 +972,7 @@ SELECT setval('comments_id_seq', (select coalesce(max(id) + 1, 1) FROM public.co
 SELECT setval('dc_definitions_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_definitions));
 SELECT setval('dc_connections_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_connections));
 SELECT setval('dc_issued_credentials_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_issued_credentials));
+SELECT setval('dc_issued_business_user_credentials_id_seq', (select coalesce(max(id) + 1, 1) FROM public.dc_issued_business_user_credentials));
 SELECT setval('documents_id_seq', (select coalesce(max(id) + 1, 1) FROM public.documents));
 SELECT setval('offices_id_seq', (select coalesce(max(id) + 1, 1) FROM public.offices));
 SELECT setval('parties_id_seq', (select coalesce(max(id) + 1, 1) FROM public.parties));
@@ -986,6 +987,12 @@ SELECT setval('colin_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM pub
 SELECT setval('alternate_names_id_seq', (select coalesce(max(id) + 1, 1) FROM public.alternate_names));
 SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
 SELECT setval('consent_continuation_outs_id_seq', (select coalesce(max(id) + 1, 1) FROM public.consent_continuation_outs));
+SELECT setval('amalgamating_business_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamating_business));
+SELECT setval('amalgamation_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamation));
+SELECT setval('naics_elements_id_seq', (select coalesce(max(id) + 1, 1) FROM public.naics_elements));
+SELECT setval('naics_structures_id_seq', (select coalesce(max(id) + 1, 1) FROM public.naics_structures));
+SELECT setval('sent_to_gazette_filing_id_seq', (select coalesce(max(filing_id) + 1, 1) FROM public.sent_to_gazette));
+SELECT setval('role_addresses_id_seq', (select coalesce(max(id) + 1, 1) FROM public.role_addresses));
 
 DROP CAST (varchar AS state);
 DROP CAST (varchar AS credentialtype);
