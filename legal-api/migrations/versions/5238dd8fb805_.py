@@ -36,12 +36,12 @@ def upgrade():
     op.create_table(
         'amalgamation',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('business_id', sa.Integer(), nullable=False),
+        sa.Column('legal_entity_id', sa.Integer(), nullable=False),
         sa.Column('filing_id', sa.Integer(), nullable=False),
         sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column('court_approval', sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
-        # sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
+        sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
         sa.PrimaryKeyConstraint('id'))
 
     # enum added after creating table as DuplicateObject error would be thrown otherwise
@@ -50,13 +50,13 @@ def upgrade():
     op.create_table(
         'amalgamating_business',
         sa.Column('id', sa.Integer(), primary_key=False),
-        sa.Column('business_id', sa.Integer(), nullable=True),
+        sa.Column('legal_entity_id', sa.Integer(), nullable=True),
         sa.Column('amalgamation_id', sa.Integer(), nullable=False),
         sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=True),
         sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True),
         sa.Column('foreign_name', sa.String(length=100), nullable=True),
         sa.Column('foreign_corp_num', sa.String(length=50), nullable=True),
-        # sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
+        sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
         sa.ForeignKeyConstraint(['amalgamation_id'], ['amalgamation.id']),
         sa.PrimaryKeyConstraint('id'))
 

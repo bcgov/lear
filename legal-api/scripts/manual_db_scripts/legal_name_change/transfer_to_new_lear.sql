@@ -924,6 +924,33 @@ SELECT stg.filing_id,
 FROM public.sent_to_gazette stg;
 
 
+-- amalgamation -> amalgamation
+CREATE CAST (varchar AS amalgamation_type) WITH INOUT AS IMPLICIT;
+
+transfer public.amalgamation from lear_old using
+SELECT  id,
+        business_id as legal_entity_id,
+        filing_id,
+        amalgamation_date,
+        amalgamation_type,
+        court_approval
+FROM public.amalgamation;
+
+
+-- amalgamating_business -> amalgamating_business
+CREATE CAST (varchar AS amalgamating_business_role) WITH INOUT AS IMPLICIT;
+
+transfer public.amalgamating_business from lear_old using
+SELECT id,
+       business_id as legal_entity_id,
+       amalgamation_id,
+       foreign_jurisdiction,
+       foreign_jurisdiction_region,
+       foreign_name,
+       foreign_corp_num,
+       role :: amalgamating_business_role
+FROM public.amalgamating_business;
+
 
 -- ensure sequence numbers are updated so collisions with future data does not happen
 SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
@@ -964,6 +991,8 @@ DROP CAST (varchar AS state);
 DROP CAST (varchar AS credentialtype);
 DROP CAST (varchar AS requesttype);
 DROP CAST (varchar AS servicename);
+DROP CAST (varchar AS amalgamation_type);
+DROP CAST (varchar AS amalgamating_business_role);
 
 
 -- *****************************************************************************************************************
