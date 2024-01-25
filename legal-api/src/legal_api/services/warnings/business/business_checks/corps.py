@@ -14,7 +14,7 @@
 
 """Business checks for corps."""
 
-from legal_api.models import Business, Filing, db
+from legal_api.models import Business
 from legal_api.services.warnings.business.business_checks import WarningType
 
 

@@ -23,7 +23,6 @@ from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
-from sqlalchemy.sql.expression import text  # noqa: I001
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -566,17 +565,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier: int):
-        """Check if a business has a pending amalgamation with the provided business identifier. """
-        # Construct a JSON containment check clause for the SQL query
-        where_clause = text(
-            "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'" +
-            f' @>\'[{{"identifier": "{business_identifier}"}}]\'')
+        """Check if a business has a pending amalgamation with the provided business identifier."""
+        # Assuming business_identifier is a string. Adjust if it's a different type.
+        where_clause = {'identifier': str(business_identifier)}
+
+        # Query the database to find amalgamation filings
         # pylint: disable=protected-access
+        # pylint: disable=unsubscriptable-object
         filing = db.session.query(Filing). \
-        filter(Filing._status == Filing.Status.PAID.value,
-               Filing._filing_type == 'amalgamationApplication',  # Check for the filing type
-               where_clause  # Apply the JSON containment check
-               ).one_or_none()
+            filter(Filing._status == Filing.Status.PAID.value,
+                   Filing._filing_type == 'amalgamationApplication',
+                   Filing.filing_json['filing']['amalgamationApplication']
+                   ['amalgamatingBusinesses'].contains([where_clause])
+                   ).one_or_none()
         return filing
 
     @classmethod
