@@ -14,6 +14,8 @@
 
 """Service to check compliancy for a business."""
 from legal_api.models import Business
+
+from .corps import check_business as corps_check  # noqa: I003
 from .firms import check_business as firms_check  # noqa: I003
 
 
@@ -25,5 +27,12 @@ def check_business(business: any) -> list:
             (Business.LegalTypes.SOLE_PROP.value,
              Business.LegalTypes.PARTNERSHIP.value):
         result = firms_check(business)
+    elif business.legal_type in \
+        (Business.LegalTypes.BC_CCC,
+         Business.LegalTypes.BC_ULC_COMPANY.value,
+         Business.LegalTypes.COMP.value,
+         Business.LegalTypes.BCOMP.value
+         ):
+        result = corps_check(business)
 
     return result
