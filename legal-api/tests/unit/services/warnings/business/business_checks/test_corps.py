@@ -13,8 +13,8 @@
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly."""
 import pytest
-from unittest.mock import patch, Mock
-from tests.unit.models import factory_business, factory_completed_filing
+from unittest.mock import patch
+from tests.unit.models import factory_business
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
 
@@ -22,8 +22,10 @@ from legal_api.services.warnings.business.business_checks.corps import check_bus
     (True, True, {"amalgamationDate": None}),  # Test case where the business is part of an amalgamation
     (False, False, {}),                        # Test case where the business is not part of an amalgamation
 ])
-def test_check_business(business, filing, has_amalgamation, expected_warning, expected_data):
+def test_check_business(session, has_amalgamation, expected_warning, expected_data):
     """Test the check_business function."""
+    business = factory_business(identifier="BC1234567")
+
     with patch('legal_api.services.warnings.business.business_checks.corps.check_amalgamating_business') as mock_check:
         mock_check.return_value = [{
             "code": "AMALGAMATING_BUSINESS",
@@ -43,3 +45,5 @@ def test_check_business(business, filing, has_amalgamation, expected_warning, ex
             assert warning['data'] == expected_data
         else:
             assert len(result) == 0
+
+
