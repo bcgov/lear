@@ -14,22 +14,9 @@
 """Test suite to ensure Corpse business checks work correctly."""
 import pytest
 from unittest.mock import patch, Mock
-from legal_api.models import Business, Filing
+from tests.unit.models import factory_business, factory_completed_filing
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
-
-@pytest.fixture
-def business():
-    """Create a mock business object for testing."""
-    return Business(identifier="BC1234567")
-
-@pytest.fixture
-def filing():
-    """Create a mock filing object for testing."""
-    mock_filing = Mock()
-    mock_filing.effective_date = None
-    mock_filing.payment_completion_date = None
-    return mock_filing
 
 @pytest.mark.parametrize("has_amalgamation, expected_warning, expected_data", [
     (True, True, {"amalgamationDate": None}),  # Test case where the business is part of an amalgamation
