@@ -26,10 +26,47 @@ attrs = "^23.1.0"
 dpath = "^2.1.6"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
 pytest = "^7.4.0"
 pytest-mock = "^3.11.1"
 requests-mock = "^1.11.0"
+black = "^23.12.1"
+pylint = "^3.0.3"
+bandit = "^1.7.6"
+flake8-pyproject = "^1.2.3"
+isort = "^5.13.2"
+
+[tool.bandit]
+exclude_dirs = [".venv","tests"]
+skips = ["B104"]
+
+[tool.flake8]
+ignore = ["F401","E402", "Q000", "E203", "W503", "W504" ]
+exclude = [
+    ".venv",
+    ".git",
+    "*migrations*"
+]
+per-file-ignores = [
+    "__init__.py:F401",
+    "*.py:B902"
+]
+max-line-length = 120
+docstring-min-length=10
+count = true
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.'MESSAGES CONTROL']
+ignore = [ "migrations", "test"]
+notes = ["FIXME","XXX","TODO"]
+ignored-modules= ["flask_sqlalchemy", "sqlalchemy", "SQLAlchemy" , "alembic", "scoped_session"]
+ignored-classes= "scoped_session"
+disable = "C0209,C0301,W0511,W0613,W0703,W1514,R0801,R0902,R0903,R0911,R0401,R1705,R1718,W3101"
+extension-pkg-whitelist = "pydantic"
 
 [build-system]
 requires = ["poetry-core"]
