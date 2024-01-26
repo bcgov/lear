@@ -19,7 +19,7 @@ from legal_api.services.warnings.business.business_checks import WarningType
 
 
 def check_business(business: Business) -> list:
-    """Check for missing business data."""
+    """Check business data."""
     result = []
 
     result.extend(check_amalgamating_business(business))
