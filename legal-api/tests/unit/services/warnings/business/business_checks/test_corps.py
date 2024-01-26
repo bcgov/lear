@@ -13,27 +13,30 @@
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly."""
 import pytest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 from tests.unit.models import factory_business
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
 
 @pytest.mark.parametrize("has_amalgamation, expected_warning, expected_data", [
-    (True, True, {"amalgamationDate": None}),  # Test case where the business is part of an amalgamation
-    (False, False, {}),                        # Test case where the business is not part of an amalgamation
+    (True, True, {"amalgamationDate": datetime.now() + timedelta(days=1)}),  # Future effective amalgamation
+    (False, False, {}),  # No amalgamation
 ])
 def test_check_business(session, has_amalgamation, expected_warning, expected_data):
     """Test the check_business function."""
     business = factory_business(identifier="BC1234567")
 
-    with patch('legal_api.services.warnings.business.business_checks.corps.check_amalgamating_business') as mock_check:
-        mock_check.return_value = [{
-            "code": "AMALGAMATING_BUSINESS",
-            "message": "This business is part of a future effective amalgamation.",
-            "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
-            "data": expected_data
-        }] if has_amalgamation else []
+    mock_filing = Mock()
+    if has_amalgamation:
+        mock_filing.effective_date = expected_data["amalgamationDate"]
+        mock_filing.payment_completion_date = datetime.now() - timedelta(days=1)
+    else:
+        # Set to realistic non-amalgamating scenario
+        mock_filing.effective_date = datetime.now() - timedelta(days=2)
+        mock_filing.payment_completion_date = datetime.now() - timedelta(days=1)
 
+    with patch('legal_api.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
         result = check_business(business)
 
         if expected_warning:
@@ -45,5 +48,3 @@ def test_check_business(session, has_amalgamation, expected_warning, expected_da
             assert warning['data'] == expected_data
         else:
             assert len(result) == 0
-
-
