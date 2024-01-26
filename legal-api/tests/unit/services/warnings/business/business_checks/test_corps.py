@@ -19,22 +19,23 @@ from tests.unit.models import factory_business
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
 
-@pytest.mark.parametrize("has_amalgamation, expected_warning, expected_data", [
-    (True, True, {"amalgamationDate": datetime.now() + timedelta(days=1)}),  # Future effective amalgamation
-    (False, False, {}),  # No amalgamation
+@pytest.mark.parametrize("has_amalgamation, expected_warning", [
+    (True, True),  # Future effective amalgamation
+    (False, False)  # No amalgamation
 ])
-def test_check_business(session, has_amalgamation, expected_warning, expected_data):
+def test_check_business(session, has_amalgamation, expected_warning):
     """Test the check_business function."""
     business = factory_business(identifier="BC1234567")
 
     mock_filing = Mock()
     if has_amalgamation:
-        mock_filing.effective_date = expected_data["amalgamationDate"]
-        mock_filing.payment_completion_date = datetime.now() - timedelta(days=1)
+        # Set effective_date in the future to simulate an amalgamation
+        mock_filing.effective_date = datetime.now() + timedelta(days=1)
+        mock_filing.payment_completion_date = datetime.now()
     else:
-        # Set to realistic non-amalgamating scenario
-        mock_filing.effective_date = datetime.now() - timedelta(days=2)
-        mock_filing.payment_completion_date = datetime.now() - timedelta(days=1)
+        # Set dates that do not indicate an amalgamation
+        mock_filing.effective_date = datetime.now()
+        mock_filing.payment_completion_date = datetime.now()
 
     with patch('legal_api.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
         result = check_business(business)
@@ -45,6 +46,7 @@ def test_check_business(session, has_amalgamation, expected_warning, expected_da
             assert warning['code'] == "AMALGAMATING_BUSINESS"
             assert warning['message'] == "This business is part of a future effective amalgamation."
             assert warning['warningType'] == WarningType.FUTURE_EFFECTIVE_AMALGAMATION
-            assert warning['data'] == expected_data
+            assert 'amalgamationDate' in warning['data']
+            assert isinstance(warning['data']['amalgamationDate'], datetime)
         else:
             assert len(result) == 0

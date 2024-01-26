@@ -566,7 +566,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier):
         """Check if a business has a pending amalgamation with the provided business identifier."""
-        # Assuming business_identifier is a string. Adjust if it's a different type.
         where_clause = {'identifier': business_identifier}
 
         # Query the database to find amalgamation filings
