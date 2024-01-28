@@ -1498,6 +1498,10 @@ DROP FUNCTION has_non_legal_name_change;
 DROP FUNCTION update_filing_json_party_ids;
 DROP FUNCTION rename_jsonb_key;
 DROP FUNCTION update_legal_name;
+DROP FUNCTION cast_le_to_leh;
+DROP FUNCTION get_previous_le_history_entry;
+DROP FUNCTION insert_into_leh;
+DROP EXTENSION hstore;
 ALTER TABLE legal_entities
     DROP COLUMN temp_party_id;
 ALTER TABLE colin_entities
