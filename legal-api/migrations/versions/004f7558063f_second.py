@@ -227,6 +227,12 @@ def upgrade():
     sa.Column('bn15', sa.String(length=20), nullable=True),
     sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+    sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True),
+    sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
+    sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
+    sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
     sa.Column('change_filing_id', sa.Integer(), nullable=True),
     sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
@@ -235,11 +241,14 @@ def upgrade():
     sa.Column('version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['state_filing_id'], ['filings.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sqlite_autoincrement=True
     )
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_name'), ['name'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_identifier'), ['identifier'], unique=False)
 
     op.create_table('alternate_names_history',
     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
@@ -249,6 +258,12 @@ def upgrade():
     sa.Column('bn15', sa.String(length=20), autoincrement=False, nullable=True),
     sa.Column('start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=False),
     sa.Column('end_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+    sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+    sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
+    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True),
+    sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
+    sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
+    sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('change_filing_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
@@ -258,11 +273,14 @@ def upgrade():
     sa.Column('changed', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['state_filing_id'], ['filings.id'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
     with op.batch_alter_table('alternate_names_history', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_alternate_names_history_change_filing_id'), ['change_filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_history_name'), ['name'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_history_identifier'), ['identifier'], unique=False)
 
     op.create_table('colin_entities',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -319,16 +337,19 @@ def upgrade():
     sa.Column('comment', sa.String(length=4096), nullable=True),
     sa.Column('timestamp', sa.DateTime(timezone=True), nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.Column('staff_id', sa.Integer(), nullable=True),
     sa.Column('filing_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.ForeignKeyConstraint(['staff_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('comments', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_comments_filing_id'), ['filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_comments_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_comments_alternate_name_id'), ['alternate_name_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_comments_staff_id'), ['staff_id'], unique=False)
 
     op.create_table('dc_connections',
@@ -338,7 +359,9 @@ def upgrade():
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('connection_state', sa.String(length=50), nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('documents',
@@ -346,33 +369,39 @@ def upgrade():
     sa.Column('type', sa.String(length=30), nullable=False),
     sa.Column('file_key', sa.String(length=100), nullable=False),
     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.Column('filing_id', sa.Integer(), nullable=True),
     sa.Column('version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sqlite_autoincrement=True
     )
     with op.batch_alter_table('documents', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_documents_filing_id'), ['filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_documents_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_documents_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('documents_history',
     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('type', sa.String(length=30), autoincrement=False, nullable=False),
     sa.Column('file_key', sa.String(length=100), autoincrement=False, nullable=False),
     sa.Column('legal_entity_id', sa.Integer(), autoincrement=False, nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.Column('filing_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('version', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('changed', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
     with op.batch_alter_table('documents_history', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_documents_history_filing_id'), ['filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_documents_history_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_documents_history_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('legal_entities_history',
     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
@@ -427,6 +456,7 @@ def upgrade():
     sa.ForeignKeyConstraint(['delivery_address_id'], ['addresses.id'], ),
     sa.ForeignKeyConstraint(['mailing_address_id'], ['addresses.id'], ),
     sa.ForeignKeyConstraint(['submitter_userid'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['state_filing_id'], ['filings.id'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
@@ -543,14 +573,17 @@ def upgrade():
     sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('message_id', sa.String(length=60), nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.Column('filing_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('request_tracker', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_request_tracker_filing_id'), ['filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_request_tracker_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_request_tracker_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('role_addresses',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -653,12 +686,17 @@ def upgrade():
     op.create_table('dc_issued_business_user_credentials',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('legal_entity_id', sa.Integer(), nullable=False),
+    sa.Column('legal_entity_id', sa.Integer(), nullable=True),  # Allow null values
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),  # Allow null values
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id']),
     sa.ForeignKeyConstraint(['user_id'], ['users.id']),
     sa.PrimaryKeyConstraint('id')
     )
 
+    # Add a check constraint to ensure at least one of legal_entity_id or alternate_name_id is non-null
+    op.execute("ALTER TABLE dc_issued_business_user_credentials ADD CONSTRAINT at_least_one_non_null CHECK (legal_entity_id IS NOT NULL OR alternate_name_id IS NOT NULL)")
+    
     op.create_table('entity_roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('role_type', sa.Enum('applicant', 'completing_party', 'custodian', 'director', 'incorporator', 'liquidator', 'proprietor', 'partner', name='roletypes'), nullable=False),
@@ -845,6 +883,7 @@ def upgrade():
         batch_op.add_column(sa.Column('notice_date', sa.DateTime(timezone=True), nullable=True))
         batch_op.add_column(sa.Column('transaction_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('legal_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('alternate_name_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('temp_reg', sa.String(length=10), nullable=True))
         batch_op.add_column(sa.Column('submitter_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('parent_filing_id', sa.Integer(), nullable=True))
@@ -852,6 +891,7 @@ def upgrade():
         batch_op.create_foreign_key(None, 'registration_bootstrap', ['temp_reg'], ['identifier'])
         batch_op.create_foreign_key(None, 'filings', ['parent_filing_id'], ['id'])
         batch_op.create_foreign_key(None, 'legal_entities', ['legal_entity_id'], ['id'])
+        batch_op.create_foreign_key(None, 'alternate_names', ['alternate_name_id'], ['id'])
 
     with op.batch_alter_table('legal_entities', schema=None) as batch_op:
         batch_op.add_column(sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True))
@@ -910,6 +950,7 @@ def upgrade():
         batch_op.create_foreign_key(None, 'addresses', ['mailing_address_id'], ['id'])
         batch_op.create_foreign_key(None, 'users', ['submitter_userid'], ['id'])
         batch_op.create_foreign_key(None, 'addresses', ['delivery_address_id'], ['id'])
+        batch_op.create_foreign_key(None, 'filings', ['state_filing_id'], ['id'])
 
     with op.batch_alter_table('offices', schema=None) as batch_op:
         batch_op.add_column(sa.Column('office_type', sa.String(length=75), nullable=True))
@@ -1007,6 +1048,7 @@ def downgrade():
         batch_op.drop_column('submitter_id')
         batch_op.drop_column('temp_reg')
         batch_op.drop_column('legal_entity_id')
+        batch_op.drop_column('alternate_name_id')
         batch_op.drop_column('transaction_id')
         batch_op.drop_column('notice_date')
         batch_op.drop_column('application_date')
@@ -1078,6 +1120,7 @@ def downgrade():
     op.drop_table('role_addresses')
     with op.batch_alter_table('request_tracker', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_request_tracker_legal_entity_id'))
+        batch_op.drop_index(batch_op.f('ix_request_tracker_alternate_name_id'))
         batch_op.drop_index(batch_op.f('ix_request_tracker_filing_id'))
 
     op.drop_table('request_tracker')
@@ -1132,6 +1175,7 @@ def downgrade():
     with op.batch_alter_table('comments', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_comments_staff_id'))
         batch_op.drop_index(batch_op.f('ix_comments_legal_entity_id'))
+        batch_op.drop_index(batch_op.f('ix_comments_alternate_name_id'))
         batch_op.drop_index(batch_op.f('ix_comments_filing_id'))
 
     op.drop_table('comments')
@@ -1152,10 +1196,14 @@ def downgrade():
     op.drop_table('colin_entities')
     with op.batch_alter_table('alternate_names_history', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_alternate_names_history_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_history_name'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_history_identifier'))
 
     op.drop_table('alternate_names_history')
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_alternate_names_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_name'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_identifier'))
 
     op.drop_table('alternate_names')
     with op.batch_alter_table('aliases_history', schema=None) as batch_op:
