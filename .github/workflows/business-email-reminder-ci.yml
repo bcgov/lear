@@ -5,6 +5,7 @@ on:
     types: [assigned, synchronize]
     paths:
       - "jobs/email-reminder/**"
+  workflow_dispatch:
 
 defaults:
   run:
@@ -12,40 +13,40 @@ defaults:
     working-directory: ./jobs/email-reminder
 
 jobs:
-  setup-job:
-    runs-on: ubuntu-20.04
+  # setup-job:
+  #   runs-on: ubuntu-20.04
 
-    if: github.repository == 'bcgov/lear'
+  #   if: github.repository == 'bcgov/lear'
 
-    steps:
-      - uses: actions/checkout@v3
-      - run: "true"
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - run: "true"
 
-  linting:
-    needs: setup-job
-    runs-on: ubuntu-20.04
+  # linting:
+  #   needs: setup-job
+  #   runs-on: ubuntu-20.04
 
-    strategy:
-      matrix:
-        python-version: [3.8]
+  #   strategy:
+  #     matrix:
+  #       python-version: [3.8]
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          make setup
-      - name: Lint with pylint
-        id: pylint
-        run: |
-          make pylint
-      - name: Lint with flake8
-        id: flake8
-        run: |
-          make flake8
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         make setup
+  #     - name: Lint with pylint
+  #       id: pylint
+  #       run: |
+  #         make pylint
+  #     - name: Lint with flake8
+  #       id: flake8
+  #       run: |
+  #         make flake8
 
   # testing:
   #   needs: setup-job
@@ -64,13 +65,20 @@ jobs:
   #       run: |
   #         make test
 
-  build-check:
-    needs: setup-job
-    runs-on: ubuntu-20.04
+  # build-check:
+  #   needs: setup-job
+  #   runs-on: ubuntu-20.04
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: build to check strictness
-        id: build
-        run: |
-          make build-nc
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: build to check strictness
+  #       id: build
+  #       run: |
+  #         make build-nc
+
+  business-email-reminder-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
+    with:
+      app_name: "business-email-reminder"
+      working_directory: "./jobs/email-reminder"
+      codecov_flag: "emailreminder"
