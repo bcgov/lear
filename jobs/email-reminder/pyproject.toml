@@ -44,7 +44,7 @@ pytest = "^7.4.0"
 pytest-mock = "^3.11.1"
 black = "^23.3.0"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.test.dependencies]
 black = "^23.12.1"
 pylint = "^3.0.3"
 bandit = "^1.7.6"
