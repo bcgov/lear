@@ -22,37 +22,41 @@
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """This module provides Queue type services."""
 from __future__ import annotations
 
 import base64
 import json
-from concurrent.futures import CancelledError
 from concurrent.futures import TimeoutError  # pylint: disable=W0622
+from concurrent.futures import CancelledError
 from contextlib import suppress
 from typing import Optional
 
 from flask import Flask, current_app
-from werkzeug.local import LocalProxy
 from google.auth import jwt
 from google.cloud import pubsub_v1
-from simple_cloudevent import CloudEventVersionException
-from simple_cloudevent import InvalidCloudEventError
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import from_queue_message
-from simple_cloudevent import to_queue_message
+from simple_cloudevent import (
+    CloudEventVersionException,
+    InvalidCloudEventError,
+    SimpleCloudEvent,
+    from_queue_message,
+    to_queue_message,
+)
+from werkzeug.local import LocalProxy
 
 
 class GcpQueue:
+    """Class representing a GcpQueue"""
+
     def __init__(self, app: Flask = None):
         self.audience = None
         self.credentials_pub = None
@@ -65,12 +69,14 @@ class GcpQueue:
             self.init_app(app)
 
     def init_app(self, app: Flask):
+        """Function initialize app."""
         self.gcp_auth_key = app.config.get("GCP_AUTH_KEY")
         if self.gcp_auth_key:
             try:
                 audience = current_app.config.get(
                     "AUDIENCE",
-                    "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber",
+                    "https://pubsub.googleapis.com/google.\
+                        pubsub.v1.Subscriber",
                 )
                 publisher_audience = current_app.config.get(
                     "PUBLISHER_AUDIENCE",
@@ -78,31 +84,28 @@ class GcpQueue:
                 )
 
                 self.service_account_info = json.loads(
-                    base64.b64decode(self.gcp_auth_key).decode("utf-8")
-                )
+                    base64.b64decode(self.gcp_auth_key).decode("utf-8"))
                 credentials = jwt.Credentials.from_service_account_info(
-                    self.service_account_info, audience=audience
-                )
+                    self.service_account_info, audience=audience)
                 self.credentials_pub = credentials.with_claims(
-                    audience=publisher_audience
-                )
+                    audience=publisher_audience)
             except Exception as error:  # noqa: B902
-                raise Exception(
-                    "Unable to create a connection", error
-                ) from error  # pylint: disable=W0719
+                raise Exception("Unable to create a connection", error) \
+                    from error  # pylint: disable=W0719
 
     @property
     def publisher(self):
+        """Function publisher"""
         if not self._publisher and self.credentials_pub:
             self._publisher = pubsub_v1.PublisherClient(
-                credentials=self.credentials_pub
-            )
+                credentials=self.credentials_pub)
         else:
             self._publisher = pubsub_v1.PublisherClient()
         return self.credentials_pub
 
     @staticmethod
     def is_valid_envelope(msg: dict):
+        """Function determine valid envelope."""
         if (
             msg.get("subscription")
             and (message := msg.get("message"))
@@ -114,17 +117,16 @@ class GcpQueue:
 
     @staticmethod
     def get_envelope(request: LocalProxy) -> Optional[dict]:
+        """Function return envelope."""
         with suppress(Exception):
-            if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(
-                envelope
-            ):
+            if (envelope := request.get_json()) and \
+                    GcpQueue.is_valid_envelope(envelope):
                 return envelope
         return None
 
     @staticmethod
-    def get_simple_cloud_event(
-        request: LocalProxy, return_raw: bool = False
-    ) -> type[SimpleCloudEvent | dict | None]:
+    def get_simple_cloud_event(request: LocalProxy, return_raw: bool = False) \
+            -> type[SimpleCloudEvent | dict | None]:
         """Return a SimpleCloudEvent if one is in session from the PubSub call.
 
         Parameters
@@ -144,7 +146,8 @@ class GcpQueue:
                 SimpleCloudEvent -or-
                 None - if there is no SimpleCloudEvent
 
-                dict - if return_raw was set to true and it's not a SimpleCloudEvent -or-
+                dict - if return_raw was set to true
+                       and it's not a SimpleCloudEvent -or-
         """
         if not (envelope := GcpQueue.get_envelope(request)):
             return None
@@ -176,14 +179,15 @@ class GcpQueue:
 
             return future.result()
         except (CancelledError, TimeoutError) as error:
-            raise Exception(
-                "Unable to post to queue", error
-            ) from error  # pylint: disable=W0719
+            raise Exception("Unable to post to queue", error) \
+                from error  # pylint: disable=W0719
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
+        """Function return message to queue."""
         return to_queue_message(ce)
 
     @staticmethod
     def from_queue_message(data: dict):
+        """Function return message from queue."""
         return from_queue_message(data)
