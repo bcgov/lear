@@ -54,7 +54,6 @@ def process(
             )
         case _:  # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
             update_proprietor_change(
-                legal_entity=legal_entity,
                 filing_type="changeOfRegistration",
                 change_filing_rec=change_filing_rec,
                 change_filing=change_filing,

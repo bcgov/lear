@@ -26,6 +26,7 @@ from entity_filer.filing_processors.filing_components import (
     create_role,
     filings,
     legal_entity_info,
+    merge_party,
     resolutions,
     rules_and_memorandum,
     shares,
@@ -215,7 +216,7 @@ def _update_party(party_info):
 
 
 def _create_party_info(business, correction_filing_rec, party_info):
-    party = merge_party(business_id=business.id, party_info=party_info, create=False)
+    party = merge_party(legal_entity_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get("roles"):
         role_str = role_type.get("roleType", "").lower()
         role = {

@@ -92,8 +92,10 @@ def update_naics_info(legal_entity: LegalEntity, naics: Dict):
     # TODO update NAICS info
     legal_entity.naics_code = naics.get("naicsCode")
     if legal_entity.naics_code:
-        naics_structure = NaicsService.find_by_code(legal_entity.naics_code)
-        legal_entity.naics_key = naics_structure["naicsKey"]
+        # TODO: Uncomment next 2 lines when find_by_code implemented and delete "pass"
+        # naics_structure = NaicsService.find_by_code(legal_entity.naics_code)
+        # legal_entity.naics_key = naics_structure["naicsKey"]
+        pass
     else:
         legal_entity.naics_code = None
         legal_entity.naics_key = None

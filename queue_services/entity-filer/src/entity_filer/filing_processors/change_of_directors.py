@@ -15,7 +15,7 @@
 from datetime import datetime
 from typing import Dict
 
-# from entity_filer.exceptions import DefaultException, logger
+from entity_filer.exceptions import DefaultException, logger
 from business_model import LegalEntity, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
@@ -67,7 +67,7 @@ def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):  # py
 
         if "appointed" in new_director["actions"]:
             # add new diretor party role to the business
-            party = merge_party(business_id=business.id, party_info=new_director)
+            party = merge_party(legal_entity_id=business.id, party_info=new_director)
             role = {
                 "roleType": "Director",
                 "appointmentDate": new_director.get("appointmentDate"),

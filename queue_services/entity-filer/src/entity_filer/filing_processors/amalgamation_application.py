@@ -19,7 +19,7 @@ from typing import Dict
 
 import sentry_sdk
 
-# from entity_filer.exceptions import DefaultException
+from entity_filer.exceptions import DefaultException
 from business_model import db, AmalgamatingBusiness, Amalgamation, LegalEntity, Document, Filing, RegistrationBootstrap
 
 # from legal_api.services.bootstrap import AccountService

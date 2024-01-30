@@ -591,7 +591,7 @@ def prep_cp_special_resolution_correction_upload_memorandum_filing(
     del filing_template["filing"]["correction"]["resolution"]
     filing_template["filing"]["correction"]["memorandumFileKey"] = "28f73dc4-8e7c-4c89-bef6-a81dff909ca6.pdf"
     filing_template["filing"]["correction"]["memorandumFileName"] = "test.pdf"
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    filing = create_filing(token=payment_id, filing_json=filing_template, legal_entity_id=business.id)
     filing.payment_completion_date = filing.filing_date
     # Triggered from the filer.
     filing._meta_data = {"correction": {"uploadNewMemorandum": True}}

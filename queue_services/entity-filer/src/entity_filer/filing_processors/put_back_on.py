@@ -18,7 +18,7 @@ from typing import Dict
 
 import dpath
 
-# from entity_filer.exceptions import DefaultException, logger
+from entity_filer.exceptions import DefaultException, logger
 from business_model import LegalEntity, Filing
 
 from entity_filer.filing_meta import FilingMeta

@@ -23,6 +23,7 @@ There are no corrections for a conversion filing.
 """
 # pylint: disable=superfluous-parens; as pylance requires it
 from contextlib import suppress
+from http import HTTPStatus
 from typing import Dict
 
 import dpath
@@ -58,7 +59,9 @@ def process(
     # Extract the filing information for incorporation
     filing_meta.conversion = {}
     if not (conversion_filing := filing.get("filing", {}).get("conversion")):
-        raise BusinessException(f"CONVL legal_filing:conversion missing from {filing_rec.id}")
+        raise BusinessException(
+            error=f"CONVL legal_filing:conversion missing from {filing_rec.id}",
+            status_code=HTTPStatus.BAD_REQUEST)
     # if legal_entity and legal_entity.entity_type in ['SP', 'GP']:
     if filing["filing"]["business"]["legalType"] in ["SP", "GP"]:
         if legal_entity and not legal_entity.entity_type in [
@@ -75,9 +78,13 @@ def process(
 
 def _process_corps_conversion(legal_entity, conversion_filing, filing, filing_rec):
     if legal_entity:
-        raise BusinessException(f"Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}")
+        raise BusinessException(
+            error=f"Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}",
+            status_code=HTTPStatus.FORBIDDEN)
     if not (corp_num := filing.get("filing", {}).get("business", {}).get("identifier")):
-        raise BusinessException(f"conversion {filing_rec.id} missing the legal_entity identifier.")
+        raise BusinessException(
+            error=f"conversion {filing_rec.id} missing the legal_entity identifier.",
+            status_code=HTTPStatus.BAD_REQUEST)
     # Initial insert of the legal_entity record
     legal_entity_info_obj = conversion_filing.get("nameRequest")
     if not (
@@ -85,7 +92,9 @@ def _process_corps_conversion(legal_entity, conversion_filing, filing, filing_re
             corp_num, LegalEntity(), legal_entity_info_obj, filing_rec
         )
     ):
-        raise BusinessException(f"CONVL conversion {filing_rec.id}, Unable to create legal_entity.")
+        raise BusinessException(
+            error=f"CONVL conversion {filing_rec.id}, Unable to create legal_entity.",
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY)
     if offices := conversion_filing.get("offices"):
         update_offices(legal_entity, offices)
     if parties := conversion_filing.get("parties"):

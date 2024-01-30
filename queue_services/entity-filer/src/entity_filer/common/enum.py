@@ -11,6 +11,7 @@ class BaseMeta(EnumMeta):
     def __contains__(self, other):
         """Return True if 'in' the Enum."""
         try:
+            # pylint: disable-next=no-value-for-parameter
             self(other)
         except ValueError:
             return False
@@ -37,6 +38,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
                 return enum_value
         return None
 
+    # pylint: disable-next=no-self-argument
     def _generate_next_value_(name, start, count, last_values):
         """Return the name of the key."""
         return name
