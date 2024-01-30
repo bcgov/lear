@@ -46,7 +46,7 @@ def test_valid_amalgamating_business_save(session):
 
     amalgamation = Amalgamation(
         amalgamation_type=Amalgamation.AmalgamationTypes.horizontal,
-        business_id=b.id,
+        legal_entity_id=b.id,
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
         court_approval=True
@@ -60,7 +60,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
         foreign_corp_num="123456789",
-        business_id=b.id,
+        legal_entity_id=b.id,
         amalgamation_id=amalgamation.id
     )
     amalgamating_business_1.save()
@@ -71,7 +71,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
         foreign_corp_num="123456789",
-        business_id=b.id,
+        legal_entity_id=b.id,
         amalgamation_id=amalgamation.id
     )
     amalgamating_business_2.save()
