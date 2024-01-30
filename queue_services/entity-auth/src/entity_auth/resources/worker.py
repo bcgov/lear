@@ -53,6 +53,7 @@ from entity_auth.services.logging import structured_log
 @dataclass
 class Message:
     """Worker message class"""
+
     id: Optional[str] = None
     type: Optional[str] = None
     filing_id: Optional[str] = None
