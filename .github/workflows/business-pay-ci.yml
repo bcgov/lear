@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   business-pay-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/pay-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
     with:
       app_name: "business-pay"
       working_directory: "./queue_services/entity-pay"

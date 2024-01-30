@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   business-bn-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/bn-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
     with:
       app_name: "business-bn"
       working_directory: "./queue_services/entity-bn"

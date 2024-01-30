@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   business-filer-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/filer-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
     with:
       app_name: "business-filer"
       working_directory: "./queue_services/entity-filer"
