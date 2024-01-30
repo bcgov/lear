@@ -60,6 +60,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True)
 
     @property
     def json(self) -> dict:

@@ -14,10 +14,10 @@
 
 """This exports all of the models and schemas used by the application."""
 from .address import Address
-from .amalgamating_business import AmalgamatingBusiness
-from .amalgamation import Amalgamation
 from .alias import Alias
 from .alternate_name import AlternateName
+from .amalgamating_business import AmalgamatingBusiness
+from .amalgamation import Amalgamation
 from .colin_entity import ColinEntity
 from .colin_update import ColinLastUpdate
 from .comment import Comment

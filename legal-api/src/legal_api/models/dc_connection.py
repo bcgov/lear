@@ -48,12 +48,14 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
 
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
 
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
+
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
             "id": self.id,
-            "businessId": self.legal_entity_id,
+            "businessId": self.legal_entity_id or self.alternate_name_id,
             "connectionId": self.connection_id,
             "invitationUrl": self.invitation_url,
             "isActive": self.is_active,

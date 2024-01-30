@@ -307,6 +307,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "tech_correction_json",
             "temp_reg",
             "transaction_id",
+            "alternate_name_id"
         ]
     }
 
@@ -342,6 +343,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     # transaction_id = db.Column('transaction_id', db.BigInteger,
     #    db.ForeignKey('transaction.id'))
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
     temp_reg = db.Column("temp_reg", db.String(10), db.ForeignKey("registration_bootstrap.identifier"))
     submitter_id = db.Column("submitter_id", db.Integer, db.ForeignKey("users.id"))
 
