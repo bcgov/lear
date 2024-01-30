@@ -52,13 +52,9 @@ def consume_nr(legal_entity: LegalEntity, filing: Filing):
                 raise NamexException
 
             # remove the NR from the account
-            if filing.temp_reg and (
-                bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-            ):
+            if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
                 AccountService.delete_affiliation(bootstrap.account, nr_num)
-    except (
-        Exception
-    ):  # pylint: disable=broad-except; note out any exception, but don't fail the call
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         structured_log(
             request,
             "ERROR",

@@ -61,9 +61,7 @@ document_sub_type = {
 }
 
 
-def get_business_type_and_sub_type_code(
-    legal_type: str, business_owned: bool, owner_legal_type: str
-):
+def get_business_type_and_sub_type_code(legal_type: str, business_owned: bool, owner_legal_type: str):
     """Get business_type and business_sub_type."""
     business_type = None
     business_sub_type = None
@@ -114,9 +112,7 @@ def get_business_type_and_sub_type_code(
 
 def build_input_xml(template_name, data):
     """Build input XML."""
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml').read_text()
     jnja_template = Template(template, autoescape=True)
     return jnja_template.render(data)
 
@@ -145,9 +141,7 @@ def request_bn_hub(input_xml):
         url = current_app.config.get("BN_HUB_API_URL")
         username = current_app.config.get("BN_HUB_CLIENT_ID")
         secret = current_app.config.get("BN_HUB_CLIENT_SECRET")
-        response = requests.get(
-            url=url, params={"inputXML": input_xml}, auth=(username, secret)
-        )
+        response = requests.get(url=url, params={"inputXML": input_xml}, auth=(username, secret))
         return response.status_code, response.text
     except requests.exceptions.RequestException as err:
         structured_log(request, "ERROR", str(err))
@@ -167,10 +161,7 @@ def get_owners_legal_type(entity_role: EntityRole):
         data = response.json()
         if results := data.get("searchResults", {}).get("results"):
             for entity in results:
-                if (
-                    entity.get("identifier")
-                    == entity_role.related_colin_entity.identifier
-                ):
+                if entity.get("identifier") == entity_role.related_colin_entity.identifier:
                     return entity.get("legalType")
         return None
     except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as err:

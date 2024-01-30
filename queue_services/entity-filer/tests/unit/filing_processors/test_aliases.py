@@ -47,12 +47,8 @@ def test_modified_aliases(app, session):
     old_value_2 = "B1 LTD."
     new_value_2 = "B2 LTD."
     business = create_business(identifier)
-    business.aliases.append(
-        Alias(alias=old_value_1, type=Alias.AliasType.TRANSLATION.value)
-    )
-    business.aliases.append(
-        Alias(alias=old_value_2, type=Alias.AliasType.TRANSLATION.value)
-    )
+    business.aliases.append(Alias(alias=old_value_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=old_value_2, type=Alias.AliasType.TRANSLATION.value))
     business.save()
     business_aliases = business.aliases.all()
     assert len(business_aliases) == 2
@@ -70,9 +66,7 @@ def test_modified_aliases(app, session):
     business_aliases = business.aliases.all()
     assert len(business_aliases) == 2
     for alias in component["nameTranslations"]:
-        business_alias = next(
-            (x for x in business_aliases if str(x.id) == alias["id"]), None
-        )
+        business_alias = next((x for x in business_aliases if str(x.id) == alias["id"]), None)
         assert business_alias.alias == alias["name"].upper()
 
 
@@ -84,12 +78,8 @@ def test_cease_aliases(app, session):
     alias_2 = "A2 LTD."
     alias_3 = "A3 LTD."
     business = create_business(identifier)
-    business.aliases.append(
-        Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value)
-    )
-    business.aliases.append(
-        Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value)
-    )
+    business.aliases.append(Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value))
     business.save()
     assert len(business.aliases.all()) == 2
 
@@ -113,12 +103,8 @@ def test_all_aliases(app, session):
     alias_3 = "A3 LTD."
     alias_4 = "A4 LTD."
     business = create_business(identifier)
-    business.aliases.append(
-        Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value)
-    )
-    business.aliases.append(
-        Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value)
-    )
+    business.aliases.append(Alias(alias=alias_1, type=Alias.AliasType.TRANSLATION.value))
+    business.aliases.append(Alias(alias=alias_2, type=Alias.AliasType.TRANSLATION.value))
     business.save()
     business_aliases = business.aliases.all()
     assert len(business_aliases) == 2
@@ -137,21 +123,13 @@ def test_all_aliases(app, session):
     assert 2 == len(business_aliases)
     assert (
         next(
-            (
-                x
-                for x in business_aliases
-                if str(x.id) == component["nameTranslations"][0]["id"]
-            ),
+            (x for x in business_aliases if str(x.id) == component["nameTranslations"][0]["id"]),
             None,
         ).alias
         == alias_3.upper()
     )
     assert next(
-        (
-            x
-            for x in business_aliases
-            if x.alias == component["nameTranslations"][1]["name"].upper()
-        ),
+        (x for x in business_aliases if x.alias == component["nameTranslations"][1]["name"].upper()),
         None,
     )
     assert not next((x for x in business_aliases if x.alias == alias_1.upper()), None)

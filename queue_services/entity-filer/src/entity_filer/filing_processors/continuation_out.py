@@ -40,17 +40,11 @@ def process(
     details = continuation_out_json.get("details")
     legal_name = continuation_out_json.get("legalName")
     continuation_out_date_str = continuation_out_json.get("continuationOutDate")
-    continuation_out_date = (
-        LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-            continuation_out_date_str
-        )
-    )
+    continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
     foreign_jurisdiction = continuation_out_json.get("foreignJurisdiction")
     foreign_jurisdiction_country = foreign_jurisdiction.get("country").upper()
 
-    continuation_out_filing.comments.append(
-        Comment(comment=details, staff_id=continuation_out_filing.submitter_id)
-    )
+    continuation_out_filing.comments.append(Comment(comment=details, staff_id=continuation_out_filing.submitter_id))
 
     legal_entity.state = LegalEntity.State.HISTORICAL
     legal_entity.state_filing_id = continuation_out_filing.id
@@ -62,9 +56,7 @@ def process(
 
     with suppress(IndexError, KeyError, TypeError):
         foreign_jurisdiction_region = foreign_jurisdiction.get("region")
-        foreign_jurisdiction_region = (
-            foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
-        )
+        foreign_jurisdiction_region = foreign_jurisdiction_region.upper() if foreign_jurisdiction_region else None
         legal_entity.foreign_jurisdiction_region = foreign_jurisdiction_region
 
     filing_meta.continuation_out = {}

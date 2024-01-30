@@ -36,16 +36,12 @@ message_type = "bc.registry.business.changeOfRegistration"
 def test_change_of_registration(app, session, client, mocker, legal_type):
     """Test inform cra about change of SP/GP registration."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, tax_id="993775204BC0001")
     json_filing = {
         "filing": {
             "header": {"name": "changeOfRegistration"},
             "changeOfRegistration": {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                },
+                "offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}},
                 "parties": [{}],
             },
         }
@@ -140,21 +136,15 @@ def test_change_of_registration(app, session, client, mocker, legal_type):
         ("GP", "993775204"),
     ],
 )
-def test_bn15_not_available_change_of_registration(
-    app, session, client, mocker, legal_type, bn9
-):
+def test_bn15_not_available_change_of_registration(app, session, client, mocker, legal_type, bn9):
     """Skip cra call when BN15 is not available while doing a change of SP/GP registration."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, bn9=bn9
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, bn9=bn9)
     json_filing = {
         "filing": {
             "header": {"name": "changeOfRegistration"},
             "changeOfRegistration": {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                },
+                "offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}},
                 "parties": [{}],
             },
         }
@@ -237,28 +227,18 @@ def test_bn15_not_available_change_of_registration(
         (RequestTracker.RequestType.CHANGE_PARTY, {"parties": [{}]}),
         (
             RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS,
-            {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                }
-            },
+            {"offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}}},
         ),
         (
             RequestTracker.RequestType.CHANGE_MAILING_ADDRESS,
-            {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                }
-            },
+            {"offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}}},
         ),
     ],
 )
 def test_retry_change_of_registration(app, session, client, mocker, request_type, data):
     """Test retry change of SP/GP registration."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        "SP", identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data("SP", identifier=identifier, tax_id="993775204BC0001")
     json_filing = {
         "filing": {
             "header": {"name": "changeOfRegistration"},

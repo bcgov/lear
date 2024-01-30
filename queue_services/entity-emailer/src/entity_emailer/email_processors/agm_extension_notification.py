@@ -28,25 +28,18 @@ from legal_api.models import Filing, LegalEntity
 from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 
 
-def _get_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str, effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the AGM Extension output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
+    headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
 
     # add filing pdf
     filing_pdf = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        "?type=letterOfAgmExtension", headers=headers
+        "?type=letterOfAgmExtension",
+        headers=headers,
     )
     if filing_pdf.status_code != HTTPStatus.OK:
         logger.error("Failed to get pdf for filing: %s", filing.id)
@@ -57,7 +50,7 @@ def _get_pdfs(
                 "fileName": "Letter of AGM Extension Approval.pdf",
                 "fileBytes": filing_pdf_encoded.decode("utf-8"),
                 "fileUrl": "",
-                "attachOrder": attach_order
+                "attachOrder": attach_order,
             }
         )
         attach_order += 1
@@ -72,9 +65,9 @@ def _get_pdfs(
             "filingDateTime": filing_date_time,
             "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
             "filingIdentifier": str(filing.id),
-            "businessNumber": business_data.tax_id if business_data and business_data.tax_id else ""
+            "businessNumber": business_data.tax_id if business_data and business_data.tax_id else "",
         },
-        headers=headers
+        headers=headers,
     )
     if receipt.status_code != HTTPStatus.CREATED:
         logger.error("Failed to get receipt pdf for filing: %s", filing.id)
@@ -85,7 +78,7 @@ def _get_pdfs(
                 "fileName": "Receipt.pdf",
                 "fileBytes": receipt_encoded.decode("utf-8"),
                 "fileUrl": "",
-                "attachOrder": attach_order
+                "attachOrder": attach_order,
             }
         )
         attach_order += 1
@@ -102,9 +95,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/AGM-EXT-{status}.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AGM-EXT-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -115,10 +106,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") +
-        (filing.json)["filing"]["business"].get("identifier", ""),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
+        + (filing.json)["filing"]["business"].get("identifier", ""),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
     )
 
     # get attachments
@@ -142,9 +133,5 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
-        "content": {
-            "subject": subject,
-            "body": f"{html_out}",
-            "attachments": pdfs
-        }
+        "content": {"subject": subject, "body": f"{html_out}", "attachments": pdfs},
     }

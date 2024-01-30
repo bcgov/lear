@@ -67,9 +67,7 @@ def create_test_db(
     DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
 
     try:
-        with create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
-        ).connect() as conn:
+        with create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(f"CREATE DATABASE {database}"))
 
         return True
@@ -100,12 +98,8 @@ def drop_test_db(
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with suppress(
-        sqlalchemy_exc.ProgrammingError, psycopg2.OperationalError, Exception
-    ):
-        with create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
-        ).connect() as conn:
+    with suppress(sqlalchemy_exc.ProgrammingError, psycopg2.OperationalError, Exception):
+        with create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
 
@@ -206,9 +200,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
-            if (
-                trans.nested and not trans._parent.nested
-            ):  # pylint: disable=protected-access
+            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
                 # Handle where test DOESN'T session.commit(),
                 sess2.expire_all()
                 sess.begin_nested()

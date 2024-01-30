@@ -18,6 +18,7 @@ from tokenize import String
 from typing import List, Optional
 
 from business_model import LegalEntity, Document, Filing
+
 # from legal_api.services.pdf_service import RegistrarStampData
 
 # from business_model.document import DocumentType

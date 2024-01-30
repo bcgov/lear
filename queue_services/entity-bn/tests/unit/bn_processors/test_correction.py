@@ -36,16 +36,12 @@ message_type = "bc.registry.business.correction"
 def test_correction(app, session, client, mocker, legal_type):
     """Test inform cra about correction of SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, tax_id="993775204BC0001")
     json_filing = {
         "filing": {
             "header": {"name": "correction"},
             "correction": {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                },
+                "offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}},
                 "parties": [{}],
             },
         }
@@ -70,12 +66,8 @@ def test_correction(app, session, client, mocker, legal_type):
         "entity_bn.bn_processors.change_of_registration.request_bn_hub",
         side_effect=side_effect,
     )
-    mocker.patch(
-        "entity_bn.bn_processors.correction.has_previous_address", return_value=True
-    )
-    mocker.patch(
-        "entity_bn.bn_processors.correction.has_party_name_changed", return_value=True
-    )
+    mocker.patch("entity_bn.bn_processors.correction.has_previous_address", return_value=True)
+    mocker.patch("entity_bn.bn_processors.correction.has_party_name_changed", return_value=True)
 
     message_id = str(uuid.uuid4())
     json_data = get_json_message(filing_id, identifier, message_id, message_type)
@@ -141,16 +133,12 @@ def test_correction(app, session, client, mocker, legal_type):
 def test_bn15_not_available_correction(app, session, client, mocker, legal_type, bn9):
     """Skip cra call when BN15 is not available while doing a correction of SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, bn9=bn9
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, bn9=bn9)
     json_filing = {
         "filing": {
             "header": {"name": "correction"},
             "correction": {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                },
+                "offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}},
                 "parties": [{}],
             },
         }
@@ -160,12 +148,8 @@ def test_bn15_not_available_correction(app, session, client, mocker, legal_type,
     filing.save()
     filing_id = filing.id
 
-    mocker.patch(
-        "entity_bn.bn_processors.correction.has_previous_address", return_value=True
-    )
-    mocker.patch(
-        "entity_bn.bn_processors.correction.has_party_name_changed", return_value=True
-    )
+    mocker.patch("entity_bn.bn_processors.correction.has_previous_address", return_value=True)
+    mocker.patch("entity_bn.bn_processors.correction.has_party_name_changed", return_value=True)
 
     message_id = str(uuid.uuid4())
     json_data = get_json_message(filing_id, identifier, message_id, message_type)
@@ -231,28 +215,18 @@ def test_bn15_not_available_correction(app, session, client, mocker, legal_type,
         (RequestTracker.RequestType.CHANGE_PARTY, {"parties": [{}]}),
         (
             RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS,
-            {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                }
-            },
+            {"offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}}},
         ),
         (
             RequestTracker.RequestType.CHANGE_MAILING_ADDRESS,
-            {
-                "offices": {
-                    "businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}
-                }
-            },
+            {"offices": {"businessOffice": {"mailingAddress": {}, "deliveryAddress": {}}}},
         ),
     ],
 )
 def test_retry_correction(app, session, client, mocker, request_type, data):
     """Test retry correction of SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        "SP", identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data("SP", identifier=identifier, tax_id="993775204BC0001")
     json_filing = {"filing": {"header": {"name": "correction"}, "correction": {}}}
     json_filing["filing"]["correction"] = data
     filing = create_filing(json_filing=json_filing, legal_entity_id=legal_entity_id)
@@ -275,9 +249,7 @@ def test_retry_correction(app, session, client, mocker, request_type, data):
         "entity_bn.bn_processors.correction.has_previous_address",
         side_effect=side_effect,
     )
-    mocker.patch(
-        "entity_bn.bn_processors.correction.has_party_name_changed", return_value=True
-    )
+    mocker.patch("entity_bn.bn_processors.correction.has_party_name_changed", return_value=True)
 
     message_id = str(uuid.uuid4())
     for _ in range(10):

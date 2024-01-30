@@ -99,7 +99,7 @@ def test_special_resolution_correction(
     sr_filing_msg = {"filing": {"id": sr_filing_id}}
     # Call the process_filing method for the original special resolution
     process_filing(sr_filing_msg)
-    
+
     if correct_filing_type == "changeOfAddress":
         correction_data = copy.deepcopy(correction_template)
         correction_data["filing"]["changeOfAddress"]["offices"] = {}
@@ -123,9 +123,7 @@ def test_special_resolution_correction(
             correction_data["filing"]["correction"] = {}
         correction_data["filing"]["correction"]["correctedFilingId"] = sr_filing_id
     correction_payment_id = str(random.SystemRandom().getrandbits(0x58))
-    correction_filing_id = (
-        create_filing(correction_payment_id, correction_data, business_id=business_id)
-    ).id
+    correction_filing_id = (create_filing(correction_payment_id, correction_data, business_id=business_id)).id
 
     # Mock the correction filing message
     correction_filing_msg = {"filing": {"id": correction_filing_id}}
@@ -145,9 +143,7 @@ def test_special_resolution_correction(
         resolution = business.resolutions.first()
         assert business.association_type == "HC"
         assert resolution is not None, "Resolution should exist"
-        assert (
-            resolution.resolution == "<p>xxxx</p>"
-        ), "Resolution text should be corrected"
+        assert resolution.resolution == "<p>xxxx</p>", "Resolution text should be corrected"
 
         # # # Check if the signatory was updated
         party = resolution.party
@@ -166,9 +162,7 @@ def test_special_resolution_correction(
         resolution_date = "2023-06-16"
         signing_date = "2023-06-17"
         correction_data_2 = copy.deepcopy(FILING_HEADER)
-        correction_data_2["filing"]["correction"] = copy.deepcopy(
-            CORRECTION_CP_SPECIAL_RESOLUTION
-        )
+        correction_data_2["filing"]["correction"] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
         correction_data_2["filing"]["header"]["name"] = "correction"
         correction_data_2["filing"]["business"] = {"identifier": identifier}
         correction_data_2["filing"]["correction"]["correctedFilingType"] = "correction"
@@ -183,15 +177,9 @@ def test_special_resolution_correction(
         # Update correction data to point to the original special resolution filing
         if "correction" not in correction_data_2["filing"]:
             correction_data_2["filing"]["correction"] = {}
-        correction_data_2["filing"]["correction"][
-            "correctedFilingId"
-        ] = correction_filing_id
+        correction_data_2["filing"]["correction"]["correctedFilingId"] = correction_filing_id
         correction_payment_id_2 = str(random.SystemRandom().getrandbits(0x58))
-        correction_filing_id_2 = (
-            create_filing(
-                correction_payment_id_2, correction_data_2, business_id=business_id
-            )
-        ).id
+        correction_filing_id_2 = (create_filing(correction_payment_id_2, correction_data_2, business_id=business_id)).id
         # Mock the correction filing message
         correction_filing_msg_2 = {"filing": {"id": correction_filing_id_2}}
 
@@ -201,9 +189,7 @@ def test_special_resolution_correction(
         business = LegalEntity.find_by_internal_id(business_id)
         resolution = business.resolutions.first()
         assert resolution is not None, "Resolution should exist"
-        assert (
-            resolution.resolution == "<p>yyyy</p>"
-        ), "Resolution text should be corrected"
+        assert resolution.resolution == "<p>yyyy</p>", "Resolution text should be corrected"
         assert resolution.resolution_date == parse(resolution_date).date()
         assert resolution.signing_date == parse(signing_date).date()
 
@@ -235,12 +221,8 @@ def test_correction_coop_rules(app, session):
 
     correction_filing = copy.deepcopy(FILING_HEADER)
     correction_filing["filing"]["header"]["name"] = "correction"
-    correction_filing["filing"]["business"][
-        "legalType"
-    ] = LegalEntity.EntityTypes.COOP.value
-    correction_filing["filing"]["correction"] = copy.deepcopy(
-        CORRECTION_CP_SPECIAL_RESOLUTION
-    )
+    correction_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
+    correction_filing["filing"]["correction"] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
     correction_filing["filing"]["correction"]["correctedFilingId"] = sr_filing_id
     # rules_file_key_uploaded_by_user = upload_file('rules.pdf')
     # correction_filing['filing']['correction']['rulesFileKey'] = rules_file_key_uploaded_by_user
@@ -248,9 +230,7 @@ def test_correction_coop_rules(app, session):
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
-    filing_submission = create_filing(
-        payment_id, correction_filing, business_id=business.id
-    )
+    filing_submission = create_filing(payment_id, correction_filing, business_id=business.id)
 
     filing_meta = FilingMeta()
 

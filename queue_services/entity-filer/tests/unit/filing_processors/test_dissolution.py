@@ -65,9 +65,7 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
 
     if legal_type == LegalEntity.EntityTypes.COOP.value:
         affidavit_uploaded_by_user_file_key = "fake-key"
-        filing_json["filing"]["dissolution"][
-            "affidavitFileKey"
-        ] = affidavit_uploaded_by_user_file_key
+        filing_json["filing"]["dissolution"]["affidavitFileKey"] = affidavit_uploaded_by_user_file_key
 
     business = create_business(identifier, legal_type=legal_type)
     member = LegalEntity(
@@ -138,17 +136,11 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
         LegalEntity.EntityTypes.SOLE_PROP.value,
         LegalEntity.EntityTypes.PARTNERSHIP.value,
     ):
-        expected_dissolution_date = datetime.fromisoformat(
-            f"{dissolution_date}T07:00:00+00:00"
-        )
+        expected_dissolution_date = datetime.fromisoformat(f"{dissolution_date}T07:00:00+00:00")
 
-    expected_dissolution_date_str = LegislationDatetime.format_as_legislation_date(
-        expected_dissolution_date
-    )
+    expected_dissolution_date_str = LegislationDatetime.format_as_legislation_date(expected_dissolution_date)
     assert business.dissolution_date == expected_dissolution_date
-    dissolution_date_format_correct = has_expected_date_str_format(
-        expected_dissolution_date_str, "%Y-%m-%d"
-    )
+    dissolution_date_format_correct = has_expected_date_str_format(expected_dissolution_date_str, "%Y-%m-%d")
     assert dissolution_date_format_correct
     assert filing_meta.dissolution["dissolutionDate"] == expected_dissolution_date_str
 
@@ -160,9 +152,7 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
         ("GP", "FM1234567", "administrative"),
     ],
 )
-def test_administrative_dissolution(
-    app, session, legal_type, identifier, dissolution_type
-):
+def test_administrative_dissolution(app, session, legal_type, identifier, dissolution_type):
     """Assert that the dissolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -244,12 +234,8 @@ def test_administrative_dissolution(
 
     assert filing_meta.dissolution["dissolutionType"] == dissolution_type
 
-    dissolution_date_str = LegislationDatetime.format_as_legislation_date(
-        filing.effective_date
-    )
-    dissolution_date_format_correct = has_expected_date_str_format(
-        dissolution_date_str, "%Y-%m-%d"
-    )
+    dissolution_date_str = LegislationDatetime.format_as_legislation_date(filing.effective_date)
+    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, "%Y-%m-%d")
     assert dissolution_date_format_correct
     assert filing_meta.dissolution["dissolutionDate"] == dissolution_date_str
 

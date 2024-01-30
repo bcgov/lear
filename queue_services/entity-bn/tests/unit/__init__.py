@@ -134,9 +134,7 @@ def create_related_entity(party_json):
             country="CA",
             postal_code=party_json["mailingAddress"]["postalCode"],
             region=party_json["mailingAddress"]["addressRegion"],
-            delivery_instructions=party_json["mailingAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=party_json["mailingAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_mailing_address = mailing_address
     if party_json.get("deliveryAddress"):
@@ -146,17 +144,13 @@ def create_related_entity(party_json):
             country="CA",
             postal_code=party_json["deliveryAddress"]["postalCode"],
             region=party_json["deliveryAddress"]["addressRegion"],
-            delivery_instructions=party_json["deliveryAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=party_json["deliveryAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_delivery_address = delivery_address
     return new_party
 
 
-def create_entity_role(
-    legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME
-):
+def create_entity_role(legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME):
     """Create party roles."""
     from legal_api.models import EntityRole
 
@@ -212,9 +206,7 @@ def create_registration_data(legal_type, identifier="FM1234567", bn9=None, tax_i
         change_filing_id=filing.id,
     )
 
-    related_entity = create_related_entity(
-        person_json if legal_type == "SP" else org_json
-    )
+    related_entity = create_related_entity(person_json if legal_type == "SP" else org_json)
     role = "proprietor" if legal_type == "SP" else "partner"
     create_entity_role(legal_entity, related_entity, [role])
     legal_entity.save()
@@ -225,9 +217,7 @@ def create_registration_data(legal_type, identifier="FM1234567", bn9=None, tax_i
     return filing.id, legal_entity.id
 
 
-def get_json_message(
-    filing_id, identifier, message_id, type, request_type=None, business_number=None
-):
+def get_json_message(filing_id, identifier, message_id, type, request_type=None, business_number=None):
     CLOUD_EVENT = SimpleCloudEvent(
         source="fake-for-tests",
         subject="fake-subject",

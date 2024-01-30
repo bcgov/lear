@@ -69,9 +69,7 @@ OFFICE_STRUCTURE = {
     "test_name,office_structure,expected_error",
     [("valid office", OFFICE_STRUCTURE, None)],
 )
-def test_manage_office_structure__offices(
-    app, session, test_name, office_structure, expected_error
-):
+def test_manage_office_structure__offices(app, session, test_name, office_structure, expected_error):
     """Assert that the corp offices gets set."""
     business = LegalEntity()
     business.save()
@@ -91,9 +89,7 @@ def test_manage_office_structure__delete_and_recreate_offices(
 
     update_and_validate_office(business, office_structure)
     # Change the value of address to recreate
-    office_structure["offices"]["recordsOffice"]["mailingAddress"][
-        "postalCode"
-    ] = "L6M 5M7"
+    office_structure["offices"]["recordsOffice"]["mailingAddress"]["postalCode"] = "L6M 5M7"
     update_and_validate_office(business, office_structure)
 
 
@@ -108,9 +104,7 @@ def update_and_validate_office(business, office_structure):
     for s in check_offices:
         check_office_structure["offices"][s.office_type] = {}
         for address in s.addresses:
-            check_office_structure["offices"][s.office_type][
-                f"{address.address_type}Address"
-            ] = address.json
+            check_office_structure["offices"][s.office_type][f"{address.address_type}Address"] = address.json
     stripped_dict = strip_keys_from_dict(check_office_structure, ["id", "addressType"])
     assert stripped_dict == office_structure
     assert not err

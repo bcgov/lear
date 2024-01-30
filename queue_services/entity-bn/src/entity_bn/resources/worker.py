@@ -115,12 +115,8 @@ def worker():
             )
             with suppress(Exception):
                 event_topic = current_app.config.get("ENTITY_EVENT_TOPIC", "filer")
-                ret = queue.publish(
-                    topic=event_topic, payload=queue.to_queue_message(cloud_event)
-                )
-                structured_log(
-                    request, "INFO", f"publish to entity event: {message.identifier}"
-                )
+                ret = queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))
+                structured_log(request, "INFO", f"publish to entity event: {message.identifier}")
 
         structured_log(request, "INFO", f"completed ce: {str(ce)}")
         return {}, HTTPStatus.OK

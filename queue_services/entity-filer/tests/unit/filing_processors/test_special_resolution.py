@@ -31,9 +31,7 @@ from business_model import Resolution
         ("CP", "CP1234567", "specialResolution"),
     ],
 )
-def test_special_resolution(
-    app, session, legal_type, identifier, special_resolution_type
-):
+def test_special_resolution(app, session, legal_type, identifier, special_resolution_type):
     """Assert that the resolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)

@@ -29,15 +29,11 @@ def process(
 ):
     """Render the court order filing into the business model objects."""
     court_order_filing.court_order_file_number = filing["courtOrder"].get("fileNumber")
-    court_order_filing.court_order_effect_of_order = filing["courtOrder"].get(
-        "effectOfOrder"
-    )
+    court_order_filing.court_order_effect_of_order = filing["courtOrder"].get("effectOfOrder")
     court_order_filing.order_details = filing["courtOrder"].get("orderDetails")
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
-        court_order_filing.court_order_date = datetime.fromisoformat(
-            filing["courtOrder"].get("orderDate")
-        )
+        court_order_filing.court_order_date = datetime.fromisoformat(filing["courtOrder"].get("orderDate"))
 
     if file_key := filing["courtOrder"].get("fileKey"):
         document = Document()

@@ -57,9 +57,7 @@ def test_process_ar_filing(app, session):
         filing = create_filing(payment_id, ar, business.id)
         filing_id = filing.id
         filing_msg = FilingMessage(filing_identifier=filing_id)
-        annual_report.process(
-            business, filing.filing_json["filing"], filing_meta=filing_meta
-        )
+        annual_report.process(business, filing.filing_json["filing"], filing_meta=filing_meta)
 
     # check it out
     # NOTE: until we save or convert the dates, they are FakeDate objects, so casting to str()
@@ -74,9 +72,7 @@ def test_process_ar_filing_no_agm(app, session):
     identifier = "CP1234567"
 
     # setup
-    business = create_business(
-        identifier, legal_type=LegalEntity.EntityTypes.COOP.value
-    )
+    business = create_business(identifier, legal_type=LegalEntity.EntityTypes.COOP.value)
     business_id = business.id
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)

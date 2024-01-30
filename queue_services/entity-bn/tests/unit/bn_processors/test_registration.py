@@ -43,18 +43,14 @@ message_type = "bc.registry.business.registration"
 def test_registration(app, session, client, mocker, legal_type):
     """Test inform cra about new SP/GP registration."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier)
 
     def side_effect(input_xml):
         root = Et.fromstring(input_xml)
         if root.tag == "SBNCreateProgramAccountRequest":
             return 200, acknowledgement_response
 
-    mocker.patch(
-        "entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect
-    )
+    mocker.patch("entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect)
     # mocker.patch("entity_bn.bn_processors.registration.publish_event")
 
     business_number = "993775204"
@@ -123,9 +119,7 @@ def test_retry_registration(app, session, client, mocker, request_type):
         if root.tag == "SBNCreateProgramAccountRequest":
             return 200, "" if is_inform_cra else acknowledgement_response
 
-    mocker.patch(
-        "entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect
-    )
+    mocker.patch("entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect)
     mocker.patch(
         "entity_bn.bn_processors.registration._get_program_account",
         return_value=(

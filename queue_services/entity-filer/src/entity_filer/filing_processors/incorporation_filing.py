@@ -104,7 +104,6 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
     #     registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
     #     replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
-
     #     document = Document()
     #     document.type = DocumentType.COOP_MEMORANDUM.value
     #     document.file_key = memorandum_file_key
@@ -127,13 +126,9 @@ def process(
     filing_meta.incorporation_application = {}
 
     if not incorp_filing:
-        raise DefaultException(
-            f"IA legal_filing:incorporationApplication missing from {filing_rec.id}"
-        )
+        raise DefaultException(f"IA legal_filing:incorporationApplication missing from {filing_rec.id}")
     if business:
-        raise DefaultException(
-            f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}"
-        )
+        raise DefaultException(f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}")
 
     business_info_obj = incorp_filing.get("nameRequest")
 
@@ -149,9 +144,7 @@ def process(
 
     # Initial insert of the business record
     business = LegalEntity()
-    business = legal_entity_info.update_legal_entity_info(
-        corp_num, business, business_info_obj, filing_rec
-    )
+    business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business = _update_cooperative(incorp_filing, business, filing_rec)
     business.state = LegalEntity.State.ACTIVE
 
@@ -165,9 +158,7 @@ def process(
         }
 
     if not business:
-        raise DefaultException(
-            f"IA incorporationApplication {filing_rec.id}, Unable to create business."
-        )
+        raise DefaultException(f"IA incorporationApplication {filing_rec.id}, Unable to create business.")
 
     if offices := incorp_filing["offices"]:
         update_offices(business, offices)
@@ -191,12 +182,8 @@ def process(
             ia_json["filing"]["business"] = {}
         ia_json["filing"]["business"]["identifier"] = business.identifier
         ia_json["filing"]["business"]["legalType"] = business.entity_type
-        ia_json["filing"]["business"][
-            "foundingDate"
-        ] = business.founding_date.isoformat()
-        filing_rec._filing_json = (
-            ia_json  # pylint: disable=protected-access; bypass to update filing data
-        )
+        ia_json["filing"]["business"]["foundingDate"] = business.founding_date.isoformat()
+        filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
     return business, filing_rec, filing_meta
 
 

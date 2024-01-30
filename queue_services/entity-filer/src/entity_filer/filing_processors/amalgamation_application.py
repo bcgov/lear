@@ -87,8 +87,9 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
     for amalgamating_business_json in amalgamating_businesses_json:
         amalgamating_business = AmalgamatingBusiness()
         amalgamating_business.role = amalgamating_business_json.get("role")
-        if ((identifier := amalgamating_business_json.get("identifier")) and
-                (business := LegalEntity.find_by_identifier(identifier))):
+        if (identifier := amalgamating_business_json.get("identifier")) and (
+            business := LegalEntity.find_by_identifier(identifier)
+        ):
             amalgamating_business.legal_entity_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
         else:
@@ -111,10 +112,12 @@ def dissolve_amalgamating_business(business: LegalEntity, filing_rec: Filing):
     db.session.add(business)
 
 
-def process(business: LegalEntity,  # pylint: disable=too-many-branches
-            filing: Dict,
-            filing_rec: Filing,
-            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
+def process(
+    business: LegalEntity,  # pylint: disable=too-many-branches
+    filing: Dict,
+    filing_rec: Filing,
+    filing_meta: FilingMeta,
+):  # pylint: disable=too-many-branches
     """Process the incoming amalgamation application filing."""
     # Extract the filing information for amalgamation
     amalgamation_filing = filing.get("filing", {}).get("amalgamationApplication")
@@ -123,10 +126,12 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
 
     if not amalgamation_filing:
         raise DefaultException(
-            f"AmalgamationApplication legal_filing:amalgamationApplication missing from {filing_rec.id}")
+            f"AmalgamationApplication legal_filing:amalgamationApplication missing from {filing_rec.id}"
+        )
     if business:
         raise DefaultException(
-            f"LegalEntity Already Exist: AmalgamationApplication legal_filing:amalgamationApplication {filing_rec.id}")
+            f"LegalEntity Already Exist: AmalgamationApplication legal_filing:amalgamationApplication {filing_rec.id}"
+        )
 
     business_info_obj = amalgamation_filing.get("nameRequest")
 
@@ -134,13 +139,12 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
     corp_num = legal_entity_info.get_next_corp_num(business_info_obj["legalType"])
     if not corp_num:
         raise DefaultException(
-            f"amalgamationApplication {filing_rec.id} unable to get a business amalgamationApplication number.")
+            f"amalgamationApplication {filing_rec.id} unable to get a business amalgamationApplication number."
+        )
 
     # Initial insert of the business record
     business = LegalEntity()
-    business = legal_entity_info.update_legal_entity_info(
-        corp_num, business, business_info_obj, filing_rec
-    )
+    business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business.state = LegalEntity.State.ACTIVE
 
     amalgamation.filing_id = filing_rec.id
@@ -151,9 +155,10 @@ def process(business: LegalEntity,  # pylint: disable=too-many-branches
     business.amalgamation.append(amalgamation)
 
     if nr_number := business_info_obj.get("nrNumber", None):
-        filing_meta.amalgamation_application = {**filing_meta.amalgamation_application,
-                                                **{"nrNumber": nr_number,
-                                                   "legalName": business_info_obj.get("legalName", None)}}
+        filing_meta.amalgamation_application = {
+            **filing_meta.amalgamation_application,
+            **{"nrNumber": nr_number, "legalName": business_info_obj.get("legalName", None)},
+        }
 
     if not business:
         raise DefaultException(f"amalgamationApplication {filing_rec.id}, Unable to create business.")

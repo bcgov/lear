@@ -59,17 +59,12 @@ def process(
     )
 
     corrected_filing_type = filing["correction"]["correctedFilingType"]
-    if (
-        business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"]
-        and corrected_filing_type != "conversion"
-    ):
+    if business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"] and corrected_filing_type != "conversion":
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
         # - include flag so that listener in Filing model does not change state automatically to COMPLETE
-        correction_filing._status = (
-            Filing.Status.PENDING_CORRECTION.value
-        )  # pylint: disable=protected-access
+        correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
         setattr(correction_filing, "skip_status_listener", True)
 
     original_filing.save_to_session()

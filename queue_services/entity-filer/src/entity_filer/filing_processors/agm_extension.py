@@ -28,32 +28,20 @@ def process(filing: Dict, filing_meta: FilingMeta):
         "extReqForAgmYear": filing["agmExtension"]["extReqForAgmYear"],
         "totalApprovedExt": filing["agmExtension"]["totalApprovedExt"],
         "extensionDuration": filing["agmExtension"]["extensionDuration"],
-        "isFinalExtension": _check_final_extension(filing)
+        "isFinalExtension": _check_final_extension(filing),
     }
 
     if prev_agm_ref_date := dpath.util.get(filing, "/agmExtension/prevAgmRefDate", default=None):
-        filing_meta.agm_extension = {
-            **filing_meta.agm_extension,
-            "prevAgmRefDate": prev_agm_ref_date
-        }
+        filing_meta.agm_extension = {**filing_meta.agm_extension, "prevAgmRefDate": prev_agm_ref_date}
 
     if curr_ext_expiry_date := dpath.util.get(filing, "/agmExtension/expireDateCurrExt", default=None):
-        filing_meta.agm_extension = {
-            **filing_meta.agm_extension,
-            "expireDateCurrExt": curr_ext_expiry_date
-        }
+        filing_meta.agm_extension = {**filing_meta.agm_extension, "expireDateCurrExt": curr_ext_expiry_date}
 
     if intended_agm_date := dpath.util.get(filing, "/agmExtension/intendedAgmDate", default=None):
-        filing_meta.agm_extension = {
-            **filing_meta.agm_extension,
-            "intendedAgmDate": intended_agm_date
-        }
+        filing_meta.agm_extension = {**filing_meta.agm_extension, "intendedAgmDate": intended_agm_date}
 
     if expiry_date_approved_ext := dpath.util.get(filing, "/agmExtension/expireDateApprovedExt", default=None):
-        filing_meta.agm_extension = {
-            **filing_meta.agm_extension,
-            "expireDateApprovedExt": expiry_date_approved_ext
-        }
+        filing_meta.agm_extension = {**filing_meta.agm_extension, "expireDateApprovedExt": expiry_date_approved_ext}
 
 
 def _check_final_extension(filing: Dict) -> bool:

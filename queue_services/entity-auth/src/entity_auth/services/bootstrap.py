@@ -41,9 +41,7 @@ class RegistrationBootstrapService:
 
         # try to create a bootstrap registration with a unique ID
         for _ in range(5):
-            bootstrap.identifier = "T" + "".join(
-                secrets.choice(allowed_encoded) for _ in range(9)
-            )
+            bootstrap.identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
             try:
                 bootstrap.save()
                 return bootstrap
@@ -84,9 +82,7 @@ class RegistrationBootstrapService:
             return HTTPStatus.OK
 
         with contextlib.suppress(Exception):
-            AccountService.delete_affiliation(
-                account=bootstrap.account, business_registration=bootstrap.identifier
-            )
+            AccountService.delete_affiliation(account=bootstrap.account, business_registration=bootstrap.identifier)
         return {"error": "Unable to create bootstrap registration."}
 
     @staticmethod
@@ -188,10 +184,7 @@ class AccountService:
         )
 
         # @TODO delete affiliation and entity record next sprint when affiliation service is updated
-        if (
-            affiliate.status_code != HTTPStatus.CREATED
-            or entity_record.status_code != HTTPStatus.CREATED
-        ):
+        if affiliate.status_code != HTTPStatus.CREATED or entity_record.status_code != HTTPStatus.CREATED:
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
 
@@ -271,9 +264,7 @@ class AccountService:
         auth_url = current_app.config.get("AUTH_SVC_URL")
         url = f"{auth_url}/orgs?affiliation={identifier}"
 
-        res = requests.get(
-            url, headers={**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token}
-        )
+        res = requests.get(url, headers={**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token})
         try:
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;

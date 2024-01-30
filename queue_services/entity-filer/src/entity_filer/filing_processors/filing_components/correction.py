@@ -47,9 +47,7 @@ def correct_business_data(
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(correction_filing, "/correction/nameRequest")
         from_legal_name = business.legal_name
-        legal_entity_info.set_legal_name(
-            business.identifier, business, name_request_json
-        )
+        legal_entity_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
             filing_meta.correction = {
                 **filing_meta.correction,
@@ -61,9 +59,7 @@ def correct_business_data(
 
     # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
-        coop_association_type = dpath.util.get(
-            correction_filing, "/correction/cooperativeAssociationType"
-        )
+        coop_association_type = dpath.util.get(correction_filing, "/correction/cooperativeAssociationType")
         from_association_type = business.association_type
         if coop_association_type:
             legal_entity_info.set_association_type(business, coop_association_type)
@@ -76,11 +72,7 @@ def correct_business_data(
             }
 
     # Update Nature of Business
-    if (
-        naics := correction_filing.get("correction", {})
-        .get("business", {})
-        .get("naics")
-    ):
+    if naics := correction_filing.get("correction", {}).get("business", {}).get("naics"):
         to_naics_code = naics.get("naicsCode")
         to_naics_description = naics.get("naicsDescription")
         if business.naics_description != to_naics_description:
@@ -118,17 +110,11 @@ def correct_business_data(
     with suppress(IndexError, KeyError, TypeError):
         business_start_date = dpath.util.get(correction_filing, "/correction/startDate")
         if business_start_date:
-            business.start_date = (
-                LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                    business_start_date
-                )
-            )
+            business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.util.get(
-            correction_filing, "/correction/shareStructure"
-        )
+        share_structure = dpath.util.get(correction_filing, "/correction/shareStructure")
         shares.update_share_structure_correction(business, share_structure)
 
     # update resolution, if any
@@ -151,9 +137,7 @@ def correct_business_data(
 
     # update business resolution date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        resolution_date = dpath.util.get(
-            correction_filing, "/correction/resolutionDate"
-        )
+        resolution_date = dpath.util.get(correction_filing, "/correction/resolutionDate")
         resolutions.update_resolution_date(business, resolution_date)
 
     # update rules, if any
@@ -161,9 +145,7 @@ def correct_business_data(
         rules_file_key = dpath.util.get(correction_filing, "/correction/rulesFileKey")
         rules_file_name = dpath.util.get(correction_filing, "/correction/rulesFileName")
         if rules_file_key:
-            rules_and_memorandum.update_rules(
-                business, correction_filing_rec, rules_file_key, rules_file_name
-            )
+            rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
             filing_meta.correction = {
                 **filing_meta.correction,
                 **{"uploadNewRules": True},
@@ -174,20 +156,18 @@ def correct_business_data(
         memorandum_file_key = dpath.util.get(correction_filing, "/correction/memorandumFileKey")
         memorandum_file_name = dpath.util.get(correction_filing, "/correction/memorandumFileName")
         if memorandum_file_key:
-            rules_and_memorandum.update_memorandum(business, correction_filing_rec,
-                                                   memorandum_file_key, memorandum_file_name)
-            filing_meta.correction = {**filing_meta.correction,
-                                      **{"uploadNewMemorandum": True}}
+            rules_and_memorandum.update_memorandum(
+                business, correction_filing_rec, memorandum_file_key, memorandum_file_name
+            )
+            filing_meta.correction = {**filing_meta.correction, **{"uploadNewMemorandum": True}}
 
     with suppress(IndexError, KeyError, TypeError):
         if dpath.util.get(correction_filing, "/correction/memorandumInResolution"):
-            filing_meta.correction = {**filing_meta.correction,
-                                      **{"memorandumInResolution": True}}
+            filing_meta.correction = {**filing_meta.correction, **{"memorandumInResolution": True}}
 
     with suppress(IndexError, KeyError, TypeError):
         if dpath.util.get(correction_filing, "/correction/rulesInResolution"):
-            filing_meta.correction = {**filing_meta.correction,
-                                      **{"rulesInResolution": True}}
+            filing_meta.correction = {**filing_meta.correction, **{"rulesInResolution": True}}
 
 
 def update_parties(business: LegalEntity, parties: list, correction_filing_rec: Filing):
@@ -195,9 +175,7 @@ def update_parties(business: LegalEntity, parties: list, correction_filing_rec: 
     # Cease the party roles not present in the edit request
     end_date_time = datetime.datetime.utcnow()
     parties_to_update = [
-        party.get("officer").get("id")
-        for party in parties
-        if party.get("officer").get("id") is not None
+        party.get("officer").get("id") for party in parties if party.get("officer").get("id") is not None
     ]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
     for party_role in existing_party_roles:
@@ -210,8 +188,7 @@ def update_parties(business: LegalEntity, parties: list, correction_filing_rec: 
         # If id is present and is a GUID then this is an id specific to the UI which is not relevant to the backend.
         # The backend will have an id of type int
         if not party_info.get("officer").get("id") or (
-            party_info.get("officer").get("id")
-            and not isinstance(party_info.get("officer").get("id"), int)
+            party_info.get("officer").get("id") and not isinstance(party_info.get("officer").get("id"), int)
         ):
             _create_party_info(business, correction_filing_rec, party_info)
         else:
@@ -226,9 +203,7 @@ def _update_party(party_info):
         party.last_name = party_info["officer"].get("lastName", "").upper()
         party.middle_initial = party_info["officer"].get("middleName", "").upper()
         party.title = party_info.get("title", "").upper()
-        party.organization_name = (
-            party_info["officer"].get("organizationName", "").upper()
-        )
+        party.organization_name = party_info["officer"].get("organizationName", "").upper()
         party.party_type = party_info["officer"].get("partyType")
         party.email = party_info["officer"].get("email", "").lower()
         party.identifier = party_info["officer"].get("identifier", "").upper()

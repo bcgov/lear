@@ -19,9 +19,7 @@ BASE_ENVELOPE = {
 }
 
 
-@pytest.mark.parametrize(
-    "test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)]
-)
+@pytest.mark.parametrize("test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)])
 def test_valid_envelope(test_name, msg, expected):
     """Test the validation the envelope."""
     rv = GcpQueue.is_valid_envelope(msg)

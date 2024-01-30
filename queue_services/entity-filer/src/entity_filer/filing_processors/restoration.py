@@ -33,9 +33,7 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
-def process(
-    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Process restoration filing."""
     restoration_filing = filing.get("restoration")
     filing_meta.restoration = {}
@@ -43,9 +41,7 @@ def process(
     from_legal_name = business.legal_name
 
     if name_request_json := restoration_filing.get("nameRequest"):
-        legal_entity_info.set_legal_name(
-            business.identifier, business, name_request_json
-        )
+        legal_entity_info.set_legal_name(business.identifier, business, name_request_json)
         if nr_number := name_request_json.get("nrNumber", None):
             filing_meta.restoration = {**filing_meta.restoration, "nrNumber": nr_number}
 
@@ -57,12 +53,8 @@ def process(
         # adding this intentionally for now to refer in ledger (filing-ui)
     }
 
-    if expiry := restoration_filing.get(
-        "expiry"
-    ):  # limitedRestoration, limitedRestorationExtension
-        business.restoration_expiry_date = (
-            LegislationDatetime.as_utc_timezone_from_legislation_date_str(expiry)
-        )
+    if expiry := restoration_filing.get("expiry"):  # limitedRestoration, limitedRestorationExtension
+        business.restoration_expiry_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(expiry)
         filing_meta.restoration = {**filing_meta.restoration, "expiry": expiry}
     else:  # fullRestoration, limitedRestorationToFull
         business.restoration_expiry_date = None
@@ -88,16 +80,10 @@ def process(
         application_date = restoration_filing.get("applicationDate")
         notice_date = restoration_filing.get("noticeDate")
         if application_date and notice_date:
-            filing_rec.application_date = (
-                LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                    application_date
-                )
+            filing_rec.application_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+                application_date
             )
-            filing_rec.notice_date = (
-                LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                    notice_date
-                )
-            )
+            filing_rec.notice_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(notice_date)
 
 
 def _update_parties(business: LegalEntity, parties: dict, filing_rec: Filing):

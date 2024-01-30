@@ -29,9 +29,7 @@ from tests.unit import create_data, get_json_message
         ("incorporationApplication", "BC", "BC1234567"),
     ],
 )
-def test_new_legal_entity(
-    app, session, client, mocker, filing_type, entity_type, identifier
-):
+def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test new legal entity."""
 
     filing, legal_entity = create_data(filing_type, entity_type, identifier)
@@ -61,9 +59,7 @@ def test_new_legal_entity(
             assert details == {
                 "bootstrapIdentifier": filing.temp_reg,
                 "identifier": legal_entity.identifier,
-                "nrNumber": filing.filing_json["filing"][filing_type]["nameRequest"][
-                    "nrNumber"
-                ],
+                "nrNumber": filing.filing_json["filing"][filing_type]["nameRequest"]["nrNumber"],
             }
 
         return HTTPStatus.OK
@@ -90,9 +86,7 @@ def test_new_legal_entity(
     )
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing.id, identifier, message_id, f"bc.registry.business.{filing_type}"
-    )
+    json_data = get_json_message(filing.id, identifier, message_id, f"bc.registry.business.{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK
 
@@ -114,9 +108,7 @@ def test_new_legal_entity(
         ("restoration", "SP", "FM1234567"),
     ],
 )
-def test_update_entity(
-    app, session, client, mocker, filing_type, entity_type, identifier
-):
+def test_update_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test update entity."""
 
     filing, legal_entity = create_data(filing_type, entity_type, identifier)
@@ -145,8 +137,6 @@ def test_update_entity(
     )
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing.id, identifier, message_id, f"bc.registry.business.{filing_type}"
-    )
+    json_data = get_json_message(filing.id, identifier, message_id, f"bc.registry.business.{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK

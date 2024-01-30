@@ -29,9 +29,7 @@ from entity_emailer.email_processors import (
 )
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Affiliation notification."""
     structured_log(request, "DEBUG", f"filing_notification: {email_info}")
 
@@ -41,13 +39,9 @@ def process(
     )
     filing_type = filing.filing_type
     status = filing.status
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

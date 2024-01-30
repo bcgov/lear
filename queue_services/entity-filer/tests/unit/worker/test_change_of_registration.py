@@ -48,22 +48,18 @@ from tests.unit import (
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 
 GP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
-GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"].append(
-    REGISTRATION["parties"][1]
-)
-del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]['officer']['id']
-del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1]['officer']['id']
+GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"].append(REGISTRATION["parties"][1])
+del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"]
+del GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1]["officer"]["id"]
 
 SP_CHANGE_OF_REGISTRATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
 SP_CHANGE_OF_REGISTRATION["filing"]["business"]["legalType"] = "SP"
-SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["nameRequest"][
-    "legalType"
-] = "SP"
+SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["nameRequest"]["legalType"] = "SP"
 SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]["roles"] = [
     {"roleType": "Completing Party", "appointmentDate": "2022-01-01"},
     {"roleType": "Proprietor", "appointmentDate": "2022-01-01"},
 ]
-del SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]['officer']['id']
+del SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"]
 
 naics_response = {
     "code": REGISTRATION["business"]["naics"]["naicsCode"],
@@ -91,24 +87,22 @@ def test_change_of_registration_legal_name_sp(
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = "FM1234567"
-    
+
     filing = copy.deepcopy(filing_template)
     if test_name == "name_change":
-        filing["filing"]["changeOfRegistration"]["nameRequest"][
-            "legalName"
-        ] = new_legal_name
+        filing["filing"]["changeOfRegistration"]["nameRequest"]["legalName"] = new_legal_name
     else:
         del filing["filing"]["changeOfRegistration"]["nameRequest"]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
-    proprietor_identifier = 'P1234567'
+    proprietor_identifier = "P1234567"
     proprietor = create_entity(proprietor_identifier, "person", "my self old")
-    filing["filing"]["changeOfRegistration"]["parties"][0]['officer']['id'] = proprietor.id
+    filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"] = proprietor.id
 
     filing["filing"]["business"]["identifier"] = identifier
     filing = create_filing(payment_id, filing)
-    
+
     alternate_name = AlternateName(
         identifier=identifier,
         name_type=AlternateName.NameType.OPERATING,
@@ -121,11 +115,11 @@ def test_change_of_registration_legal_name_sp(
     proprietor.alternate_names.append(alternate_name)
     proprietor.save()
     proprietor_id = proprietor.id
-    
+
     filing_id = filing.id
     filing.legal_entity_id = proprietor_id
     filing.save()
-    
+
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
@@ -176,12 +170,10 @@ def test_change_of_registration_legal_name_gp(
     """Assert the worker process calls the legal name change correctly."""
 
     identifier = "FM1234567"
-    
+
     filing = copy.deepcopy(filing_template)
     if test_name == "name_change":
-        filing["filing"]["changeOfRegistration"]["nameRequest"][
-            "legalName"
-        ] = new_legal_name
+        filing["filing"]["changeOfRegistration"]["nameRequest"]["legalName"] = new_legal_name
     else:
         del filing["filing"]["changeOfRegistration"]["nameRequest"]
 
@@ -190,7 +182,7 @@ def test_change_of_registration_legal_name_gp(
     filing = create_filing(payment_id, filing)
 
     business = create_entity(identifier, legal_type, legal_name)
-    
+
     alternate_name = AlternateName(
         identifier=identifier,
         name_type=AlternateName.NameType.OPERATING,
@@ -206,7 +198,7 @@ def test_change_of_registration_legal_name_gp(
     filing_id = filing.id
     filing.legal_entity_id = business_id
     filing.save()
-    
+
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
@@ -265,12 +257,12 @@ def test_change_of_registration_business_address(
     del filing["filing"]["changeOfRegistration"]["nameRequest"]
     del filing["filing"]["changeOfRegistration"]["parties"]
 
-    filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"][
-        "deliveryAddress"
-    ]["id"] = business_delivery_address_id
-    filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"][
-        "mailingAddress"
-    ]["id"] = business_mailing_address_id
+    filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["deliveryAddress"][
+        "id"
+    ] = business_delivery_address_id
+    filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["mailingAddress"][
+        "id"
+    ] = business_mailing_address_id
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -297,17 +289,13 @@ def test_change_of_registration_business_address(
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_delivery_address.json[key]
-            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"][
-                "deliveryAddress"
-            ][key]
+            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["deliveryAddress"][key]
         )
     changed_mailing_address = Address.find_by_id(business_mailing_address_id)
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_mailing_address.json[key]
-            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"][
-                "mailingAddress"
-            ][key]
+            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["mailingAddress"][key]
         )
 
 
@@ -318,9 +306,7 @@ def test_change_of_registration_business_address(
         ("sp_court_order", "SP", SP_CHANGE_OF_REGISTRATION),
     ],
 )
-def test_worker_change_of_registration_court_order(
-    app, session, mocker, test_name, legal_type, filing_template
-):
+def test_worker_change_of_registration_court_order(app, session, mocker, test_name, legal_type, filing_template):
     """Assert the worker process the court order correctly."""
     identifier = "FM1234567"
     business = create_entity(identifier, legal_type, "Test Entity")
@@ -334,9 +320,7 @@ def test_worker_change_of_registration_court_order(
     filing["filing"]["changeOfRegistration"]["contactPoint"] = CONTACT_POINT
 
     filing["filing"]["changeOfRegistration"]["courtOrder"] = COURT_ORDER
-    filing["filing"]["changeOfRegistration"]["courtOrder"][
-        "effectOfOrder"
-    ] = effect_of_order
+    filing["filing"]["changeOfRegistration"]["courtOrder"]["effectOfOrder"] = effect_of_order
 
     del filing["filing"]["changeOfRegistration"]["nameRequest"]
     del filing["filing"]["changeOfRegistration"]["parties"]
@@ -371,9 +355,7 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
     business = create_entity(identifier, "SP", "Test Entity")
     business_id = business.id
 
-    party = create_entity_person(
-        SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]
-    )
+    party = create_entity_person(SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0])
     party_id = party.id
 
     create_entity_role(business, party, ["proprietor"], datetime.utcnow())
@@ -381,18 +363,10 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
     filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
     filing["filing"]["changeOfRegistration"]["contactPoint"] = CONTACT_POINT
     filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"] = party_id
-    filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-        "firstName"
-    ] = "New Name"
-    filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-        "middleInitial"
-    ] = "New Name"
-    filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
-        "streetAddress"
-    ] = "New Name"
-    filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"][
-        "streetAddress"
-    ] = "New Name"
+    filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["firstName"] = "New Name"
+    filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["middleInitial"] = "New Name"
+    filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"]["streetAddress"] = "New Name"
+    filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"]["streetAddress"] = "New Name"
 
     del filing["filing"]["changeOfRegistration"]["nameRequest"]
 
@@ -416,23 +390,14 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
     # Check outcome
     business = LegalEntity.find_by_internal_id(business_id)
     party = business.entity_roles.all()[0].related_entity
-    assert (
-        party.first_name
-        == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-            "firstName"
-        ].upper()
-    )
+    assert party.first_name == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["firstName"].upper()
     assert (
         party.entity_delivery_address.street
-        == filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"]["streetAddress"]
     )
     assert (
         party.entity_mailing_address.street
-        == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"]["streetAddress"]
     )
 
 
@@ -450,13 +415,9 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     business = create_entity(identifier, "GP", "Test Entity")
     business_id = business.id
 
-    party1 = create_entity_person(
-        GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0]
-    )
+    party1 = create_entity_person(GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0])
     party_id_1 = party1.id
-    party2 = create_entity_person(
-        GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1]
-    )
+    party2 = create_entity_person(GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1])
     party_id_2 = party2.id
 
     create_entity_role(business, party1, ["partner"], datetime.utcnow())
@@ -466,38 +427,20 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     filing["filing"]["changeOfRegistration"]["contactPoint"] = CONTACT_POINT
 
     if test_name == "gp_add_partner":
-        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-            "id"
-        ] = party_id_1
-        filing["filing"]["changeOfRegistration"]["parties"][1]["officer"][
-            "id"
-        ] = party_id_2
-        new_party_json = GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"][
-            "parties"
-        ][1]
+        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"] = party_id_1
+        filing["filing"]["changeOfRegistration"]["parties"][1]["officer"]["id"] = party_id_2
+        new_party_json = GP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][1]
         del new_party_json["officer"]["id"]
         new_party_json["officer"]["firstName"] = "New Name"
         filing["filing"]["changeOfRegistration"]["parties"].append(new_party_json)
 
     if test_name == "gp_edit_partner_name_and_address":
-        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-            "id"
-        ] = party_id_1
-        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-            "firstName"
-        ] = "New Name a"
-        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-            "middleInitial"
-        ] = "New Name a"
-        filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
-            "streetAddress"
-        ] = "New Name"
-        filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"][
-            "streetAddress"
-        ] = "New Name"
-        filing["filing"]["changeOfRegistration"]["parties"][1]["officer"][
-            "id"
-        ] = party_id_2
+        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["id"] = party_id_1
+        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["firstName"] = "New Name a"
+        filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["middleInitial"] = "New Name a"
+        filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"]["streetAddress"] = "New Name"
+        filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"]["streetAddress"] = "New Name"
+        filing["filing"]["changeOfRegistration"]["parties"][1]["officer"]["id"] = party_id_2
 
     if test_name == "gp_delete_partner":
         del filing["filing"]["changeOfRegistration"]["parties"][1]
@@ -534,22 +477,15 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     if test_name == "gp_edit_partner_name_and_address":
         party = business.entity_roles.all()[0].related_entity
         assert (
-            party.first_name
-            == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"][
-                "firstName"
-            ].upper()
+            party.first_name == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["firstName"].upper()
         )
         assert (
             party.entity_delivery_address.street
-            == filing["filing"]["changeOfRegistration"]["parties"][0][
-                "deliveryAddress"
-            ]["streetAddress"]
+            == filing["filing"]["changeOfRegistration"]["parties"][0]["deliveryAddress"]["streetAddress"]
         )
         assert (
             party.entity_mailing_address.street
-            == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"][
-                "streetAddress"
-            ]
+            == filing["filing"]["changeOfRegistration"]["parties"][0]["mailingAddress"]["streetAddress"]
         )
         assert business.entity_roles.all()[0].cessation_date is None
         assert business.entity_roles.all()[1].cessation_date is None

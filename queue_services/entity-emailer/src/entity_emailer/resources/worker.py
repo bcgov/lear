@@ -120,20 +120,14 @@ def worker():
 
     # 4. Send email
     # ##
-    if (
-        not email
-        or "recipients" not in email
-        or "content" not in email
-        or "body" not in email["content"]
-    ):
+    if not email or "recipients" not in email or "content" not in email or "body" not in email["content"]:
         # email object(s) is empty, take off queue
         structured_log(request, "INFO", "Send email: email object(s) is empty")
         return {}, HTTPStatus.OK
 
     if not email["recipients"] or not email["content"] or not email["content"]["body"]:
         # email object(s) is missing, take off queue
-        structured_log(request, "INFO",
-                       "Send email: email object(s) is missing")
+        structured_log(request, "INFO", "Send email: email object(s) is missing")
         return {}, HTTPStatus.OK
 
     resp = send_email(email, token)
@@ -152,20 +146,16 @@ def worker():
     return {}, HTTPStatus.OK
 
 
-def process_email(
-    email_msg: dict, token: str
-):  # pylint: disable=too-many-branches, too-many-statements
+def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-branches, too-many-statements
     """Process the email contained in the submission."""
     flags = Flags()
     if current_app.config.get("LD_SDK_KEY", None):
         flags.init_app(current_app)
 
-    structured_log(request, "DEBUG",
-                   f"Attempting to process email: {email_msg}")
+    structured_log(request, "DEBUG", f"Attempting to process email: {email_msg}")
     etype = email_msg.get("type", None)
     if etype and etype == "bc.registry.names.request":
-        option = email_msg.get("data", {}).get(
-            "request", {}).get("option", None)
+        option = email_msg.get("data", {}).get("request", {}).get("option", None)
         if option and option in [
             nr_notification.Option.BEFORE_EXPIRY.value,
             nr_notification.Option.EXPIRED.value,
@@ -189,37 +179,27 @@ def process_email(
             email = mras_notification.process(email_msg["email"])
         elif etype == "annualReport" and option == "reminder":
             flag_on = flags.is_on("disable-specific-service-provider")
-            email = ar_reminder_notification.process(
-                email_msg["email"], token, flag_on)
+            email = ar_reminder_notification.process(email_msg["email"], token, flag_on)
         elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
-            email = agm_location_change_notification.process(
-                email_msg["email"], token)
+            email = agm_location_change_notification.process(email_msg["email"], token)
         elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
-            email = agm_extension_notification.process(
-                email_msg["email"], token)
+            email = agm_extension_notification.process(email_msg["email"], token)
         elif etype == "dissolution":
             email = dissolution_notification.process(email_msg["email"], token)
         elif etype == "registration":
-            email = registration_notification.process(
-                email_msg["email"], token)
+            email = registration_notification.process(email_msg["email"], token)
         elif etype == "restoration":
             email = restoration_notification.process(email_msg["email"], token)
         elif etype == "changeOfRegistration":
-            email = change_of_registration_notification.process(
-                email_msg["email"], token
-            )
+            email = change_of_registration_notification.process(email_msg["email"], token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
         elif etype == "consentContinuationOut":
-            email = consent_continuation_out_notification.process(
-                email_msg["email"], token
-            )
+            email = consent_continuation_out_notification.process(email_msg["email"], token)
         elif etype == "continuationOut":
-            email = continuation_out_notification.process(
-                email_msg["email"], token)
+            email = continuation_out_notification.process(email_msg["email"], token)
         elif etype == "specialResolution":
-            email = special_resolution_notification.process(
-                email_msg["email"], token)
+            email = special_resolution_notification.process(email_msg["email"], token)
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
                 return None

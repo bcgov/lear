@@ -58,9 +58,7 @@ def create_address(address_info: Dict, address_type: str) -> Address:
         street_additional=address_info.get("streetAddressAdditional"),
         city=address_info.get("addressCity"),
         region=address_info.get("addressRegion"),
-        country=pycountry.countries.search_fuzzy(address_info.get("addressCountry"))[
-            0
-        ].alpha_2,
+        country=pycountry.countries.search_fuzzy(address_info.get("addressCountry"))[0].alpha_2,
         postal_code=address_info.get("postalCode"),
         delivery_instructions=address_info.get("deliveryInstructions"),
         address_type=db_address_type,
@@ -74,9 +72,7 @@ def update_address(address: Address, new_info: dict) -> Address:
     address.street_additional = new_info.get("streetAddressAdditional")
     address.city = new_info.get("addressCity")
     address.region = new_info.get("addressRegion")
-    address.country = pycountry.countries.search_fuzzy(new_info.get("addressCountry"))[
-        0
-    ].alpha_2
+    address.country = pycountry.countries.search_fuzzy(new_info.get("addressCountry"))[0].alpha_2
     address.postal_code = new_info.get("postalCode")
     address.delivery_instructions = new_info.get("deliveryInstructions")
 
@@ -133,9 +129,7 @@ def merge_party(legal_entity_id: int, party_info: dict, create: bool = True) -> 
     return party
 
 
-def create_entity_party(
-    legal_entity_id: int, party_info: dict, create: bool = True
-) -> LegalEntity:
+def create_entity_party(legal_entity_id: int, party_info: dict, create: bool = True) -> LegalEntity:
     """Create a new party or get them if they already exist."""
     # HERE
     legal_entity = None
@@ -202,23 +196,15 @@ def update_director(director: EntityRole, new_info: dict) -> EntityRole:
     director.party.title = new_info.get("title", "").upper()
 
     if director.party.delivery_address:
-        director.party.delivery_address = update_address(
-            director.party.delivery_address, new_info["deliveryAddress"]
-        )
+        director.party.delivery_address = update_address(director.party.delivery_address, new_info["deliveryAddress"])
     else:
-        director.party.delivery_address = create_address(
-            new_info["deliveryAddress"], Address.DELIVERY
-        )
+        director.party.delivery_address = create_address(new_info["deliveryAddress"], Address.DELIVERY)
 
     if new_info.get("mailingAddress", None):
         if director.party.mailing_address is None:
-            director.party.mailing_address = create_address(
-                new_info["mailingAddress"], Address.MAILING
-            )
+            director.party.mailing_address = create_address(new_info["mailingAddress"], Address.MAILING)
         else:
-            director.party.mailing_address = update_address(
-                director.party.mailing_address, new_info["mailingAddress"]
-            )
+            director.party.mailing_address = update_address(director.party.mailing_address, new_info["mailingAddress"])
     director.cessation_date = new_info.get("cessationDate")
 
     return director

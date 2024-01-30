@@ -57,9 +57,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     alteration_filing["filing"]["alteration"] = copy.deepcopy(ALTERATION)
     alteration_filing["filing"]["alteration"]["business"]["legalType"] = new_legal_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_submission = create_filing(
-        payment_id, alteration_filing, business_id=business.id
-    )
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
 
     filing_meta = FilingMeta()
 
@@ -125,9 +123,7 @@ def test_worker_alteration(app, session, mocker, orig_legal_type, new_legal_type
         ("no_change", "1234567 B.C. LTD.", None),  # No change in name
     ],
 )
-def test_alteration_legal_name(
-    app, session, mocker, test_name, legal_name, new_legal_name
-):
+def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_legal_name):
     """Assert the worker process calls the alteration correctly."""
     identifier = "BC1234567"
     business = create_business(identifier)
@@ -229,17 +225,11 @@ def test_alteration_coop_association_type(app, session, new_association_type):
     business.entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
-    alteration_filing["filing"]["business"][
-        "legalType"
-    ] = LegalEntity.EntityTypes.COOP.value
+    alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
     alteration_filing["filing"]["alteration"] = copy.deepcopy(ALTERATION)
-    alteration_filing["filing"]["alteration"][
-        "cooperativeAssociationType"
-    ] = new_association_type
+    alteration_filing["filing"]["alteration"]["cooperativeAssociationType"] = new_association_type
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_submission = create_filing(
-        payment_id, alteration_filing, business_id=business.id
-    )
+    filing_submission = create_filing(payment_id, alteration_filing, business_id=business.id)
 
     filing_meta = FilingMeta()
 
@@ -263,9 +253,7 @@ def test_alteration_coop_rules_and_memorandum(app, session):
     business.entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
-    alteration_filing["filing"]["business"][
-        "legalType"
-    ] = LegalEntity.EntityTypes.COOP.value
+    alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
     alteration_filing["filing"]["alteration"] = copy.deepcopy(ALTERATION)
 
     # TODO

@@ -42,6 +42,7 @@ from entity_emailer import utils
 
 PACKAGE_NAME = "entity_emailer"
 
+
 def test_get_version():
     """Assert that the version is returned correctly."""
     rv = utils.get_run_version()

@@ -25,9 +25,7 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(
-    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
     if not (put_back_on_filing := filing.get("putBackOn")):
         print("Could not find putBackOn in: %s", filing)

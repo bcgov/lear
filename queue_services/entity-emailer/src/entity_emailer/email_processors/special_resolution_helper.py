@@ -67,8 +67,7 @@ def get_completed_pdfs(
         )
 
         if name_change.status_code == HTTPStatus.OK:
-            certified_name_change_encoded = base64.b64encode(
-                name_change.content)
+            certified_name_change_encoded = base64.b64encode(name_change.content)
             pdfs.append(
                 {
                     "fileName": "Certificate of Name Change.pdf",
@@ -109,7 +108,7 @@ def get_completed_pdfs(
         memorandum = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
             "?type=certifiedMemorandum",
-            headers=headers
+            headers=headers,
         )
         if memorandum.status_code == HTTPStatus.OK:
             certified_memorandum_encoded = base64.b64encode(memorandum.content)
@@ -118,7 +117,7 @@ def get_completed_pdfs(
                     "fileName": "Certified Memorandum.pdf",
                     "fileBytes": certified_memorandum_encoded.decode("utf-8"),
                     "fileUrl": "",
-                    "attachOrder": attach_order
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -149,8 +148,7 @@ def get_paid_pdfs(
     )
 
     if sr_filing_pdf.status_code != HTTPStatus.OK:
-        structured_log(request, "ERROR",
-                       f"Failed to get pdf for filing: {filing.id}")
+        structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
     else:
         sr_filing_pdf_encoded = base64.b64encode(sr_filing_pdf.content)
         pdfs.append(
@@ -171,21 +169,15 @@ def get_paid_pdfs(
         json={
             "corpName": business_name,
             "filingDateTime": filing_date_time,
-            "effectiveDateTime": effective_date
-            if effective_date != filing_date_time
-            else "",
+            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
             "filingIdentifier": str(filing.id),
-            "businessNumber": origin_business.tax_id
-            if origin_business and origin_business.tax_id
-            else "",
+            "businessNumber": origin_business.tax_id if origin_business and origin_business.tax_id else "",
         },
         headers=headers,
     )
 
     if sr_receipt.status_code != HTTPStatus.CREATED:
-        structured_log(
-            request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
-        )
+        structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
     else:
         receipt_encoded = base64.b64encode(sr_receipt.content)
         pdfs.append(

@@ -20,28 +20,24 @@ from tests.unit import prep_alteration_filing
 
 def test_notifications(app, session):
     """Assert Affiliation notification is created."""
-    subject = 'How to use BCRegistry.ca'
-    company_name = 'Company Name'
-    testing_email = 'test@test.com'
-    token = 'token'
-    filing = prep_alteration_filing(session, 'BC1234567', 'DRAFT', company_name)
+    subject = "How to use BCRegistry.ca"
+    company_name = "Company Name"
+    testing_email = "test@test.com"
+    token = "token"
+    filing = prep_alteration_filing(session, "BC1234567", "DRAFT", company_name)
 
     # test processor
-    with patch.object(affiliation_notification, 'get_recipients', return_value=testing_email):
+    with patch.object(affiliation_notification, "get_recipients", return_value=testing_email):
         email = affiliation_notification.process(
             {
-                'data': {
-                        'filing': {
-                            'header': {'filingId': filing.id}
-                        }
-                },
-                'type': 'bc.registry.affiliation',
-                'identifier': 'BC1234567'
+                "data": {"filing": {"header": {"filingId": filing.id}}},
+                "type": "bc.registry.affiliation",
+                "identifier": "BC1234567",
             },
-            token
+            token,
         )
 
-        assert email['content']['subject'] == company_name + ' - ' + subject
+        assert email["content"]["subject"] == company_name + " - " + subject
 
-        assert testing_email in email['recipients']
-        assert email['content']['body']
+        assert testing_email in email["recipients"]
+        assert email["content"]["body"]

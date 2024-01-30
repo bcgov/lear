@@ -75,9 +75,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
-        structured_log(
-            request, "ERROR", f"Failed to get nr info for name request: {nr_number}"
-        )
+        structured_log(request, "ERROR", f"Failed to get nr info for name request: {nr_number}")
         return {}
 
     nr_data = nr_response.json()
@@ -90,9 +88,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     refund_value = ""
     if option == Option.REFUND.value:
-        refund_value = (
-            email_info.get("data", {}).get("request", {}).get("refundValue", None)
-        )
+        refund_value = email_info.get("data", {}).get("request", {}).get("refundValue", None)
 
     business_name = ""
     for n_item in nr_data["names"]:
@@ -129,7 +125,7 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
         decide_business_url=decide_business_url,
         corp_online_url=corp_online_url,
         form_page_url=form_page_url,
-        societies_url=societies_url
+        societies_url=societies_url,
     )
 
     # get recipients

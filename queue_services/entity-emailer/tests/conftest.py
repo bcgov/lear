@@ -67,9 +67,7 @@ def create_test_db(
     DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
 
     try:
-        with sqlalchemy.create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
-        ).connect() as conn:
+        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(f"CREATE DATABASE {database}"))
 
         return True
@@ -100,14 +98,11 @@ def drop_test_db(
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with contextlib.suppress(
-        sqlalchemy.exc.ProgrammingError, psycopg2.OperationalError, Exception
-    ):
-        with sqlalchemy.create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
-        ).connect() as conn:
+    with contextlib.suppress(sqlalchemy.exc.ProgrammingError, psycopg2.OperationalError, Exception):
+        with sqlalchemy.create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
+
 
 @contextmanager
 def not_raises(exception):
@@ -118,22 +113,23 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
 
 # fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
 def freeze_datetime_utcnow(monkeypatch):
     """Fixture to return a static time for utcnow()."""
+
     class _Datetime:
         @classmethod
         def utcnow(cls):
             return FROZEN_DATETIME
 
-    monkeypatch.setattr(datetime, 'datetime', _Datetime)
+    monkeypatch.setattr(datetime, "datetime", _Datetime)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
     """Return a session-wide application configured in TEST mode."""
     _app = create_app(Testing)
@@ -147,13 +143,13 @@ def config(app):
     return app.config
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
@@ -178,7 +174,8 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
             database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
         )
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
@@ -197,7 +194,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()
 
-        @event.listens_for(sess(), 'after_transaction_end')
+        @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
             if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
@@ -207,7 +204,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
 
         db.session = sess
 
-        sql = text('select 1')
+        sql = text("select 1")
         sess.execute(sql)
 
         yield sess

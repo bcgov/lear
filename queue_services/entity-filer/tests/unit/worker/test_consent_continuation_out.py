@@ -35,16 +35,10 @@ from tests.unit import create_business, create_filing
         # DST_TO_DST is not possible. Example: 2023-11-06 (starting day of DST) + 6 months = 2024-05-06 (in STD)
     ],
 )
-def test_worker_consent_continuation_out(
-    app, session, mocker, test_name, effective_date, expiry_date
-):
+def test_worker_consent_continuation_out(app, session, mocker, test_name, effective_date, expiry_date):
     """Assert that the consent continuation out object is correctly populated to model objects."""
-    effective_date = LegislationDatetime.as_legislation_timezone(
-        datetime.fromisoformat(effective_date)
-    )
-    expiry_date = LegislationDatetime.as_legislation_timezone(
-        datetime.fromisoformat(expiry_date)
-    )
+    effective_date = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(effective_date))
+    expiry_date = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(expiry_date))
 
     identifier = "BC1234567"
     business = create_business(identifier, legal_type="BC")
@@ -86,42 +80,27 @@ def test_worker_consent_continuation_out(
         filing_json["filing"]["consentContinuationOut"]["courtOrder"]["effectOfOrder"]
         == final_filing.court_order_effect_of_order
     )
-    assert (
-        filing_json["filing"]["consentContinuationOut"]["details"]
-        == final_filing.order_details
-    )
+    assert filing_json["filing"]["consentContinuationOut"]["details"] == final_filing.order_details
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 
     cco = ConsentContinuationOut.get_active_cco(business.id, expiry_date_utc)
     assert cco
     assert (
-        cco[0].foreign_jurisdiction
-        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"][
-            "country"
-        ]
+        cco[0].foreign_jurisdiction == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"]["country"]
     )
     assert (
         cco[0].foreign_jurisdiction_region
-        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"][
-            "region"
-        ]
+        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"]["region"]
     )
     assert cco[0].expiry_date == expiry_date_utc
 
     assert (
         final_filing.meta_data["consentContinuationOut"]["country"]
-        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"][
-            "country"
-        ]
+        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"]["country"]
     )
     assert (
         final_filing.meta_data["consentContinuationOut"]["region"]
-        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"][
-            "region"
-        ]
+        == filing_json["filing"]["consentContinuationOut"]["foreignJurisdiction"]["region"]
     )
-    assert (
-        final_filing.meta_data["consentContinuationOut"]["expiry"]
-        == expiry_date_utc.isoformat()
-    )
+    assert final_filing.meta_data["consentContinuationOut"]["expiry"] == expiry_date_utc.isoformat()

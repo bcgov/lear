@@ -121,13 +121,9 @@ def create_related_entity(related_entity_json):
     new_party = LegalEntity()
     new_party.first_name = related_entity_json["officer"].get("firstName", "").upper()
     new_party.last_name = related_entity_json["officer"].get("lastName", "").upper()
-    new_party.middle_initial = (
-        related_entity_json["officer"].get("middleInitial", "").upper()
-    )
+    new_party.middle_initial = related_entity_json["officer"].get("middleInitial", "").upper()
     new_party.title = related_entity_json.get("title", "").upper()
-    new_party._legal_name = (
-        related_entity_json["officer"].get("organizationName", "").upper()
-    )
+    new_party._legal_name = related_entity_json["officer"].get("organizationName", "").upper()
     new_party.email = related_entity_json["officer"].get("email")
     new_party.entity_type = related_entity_json["officer"].get("entityType")
     new_party.identifier = related_entity_json["officer"].get("identifier")
@@ -140,9 +136,7 @@ def create_related_entity(related_entity_json):
             country="CA",
             postal_code=related_entity_json["mailingAddress"]["postalCode"],
             region=related_entity_json["mailingAddress"]["addressRegion"],
-            delivery_instructions=related_entity_json["mailingAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=related_entity_json["mailingAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_mailing_address = mailing_address
     if related_entity_json.get("deliveryAddress"):
@@ -152,17 +146,13 @@ def create_related_entity(related_entity_json):
             country="CA",
             postal_code=related_entity_json["deliveryAddress"]["postalCode"],
             region=related_entity_json["deliveryAddress"]["addressRegion"],
-            delivery_instructions=related_entity_json["deliveryAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=related_entity_json["deliveryAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_delivery_address = delivery_address
     return new_party
 
 
-def create_entity_role(
-    legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME
-):
+def create_entity_role(legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME):
     """Create party roles."""
     from business_model import EntityRole
 

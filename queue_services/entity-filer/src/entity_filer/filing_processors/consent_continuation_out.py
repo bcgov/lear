@@ -24,15 +24,11 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(
-    legal_entity: LegalEntity, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta
-):
+def process(legal_entity: LegalEntity, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
     """Render the consent continuation out filing into the legal_entity model objects."""
     # update consent continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        consent_continuation_out_json = dpath.util.get(
-            filing, "/consentContinuationOut/courtOrder"
-        )
+        consent_continuation_out_json = dpath.util.get(filing, "/consentContinuationOut/courtOrder")
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
     cco_filing.order_details = filing["consentContinuationOut"].get("details")

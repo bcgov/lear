@@ -34,9 +34,7 @@ def process(email_msg: dict, token: str, flag_on: bool) -> dict:
     ar_fee = email_msg["arFee"]
     ar_year = email_msg["arYear"]
     # get template and fill in parts
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html').read_text()
     filled_template = substitute_template_parts(template)
     business = LegalEntity.find_by_internal_id(email_msg["businessId"])
     corp_type = CorpType.find_by_id(business.entity_type)
@@ -49,7 +47,7 @@ def process(email_msg: dict, token: str, flag_on: bool) -> dict:
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
         entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.identifier,
-        disable_specific_service_provider=flag_on
+        disable_specific_service_provider=flag_on,
     )
 
     # get recipients

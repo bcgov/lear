@@ -66,15 +66,14 @@ def get_run_version():
 
 
 def replace_file_with_certified_copy(
-        _bytes: bytes,
-        key: str,
-#        data: RegistrarStampData
+    _bytes: bytes,
+    key: str,
+    #        data: RegistrarStampData
 ):
     """Create a certified copy and replace it into Minio server."""
 
     raise Exception
     # TODO we shouldn't do this anymore
-
 
     # open_pdf_file = io.BytesIO(_bytes)
     # pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)

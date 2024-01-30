@@ -24,12 +24,7 @@ from entity_filer.resources.worker import FilingMessage
 from tests.unit import create_business, create_filing
 
 
-@pytest.mark.parametrize(
-        "test_name",
-        [
-            ("general"), ("first_agm_year"), ("more_extension"), ("final_extension")
-        ]
-)
+@pytest.mark.parametrize("test_name", [("general"), ("first_agm_year"), ("more_extension"), ("final_extension")])
 def test_worker_agm_extension(app, session, mocker, test_name):
     """Assert that the agm extension object is correctly populated to model objects."""
     identifier = "BC1234567"

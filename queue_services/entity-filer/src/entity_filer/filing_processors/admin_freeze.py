@@ -23,9 +23,7 @@ from business_model import LegalEntity, Filing
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(
-    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the admin freeze filing unto the model objects."""
     if not (admin_freeze_filing := filing.get("adminFreeze")):
         print("Could not find adminFreeze in: %s", filing)

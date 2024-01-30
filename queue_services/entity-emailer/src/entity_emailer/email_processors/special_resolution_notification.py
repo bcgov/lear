@@ -37,32 +37,22 @@ from entity_emailer.email_processors.special_resolution_helper import (
 )
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for Special Resolution notification."""
     structured_log(request, "DEBUG", f"special_resolution_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_info["filingId"]
-    )
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/SR-CP-{status}.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/SR-CP-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)["filing"][f"{filing_type}"]
     name_changed = filing.filing_json["filing"].get("changeOfName")
-    rules_changed = bool(
-        filing.filing_json["filing"].get("alteration", {}).get("rulesFileKey")
-    )
+    rules_changed = bool(filing.filing_json["filing"].get("alteration", {}).get("rulesFileKey"))
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
@@ -79,9 +69,7 @@ def process(
 
     # get attachments
     if status == Filing.Status.PAID.value:
-        pdfs = get_paid_pdfs(
-            token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
-        )
+        pdfs = get_paid_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     if status == Filing.Status.COMPLETED.value:
         pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
 
@@ -92,13 +80,9 @@ def process(
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff file a dissolution documentOptionalEmail may contain completing party email
-        recipients.append(
-            filing.filing_json["filing"]["header"].get("documentOptionalEmail")
-        )
+        recipients.append(filing.filing_json["filing"]["header"].get("documentOptionalEmail"))
     else:
-        recipients.append(
-            get_user_email_from_auth(filing.filing_submitter.username, token)
-        )
+        recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
     recipients = list(set(recipients))
     recipients = ", ".join(filter(None, recipients)).strip()

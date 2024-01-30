@@ -129,10 +129,7 @@ def test_conversion(
     assert business.offices.first().office_type == "businessOffice"
 
     assert (
-        business.naics_description
-        == filing_template["filing"]["conversion"]["business"]["naics"][
-            "naicsDescription"
-        ]
+        business.naics_description == filing_template["filing"]["conversion"]["business"]["naics"]["naicsDescription"]
     )
 
 
@@ -153,12 +150,8 @@ def test_worker_proprietor_new_address(app, session, mocker):
     filing = copy.deepcopy(SP_CONVERSION)
     filing["filing"]["conversion"]["contactPoint"] = CONTACT_POINT
     filing["filing"]["conversion"]["parties"][0]["officer"]["id"] = party_id
-    filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
-        "streetAddress"
-    ] = "New Name"
-    filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
-        "streetAddress"
-    ] = "New Name"
+    filing["filing"]["conversion"]["parties"][0]["mailingAddress"]["streetAddress"] = "New Name"
+    filing["filing"]["conversion"]["parties"][0]["deliveryAddress"]["streetAddress"] = "New Name"
 
     del filing["filing"]["conversion"]["nameRequest"]
 
@@ -184,13 +177,9 @@ def test_worker_proprietor_new_address(app, session, mocker):
     assert party.entity_roles.all()[0].role_type == EntityRole.RoleTypes.proprietor
     assert (
         party.entity_delivery_address.street
-        == filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["conversion"]["parties"][0]["deliveryAddress"]["streetAddress"]
     )
     assert (
         party.entity_mailing_address.street
-        == filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["conversion"]["parties"][0]["mailingAddress"]["streetAddress"]
     )

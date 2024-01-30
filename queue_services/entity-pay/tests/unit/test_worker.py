@@ -158,9 +158,7 @@ def test_process_payment_failed(app, session, client, mocker):
         }
     }
 
-    message = helper_create_cloud_event_envelope(
-        source="sbc-pay", subject="payment", data=payment_token
-    )
+    message = helper_create_cloud_event_envelope(source="sbc-pay", subject="payment", data=payment_token)
 
     def mock_publish():
         return {}
@@ -205,9 +203,7 @@ def test_process_payment(app, session, client, mocker):
         }
     }
 
-    message = helper_create_cloud_event_envelope(
-        source="sbc-pay", subject="payment", data=payment_token
-    )
+    message = helper_create_cloud_event_envelope(source="sbc-pay", subject="payment", data=payment_token)
     # keep track of topics called on the mock
     topics = []
 
@@ -258,9 +254,7 @@ def helper_create_cloud_event_envelope(
             }
         }
     if not ce:
-        ce = SimpleCloudEvent(
-            id=cloud_event_id, source=source, subject=subject, type=type, data=data
-        )
+        ce = SimpleCloudEvent(id=cloud_event_id, source=source, subject=subject, type=type, data=data)
     #
     # This needs to mimic the envelope created by GCP PubSb when call a resource
     #

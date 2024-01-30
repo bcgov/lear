@@ -69,9 +69,7 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
                     if rv := scan_list(value, keys):
                         modified_dict[key] = rv
                 else:
-                    modified_dict[
-                        key
-                    ] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
+                    modified_dict[key] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
         return modified_dict
 
     def scan_list(orig_list, keys):

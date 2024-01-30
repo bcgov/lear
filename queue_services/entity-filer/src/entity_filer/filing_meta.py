@@ -52,10 +52,7 @@ def to_camel(string: str) -> Optional[str]:
     if not isinstance(string, str):
         return None
 
-    return "".join(
-        word.lower() if idx == 0 else word.capitalize()
-        for idx, word in enumerate(string.split("_"))
-    )
+    return "".join(word.lower() if idx == 0 else word.capitalize() for idx, word in enumerate(string.split("_")))
 
 
 def to_snake(string: str) -> Optional[str]:

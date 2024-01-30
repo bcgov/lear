@@ -12,17 +12,13 @@ def to_camel_case(snake_str: str) -> str:
 
 def to_camel_case_unstructure(cls):
     return make_dict_unstructure_fn(
-        cls,
-        converter,
-        **{a.name: override(rename=to_camel_case(a.name)) for a in fields(cls)}
+        cls, converter, **{a.name: override(rename=to_camel_case(a.name)) for a in fields(cls)}
     )
 
 
 def to_camel_case_structure(cls):
     return make_dict_structure_fn(
-        cls,
-        converter,
-        **{a.name: override(rename=to_camel_case(a.name)) for a in fields(cls)}
+        cls, converter, **{a.name: override(rename=to_camel_case(a.name)) for a in fields(cls)}
     )
 
 

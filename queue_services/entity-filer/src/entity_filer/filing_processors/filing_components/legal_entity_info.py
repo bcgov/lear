@@ -70,15 +70,11 @@ def set_legal_name(corp_num: str, legal_entity: LegalEntity, legal_entity_info: 
         legal_entity.legal_name = legal_name
     else:
         entity_type = legal_entity_info.get("legalType", None)
-        numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type][
-            "numberedBusinessNameSuffix"
-        ]
+        numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type]["numberedBusinessNameSuffix"]
         legal_entity.legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
 
 
-def update_legal_entity_info(
-    corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing
-):
+def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing):
     """Format and update the legal_entity entity from incorporation filing."""
     if corp_num and legal_entity and legal_entity_info and filing:
         set_legal_name(corp_num, legal_entity, legal_entity_info)

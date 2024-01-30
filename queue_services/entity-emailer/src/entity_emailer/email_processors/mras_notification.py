@@ -33,14 +33,10 @@ def process(email_msg: dict) -> dict:
     structured_log(request, "DEBUG", f"mras_notification: {email_msg}")
     filing_type = email_msg["type"]
     # get template and fill in parts
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
     filled_template = substitute_template_parts(template)
     # get template info from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_msg["filingId"]
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg["filingId"])
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

@@ -62,12 +62,8 @@ def test_transition_filing(app, session):
     assert len(business.share_classes.all()) == len(
         filing_json["filing"]["transition"]["shareStructure"]["shareClasses"]
     )
-    assert len(business.offices.all()) == len(
-        filing_json["filing"]["transition"]["offices"]
-    )
-    assert len(business.aliases.all()) == len(
-        filing_json["filing"]["transition"]["nameTranslations"]
-    )
+    assert len(business.offices.all()) == len(filing_json["filing"]["transition"]["offices"])
+    assert len(business.aliases.all()) == len(filing_json["filing"]["transition"]["nameTranslations"])
     assert len(business.resolutions.all()) == len(
         filing_json["filing"]["transition"]["shareStructure"]["resolutionDates"]
     )

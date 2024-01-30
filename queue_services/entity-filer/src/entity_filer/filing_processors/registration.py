@@ -37,18 +37,14 @@ from entity_filer.filing_processors.filing_components.parties import (
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party
 from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 
+
 def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
         pass_code = legal_entity_info.get_firm_affiliation_passcode(business.id)
 
-        nr_number = (
-            filing.filing_json.get("filing")
-            .get("registration", {})
-            .get("nameRequest", {})
-            .get("nrNumber")
-        )
+        nr_number = filing.filing_json.get("filing").get("registration", {}).get("nameRequest", {}).get("nrNumber")
         details = {
             "bootstrapIdentifier": bootstrap.identifier,
             "identifier": business.identifier,
@@ -83,9 +79,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
     #             or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
     #             or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
     #         raise DefaultException
-    except (
-        Exception
-    ) as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+    except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.print(
             f"Queue Error: Affiliation error for filing:{filing.id}, with err:{err}",
             level="error",
@@ -101,25 +95,17 @@ def process(
     """Process the incoming registration filing."""
     # Extract the filing information for registration
     if business:
-        raise DefaultException(
-            f"Business Already Exist: Registration legal_filing:registration {filing_rec.id}"
-        )
+        raise DefaultException(f"Business Already Exist: Registration legal_filing:registration {filing_rec.id}")
 
     if not (registration_filing := filing.get("filing", {}).get("registration")):
-        raise DefaultException(
-            f"Registration legal_filing:registration missing from {filing_rec.id}"
-        )
+        raise DefaultException(f"Registration legal_filing:registration missing from {filing_rec.id}")
 
-    legal_type = registration_filing.get("businessType") or registration_filing.get(
-        "nameRequest", {}
-    ).get("legalType")
+    legal_type = registration_filing.get("businessType") or registration_filing.get("nameRequest", {}).get("legalType")
     if legal_type not in (
         LegalEntity.EntityTypes.SOLE_PROP,
         LegalEntity.EntityTypes.PARTNERSHIP,
     ):
-        raise DefaultException(
-            f"{filing_rec.id} has no valid legatype for a Registration."
-        )
+        raise DefaultException(f"{filing_rec.id} has no valid legatype for a Registration.")
 
     filing_meta.registration = {}
 
@@ -127,9 +113,7 @@ def process(
 
     # Reserve the Corp Number for this entity
     if not (firm_reg_num := legal_entity_info.get_next_corp_num("FM")):
-        raise DefaultException(
-            f"registration {filing_rec.id} unable to get a Firm registration number."
-        )
+        raise DefaultException(f"registration {filing_rec.id} unable to get a Firm registration number.")
 
     match legal_type:
         case LegalEntity.EntityTypes.SOLE_PROP:
@@ -138,16 +122,12 @@ def process(
 
         case LegalEntity.EntityTypes.PARTNERSHIP:
             # Create Partnership
-            business = merge_partnership_registration(
-                firm_reg_num, filing, filing_rec, registration_filing
-            )
+            business = merge_partnership_registration(firm_reg_num, filing, filing_rec, registration_filing)
 
         case _:
             # Default and failed
             # Based on the above checks, this should never happen
-            raise DefaultException(
-                f"registration {filing_rec.id} had no valid Firm type."
-            )
+            raise DefaultException(f"registration {filing_rec.id} had no valid Firm type.")
 
     # Assuming we should not reset this from a filing
     if not business.tax_id:
@@ -180,9 +160,7 @@ def process(
     registration_json = copy.deepcopy(filing_rec.filing_json)
     registration_json["filing"]["business"] = {}
     registration_json["filing"]["business"]["identifier"] = business.identifier
-    registration_json["filing"]["registration"]["business"][
-        "identifier"
-    ] = business.identifier
+    registration_json["filing"]["registration"]["business"]["identifier"] = business.identifier
     registration_json["filing"]["business"]["legalType"] = business.entity_type
     # registration_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
@@ -207,9 +185,7 @@ def merge_partnership_registration(
     # Initial insert of the business record
     business_info_obj = registration_filing.get("nameRequest")
     business = LegalEntity()
-    business = legal_entity_info.update_legal_entity_info(
-        registration_num, business, business_info_obj, filing_rec
-    )
+    business = legal_entity_info.update_legal_entity_info(registration_num, business, business_info_obj, filing_rec)
     business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
         registration_filing.get("startDate")
     )
@@ -234,15 +210,11 @@ def merge_partnership_registration(
     return business
 
 
-def merge_sp_registration(
-    registration_num: str, filing: Dict, filing_rec: Filing
-) -> LegalEntity:
+def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filing) -> LegalEntity:
     # find or create the LE for the SP Owner
 
     if not (parties_dict := filing["filing"]["registration"]["parties"]):
-        raise DefaultException(
-            f"Missing parties in the SP registration for filing:{filing_rec.id}"
-        )
+        raise DefaultException(f"Missing parties in the SP registration for filing:{filing_rec.id}")
 
     # Find the Proprietor
     proprietor = None
@@ -255,28 +227,15 @@ def merge_sp_registration(
             break
 
     if not proprietor_dict:
-        raise DefaultException(
-            f"No Proprietor in the SP registration for filing:{filing_rec.id}"
-        )
+        raise DefaultException(f"No Proprietor in the SP registration for filing:{filing_rec.id}")
 
-    proprietor, delivery_address, mailing_address = get_or_create_party(
-        proprietor_dict, filing_rec
-    )
+    proprietor, delivery_address, mailing_address = get_or_create_party(proprietor_dict, filing_rec)
     if not proprietor:
-        raise DefaultException(
-            f"No Proprietor in the SP registration for filing:{filing_rec.id}"
-        )
+        raise DefaultException(f"No Proprietor in the SP registration for filing:{filing_rec.id}")
 
-    operating_name = (
-        filing.get("filing", {})
-        .get("registration", {})
-        .get("nameRequest", {})
-        .get("legalName")
-    )
+    operating_name = filing.get("filing", {}).get("registration", {}).get("nameRequest", {}).get("legalName")
     if start := filing.get("filing", {}).get("registration", {}).get("startDate"):
-        start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-            start
-        )
+        start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
     elif filing.effective_date:
         start_date = filing.effective_date.isoformat()
     else:

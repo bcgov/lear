@@ -41,14 +41,8 @@ def test_worker_court_order(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert (
-        filing["filing"]["courtOrder"]["fileNumber"]
-        == final_filing.court_order_file_number
-    )
-    assert (
-        filing["filing"]["courtOrder"]["effectOfOrder"]
-        == final_filing.court_order_effect_of_order
-    )
+    assert filing["filing"]["courtOrder"]["fileNumber"] == final_filing.court_order_file_number
+    assert filing["filing"]["courtOrder"]["effectOfOrder"] == final_filing.court_order_effect_of_order
     assert filing["filing"]["courtOrder"]["orderDetails"] == final_filing.order_details
 
     court_order_file = final_filing.documents.one_or_none()

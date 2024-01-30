@@ -55,9 +55,7 @@ def _get_pdfs(
             headers=headers,
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            structured_log(
-                request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
@@ -77,20 +75,14 @@ def _get_pdfs(
             json={
                 "corpName": corp_name,
                 "filingDateTime": filing_date_time,
-                "effectiveDateTime": effective_date
-                if effective_date != filing_date_time
-                else "",
+                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
                 "filingIdentifier": str(filing.id),
-                "businessNumber": business_data.tax_id
-                if business_data and business_data.tax_id
-                else "",
+                "businessNumber": business_data.tax_id if business_data and business_data.tax_id else "",
             },
             headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            structured_log(
-                request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -129,26 +121,16 @@ def _get_pdfs(
     return pdfs
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Change of Registration notification."""
-    structured_log(
-        request, "DEBUG", f"change_of_registration_notification: {email_info}"
-    )
+    structured_log(request, "DEBUG", f"change_of_registration_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_info["filingId"]
-    )
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -166,9 +148,7 @@ def process(
     )
 
     # get attachments
-    pdfs = _get_pdfs(
-        status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
-    )
+    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     recipients = []
@@ -180,21 +160,13 @@ def process(
                 break
 
     if filing.filing_json["filing"]["changeOfRegistration"].get("contactPoint"):
-        recipients.append(
-            filing.filing_json["filing"]["changeOfRegistration"]["contactPoint"][
-                "email"
-            ]
-        )
+        recipients.append(filing.filing_json["filing"]["changeOfRegistration"]["contactPoint"]["email"])
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff do filing documentOptionalEmail may contain completing party email
-        recipients.append(
-            filing.filing_json["filing"]["header"].get("documentOptionalEmail")
-        )
+        recipients.append(filing.filing_json["filing"]["header"].get("documentOptionalEmail"))
     else:
-        recipients.append(
-            get_user_email_from_auth(filing.filing_submitter.username, token)
-        )
+        recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
     recipients = list(set(recipients))
     recipients = ", ".join(filter(None, recipients)).strip()

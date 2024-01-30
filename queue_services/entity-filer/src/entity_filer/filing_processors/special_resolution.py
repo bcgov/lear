@@ -30,21 +30,15 @@ def process(business: LegalEntity, filing: Dict, filing_rec: Filing):
 
         if signatory := resolution_filing.get("signatory"):
             signatory_le = LegalEntity(
-                first_name=signatory.get("givenName").upper()
-                if signatory.get("givenName")
-                else None,
+                first_name=signatory.get("givenName").upper() if signatory.get("givenName") else None,
                 last_name=signatory.get("familyName", "").upper(),
-                middle_initial=signatory.get("additionalName").upper()
-                if signatory.get("additionalName")
-                else None,
+                middle_initial=signatory.get("additionalName").upper() if signatory.get("additionalName") else None,
                 entity_type=LegalEntity.EntityTypes.PERSON,
             )
             resolution.signing_legal_entity = signatory_le
 
         if resolution_filing.get("resolutionDate"):
-            resolution.resolution_date = parse(
-                resolution_filing.get("resolutionDate")
-            ).date()
+            resolution.resolution_date = parse(resolution_filing.get("resolutionDate")).date()
         if resolution_filing.get("signingDate"):
             resolution.signing_date = parse(resolution_filing.get("signingDate")).date()
 

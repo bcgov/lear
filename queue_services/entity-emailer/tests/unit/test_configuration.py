@@ -41,22 +41,22 @@ from flask import current_app
 
 # testdata pattern is ({str: environment}, {expected return value})
 TEST_ENVIRONMENT_DATA = [
-    ('valid', 'development', current_app.config.get('DevConfig')),
-    ('valid', 'testing', current_app.config.get('TestConfig')),
-    ('valid', 'default', current_app.config.get('ProdConfig')),
-    ('valid', 'staging', current_app.config.get('ProdConfig')),
-    ('valid', 'production', current_app.config.get('ProdConfig')),
-    ('error', None, KeyError)
+    ("valid", "development", current_app.config.get("DevConfig")),
+    ("valid", "testing", current_app.config.get("TestConfig")),
+    ("valid", "default", current_app.config.get("ProdConfig")),
+    ("valid", "staging", current_app.config.get("ProdConfig")),
+    ("valid", "production", current_app.config.get("ProdConfig")),
+    ("error", None, KeyError),
 ]
 
 
-@pytest.mark.parametrize('test_type,environment,expected', TEST_ENVIRONMENT_DATA)
+@pytest.mark.parametrize("test_type,environment,expected", TEST_ENVIRONMENT_DATA)
 def test_get_named_config(test_type, environment, expected):
     """Assert that the named configurations can be loaded.
 
     Or that a KeyError is returned for missing config types.
     """
-    if test_type == 'valid':
+    if test_type == "valid":
         assert isinstance(current_app.config.get_named_config(environment), expected)
     else:
         with pytest.raises(KeyError):

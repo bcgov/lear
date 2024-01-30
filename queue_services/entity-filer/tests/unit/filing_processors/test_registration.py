@@ -80,19 +80,14 @@ def test_registration_process(app, session, legal_type, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, filing_rec, filing_meta = registration.process(
-                None, filing, filing_rec, filing_meta
-            )
+            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         # Legal Entity
         assert business.identifier.startswith("FM")
         assert business.founding_date == effective_date
         assert business.start_date == datetime.fromisoformat(f"{now}T08:00:00+00:00")
-        assert (
-            business.entity_type
-            == filing["filing"]["registration"]["nameRequest"]["legalType"]
-        )
+        assert business.entity_type == filing["filing"]["registration"]["nameRequest"]["legalType"]
         assert business.tax_id == REGISTRATION["business"]["taxId"]
         assert business.state == LegalEntity.State.ACTIVE
         assert len(filing_rec.filing_entity_roles.all()) == 3
@@ -104,19 +99,13 @@ def test_registration_process(app, session, legal_type, filing):
 
         # NAICS
         assert business.naics_code == REGISTRATION["business"]["naics"]["naicsCode"]
-        assert (
-            business.naics_description
-            == REGISTRATION["business"]["naics"]["naicsDescription"]
-        )
+        assert business.naics_description == REGISTRATION["business"]["naics"]["naicsDescription"]
 
         # AlternateNames
         assert len(business.alternate_names.all()) > 0
         alternate_name = business.alternate_names[0]
         assert alternate_name.identifier.startswith("FM")
-        assert (
-            alternate_name.name
-            == filing["filing"]["registration"]["nameRequest"]["legalName"]
-        )
+        assert alternate_name.name == filing["filing"]["registration"]["nameRequest"]["legalName"]
 
 
 @pytest.mark.parametrize(
@@ -148,9 +137,7 @@ def test_sp_registration_process(app, session, legal_type, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, filing_rec, filing_meta = registration.process(
-                None, filing, filing_rec, filing_meta
-            )
+            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         # assert business.founding_date.replace(tzinfo=None) == effective_date
@@ -159,15 +146,10 @@ def test_sp_registration_process(app, session, legal_type, filing):
 
         alternate_name = business.alternate_names.all()[0]
         # alternate_name = business.alternate_names
-        assert alternate_name.start_date == datetime.fromisoformat(
-            f"{now}T08:00:00+00:00"
-        )
+        assert alternate_name.start_date == datetime.fromisoformat(f"{now}T08:00:00+00:00")
         assert alternate_name.identifier.startswith("FM")
 
-        assert (
-            alternate_name.name
-            == filing["filing"]["registration"]["nameRequest"]["legalName"]
-        )
+        assert alternate_name.name == filing["filing"]["registration"]["nameRequest"]["legalName"]
         # TODO I don't think it makes sens to be changing or setting
         # a natural person's NAICS codes. Maybe this is an Alias/DBA thing
         # assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']

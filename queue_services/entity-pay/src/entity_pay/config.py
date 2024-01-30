@@ -70,11 +70,11 @@ class Config:  # pylint: disable=too-few-public-methods
 
     # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
-    else:
         SQLALCHEMY_DATABASE_URI = (
-            f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+            f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
         )
+    else:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # API Endpoints
     PAY_API_URL = os.getenv("PAY_API_URL", "")
@@ -86,12 +86,8 @@ class Config:  # pylint: disable=too-few-public-methods
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
     ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
-    AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
-    )
-    PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
-    )
+    AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
+    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
 
 
 class Development(Config):  # pylint: disable=too-few-public-methods

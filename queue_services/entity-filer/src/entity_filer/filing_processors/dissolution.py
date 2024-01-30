@@ -36,17 +36,13 @@ from entity_filer.filing_processors.filing_components.parties import merge_all_p
 # from entity_filer.utils import replace_file_with_certified_copy
 
 
-def process(
-    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get("dissolution")):
         print("Could not find Dissolution in: %s", filing)
         raise BusinessException(
             f"legal_filing:Dissolution missing from {filing}",
-            get_error_message(
-                ErrorCode.GENERAL_UNRECOVERABLE_ERROR, **{"filing_id": filing_rec.id}
-            ),
+            get_error_message(ErrorCode.GENERAL_UNRECOVERABLE_ERROR, **{"filing_id": filing_rec.id}),
         )
 
     print("processing dissolution: %s", filing)
@@ -66,11 +62,7 @@ def process(
         LegalEntity.EntityTypes.PARTNERSHIP.value,
     ):
         dissolution_date_str = dissolution_filing.get("dissolutionDate")
-        dissolution_date = (
-            LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                dissolution_date_str
-            )
-        )
+        dissolution_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date_str)
     business.dissolution_date = dissolution_date
 
     business.state = LegalEntity.State.HISTORICAL
@@ -105,15 +97,11 @@ def process(
         filing_meta.dissolution = {
             **filing_meta.dissolution,
             "dissolutionType": dissolution_type,
-            "dissolutionDate": LegislationDatetime.format_as_legislation_date(
-                business.dissolution_date
-            ),
+            "dissolutionDate": LegislationDatetime.format_as_legislation_date(business.dissolution_date),
         }
 
 
-def _update_cooperative(
-    dissolution_filing: Dict, business: LegalEntity, filing: Filing, dissolution_type
-):
+def _update_cooperative(dissolution_filing: Dict, business: LegalEntity, filing: Filing, dissolution_type):
     """Update COOP data.
 
     This should not be updated for administrative dissolution
@@ -138,9 +126,7 @@ def _update_cooperative(
     # business.documents.append(document)
 
 
-def post_process(
-    business: LegalEntity, filing: Filing, correction: bool = False
-):  # pylint: disable=W0613
+def post_process(business: LegalEntity, filing: Filing, correction: bool = False):  # pylint: disable=W0613
     """Post processing activities for incorporations.
 
     THIS SHOULD NOT ALTER THE MODEL

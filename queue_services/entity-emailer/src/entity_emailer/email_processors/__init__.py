@@ -42,40 +42,29 @@ def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
     hour = leg_tmz_filing_date.strftime("%I").lstrip("0")
     am_pm = leg_tmz_filing_date.strftime("%p").lower()
-    leg_tmz_filing_date = leg_tmz_filing_date.strftime(
-        f"%B %d, %Y at {hour}:%M {am_pm} Pacific time"
-    )
+    leg_tmz_filing_date = leg_tmz_filing_date.strftime(f"%B %d, %Y at {hour}:%M {am_pm} Pacific time")
 
     effective_date = datetime.fromisoformat(filing.effective_date.isoformat())
     leg_tmz_effective_date = LegislationDatetime.as_legislation_timezone(effective_date)
     hour = leg_tmz_effective_date.strftime("%I").lstrip("0")
     am_pm = leg_tmz_effective_date.strftime("%p").lower()
-    leg_tmz_effective_date = leg_tmz_effective_date.strftime(
-        f"%B %d, %Y at {hour}:%M {am_pm} Pacific time"
-    )
+    leg_tmz_effective_date = leg_tmz_effective_date.strftime(f"%B %d, %Y at {hour}:%M {am_pm} Pacific time")
 
     return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_recipients(
-    option: str, filing_json: dict, token: str = None, filing_type: str = None
-) -> str:
+def get_recipients(option: str, filing_json: dict, token: str = None, filing_type: str = None) -> str:
     """Get the recipients for the email output."""
     recipients = ""
     filing_type = filing_type if filing_type else "incorporationApplication"
     if filing_json["filing"].get(filing_type):
         recipients = filing_json["filing"][filing_type]["contactPoint"]["email"]
-        if (
-            option in [Filing.Status.PAID.value, "bn"]
-            and filing_json["filing"]["header"]["name"] == filing_type
-        ):
+        if option in [Filing.Status.PAID.value, "bn"] and filing_json["filing"]["header"]["name"] == filing_type:
             parties = filing_json["filing"][filing_type].get("parties")
             comp_party_email = None
             for party in parties:
                 for role in party["roles"]:
-                    if role["roleType"] == "Completing Party" and (
-                        comp_party_email := party["officer"].get("email")
-                    ):
+                    if role["roleType"] == "Completing Party" and (comp_party_email := party["officer"].get("email")):
                         recipients = f"{recipients}, {comp_party_email}"
                         break
     else:
@@ -91,9 +80,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     """Get the recipients for the email output from auth."""
     headers = {"Accept": "application/json", "Authorization": f"Bearer {token}"}
 
-    contact_info = requests.get(
-        f'{current_app.config.get("AUTH_URL")}/entities/{identifier}', headers=headers
-    )
+    contact_info = requests.get(f'{current_app.config.get("AUTH_URL")}/entities/{identifier}', headers=headers)
     contacts = contact_info.json()["contacts"]
 
     if not contacts:
@@ -122,9 +109,7 @@ def get_user_from_auth(user_name: str, token: str) -> requests.Response:
     """Get user from auth."""
     headers = {"Accept": "application/json", "Authorization": f"Bearer {token}"}
 
-    user_info = requests.get(
-        f'{current_app.config.get("AUTH_URL")}/users/{user_name}', headers=headers
-    )
+    user_info = requests.get(f'{current_app.config.get("AUTH_URL")}/users/{user_name}', headers=headers)
     return user_info
 
 
@@ -160,11 +145,7 @@ def substitute_template_parts(template_code: str) -> str:
 
     # substitute template parts - marked up by [[filename]]
     for template_part in template_parts:
-        template_part_code = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html'
-        ).read_text()
-        template_code = template_code.replace(
-            "[[{}.html]]".format(template_part), template_part_code
-        )
+        template_part_code = Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html').read_text()
+        template_code = template_code.replace("[[{}.html]]".format(template_part), template_part_code)
 
     return template_code

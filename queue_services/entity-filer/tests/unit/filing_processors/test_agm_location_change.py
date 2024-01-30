@@ -47,7 +47,7 @@ def test_worker_agm_location_change(app, session, mocker):
     final_filing = Filing.find_by_id(filing.id)
     assert final_filing.id
     assert final_filing.meta_data
-    
+
     agm_location_change = final_filing.meta_data.get("agmLocationChange")
     assert filing_json["filing"]["agmLocationChange"]["year"] == agm_location_change.get("year")
     assert filing_json["filing"]["agmLocationChange"]["agmLocation"] == agm_location_change.get("agmLocation")

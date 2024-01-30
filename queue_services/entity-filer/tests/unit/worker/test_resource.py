@@ -85,9 +85,7 @@ def test_process_simple_filing(client, session):
     business = create_business(identifier, legal_type=legal_type)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (
-        create_filing(payment_id, filing_submission, business_id=business.id)
-    ).id
+    filing_id = (create_filing(payment_id, filing_submission, business_id=business.id)).id
 
     ce = SimpleCloudEvent(
         id="fake-id",

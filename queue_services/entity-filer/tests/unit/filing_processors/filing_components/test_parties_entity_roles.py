@@ -318,9 +318,7 @@ def test_person_and_role_exists(session, test_name, schema_role, template):
 
 
 @pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
-def test_person_and_role_exists_cessation_date_set(
-    session, test_name, schema_role, template
-):
+def test_person_and_role_exists_cessation_date_set(session, test_name, schema_role, template):
     """Test where the person and role exists and the role is ceased.
 
     Assumption: Entity exists.
@@ -376,23 +374,13 @@ def test_person_and_role_exists_cessation_date_set(
             entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
             assert len(entity_roles) == 0
 
-            historical_roles = EntityRole.get_entity_roles_history_by_filing(
-                filing_id=filing.id
-            )
+            historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
             number_of_historical_roles = len(historical_roles)
             assert number_of_historical_roles >= 2
-            assert historical_roles[
-                number_of_historical_roles - 1
-            ].role_type == map_schema_role_to_enum(schema_role)
+            assert historical_roles[number_of_historical_roles - 1].role_type == map_schema_role_to_enum(schema_role)
+            assert historical_roles[number_of_historical_roles - 1].related_entity_id == person.id
             assert (
-                historical_roles[number_of_historical_roles - 1].related_entity_id
-                == person.id
-            )
-            assert (
-                historical_roles[number_of_historical_roles - 1].cessation_date.replace(
-                    tzinfo=None
-                )
-                == cessation_date
+                historical_roles[number_of_historical_roles - 1].cessation_date.replace(tzinfo=None) == cessation_date
             )
 
 
@@ -445,9 +433,7 @@ def test_directors_exist_but_not_in_filing(session):
 
         assert len(current_entity_roles) == 1
 
-        historical_roles = EntityRole.get_entity_roles_history_by_filing(
-            filing_id=filing.id
-        )
+        historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
         number_of_historical_roles = len(historical_roles)
         # Should be at least 2 records for each historical role.
         assert number_of_historical_roles == 4

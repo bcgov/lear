@@ -23,5 +23,5 @@ def process(filing: Dict, filing_meta: FilingMeta):
     filing_meta.agm_location_change = {
         "year": filing["agmLocationChange"]["year"],
         "agmLocation": filing["agmLocationChange"]["agmLocation"],
-        "reason": filing["agmLocationChange"]["reason"]
+        "reason": filing["agmLocationChange"]["reason"],
     }

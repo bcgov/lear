@@ -38,9 +38,7 @@ message_type = f"bc.registry.business."
 def test_change_of_status(app, session, client, mocker, legal_type, filing_type):
     """Test inform cra about change of status of SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, tax_id="993775204BC0001")
     json_filing = {"filing": {"header": {"name": filing_type}}}
     if filing_type == "dissolution":
         json_filing["filing"][filing_type] = {"dissolutionType": "voluntary"}
@@ -67,9 +65,7 @@ def test_change_of_status(app, session, client, mocker, legal_type, filing_type)
     )
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing_id, identifier, message_id, f"{message_type}{filing_type}"
-    )
+    json_data = get_json_message(filing_id, identifier, message_id, f"{message_type}{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK
 
@@ -102,14 +98,10 @@ def test_change_of_status(app, session, client, mocker, legal_type, filing_type)
         ("GP", "putBackOn", "993775204"),
     ],
 )
-def test_bn15_not_available_change_of_status(
-    app, session, client, mocker, legal_type, filing_type, bn9
-):
+def test_bn15_not_available_change_of_status(app, session, client, mocker, legal_type, filing_type, bn9):
     """Skip cra call when BN15 is not available while doing a change of status SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        legal_type, identifier=identifier, bn9=bn9
-    )
+    filing_id, legal_entity_id = create_registration_data(legal_type, identifier=identifier, bn9=bn9)
 
     json_filing = {"filing": {"header": {"name": filing_type}}}
     if filing_type == "dissolution":
@@ -121,9 +113,7 @@ def test_bn15_not_available_change_of_status(
     filing_id = filing.id
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing_id, identifier, message_id, f"{message_type}{filing_type}"
-    )
+    json_data = get_json_message(filing_id, identifier, message_id, f"{message_type}{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK
 
@@ -143,9 +133,7 @@ def test_bn15_not_available_change_of_status(
 def test_retry_change_of_status(app, session, client, mocker):
     """Test retry change of status of SP/GP."""
     identifier = "FM1234567"
-    filing_id, legal_entity_id = create_registration_data(
-        "SP", identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data("SP", identifier=identifier, tax_id="993775204BC0001")
     json_filing = {
         "filing": {
             "header": {"name": "dissolution"},
@@ -164,9 +152,7 @@ def test_retry_change_of_status(app, session, client, mocker):
 
     message_id = str(uuid.uuid4())
     for _ in range(10):
-        json_data = get_json_message(
-            filing_id, identifier, message_id, f"{message_type}dissolution"
-        )
+        json_data = get_json_message(filing_id, identifier, message_id, f"{message_type}dissolution")
         rv = client.post("/", json=json_data)
 
         if rv.status_code == HTTPStatus.OK:

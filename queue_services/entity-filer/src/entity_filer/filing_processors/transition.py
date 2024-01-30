@@ -23,22 +23,14 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 
-def process(
-    business: LegalEntity, filing_rec: Filing, filing: Dict, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing_rec: Filing, filing: Dict, filing_meta: FilingMeta):
     # pylint: disable=too-many-locals; 1 extra
     """Process the incoming transition filing."""
     # Extract the filing information for transition application
-    if not (
-        transition_filing := filing.get("transition")
-    ):  # pylint: disable=superfluous-parens;
-        raise DefaultException(
-            f"legal_filing:transition data missing from {filing_rec.id}"
-        )
+    if not (transition_filing := filing.get("transition")):  # pylint: disable=superfluous-parens;
+        raise DefaultException(f"legal_filing:transition data missing from {filing_rec.id}")
     if not business:
-        raise DefaultException(
-            f"Business does not exist: legal_filing:transitionApplication {filing_rec.id}"
-        )
+        raise DefaultException(f"Business does not exist: legal_filing:transitionApplication {filing_rec.id}")
 
     # Initial insert of the business record
     business.restriction_ind = transition_filing.get("hasProvisions")

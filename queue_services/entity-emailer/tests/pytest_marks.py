@@ -22,5 +22,6 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 
-colin_api_integration = pytest.mark.skipif((os.getenv('RUN_COLIN_API', False) is False),
-                                           reason='requires access to COLIN API')
+colin_api_integration = pytest.mark.skipif(
+    (os.getenv("RUN_COLIN_API", False) is False), reason="requires access to COLIN API"
+)
