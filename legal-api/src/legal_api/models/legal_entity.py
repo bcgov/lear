@@ -42,7 +42,9 @@ from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the 
 from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
     AlternateName,
 )
-from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .amalgamation import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+    Amalgamation,
+)
 from .db import db  # noqa: I001
 from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     EntityRole,
@@ -326,8 +328,8 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         foreign_keys="Resolution.signing_legal_entity_id",
         lazy="dynamic",
     )
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
-    amalgamation = db.relationship('Amalgamation', lazy='dynamic')
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
+    amalgamation = db.relationship("Amalgamation", lazy="dynamic")
 
     @hybrid_property
     def identifier(self):
@@ -479,7 +481,10 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                 func.nullif(related_le_alias.first_name, ""),
                             ),
                         ),
-                        (related_le_alias.entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
+                        (
+                            related_le_alias.entity_type == "organization",
+                            related_le_alias._legal_name,
+                        ),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("sortName"),
                     case(
@@ -492,7 +497,10 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                                 func.nullif(related_le_alias.last_name, ""),
                             ),
                         ),
-                        (related_le_alias.entity_type == "organization", related_le_alias._legal_name),  # pylint: disable=protected-access  # noqa: E501
+                        (
+                            related_le_alias.entity_type == "organization",
+                            related_le_alias._legal_name,
+                        ),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("legalName"),
                 )
@@ -656,8 +664,9 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            if (self.state == LegalEntity.State.HISTORICAL and
-                    (amalgamating_business := self.amalgamating_businesses.one_or_none())):
+            if self.state == LegalEntity.State.HISTORICAL and (
+                amalgamating_business := self.amalgamating_businesses.one_or_none()
+            ):
                 amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
                 d["amalgamatedInto"] = amalgamation.json()
             else:
@@ -794,9 +803,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
-        if not identifier or not cls.validate_identifier(
-            entity_type=None, identifier=identifier
-        ):
+        if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
             return None
 
         legal_entity = None

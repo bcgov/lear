@@ -16,9 +16,10 @@ from __future__ import annotations
 
 from sql_versioning import Versioned
 
+from legal_api.utils.datetime import datetime
+
 from ..utils.enum import BaseEnum, auto
 from .db import db
-from legal_api.utils.datetime import datetime
 
 
 class AlternateName(Versioned, db.Model):
@@ -56,7 +57,7 @@ class AlternateName(Versioned, db.Model):
             "state",
             "state_filing_id",
             "admin_freeze",
-            "last_modified"
+            "last_modified",
         ]
     }
 
@@ -75,7 +76,6 @@ class AlternateName(Versioned, db.Model):
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
-
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
