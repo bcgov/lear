@@ -84,6 +84,8 @@ class AlternateName(Versioned, db.Model):
 
     # relationships
     legal_entity = db.relationship("LegalEntity", back_populates="_alternate_names")
+    filings = db.relationship("Filing", lazy="dynamic", foreign_keys="Filing.alternate_name_id")
+    documents = db.relationship("Document", lazy="dynamic")
 
     def save(self):
         """Save the object to the database immediately."""
