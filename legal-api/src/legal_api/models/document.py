@@ -45,6 +45,7 @@ class Document(Versioned, db.Model):
             "filing_id",
             "legal_entity_id",
             "type",
+            "alternate_name_id"
         ]
     }
 
@@ -55,6 +56,7 @@ class Document(Versioned, db.Model):
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True)
 
     def save(self):
         """Save the object to the database immediately."""

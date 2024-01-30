@@ -267,7 +267,6 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
-    state_filing_id = db.Column("state_filing_id", db.Integer)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
     submitter = db.relationship("User", backref=backref("submitter", uselist=False), foreign_keys=[submitter_userid])
@@ -294,6 +293,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
     mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
     change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    state_filing_id = db.Column("state_filing_id", db.Integer, db.ForeignKey("filings.id"))
 
     # relationships
     change_filing = db.relationship("Filing", foreign_keys=[change_filing_id])

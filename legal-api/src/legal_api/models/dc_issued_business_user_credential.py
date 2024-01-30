@@ -28,6 +28,7 @@ class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-inst
 
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
 
     def save(self):
         """Save the object to the database immediately."""
