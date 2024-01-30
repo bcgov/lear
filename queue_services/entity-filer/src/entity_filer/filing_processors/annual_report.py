@@ -25,7 +25,6 @@ from entity_filer.filing_meta import FilingMeta
 # from legal_api.services.filings import validations
 
 
-
 def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):
     """Render the annual_report onto the legal_entity model objects."""
     legal_filing_name = "annualReport"

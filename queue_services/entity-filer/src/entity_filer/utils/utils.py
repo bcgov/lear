@@ -48,7 +48,6 @@ from importlib.metadata import version
 # from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-
 def _get_commit_hash():
     """Return the containers ref if present."""
     if (commit_hash := os.getenv("VCS_REF", None)) and commit_hash != "missing":

@@ -35,7 +35,6 @@ from tests.unit import create_business, create_filing
 # from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
 
 
-
 @pytest.mark.parametrize(
     "legal_type,identifier,dissolution_type",
     [

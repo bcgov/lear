@@ -47,7 +47,6 @@ from .translations import babel
 # from sentry_sdk.integrations.flask import FlaskIntegration
 
 
-
 def create_app(environment: Config = Production, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)

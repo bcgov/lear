@@ -42,7 +42,6 @@ from entity_filer.filing_processors.filing_components.parties import merge_all_p
 # from legal_api.services.bootstrap import AccountService
 
 
-
 def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     # TODO remove all of this
